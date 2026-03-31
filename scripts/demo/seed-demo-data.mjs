@@ -64,6 +64,7 @@ async function seedFoundation(supabase) {
         phone: "555-0100",
         email: "demo-facility@haven.local",
         total_licensed_beds: 52,
+        settings: { incident_report_prefix: "DEMO" },
       },
     ]),
   );
@@ -350,6 +351,7 @@ async function seedIncidents(supabase, actorUserId) {
   }
 
   const now = new Date();
+  const seqYear = now.getFullYear();
   const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000).toISOString();
   const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString();
   const inOneHour = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
@@ -362,7 +364,7 @@ async function seedIncidents(supabase, actorUserId) {
         resident_id: DEMO_IDS.residents.margaret,
         facility_id: DEMO_IDS.facilityId,
         organization_id: DEMO_IDS.orgId,
-        incident_number: "DEMO-2026-0001",
+        incident_number: `DEMO-${seqYear}-0001`,
         category: "fall_without_injury",
         severity: "level_2",
         status: "open",
@@ -382,7 +384,7 @@ async function seedIncidents(supabase, actorUserId) {
         resident_id: DEMO_IDS.residents.eleanor,
         facility_id: DEMO_IDS.facilityId,
         organization_id: DEMO_IDS.orgId,
-        incident_number: "DEMO-2026-0002",
+        incident_number: `DEMO-${seqYear}-0002`,
         category: "fall_with_injury",
         severity: "level_3",
         status: "investigating",
@@ -399,6 +401,15 @@ async function seedIncidents(supabase, actorUserId) {
         reported_by: actorUserId,
       },
     ]),
+  );
+
+  await assertNoError(
+    "incident_sequences sync",
+    supabase.from("incident_sequences").upsert({
+      facility_id: DEMO_IDS.facilityId,
+      year: seqYear,
+      last_number: 2,
+    }),
   );
 
   await assertNoError(
