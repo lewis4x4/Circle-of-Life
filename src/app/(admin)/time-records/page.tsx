@@ -10,6 +10,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -59,7 +60,7 @@ export default function AdminTimeRecordsPage() {
     setError(null);
     try {
       const live = await fetchTimeRecordsFromSupabase(selectedFacilityId);
-      setRows(live.length > 0 ? live : mockTimeRows);
+      setRows(live);
     } catch {
       setRows(mockTimeRows);
       setError("Live time records are unavailable. Showing demo punches.");
@@ -83,6 +84,24 @@ export default function AdminTimeRecordsPage() {
       return matchesSearch && matchesApproved;
     });
   }, [rows, search, approved]);
+
+  const listEmptyCopy = useMemo(
+    () =>
+      adminListFilteredEmptyCopy({
+        datasetRowCount: rows.length,
+        whenDatasetEmpty: {
+          title: "No time records in this scope",
+          description:
+            "Live data returned no punches for the selected facility or organization filter. Clock events will appear here as staff use timekeeping.",
+        },
+        whenFiltersExcludeAll: {
+          title: "No time records match the current filters",
+          description:
+            "Punches appear as caregivers clock in and out. Scope follows your facility selector.",
+        },
+      }),
+    [rows.length],
+  );
 
   const pendingApproval = rows.filter((r) => !r.approved && r.clockOut).length;
 
@@ -135,10 +154,7 @@ export default function AdminTimeRecordsPage() {
         </Card>
       ) : null}
       {!isLoading && filteredRows.length === 0 ? (
-        <AdminEmptyState
-          title="No time records match the current filters"
-          description="Punches appear as caregivers clock in and out. Scope follows your facility selector."
-        />
+        <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />
       ) : null}
       {!isLoading && filteredRows.length > 0 ? (
         <Card className="border-slate-200/80 shadow-sm dark:border-slate-800">

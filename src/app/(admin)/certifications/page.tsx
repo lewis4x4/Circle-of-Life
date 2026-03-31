@@ -10,6 +10,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -67,7 +68,7 @@ export default function AdminCertificationsPage() {
     setError(null);
     try {
       const live = await fetchCertificationsFromSupabase(selectedFacilityId);
-      setRows(live.length > 0 ? live : mockCertRows);
+      setRows(live);
     } catch {
       setRows(mockCertRows);
       setError("Live certification directory is unavailable. Showing demo rows.");
@@ -94,6 +95,24 @@ export default function AdminCertificationsPage() {
       return matchesSearch && matchesTimeline && matchesDb;
     });
   }, [rows, search, timeline, dbStatus]);
+
+  const listEmptyCopy = useMemo(
+    () =>
+      adminListFilteredEmptyCopy({
+        datasetRowCount: rows.length,
+        whenDatasetEmpty: {
+          title: "No certifications in this scope",
+          description:
+            "Live data returned no certification rows for the selected facility or organization filter.",
+        },
+        whenFiltersExcludeAll: {
+          title: "No certifications match the current filters",
+          description:
+            "Try clearing search or broadening status filters. Rows respect your facility selector when a facility is chosen.",
+        },
+      }),
+    [rows.length],
+  );
 
   const expiringCount = rows.filter((r) => r.timeline === "expiring_soon").length;
   const expiredCount = rows.filter((r) => r.timeline === "expired").length;
@@ -169,10 +188,7 @@ export default function AdminCertificationsPage() {
         </Card>
       ) : null}
       {!isLoading && filteredRows.length === 0 ? (
-        <AdminEmptyState
-          title="No certifications match the current filters"
-          description="Try clearing search or broadening status filters. Rows respect your facility selector when a facility is chosen."
-        />
+        <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />
       ) : null}
       {!isLoading && filteredRows.length > 0 ? (
         <Card className="border-slate-200/80 shadow-sm dark:border-slate-800">

@@ -6,6 +6,7 @@ import { ArrowUpDown, CalendarClock, ChevronRight } from "lucide-react";
 
 import { AdminEmptyState, AdminFilterBar, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { buttonVariants } from "@/components/ui/button";
@@ -79,7 +80,7 @@ export default function AdminCarePlanReviewsDuePage() {
     setError(null);
     try {
       const live = await fetchReviewsDue(selectedFacilityId);
-      setRows(live.length > 0 ? live : mockRows);
+      setRows(live);
     } catch {
       setRows(mockRows);
       setError("Live care plan data is unavailable. Showing demo review queue.");
@@ -105,6 +106,24 @@ export default function AdminCarePlanReviewsDuePage() {
       return matchesSearch && matchesStatus;
     });
   }, [rows, search, statusFilter]);
+
+  const listEmptyCopy = useMemo(
+    () =>
+      adminListFilteredEmptyCopy({
+        datasetRowCount: rows.length,
+        whenDatasetEmpty: {
+          title: "No care plans due for review in this scope",
+          description:
+            "Live data returned no active plans with a review due on or before today for the selected facility or organization filter.",
+        },
+        whenFiltersExcludeAll: {
+          title: "No plans match the current filters",
+          description:
+            "Try clearing search or broadening status. Rows are scoped by your current facility selection.",
+        },
+      }),
+    [rows.length],
+  );
 
   const urgent = rows.filter((r) => r.daysOverdue > 0).length;
 
@@ -150,10 +169,7 @@ export default function AdminCarePlanReviewsDuePage() {
         </Card>
       ) : null}
       {!isLoading && filtered.length === 0 ? (
-        <AdminEmptyState
-          title="No plans in this view"
-          description="When active care plans have a review due date on or before today, they surface here for administrative follow-up."
-        />
+        <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />
       ) : null}
 
       {!isLoading && filtered.length > 0 ? (

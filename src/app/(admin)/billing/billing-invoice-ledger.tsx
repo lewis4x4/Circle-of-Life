@@ -6,6 +6,7 @@ import { ArrowUpDown, ChevronRight, CreditCard, Receipt } from "lucide-react";
 
 import { AdminEmptyState, AdminFilterBar, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Badge } from "@/components/ui/badge";
@@ -95,7 +96,7 @@ export function BillingInvoiceLedger({
     setError(null);
     try {
       const liveRows = await fetchInvoicesFromSupabase(selectedFacilityId, residentIdFilter);
-      setRows(liveRows.length > 0 ? liveRows : residentIdFilter ? [] : mockInvoices);
+      setRows(liveRows);
     } catch {
       setRows(residentIdFilter ? [] : mockInvoices);
       setError(
@@ -124,6 +125,36 @@ export function BillingInvoiceLedger({
       return matchesSearch && matchesStatus && matchesPayerType;
     });
   }, [rows, search, status, payerType]);
+
+  const listEmptyCopy = useMemo(() => {
+    if (residentIdFilter) {
+      return adminListFilteredEmptyCopy({
+        datasetRowCount: rows.length,
+        whenDatasetEmpty: {
+          title: "No invoices for this resident",
+          description:
+            "There are no invoices linked to this resident in the current scope. They will appear here once billing generates statements.",
+        },
+        whenFiltersExcludeAll: {
+          title: "No invoices match the current filters",
+          description: "Adjust status or payer filters to widen the ledger view.",
+        },
+      });
+    }
+    return adminListFilteredEmptyCopy({
+      datasetRowCount: rows.length,
+      whenDatasetEmpty: {
+        title: "No invoices in this scope",
+        description:
+          "Live billing returned no invoices for the selected facility or organization filter. Generate invoices or adjust scope.",
+      },
+      whenFiltersExcludeAll: {
+        title: "No invoices match the current filters",
+        description:
+          "Adjust status or payer filters. Live ledger is scoped by your current facility selection.",
+      },
+    });
+  }, [rows.length, residentIdFilter]);
 
   const outstandingCents = rows
     .filter((row) => row.status !== "paid" && row.status !== "written_off" && row.status !== "void")
@@ -203,10 +234,7 @@ export function BillingInvoiceLedger({
         </Card>
       ) : null}
       {!isLoading && filteredRows.length === 0 ? (
-        <AdminEmptyState
-          title="No invoices match the current filters"
-          description="Adjust status or payer filters. Live ledger is scoped by your current facility selection."
-        />
+        <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />
       ) : null}
 
       {!isLoading && filteredRows.length > 0 ? (

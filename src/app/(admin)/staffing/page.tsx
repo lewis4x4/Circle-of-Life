@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -52,7 +53,7 @@ export default function AdminStaffingPage() {
     setError(null);
     try {
       const live = await fetchSnapshotsFromSupabase(selectedFacilityId);
-      setRows(live.length > 0 ? live : mockSnapshots);
+      setRows(live);
     } catch {
       setRows(mockSnapshots);
       setError("Live staffing snapshots are unavailable. Showing demo ratios.");
@@ -75,6 +76,24 @@ export default function AdminStaffingPage() {
       return matchesShift && matchesCompliance;
     });
   }, [rows, shift, compliance]);
+
+  const listEmptyCopy = useMemo(
+    () =>
+      adminListFilteredEmptyCopy({
+        datasetRowCount: rows.length,
+        whenDatasetEmpty: {
+          title: "No staffing snapshots in this scope",
+          description:
+            "Live data returned no ratio snapshots for the selected facility or organization filter. Snapshots appear as they are recorded.",
+        },
+        whenFiltersExcludeAll: {
+          title: "No staffing snapshots match the current filters",
+          description:
+            "Snapshots are recorded per facility and shift. Select a facility or widen filters.",
+        },
+      }),
+    [rows.length],
+  );
 
   const nonCompliant = rows.filter((r) => !r.isCompliant).length;
 
@@ -144,10 +163,7 @@ export default function AdminStaffingPage() {
         </Card>
       ) : null}
       {!isLoading && filteredRows.length === 0 ? (
-        <AdminEmptyState
-          title="No staffing snapshots match the current filters"
-          description="Snapshots are recorded per facility and shift. Select a facility or widen filters."
-        />
+        <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />
       ) : null}
       {!isLoading && filteredRows.length > 0 ? (
         <Card className="border-slate-200/80 shadow-sm dark:border-slate-800">

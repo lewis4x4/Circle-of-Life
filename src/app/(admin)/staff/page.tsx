@@ -6,6 +6,7 @@ import { ArrowUpDown, ChevronRight, UserCog, UserRoundCheck } from "lucide-react
 
 import { AdminEmptyState, AdminFilterBar, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -80,7 +81,7 @@ export default function AdminStaffPage() {
     setError(null);
     try {
       const liveRows = await fetchStaffFromSupabase(selectedFacilityId);
-      setRows(liveRows.length > 0 ? liveRows : mockStaff);
+      setRows(liveRows);
     } catch {
       setRows(mockStaff);
       setError("Live staff directory is unavailable. Showing demo roster data.");
@@ -106,6 +107,24 @@ export default function AdminStaffPage() {
       return matchesSearch && matchesRole && matchesStatus && matchesCert;
     });
   }, [rows, search, role, status, cert]);
+
+  const listEmptyCopy = useMemo(
+    () =>
+      adminListFilteredEmptyCopy({
+        datasetRowCount: rows.length,
+        whenDatasetEmpty: {
+          title: "No staff in this scope",
+          description:
+            "Live roster returned no staff rows for the selected facility or organization filter. Add staff records or adjust scope.",
+        },
+        whenFiltersExcludeAll: {
+          title: "No staff match the current filters",
+          description:
+            "Try broadening role, status, or certification filters. Live roster is scoped by your current facility selection.",
+        },
+      }),
+    [rows.length],
+  );
 
   const activeCount = rows.filter((row) => row.status === "active").length;
   const certRiskCount = rows.filter((row) => row.certifications !== "current").length;
@@ -194,10 +213,7 @@ export default function AdminStaffPage() {
         </Card>
       ) : null}
       {!isLoading && filteredRows.length === 0 ? (
-        <AdminEmptyState
-          title="No staff match the current filters"
-          description="Try broadening role, status, or certification filters. Live roster is scoped by your current facility selection."
-        />
+        <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />
       ) : null}
 
       {!isLoading && filteredRows.length > 0 ? (

@@ -6,6 +6,7 @@ import { AlertTriangle, ArrowUpDown, BarChart3, ChevronRight, ShieldAlert } from
 
 import { AdminEmptyState, AdminFilterBar, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Badge } from "@/components/ui/badge";
@@ -85,7 +86,7 @@ export default function AdminIncidentsPage() {
     setError(null);
     try {
       const liveRows = await fetchIncidentsFromSupabase(selectedFacilityId);
-      setRows(liveRows.length > 0 ? liveRows : mockIncidents);
+      setRows(liveRows);
     } catch {
       setRows(mockIncidents);
       setError("Live incident data is unavailable. Showing demo queue data.");
@@ -112,6 +113,24 @@ export default function AdminIncidentsPage() {
       return matchesSearch && matchesSeverity && matchesStatus && matchesCategory;
     });
   }, [rows, search, severity, status, category]);
+
+  const listEmptyCopy = useMemo(
+    () =>
+      adminListFilteredEmptyCopy({
+        datasetRowCount: rows.length,
+        whenDatasetEmpty: {
+          title: "No incidents in this scope",
+          description:
+            "Live data returned no incidents for the selected facility or organization filter. New reports will appear here as they are filed.",
+        },
+        whenFiltersExcludeAll: {
+          title: "No incidents match the current filters",
+          description:
+            "Try broadening severity, status, or category. Live data is scoped by your current facility selection.",
+        },
+      }),
+    [rows.length],
+  );
 
   const openCount = rows.filter((row) => row.status !== "closed").length;
   const criticalCount = rows.filter((row) => row.severity === "level_4").length;
@@ -212,10 +231,7 @@ export default function AdminIncidentsPage() {
         </Card>
       ) : null}
       {!isLoading && filteredRows.length === 0 ? (
-        <AdminEmptyState
-          title="No incidents match the current filters"
-          description="Try broadening severity, status, or category. Live data is scoped by your current facility selection."
-        />
+        <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />
       ) : null}
 
       {!isLoading && filteredRows.length > 0 ? (

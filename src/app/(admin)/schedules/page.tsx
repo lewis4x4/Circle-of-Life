@@ -7,6 +7,7 @@ import { AdminEmptyState, AdminFilterBar, AdminTableLoadingState } from "@/compo
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -46,7 +47,7 @@ export default function AdminSchedulesPage() {
     setError(null);
     try {
       const live = await fetchSchedulesFromSupabase(selectedFacilityId);
-      setRows(live.length > 0 ? live : mockSchedules);
+      setRows(live);
     } catch {
       setRows(mockSchedules);
       setError("Live schedules are unavailable. Showing demo weeks.");
@@ -70,6 +71,24 @@ export default function AdminSchedulesPage() {
       return matchesSearch && matchesStatus;
     });
   }, [rows, search, status]);
+
+  const listEmptyCopy = useMemo(
+    () =>
+      adminListFilteredEmptyCopy({
+        datasetRowCount: rows.length,
+        whenDatasetEmpty: {
+          title: "No schedules in this scope",
+          description:
+            "Live data returned no schedule weeks for the selected facility or organization filter. Create a week in Supabase or adjust scope.",
+        },
+        whenFiltersExcludeAll: {
+          title: "No schedules match the current filters",
+          description:
+            "Schedules are created per facility and week. Pick a facility or clear filters to see more rows.",
+        },
+      }),
+    [rows.length],
+  );
 
   const draftCount = rows.filter((r) => r.status === "draft").length;
 
@@ -123,10 +142,7 @@ export default function AdminSchedulesPage() {
         </Card>
       ) : null}
       {!isLoading && filteredRows.length === 0 ? (
-        <AdminEmptyState
-          title="No schedules match the current filters"
-          description="Schedules are created per facility and week. Pick a facility or clear filters to see more rows."
-        />
+        <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />
       ) : null}
       {!isLoading && filteredRows.length > 0 ? (
         <Card className="border-slate-200/80 shadow-sm dark:border-slate-800">

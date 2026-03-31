@@ -6,6 +6,7 @@ import { ArrowUpDown, ChevronRight, ClipboardCheck } from "lucide-react";
 
 import { AdminEmptyState, AdminFilterBar, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { buttonVariants } from "@/components/ui/button";
@@ -81,7 +82,7 @@ export default function AdminAssessmentsOverduePage() {
     setError(null);
     try {
       const live = await fetchOverdueAssessments(selectedFacilityId);
-      setRows(live.length > 0 ? live : mockRows);
+      setRows(live);
     } catch {
       setRows(mockRows);
       setError("Live assessment queue is unavailable. Showing demo overdue items.");
@@ -110,6 +111,24 @@ export default function AdminAssessmentsOverduePage() {
       return matchesSearch && matchesType;
     });
   }, [rows, search, typeFilter]);
+
+  const listEmptyCopy = useMemo(
+    () =>
+      adminListFilteredEmptyCopy({
+        datasetRowCount: rows.length,
+        whenDatasetEmpty: {
+          title: "No overdue assessments in this scope",
+          description:
+            "Live data returned no assessments past due for the selected facility or organization filter. Completed or rescheduled items drop off this queue.",
+        },
+        whenFiltersExcludeAll: {
+          title: "No matching overdue assessments",
+          description:
+            "Try clearing search or choosing “All types”. Rows are scoped by your current facility selection.",
+        },
+      }),
+    [rows.length],
+  );
 
   const overdueCount = rows.filter((r) => r.daysOverdue > 0).length;
 
@@ -155,10 +174,7 @@ export default function AdminAssessmentsOverduePage() {
         </Card>
       ) : null}
       {!isLoading && filtered.length === 0 ? (
-        <AdminEmptyState
-          title="No matching overdue assessments"
-          description="When assessments have a next due date on or before today, they appear here for clinical follow-up."
-        />
+        <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />
       ) : null}
 
       {!isLoading && filtered.length > 0 ? (

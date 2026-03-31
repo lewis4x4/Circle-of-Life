@@ -6,6 +6,7 @@ import { ArrowUpDown, ChevronRight, Users } from "lucide-react";
 
 import { AdminEmptyState, AdminFilterBar, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -94,7 +95,7 @@ export default function AdminResidentsPage() {
 
     try {
       const liveRows = await fetchResidentsFromSupabase(selectedFacilityId);
-      setRows(liveRows.length > 0 ? liveRows : mockResidents);
+      setRows(liveRows);
     } catch {
       setRows(mockResidents);
       setError("Live resident data is unavailable. Showing demo census data.");
@@ -130,6 +131,24 @@ export default function AdminResidentsPage() {
       return matchesSearch && matchesAcuity && matchesUnit && matchesAdl;
     });
   }, [rows, search, acuity, unit, adl]);
+
+  const listEmptyCopy = useMemo(
+    () =>
+      adminListFilteredEmptyCopy({
+        datasetRowCount: rows.length,
+        whenDatasetEmpty: {
+          title: "No residents in this scope",
+          description:
+            "Live census returned no active residents for the selected facility or organization filter. Add residents in Supabase or choose a different scope.",
+        },
+        whenFiltersExcludeAll: {
+          title: "No residents match the current filters",
+          description:
+            "Try broadening acuity, unit, or ADL criteria. Live census data is scoped by your current facility selection.",
+        },
+      }),
+    [rows.length],
+  );
 
   const activeCount = rows.filter((row) => row.status === "active").length;
   const highAcuityCount = rows.filter((row) => row.acuity === 3).length;
@@ -205,10 +224,7 @@ export default function AdminResidentsPage() {
         </Card>
       ) : null}
       {!isLoading && filteredRows.length === 0 ? (
-        <AdminEmptyState
-          title="No residents match the current filters"
-          description="Try broadening acuity, unit, or ADL criteria. Live census data is scoped by your current facility selection."
-        />
+        <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />
       ) : null}
 
       {!isLoading && filteredRows.length > 0 ? (
