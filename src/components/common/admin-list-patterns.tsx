@@ -88,11 +88,16 @@ export function AdminTableLoadingState() {
 }
 
 type AdminErrorStateProps = {
+  title?: string;
   message: string;
   onRetry: () => void;
 };
 
-export function AdminErrorState({ message, onRetry }: AdminErrorStateProps) {
+export function AdminErrorState({
+  title = "Could not load records",
+  message,
+  onRetry,
+}: AdminErrorStateProps) {
   return (
     <Card className="border-red-200/80 bg-red-50/40 dark:border-red-900/60 dark:bg-red-950/20">
       <CardContent className="flex flex-col items-center gap-4 py-14 text-center">
@@ -100,7 +105,7 @@ export function AdminErrorState({ message, onRetry }: AdminErrorStateProps) {
           <AlertTriangle className="h-5 w-5" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-red-700 dark:text-red-300">Could not load residents</h3>
+          <h3 className="text-lg font-semibold text-red-700 dark:text-red-300">{title}</h3>
           <p className="mt-1 text-sm text-red-600/90 dark:text-red-300/80">{message}</p>
         </div>
         <Button variant="outline" onClick={onRetry} className="border-red-200 bg-white text-red-700 hover:bg-red-50 dark:border-red-900 dark:bg-red-950/20 dark:text-red-300">

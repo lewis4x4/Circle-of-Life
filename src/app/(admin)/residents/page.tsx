@@ -152,7 +152,9 @@ export default function AdminResidentsPage() {
       />
 
       {isLoading ? <AdminTableLoadingState /> : null}
-      {!isLoading && error ? <AdminErrorState message={error} onRetry={loadResidents} /> : null}
+      {!isLoading && error ? (
+        <AdminErrorState title="Could not load residents" message={error} onRetry={loadResidents} />
+      ) : null}
       {!isLoading && !error && filteredRows.length === 0 ? (
         <AdminEmptyState
           title="No residents match the current filters"
