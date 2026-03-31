@@ -26,18 +26,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-const HeroCanvas = dynamic(
-  () => import("./hero-canvas").then((m) => m.HeroCanvas),
-  {
-    ssr: false,
-    loading: () => (
-      <div
-        className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_40%,rgba(45,212,191,0.15),transparent_55%)]"
-        aria-hidden
-      />
-    ),
-  },
-);
+import Image from "next/image";
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
@@ -261,20 +250,19 @@ export default function LandingHome() {
             transition={{ duration: 0.85, delay: 0.15, ease: easeOut }}
           >
             <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-teal-500/25 via-transparent to-indigo-500/20 opacity-60 blur-3xl" />
-            <div className="relative aspect-square overflow-hidden rounded-[1.75rem] border border-white/[0.08] bg-gradient-to-b from-slate-900/90 to-[#030712] shadow-2xl shadow-black/50 ring-1 ring-white/[0.06]">
-              {!reduceMotion ? <HeroCanvas /> : (
-                <div
-                  className="absolute inset-0 bg-[radial-gradient(circle_at_40%_40%,rgba(45,212,191,0.2),transparent_55%),radial-gradient(circle_at_70%_60%,rgba(99,102,241,0.15),transparent_50%)]"
-                  aria-hidden
-                />
-              )}
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#030712] via-transparent to-transparent opacity-90" />
-              <div className="absolute bottom-5 left-5 right-5 rounded-xl border border-white/10 bg-black/40 p-4 backdrop-blur-md">
+            <div className="relative aspect-square overflow-hidden rounded-[1.75rem] border border-white/[0.08] shadow-2xl shadow-black/50 ring-1 ring-white/[0.06]">
+              <img
+                src="/luxury-alf-interior.png"
+                alt="Luxury Assisted Living Interior"
+                className="absolute inset-0 h-full w-full object-cover object-center"
+              />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#030712] via-[#030712]/40 to-transparent opacity-90" />
+              <div className="absolute bottom-5 left-5 right-5 rounded-xl border border-white/10 bg-black/60 p-4 backdrop-blur-md">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-teal-200/80">
-                  Live lattice
+                  Built for Care
                 </p>
                 <p className="mt-1 text-sm text-slate-300">
-                  WebGL accent—subtle motion, no tracking pixels, respects reduced motion.
+                  Premium hospitality environments supported by invisible, high-precision operations technology.
                 </p>
               </div>
             </div>
