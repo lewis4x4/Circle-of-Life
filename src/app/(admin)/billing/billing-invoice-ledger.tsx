@@ -14,6 +14,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
+import { DEMO_INVOICE_IDS } from "./demo-invoices";
+
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -268,7 +270,7 @@ export function BillingInvoiceLedger({
   );
 }
 
-export async function fetchInvoicesFromSupabase(
+async function fetchInvoicesFromSupabase(
   selectedFacilityId: string | null,
   residentIdFilter?: string | null,
 ): Promise<BillingRow[]> {
@@ -393,7 +395,7 @@ export function InvoiceStatusBadge({ status }: { status: InvoiceStatusUi }) {
 
 const mockInvoices: BillingRow[] = [
   {
-    id: "inv-001",
+    id: DEMO_INVOICE_IDS.inv1,
     invoiceNumber: "INV-2026-03-145",
     residentName: "Margaret Sullivan",
     payerType: "private_pay",
@@ -403,7 +405,7 @@ const mockInvoices: BillingRow[] = [
     updatedAt: "12 min ago",
   },
   {
-    id: "inv-002",
+    id: DEMO_INVOICE_IDS.inv2,
     invoiceNumber: "INV-2026-03-142",
     residentName: "Arthur Pendelton",
     payerType: "medicaid",
@@ -413,7 +415,7 @@ const mockInvoices: BillingRow[] = [
     updatedAt: "1 hr ago",
   },
   {
-    id: "inv-003",
+    id: DEMO_INVOICE_IDS.inv3,
     invoiceNumber: "INV-2026-03-140",
     residentName: "Lucille Booth",
     payerType: "ltc_insurance",
@@ -423,7 +425,7 @@ const mockInvoices: BillingRow[] = [
     updatedAt: "Today, 08:10",
   },
   {
-    id: "inv-004",
+    id: DEMO_INVOICE_IDS.inv4,
     invoiceNumber: "INV-2026-02-098",
     residentName: "William Hastings",
     payerType: "private_pay",
