@@ -1,20 +1,18 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowUpDown, ChevronRight, CreditCard, Receipt } from "lucide-react";
 
-import {
-  AdminEmptyState,
-  AdminErrorState,
-  AdminFilterBar,
-  AdminTableLoadingState,
-} from "@/components/common/admin-list-patterns";
+import { AdminEmptyState, AdminFilterBar, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
+import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { createClient } from "@/lib/supabase/client";
+import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-type InvoiceStatus = "draft" | "sent" | "partial" | "paid" | "overdue";
+type InvoiceStatus = "draft" | "sent" | "partial" | "paid" | "overdue" | "void" | "written_off";
 type PayerType = "private_pay" | "medicaid" | "ltc_insurance";
 
 type BillingRow = {
@@ -39,7 +37,29 @@ const currency = new Intl.NumberFormat("en-US", {
   currency: "USD",
 });
 
+type SupabaseInvoiceRow = {
+  id: string;
+  resident_id: string;
+  invoice_number: string;
+  status: string;
+  balance_due: number;
+  due_date: string;
+  updated_at: string;
+  payer_type: string | null;
+  deleted_at: string | null;
+};
+
+type SupabaseResidentMini = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+};
+
+type QueryError = { message: string };
+type QueryResult<T> = { data: T[] | null; error: QueryError | null };
+
 export default function AdminBillingPage() {
+  const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<BillingRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,22 +68,23 @@ export default function AdminBillingPage() {
   const [status, setStatus] = useState(DEFAULT_FILTERS.status);
   const [payerType, setPayerType] = useState(DEFAULT_FILTERS.payerType);
 
-  const loadBilling = async () => {
+  const loadBilling = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 900));
-      setRows(mockInvoices);
+      const liveRows = await fetchInvoicesFromSupabase(selectedFacilityId);
+      setRows(liveRows.length > 0 ? liveRows : mockInvoices);
     } catch {
-      setError("Billing feed is currently unavailable. Please retry.");
+      setRows(mockInvoices);
+      setError("Live billing data is unavailable. Showing demo ledger data.");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedFacilityId]);
 
   useEffect(() => {
     void loadBilling();
-  }, []);
+  }, [loadBilling]);
 
   const filteredRows = useMemo(() => {
     const loweredSearch = search.trim().toLowerCase();
@@ -79,7 +100,7 @@ export default function AdminBillingPage() {
   }, [rows, search, status, payerType]);
 
   const outstandingCents = rows
-    .filter((row) => row.status !== "paid")
+    .filter((row) => row.status !== "paid" && row.status !== "written_off" && row.status !== "void")
     .reduce((acc, row) => acc + row.amountDueCents, 0);
   const overdueCount = rows.filter((row) => row.status === "overdue").length;
 
@@ -128,6 +149,8 @@ export default function AdminBillingPage() {
               { value: "partial", label: "Partial" },
               { value: "paid", label: "Paid" },
               { value: "overdue", label: "Overdue" },
+              { value: "void", label: "Void" },
+              { value: "written_off", label: "Written Off" },
             ],
           },
           {
@@ -151,20 +174,22 @@ export default function AdminBillingPage() {
 
       {isLoading ? <AdminTableLoadingState /> : null}
       {!isLoading && error ? (
-        <AdminErrorState title="Could not load billing records" message={error} onRetry={loadBilling} />
+        <Card className="border-amber-200/80 bg-amber-50/40 dark:border-amber-900/60 dark:bg-amber-950/20">
+          <CardContent className="py-3 text-sm text-amber-700 dark:text-amber-300">{error}</CardContent>
+        </Card>
       ) : null}
-      {!isLoading && !error && filteredRows.length === 0 ? (
+      {!isLoading && filteredRows.length === 0 ? (
         <AdminEmptyState
           title="No invoices match the current filters"
-          description="Adjust status or payer filters to restore ledger results."
+          description="Adjust status or payer filters. Live ledger is scoped by your current facility selection."
         />
       ) : null}
 
-      {!isLoading && !error && filteredRows.length > 0 ? (
+      {!isLoading && filteredRows.length > 0 ? (
         <Card className="overflow-hidden border-slate-200/70 bg-white shadow-soft dark:border-slate-800 dark:bg-slate-950">
           <CardHeader className="border-b border-slate-100 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/30">
             <CardTitle className="text-lg font-display">Invoice Ledger</CardTitle>
-            <CardDescription>Scaffolded billing queue for invoices, payments, and collections modules.</CardDescription>
+            <CardDescription>Open invoices and balances from the billing schema (RLS-scoped).</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             <Table>
@@ -217,6 +242,98 @@ export default function AdminBillingPage() {
   );
 }
 
+async function fetchInvoicesFromSupabase(selectedFacilityId: string | null): Promise<BillingRow[]> {
+  const supabase = createClient();
+  let invQuery = supabase
+    .from("invoices" as never)
+    .select(
+      "id, resident_id, invoice_number, status, balance_due, due_date, updated_at, payer_type, deleted_at",
+    )
+    .is("deleted_at", null)
+    .order("invoice_date", { ascending: false })
+    .limit(200);
+
+  if (isValidFacilityIdForQuery(selectedFacilityId)) {
+    invQuery = invQuery.eq("facility_id", selectedFacilityId);
+  }
+
+  const invResult = (await invQuery) as unknown as QueryResult<SupabaseInvoiceRow>;
+  const invoices = invResult.data ?? [];
+  if (invResult.error) {
+    throw invResult.error;
+  }
+  if (invoices.length === 0) {
+    return [];
+  }
+
+  const residentIds = Array.from(new Set(invoices.map((i) => i.resident_id)));
+  const resResult = (await supabase
+    .from("residents" as never)
+    .select("id, first_name, last_name")
+    .in("id", residentIds)) as unknown as QueryResult<SupabaseResidentMini>;
+  if (resResult.error) {
+    throw resResult.error;
+  }
+  const residentById = new Map((resResult.data ?? []).map((r) => [r.id, r] as const));
+
+  return invoices.map((inv) => {
+    const res = residentById.get(inv.resident_id);
+    const fn = res?.first_name?.trim() ?? "";
+    const ln = res?.last_name?.trim() ?? "";
+    const residentName = `${fn} ${ln}`.trim() || "Resident";
+    return {
+      id: inv.id,
+      invoiceNumber: inv.invoice_number,
+      residentName,
+      payerType: mapDbPayerTypeToUi(inv.payer_type),
+      status: mapDbInvoiceStatusToUi(inv.status),
+      amountDueCents: Math.max(0, inv.balance_due),
+      dueDate: formatDueDisplay(inv.due_date, inv.status),
+      updatedAt: formatUpdatedAt(inv.updated_at),
+    };
+  });
+}
+
+function mapDbPayerTypeToUi(value: string | null): PayerType {
+  if (value === "medicaid_oss") return "medicaid";
+  if (value === "ltc_insurance" || value === "va_aid_attendance") return "ltc_insurance";
+  if (value === "private_pay") return "private_pay";
+  return "private_pay";
+}
+
+function mapDbInvoiceStatusToUi(value: string): InvoiceStatus {
+  if (
+    value === "draft" ||
+    value === "sent" ||
+    value === "paid" ||
+    value === "partial" ||
+    value === "overdue" ||
+    value === "void" ||
+    value === "written_off"
+  ) {
+    return value;
+  }
+  return "draft";
+}
+
+function formatDueDisplay(dueDate: string, status: string): string {
+  if (status === "paid") return "Paid";
+  const parsed = new Date(`${dueDate}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) return dueDate;
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(parsed);
+}
+
+function formatUpdatedAt(iso: string): string {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return "—";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(parsed);
+}
+
 function PayerTypeBadge({ payerType }: { payerType: PayerType }) {
   const map: Record<PayerType, { label: string; className: string }> = {
     private_pay: { label: "Private Pay", className: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300" },
@@ -236,6 +353,8 @@ function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
     partial: { label: "Partial", className: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" },
     paid: { label: "Paid", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" },
     overdue: { label: "Overdue", className: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300" },
+    void: { label: "Void", className: "bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200" },
+    written_off: { label: "Written Off", className: "bg-orange-100 text-orange-800 dark:bg-orange-950/40 dark:text-orange-200" },
   };
   return <Badge className={map[status].className}>{map[status].label}</Badge>;
 }
