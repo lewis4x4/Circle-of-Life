@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Bell, Search, UserCircle2, ChevronDown, Check } from "lucide-react";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
@@ -11,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const { selectedFacilityId, availableFacilities, setSelectedFacility } = useFacilityStore();
   const currentFacility = availableFacilities.find(f => f.id === selectedFacilityId) || availableFacilities[0];
 
@@ -22,10 +25,36 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <span className="text-lg font-semibold font-display text-slate-900 tracking-tight">Haven Admin</span>
         </div>
         <nav className="flex-1 px-4 py-6 space-y-1">
-          {/* We will add real navigation links here later */}
-          <div className="px-2 py-2 rounded-md bg-slate-100 text-slate-900 font-medium text-sm">Dashboard</div>
-          <div className="px-2 py-2 rounded-md text-slate-600 font-medium text-sm hover:bg-slate-50 cursor-pointer tap-responsive">Residents</div>
-          <div className="px-2 py-2 rounded-md text-slate-600 font-medium text-sm hover:bg-slate-50 cursor-pointer tap-responsive">Daily Operations</div>
+          {[
+            { href: "/admin", label: "Dashboard", enabled: true },
+            { href: "/admin/residents", label: "Residents", enabled: true },
+            { href: "#", label: "Daily Operations", enabled: false },
+          ].map((item) => {
+            const isActive = pathname === item.href;
+            if (!item.enabled) {
+              return (
+                <span
+                  key={item.label}
+                  className="block cursor-not-allowed rounded-md px-2 py-2 text-sm font-medium text-slate-400"
+                >
+                  {item.label}
+                </span>
+              );
+            }
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`block rounded-md px-2 py-2 text-sm font-medium tap-responsive ${
+                  isActive
+                    ? "bg-slate-100 text-slate-900"
+                    : "text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
       </aside>
       

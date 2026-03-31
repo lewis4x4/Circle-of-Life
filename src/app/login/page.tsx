@@ -101,38 +101,39 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full bg-[#050914] font-sans text-slate-100 lg:grid lg:grid-cols-2">
-      <div className="relative hidden lg:flex min-h-screen overflow-hidden border-r border-white/10">
+      <div className="relative hidden lg:flex min-h-screen overflow-hidden border-r border-white/10 flex-col justify-end p-12 xl:p-16">
+        {/* Photographic Background Layer */}
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 bg-cover bg-center"
           style={{
-            background:
-              "linear-gradient(120deg, rgba(6,15,44,0.82), rgba(4,17,59,0.62)), radial-gradient(70% 70% at 20% 20%, rgba(32,160,146,0.22), rgba(0,0,0,0))",
+            backgroundImage: "url('https://images.unsplash.com/photo-1581578731548-c64695cc6952?q=80&w=2000&auto=format&fit=crop')",
           }}
         />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(148,163,184,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.06)_1px,transparent_1px)] bg-[size:2.8rem_2.8rem]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(56,189,248,0.12),transparent_45%),radial-gradient(circle_at_70%_70%,rgba(20,184,166,0.14),transparent_45%)]" />
+        
+        {/* Gradient overlays to ensure white text readability */}
+        <div className="absolute inset-0 bg-slate-950/20 mix-blend-multiply" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#050914] via-[#050914]/80 to-transparent opacity-90" />
+        
+        {/* Subtle grid pattern for texture */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:2.8rem_2.8rem]" />
 
-        <div className="relative z-10 flex h-full flex-col justify-between p-12 xl:p-16">
+        {/* Content */}
+        <div className="relative z-10 w-full h-full flex flex-col justify-between">
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-xl bg-white/95 text-slate-900 flex items-center justify-center shadow-lg">
               <div className="h-4 w-4 rounded-sm bg-[#0a192f]" />
             </div>
-            <span className="text-2xl font-serif tracking-tight text-slate-100">Haven</span>
+            <span className="text-2xl font-serif tracking-tight text-white drop-shadow-md">Haven</span>
           </div>
 
-          <div className="max-w-xl">
-            <p className="text-sm uppercase tracking-[0.18em] text-teal-300/90">Secure Care Operations</p>
-            <h1 className="mt-6 text-5xl font-display font-semibold leading-tight text-white">
-              Welcome back to the command layer for human care.
+          <div className="max-w-xl mt-auto pb-8">
+            <h1 className="text-6xl md:text-7xl font-display font-bold leading-[1.05] tracking-tight text-white drop-shadow-sm">
+              Elevating <br /><span className="text-emerald-400">Human Care.</span>
             </h1>
-            <p className="mt-6 text-lg leading-relaxed text-slate-300">
-              One platform for resident safety, compliant documentation, staffing coordination, and family confidence.
+            <p className="mt-8 text-lg font-medium leading-relaxed text-slate-200">
+              The comprehensive platform for assisted living operators. Streamline your operations from clinical workflows to compliance.
             </p>
           </div>
-
-          <p className="text-sm text-slate-400">
-            &copy; {new Date().getFullYear()} Circle of Life. Protected health information must remain handled per policy.
-          </p>
         </div>
       </div>
 

@@ -1,0 +1,132 @@
+{
+  "segment": "ui-admin-residents-scaffold",
+  "timestamp": "2026-03-31T01:54:58.815Z",
+  "verdict": "FAIL",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-env-example.mjs",
+      "duration_ms": 41,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "duration_ms": 139,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "status": "passed",
+      "command": "npm run audit:ci",
+      "duration_ms": 864,
+      "stdout": "found 0 vulnerabilities\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "status": "passed",
+      "command": "npm run secrets:gitleaks",
+      "duration_ms": 2862,
+      "stdout": "[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n\u001b[90m1:55AM\u001b[0m \u001b[32mINF\u001b[0m 7 commits scanned.\n\u001b[90m1:55AM\u001b[0m \u001b[32mINF\u001b[0m scan completed in 223ms\n\u001b[90m1:55AM\u001b[0m \u001b[32mINF\u001b[0m no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "status": "passed",
+      "command": "npm run lint",
+      "duration_ms": 1300,
+      "stdout": "\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/page.tsx\n  18:40  warning  'Clock' is defined but never used         @typescript-eslint/no-unused-vars\n  18:47  warning  'ChevronRight' is defined but never used  @typescript-eslint/no-unused-vars\n  18:96  warning  'Stethoscope' is defined but never used   @typescript-eslint/no-unused-vars\n\n✖ 3 problems (0 errors, 3 warnings)\n\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "status": "passed",
+      "command": "npm run migrations:check",
+      "duration_ms": 109,
+      "stdout": "[migrations:check] PASS: 20 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..020\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": false,
+      "status": "passed",
+      "command": "npm run migrations:verify:pg",
+      "duration_ms": 4393,
+      "stdout": "[migrations:verify:pg] PASS (20 migration file(s))\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "status": "passed",
+      "command": "npm run build",
+      "duration_ms": 4128,
+      "stdout": "[migrations:check] PASS: 20 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..020\n▲ Next.js 16.2.1 (Turbopack)\n\n  Creating an optimized production build ...\n✓ Compiled successfully in 1512ms\n  Running TypeScript ...\n  Finished TypeScript in 1338ms ...\n  Collecting page data using 11 workers ...\n  Generating static pages using 11 workers (0/10) ...\n  Generating static pages using 11 workers (2/10) \r\n  Generating static pages using 11 workers (4/10) \r\n  Generating static pages using 11 workers (7/10) \r\n✓ Generating static pages using 11 workers (10/10) in 341ms\n  Finalizing page optimization ...\n\nRoute (app)\n┌ ○ /\n├ ○ /_not-found\n├ ○ /admin\n├ ○ /admin/residents\n├ ○ /caregiver\n├ ○ /family\n├ ○ /login\n└ ○ /residents\n\n\nƒ Proxy (Middleware)\n\n○  (Static)  prerendered as static content\n\n",
+      "stderr": "⚠ The \"middleware\" file convention is deprecated. Please use \"proxy\" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy\n"
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "advisory",
+      "command": "(derived from npm run build output)",
+      "stdout": "Next.js middleware deprecation warning detected — plan migration to proxy API (set FAIL_ON_NEXT_DEPRECATIONS=1 to hard-fail)."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run stress:test",
+      "stdout": "skipped (--no-chaos)"
+    },
+    {
+      "id": "cdo.design-review",
+      "required": true,
+      "status": "passed",
+      "command": "npm run design:review",
+      "duration_ms": 2304,
+      "stdout": "[design:review] PASS: 4 screenshot(s) -> /Users/brianlewis/Circle of Life/Circle-of-Life/test-results/design-review/report.json\n",
+      "stderr": "",
+      "artifacts": [
+        "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/design-review/report.json"
+      ]
+    },
+    {
+      "id": "cdo.a11y-axe",
+      "required": true,
+      "status": "failed",
+      "command": "npm run a11y:routes",
+      "duration_ms": 2552,
+      "stdout": "",
+      "stderr": "[a11y:routes] FAIL: critical/serious axe violations:\n [\n  {\n    \"url\": \"http://127.0.0.1:3000/\",\n    \"violations\": [\n      {\n        \"id\": \"color-contrast\",\n        \"help\": \"Elements must meet minimum color contrast ratio thresholds\",\n        \"nodes\": 1\n      }\n    ]\n  }\n]\n"
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 1,
+    "skipped": 3,
+    "blocking_failures": [
+      "cdo.a11y-axe"
+    ]
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/agent-gates/2026-03-31T01-54-58-815Z-ui-admin-residents-scaffold.json"
+  ]
+}

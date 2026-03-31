@@ -1,0 +1,354 @@
+"use client";
+
+import React, { useEffect, useMemo, useState } from "react";
+import { ArrowUpDown, ChevronRight, Users } from "lucide-react";
+
+import { AdminEmptyState, AdminErrorState, AdminFilterBar, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+type Acuity = 1 | 2 | 3;
+type AdlStatus = "independent" | "assisted" | "dependent";
+type ResidencyStatus = "active" | "hospital" | "loa";
+
+type ResidentRow = {
+  id: string;
+  name: string;
+  initials: string;
+  room: string;
+  unit: string;
+  acuity: Acuity;
+  adlStatus: AdlStatus;
+  status: ResidencyStatus;
+  careSummary: string;
+  updatedAt: string;
+};
+
+const DEFAULT_FILTERS = {
+  search: "",
+  acuity: "all",
+  unit: "all",
+  adl: "all",
+};
+
+export default function AdminResidentsPage() {
+  const [rows, setRows] = useState<ResidentRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [search, setSearch] = useState(DEFAULT_FILTERS.search);
+  const [acuity, setAcuity] = useState(DEFAULT_FILTERS.acuity);
+  const [unit, setUnit] = useState(DEFAULT_FILTERS.unit);
+  const [adl, setAdl] = useState(DEFAULT_FILTERS.adl);
+
+  const loadResidents = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Replace with real API/Supabase query when resident module wiring begins.
+      await new Promise((resolve) => setTimeout(resolve, 950));
+      setRows(mockResidents);
+    } catch {
+      setError("The resident index service did not respond. Please retry.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadResidents();
+  }, []);
+
+  const filteredRows = useMemo(() => {
+    const loweredSearch = search.trim().toLowerCase();
+    return rows.filter((row) => {
+      const matchesSearch =
+        loweredSearch.length === 0 ||
+        row.name.toLowerCase().includes(loweredSearch) ||
+        row.room.toLowerCase().includes(loweredSearch) ||
+        row.careSummary.toLowerCase().includes(loweredSearch);
+      const matchesAcuity = acuity === "all" || String(row.acuity) === acuity;
+      const matchesUnit = unit === "all" || row.unit === unit;
+      const matchesAdl = adl === "all" || row.adlStatus === adl;
+
+      return matchesSearch && matchesAcuity && matchesUnit && matchesAdl;
+    });
+  }, [rows, search, acuity, unit, adl]);
+
+  const activeCount = rows.filter((row) => row.status === "active").length;
+  const highAcuityCount = rows.filter((row) => row.acuity === 3).length;
+
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+            Resident Master List
+          </h2>
+          <p className="mt-1 text-slate-500 dark:text-slate-400">
+            Unified census view with acuity, unit, and ADL filtering for rapid shift decisions.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="border-slate-200 bg-white px-3 py-1 dark:border-slate-800 dark:bg-slate-900">
+            <Users className="mr-1 h-3.5 w-3.5" />
+            {activeCount} active
+          </Badge>
+          <Badge variant="outline" className="border-red-200 bg-red-50 px-3 py-1 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
+            {highAcuityCount} high acuity
+          </Badge>
+        </div>
+      </header>
+
+      <AdminFilterBar
+        searchValue={search}
+        searchPlaceholder="Search resident, room, or care note..."
+        onSearchChange={setSearch}
+        filters={[
+          {
+            id: "acuity",
+            value: acuity,
+            onChange: setAcuity,
+            options: [
+              { value: "all", label: "All Acuity" },
+              { value: "1", label: "Acuity 1" },
+              { value: "2", label: "Acuity 2" },
+              { value: "3", label: "Acuity 3" },
+            ],
+          },
+          {
+            id: "unit",
+            value: unit,
+            onChange: setUnit,
+            options: [
+              { value: "all", label: "All Units" },
+              { value: "East Wing", label: "East Wing" },
+              { value: "West Wing", label: "West Wing" },
+              { value: "Memory Care", label: "Memory Care" },
+            ],
+          },
+          {
+            id: "adl",
+            value: adl,
+            onChange: setAdl,
+            options: [
+              { value: "all", label: "All ADL Status" },
+              { value: "independent", label: "Independent" },
+              { value: "assisted", label: "Assisted" },
+              { value: "dependent", label: "Dependent" },
+            ],
+          },
+        ]}
+        onReset={() => {
+          setSearch(DEFAULT_FILTERS.search);
+          setAcuity(DEFAULT_FILTERS.acuity);
+          setUnit(DEFAULT_FILTERS.unit);
+          setAdl(DEFAULT_FILTERS.adl);
+        }}
+      />
+
+      {isLoading ? <AdminTableLoadingState /> : null}
+      {!isLoading && error ? <AdminErrorState message={error} onRetry={loadResidents} /> : null}
+      {!isLoading && !error && filteredRows.length === 0 ? (
+        <AdminEmptyState
+          title="No residents match the current filters"
+          description="Try broadening acuity, unit, or ADL criteria. This scaffold is wired for mock data until resident APIs are connected."
+        />
+      ) : null}
+
+      {!isLoading && !error && filteredRows.length > 0 ? (
+        <Card className="overflow-hidden border-slate-200/70 bg-white shadow-soft dark:border-slate-800 dark:bg-slate-950">
+          <CardHeader className="border-b border-slate-100 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/30">
+            <CardTitle className="text-lg font-display">Census Table</CardTitle>
+            <CardDescription>Filterable scaffold pattern for Residents, Incidents, Staff, and Billing modules.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader className="bg-slate-50/70 dark:bg-slate-900/60">
+                <TableRow className="border-slate-100 hover:bg-transparent dark:border-slate-800">
+                  <TableHead className="pl-4 font-medium">Resident</TableHead>
+                  <TableHead className="font-medium">Room</TableHead>
+                  <TableHead className="font-medium">Unit</TableHead>
+                  <TableHead className="font-medium">Acuity</TableHead>
+                  <TableHead className="font-medium">ADL Status</TableHead>
+                  <TableHead className="font-medium">Current Status</TableHead>
+                  <TableHead className="font-medium">
+                    <span className="inline-flex items-center gap-1">
+                      Updated
+                      <ArrowUpDown className="h-3.5 w-3.5 text-slate-400" />
+                    </span>
+                  </TableHead>
+                  <TableHead className="w-10 pr-4 text-right font-medium"> </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredRows.map((resident) => (
+                  <TableRow key={resident.id} className="border-slate-100 dark:border-slate-800">
+                    <TableCell className="pl-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar size="default" className="ring-1 ring-slate-200 dark:ring-slate-700">
+                          <AvatarImage src={`https://i.pravatar.cc/80?u=${resident.id}`} alt={resident.name} />
+                          <AvatarFallback className="bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-100">
+                            {resident.initials}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-slate-900 dark:text-slate-100">{resident.name}</span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">{resident.careSummary}</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{resident.room}</TableCell>
+                    <TableCell>{resident.unit}</TableCell>
+                    <TableCell>
+                      <AcuityBadge acuity={resident.acuity} />
+                    </TableCell>
+                    <TableCell>
+                      <AdlBadge status={resident.adlStatus} />
+                    </TableCell>
+                    <TableCell>
+                      <ResidentStatusBadge status={resident.status} />
+                    </TableCell>
+                    <TableCell className="text-slate-500 dark:text-slate-400">{resident.updatedAt}</TableCell>
+                    <TableCell className="pr-4 text-right">
+                      <Button variant="ghost" size="icon-sm" aria-label={`Open ${resident.name}`}>
+                        <ChevronRight className="h-4 w-4 text-slate-500" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      ) : null}
+    </div>
+  );
+}
+
+function AcuityBadge({ acuity }: { acuity: Acuity }) {
+  if (acuity === 3) {
+    return <Badge className="bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300">Acuity 3</Badge>;
+  }
+  if (acuity === 2) {
+    return <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">Acuity 2</Badge>;
+  }
+  return <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">Acuity 1</Badge>;
+}
+
+function AdlBadge({ status }: { status: AdlStatus }) {
+  const map: Record<AdlStatus, { label: string; className: string }> = {
+    independent: {
+      label: "Independent",
+      className: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+    },
+    assisted: {
+      label: "Assisted",
+      className: "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
+    },
+    dependent: {
+      label: "Dependent",
+      className: "bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300",
+    },
+  };
+
+  return <Badge className={map[status].className}>{map[status].label}</Badge>;
+}
+
+function ResidentStatusBadge({ status }: { status: ResidencyStatus }) {
+  const map: Record<ResidencyStatus, { label: string; className: string }> = {
+    active: {
+      label: "In Facility",
+      className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+    },
+    hospital: {
+      label: "Hospital",
+      className: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300",
+    },
+    loa: {
+      label: "LOA",
+      className: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+    },
+  };
+
+  return <Badge className={map[status].className}>{map[status].label}</Badge>;
+}
+
+const mockResidents: ResidentRow[] = [
+  {
+    id: "res-001",
+    name: "Margaret Sullivan",
+    initials: "MS",
+    room: "101-A",
+    unit: "East Wing",
+    acuity: 2,
+    adlStatus: "assisted",
+    status: "active",
+    careSummary: "Needs 1-person assist for transfers",
+    updatedAt: "12 min ago",
+  },
+  {
+    id: "res-002",
+    name: "Arthur Pendelton",
+    initials: "AP",
+    room: "102-B",
+    unit: "East Wing",
+    acuity: 1,
+    adlStatus: "independent",
+    status: "active",
+    careSummary: "Independent ambulation, low fall risk",
+    updatedAt: "39 min ago",
+  },
+  {
+    id: "res-003",
+    name: "Eleanor Vance",
+    initials: "EV",
+    room: "104-A",
+    unit: "Memory Care",
+    acuity: 3,
+    adlStatus: "dependent",
+    status: "hospital",
+    careSummary: "Post-fall transfer, neuro checks in progress",
+    updatedAt: "6 min ago",
+  },
+  {
+    id: "res-004",
+    name: "Robert Chen",
+    initials: "RC",
+    room: "201-A",
+    unit: "West Wing",
+    acuity: 1,
+    adlStatus: "independent",
+    status: "active",
+    careSummary: "Physical therapy 3x/week",
+    updatedAt: "1 hr ago",
+  },
+  {
+    id: "res-005",
+    name: "Lucille Booth",
+    initials: "LB",
+    room: "205-B",
+    unit: "West Wing",
+    acuity: 2,
+    adlStatus: "assisted",
+    status: "active",
+    careSummary: "PRN pain protocol and hydration tracking",
+    updatedAt: "15 min ago",
+  },
+  {
+    id: "res-006",
+    name: "William Hastings",
+    initials: "WH",
+    room: "206-A",
+    unit: "West Wing",
+    acuity: 1,
+    adlStatus: "independent",
+    status: "loa",
+    careSummary: "Family leave approved until Monday",
+    updatedAt: "Yesterday",
+  },
+];
