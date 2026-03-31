@@ -27,10 +27,10 @@ The absolute bedrock of the "Soft Precision" visual identity.
   - Dynamic Metrics Grid (Occupancy, Ratios, Acuity Alerts).
   - Front-Line Census Table (Dense data, severity badging, simulated avatars).
   - Live Shift Activity Feed (Chronological CSS-driven timeline).
-- [ ] **Resident Master List (`/admin/residents`)**: Expandable data table with advanced filtering (by acuity, unit, ADL status).
-- [ ] **Staffing Roster & Schedules (`/admin/staff`)**: Calendar grid view and visual shift gap identification.
-- [ ] **Incident Command (`/admin/incidents`)**: Inbox-zero style queue for state-reportable vs. internal infractions.
-- [ ] **Billing Core (`/admin/billing`)**: Ledgers, payment statuses, and invoice generation previews.
+- [x] **Resident Master List (`/admin/residents`)**: Scaffolded premium data table with shared filtering/loading/error/empty states.
+- [x] **Staffing Roster & Schedules (`/admin/staff`)**: Scaffolded roster table with role/status/certification filters and risk badging.
+- [x] **Incident Command (`/admin/incidents`)**: Scaffolded command queue with severity/status/category filters and standardized list states.
+- [x] **Billing Core (`/admin/billing`)**: Scaffolded ledger-focused billing list with payer/status filters and shared list patterns.
 
 ---
 
@@ -50,15 +50,15 @@ The absolute bedrock of the "Soft Precision" visual identity.
 
 - [ ] **Family Feed (`/family`)**: Instagram-style chronological feed of authorized updates (meal consumptions, activities attended).
 - [ ] **Care Summary (`/family/care-plan`)**: Beautifully formatted PDF/Web view of the current care parameters.
-- [ ] **Financials (`/family/billing`)**: Simple, stripe-like invoice payment interface.
+- [ ] **Financials (`/family/billing`)**: Read-only billing summary and balance visibility (no payment flow in Phase 1).
 - [ ] **Secure Comms (`/family/messages`)**: Direct messaging UI connecting the family POA to the facility Director of Nursing.
 
 ---
 
 ## Next Immediate Execution Step
-We are currently opening **Sector 1 (Admin Shell)**. The `Admin Dashboard` is complete. 
+Sector 1 Admin scaffold routes are now in place (`/admin`, `/admin/residents`, `/admin/incidents`, `/admin/staff`, `/admin/billing`).
 
-**Next targeted UI file:** `src/app/(admin)/residents/page.tsx` (Building the full Resident Master List with advanced Shadcn Data Table filtering).
+**Next targeted UI file:** `src/app/(caregiver)/caregiver/page.tsx` (beginning Sector 2 caregiver-shell scaffold uplift from placeholder to premium mobile dashboard).
 
 ---
 
@@ -68,6 +68,8 @@ Implementation sequence is temporarily locked to the following order:
 
 1. Complete a **one-week Admin UI scaffold sprint** (Sector 1 route scaffolds and shared patterns).
 2. Then return to backend/module specs in build order from `docs/specs/README.md`: **07 -> 11 -> 16**.
+
+Execution lock status: **complete** (Admin scaffold sprint completed; backend modules 07, 11, and 16 implemented with segment gate artifacts).
 
 Scope guardrails for the UI scaffold sprint:
 
