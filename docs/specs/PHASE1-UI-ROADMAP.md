@@ -38,7 +38,7 @@ The absolute bedrock of the "Soft Precision" visual identity.
 *Built exclusively for mobile devices. Forced dark mode. "Zero-glare" UI designed to be used in dimly lit resident rooms at 3 AM.*
 
 - [x] **Caregiver Dashboard (`/caregiver`)**: Premium mobile-first shift brief with high-contrast critical alerts stack and quick actions.
-- [ ] **Task & ADL Queue (`/caregiver/tasks`)**: Swipe-to-complete interactions for bathing, feeding, and rounding.
+- [x] **Task & ADL Queue (`/caregiver/tasks`)**: Swipe-ready completion queue with priority filtering and overdue-first mobile cards.
 - [ ] **eMAR Interface (`/caregiver/meds`)**: Large tap targets. Color-coded medication verification (Given vs. Refused).
 - [ ] **Mobile Incident Reporter (`/caregiver/incident-draft`)**: Step-by-step wizard (What happened -> Who was involved -> Photo attachment).
 - [ ] **Resident Quick-Profile (`/caregiver/resident/:id`)**: Essential stats, fall-risk banners, and quick-add note button.
@@ -58,7 +58,7 @@ The absolute bedrock of the "Soft Precision" visual identity.
 ## Next Immediate Execution Step
 Sector 1 Admin scaffold routes are now in place (`/admin`, `/admin/residents`, `/admin/incidents`, `/admin/staff`, `/admin/billing`).
 
-**Next targeted UI file:** `src/app/(caregiver)/tasks/page.tsx` (Task & ADL Queue scaffold with swipe-ready completion affordances and overdue prioritization).
+**Next targeted UI file:** `src/app/(caregiver)/meds/page.tsx` (eMAR mobile interface scaffold with large tap targets and Given/Refused status emphasis).
 
 ---
 

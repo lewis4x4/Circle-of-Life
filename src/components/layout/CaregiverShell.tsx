@@ -1,11 +1,14 @@
 "use client";
 
 import React, { useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Home, Pill, ClipboardList, AlertTriangle, User } from "lucide-react";
 import { useTheme } from "next-themes";
 
 export function CaregiverShell({ children }: { children: React.ReactNode }) {
   const { setTheme } = useTheme();
+  const pathname = usePathname();
 
   // Force Caregiver shell into dark mode
   useEffect(() => {
@@ -39,21 +42,61 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
 
       {/* 64px Mobile Bottom Tab Bar */}
       <nav className="fixed bottom-0 left-0 right-0 h-[calc(4rem+env(safe-area-inset-bottom))] bg-black/80 backdrop-blur-lg border-t border-zinc-900 flex justify-around items-center px-2 pb-[env(safe-area-inset-bottom)] pt-1 z-50">
-        <TabItem icon={<Home className="w-6 h-6" />} label="Home" active />
-        <TabItem icon={<Pill className="w-6 h-6" />} label="Meds" />
-        <TabItem icon={<ClipboardList className="w-6 h-6" />} label="Log" />
-        <TabItem icon={<AlertTriangle className="w-6 h-6" />} label="Alert" />
-        <TabItem icon={<User className="w-6 h-6" />} label="Me" />
+        <TabItem
+          icon={<Home className="w-6 h-6" />}
+          label="Home"
+          href="/caregiver"
+          active={pathname === "/caregiver"}
+        />
+        <TabItem
+          icon={<Pill className="w-6 h-6" />}
+          label="Meds"
+          href="/caregiver/meds"
+          active={pathname.startsWith("/caregiver/meds")}
+        />
+        <TabItem
+          icon={<ClipboardList className="w-6 h-6" />}
+          label="Tasks"
+          href="/caregiver/tasks"
+          active={pathname.startsWith("/caregiver/tasks")}
+        />
+        <TabItem
+          icon={<AlertTriangle className="w-6 h-6" />}
+          label="Alert"
+          href="/caregiver/incident-draft"
+          active={pathname.startsWith("/caregiver/incident-draft")}
+        />
+        <TabItem
+          icon={<User className="w-6 h-6" />}
+          label="Me"
+          href="/caregiver/me"
+          active={pathname.startsWith("/caregiver/me")}
+        />
       </nav>
     </div>
   );
 }
 
-function TabItem({ icon, label, active = false }: { icon: React.ReactNode, label: string, active?: boolean }) {
+function TabItem({
+  icon,
+  label,
+  href,
+  active = false,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  href: string;
+  active?: boolean;
+}) {
   return (
-    <button className={`flex flex-col items-center justify-center w-16 h-full gap-1 tap-responsive ${active ? 'text-white' : 'text-zinc-500'}`}>
+    <Link
+      href={href}
+      className={`flex flex-col items-center justify-center w-16 h-full gap-1 tap-responsive ${
+        active ? "text-white" : "text-zinc-500"
+      }`}
+    >
       {icon}
       <span className="text-[10px] font-medium">{label}</span>
-    </button>
+    </Link>
   );
 }
