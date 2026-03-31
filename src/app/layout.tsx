@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
-import { Inter, Outfit, Lora } from "next/font/google";
+import { Inter, Outfit, Lora, Geist } from "next/font/google";
 import "./globals.css";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const interSans = Inter({
   variable: "--font-inter",
@@ -31,7 +34,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${interSans.variable} ${outfitDisplay.variable} ${loraSerif.variable} h-full antialiased`}
+      className={cn("h-full", "antialiased", interSans.variable, outfitDisplay.variable, loraSerif.variable, "font-sans", geist.variable)}
     >
       <body className="min-h-full flex flex-col font-sans">
         <a
