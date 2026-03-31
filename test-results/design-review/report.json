@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-03-31T01:55:13.732Z",
-  "baseUrl": "http://127.0.0.1:3000",
+  "timestamp": "2026-03-31T02:05:54.276Z",
+  "baseUrl": "http://127.0.0.1:4173",
   "routes": [
     "/"
   ],
@@ -14,33 +14,33 @@
     {
       "route": "/",
       "viewport": "375",
-      "url": "http://127.0.0.1:3000/",
+      "url": "http://127.0.0.1:4173/",
       "status": 200,
-      "title": "Claw3D",
+      "title": "Haven — Circle of Life",
       "screenshot": "test-results/design-review/screenshots/_-375.png"
     },
     {
       "route": "/",
       "viewport": "768",
-      "url": "http://127.0.0.1:3000/",
+      "url": "http://127.0.0.1:4173/",
       "status": 200,
-      "title": "Claw3D",
+      "title": "Haven — Circle of Life",
       "screenshot": "test-results/design-review/screenshots/_-768.png"
     },
     {
       "route": "/",
       "viewport": "1024",
-      "url": "http://127.0.0.1:3000/",
+      "url": "http://127.0.0.1:4173/",
       "status": 200,
-      "title": "Claw3D",
+      "title": "Haven — Circle of Life",
       "screenshot": "test-results/design-review/screenshots/_-1024.png"
     },
     {
       "route": "/",
       "viewport": "1440",
-      "url": "http://127.0.0.1:3000/",
+      "url": "http://127.0.0.1:4173/",
       "status": 200,
-      "title": "Claw3D",
+      "title": "Haven — Circle of Life",
       "screenshot": "test-results/design-review/screenshots/_-1440.png"
     }
   ],

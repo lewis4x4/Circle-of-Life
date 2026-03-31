@@ -34,6 +34,40 @@ async function main() {
         await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20_000 });
         // Let client hydration settle to avoid scanning transient loading overlays.
         await page.waitForTimeout(1000);
+        // Remove known non-product debug overlays injected by local tooling.
+        await page.evaluate(() => {
+          const findOverlayRoot = (start) => {
+            let element = start;
+            for (let i = 0; i < 10 && element?.parentElement; i += 1) {
+              const style = window.getComputedStyle(element);
+              const zIndex = Number.parseInt(style.zIndex || "0", 10);
+              if (style.position === "fixed" || zIndex > 999) return element;
+              element = element.parentElement;
+            }
+            return null;
+          };
+
+          const roots = new Set();
+          const markers = ["drag · scroll · space+drag · dbl-click", "SPEEDY INC", "ANALYTICS", "idle", "working"];
+
+          document.querySelectorAll('[title*="Agent"]').forEach((node) => {
+            const root = findOverlayRoot(node);
+            if (root) roots.add(root);
+          });
+
+          document.querySelectorAll("body *").forEach((node) => {
+            const text = node.textContent ?? "";
+            if (!markers.some((marker) => text.includes(marker))) return;
+            const root = findOverlayRoot(node);
+            if (root) roots.add(root);
+          });
+
+          roots.forEach((root) => {
+            if (root && root !== document.body && root !== document.documentElement) {
+              root.remove();
+            }
+          });
+        });
       } catch (e) {
         console.error(`[a11y:routes] FAIL: could not load ${url} — start the app (npm run dev) or set BASE_URL.\n${e.message}`);
         process.exitCode = 1;
