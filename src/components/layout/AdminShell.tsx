@@ -23,6 +23,7 @@ import {
   CalendarDays,
   Clock,
   Activity,
+  MessageCircle,
   Sun,
   Moon,
   Monitor
@@ -120,6 +121,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     { key: "time-records", href: "/admin/time-records", label: "Time records", enabled: true, icon: Clock },
     { key: "staffing", href: "/admin/staffing", label: "Staffing", enabled: true, icon: Activity },
     { key: "billing", href: "/admin/billing", label: "Billing", enabled: true, icon: CreditCard },
+    { key: "family-messages", href: "/admin/family-messages", label: "Family Messages", enabled: true, icon: MessageCircle },
   ];
 
   return (

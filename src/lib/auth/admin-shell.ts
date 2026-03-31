@@ -19,6 +19,7 @@ const ADMIN_SHELL_SEGMENTS = [
   "/certifications",
   "/assessments",
   "/care-plans",
+  "/family-messages",
 ] as const;
 
 export function isAdminShellPath(pathname: string): boolean {
