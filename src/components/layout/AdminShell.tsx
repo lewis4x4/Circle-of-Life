@@ -29,7 +29,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             { href: "/admin", label: "Dashboard", enabled: true },
             { href: "/admin/residents", label: "Residents", enabled: true },
             { href: "/admin/incidents", label: "Incidents", enabled: true },
-            { href: "#", label: "Staff", enabled: false },
+            { href: "/admin/staff", label: "Staff", enabled: true },
             { href: "#", label: "Billing", enabled: false },
             { href: "#", label: "Daily Operations", enabled: false },
           ].map((item) => {
