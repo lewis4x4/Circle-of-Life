@@ -1,46 +1,98 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { ArrowRight, Activity, ShieldCheck, Clock } from "lucide-react";
+import { useTheme } from "next-themes";
+import { Button } from "@/components/ui/button";
+
 export default function Home() {
-  const supabaseReady = Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL?.length &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length,
-  );
+  const { setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    // Ensure the root landing page stays in deep structural dark mode for a cinematic feel
+    setTheme("dark");
+    setMounted(true);
+  }, [setTheme]);
+
+  if (!mounted) return null;
 
   return (
-    <div className="min-h-full bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-      <main
-        id="main-content"
-        tabIndex={-1}
-        className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-16 outline-none"
-      >
-        <p className="text-sm font-medium uppercase tracking-wide text-teal-700 dark:text-teal-400">
-          Haven
-        </p>
-        <h1 className="text-3xl font-semibold leading-tight">
-          Assisted living &amp; home care operations
+    <div className="flex flex-col min-h-screen bg-[#0a192f] text-slate-50 font-sans selection:bg-brand-500 selection:text-white overflow-hidden relative">
+      
+      {/* Cinematic Background Layer */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-brand-900/40 blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] rounded-full bg-teal-900/20 blur-[120px] pointer-events-none" />
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f2937_1px,transparent_1px),linear-gradient(to_bottom,#1f2937_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-20" />
+      </div>
+
+      {/* Navigation */}
+      <header className="relative z-10 py-6 px-6 lg:px-12 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-md bg-white flex items-center justify-center">
+            <div className="w-4 h-4 rounded-sm bg-[#0a192f]"></div>
+          </div>
+          <span className="text-xl font-serif tracking-tight text-white">Haven</span>
+        </div>
+        <Link href="/login">
+          <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-white/10 tap-responsive font-medium">
+            Sign In
+          </Button>
+        </Link>
+      </header>
+
+      {/* Hero Section */}
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 text-center animate-in fade-in slide-in-from-bottom-8 duration-700">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-md">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span className="text-xs font-medium text-slate-300 tracking-wide uppercase">System Operational</span>
+        </div>
+
+        <h1 className="text-5xl md:text-7xl font-display font-semibold tracking-tight text-white max-w-4xl mx-auto leading-[1.1]">
+          The unified command center for <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-300">human care.</span>
         </h1>
-        <p className="text-lg leading-relaxed text-zinc-600 dark:text-zinc-400">
-          Unified platform for multi-site operators—clinical workflows, compliance, workforce,
-          families, and business data on one secure, role-governed layer. Foundation migrations and
-          Supabase clients are wired; apply SQL to your project, then set{" "}
-          <code className="rounded bg-zinc-200 px-1.5 py-0.5 text-sm dark:bg-zinc-800">
-            .env.local
-          </code>{" "}
-          from{" "}
-          <code className="rounded bg-zinc-200 px-1.5 py-0.5 text-sm dark:bg-zinc-800">
-            .env.example
-          </code>
-          .
+        
+        <p className="mt-6 text-lg md:text-xl text-slate-400 max-w-2xl mx-auto font-medium leading-relaxed">
+          Assisted living, home health, and community-based care operations securely governed on a single, high-precision layer.
         </p>
-        <div
-          className={`rounded-lg border px-4 py-3 text-sm ${
-            supabaseReady
-              ? "border-teal-200 bg-teal-50 text-teal-900 dark:border-teal-900 dark:bg-teal-950/40 dark:text-teal-100"
-              : "border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100"
-          }`}
-          role="status"
-        >
-          {supabaseReady
-            ? "Supabase URL and anon key are configured for this environment."
-            : "Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local to enable auth and data access."}
+
+        <div className="mt-12 flex flex-col sm:flex-row items-center gap-4">
+          <Link href="/admin">
+            <Button size="lg" className="h-14 px-8 text-lg bg-white text-[#0a192f] hover:bg-slate-200 tap-responsive font-medium shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]">
+              Enter Admin Portal
+              <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
+          </Link>
+          <Link href="/caregiver">
+            <Button size="lg" variant="outline" className="h-14 px-8 text-lg border-white/20 text-white hover:bg-white/10 tap-responsive font-medium backdrop-blur-md">
+              Launch Caregiver Shell
+            </Button>
+          </Link>
+        </div>
+
+        {/* Feature Micro-Indicators */}
+        <div className="mt-20 grid grid-cols-1 sm:grid-cols-3 gap-8 py-8 border-t border-white/10 max-w-4xl mx-auto w-full">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
+              <Activity className="w-5 h-5" />
+            </div>
+            <p className="text-sm font-medium text-slate-300">Live Clinical Workflows</p>
+          </div>
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <p className="text-sm font-medium text-slate-300">Role-Governed Security</p>
+          </div>
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400">
+              <Clock className="w-5 h-5" />
+            </div>
+            <p className="text-sm font-medium text-slate-300">Real-Time Sync</p>
+          </div>
         </div>
       </main>
     </div>
