@@ -1,29 +1,47 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, CalendarClock, Droplets, HeartPulse, Loader2, Pill, Plus, ShieldCheck } from "lucide-react";
+import { AlertTriangle, CalendarClock, Check, Droplets, HeartPulse, Loader2, Pill, Plus, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+import { zonedYmd } from "@/lib/caregiver/emar-queue";
+import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 import type { CaregiverResidentProfile, RiskBanner } from "@/lib/caregiver/resident-profile";
 import { fetchCaregiverResidentProfile } from "@/lib/caregiver/resident-profile";
+import type { Database } from "@/types/database";
+
+function zonedTimeShort(now: Date, tz: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(now);
+}
 
 export default function CaregiverResidentQuickProfilePage() {
   const params = useParams<{ id: string }>();
   const residentId = params?.id ?? "unknown";
+  const supabase = useMemo(() => createClient(), []);
 
   const [profile, setProfile] = useState<CaregiverResidentProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [noteDraft, setNoteDraft] = useState("");
+  const [noteSaving, setNoteSaving] = useState(false);
+  const [noteSaved, setNoteSaved] = useState(false);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const supabase = createClient();
       const result = await fetchCaregiverResidentProfile(supabase, residentId);
       if (!result.ok) {
         setError(result.error);
@@ -35,7 +53,7 @@ export default function CaregiverResidentQuickProfilePage() {
     } finally {
       setLoading(false);
     }
-  }, [residentId]);
+  }, [supabase, residentId]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -128,7 +146,11 @@ export default function CaregiverResidentQuickProfilePage() {
           <CardTitle className="text-base">Shift Actions</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-2">
-          <ActionButton icon={<Pill className="h-4 w-4" />} label="Open eMAR" />
+          <ActionLink
+            href="/caregiver/meds"
+            icon={<Pill className="h-4 w-4" />}
+            label="Open eMAR"
+          />
           <ActionLink
             href={`/caregiver/resident/${residentId}/adl`}
             icon={<CalendarClock className="h-4 w-4" />}
@@ -152,12 +174,118 @@ export default function CaregiverResidentQuickProfilePage() {
         </CardContent>
       </Card>
 
-      <Button type="button" className="h-11 w-full bg-emerald-600 text-white hover:bg-emerald-500">
-        <Plus className="mr-1.5 h-4 w-4" />
-        Quick Add Note
-      </Button>
+      {!noteOpen ? (
+        <Button
+          type="button"
+          className="h-11 w-full bg-emerald-600 text-white hover:bg-emerald-500"
+          onClick={() => { setNoteOpen(true); setNoteSaved(false); }}
+        >
+          <Plus className="mr-1.5 h-4 w-4" />
+          Quick Add Note
+        </Button>
+      ) : (
+        <Card className="border-zinc-800 bg-zinc-950/70 text-zinc-100">
+          <CardContent className="space-y-3 pt-4">
+            {noteSaved ? (
+              <div className="flex items-center gap-2 text-sm text-emerald-400">
+                <Check className="h-4 w-4" />
+                Note saved to daily log.
+              </div>
+            ) : null}
+            <textarea
+              rows={3}
+              autoFocus
+              placeholder="Objective, brief note…"
+              className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600"
+              value={noteDraft}
+              onChange={(e) => setNoteDraft(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                disabled={noteSaving || !noteDraft.trim()}
+                className="h-9 bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50"
+                onClick={() => { void saveQuickNote(); }}
+              >
+                {noteSaving ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
+                Save
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-9 text-zinc-400 hover:text-white"
+                onClick={() => { setNoteOpen(false); setNoteDraft(""); setNoteSaved(false); }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
+
+  async function saveQuickNote() {
+    if (!noteDraft.trim()) return;
+    setNoteSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setError("Session expired."); return; }
+
+      const fcResult = await loadCaregiverFacilityContext(supabase);
+      if (!fcResult.ok) { setError(fcResult.error); return; }
+      const fc = fcResult.ctx;
+
+      const tz = fc.timeZone;
+      const ymd = zonedYmd(new Date(), tz);
+      const shift = currentShiftForTimezone(tz);
+      const stamp = zonedTimeShort(new Date(), tz);
+      const line = `[${stamp}] ${noteDraft.trim()}`;
+
+      const existing = await supabase
+        .from("daily_logs")
+        .select("id, general_notes")
+        .eq("resident_id", residentId)
+        .eq("facility_id", fc.facilityId)
+        .eq("log_date", ymd)
+        .eq("shift", shift)
+        .eq("logged_by", user.id)
+        .is("deleted_at", null)
+        .maybeSingle();
+
+      if (existing.error) throw existing.error;
+
+      if (existing.data) {
+        const prev = (existing.data as { id: string; general_notes: string | null }).general_notes?.trim() ?? "";
+        const next = prev ? `${prev}\n${line}` : line;
+        const upd = await supabase
+          .from("daily_logs")
+          .update({ general_notes: next, updated_by: user.id } as never)
+          .eq("id", (existing.data as { id: string }).id);
+        if (upd.error) throw upd.error;
+      } else {
+        const ins: Database["public"]["Tables"]["daily_logs"]["Insert"] = {
+          resident_id: residentId,
+          facility_id: fc.facilityId,
+          organization_id: fc.organizationId,
+          log_date: ymd,
+          shift,
+          logged_by: user.id,
+          general_notes: line,
+          created_by: user.id,
+        };
+        const { error: insErr } = await supabase.from("daily_logs").insert(ins);
+        if (insErr) throw insErr;
+      }
+
+      setNoteDraft("");
+      setNoteSaved(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save note.");
+    } finally {
+      setNoteSaving(false);
+    }
+  }
 }
 
 function MetricPill({
@@ -210,19 +338,6 @@ function BannerRow({
       </p>
       <p className="mt-1 text-xs text-zinc-400">{detail}</p>
     </div>
-  );
-}
-
-function ActionButton({ icon, label }: { icon: React.ReactNode; label: string }) {
-  return (
-    <Button
-      type="button"
-      variant="outline"
-      className="h-12 justify-start gap-2 border-zinc-800 bg-zinc-900 text-zinc-100 hover:bg-zinc-800 hover:text-white"
-    >
-      {icon}
-      <span className="text-xs">{label}</span>
-    </Button>
   );
 }
 
