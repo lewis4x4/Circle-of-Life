@@ -1,0 +1,123 @@
+{
+  "segment": "spec-07-incident-reporting",
+  "timestamp": "2026-03-31T11:28:55.544Z",
+  "verdict": "PASS",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-env-example.mjs",
+      "duration_ms": 27,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "duration_ms": 78,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "status": "passed",
+      "command": "npm run audit:ci",
+      "duration_ms": 831,
+      "stdout": "found 0 vulnerabilities\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "status": "passed",
+      "command": "npm run secrets:gitleaks",
+      "duration_ms": 16235,
+      "stdout": "[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n\u001b[90m11:29AM\u001b[0m \u001b[32mINF\u001b[0m 13 commits scanned.\n\u001b[90m11:29AM\u001b[0m \u001b[32mINF\u001b[0m scan completed in 373ms\n\u001b[90m11:29AM\u001b[0m \u001b[32mINF\u001b[0m no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "status": "passed",
+      "command": "npm run lint",
+      "duration_ms": 2159,
+      "stdout": "\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/page.tsx\n  18:40  warning  'Clock' is defined but never used         @typescript-eslint/no-unused-vars\n  18:47  warning  'ChevronRight' is defined but never used  @typescript-eslint/no-unused-vars\n  18:96  warning  'Stethoscope' is defined but never used   @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/page.tsx\n  5:55  warning  'Users' is defined but never used  @typescript-eslint/no-unused-vars\n\n✖ 4 problems (0 errors, 4 warnings)\n\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "status": "passed",
+      "command": "npm run migrations:check",
+      "duration_ms": 113,
+      "stdout": "[migrations:check] PASS: 23 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..023\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": false,
+      "status": "passed",
+      "command": "npm run migrations:verify:pg",
+      "duration_ms": 9295,
+      "stdout": "[migrations:verify:pg] PASS (23 migration file(s))\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "status": "passed",
+      "command": "npm run build",
+      "duration_ms": 5094,
+      "stdout": "[migrations:check] PASS: 23 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..023\n▲ Next.js 16.2.1 (Turbopack)\n\n  Creating an optimized production build ...\n✓ Compiled successfully in 1628ms\n  Running TypeScript ...\n  Finished TypeScript in 1765ms ...\n  Collecting page data using 15 workers ...\n  Generating static pages using 15 workers (0/16) ...\n  Generating static pages using 15 workers (4/16) \r\n  Generating static pages using 15 workers (8/16) \r\n  Generating static pages using 15 workers (12/16) \r\n✓ Generating static pages using 15 workers (16/16) in 388ms\n  Finalizing page optimization ...\n\nRoute (app)\n┌ ○ /\n├ ○ /_not-found\n├ ○ /admin\n├ ○ /admin/billing\n├ ○ /admin/incidents\n├ ○ /admin/residents\n├ ○ /admin/staff\n├ ○ /billing\n├ ○ /caregiver\n├ ○ /family\n├ ○ /incidents\n├ ○ /login\n├ ○ /residents\n└ ○ /staff\n\n\nƒ Proxy (Middleware)\n\n○  (Static)  prerendered as static content\n\n",
+      "stderr": "⚠ The \"middleware\" file convention is deprecated. Please use \"proxy\" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy\n"
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "advisory",
+      "command": "(derived from npm run build output)",
+      "stdout": "Next.js middleware deprecation warning detected — plan migration to proxy API (set FAIL_ON_NEXT_DEPRECATIONS=1 to hard-fail)."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run stress:test",
+      "stdout": "skipped (--no-chaos)"
+    },
+    {
+      "id": "cdo.design-review",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run design:review",
+      "stdout": "skipped (pass --ui to enable)"
+    },
+    {
+      "id": "cdo.a11y-axe",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run a11y:routes",
+      "stdout": "skipped (pass --ui to enable; omit --no-a11y)"
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "skipped": 5,
+    "blocking_failures": []
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/agent-gates/2026-03-31T11-28-55-544Z-spec-07-incident-reporting.json"
+  ]
+}
