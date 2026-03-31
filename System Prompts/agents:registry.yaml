@@ -1,0 +1,84 @@
+# Portable copy — keep in sync with repo root: agents/registry.yaml
+# Circle of Life / Haven — agent registry, gate order, mission (ship gate)
+
+north_star_mission: >
+  Build Haven, a unified operations platform for assisted living facilities, home health, and
+  home- and community-based care, so multi-site and multi-entity operators run clinical workflows,
+  compliance, workforce, family engagement, and business operations on one secure, role-governed
+  data layer. Improve resident safety and quality, regulatory readiness, staff clarity, and owner
+  visibility. Use AI to reduce administrative burden and surface risk early; it remains subordinate
+  to human judgment, licensure rules, and auditability.
+
+mission_gate_rules:
+  alignment_values: [pass, risk, fail]
+  waiver_required_fields: [owner, reason, expiry, remediation_issue]
+  note: Any gate may block on mission misalignment.
+
+default_gate_order:
+  - engineer
+  - qa_agent
+  - cdo_agent
+  - chaos_agent
+  - security_agent
+  - performance_agent
+  - migration_agent
+  - release_gate_agent
+
+agents:
+  engineer:
+    id: engineer
+    playbook: agents/playbooks/engineer-of-record.md
+    mandatory_when: always
+    expected_outputs: [segment handoff, code changes, mission_alignment]
+    pass_criteria: Bounded segment implemented; handoff references segment id.
+
+  qa_agent:
+    id: qa_agent
+    playbook: agents/playbooks/qa-agent.md
+    mandatory_when: always
+    expected_outputs: [build green, lint optional advisory]
+    pass_criteria: Root build and optional web build succeed when applicable.
+
+  cdo_agent:
+    id: cdo_agent
+    playbook: agents/playbooks/chief-design-officer-agent.md
+    mandatory_when: ui_change
+    trigger_rules: Run design review when CLI passes --ui or UI files touched.
+    expected_outputs: [design review report, screenshots optional]
+    pass_criteria: Required viewports captured; no blocking visual regressions on critical routes.
+
+  chaos_agent:
+    id: chaos_agent
+    playbook: agents/playbooks/testing-simulation-agent.md
+    mandatory_when: default
+    trigger_rules: Skipped when --no-chaos.
+    expected_outputs: [stress suite lines PASS|FAIL|ADVISORY]
+    pass_criteria: No FAIL lines; hard exit 0.
+
+  security_agent:
+    id: security_agent
+    playbook: agents/playbooks/security-rls-agent.md
+    mandatory_when: segment_close
+    expected_outputs: [manual or scripted checks documented in gate report notes]
+    pass_criteria: No new secret leaks; auth/RLS assumptions documented for the segment.
+
+  performance_agent:
+    id: performance_agent
+    playbook: agents/playbooks/performance-agent.md
+    mandatory_when: segment_close
+    expected_outputs: [bundle/build notes, perf budget check advisory]
+    pass_criteria: Build completes within CI expectations; large regressions flagged.
+
+  migration_agent:
+    id: migration_agent
+    playbook: agents/playbooks/migration-integrity-agent.md
+    mandatory_when: migrations_exist_or_touch
+    expected_outputs: [migrations:check PASS]
+    pass_criteria: Numeric prefix sequence valid per runbook.
+
+  release_gate_agent:
+    id: release_gate_agent
+    playbook: agents/playbooks/release-gate-agent.md
+    mandatory_when: always
+    expected_outputs: [aggregated GO/NO_GO, gate JSON artifact]
+    pass_criteria: All required automated checks in segment:gates report are passed.
