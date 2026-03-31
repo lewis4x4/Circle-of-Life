@@ -32,6 +32,8 @@ async function main() {
       const url = new URL(route, baseUrl).href;
       try {
         await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20_000 });
+        // Let client hydration settle to avoid scanning transient loading overlays.
+        await page.waitForTimeout(1000);
       } catch (e) {
         console.error(`[a11y:routes] FAIL: could not load ${url} — start the app (npm run dev) or set BASE_URL.\n${e.message}`);
         process.exitCode = 1;
@@ -44,7 +46,17 @@ async function main() {
         ["critical", "serious"].includes(v.impact),
       );
       if (serious.length) {
-        bad.push({ url, violations: serious.map((v) => ({ id: v.id, help: v.help, nodes: v.nodes.length })) });
+        bad.push({
+          url,
+          violations: serious.map((v) => ({
+            id: v.id,
+            help: v.help,
+            nodes: v.nodes.map((node) => ({
+              target: node.target,
+              failureSummary: node.failureSummary,
+            })),
+          })),
+        });
       }
       await context.close();
     }

@@ -34,7 +34,7 @@ export default function Home() {
           <span className="text-xl font-serif tracking-tight text-white">Haven</span>
         </div>
         <Link href="/login">
-          <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-white/10 tap-responsive font-medium">
+          <Button variant="ghost" className="text-white hover:text-white hover:bg-white/10 tap-responsive font-medium">
             Sign In
           </Button>
         </Link>
@@ -51,13 +51,13 @@ export default function Home() {
           The unified command center for <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-300">human care.</span>
         </h1>
         
-        <p className="mt-6 text-lg md:text-xl text-slate-400 max-w-2xl mx-auto font-medium leading-relaxed">
+        <p className="mt-6 text-lg md:text-xl text-slate-200 max-w-2xl mx-auto font-medium leading-relaxed">
           Assisted living, home health, and community-based care operations securely governed on a single, high-precision layer.
         </p>
 
         <div className="mt-12 flex items-center justify-center">
           <Link href="/login">
-            <Button size="lg" className="h-14 px-10 text-lg bg-white text-[#0a192f] hover:bg-slate-200 tap-responsive font-medium shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]">
+            <Button size="lg" className="h-14 px-10 text-lg bg-white text-[#0a192f] hover:bg-slate-200 tap-responsive font-medium shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] [&_*]:text-[#0a192f]">
               Sign In to Haven
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
