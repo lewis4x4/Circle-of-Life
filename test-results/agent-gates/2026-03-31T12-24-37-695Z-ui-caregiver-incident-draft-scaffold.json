@@ -1,0 +1,130 @@
+{
+  "segment": "ui-caregiver-incident-draft-scaffold",
+  "timestamp": "2026-03-31T12:24:37.695Z",
+  "verdict": "PASS",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-env-example.mjs",
+      "duration_ms": 41,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "duration_ms": 127,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "status": "passed",
+      "command": "npm run audit:ci",
+      "duration_ms": 812,
+      "stdout": "found 0 vulnerabilities\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "status": "passed",
+      "command": "npm run secrets:gitleaks",
+      "duration_ms": 54327,
+      "stdout": "[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n\u001b[90m12:25PM\u001b[0m \u001b[32mINF\u001b[0m 21 commits scanned.\n\u001b[90m12:25PM\u001b[0m \u001b[32mINF\u001b[0m scan completed in 584ms\n\u001b[90m12:25PM\u001b[0m \u001b[32mINF\u001b[0m no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "status": "passed",
+      "command": "npm run lint",
+      "duration_ms": 1507,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "status": "passed",
+      "command": "npm run migrations:check",
+      "duration_ms": 110,
+      "stdout": "[migrations:check] PASS: 29 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..029\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": false,
+      "status": "passed",
+      "command": "npm run migrations:verify:pg",
+      "duration_ms": 73432,
+      "stdout": "[migrations:verify:pg] PASS (29 migration file(s))\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "status": "passed",
+      "command": "npm run build",
+      "duration_ms": 6311,
+      "stdout": "[migrations:check] PASS: 29 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..029\n▲ Next.js 16.2.1 (Turbopack)\n\n  Creating an optimized production build ...\n✓ Compiled successfully in 1701ms\n  Running TypeScript ...\n  Finished TypeScript in 3.1s ...\n  Collecting page data using 15 workers ...\n  Generating static pages using 15 workers (0/22) ...\n  Generating static pages using 15 workers (5/22) \r\n  Generating static pages using 15 workers (10/22) \r\n  Generating static pages using 15 workers (16/22) \r\n✓ Generating static pages using 15 workers (22/22) in 351ms\n  Finalizing page optimization ...\n\nRoute (app)\n┌ ○ /\n├ ○ /_not-found\n├ ○ /admin\n├ ○ /admin/billing\n├ ○ /admin/incidents\n├ ○ /admin/residents\n├ ○ /admin/staff\n├ ○ /billing\n├ ○ /caregiver\n├ ○ /caregiver/incident-draft\n├ ○ /caregiver/meds\n├ ○ /caregiver/tasks\n├ ○ /family\n├ ○ /incident-draft\n├ ○ /incidents\n├ ○ /login\n├ ○ /meds\n├ ○ /residents\n├ ○ /staff\n└ ○ /tasks\n\n\nƒ Proxy (Middleware)\n\n○  (Static)  prerendered as static content\n\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run stress:test",
+      "stdout": "skipped (--no-chaos)"
+    },
+    {
+      "id": "cdo.design-review",
+      "required": true,
+      "status": "passed",
+      "command": "npm run design:review",
+      "duration_ms": 2473,
+      "stdout": "[design:review] PASS: 4 screenshot(s) -> /Users/brianlewis/Circle of Life/Circle-of-Life/test-results/design-review/report.json\n",
+      "stderr": "",
+      "artifacts": [
+        "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/design-review/report.json"
+      ]
+    },
+    {
+      "id": "cdo.a11y-axe",
+      "required": true,
+      "status": "passed",
+      "command": "npm run a11y:routes",
+      "duration_ms": 2536,
+      "stdout": "[a11y:routes] PASS (1 route(s))\n",
+      "stderr": ""
+    }
+  ],
+  "summary": {
+    "passed": 11,
+    "failed": 0,
+    "skipped": 2,
+    "blocking_failures": []
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/agent-gates/2026-03-31T12-24-37-695Z-ui-caregiver-incident-draft-scaffold.json"
+  ]
+}
