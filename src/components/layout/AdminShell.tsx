@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -95,11 +95,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       ? "All facilities"
       : (currentFacility?.name ?? "Select facility…");
 
-  const mounted = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false,
-  );
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const navItems = [
     { href: "/admin", label: "Dashboard", enabled: true, icon: LayoutDashboard },
@@ -113,7 +110,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     { href: "/admin/time-records", label: "Time records", enabled: true, icon: Clock },
     { href: "/admin/staffing", label: "Staffing", enabled: true, icon: Activity },
     { href: "/admin/billing", label: "Billing", enabled: true, icon: CreditCard },
-    { href: "#", label: "Daily Operations", enabled: false, icon: ClipboardList },
+    { href: "/admin/residents", label: "Daily Operations", enabled: true, icon: ClipboardList },
   ];
 
   return (
