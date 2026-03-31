@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { CreditCard, FileText, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const invoices = [
@@ -67,14 +69,26 @@ export default function FamilyBillingSummaryPage() {
             future release.
           </p>
           <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" className="h-10 border-stone-300 bg-white text-stone-800 hover:bg-stone-50">
+            <Link
+              href="/family/invoices"
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "h-10 border-stone-300 bg-white text-stone-800 hover:bg-stone-50",
+              )}
+            >
               <FileText className="mr-1.5 h-4 w-4" />
               View Invoices
-            </Button>
-            <Button variant="outline" className="h-10 border-stone-300 bg-white text-stone-800 hover:bg-stone-50">
+            </Link>
+            <Link
+              href="/family/payments"
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "h-10 border-stone-300 bg-white text-stone-800 hover:bg-stone-50",
+              )}
+            >
               <CreditCard className="mr-1.5 h-4 w-4" />
               View Payments
-            </Button>
+            </Link>
           </div>
         </CardContent>
       </Card>

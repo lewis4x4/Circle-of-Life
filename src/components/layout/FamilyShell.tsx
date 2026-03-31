@@ -3,7 +3,7 @@
 import React, { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, CalendarHeart, CreditCard, MessageSquare, UserCircle2 } from "lucide-react";
+import { Bell, CalendarDays, CalendarHeart, CreditCard, MessageSquare, UserCircle2 } from "lucide-react";
 import { useTheme } from "next-themes";
 
 export function FamilyShell({ children }: { children: React.ReactNode }) {
@@ -45,13 +45,28 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
         
         {/* Navigation Tabs - Desktop */}
         <div className="hidden md:flex max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-x-8">
-          {[
-            { href: "/family", label: "Today" },
-            { href: "/family/care-plan", label: "Care Plan" },
-            { href: "/family/billing", label: "Billing" },
-            { href: "/family/messages", label: "Messages" },
-          ].map((tab) => {
-            const isActive = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+          {(
+            [
+              { href: "/family", label: "Today", exact: true },
+              { href: "/family/calendar", label: "Calendar" },
+              { href: "/family/care-plan", label: "Care Plan" },
+              {
+                href: "/family/billing",
+                label: "Billing",
+                match: (p: string) =>
+                  p.startsWith("/family/billing") ||
+                  p.startsWith("/family/invoices") ||
+                  p.startsWith("/family/payments"),
+              },
+              { href: "/family/messages", label: "Messages" },
+            ] as const
+          ).map((tab) => {
+            const isActive =
+              "match" in tab && tab.match
+                ? tab.match(pathname)
+                : "exact" in tab && tab.exact
+                  ? pathname === tab.href || pathname === `${tab.href}/`
+                  : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
             return (
               <Link
                 key={tab.href}
@@ -80,7 +95,13 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
           href="/family"
           label="Today"
           icon={<CalendarHeart className="h-4 w-4" />}
-          active={pathname === "/family"}
+          active={pathname === "/family" || pathname === "/family/"}
+        />
+        <MobileTab
+          href="/family/calendar"
+          label="Calendar"
+          icon={<CalendarDays className="h-4 w-4" />}
+          active={pathname.startsWith("/family/calendar")}
         />
         <MobileTab
           href="/family/care-plan"
@@ -92,7 +113,11 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
           href="/family/billing"
           label="Billing"
           icon={<CreditCard className="h-4 w-4" />}
-          active={pathname.startsWith("/family/billing")}
+          active={
+            pathname.startsWith("/family/billing") ||
+            pathname.startsWith("/family/invoices") ||
+            pathname.startsWith("/family/payments")
+          }
         />
         <MobileTab
           href="/family/messages"
