@@ -6,6 +6,7 @@ import { ArrowUpDown, ChevronRight, Users } from "lucide-react";
 import { AdminEmptyState, AdminFilterBar, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
+import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -287,7 +288,7 @@ async function fetchResidentsFromSupabase(selectedFacilityId: string | null): Pr
     .in("status", ["active", "hospital_hold", "loa"])
     .limit(300);
 
-  if (selectedFacilityId) {
+  if (isValidFacilityIdForQuery(selectedFacilityId)) {
     residentsQuery = residentsQuery.eq("facility_id", selectedFacilityId);
   }
 

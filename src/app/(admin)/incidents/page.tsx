@@ -6,6 +6,7 @@ import { AlertTriangle, ArrowUpDown, ChevronRight, ShieldAlert } from "lucide-re
 import { AdminEmptyState, AdminFilterBar, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
+import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -277,7 +278,7 @@ async function fetchIncidentsFromSupabase(selectedFacilityId: string | null): Pr
     .order("occurred_at", { ascending: false })
     .limit(200);
 
-  if (selectedFacilityId) {
+  if (isValidFacilityIdForQuery(selectedFacilityId)) {
     incidentsQuery = incidentsQuery.eq("facility_id", selectedFacilityId);
   }
 
