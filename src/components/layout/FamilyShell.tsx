@@ -1,11 +1,14 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { MessageSquare, Bell, UserCircle2 } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Bell, CalendarHeart, CreditCard, MessageSquare, UserCircle2 } from "lucide-react";
 import { useTheme } from "next-themes";
 
 export function FamilyShell({ children }: { children: React.ReactNode }) {
   const { setTheme } = useTheme();
+  const pathname = usePathname();
 
   // Family shell strictly operates in light mode for the hospitality feel
   useEffect(() => {
@@ -24,9 +27,13 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
           </div>
           
           <div className="flex items-center gap-4">
-            <button className="text-stone-400 hover:text-stone-600 tap-responsive" aria-label="Messages">
+            <Link
+              href="/family/messages"
+              className="text-stone-400 hover:text-stone-600 tap-responsive"
+              aria-label="Messages"
+            >
               <MessageSquare className="w-5 h-5" />
-            </button>
+            </Link>
             <button className="relative text-stone-400 hover:text-stone-600 tap-responsive" aria-label="Notifications">
               <Bell className="w-5 h-5" />
             </button>
@@ -38,10 +45,27 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
         
         {/* Navigation Tabs - Desktop */}
         <div className="hidden md:flex max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-x-8">
-          <div className="py-3 border-b-2 border-orange-600 text-stone-900 font-medium text-sm">Today</div>
-          <div className="py-3 border-b-2 border-transparent text-stone-500 hover:text-stone-700 font-medium text-sm cursor-pointer tap-responsive">Care Plan</div>
-          <div className="py-3 border-b-2 border-transparent text-stone-500 hover:text-stone-700 font-medium text-sm cursor-pointer tap-responsive">Calendar</div>
-          <div className="py-3 border-b-2 border-transparent text-stone-500 hover:text-stone-700 font-medium text-sm cursor-pointer tap-responsive">Documents</div>
+          {[
+            { href: "/family", label: "Today" },
+            { href: "/family/care-plan", label: "Care Plan" },
+            { href: "/family/billing", label: "Billing" },
+            { href: "/family/messages", label: "Messages" },
+          ].map((tab) => {
+            const isActive = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+            return (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                className={`py-3 border-b-2 font-medium text-sm tap-responsive ${
+                  isActive
+                    ? "border-orange-600 text-stone-900"
+                    : "border-transparent text-stone-500 hover:text-stone-700"
+                }`}
+              >
+                {tab.label}
+              </Link>
+            );
+          })}
         </div>
       </header>
 
@@ -51,17 +75,56 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Mobile Bottom Navigation (only visible md and below) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-[calc(4rem+env(safe-area-inset-bottom))] bg-white border-t border-stone-200 flex justify-around items-center px-4 pb-[env(safe-area-inset-bottom)] pt-1 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
-        <div className="flex flex-col items-center justify-center text-orange-600 tap-responsive">
-          <span className="text-xs font-semibold">Today</span>
-        </div>
-        <div className="flex flex-col items-center justify-center text-stone-400 tap-responsive">
-          <span className="text-xs font-medium">Care</span>
-        </div>
-        <div className="flex flex-col items-center justify-center text-stone-400 tap-responsive">
-          <span className="text-xs font-medium">Chat</span>
-        </div>
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-[calc(4rem+env(safe-area-inset-bottom))] bg-white border-t border-stone-200 flex justify-around items-center px-2 pb-[env(safe-area-inset-bottom)] pt-1 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
+        <MobileTab
+          href="/family"
+          label="Today"
+          icon={<CalendarHeart className="h-4 w-4" />}
+          active={pathname === "/family"}
+        />
+        <MobileTab
+          href="/family/care-plan"
+          label="Care"
+          icon={<UserCircle2 className="h-4 w-4" />}
+          active={pathname.startsWith("/family/care-plan")}
+        />
+        <MobileTab
+          href="/family/billing"
+          label="Billing"
+          icon={<CreditCard className="h-4 w-4" />}
+          active={pathname.startsWith("/family/billing")}
+        />
+        <MobileTab
+          href="/family/messages"
+          label="Chat"
+          icon={<MessageSquare className="h-4 w-4" />}
+          active={pathname.startsWith("/family/messages")}
+        />
       </nav>
     </div>
+  );
+}
+
+function MobileTab({
+  href,
+  label,
+  icon,
+  active,
+}: {
+  href: string;
+  label: string;
+  icon: React.ReactNode;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`flex flex-col items-center justify-center gap-1 tap-responsive ${
+        active ? "text-orange-600" : "text-stone-400"
+      }`}
+    >
+      {icon}
+      <span className={`text-xs ${active ? "font-semibold" : "font-medium"}`}>{label}</span>
+    </Link>
   );
 }

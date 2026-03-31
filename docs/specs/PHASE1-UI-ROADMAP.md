@@ -49,16 +49,16 @@ The absolute bedrock of the "Soft Precision" visual identity.
 *The anti-clinical interface. Bright, airy, and reassuring.*
 
 - [x] **Family Feed (`/family`)**: Hospitality-style chronological feed scaffold with care, meal, and activity updates.
-- [ ] **Care Summary (`/family/care-plan`)**: Beautifully formatted PDF/Web view of the current care parameters.
-- [ ] **Financials (`/family/billing`)**: Read-only billing summary and balance visibility (no payment flow in Phase 1).
-- [ ] **Secure Comms (`/family/messages`)**: Direct messaging UI connecting the family POA to the facility Director of Nursing.
+- [x] **Care Summary (`/family/care-plan`)**: Readable care summary scaffold with sectioned parameters and printable view CTA.
+- [x] **Financials (`/family/billing`)**: Read-only billing summary scaffold with invoice list and payment history entry points.
+- [x] **Secure Comms (`/family/messages`)**: Secure messaging scaffold with conversation stream and composed message input.
 
 ---
 
 ## Next Immediate Execution Step
 Sector 1 Admin scaffold routes are now in place (`/admin`, `/admin/residents`, `/admin/incidents`, `/admin/staff`, `/admin/billing`).
 
-**Next targeted UI file:** `src/app/(family)/care-plan/page.tsx` (Care Summary scaffold with clean printable layout states).
+**Next targeted UI file:** `src/app/(admin)/residents/page.tsx` data integration pass (replace mock list with Supabase-backed query adapter and preserve shared list states).
 
 ---
 
