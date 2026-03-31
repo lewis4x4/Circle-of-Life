@@ -517,16 +517,18 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON shift_handoffs FOR EACH ROW EXECU
 
 ## UI SCREENS — MOBILE (Primary Interface for Caregivers)
 
+Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
+
 | Screen | Route | Description |
 |--------|-------|-------------|
-| Shift Dashboard | `/shift` | Current shift, assigned residents, pending tasks (meds due, assessments due, care plan tasks), cognitive load indicator (Phase 5), unacknowledged handoff alert |
-| Medication Pass | `/shift/med-pass` | List of all medications due in current window across assigned residents. Tap resident → see their meds → tap each to document. Barcode scan option. |
-| Resident Daily Log | `/shift/residents/:id/log` | Single-screen daily documentation: mood, ADLs completed, meals, notes. Tabs for vitals if ordered. |
-| ADL Quick-Log | `/shift/residents/:id/adl` | Quick-entry buttons: Bathing ✓, Dressing ✓, Toileting ✓, etc. Tap to log with timestamp. Long-press for detail entry. |
-| Behavioral Event | `/shift/residents/:id/behavior` | ABC form: antecedent, behavior type picker, description, intervention checkboxes, outcome. |
-| Condition Change | `/shift/residents/:id/condition-change` | Guided form: change type, description, severity picker. Auto-shows notification chain based on severity. |
-| Shift Handoff | `/shift/handoff` | View auto-generated summary. Add notes. Submit. Incoming: view outgoing summary, acknowledge. |
-| PRN Effectiveness | `/shift/prn-followup` | List of PRN meds given that need effectiveness checks. Tap to document result. |
+| Shift Dashboard | `/caregiver` | Current shift, assigned residents, pending tasks (meds due, assessments due, care plan tasks), cognitive load indicator (Phase 5), unacknowledged handoff alert |
+| Medication Pass | `/caregiver/meds` | List of all medications due in current window across assigned residents. Tap resident → see their meds → tap each to document. Barcode scan option. |
+| Resident Daily Log | `/caregiver/resident/:id/log` | Single-screen daily documentation: mood, ADLs completed, meals, notes. Tabs for vitals if ordered. |
+| ADL Quick-Log | `/caregiver/resident/:id/adl` | Quick-entry buttons: Bathing ✓, Dressing ✓, Toileting ✓, etc. Tap to log with timestamp. Long-press for detail entry. |
+| Behavioral Event | `/caregiver/resident/:id/behavior` | ABC form: antecedent, behavior type picker, description, intervention checkboxes, outcome. |
+| Condition Change | `/caregiver/resident/:id/condition-change` | Guided form: change type, description, severity picker. Auto-shows notification chain based on severity. |
+| Shift Handoff | `/caregiver/handoff` | View auto-generated summary. Add notes. Submit. Incoming: view outgoing summary, acknowledge. |
+| PRN Effectiveness | `/caregiver/prn-followup` | List of PRN meds given that need effectiveness checks. Tap to document result. |
 
 ### Offline Behavior — Module 4
 

@@ -11,6 +11,8 @@
 
 Claude Code executes migrations and builds features in this exact sequence. Do not skip ahead. Each spec contains: database schemas (complete CREATE TABLE statements), RLS policies, business rules, API endpoints, Edge Functions, UI screens, and offline behavior.
 
+For frontend stack, route naming, and Phase 1 UI scope locks, use `FRONTEND-CONTRACT.md` as the canonical source.
+
 ### Phase 1: Foundation & Core Operations (Weeks 1-12)
 
 | Order | Spec File | Module | Weeks | What It Creates |
@@ -21,6 +23,17 @@ Claude Code executes migrations and builds features in this exact sequence. Do n
 | 4 | `07-incident-reporting.md` | Incident & Risk Management | 7-8 | incidents, incident_followups, incident_photos, incident_sequences |
 | 5 | `11-staff-management.md` | Staff Management & Scheduling | 9-10 | staff, staff_certifications, schedules, shift_assignments, time_records, shift_swap_requests, staffing_ratio_snapshots |
 | 6 | `16-billing.md` | Resident Billing & Collections | 11-12 | rate_schedules, resident_payers, invoices, invoice_line_items, payments, collection_activities, invoice_sequences |
+
+### Phase 1 execution interlock: UI scaffold first (added 2026-03-30)
+
+Before implementing Step 4 (`07-incident-reporting.md`), run a focused **one-week Admin UI scaffold sprint** to stabilize IA and reusable page patterns:
+
+- Build scaffold pages and route wiring for `/admin/residents`, `/admin/incidents`, `/admin/staff`, `/admin/billing`.
+- Standardize shared Admin patterns (header, filter bar, table shell, loading/empty/error states).
+- Keep data mocked or adapter-backed during this sprint; do not block on backend wiring.
+- Avoid adding new database migrations during this UI-only interlock unless explicitly approved.
+
+After this scaffold sprint, resume backend spec implementation in original order: **07 -> 11 -> 16**.
 
 **Phase 1 Milestone:** At Week 12, COL can run daily operations on the platform at 1 pilot facility (Oakridge ALF). Caregivers document care, administer medications via eMAR, report incidents, view schedules, and clock in/out. Administrators manage staff, certifications, billing, and view facility dashboard.
 

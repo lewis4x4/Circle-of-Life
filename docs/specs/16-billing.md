@@ -413,24 +413,26 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON payments FOR EACH ROW EXECUTE FUN
 
 ## UI SCREENS
 
+Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
+
 ### Web (Admin Dashboard)
 
 | Screen | Route | Description |
 |--------|-------|-------------|
-| Rate Management | `/facilities/:id/rates` | Current and historical rate schedules. Edit/create. |
-| Resident Billing Setup | `/residents/:id/billing` | Payer configuration, current rates, rate history |
-| Invoice List | `/facilities/:id/invoices` | Filter by status, month, resident. Bulk actions: send, print. |
-| Invoice Detail | `/invoices/:id` | Line items, payment history, collection log. Send/void buttons. Print to PDF. |
-| Invoice Generation | `/facilities/:id/invoices/generate` | Preview monthly invoice batch. Review, edit, approve, generate. |
-| Payment Entry | `/facilities/:id/payments/new` | Record payment: resident, amount, method, reference. Apply to invoice. |
-| AR Aging Report | `/facilities/:id/ar-aging` | Aging buckets, drill-down to resident, collection activity log |
-| Org AR Summary | `/organization/ar-aging` | Cross-facility AR aging. Total outstanding by facility. |
-| Revenue Dashboard | `/facilities/:id/revenue` | MTD/YTD revenue, by payer type, per-bed revenue, occupancy correlation |
+| Rate Management | `/admin/billing/rates` | Current and historical rate schedules. Edit/create. |
+| Resident Billing Setup | `/admin/residents/:id/billing` | Payer configuration, current rates, rate history |
+| Invoice List | `/admin/billing/invoices` | Filter by status, month, resident. Bulk actions: send, print. |
+| Invoice Detail | `/admin/billing/invoices/:id` | Line items, payment history, collection log. Send/void buttons. Print to PDF. |
+| Invoice Generation | `/admin/billing/invoices/generate` | Preview monthly invoice batch. Review, edit, approve, generate. |
+| Payment Entry | `/admin/billing/payments/new` | Record payment: resident, amount, method, reference. Apply to invoice. |
+| AR Aging Report | `/admin/billing/ar-aging` | Aging buckets, drill-down to resident, collection activity log |
+| Org AR Summary | `/admin/billing/org-ar-aging` | Cross-facility AR aging. Total outstanding by facility. |
+| Revenue Dashboard | `/admin/billing/revenue` | MTD/YTD revenue, by payer type, per-bed revenue, occupancy correlation |
 
 ### Family Portal (limited billing view)
 
 | Screen | Route | Description |
 |--------|-------|-------------|
 | My Invoices | `/family/invoices` | List of invoices for linked resident. View detail. |
-| Make Payment | `/family/pay` | Online payment form (credit card/ACH). PCI-compliant integration. |
-| Payment History | `/family/payments` | List of payments made. Receipts. |
+| Billing Summary | `/family/billing` | Read-only billing summary and current balance for linked resident. |
+| Payment History | `/family/payments` | List of posted payments and receipts. |

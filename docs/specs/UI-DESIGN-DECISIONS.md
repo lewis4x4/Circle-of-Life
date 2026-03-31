@@ -2,6 +2,8 @@
 
 **This document defines every UI architectural decision that affects code structure.** It does not prescribe visual design (that's yours). It prescribes the structural, behavioral, and technical decisions that must be consistent across every screen Claude Code builds.
 
+Canonical lock: if this file conflicts with `FRONTEND-CONTRACT.md`, the contract file wins.
+
 ---
 
 ## 1. TECHNOLOGY STACK
@@ -16,14 +18,14 @@
 | State (client) | React Query (TanStack Query) | 5+ | All server state. Caching, background refetch, optimistic updates. |
 | State (local) | Zustand | Latest | UI-only state: sidebar open/closed, selected facility, current shift, form drafts. |
 | Forms | React Hook Form + Zod | Latest | All forms validated with Zod schemas that mirror the API request shapes from the specs. |
-| Routing | React Router | 6+ | Or TanStack Router. Decide before build — don't switch mid-project. |
+| Routing | Next.js App Router | 16+ | Do not introduce React Router/TanStack Router alongside Next routing. |
 | Date/Time | date-fns | Latest | All date formatting and manipulation. Timezone conversion: `date-fns-tz` with `America/New_York`. |
 | Charts | Recharts | Latest | Dashboard charts, trend lines, census graphs. |
 | Tables | TanStack Table | Latest | Sortable, filterable, paginated data tables for admin views. |
 | Offline | Workbox (service worker) + IndexedDB (via idb) | Latest | PWA offline queue and cache. |
 | PDF | @react-pdf/renderer or jsPDF | Latest | Invoice generation, incident report export, care plan printing. |
-| Build | Vite | 5+ | |
-| Deploy | Netlify | | Auto-deploy from main branch. Preview deploys from PRs. |
+| Build | Next.js build pipeline | 16+ | `next build` via npm scripts in this repo |
+| Deploy | Next-compatible host | | Keep deployment platform aligned with Next.js runtime requirements |
 
 ---
 
@@ -162,7 +164,7 @@ Mobile:
 - **Care Plan:** Read-only view of current care plan summary. Assessment trends (charts). No clinical jargon — translated to family-friendly language.
 - **Messages:** Secure messaging with facility staff. Threaded. Timestamped.
 - **Calendar:** Upcoming appointments, family council meetings, facility events. RSVP.
-- **Billing:** Invoices, payment history, make payment (Phase 1: view only. Online payment integration Phase 4+).
+- **Billing:** Invoices and payment history (Phase 1 view-only). Online payment integration is deferred to a later phase.
 - **Documents:** Admission agreement, care plan summary, advance directives. Upload capability for family documents.
 
 **Family portal design constraints:**
@@ -514,7 +516,7 @@ These are the screens that Claude Code needs to build in Phase 1, in build order
 2. Admin layout shell (sidebar + header + facility selector)
 3. Caregiver layout shell (bottom tabs + shift header)
 4. Facility dashboard (census board, key metrics cards, recent activity)
-5. User management (list, create, edit, assign facility access)
+5. Admin settings shell placeholder (user management full CRUD deferred)
 
 ### Week 3-4 Screens (Residents)
 6. Resident list (data table with search, filter by status/acuity/unit)
@@ -599,10 +601,17 @@ function ResidentList() {
 
 ---
 
-## 12. FILE STRUCTURE
+## 12. FILE STRUCTURE (Next.js App Router)
 
 ```
 src/
+  app/
+    (admin)/
+    (caregiver)/
+    (family)/
+    login/
+    layout.tsx
+    page.tsx
   components/
     ui/                     # shadcn/ui components (Button, Input, Dialog, etc.)
     layout/
@@ -690,11 +699,6 @@ src/
   types/
     database.ts             # Generated from Supabase (supabase gen types)
     api.ts                  # API request/response shapes
-  routes/
-    index.tsx               # Route definitions
-    admin-routes.tsx
-    caregiver-routes.tsx
-    family-routes.tsx
 ```
 
 ---

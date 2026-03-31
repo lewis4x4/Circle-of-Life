@@ -372,21 +372,23 @@ The system flags `insurance_reportable = true` when:
 
 ## UI SCREENS
 
+Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
+
 ### Mobile (Caregiver — Primary Incident Reporting Interface)
 
 | Screen | Route | Description |
 |--------|-------|-------------|
-| Report Incident | `/incidents/new` | Step-through guided form: 1) Resident (or "Environmental"), 2) Category picker (large icons), 3) When/where, 4) Description, 5) Fall-specific fields (conditional), 6) Injury assessment, 7) Immediate actions, 8) Photos, 9) Review & submit |
-| My Follow-ups | `/incidents/followups/mine` | List of assigned follow-up tasks: due time, resident, task type. Tap to complete with notes. |
+| Report Incident | `/caregiver/incident-draft` | Step-through guided form: 1) Resident (or "Environmental"), 2) Category picker (large icons), 3) When/where, 4) Description, 5) Fall-specific fields (conditional), 6) Injury assessment, 7) Immediate actions, 8) Photos, 9) Review & submit |
+| My Follow-ups | `/caregiver/followups` | List of assigned follow-up tasks: due time, resident, task type. Tap to complete with notes. |
 
 ### Web (Admin/Nurse Dashboard)
 
 | Screen | Route | Description |
 |--------|-------|-------------|
-| Incident Dashboard | `/facilities/:id/incidents` | Open incidents, overdue follow-ups, monthly trends chart, incident rate metrics |
-| Incident Detail | `/incidents/:id` | Full incident record, photo gallery, follow-up task checklist, notification log, linked care plan changes |
-| Org Incident Trends | `/organization/incidents/trends` | Cross-facility comparison: fall rates, incident rates by category, severity distribution. Date range selector. |
-| Root Cause Analysis | `/incidents/:id/rca` | Structured RCA form: contributing factors checklist, environmental factors, medication factors, staffing factors, corrective actions planned |
+| Incident Dashboard | `/admin/incidents` | Open incidents, overdue follow-ups, monthly trends chart, incident rate metrics |
+| Incident Detail | `/admin/incidents/:id` | Full incident record, photo gallery, follow-up task checklist, notification log, linked care plan changes |
+| Org Incident Trends | `/admin/incidents/trends` | Cross-facility comparison: fall rates, incident rates by category, severity distribution. Date range selector. |
+| Root Cause Analysis | `/admin/incidents/:id/rca` | Structured RCA form: contributing factors checklist, environmental factors, medication factors, staffing factors, corrective actions planned |
 
 ### Offline Behavior
 

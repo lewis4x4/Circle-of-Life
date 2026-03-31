@@ -402,21 +402,23 @@ Validation failures block publishing and display specific violations.
 
 ## UI SCREENS
 
+Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
+
 ### Web (Admin Dashboard)
 
 | Screen | Route | Description |
 |--------|-------|-------------|
-| Staff Directory | `/facilities/:id/staff` | Sortable table: name, role, status, hire date, certs expiring. Quick filters by role. |
-| Staff Profile | `/staff/:id` | Employment details, certification list with expiration indicators, schedule view, time record history, performance notes |
-| Certification Dashboard | `/facilities/:id/certifications` | Grid: staff names × certification types. Green (current), Yellow (expiring in 90 days), Red (expired or missing). Drill down to renew. |
-| Schedule Builder | `/facilities/:id/schedule?week=2026-04-06` | 7-day grid, shifts as rows, drag-drop staff assignment. Color coding: green (compliant), red (understaffed), yellow (overtime risk). Publish button with validation. |
-| Time Records | `/facilities/:id/time-records` | Table: staff, date, clock in, clock out, hours, overtime, approved. Bulk approve button. |
-| Staffing Dashboard | `/facilities/:id/staffing` | Real-time ratio display per shift, historical ratio chart, alert log |
+| Staff Directory | `/admin/staff` | Sortable table: name, role, status, hire date, certs expiring. Quick filters by role. |
+| Staff Profile | `/admin/staff/:id` | Employment details, certification list with expiration indicators, schedule view, time record history, performance notes |
+| Certification Dashboard | `/admin/certifications` | Grid: staff names × certification types. Green (current), Yellow (expiring in 90 days), Red (expired or missing). Drill down to renew. |
+| Schedule Builder | `/admin/schedules?week=2026-04-06` | 7-day grid, shifts as rows, drag-drop staff assignment. Color coding: green (compliant), red (understaffed), yellow (overtime risk). Publish button with validation. |
+| Time Records | `/admin/time-records` | Table: staff, date, clock in, clock out, hours, overtime, approved. Bulk approve button. |
+| Staffing Dashboard | `/admin/staffing` | Real-time ratio display per shift, historical ratio chart, alert log |
 
 ### Mobile (Staff)
 
 | Screen | Route | Description |
 |--------|-------|-------------|
-| My Schedule | `/my/schedule` | Week view of my shifts across all facilities. Tap shift for details. |
-| Clock In/Out | `/my/clock` | Large clock-in button. Shows GPS status. Current shift info. Clock-out button. |
-| Swap Board | `/my/swaps` | Open swap requests at my facility. My pending requests. Claim button. |
+| My Schedule | `/caregiver/me/schedule` | Week view of my shifts across all facilities. Tap shift for details. |
+| Clock In/Out | `/caregiver/me/clock` | Large clock-in button. Shows GPS status. Current shift info. Clock-out button. |
+| Swap Board | `/caregiver/me/swaps` | Open swap requests at my facility. My pending requests. Claim button. |

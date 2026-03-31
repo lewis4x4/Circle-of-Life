@@ -27,14 +27,15 @@ async function main() {
 
   try {
     for (const route of routes) {
-      const page = await browser.newPage();
+      const context = await browser.newContext();
+      const page = await context.newPage();
       const url = new URL(route, baseUrl).href;
       try {
         await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20_000 });
       } catch (e) {
         console.error(`[a11y:routes] FAIL: could not load ${url} — start the app (npm run dev) or set BASE_URL.\n${e.message}`);
         process.exitCode = 1;
-        await page.close();
+        await context.close();
         return;
       }
 
@@ -45,7 +46,7 @@ async function main() {
       if (serious.length) {
         bad.push({ url, violations: serious.map((v) => ({ id: v.id, help: v.help, nodes: v.nodes.length })) });
       }
-      await page.close();
+      await context.close();
     }
   } finally {
     await browser.close();

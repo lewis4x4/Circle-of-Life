@@ -710,26 +710,28 @@ INSERT INTO assessment_templates (assessment_type, name, description, score_rang
 
 ## UI SCREENS
 
+Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
+
 ### Web (Admin/Nurse Dashboard)
 
 | Screen | Route | Components | Data |
 |--------|-------|-----------|------|
-| Resident List | `/facilities/:id/residents` | Search bar, filter dropdowns (status, acuity, unit), sortable table, quick-view cards | GET /residents?facility_id=X |
-| Resident Profile | `/residents/:id` | Tab navigation: Overview, Care Plan, Assessments, Medications (Module 6), Daily Logs (Module 4), Incidents (Module 7), Photos, Documents, Contacts, Billing (Module 16) | GET /residents/:id |
-| Care Plan Editor | `/residents/:id/care-plan` | Drag-sortable care plan items, inline editing, version history sidebar, review/approve buttons | GET /residents/:id/care-plan |
-| Assessment Entry | `/residents/:id/assessments/new/:type` | Guided form matching assessment_template, auto-scoring, risk level display, save + alert generation | POST /residents/:id/assessments |
-| Assessment History | `/residents/:id/assessments` | Timeline view, score trending chart, filter by type | GET /residents/:id/assessments |
-| Overdue Assessments | `/facilities/:id/assessments/overdue` | Table: resident, assessment type, due date, days overdue, assigned nurse | GET /assessments/overdue |
-| Care Plan Reviews Due | `/facilities/:id/care-plans/reviews-due` | Table: resident, care plan version, review due date, days remaining/overdue | GET /care-plans/reviews-due |
+| Resident List | `/admin/residents` | Search bar, filter dropdowns (status, acuity, unit), sortable table, quick-view cards | GET /residents?facility_id=X |
+| Resident Profile | `/admin/residents/:id` | Tab navigation: Overview, Care Plan, Assessments, Medications (Module 6), Daily Logs (Module 4), Incidents (Module 7), Photos, Documents, Contacts, Billing (Module 16) | GET /residents/:id |
+| Care Plan Editor | `/admin/residents/:id/care-plan` | Drag-sortable care plan items, inline editing, version history sidebar, review/approve buttons | GET /residents/:id/care-plan |
+| Assessment Entry | `/admin/residents/:id/assessments/new/:type` | Guided form matching assessment_template, auto-scoring, risk level display, save + alert generation | POST /residents/:id/assessments |
+| Assessment History | `/admin/residents/:id/assessments` | Timeline view, score trending chart, filter by type | GET /residents/:id/assessments |
+| Overdue Assessments | `/admin/assessments/overdue` | Table: resident, assessment type, due date, days overdue, assigned nurse | GET /assessments/overdue |
+| Care Plan Reviews Due | `/admin/care-plans/reviews-due` | Table: resident, care plan version, review due date, days remaining/overdue | GET /care-plans/reviews-due |
 
 ### Mobile (Caregiver Interface)
 
 | Screen | Route | Components | Data |
 |--------|-------|-----------|------|
-| My Residents | `/shift/residents` | Card list of assigned residents with: name, photo, room, acuity badge, key care plan highlights, pending tasks | GET /residents?assigned_to=me |
-| Resident Quick View | `/residents/:id/quick` | Key info card: name, photo, room, allergies, diet, code status, fall risk, assistive device, key care plan items. One-tap to daily log, incident report, or full profile | GET /residents/:id (subset) |
-| Assessment Entry | `/residents/:id/assess/:type` | Step-through form optimized for mobile touch, large tap targets, auto-scoring | POST /residents/:id/assessments |
-| Photo Capture | `/residents/:id/photo` | Camera capture, body diagram for anatomical location tagging, description field, link to incident | POST /residents/:id/photos |
+| My Residents | `/caregiver/residents` | Card list of assigned residents with: name, photo, room, acuity badge, key care plan highlights, pending tasks | GET /residents?assigned_to=me |
+| Resident Quick View | `/caregiver/resident/:id` | Key info card: name, photo, room, allergies, diet, code status, fall risk, assistive device, key care plan items. One-tap to daily log, incident report, or full profile | GET /residents/:id (subset) |
+| Assessment Entry | `/caregiver/resident/:id/assess/:type` | Step-through form optimized for mobile touch, large tap targets, auto-scoring | POST /residents/:id/assessments |
+| Photo Capture | `/caregiver/resident/:id/photo` | Camera capture, body diagram for anatomical location tagging, description field, link to incident | POST /residents/:id/photos |
 
 ### Offline Behavior
 

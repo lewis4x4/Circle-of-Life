@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, Activity, ShieldCheck, Clock } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -8,15 +8,11 @@ import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const { setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     // Ensure the root landing page stays in deep structural dark mode for a cinematic feel
     setTheme("dark");
-    setMounted(true);
   }, [setTheme]);
-
-  if (!mounted) return null;
 
   return (
     <div className="flex flex-col min-h-screen bg-[#0a192f] text-slate-50 font-sans selection:bg-brand-500 selection:text-white overflow-hidden relative">
@@ -59,16 +55,11 @@ export default function Home() {
           Assisted living, home health, and community-based care operations securely governed on a single, high-precision layer.
         </p>
 
-        <div className="mt-12 flex flex-col sm:flex-row items-center gap-4">
-          <Link href="/admin">
-            <Button size="lg" className="h-14 px-8 text-lg bg-white text-[#0a192f] hover:bg-slate-200 tap-responsive font-medium shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]">
-              Enter Admin Portal
+        <div className="mt-12 flex items-center justify-center">
+          <Link href="/login">
+            <Button size="lg" className="h-14 px-10 text-lg bg-white text-[#0a192f] hover:bg-slate-200 tap-responsive font-medium shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]">
+              Sign In to Haven
               <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
-          </Link>
-          <Link href="/caregiver">
-            <Button size="lg" variant="outline" className="h-14 px-8 text-lg border-white/20 text-white hover:bg-white/10 tap-responsive font-medium backdrop-blur-md">
-              Launch Caregiver Shell
             </Button>
           </Link>
         </div>
