@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 import { adminShellAccessRedirect, isAdminShellPath, mergeSetCookieHeaders } from "@/lib/auth/admin-shell";
 import { caregiverShellAccessRedirect, isCaregiverShellPath } from "@/lib/auth/caregiver-shell";
+import { familyShellAccessRedirect, isFamilyShellPath } from "@/lib/auth/family-shell";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function proxy(request: NextRequest) {
@@ -18,6 +19,15 @@ export async function proxy(request: NextRequest) {
 
   if (isCaregiverShellPath(pathname)) {
     const redirect = caregiverShellAccessRedirect(request, user);
+    if (redirect) {
+      mergeSetCookieHeaders(response, redirect);
+      return redirect;
+    }
+    return response;
+  }
+
+  if (isFamilyShellPath(pathname)) {
+    const redirect = familyShellAccessRedirect(request, user);
     if (redirect) {
       mergeSetCookieHeaders(response, redirect);
       return redirect;
