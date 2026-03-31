@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { AlertTriangle, ArrowUpDown, ChevronRight, ShieldAlert } from "lucide-react";
 
 import { AdminEmptyState, AdminFilterBar, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
@@ -8,8 +9,9 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type IncidentSeverity = "level_1" | "level_2" | "level_3" | "level_4";
@@ -252,9 +254,13 @@ export default function AdminIncidentsPage() {
                     <TableCell className="text-slate-500 dark:text-slate-400">{incident.reportedAt}</TableCell>
                     <TableCell className="text-slate-500 dark:text-slate-400">{incident.followupDue}</TableCell>
                     <TableCell className="pr-4 text-right">
-                      <Button variant="ghost" size="icon-sm" aria-label={`Open incident ${incident.incidentNumber}`}>
+                      <Link
+                        href={`/admin/incidents/${incident.id}`}
+                        className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
+                        aria-label={`Open incident ${incident.incidentNumber}`}
+                      >
                         <ChevronRight className="h-4 w-4 text-slate-500" />
-                      </Button>
+                      </Link>
                     </TableCell>
                   </TableRow>
                 ))}
