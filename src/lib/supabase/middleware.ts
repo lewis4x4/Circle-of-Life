@@ -1,12 +1,18 @@
 import { createServerClient } from "@supabase/ssr";
+import type { User } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
-export async function updateSession(request: NextRequest) {
+export type SessionUpdateResult = {
+  response: NextResponse;
+  user: User | null;
+};
+
+export async function updateSession(request: NextRequest): Promise<SessionUpdateResult> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !key) {
-    return NextResponse.next({ request });
+    return { response: NextResponse.next({ request }), user: null };
   }
 
   let response = NextResponse.next({ request });
@@ -26,10 +32,12 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
+  let user: User | null = null;
   try {
-    await supabase.auth.getUser();
+    const { data } = await supabase.auth.getUser();
+    user = data.user ?? null;
   } catch {
     // Avoid failing every request when Supabase is unreachable or misconfigured at runtime.
   }
-  return response;
+  return { response, user };
 }

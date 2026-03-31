@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Loader2, ArrowRight } from "lucide-react";
 
+import { isAdminEligibleAppRole, getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { loginSchema, type LoginFormData } from "@/lib/validation/auth";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 
@@ -20,6 +21,17 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+
+function LoginForbiddenNotice() {
+  const searchParams = useSearchParams();
+  if (searchParams.get("reason") !== "forbidden") return null;
+  return (
+    <div className="rounded-lg border border-amber-600/50 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">
+      You don&apos;t have access to the operations dashboard with this account. Use the family or caregiver
+      portal if applicable, or ask an administrator to assign your role.
+    </div>
+  );
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -55,13 +67,12 @@ export default function LoginPage() {
     }
     if (!user) return null;
 
-    const roleFromAppMetadata = user.app_metadata?.app_role;
-    const roleFromUserMetadata = user.user_metadata?.app_role;
-    const role = (roleFromAppMetadata ?? roleFromUserMetadata ?? "") as string;
+    const role = getAppRoleFromClaims(user);
 
     if (role === "caregiver") return "/caregiver";
     if (role === "family") return "/family";
-    return "/admin";
+    if (isAdminEligibleAppRole(role)) return "/admin";
+    return null;
   }, [supabase]);
 
   useEffect(() => {
@@ -130,7 +141,13 @@ export default function LoginPage() {
         return;
       }
 
-      const destination = (await resolveRouteFromRole()) ?? "/admin";
+      const destination = await resolveRouteFromRole();
+      if (!destination) {
+        setGlobalError(
+          "Your account does not have an operations role assigned in Haven, or your role cannot open the staff dashboard. Contact your administrator.",
+        );
+        return;
+      }
       router.push(destination);
       router.refresh();
     } catch {
@@ -200,6 +217,10 @@ export default function LoginPage() {
               Use your organizational credentials. Your dashboard is selected automatically by role.
             </p>
           </div>
+
+          <Suspense fallback={null}>
+            <LoginForbiddenNotice />
+          </Suspense>
 
           {sessionProbeError ? (
             <div className="rounded-lg border border-amber-600/50 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">
