@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
   ArrowLeft,
+  Brain,
   ClipboardList,
   CreditCard,
   FileText,
@@ -13,6 +14,7 @@ import {
   MapPin,
   Phone,
   Shield,
+  Stethoscope,
   User,
   Utensils,
 } from "lucide-react";
@@ -362,6 +364,79 @@ export default function AdminResidentDetailPage() {
           </CardContent>
         </Card>
 
+        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800 lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-display text-lg">
+              <Brain className="h-4 w-4 text-brand-600" />
+              Behavior &amp; condition reports
+            </CardTitle>
+            <CardDescription>Recent behavioral events and reported condition changes from floor documentation</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-6 lg:grid-cols-2">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-200">
+                <Brain className="h-4 w-4 text-slate-500" />
+                Behavioral events
+              </div>
+              {detail.recentBehavior.length === 0 ? (
+                <p className="text-sm text-slate-500 dark:text-slate-400">No behavioral log entries yet.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {detail.recentBehavior.map((row) => (
+                    <li
+                      key={row.id}
+                      className="rounded-lg border border-slate-200/80 bg-slate-50/80 p-3 text-sm dark:border-slate-700 dark:bg-slate-900/40"
+                    >
+                      <p className="font-medium text-slate-800 dark:text-slate-200">{row.typeLabel}</p>
+                      <p className="mt-1 text-slate-700 dark:text-slate-300">{truncateSnippet(row.behaviorText, 320)}</p>
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        {row.occurredLabel} · {row.shift} · {row.loggedByLabel}
+                      </p>
+                      {row.injuryOccurred ? (
+                        <p className="mt-1 text-xs font-medium text-rose-600 dark:text-rose-400">Injury documented</p>
+                      ) : null}
+                      {row.notesSnippet ? (
+                        <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{row.notesSnippet}</p>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-200">
+                <Stethoscope className="h-4 w-4 text-slate-500" />
+                Condition changes
+              </div>
+              {detail.recentConditionChanges.length === 0 ? (
+                <p className="text-sm text-slate-500 dark:text-slate-400">No condition change reports yet.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {detail.recentConditionChanges.map((row) => (
+                    <li
+                      key={row.id}
+                      className="rounded-lg border border-slate-200/80 bg-slate-50/80 p-3 text-sm dark:border-slate-700 dark:bg-slate-900/40"
+                    >
+                      <p className="font-medium text-slate-800 dark:text-slate-200">
+                        {row.typeLabel}
+                        <span className="font-normal text-slate-500"> · </span>
+                        <span className="capitalize text-slate-600 dark:text-slate-300">{row.severity}</span>
+                      </p>
+                      <p className="mt-1 text-slate-700 dark:text-slate-300">{truncateSnippet(row.description, 360)}</p>
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        {row.reportedLabel} · {row.shift} · {row.loggedByLabel}
+                        {row.nurseNotified ? (
+                          <span className="text-emerald-600 dark:text-emerald-400"> · nurse notified</span>
+                        ) : null}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="border-slate-200/70 shadow-soft dark:border-slate-800">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-display text-lg">
@@ -463,6 +538,26 @@ type ResidentDetailView = {
     summary: string;
     detailNote: string | null;
     loggedByLabel: string;
+  }>;
+  recentBehavior: Array<{
+    id: string;
+    typeLabel: string;
+    behaviorText: string;
+    occurredLabel: string;
+    shift: string;
+    loggedByLabel: string;
+    injuryOccurred: boolean;
+    notesSnippet: string | null;
+  }>;
+  recentConditionChanges: Array<{
+    id: string;
+    typeLabel: string;
+    severity: string;
+    description: string;
+    reportedLabel: string;
+    shift: string;
+    loggedByLabel: string;
+    nurseNotified: boolean;
   }>;
 };
 
@@ -578,7 +673,7 @@ async function fetchResidentDetail(
   const unitName = unit?.name ?? "Unassigned";
 
   const facilityId = resident.facility_id;
-  const [dailyResult, adlResult] = await Promise.all([
+  const [dailyResult, adlResult, behaviorResult, conditionResult] = await Promise.all([
     supabase
       .from("daily_logs")
       .select("id, log_date, shift, general_notes, logged_by")
@@ -595,6 +690,22 @@ async function fetchResidentDetail(
       .is("deleted_at", null)
       .order("log_time", { ascending: false })
       .limit(12),
+    supabase
+      .from("behavioral_logs")
+      .select("id, occurred_at, shift, behavior_type, behavior, injury_occurred, notes, logged_by")
+      .eq("resident_id", residentId)
+      .eq("facility_id", facilityId)
+      .is("deleted_at", null)
+      .order("occurred_at", { ascending: false })
+      .limit(10),
+    supabase
+      .from("condition_changes")
+      .select("id, reported_at, shift, change_type, description, severity, nurse_notified, reported_by")
+      .eq("resident_id", residentId)
+      .eq("facility_id", facilityId)
+      .is("deleted_at", null)
+      .order("reported_at", { ascending: false })
+      .limit(10),
   ]);
 
   if (dailyResult.error) {
@@ -603,13 +714,23 @@ async function fetchResidentDetail(
   if (adlResult.error) {
     throw adlResult.error;
   }
+  if (behaviorResult.error) {
+    throw behaviorResult.error;
+  }
+  if (conditionResult.error) {
+    throw conditionResult.error;
+  }
 
   const dailyRows = dailyResult.data ?? [];
   const adlRows = adlResult.data ?? [];
+  const behaviorRows = behaviorResult.data ?? [];
+  const conditionRows = conditionResult.data ?? [];
   const userIds = [
     ...new Set([
       ...dailyRows.map((r) => r.logged_by),
       ...adlRows.map((r) => r.logged_by),
+      ...behaviorRows.map((r) => r.logged_by),
+      ...conditionRows.map((r) => r.reported_by),
     ]),
   ];
   const nameById = new Map<string, string>();
@@ -645,6 +766,28 @@ async function fetchResidentDetail(
     };
   });
 
+  const recentBehavior = behaviorRows.map((r) => ({
+    id: r.id,
+    typeLabel: behaviorTypeLabel(r.behavior_type),
+    behaviorText: r.behavior,
+    occurredLabel: formatLogTime(r.occurred_at),
+    shift: r.shift,
+    loggedByLabel: nameById.get(r.logged_by) ?? "Staff",
+    injuryOccurred: r.injury_occurred,
+    notesSnippet: r.notes?.trim() ? truncateSnippet(r.notes.trim(), 200) : null,
+  }));
+
+  const recentConditionChanges = conditionRows.map((r) => ({
+    id: r.id,
+    typeLabel: conditionChangeTypeLabel(r.change_type),
+    severity: r.severity,
+    description: r.description,
+    reportedLabel: formatLogTime(r.reported_at),
+    shift: r.shift,
+    loggedByLabel: nameById.get(r.reported_by) ?? "Staff",
+    nurseNotified: r.nurse_notified,
+  }));
+
   return {
     id: resident.id,
     fullName,
@@ -678,6 +821,8 @@ async function fetchResidentDetail(
     emergency2Phone: resident.emergency_contact_2_phone,
     recentDailyNotes,
     recentAdl,
+    recentBehavior,
+    recentConditionChanges,
   };
 }
 
@@ -754,6 +899,37 @@ function formatLogTime(iso: string): string {
     hour: "numeric",
     minute: "2-digit",
   }).format(parsed);
+}
+
+const BEHAVIOR_TYPE_LABELS: Record<string, string> = {
+  agitation: "Agitation / anxiety",
+  wandering: "Wandering / elopement risk",
+  verbal: "Verbal outburst",
+  physical: "Physical aggression",
+  self_injury: "Self-injury / SIB",
+  withdrawal: "Withdrawal / refusal",
+  sundowning: "Sundowning",
+  other: "Other",
+};
+
+function behaviorTypeLabel(value: string): string {
+  return BEHAVIOR_TYPE_LABELS[value] ?? value.replace(/_/g, " ");
+}
+
+const CONDITION_TYPE_LABELS: Record<string, string> = {
+  vitals: "Vitals / measurements",
+  pain: "Pain",
+  respiratory: "Respiratory",
+  skin_wound: "Skin / wound",
+  mental_status: "Mental status / cognition",
+  gi: "GI / appetite",
+  urinary: "Urinary",
+  neurologic: "Neurologic",
+  other: "Other",
+};
+
+function conditionChangeTypeLabel(value: string): string {
+  return CONDITION_TYPE_LABELS[value] ?? value.replace(/_/g, " ");
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {
