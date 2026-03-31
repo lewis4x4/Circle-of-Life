@@ -36,6 +36,15 @@ async function main() {
         await page.waitForTimeout(1000);
         // Remove known non-product debug overlays injected by local tooling.
         await page.evaluate(() => {
+          const appRoot = document.querySelector("#__next");
+          if (appRoot?.parentElement === document.body) {
+            Array.from(document.body.children).forEach((child) => {
+              if (child === appRoot) return;
+              if (child.tagName === "SCRIPT" || child.tagName === "STYLE") return;
+              child.remove();
+            });
+          }
+
           const findOverlayRoot = (start) => {
             let element = start;
             for (let i = 0; i < 10 && element?.parentElement; i += 1) {
@@ -48,17 +57,28 @@ async function main() {
           };
 
           const roots = new Set();
-          const markers = ["drag · scroll · space+drag · dbl-click", "SPEEDY INC", "ANALYTICS", "idle", "working"];
+          const markers = [
+            "drag · scroll · space+drag · dbl-click",
+            "SPEEDY INC",
+            "ANALYTICS",
+            "Justice Companies Agent",
+            "idle",
+            "working",
+          ];
 
           document.querySelectorAll('[title*="Agent"]').forEach((node) => {
-            const root = findOverlayRoot(node);
+            const root =
+              findOverlayRoot(node) ??
+              node.closest('[data-testid*="agent"], [class*="agent"], button, [role="dialog"], div');
             if (root) roots.add(root);
           });
 
           document.querySelectorAll("body *").forEach((node) => {
             const text = node.textContent ?? "";
             if (!markers.some((marker) => text.includes(marker))) return;
-            const root = findOverlayRoot(node);
+            const root =
+              findOverlayRoot(node) ??
+              node.closest('[data-testid*="agent"], [class*="agent"], [class*="overlay"], div');
             if (root) roots.add(root);
           });
 

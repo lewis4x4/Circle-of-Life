@@ -37,7 +37,7 @@ The absolute bedrock of the "Soft Precision" visual identity.
 ## Sector 2: The Floor (Caregiver Shell)
 *Built exclusively for mobile devices. Forced dark mode. "Zero-glare" UI designed to be used in dimly lit resident rooms at 3 AM.*
 
-- [ ] **Caregiver Dashboard (`/caregiver`)**: Bottom-tab navigation. High-contrast "Current Shift" critical alerts stack.
+- [x] **Caregiver Dashboard (`/caregiver`)**: Premium mobile-first shift brief with high-contrast critical alerts stack and quick actions.
 - [ ] **Task & ADL Queue (`/caregiver/tasks`)**: Swipe-to-complete interactions for bathing, feeding, and rounding.
 - [ ] **eMAR Interface (`/caregiver/meds`)**: Large tap targets. Color-coded medication verification (Given vs. Refused).
 - [ ] **Mobile Incident Reporter (`/caregiver/incident-draft`)**: Step-by-step wizard (What happened -> Who was involved -> Photo attachment).
@@ -58,7 +58,7 @@ The absolute bedrock of the "Soft Precision" visual identity.
 ## Next Immediate Execution Step
 Sector 1 Admin scaffold routes are now in place (`/admin`, `/admin/residents`, `/admin/incidents`, `/admin/staff`, `/admin/billing`).
 
-**Next targeted UI file:** `src/app/(caregiver)/caregiver/page.tsx` (beginning Sector 2 caregiver-shell scaffold uplift from placeholder to premium mobile dashboard).
+**Next targeted UI file:** `src/app/(caregiver)/tasks/page.tsx` (Task & ADL Queue scaffold with swipe-ready completion affordances and overdue prioritization).
 
 ---
 
