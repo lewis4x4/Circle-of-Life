@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useSyncExternalStore } from "react";
+import React, { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -29,6 +29,7 @@ import {
   Monitor
 } from "lucide-react";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,9 +40,44 @@ import {
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { setTheme, theme } = useTheme();
-  const { selectedFacilityId, availableFacilities, setSelectedFacility } = useFacilityStore();
-  const currentFacility = availableFacilities.find(f => f.id === selectedFacilityId) || availableFacilities[0];
+  const selectedFacilityId = useFacilityStore((s) => s.selectedFacilityId);
+  const availableFacilities = useFacilityStore((s) => s.availableFacilities);
+  const setSelectedFacility = useFacilityStore((s) => s.setSelectedFacility);
+  const setAvailableFacilities = useFacilityStore((s) => s.setAvailableFacilities);
+
+  const currentFacility = availableFacilities.find((f) => f.id === selectedFacilityId);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [facilitiesLoading, setFacilitiesLoading] = useState(true);
+  const [facilitiesLoadFailed, setFacilitiesLoadFailed] = useState(false);
+
+  const refreshFacilities = useCallback(async () => {
+    setFacilitiesLoading(true);
+    setFacilitiesLoadFailed(false);
+    try {
+      const list = await fetchAdminFacilityOptions();
+      setAvailableFacilities(list);
+      const persistedId = useFacilityStore.getState().selectedFacilityId;
+      if (persistedId != null && !list.some((f) => f.id === persistedId)) {
+        setSelectedFacility(null);
+      }
+    } catch {
+      setAvailableFacilities([]);
+      setFacilitiesLoadFailed(true);
+    } finally {
+      setFacilitiesLoading(false);
+    }
+  }, [setAvailableFacilities, setSelectedFacility]);
+
+  useEffect(() => {
+    void refreshFacilities();
+  }, [refreshFacilities]);
+
+  const facilityTriggerLabel = facilitiesLoading
+    ? "Loading facilities…"
+    : selectedFacilityId === null
+      ? "All facilities"
+      : (currentFacility?.name ?? "Select facility…");
+
   const mounted = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -130,20 +166,26 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-4">
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/50 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 tap-responsive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                <span className="text-sm font-medium text-slate-900 dark:text-slate-200 truncate max-w-[150px]">
-                  {selectedFacilityId ? currentFacility?.name : "Select Facility..."}
+                <span className="text-sm font-medium text-slate-900 dark:text-slate-200 truncate max-w-[200px]">
+                  {facilityTriggerLabel}
                 </span>
                 <ChevronDown className="h-4 w-4 text-slate-500" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-[220px] dark:bg-slate-950 dark:border-slate-800">
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => setSelectedFacility(null)}
-                  className="font-medium flex justify-between items-center cursor-pointer dark:focus:bg-slate-800"
+                  className="flex cursor-pointer items-center justify-between font-medium dark:focus:bg-slate-800"
                 >
-                  All Facilities
+                  All facilities
                   {selectedFacilityId === null && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
                 </DropdownMenuItem>
-                
+
+                {facilitiesLoadFailed ? (
+                  <div className="px-2 py-1.5 text-xs text-amber-700 dark:text-amber-300">
+                    Could not load facilities. Check login and Supabase access.
+                  </div>
+                ) : null}
+
                 {availableFacilities.map((facility) => (
                   <DropdownMenuItem 
                     key={facility.id}
