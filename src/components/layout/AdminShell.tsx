@@ -30,7 +30,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             { href: "/admin/residents", label: "Residents", enabled: true },
             { href: "/admin/incidents", label: "Incidents", enabled: true },
             { href: "/admin/staff", label: "Staff", enabled: true },
-            { href: "#", label: "Billing", enabled: false },
+            { href: "/admin/billing", label: "Billing", enabled: true },
             { href: "#", label: "Daily Operations", enabled: false },
           ].map((item) => {
             const isActive = pathname === item.href;
