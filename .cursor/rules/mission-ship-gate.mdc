@@ -1,0 +1,12 @@
+---
+description: North-star mission and alignment verdicts for all segments
+alwaysApply: true
+---
+
+# Mission ship gate
+
+Before closing a segment, align work with the mission in `docs/mission-statement.md` (also in `AGENTS.md`, `CODEX.md`, `agents/registry.yaml`).
+
+State **mission alignment** explicitly: `pass`, `risk`, or `fail`, with one concrete sentence. Misalignment can block release even if tests pass. Waivers need owner, reason, expiry, and a remediation issue.
+
+Do not reset architecture or broaden scope mid-segment without explicit human approval.

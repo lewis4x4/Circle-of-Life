@@ -1,0 +1,12 @@
+---
+description: Autonomous segment workflow, gate runner, and commit discipline
+alwaysApply: true
+---
+
+# Segment gates (Cursor agent)
+
+- Implement **one bounded segment** at a time. Keep commits **atomic** to that segment only.
+- After code changes, run **`npm run segment:gates -- --segment "<id>"`**. Add **`--ui`** when routes, layouts, or visual behavior changed (requires dev server + Playwright; see `docs/agent-gates-runbook.md`).
+- Treat **`test-results/agent-gates/*.json`** as proof of gate execution. Do not call work “done” without a PASS artifact when gates apply.
+- Use **conventional commits** (`feat:`, `fix:`, `chore:`). Follow playbooks under `agents/playbooks/` and handoff template `agents/templates/segment-handoff.md`.
+- Prefer **`AGENTS.md`** and **`CODEX.md`** for stack-specific commands; this repo uses **npm** (not Bun) for the same script contract.

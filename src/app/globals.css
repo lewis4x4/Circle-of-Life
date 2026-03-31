@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-lora), ui-serif, Georgia, serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-border: var(--border);
+
+  /* Deep Midnight Slate Palette */
+  --color-brand-50: #f0f4f8;
+  --color-brand-100: #d9e2ec;
+  --color-brand-200: #bcccdc;
+  --color-brand-300: #9fb3c8;
+  --color-brand-400: #829ab1;
+  --color-brand-500: #627d98;
+  --color-brand-600: #486581;
+  --color-brand-700: #334e68;
+  --color-brand-800: #243b53;
+  --color-brand-900: #102a43;
+  --color-brand-950: #0a192f;
+
+  /* Haven Dedicated Tokens */
+  --color-acuity-1: var(--acuity-1);
+  --color-acuity-2: var(--acuity-2);
+  --color-acuity-3: var(--acuity-3);
+
+  --color-severity-1: var(--severity-1);
+  --color-severity-2: var(--severity-2);
+  --color-severity-3: var(--severity-3);
+  --color-severity-4: var(--severity-4);
+
+  --color-bed-available: var(--bed-available);
+  --color-bed-occupied: var(--bed-occupied);
+  --color-bed-hold: var(--bed-hold);
+  --color-bed-maintenance: var(--bed-maintenance);
+
+  --color-emar-scheduled: var(--emar-scheduled);
+  --color-emar-given: var(--emar-given);
+  --color-emar-refused: var(--emar-refused);
+  --color-emar-held: var(--emar-held);
+  --color-emar-unavailable: var(--emar-unavailable);
+
+  --color-compliance-good: var(--compliance-good);
+  --color-compliance-warning: var(--compliance-warning);
+  --color-compliance-critical: var(--compliance-critical);
+  
+  --radius-card: 0.75rem;
+  --radius-element: 0.375rem;
+
+  --shadow-soft: 0 4px 20px -2px rgba(15, 23, 42, 0.04);
+  --shadow-elevated: 0 10px 30px -5px rgba(15, 23, 42, 0.08);
+}
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --border: #e2e8f0;
+
+  --acuity-1: #059669;
+  --acuity-2: #d97706;
+  --acuity-3: #dc2626;
+
+  --severity-1: #475569;
+  --severity-2: #eab308;
+  --severity-3: #ea580c;
+  --severity-4: #991b1b;
+
+  --bed-available: #10b981;
+  --bed-occupied: #64748b;
+  --bed-hold: #f59e0b;
+  --bed-maintenance: #94a3b8;
+
+  --emar-scheduled: #64748b;
+  --emar-given: #10b981;
+  --emar-refused: #f59e0b;
+  --emar-held: #8b5cf6;
+  --emar-unavailable: #ef4444;
+
+  --compliance-good: #059669;
+  --compliance-warning: #d97706;
+  --compliance-critical: #dc2626;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0f172a; /* Admin Default Dark */
+    --foreground: #f8fafc;
+    --border: #1e293b;
+
+    /* Dark equivalents */
+    --acuity-1: #34d399;
+    --acuity-2: #fbbf24;
+    --acuity-3: #f87171;
+
+    --severity-1: #94a3b8;
+    --severity-2: #facc15;
+    --severity-3: #fb923c;
+    --severity-4: #ef4444;
+
+    --bed-available: #10b981;
+    --bed-occupied: #94a3b8;
+    --bed-hold: #fbbf24;
+    --bed-maintenance: #64748b;
+
+    --emar-scheduled: #94a3b8;
+    --emar-given: #34d399;
+    --emar-refused: #fbbf24;
+    --emar-held: #a78bfa;
+    --emar-unavailable: #f87171;
+
+    --compliance-good: #34d399;
+    --compliance-warning: #fbbf24;
+    --compliance-critical: #f87171;
+  }
+}
+
+/* Caregiver Shell True Black override */
+.caregiver-shell {
+  --background: #000000;
+  --border: #18181b; /* zinc-900 */
+}
+
+/* Family Shell Warm Background override */
+.family-shell {
+  --background: #fafaf9; /* stone-50 */
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}

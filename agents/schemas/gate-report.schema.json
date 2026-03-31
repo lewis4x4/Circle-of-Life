@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://circle-of-life.local/schemas/gate-report.json",
+  "title": "Segment gate report",
+  "type": "object",
+  "required": ["segment", "timestamp", "verdict", "checks", "summary"],
+  "additionalProperties": true,
+  "properties": {
+    "segment": { "type": "string", "minLength": 1 },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "verdict": { "type": "string", "enum": ["PASS", "FAIL", "ADVISORY"] },
+    "mission_alignment": {
+      "type": "string",
+      "enum": ["pass", "risk", "fail"],
+      "description": "Segment-level mission alignment; may be mirrored per-check."
+    },
+    "summary": {
+      "type": "object",
+      "required": ["passed", "failed", "skipped"],
+      "properties": {
+        "passed": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 },
+        "skipped": { "type": "integer", "minimum": 0 },
+        "blocking_failures": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "required", "status"],
+        "properties": {
+          "id": { "type": "string" },
+          "required": { "type": "boolean" },
+          "status": { "type": "string", "enum": ["passed", "failed", "skipped", "advisory"] },
+          "command": { "type": "string" },
+          "duration_ms": { "type": "number" },
+          "stdout": { "type": "string" },
+          "stderr": { "type": "string" },
+          "artifacts": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

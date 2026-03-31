@@ -1,0 +1,42 @@
+{
+  "name": "circle-of-life",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "npm run migrations:check && next build",
+    "build:web": "npm run build",
+    "start": "next start",
+    "lint": "eslint src",
+    "audit:ci": "npm audit --audit-level=high",
+    "check:env-example": "node scripts/check-env-example.mjs",
+    "check:secrets": "node scripts/check-tracked-secrets.mjs",
+    "secrets:gitleaks": "node scripts/run-gitleaks.mjs",
+    "migrations:check": "node scripts/check-migration-order.mjs",
+    "migrations:verify:pg": "node scripts/pg-verify-migrations.mjs",
+    "a11y:routes": "node scripts/a11y-axe-routes.mjs",
+    "design:review": "node .agents/design-review-runner.mjs",
+    "stress:test": "tsx .agents/stress-test/run.ts",
+    "segment:gates": "node scripts/agent-gates/run-segment-gates.mjs"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.10.0",
+    "@supabase/supabase-js": "^2.101.0",
+    "next": "16.2.1",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.11.1",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.1",
+    "playwright": "^1.51.0",
+    "tailwindcss": "^4",
+    "tsx": "^4.19.3",
+    "typescript": "^5"
+  }
+}

@@ -1,0 +1,15 @@
+# https://github.com/gitleaks/gitleaks
+title = "Circle of Life — Haven"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Generated and third-party noise"
+paths = [
+  '''package-lock\.json''',
+  '''pnpm-lock\.yaml''',
+  '''yarn\.lock''',
+  '''test-results/''',
+  '''\.next/''',
+]

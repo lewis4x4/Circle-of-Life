@@ -1,0 +1,28 @@
+name: CI — segment gates
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Segment gates (security, lint, migrations, build, stress)
+        run: npm run segment:gates -- --segment "ci-${{ github.run_id }}" --no-chaos
+        env:
+          CI: true
+          # Require Docker-backed migration replay on CI (ubuntu provides Docker)
+          REQUIRE_PG_VERIFY: "1"

@@ -1,0 +1,10 @@
+---
+description: COL Haven SaaS roadmap is context-only; phase handoffs are authoritative
+alwaysApply: true
+---
+
+# Roadmap vs implementation
+
+- **Orientation:** `docs/roadmap-overview.md` summarizes the COL unified ALF operations platform (Haven): 24 modules, phased delivery, Supabase/multi-entity direction.
+- **Authoritative scope:** Files in **`docs/specs/`** (plus direct user instructions). The Downloads roadmap and **`docs/roadmap-overview.md`** are orientation only.
+- **Do not** implement later-phase modules or copy PII/premium details from the Downloads roadmap into code or committed docs.
