@@ -21,6 +21,9 @@ import {
   ClipboardCheck,
   CalendarClock,
   Award,
+  CalendarDays,
+  Clock,
+  Activity,
   Sun,
   Moon,
   Monitor
@@ -53,6 +56,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     { href: "/admin/incidents", label: "Incidents", enabled: true, icon: ShieldAlert },
     { href: "/admin/staff", label: "Staff", enabled: true, icon: UserCog },
     { href: "/admin/certifications", label: "Certifications", enabled: true, icon: Award },
+    { href: "/admin/schedules", label: "Schedules", enabled: true, icon: CalendarDays },
+    { href: "/admin/time-records", label: "Time records", enabled: true, icon: Clock },
+    { href: "/admin/staffing", label: "Staffing", enabled: true, icon: Activity },
     { href: "/admin/billing", label: "Billing", enabled: true, icon: CreditCard },
     { href: "#", label: "Daily Operations", enabled: false, icon: ClipboardList },
   ];
