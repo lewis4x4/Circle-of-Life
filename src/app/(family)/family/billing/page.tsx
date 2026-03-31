@@ -1,31 +1,124 @@
 "use client";
 
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CreditCard, FileText, ShieldCheck } from "lucide-react";
+import { CreditCard, FileText, Loader2, ShieldCheck } from "lucide-react";
+
+import {
+  fetchFamilyBillingContext,
+  formatUsd,
+  invoiceStatusBadgeClass,
+  type FamilyBillingContext,
+} from "@/lib/family/family-billing-data";
+import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
+
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-const invoices = [
-  { id: "INV-2026-04-001", period: "Apr 2026", total: "$6,420.00", status: "Open", due: "May 5" },
-  { id: "INV-2026-03-001", period: "Mar 2026", total: "$6,180.00", status: "Paid", due: "Apr 5" },
-  { id: "INV-2026-02-001", period: "Feb 2026", total: "$6,180.00", status: "Paid", due: "Mar 5" },
-];
+function formatDue(ymd: string): string {
+  const d = new Date(`${ymd}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return ymd;
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(d);
+}
 
 export default function FamilyBillingSummaryPage() {
+  const supabase = useMemo(() => createClient(), []);
+  const [configError, setConfigError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<FamilyBillingContext | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    setConfigError(null);
+    if (!isBrowserSupabaseConfigured()) {
+      setConfigError(
+        "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local.",
+      );
+      setLoading(false);
+      return;
+    }
+    try {
+      const result = await fetchFamilyBillingContext(supabase);
+      if (!result.ok) {
+        setLoadError(result.error);
+        setData(null);
+      } else {
+        setData(result.data);
+      }
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : "Could not load billing.");
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  if (configError) {
+    return (
+      <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{configError}</div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16 text-stone-500">
+        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+        Loading billing…
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="space-y-3 pb-16 md:pb-0">
+        <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">{loadError}</div>
+        <button
+          type="button"
+          className={cn(buttonVariants({ variant: "outline" }), "border-stone-300")}
+          onClick={() => void load()}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  const recent = data.invoices.slice(0, 4);
+  const balanceTone: "neutral" | "warning" | "success" =
+    data.hasOverdue ? "warning" : data.totalBalanceDue > 0 ? "warning" : "success";
+  const accountStatus = data.hasOverdue
+    ? "Overdue balance"
+    : data.totalBalanceDue > 0
+      ? "Balance due"
+      : "In good standing";
+  const accountTone: "neutral" | "warning" | "success" = data.hasOverdue ? "warning" : data.totalBalanceDue > 0 ? "warning" : "success";
+
   return (
     <div className="space-y-4 pb-16 md:pb-0">
       <Card className="border-stone-200 bg-white text-stone-900">
         <CardHeader className="pb-2">
           <CardTitle className="text-xl font-display">Billing Summary</CardTitle>
-          <CardDescription>Read-only overview of current balance and recent invoices.</CardDescription>
+          <CardDescription>Read-only overview from invoices and payments visible to your account.</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-2 text-xs">
-          <SummaryPill label="Current balance" value="$6,420.00" tone="warning" />
-          <SummaryPill label="Last payment" value="$6,180.00" tone="neutral" />
-          <SummaryPill label="Payment date" value="Apr 3, 2026" tone="neutral" />
-          <SummaryPill label="Account status" value="In good standing" tone="success" />
+          <SummaryPill label="Open balance" value={formatUsd(data.totalBalanceDue)} tone={balanceTone} />
+          <SummaryPill
+            label="Last payment"
+            value={data.lastPaymentAmount != null ? formatUsd(data.lastPaymentAmount) : "—"}
+            tone="neutral"
+          />
+          <SummaryPill label="Payment date" value={data.lastPaymentDateLabel ?? "—"} tone="neutral" />
+          <SummaryPill label="Account status" value={accountStatus} tone={accountTone} />
         </CardContent>
       </Card>
 
@@ -34,27 +127,27 @@ export default function FamilyBillingSummaryPage() {
           <CardTitle className="text-base">Recent Invoices</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {invoices.map((invoice) => (
-            <div key={invoice.id} className="rounded-lg border border-stone-200 bg-stone-50 p-3">
-              <div className="mb-1 flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold">{invoice.id}</p>
-                <Badge
-                  className={
-                    invoice.status === "Open"
-                      ? "border-amber-300 bg-amber-100 text-amber-800"
-                      : "border-emerald-300 bg-emerald-100 text-emerald-800"
-                  }
-                >
-                  {invoice.status}
-                </Badge>
+          {recent.length === 0 ? (
+            <p className="py-4 text-center text-sm text-stone-600">No invoices to show yet.</p>
+          ) : (
+            recent.map((invoice) => (
+              <div key={invoice.id} className="rounded-lg border border-stone-200 bg-stone-50 p-3">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold">{invoice.invoiceNumber}</p>
+                  <Badge className={invoiceStatusBadgeClass(invoice.status)}>{invoice.statusLabel}</Badge>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs text-stone-600">
+                  <p>{invoice.periodLabel}</p>
+                  <p>{formatUsd(invoice.total)}</p>
+                  <p>
+                    {invoice.status === "paid"
+                      ? "Paid"
+                      : `Due ${formatDue(invoice.dueDate)}`}
+                  </p>
+                </div>
               </div>
-              <div className="grid grid-cols-3 gap-2 text-xs text-stone-600">
-                <p>{invoice.period}</p>
-                <p>{invoice.total}</p>
-                <p>Due {invoice.due}</p>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </CardContent>
       </Card>
 
@@ -65,8 +158,7 @@ export default function FamilyBillingSummaryPage() {
             Phase 1 billing scope
           </p>
           <p className="mb-3 text-sm text-stone-700">
-            Family billing is read-only during this phase. Online payment actions are scheduled for a
-            future release.
+            Family billing is read-only during this phase. Online payment actions are scheduled for a future release.
           </p>
           <div className="grid grid-cols-2 gap-2">
             <Link
