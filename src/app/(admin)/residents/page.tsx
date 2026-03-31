@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { ArrowUpDown, ChevronRight, Users } from "lucide-react";
 
 import { AdminEmptyState, AdminFilterBar, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
@@ -9,7 +10,8 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
@@ -264,9 +266,13 @@ export default function AdminResidentsPage() {
                     </TableCell>
                     <TableCell className="text-slate-500 dark:text-slate-400">{resident.updatedAt}</TableCell>
                     <TableCell className="pr-4 text-right">
-                      <Button variant="ghost" size="icon-sm" aria-label={`Open ${resident.name}`}>
+                      <Link
+                        href={`/admin/residents/${resident.id}`}
+                        className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
+                        aria-label={`Open ${resident.name}`}
+                      >
                         <ChevronRight className="h-4 w-4 text-slate-500" />
-                      </Button>
+                      </Link>
                     </TableCell>
                   </TableRow>
                 ))}
