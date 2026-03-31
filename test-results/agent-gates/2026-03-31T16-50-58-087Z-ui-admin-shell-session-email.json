@@ -1,0 +1,130 @@
+{
+  "segment": "ui-admin-shell-session-email",
+  "timestamp": "2026-03-31T16:50:58.087Z",
+  "verdict": "PASS",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-env-example.mjs",
+      "duration_ms": 25,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "duration_ms": 65,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "status": "passed",
+      "command": "npm run audit:ci",
+      "duration_ms": 539,
+      "stdout": "found 0 vulnerabilities\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "status": "passed",
+      "command": "npm run secrets:gitleaks",
+      "duration_ms": 30144,
+      "stdout": "[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n\u001b[90m4:51PM\u001b[0m \u001b[32mINF\u001b[0m 54 commits scanned.\n\u001b[90m4:51PM\u001b[0m \u001b[32mINF\u001b[0m scan completed in 28.3s\n\u001b[90m4:51PM\u001b[0m \u001b[32mINF\u001b[0m no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "status": "passed",
+      "command": "npm run lint",
+      "duration_ms": 2595,
+      "stdout": "\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/components/landing/landing-home.tsx\n    3:8   warning  'dynamic' is defined but never used                                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars\n   29:8   warning  'Image' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars\n  254:15  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element\n\n✖ 3 problems (0 errors, 3 warnings)\n\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "status": "passed",
+      "command": "npm run migrations:check",
+      "duration_ms": 112,
+      "stdout": "[migrations:check] PASS: 29 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..029\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": false,
+      "status": "passed",
+      "command": "npm run migrations:verify:pg",
+      "duration_ms": 37099,
+      "stdout": "[migrations:verify:pg] PASS (29 migration file(s))\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "status": "passed",
+      "command": "npm run build",
+      "duration_ms": 7416,
+      "stdout": "[migrations:check] PASS: 29 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..029\n▲ Next.js 16.2.1 (Turbopack)\n- Environments: .env.local\n\n  Creating an optimized production build ...\n✓ Compiled successfully in 3.4s\n  Running TypeScript ...\n  Finished TypeScript in 2.7s ...\n  Collecting page data using 15 workers ...\n  Generating static pages using 15 workers (0/64) ...\n  Generating static pages using 15 workers (16/64) \r\n  Generating static pages using 15 workers (32/64) \r\n  Generating static pages using 15 workers (48/64) \r\n✓ Generating static pages using 15 workers (64/64) in 235ms\n  Finalizing page optimization ...\n\nRoute (app)\n┌ ○ /\n├ ○ /_not-found\n├ ○ /admin\n├ ○ /admin/assessments/overdue\n├ ○ /admin/billing\n├ ○ /admin/billing/ar-aging\n├ ○ /admin/billing/invoices\n├ ƒ /admin/billing/invoices/[id]\n├ ○ /admin/billing/invoices/generate\n├ ○ /admin/billing/org-ar-aging\n├ ○ /admin/billing/payments/new\n├ ○ /admin/billing/rates\n├ ○ /admin/billing/revenue\n├ ○ /admin/care-plans/reviews-due\n├ ○ /admin/certifications\n├ ○ /admin/incidents\n├ ƒ /admin/incidents/[id]\n├ ƒ /admin/incidents/[id]/rca\n├ ○ /admin/incidents/trends\n├ ○ /admin/residents\n├ ƒ /admin/residents/[id]\n├ ƒ /admin/residents/[id]/billing\n├ ƒ /admin/residents/[id]/care-plan\n├ ○ /admin/schedules\n├ ○ /admin/staff\n├ ƒ /admin/staff/[id]\n├ ○ /admin/staffing\n├ ○ /admin/time-records\n├ ○ /assessments/overdue\n├ ○ /billing\n├ ○ /billing/ar-aging\n├ ○ /billing/invoices\n├ ƒ /billing/invoices/[id]\n├ ○ /billing/invoices/generate\n├ ○ /billing/org-ar-aging\n├ ○ /billing/payments/new\n├ ○ /billing/rates\n├ ○ /billing/revenue\n├ ○ /care-plans/reviews-due\n├ ○ /caregiver\n├ ○ /caregiver/followups\n├ ○ /caregiver/handoff\n├ ○ /caregiver/incident-draft\n├ ○ /caregiver/me\n├ ○ /caregiver/meds\n├ ○ /caregiver/prn-followup\n├ ƒ /caregiver/resident/[id]\n├ ƒ /caregiver/resident/[id]/adl\n├ ƒ /caregiver/resident/[id]/behavior\n├ ƒ /caregiver/resident/[id]/condition-change\n├ ƒ /caregiver/resident/[id]/log\n├ ○ /caregiver/tasks\n├ ○ /certifications\n├ ○ /family\n├ ○ /family/billing\n├ ○ /family/calendar\n├ ○ /family/care-plan\n├ ○ /family/invoices\n├ ○ /family/messages\n├ ○ /family/payments\n├ ○ /followups\n├ ○ /handoff\n├ ○ /incident-draft\n├ ○ /incidents\n├ ƒ /incidents/[id]\n├ ƒ /incidents/[id]/rca\n├ ○ /incidents/trends\n├ ○ /login\n├ ○ /me\n├ ○ /meds\n├ ○ /prn-followup\n├ ƒ /resident/[id]\n├ ƒ /resident/[id]/adl\n├ ƒ /resident/[id]/behavior\n├ ƒ /resident/[id]/condition-change\n├ ƒ /resident/[id]/log\n├ ○ /residents\n├ ƒ /residents/[id]\n├ ƒ /residents/[id]/billing\n├ ƒ /residents/[id]/care-plan\n├ ○ /schedules\n├ ○ /staff\n├ ƒ /staff/[id]\n├ ○ /staffing\n├ ○ /tasks\n└ ○ /time-records\n\n\nƒ Proxy (Middleware)\n\n○  (Static)   prerendered as static content\nƒ  (Dynamic)  server-rendered on demand\n\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run stress:test",
+      "stdout": "skipped (--no-chaos)"
+    },
+    {
+      "id": "cdo.design-review",
+      "required": true,
+      "status": "passed",
+      "command": "npm run design:review",
+      "duration_ms": 4907,
+      "stdout": "[design:review] PASS: 4 screenshot(s) -> /Users/brianlewis/Circle of Life/Circle-of-Life/test-results/design-review/report.json\n",
+      "stderr": "",
+      "artifacts": [
+        "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/design-review/report.json"
+      ]
+    },
+    {
+      "id": "cdo.a11y-axe",
+      "required": true,
+      "status": "passed",
+      "command": "npm run a11y:routes",
+      "duration_ms": 2369,
+      "stdout": "[a11y:routes] PASS (1 route(s))\n",
+      "stderr": ""
+    }
+  ],
+  "summary": {
+    "passed": 11,
+    "failed": 0,
+    "skipped": 2,
+    "blocking_failures": []
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/agent-gates/2026-03-31T16-50-58-087Z-ui-admin-shell-session-email.json"
+  ]
+}

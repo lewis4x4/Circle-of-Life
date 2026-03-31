@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
+import { createClient } from "@/lib/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,6 +50,22 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [facilitiesLoading, setFacilitiesLoading] = useState(true);
   const [facilitiesLoadFailed, setFacilitiesLoadFailed] = useState(false);
+  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    let cancelled = false;
+    void supabase.auth.getSession().then(({ data }) => {
+      if (!cancelled) setSessionEmail(data.session?.user?.email ?? null);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!cancelled) setSessionEmail(session?.user?.email ?? null);
+    });
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
 
   const refreshFacilities = useCallback(async () => {
     setFacilitiesLoading(true);
@@ -218,7 +235,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-600 border-2 border-white dark:border-slate-950"></span>
             </button>
             
-            <div className="w-px h-6 bg-slate-200 dark:bg-slate-800 mx-1"></div>
+            <div className="mx-1 h-6 w-px bg-slate-200 dark:bg-slate-800" />
+
+            {sessionEmail ? (
+              <span
+                className="hidden max-w-[168px] truncate text-xs text-slate-500 dark:text-slate-400 md:inline"
+                title={sessionEmail}
+              >
+                {sessionEmail}
+              </span>
+            ) : null}
 
             {/* Global Theme Toggle */}
             <DropdownMenu>
