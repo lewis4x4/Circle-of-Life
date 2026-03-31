@@ -41,7 +41,7 @@ The absolute bedrock of the "Soft Precision" visual identity.
 - [x] **Task & ADL Queue (`/caregiver/tasks`)**: Swipe-ready completion queue with priority filtering and overdue-first mobile cards.
 - [x] **eMAR Interface (`/caregiver/meds`)**: Mobile eMAR queue scaffold with large tap targets and Given/Refused status actions.
 - [x] **Mobile Incident Reporter (`/caregiver/incident-draft`)**: Guided draft scaffold with step flow, category selection, and photo/compliance-ready states.
-- [ ] **Resident Quick-Profile (`/caregiver/resident/:id`)**: Essential stats, fall-risk banners, and quick-add note button.
+- [x] **Resident Quick-Profile (`/caregiver/resident/:id`)**: Mobile resident profile scaffold with risk banners, quick actions, and quick-add note CTA.
 
 ---
 
@@ -58,7 +58,7 @@ The absolute bedrock of the "Soft Precision" visual identity.
 ## Next Immediate Execution Step
 Sector 1 Admin scaffold routes are now in place (`/admin`, `/admin/residents`, `/admin/incidents`, `/admin/staff`, `/admin/billing`).
 
-**Next targeted UI file:** `src/app/(caregiver)/resident/[id]/page.tsx` (resident quick-profile scaffold with risk banners and shift actions).
+**Next targeted UI file:** `src/app/(family)/family/page.tsx` (Family Feed scaffold kickoff for Sector 3).
 
 ---
 
