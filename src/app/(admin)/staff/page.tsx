@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { ArrowUpDown, ChevronRight, UserCog, UserRoundCheck } from "lucide-react";
 
 import { AdminEmptyState, AdminFilterBar, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
@@ -9,8 +10,9 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type StaffRole = "nurse" | "caregiver" | "med_tech" | "admin";
@@ -250,9 +252,13 @@ export default function AdminStaffPage() {
                       <OvertimeRiskBadge risk={staff.overtimeRisk} />
                     </TableCell>
                     <TableCell className="pr-4 text-right">
-                      <Button variant="ghost" size="icon-sm" aria-label={`Open ${staff.name}`}>
+                      <Link
+                        href={`/admin/staff/${staff.id}`}
+                        className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
+                        aria-label={`Open ${staff.name}`}
+                      >
                         <ChevronRight className="h-4 w-4 text-slate-500" />
-                      </Button>
+                      </Link>
                     </TableCell>
                   </TableRow>
                 ))}
