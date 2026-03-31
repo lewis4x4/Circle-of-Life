@@ -36,6 +36,10 @@ async function main() {
         await page.waitForTimeout(1000);
         // Remove known non-product debug overlays injected by local tooling.
         await page.evaluate(() => {
+          // Next.js 16+ injects devtools into <nextjs-portal> (shadow DOM). Axe flags its
+          // internal contrast; production has no portal — exclude from product a11y scans.
+          document.querySelectorAll("nextjs-portal").forEach((el) => el.remove());
+
           const appRoot = document.querySelector("#__next");
           if (appRoot?.parentElement === document.body) {
             Array.from(document.body.children).forEach((child) => {

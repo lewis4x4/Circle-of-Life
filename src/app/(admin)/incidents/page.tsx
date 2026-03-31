@@ -1,14 +1,11 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ArrowUpDown, ChevronRight, ShieldAlert } from "lucide-react";
 
-import {
-  AdminEmptyState,
-  AdminErrorState,
-  AdminFilterBar,
-  AdminTableLoadingState,
-} from "@/components/common/admin-list-patterns";
+import { AdminEmptyState, AdminFilterBar, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
+import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,7 +34,40 @@ const DEFAULT_FILTERS = {
   category: "all",
 };
 
+type SupabaseIncidentRow = {
+  id: string;
+  incident_number: string;
+  resident_id: string | null;
+  facility_id: string;
+  category: string;
+  severity: string;
+  status: string;
+  occurred_at: string;
+  reported_by: string;
+  deleted_at: string | null;
+};
+
+type SupabaseResidentMini = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+};
+
+type SupabaseProfileMini = {
+  id: string;
+  full_name: string | null;
+};
+
+type SupabaseFollowupMini = {
+  incident_id: string;
+  due_at: string;
+};
+
+type QueryError = { message: string };
+type QueryResult<T> = { data: T[] | null; error: QueryError | null };
+
 export default function AdminIncidentsPage() {
+  const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<IncidentRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,22 +77,23 @@ export default function AdminIncidentsPage() {
   const [status, setStatus] = useState(DEFAULT_FILTERS.status);
   const [category, setCategory] = useState(DEFAULT_FILTERS.category);
 
-  const loadIncidents = async () => {
+  const loadIncidents = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 900));
-      setRows(mockIncidents);
+      const liveRows = await fetchIncidentsFromSupabase(selectedFacilityId);
+      setRows(liveRows.length > 0 ? liveRows : mockIncidents);
     } catch {
-      setError("Incident feed is temporarily unavailable. Please retry.");
+      setRows(mockIncidents);
+      setError("Live incident data is unavailable. Showing demo queue data.");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedFacilityId]);
 
   useEffect(() => {
     void loadIncidents();
-  }, []);
+  }, [loadIncidents]);
 
   const filteredRows = useMemo(() => {
     const loweredSearch = search.trim().toLowerCase();
@@ -163,16 +194,18 @@ export default function AdminIncidentsPage() {
 
       {isLoading ? <AdminTableLoadingState /> : null}
       {!isLoading && error ? (
-        <AdminErrorState title="Could not load incidents" message={error} onRetry={loadIncidents} />
+        <Card className="border-amber-200/80 bg-amber-50/40 dark:border-amber-900/60 dark:bg-amber-950/20">
+          <CardContent className="py-3 text-sm text-amber-700 dark:text-amber-300">{error}</CardContent>
+        </Card>
       ) : null}
-      {!isLoading && !error && filteredRows.length === 0 ? (
+      {!isLoading && filteredRows.length === 0 ? (
         <AdminEmptyState
           title="No incidents match the current filters"
-          description="Try broadening severity, status, or category to restore the queue. Data is scaffolded with mock records until module 07 API wiring."
+          description="Try broadening severity, status, or category. Live data is scoped by your current facility selection."
         />
       ) : null}
 
-      {!isLoading && !error && filteredRows.length > 0 ? (
+      {!isLoading && filteredRows.length > 0 ? (
         <Card className="overflow-hidden border-slate-200/70 bg-white shadow-soft dark:border-slate-800 dark:bg-slate-950">
           <CardHeader className="border-b border-slate-100 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/30">
             <CardTitle className="text-lg font-display">Incident Queue</CardTitle>
@@ -231,6 +264,158 @@ export default function AdminIncidentsPage() {
       ) : null}
     </div>
   );
+}
+
+async function fetchIncidentsFromSupabase(selectedFacilityId: string | null): Promise<IncidentRow[]> {
+  const supabase = createClient();
+  let incidentsQuery = supabase
+    .from("incidents" as never)
+    .select(
+      "id, incident_number, resident_id, facility_id, category, severity, status, occurred_at, reported_by, deleted_at",
+    )
+    .is("deleted_at", null)
+    .order("occurred_at", { ascending: false })
+    .limit(200);
+
+  if (selectedFacilityId) {
+    incidentsQuery = incidentsQuery.eq("facility_id", selectedFacilityId);
+  }
+
+  const incidentsResult = (await incidentsQuery) as unknown as QueryResult<SupabaseIncidentRow>;
+  const incidents = incidentsResult.data ?? [];
+  if (incidentsResult.error) {
+    throw incidentsResult.error;
+  }
+  if (incidents.length === 0) {
+    return [];
+  }
+
+  const incidentIds = incidents.map((row) => row.id);
+  const residentIds = Array.from(
+    new Set(
+      incidents
+        .map((row) => row.resident_id)
+        .filter((id): id is string => typeof id === "string" && id.length > 0),
+    ),
+  );
+  const reporterIds = Array.from(new Set(incidents.map((row) => row.reported_by)));
+
+  const residentsResult = residentIds.length
+    ? ((await supabase
+        .from("residents" as never)
+        .select("id, first_name, last_name")
+        .in("id", residentIds)) as unknown as QueryResult<SupabaseResidentMini>)
+    : ({ data: [], error: null } as QueryResult<SupabaseResidentMini>);
+  if (residentsResult.error) {
+    throw residentsResult.error;
+  }
+
+  const profilesResult = reporterIds.length
+    ? ((await supabase
+        .from("user_profiles" as never)
+        .select("id, full_name")
+        .in("id", reporterIds)) as unknown as QueryResult<SupabaseProfileMini>)
+    : ({ data: [], error: null } as QueryResult<SupabaseProfileMini>);
+  if (profilesResult.error) {
+    throw profilesResult.error;
+  }
+
+  const followupsResult = incidentIds.length
+    ? ((await supabase
+        .from("incident_followups" as never)
+        .select("incident_id, due_at")
+        .in("incident_id", incidentIds)
+        .is("deleted_at", null)
+        .is("completed_at", null)) as unknown as QueryResult<SupabaseFollowupMini>)
+    : ({ data: [], error: null } as QueryResult<SupabaseFollowupMini>);
+  if (followupsResult.error) {
+    throw followupsResult.error;
+  }
+
+  const residentById = new Map((residentsResult.data ?? []).map((r) => [r.id, r] as const));
+  const reporterById = new Map((profilesResult.data ?? []).map((p) => [p.id, p] as const));
+
+  const nextDueByIncident = new Map<string, string>();
+  for (const row of followupsResult.data ?? []) {
+    const existing = nextDueByIncident.get(row.incident_id);
+    if (!existing || new Date(row.due_at).getTime() < new Date(existing).getTime()) {
+      nextDueByIncident.set(row.incident_id, row.due_at);
+    }
+  }
+
+  return incidents.map((row) => {
+    const resident = row.resident_id ? residentById.get(row.resident_id) : null;
+    const first = resident?.first_name ?? "";
+    const last = resident?.last_name ?? "";
+    const residentName = `${first} ${last}`.trim() || (row.resident_id ? "Unknown resident" : "Environmental");
+
+    const reporter = reporterById.get(row.reported_by);
+    const reportedBy = reporter?.full_name?.trim() || "Staff";
+
+    const dueIso = nextDueByIncident.get(row.id);
+    const followupDue = dueIso ? formatFollowupDue(dueIso) : "—";
+
+    return {
+      id: row.id,
+      incidentNumber: row.incident_number,
+      residentName,
+      category: mapDbCategoryToUi(row.category),
+      severity: mapDbSeverityToUi(row.severity),
+      status: mapDbStatusToUi(row.status),
+      reportedAt: formatOccurredAt(row.occurred_at),
+      reportedBy,
+      followupDue,
+    } satisfies IncidentRow;
+  });
+}
+
+function mapDbStatusToUi(value: string): IncidentStatus {
+  if (value === "investigating") return "in_review";
+  if (value === "resolved" || value === "closed") return "closed";
+  return "open";
+}
+
+function mapDbSeverityToUi(value: string): IncidentSeverity {
+  if (value === "level_2" || value === "level_3" || value === "level_4") {
+    return value;
+  }
+  return "level_1";
+}
+
+function mapDbCategoryToUi(value: string): IncidentCategory {
+  if (value.startsWith("fall_")) return "fall";
+  if (value === "elopement" || value === "wandering") return "elopement";
+  if (value.startsWith("medication_")) return "medication_error";
+  if (
+    value.startsWith("behavioral_") ||
+    value === "abuse_allegation" ||
+    value === "neglect_allegation"
+  ) {
+    return "behavioral";
+  }
+  return "other";
+}
+
+function formatOccurredAt(value: string): string {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "Unknown";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(parsed);
+}
+
+function formatFollowupDue(iso: string): string {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return "—";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(parsed);
 }
 
 function CategoryBadge({ category }: { category: IncidentCategory }) {
