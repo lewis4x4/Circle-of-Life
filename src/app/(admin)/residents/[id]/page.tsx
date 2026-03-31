@@ -203,12 +203,21 @@ export default function AdminResidentDetailPage() {
             Census
           </Link>
           <div className="flex flex-wrap items-center gap-4">
-            <Avatar className="h-16 w-16 ring-2 ring-slate-200 dark:ring-slate-700">
-              <AvatarImage src={detail.photoUrl ?? `https://i.pravatar.cc/160?u=${detail.id}`} alt={detail.fullName} />
-              <AvatarFallback className="bg-brand-100 text-lg font-medium text-brand-900 dark:bg-brand-900 dark:text-brand-100">
-                {detail.initials}
-              </AvatarFallback>
-            </Avatar>
+            {detail.photoUrl ? (
+              <Avatar className="h-16 w-16 ring-2 ring-slate-200 dark:ring-slate-700">
+                <AvatarImage src={detail.photoUrl} alt={detail.fullName} />
+                <AvatarFallback className="bg-brand-100 text-lg font-medium text-brand-900 dark:bg-brand-900 dark:text-brand-100">
+                  {detail.initials}
+                </AvatarFallback>
+              </Avatar>
+            ) : (
+              <div
+                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-slate-200 text-lg font-medium text-slate-600 ring-2 ring-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:ring-slate-700"
+                aria-hidden
+              >
+                {detail.fullName.charAt(0).toUpperCase()}
+              </div>
+            )}
             <div>
               <h1 className="font-display text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
                 {detail.fullName}

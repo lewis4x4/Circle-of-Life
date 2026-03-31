@@ -163,57 +163,58 @@ export async function fetchCaregiverResidentProfile(
       .from("beds")
       .select("bed_label, room_id")
       .eq("id", r.bed_id)
-      .single();
+      .maybeSingle();
     const bed = bedRaw as unknown as BedRow | null;
     if (bed?.room_id) {
       const { data: roomRaw } = await supabase
         .from("rooms")
         .select("room_number")
         .eq("id", bed.room_id)
-        .single();
+        .maybeSingle();
       const room = roomRaw as unknown as RoomRow | null;
       if (room) roomLabel = `Room ${room.room_number}`;
     }
   }
 
-  const { count: medCount } = await supabase
-    .from("resident_medications")
-    .select("id", { count: "exact", head: true })
-    .eq("resident_id", residentId)
-    .eq("status", "active")
-    .is("deleted_at", null);
-
   const now = new Date();
   const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
   const oneHourAhead = new Date(now.getTime() + 60 * 60 * 1000);
-  const { count: dueMedCount } = await supabase
-    .from("emar_records")
-    .select("id", { count: "exact", head: true })
-    .eq("resident_id", residentId)
-    .eq("status", "scheduled")
-    .is("deleted_at", null)
-    .gte("scheduled_time", twoHoursAgo.toISOString())
-    .lte("scheduled_time", oneHourAhead.toISOString());
 
-  const { data: cpRaw } = await supabase
-    .from("care_plans")
-    .select("status, notes")
-    .eq("resident_id", residentId)
-    .is("deleted_at", null)
-    .in("status", ["active", "under_review"])
-    .order("effective_date", { ascending: false })
-    .limit(1)
-    .single();
+  const [{ count: medCount }, { count: dueMedCount }, { data: cpRaw }, { data: logRaw }] = await Promise.all([
+    supabase
+      .from("resident_medications")
+      .select("id", { count: "exact", head: true })
+      .eq("resident_id", residentId)
+      .eq("status", "active")
+      .is("deleted_at", null),
+    supabase
+      .from("emar_records")
+      .select("id", { count: "exact", head: true })
+      .eq("resident_id", residentId)
+      .eq("status", "scheduled")
+      .is("deleted_at", null)
+      .gte("scheduled_time", twoHoursAgo.toISOString())
+      .lte("scheduled_time", oneHourAhead.toISOString()),
+    supabase
+      .from("care_plans")
+      .select("status, notes")
+      .eq("resident_id", residentId)
+      .is("deleted_at", null)
+      .in("status", ["active", "under_review"])
+      .order("effective_date", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("daily_logs")
+      .select("mood")
+      .eq("resident_id", residentId)
+      .is("deleted_at", null)
+      .order("log_date", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
   const activeCarePlan = cpRaw as unknown as CarePlanRow | null;
-
-  const { data: logRaw } = await supabase
-    .from("daily_logs")
-    .select("mood")
-    .eq("resident_id", residentId)
-    .is("deleted_at", null)
-    .order("log_date", { ascending: false })
-    .limit(1)
-    .single();
   const latestLog = logRaw as unknown as LogRow | null;
 
   const displayName =

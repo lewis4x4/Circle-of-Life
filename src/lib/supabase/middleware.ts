@@ -36,8 +36,9 @@ export async function updateSession(request: NextRequest): Promise<SessionUpdate
   try {
     const { data } = await supabase.auth.getUser();
     user = data.user ?? null;
-  } catch {
-    // Avoid failing every request when Supabase is unreachable or misconfigured at runtime.
+  } catch (e: unknown) {
+    /* auth check failed — treat as unauthenticated */
+    void e;
   }
   return { response, user };
 }

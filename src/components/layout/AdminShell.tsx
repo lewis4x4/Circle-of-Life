@@ -59,7 +59,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       try {
         const { data } = await supabase.auth.getSession();
         if (!cancelled) setSessionEmail(data.session?.user?.email ?? null);
-      } catch {
+      } catch (err) {
+        console.warn("[AdminShell] getSession failed", err);
         if (!cancelled) setSessionEmail(null);
       }
     })();
@@ -82,7 +83,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       if (persistedId != null && !list.some((f) => f.id === persistedId)) {
         setSelectedFacility(null);
       }
-    } catch {
+    } catch (err) {
+      console.warn("[AdminShell] refreshFacilities failed", err);
       setAvailableFacilities([]);
       setFacilitiesLoadFailed(true);
     } finally {

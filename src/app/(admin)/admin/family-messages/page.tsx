@@ -102,7 +102,7 @@ export default function StaffFamilyMessagesPage() {
     return (
       <div className="space-y-3 py-12 text-center">
         <p className="text-sm text-red-400">{error}</p>
-        <Button variant="outline" size="sm" onClick={loadThreads}>Retry</Button>
+        <Button variant="outline" size="sm" onClick={() => { void loadThreads(); }}>Retry</Button>
       </div>
     );
   }
@@ -135,7 +135,7 @@ export default function StaffFamilyMessagesPage() {
         ) : msgError ? (
           <div className="py-8 text-center">
             <p className="text-sm text-red-400">{msgError}</p>
-            <Button variant="outline" size="sm" className="mt-2" onClick={() => openThread(selectedResidentId)}>
+            <Button variant="outline" size="sm" className="mt-2" onClick={() => { void openThread(selectedResidentId); }}>
               Retry
             </Button>
           </div>
@@ -184,7 +184,7 @@ export default function StaffFamilyMessagesPage() {
                 }}
               />
               <Button
-                onClick={handleSend}
+                onClick={() => { void handleSend(); }}
                 disabled={!draft.trim() || sending}
                 className="h-auto self-end"
               >
@@ -218,7 +218,7 @@ export default function StaffFamilyMessagesPage() {
             <Card
               key={t.residentId}
               className="cursor-pointer transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900/60"
-              onClick={() => openThread(t.residentId)}
+              onClick={() => { void openThread(t.residentId); }}
             >
               <CardHeader className="pb-1">
                 <div className="flex items-start justify-between gap-2">

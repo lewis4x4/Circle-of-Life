@@ -14,7 +14,6 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -259,12 +258,12 @@ export default function AdminResidentsPage() {
                   <TableRow key={resident.id} className="border-slate-100 dark:border-slate-800">
                     <TableCell className="pl-4">
                       <div className="flex items-center gap-3">
-                        <Avatar size="default" className="ring-1 ring-slate-200 dark:ring-slate-700">
-                          <AvatarImage src={`https://i.pravatar.cc/80?u=${resident.id}`} alt={resident.name} />
-                          <AvatarFallback className="bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-100">
-                            {resident.initials}
-                          </AvatarFallback>
-                        </Avatar>
+                        <div
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-medium text-slate-600 ring-1 ring-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:ring-slate-700"
+                          aria-hidden
+                        >
+                          {resident.name.charAt(0).toUpperCase()}
+                        </div>
                         <div className="flex flex-col">
                           <span className="font-medium text-slate-900 dark:text-slate-100">{resident.name}</span>
                           <span className="text-xs text-slate-500 dark:text-slate-400">{resident.careSummary}</span>

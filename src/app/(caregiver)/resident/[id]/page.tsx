@@ -51,7 +51,7 @@ export default function CaregiverResidentQuickProfilePage() {
     return (
       <div className="space-y-3 py-12 text-center">
         <p className="text-sm text-red-400">{error ?? "Resident not found"}</p>
-        <Button variant="outline" size="sm" onClick={load}>Retry</Button>
+        <Button variant="outline" size="sm" onClick={() => { void load(); }}>Retry</Button>
       </div>
     );
   }

@@ -165,12 +165,13 @@ export async function fetchFamilyHomeSnapshot(
     supabase
       .from("incidents")
       .select("id, resident_id, category, description, occurred_at, status, incident_number")
-      .not("resident_id", "is", null)
+      .in("resident_id", residentIds)
       .order("occurred_at", { ascending: false })
       .limit(25),
     supabase
       .from("invoices")
       .select("id, resident_id, invoice_number, status, total, balance_due, invoice_date")
+      .in("resident_id", residentIds)
       .order("invoice_date", { ascending: false })
       .limit(20),
   ]);

@@ -247,12 +247,21 @@ export default function AdminStaffPage() {
                   <TableRow key={staff.id} className="border-slate-100 dark:border-slate-800">
                     <TableCell className="pl-4">
                       <div className="flex items-center gap-3">
-                        <Avatar size="default" className="ring-1 ring-slate-200 dark:ring-slate-700">
-                          <AvatarImage src={staff.photoUrl ?? `https://i.pravatar.cc/80?u=${staff.id}`} alt={staff.name} />
-                          <AvatarFallback className="bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-100">
-                            {staff.initials}
-                          </AvatarFallback>
-                        </Avatar>
+                        {staff.photoUrl ? (
+                          <Avatar size="default" className="ring-1 ring-slate-200 dark:ring-slate-700">
+                            <AvatarImage src={staff.photoUrl} alt={staff.name} />
+                            <AvatarFallback className="bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-100">
+                              {staff.initials}
+                            </AvatarFallback>
+                          </Avatar>
+                        ) : (
+                          <div
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-medium text-slate-600 ring-1 ring-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:ring-slate-700"
+                            aria-hidden
+                          >
+                            {staff.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
                         <span className="font-medium text-slate-900 dark:text-slate-100">{staff.name}</span>
                       </div>
                     </TableCell>

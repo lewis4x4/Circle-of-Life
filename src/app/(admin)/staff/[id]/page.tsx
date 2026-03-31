@@ -266,12 +266,21 @@ export default function AdminStaffDetailPage() {
             Roster
           </Link>
           <div className="flex flex-wrap items-center gap-4">
-            <Avatar className="h-16 w-16 ring-2 ring-slate-200 dark:ring-slate-700">
-              <AvatarImage src={staff.photo_url ?? `https://i.pravatar.cc/160?u=${staff.id}`} alt={fullName} />
-              <AvatarFallback className="bg-brand-100 text-lg font-medium text-brand-900 dark:bg-brand-900 dark:text-brand-100">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
+            {staff.photo_url ? (
+              <Avatar className="h-16 w-16 ring-2 ring-slate-200 dark:ring-slate-700">
+                <AvatarImage src={staff.photo_url} alt={fullName} />
+                <AvatarFallback className="bg-brand-100 text-lg font-medium text-brand-900 dark:bg-brand-900 dark:text-brand-100">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+            ) : (
+              <div
+                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-slate-200 text-lg font-medium text-slate-600 ring-2 ring-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:ring-slate-700"
+                aria-hidden
+              >
+                {fullName.charAt(0).toUpperCase()}
+              </div>
+            )}
             <div>
               <h1 className="font-display text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
                 {fullName}

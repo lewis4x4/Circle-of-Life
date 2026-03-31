@@ -155,24 +155,29 @@ export async function fetchStaffMessagesForResident(
   supabase: SupabaseClient<Database>,
   residentId: string,
 ): Promise<{ ok: true; messages: StaffMessageRow[]; residentName: string } | { ok: false; error: string }> {
-  const { data: res } = await supabase
-    .from("residents")
-    .select("first_name, last_name")
-    .eq("id", residentId)
-    .is("deleted_at", null)
-    .single();
+  const [resQ, msgQ] = await Promise.all([
+    supabase
+      .from("residents")
+      .select("first_name, last_name")
+      .eq("id", residentId)
+      .is("deleted_at", null)
+      .maybeSingle(),
+    supabase
+      .from("family_portal_messages")
+      .select("id, author_user_id, author_kind, body, created_at")
+      .eq("resident_id", residentId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: true })
+      .limit(200),
+  ]);
+
+  const { data: res, error: resErr } = resQ;
+  if (resErr) return { ok: false, error: resErr.message };
   const rn = res
     ? `${(res as unknown as { first_name: string | null; last_name: string | null }).first_name?.trim() ?? ""} ${(res as unknown as { first_name: string | null; last_name: string | null }).last_name?.trim() ?? ""}`.trim() || "Resident"
     : "Resident";
 
-  const { data: msgs, error: msgErr } = await supabase
-    .from("family_portal_messages")
-    .select("id, author_user_id, author_kind, body, created_at")
-    .eq("resident_id", residentId)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: true })
-    .limit(200);
-
+  const { data: msgs, error: msgErr } = msgQ;
   if (msgErr) return { ok: false, error: msgErr.message };
   const rows = (msgs ?? []) as unknown as MsgRow[];
 
@@ -213,13 +218,14 @@ export async function postStaffMessage(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Not authenticated." };
 
-  const { data: res } = await supabase
+  const { data: res, error: resErr } = await supabase
     .from("residents")
     .select("facility_id, organization_id")
     .eq("id", residentId)
     .is("deleted_at", null)
-    .single();
+    .maybeSingle();
 
+  if (resErr) return { ok: false, error: resErr.message };
   if (!res) return { ok: false, error: "Resident not found." };
   const r = res as unknown as { facility_id: string; organization_id: string };
 
