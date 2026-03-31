@@ -6,7 +6,6 @@ import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -23,7 +22,6 @@ import {
   mapDbInvoiceStatusToUi,
   mapDbPayerTypeToUi,
 } from "../../billing-invoice-ledger";
-import { getDemoInvoiceBundle, isDemoInvoiceId } from "../../demo-invoices";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -89,17 +87,6 @@ export default function AdminInvoiceDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
 
-  const applyDemoBundle = useCallback((invoiceId: string) => {
-    const demo = getDemoInvoiceBundle(invoiceId);
-    if (!demo) return false;
-    setInvoice(demo.invoice as SupabaseInvoice);
-    setLines(demo.lines as SupabaseLine[]);
-    setResidentName(demo.residentName);
-    setError(null);
-    setNotFound(false);
-    return true;
-  }, []);
-
   const load = useCallback(async () => {
     if (!id) {
       setNotFound(true);
@@ -124,9 +111,6 @@ export default function AdminInvoiceDetailPage() {
       const inv = invRes.data;
 
       if (!inv) {
-        if (applyDemoBundle(id)) {
-          return;
-        }
         setNotFound(true);
         return;
       }
@@ -157,15 +141,13 @@ export default function AdminInvoiceDetailPage() {
       setInvoice(inv);
       setLines(lineRes.data ?? []);
     } catch {
-      if (!applyDemoBundle(id)) {
-        setError("Could not load this invoice.");
-        setInvoice(null);
-        setLines([]);
-      }
+      setError("Could not load this invoice.");
+      setInvoice(null);
+      setLines([]);
     } finally {
       setIsLoading(false);
     }
-  }, [id, selectedFacilityId, applyDemoBundle]);
+  }, [id, selectedFacilityId]);
 
   useEffect(() => {
     void load();
@@ -225,18 +207,12 @@ export default function AdminInvoiceDetailPage() {
           <ArrowLeft className="h-4 w-4" />
           Invoices
         </Link>
-        {!isDemoInvoiceId(invoice.id) ? (
-          <Link
-            href={`/admin/residents/${invoice.resident_id}/billing`}
-            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-          >
-            Resident billing
-          </Link>
-        ) : (
-          <Badge variant="secondary" className="font-normal">
-            Demo invoice
-          </Badge>
-        )}
+        <Link
+          href={`/admin/residents/${invoice.resident_id}/billing`}
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+        >
+          Resident billing
+        </Link>
       </div>
 
       <header className="space-y-2">
