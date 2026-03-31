@@ -1,35 +1,135 @@
 "use client";
 
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
   BellRing,
   CalendarDays,
   CheckCircle2,
+  Loader2,
   LogIn,
   MessageSquare,
   Pill,
   UserRound,
   Waves,
 } from "lucide-react";
+
+import { fetchCaregiverShiftBrief, type CaregiverShiftBrief } from "@/lib/caregiver/shift-brief";
+import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+import { zonedYmd } from "@/lib/caregiver/emar-queue";
+import { currentShiftForTimezone } from "@/lib/caregiver/shift";
+import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
+
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function CaregiverHomePage() {
+  const supabase = useMemo(() => createClient(), []);
+  const [configError, setConfigError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [facilityName, setFacilityName] = useState<string | null>(null);
+  const [timeZone, setTimeZone] = useState("America/New_York");
+  const [brief, setBrief] = useState<CaregiverShiftBrief | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    setConfigError(null);
+    if (!isBrowserSupabaseConfigured()) {
+      setConfigError(
+        "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local.",
+      );
+      setLoading(false);
+      return;
+    }
+    try {
+      const resolved = await loadCaregiverFacilityContext(supabase);
+      if (!resolved.ok) {
+        setLoadError(resolved.error);
+        setLoading(false);
+        return;
+      }
+      const { ctx } = resolved;
+      setFacilityName(ctx.facilityName);
+      setTimeZone(ctx.timeZone);
+      const b = await fetchCaregiverShiftBrief(supabase, ctx);
+      setBrief(b);
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : "Could not load shift brief.");
+      setBrief(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const shiftLine = useMemo(() => {
+    const shift = currentShiftForTimezone(timeZone);
+    const ymd = zonedYmd(new Date(), timeZone);
+    const place = facilityName?.trim() || "Your facility";
+    return `${place} · ${ymd} · ${shift} shift`;
+  }, [facilityName, timeZone]);
+
+  if (configError) {
+    return (
+      <div className="rounded-lg border border-amber-800/60 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">{configError}</div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16 text-zinc-400">
+        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+        Loading shift brief…
+      </div>
+    );
+  }
+
+  if (loadError || !brief) {
+    return (
+      <div className="space-y-3">
+        <div className="rounded-lg border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-100">
+          {loadError ?? "Shift brief unavailable."}
+        </div>
+        <button
+          type="button"
+          className="inline-flex h-11 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-4 text-sm font-medium text-zinc-200 hover:bg-zinc-800"
+          onClick={() => void load()}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  const docPending = brief.openConditionCount + brief.pendingPrnCount;
+  const emarWindow = brief.emarDueNow + brief.emarDueSoon;
+
   return (
     <div className="space-y-4">
       <Card className="border-zinc-800 bg-gradient-to-br from-zinc-950 to-zinc-900 text-zinc-100">
         <CardHeader className="pb-3">
           <CardTitle className="text-xl font-display">Current Shift Brief</CardTitle>
-          <CardDescription className="text-zinc-400">
-            11 PM to 7 AM handoff priorities and safety-critical watch items.
-          </CardDescription>
+          <CardDescription className="text-zinc-400">{shiftLine}</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-2 text-xs">
-          <StatPill label="Assigned Residents" value="12" tone="neutral" />
-          <StatPill label="High Risk Alerts" value="3" tone="warning" />
-          <StatPill label="Meds Due (2 hrs)" value="8" tone="neutral" />
-          <StatPill label="Unfinished Tasks" value="5" tone="danger" />
+          <StatPill label="Assigned Residents" value={String(brief.census)} tone="neutral" />
+          <StatPill
+            label="High priority reports"
+            value={String(brief.highSeverityConditionCount)}
+            tone={brief.highSeverityConditionCount > 0 ? "warning" : "neutral"}
+          />
+          <StatPill label="eMAR window" value={String(emarWindow)} tone="neutral" />
+          <StatPill
+            label="Documentation pending"
+            value={String(docPending)}
+            tone={docPending > 0 ? "danger" : "neutral"}
+          />
         </CardContent>
       </Card>
 
@@ -37,20 +137,27 @@ export default function CaregiverHomePage() {
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base">
             <AlertTriangle className="h-4 w-4 text-amber-400" />
-            Critical Alerts
+            Critical alerts
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <AlertRow
-            title="Fall risk escalation: Margaret Johnson"
-            detail="Bed exit sensor triggered 2 times in last 45 minutes."
-            badge="Immediate rounding"
-          />
-          <AlertRow
-            title="Medication overdue: Room 114"
-            detail="8:00 PM blood pressure medication not yet documented."
-            badge="Due now"
-          />
+          {brief.criticalAlerts.length === 0 ? (
+            <p className="text-xs text-zinc-400">No open critical or high-priority condition reports.</p>
+          ) : (
+            brief.criticalAlerts.map((a) => (
+              <Link
+                key={a.id}
+                href={`/caregiver/resident/${a.residentId}/condition-change`}
+                className="block rounded-lg border border-amber-800/60 bg-zinc-950/80 p-3 transition-colors hover:bg-zinc-900"
+              >
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <p className="text-sm font-medium text-zinc-100">{a.title}</p>
+                  <Badge className="border-amber-700 bg-amber-900/40 text-amber-200">{a.badge}</Badge>
+                </div>
+                <p className="text-xs text-zinc-400">{a.detail}</p>
+              </Link>
+            ))
+          )}
         </CardContent>
       </Card>
 
@@ -81,15 +188,39 @@ export default function CaregiverHomePage() {
 
       <Card className="border-zinc-800 bg-zinc-950/60 text-zinc-100">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Resident Watchlist</CardTitle>
+          <CardTitle className="text-base">Resident watchlist</CardTitle>
           <CardDescription className="text-zinc-400">
-            Residents needing elevated monitoring this shift.
+            Elevated acuity or safety flags from the census (max five).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
-          <ResidentRow name="Margaret Johnson" room="114" flags={["Fall risk", "Toileting assist"]} />
-          <ResidentRow name="Samuel Ortiz" room="212" flags={["Behavioral trigger", "Sleep disruption"]} />
-          <ResidentRow name="Elena Ramos" room="207" flags={["Hydration watch", "Blood sugar check"]} />
+          {brief.watchlist.length === 0 ? (
+            <p className="text-xs text-zinc-400">No residents match elevated watch filters right now.</p>
+          ) : (
+            brief.watchlist.map((w) => (
+              <Link
+                key={w.id}
+                href={`/caregiver/resident/${w.id}`}
+                className="block rounded-lg border border-zinc-800 bg-zinc-950/80 p-3 transition-colors hover:bg-zinc-900"
+              >
+                <div className="mb-2 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <UserRound className="h-4 w-4 text-zinc-400" />
+                    <p className="text-sm font-medium text-zinc-100">{w.name}</p>
+                  </div>
+                  <span className="text-xs text-zinc-400">Room {w.room}</span>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {w.flags.map((flag) => (
+                    <Badge key={flag} variant="outline" className="border-zinc-700 text-zinc-300">
+                      <Waves className="mr-1 h-3 w-3 text-zinc-500" />
+                      {flag}
+                    </Badge>
+                  ))}
+                </div>
+              </Link>
+            ))
+          )}
         </CardContent>
       </Card>
     </div>
@@ -120,26 +251,6 @@ function StatPill({
   );
 }
 
-function AlertRow({
-  title,
-  detail,
-  badge,
-}: {
-  title: string;
-  detail: string;
-  badge: string;
-}) {
-  return (
-    <div className="rounded-lg border border-amber-800/60 bg-zinc-950/80 p-3">
-      <div className="mb-1 flex items-center justify-between gap-2">
-        <p className="text-sm font-medium text-zinc-100">{title}</p>
-        <Badge className="border-amber-700 bg-amber-900/40 text-amber-200">{badge}</Badge>
-      </div>
-      <p className="text-xs text-zinc-400">{detail}</p>
-    </div>
-  );
-}
-
 function QuickLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
   return (
     <Link
@@ -149,35 +260,5 @@ function QuickLink({ href, icon, label }: { href: string; icon: React.ReactNode;
       {icon}
       <span className="text-xs">{label}</span>
     </Link>
-  );
-}
-
-function ResidentRow({
-  name,
-  room,
-  flags,
-}: {
-  name: string;
-  room: string;
-  flags: string[];
-}) {
-  return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-950/80 p-3">
-      <div className="mb-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <UserRound className="h-4 w-4 text-zinc-400" />
-          <p className="text-sm font-medium text-zinc-100">{name}</p>
-        </div>
-        <span className="text-xs text-zinc-400">Room {room}</span>
-      </div>
-      <div className="flex flex-wrap gap-1">
-        {flags.map((flag) => (
-          <Badge key={flag} variant="outline" className="border-zinc-700 text-zinc-300">
-            <Waves className="mr-1 h-3 w-3 text-zinc-500" />
-            {flag}
-          </Badge>
-        ))}
-      </div>
-    </div>
   );
 }
