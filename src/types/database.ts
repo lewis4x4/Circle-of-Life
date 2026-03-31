@@ -1522,6 +1522,70 @@ export type Database = {
           },
         ]
       }
+      family_portal_messages: {
+        Row: {
+          author_kind: Database["public"]["Enums"]["family_message_author"]
+          author_user_id: string
+          body: string
+          created_at: string
+          deleted_at: string | null
+          facility_id: string
+          id: string
+          organization_id: string
+          resident_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          author_kind: Database["public"]["Enums"]["family_message_author"]
+          author_user_id: string
+          body: string
+          created_at?: string
+          deleted_at?: string | null
+          facility_id: string
+          id?: string
+          organization_id: string
+          resident_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          author_kind?: Database["public"]["Enums"]["family_message_author"]
+          author_user_id?: string
+          body?: string
+          created_at?: string
+          deleted_at?: string | null
+          facility_id?: string
+          id?: string
+          organization_id?: string
+          resident_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_portal_messages_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_portal_messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_portal_messages_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       family_resident_links: {
         Row: {
           can_make_decisions: boolean
@@ -1581,70 +1645,6 @@ export type Database = {
           },
           {
             foreignKeyName: "fk_frl_resident"
-            columns: ["resident_id"]
-            isOneToOne: false
-            referencedRelation: "residents"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      family_portal_messages: {
-        Row: {
-          author_kind: Database["public"]["Enums"]["family_message_author"]
-          author_user_id: string
-          body: string
-          created_at: string
-          deleted_at: string | null
-          facility_id: string
-          id: string
-          organization_id: string
-          resident_id: string
-          updated_at: string
-          updated_by: string | null
-        }
-        Insert: {
-          author_kind: Database["public"]["Enums"]["family_message_author"]
-          author_user_id: string
-          body: string
-          created_at?: string
-          deleted_at?: string | null
-          facility_id: string
-          id?: string
-          organization_id: string
-          resident_id: string
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Update: {
-          author_kind?: Database["public"]["Enums"]["family_message_author"]
-          author_user_id?: string
-          body?: string
-          created_at?: string
-          deleted_at?: string | null
-          facility_id?: string
-          id?: string
-          organization_id?: string
-          resident_id?: string
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "family_portal_messages_facility_id_fkey"
-            columns: ["facility_id"]
-            isOneToOne: false
-            referencedRelation: "facilities"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "family_portal_messages_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "family_portal_messages_resident_id_fkey"
             columns: ["resident_id"]
             isOneToOne: false
             referencedRelation: "residents"
