@@ -48,7 +48,7 @@ The absolute bedrock of the "Soft Precision" visual identity.
 ## Sector 3: The Hospitality Layer (Family Shell)
 *The anti-clinical interface. Bright, airy, and reassuring.*
 
-- [ ] **Family Feed (`/family`)**: Instagram-style chronological feed of authorized updates (meal consumptions, activities attended).
+- [x] **Family Feed (`/family`)**: Hospitality-style chronological feed scaffold with care, meal, and activity updates.
 - [ ] **Care Summary (`/family/care-plan`)**: Beautifully formatted PDF/Web view of the current care parameters.
 - [ ] **Financials (`/family/billing`)**: Read-only billing summary and balance visibility (no payment flow in Phase 1).
 - [ ] **Secure Comms (`/family/messages`)**: Direct messaging UI connecting the family POA to the facility Director of Nursing.
@@ -58,7 +58,7 @@ The absolute bedrock of the "Soft Precision" visual identity.
 ## Next Immediate Execution Step
 Sector 1 Admin scaffold routes are now in place (`/admin`, `/admin/residents`, `/admin/incidents`, `/admin/staff`, `/admin/billing`).
 
-**Next targeted UI file:** `src/app/(family)/family/page.tsx` (Family Feed scaffold kickoff for Sector 3).
+**Next targeted UI file:** `src/app/(family)/care-plan/page.tsx` (Care Summary scaffold with clean printable layout states).
 
 ---
 
