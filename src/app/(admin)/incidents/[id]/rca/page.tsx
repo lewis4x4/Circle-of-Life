@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, GitBranch, Save } from "lucide-react";
 
-import { AdminTableLoadingState } from "@/components/common/admin-list-patterns";
+import { AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -232,9 +232,7 @@ export default function AdminIncidentRcaPage() {
           <ArrowLeft className="h-4 w-4" />
           Incident queue
         </Link>
-        <Card className="border-amber-200/80 bg-amber-50/40 dark:border-amber-900/60 dark:bg-amber-950/20">
-          <CardContent className="py-4 text-sm text-amber-800 dark:text-amber-200">{error}</CardContent>
-        </Card>
+        <AdminLiveDataFallbackNotice message={error} onRetry={() => void loadIncident()} />
       </div>
     );
   }

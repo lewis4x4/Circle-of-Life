@@ -4,7 +4,11 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Timer } from "lucide-react";
 
-import { AdminEmptyState, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
+import {
+  AdminEmptyState,
+  AdminLiveDataFallbackNotice,
+  AdminTableLoadingState,
+} from "@/components/common/admin-list-patterns";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -155,11 +159,7 @@ export default function AdminArAgingPage() {
         </div>
       </header>
 
-      {error ? (
-        <Card className="border-amber-200/80 bg-amber-50/40 dark:border-amber-900/60 dark:bg-amber-950/20">
-          <CardContent className="py-3 text-sm text-amber-700 dark:text-amber-300">{error}</CardContent>
-        </Card>
-      ) : null}
+      {error ? <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} /> : null}
 
       {!isLoading && rows.length > 0 ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">

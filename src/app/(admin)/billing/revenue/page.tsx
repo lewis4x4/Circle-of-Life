@@ -3,7 +3,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { TrendingUp } from "lucide-react";
 
-import { AdminEmptyState, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
+import {
+  AdminEmptyState,
+  AdminLiveDataFallbackNotice,
+  AdminTableLoadingState,
+} from "@/components/common/admin-list-patterns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
@@ -99,11 +103,7 @@ export default function AdminRevenuePage() {
         </div>
       </header>
 
-      {error ? (
-        <Card className="border-amber-200/80 bg-amber-50/40 dark:border-amber-900/60 dark:bg-amber-950/20">
-          <CardContent className="py-3 text-sm text-amber-700 dark:text-amber-300">{error}</CardContent>
-        </Card>
-      ) : null}
+      {error ? <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} /> : null}
 
       {!isLoading && byMonth.length > 0 ? (
         <Card>

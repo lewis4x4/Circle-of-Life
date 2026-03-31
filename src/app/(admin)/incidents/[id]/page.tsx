@@ -5,7 +5,11 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, ClipboardList, GitBranch, MapPin, ShieldAlert, User } from "lucide-react";
 
-import { AdminEmptyState, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
+import {
+  AdminEmptyState,
+  AdminLiveDataFallbackNotice,
+  AdminTableLoadingState,
+} from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -184,11 +188,7 @@ export default function AdminIncidentDetailPage() {
           <ArrowLeft className="h-4 w-4" />
           Back to queue
         </Link>
-        {error ? (
-          <Card className="border-amber-200/80 bg-amber-50/40 dark:border-amber-900/60 dark:bg-amber-950/20">
-            <CardContent className="py-4 text-sm text-amber-800 dark:text-amber-200">{error}</CardContent>
-          </Card>
-        ) : null}
+        {error ? <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} /> : null}
       </div>
     );
   }
