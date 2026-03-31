@@ -18,6 +18,8 @@ import {
   UserCog,
   CreditCard,
   ClipboardList,
+  ClipboardCheck,
+  CalendarClock,
   Sun,
   Moon,
   Monitor
@@ -45,6 +47,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const navItems = [
     { href: "/admin", label: "Dashboard", enabled: true, icon: LayoutDashboard },
     { href: "/admin/residents", label: "Residents", enabled: true, icon: Users },
+    { href: "/admin/assessments/overdue", label: "Assessments", enabled: true, icon: ClipboardCheck },
+    { href: "/admin/care-plans/reviews-due", label: "Plan reviews", enabled: true, icon: CalendarClock },
     { href: "/admin/incidents", label: "Incidents", enabled: true, icon: ShieldAlert },
     { href: "/admin/staff", label: "Staff", enabled: true, icon: UserCog },
     { href: "/admin/billing", label: "Billing", enabled: true, icon: CreditCard },
