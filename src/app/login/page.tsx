@@ -35,7 +35,7 @@ function LoginForbiddenNotice() {
 
 export default function LoginPage() {
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = React.useMemo(() => createClient(), []);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
   const [sessionProbeError, setSessionProbeError] = useState<string | null>(null);

@@ -32,8 +32,8 @@ export const viewport: Viewport = {
   ],
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
   viewportFit: "cover",
 };
 
@@ -62,7 +62,7 @@ export default function RootLayout({
             >
               Skip to main content
             </a>
-            {children}
+            <div id="main-content">{children}</div>
           </div>
         </ThemeProvider>
       </body>

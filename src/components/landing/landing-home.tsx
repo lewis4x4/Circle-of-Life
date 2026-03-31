@@ -1,7 +1,7 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import Link from "next/link";
+import Image from "next/image";
 import React, { useEffect, useRef } from "react";
 import {
   motion,
@@ -25,8 +25,6 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-
-import Image from "next/image";
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
@@ -251,10 +249,12 @@ export default function LandingHome() {
           >
             <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-teal-500/25 via-transparent to-indigo-500/20 opacity-60 blur-3xl" />
             <div className="relative aspect-square overflow-hidden rounded-[1.75rem] border border-white/[0.08] shadow-2xl shadow-black/50 ring-1 ring-white/[0.06]">
-              <img
+              <Image
                 src="/luxury-alf-interior.png"
                 alt="Luxury Assisted Living Interior"
-                className="absolute inset-0 h-full w-full object-cover object-center"
+                fill
+                className="object-cover object-center"
+                priority
               />
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#030712] via-[#030712]/40 to-transparent opacity-90" />
               <div className="absolute bottom-5 left-5 right-5 rounded-xl border border-white/10 bg-black/60 p-4 backdrop-blur-md">

@@ -7,6 +7,7 @@ import { getAppRoleFromClaims, isAdminEligibleAppRole } from "@/lib/auth/app-rol
  * Root-level aliases for `src/app/(caregiver)/` routes (same pages as under `/caregiver/*`).
  */
 const CAREGIVER_ROOT_ALIAS_PREFIXES = [
+  "/clock",
   "/followups",
   "/handoff",
   "/incident-draft",

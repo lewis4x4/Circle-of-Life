@@ -27,6 +27,7 @@ test-results/design-review/screenshots/
 .DS_Store
 *.pem
 .sfdx/
+.agent-mcp/
 .migration-payload-*.json
 .mcp-*.sql
 .mcp-payload-*.json

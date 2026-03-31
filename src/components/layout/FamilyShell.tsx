@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, CalendarDays, CalendarHeart, CreditCard, MessageSquare, UserCircle2 } from "lucide-react";
@@ -9,10 +9,13 @@ import { useTheme } from "next-themes";
 export function FamilyShell({ children }: { children: React.ReactNode }) {
   const { setTheme } = useTheme();
   const pathname = usePathname();
+  const themeSet = useRef(false);
 
-  // Family shell strictly operates in light mode for the hospitality feel
   useEffect(() => {
-    setTheme("light");
+    if (!themeSet.current) {
+      setTheme("light");
+      themeSet.current = true;
+    }
   }, [setTheme]);
 
   return (

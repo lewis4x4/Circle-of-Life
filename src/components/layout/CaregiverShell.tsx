@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Pill, ClipboardList, AlertTriangle, User } from "lucide-react";
@@ -9,10 +9,13 @@ import { useTheme } from "next-themes";
 export function CaregiverShell({ children }: { children: React.ReactNode }) {
   const { setTheme } = useTheme();
   const pathname = usePathname();
+  const themeSet = useRef(false);
 
-  // Force Caregiver shell into dark mode
   useEffect(() => {
-    setTheme("dark");
+    if (!themeSet.current) {
+      setTheme("dark");
+      themeSet.current = true;
+    }
   }, [setTheme]);
 
   return (

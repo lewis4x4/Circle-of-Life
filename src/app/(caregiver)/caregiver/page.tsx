@@ -1,9 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, BellRing, CheckCircle2, Clock3, MessageSquare, Pill, UserRound, Waves } from "lucide-react";
+import {
+  AlertTriangle,
+  BellRing,
+  CalendarDays,
+  CheckCircle2,
+  LogIn,
+  MessageSquare,
+  Pill,
+  UserRound,
+  Waves,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function CaregiverHomePage() {
@@ -53,7 +62,7 @@ export default function CaregiverHomePage() {
           <QuickLink href="/caregiver/meds" icon={<Pill className="h-4 w-4" />} label="Open eMAR" />
           <QuickLink href="/caregiver/tasks" icon={<CheckCircle2 className="h-4 w-4" />} label="Task Queue" />
           <QuickLink href="/caregiver/incident-draft" icon={<AlertTriangle className="h-4 w-4" />} label="Report incident" />
-          <QuickAction icon={<Clock3 className="h-4 w-4" />} label="Clock In/Out" />
+          <QuickLink href="/caregiver/clock" icon={<LogIn className="h-4 w-4" />} label="Clock in / out" />
         </CardContent>
       </Card>
 
@@ -63,6 +72,7 @@ export default function CaregiverHomePage() {
           <CardDescription className="text-zinc-400">Follow-ups, handoff, and PRN reassessment.</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-2">
+          <QuickLink href="/caregiver/schedules" icon={<CalendarDays className="h-4 w-4" />} label="My schedule" />
           <QuickLink href="/caregiver/followups" icon={<BellRing className="h-4 w-4" />} label="Follow-ups" />
           <QuickLink href="/caregiver/handoff" icon={<MessageSquare className="h-4 w-4" />} label="Handoff" />
           <QuickLink href="/caregiver/prn-followup" icon={<Pill className="h-4 w-4" />} label="PRN follow-up" />
@@ -127,19 +137,6 @@ function AlertRow({
       </div>
       <p className="text-xs text-zinc-400">{detail}</p>
     </div>
-  );
-}
-
-function QuickAction({ icon, label }: { icon: React.ReactNode; label: string }) {
-  return (
-    <Button
-      type="button"
-      variant="outline"
-      className="h-12 justify-start gap-2 border-zinc-800 bg-zinc-900 text-zinc-100 hover:bg-zinc-800 hover:text-white"
-    >
-      {icon}
-      <span className="text-xs">{label}</span>
-    </Button>
   );
 }
 

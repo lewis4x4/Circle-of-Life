@@ -140,18 +140,6 @@ export async function fetchAdminDashboardSnapshot(
     facilitiesQuery = facilitiesQuery.eq("id", selectedFacilityId);
   }
 
-  const facilitiesResult = (await facilitiesQuery) as unknown as QueryResult<SupabaseFacilityRow[]>;
-  if (facilitiesResult.error) {
-    throw facilitiesResult.error;
-  }
-  const facilityRows = facilitiesResult.data ?? [];
-  const licensedBedsSum = facilityRows.reduce((acc, f) => acc + (f.total_licensed_beds ?? 0), 0);
-  const primaryTz = facilityRows[0]?.timezone?.trim() || "America/New_York";
-  const headlineName =
-    isValidFacilityIdForQuery(selectedFacilityId) && facilityRows.length === 1
-      ? facilityRows[0].name
-      : "All facilities";
-
   let residentsCountQuery = supabase
     .from("residents" as never)
     .select("id", { count: "exact", head: true })
@@ -160,14 +148,6 @@ export async function fetchAdminDashboardSnapshot(
 
   if (isValidFacilityIdForQuery(selectedFacilityId)) {
     residentsCountQuery = residentsCountQuery.eq("facility_id", selectedFacilityId);
-  }
-
-  const residentsCountRes = (await residentsCountQuery) as unknown as {
-    count: number | null;
-    error: QueryError | null;
-  };
-  if (residentsCountRes.error) {
-    throw residentsCountRes.error;
   }
 
   let staffCountQuery = supabase
@@ -180,14 +160,6 @@ export async function fetchAdminDashboardSnapshot(
     staffCountQuery = staffCountQuery.eq("facility_id", selectedFacilityId);
   }
 
-  const staffCountRes = (await staffCountQuery) as unknown as {
-    count: number | null;
-    error: QueryError | null;
-  };
-  if (staffCountRes.error) {
-    throw staffCountRes.error;
-  }
-
   let incidentsCountQuery = supabase
     .from("incidents" as never)
     .select("id", { count: "exact", head: true })
@@ -196,14 +168,6 @@ export async function fetchAdminDashboardSnapshot(
 
   if (isValidFacilityIdForQuery(selectedFacilityId)) {
     incidentsCountQuery = incidentsCountQuery.eq("facility_id", selectedFacilityId);
-  }
-
-  const incidentsCountRes = (await incidentsCountQuery) as unknown as {
-    count: number | null;
-    error: QueryError | null;
-  };
-  if (incidentsCountRes.error) {
-    throw incidentsCountRes.error;
   }
 
   let residentsPreviewQuery = supabase
@@ -220,16 +184,6 @@ export async function fetchAdminDashboardSnapshot(
     residentsPreviewQuery = residentsPreviewQuery.eq("facility_id", selectedFacilityId);
   }
 
-  const residentsPreviewResult = (await residentsPreviewQuery) as unknown as QueryResult<
-    SupabaseResidentRow[]
-  >;
-  if (residentsPreviewResult.error) {
-    throw residentsPreviewResult.error;
-  }
-  const previewResidents = residentsPreviewResult.data ?? [];
-
-  const censusPreview = await mapResidentsToCensusRows(supabase, previewResidents);
-
   let incidentsFeedQuery = supabase
     .from("incidents" as never)
     .select("id, occurred_at, category, severity, status, resident_id, deleted_at")
@@ -241,13 +195,44 @@ export async function fetchAdminDashboardSnapshot(
     incidentsFeedQuery = incidentsFeedQuery.eq("facility_id", selectedFacilityId);
   }
 
-  const incidentsFeedResult = (await incidentsFeedQuery) as unknown as QueryResult<SupabaseIncidentFeedRow[]>;
-  if (incidentsFeedResult.error) {
-    throw incidentsFeedResult.error;
-  }
+  const [
+    facilitiesResult,
+    residentsCountRes,
+    staffCountRes,
+    incidentsCountRes,
+    residentsPreviewResult,
+    incidentsFeedResult,
+  ] = await Promise.all([
+    facilitiesQuery as unknown as Promise<QueryResult<SupabaseFacilityRow[]>>,
+    residentsCountQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
+    staffCountQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
+    incidentsCountQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
+    residentsPreviewQuery as unknown as Promise<QueryResult<SupabaseResidentRow[]>>,
+    incidentsFeedQuery as unknown as Promise<QueryResult<SupabaseIncidentFeedRow[]>>,
+  ]);
+
+  if (facilitiesResult.error) throw facilitiesResult.error;
+  if (residentsCountRes.error) throw residentsCountRes.error;
+  if (staffCountRes.error) throw staffCountRes.error;
+  if (incidentsCountRes.error) throw incidentsCountRes.error;
+  if (residentsPreviewResult.error) throw residentsPreviewResult.error;
+  if (incidentsFeedResult.error) throw incidentsFeedResult.error;
+
+  const facilityRows = facilitiesResult.data ?? [];
+  const licensedBedsSum = facilityRows.reduce((acc, f) => acc + (f.total_licensed_beds ?? 0), 0);
+  const primaryTz = facilityRows[0]?.timezone?.trim() || "America/New_York";
+  const headlineName =
+    isValidFacilityIdForQuery(selectedFacilityId) && facilityRows.length === 1
+      ? facilityRows[0].name
+      : "All facilities";
+
+  const previewResidents = residentsPreviewResult.data ?? [];
   const incidentRows = incidentsFeedResult.data ?? [];
 
-  const activity = await mapIncidentsToActivity(supabase, incidentRows);
+  const [censusPreview, activity] = await Promise.all([
+    mapResidentsToCensusRows(supabase, previewResidents),
+    mapIncidentsToActivity(supabase, incidentRows),
+  ]);
 
   const residentCount = residentsCountRes.count ?? 0;
   const activeStaffCount = staffCountRes.count ?? 0;
