@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, ClipboardList, MapPin, ShieldAlert, User } from "lucide-react";
+import { ArrowLeft, ClipboardList, GitBranch, MapPin, ShieldAlert, User } from "lucide-react";
 
 import { AdminEmptyState, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
@@ -232,6 +232,16 @@ export default function AdminIncidentDetailPage() {
           </div>
         </div>
         <div className="flex flex-col items-stretch gap-2 sm:items-end">
+          <Link
+            href={`/admin/incidents/${incident.id}/rca`}
+            className={cn(
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "border-violet-200 bg-violet-50/50 text-violet-900 dark:border-violet-900/50 dark:bg-violet-950/30 dark:text-violet-100",
+            )}
+          >
+            <GitBranch className="mr-2 h-3.5 w-3.5" />
+            Root cause workspace
+          </Link>
           {incident.resident_id && residentName ? (
             <Link
               href={`/admin/residents/${incident.resident_id}`}

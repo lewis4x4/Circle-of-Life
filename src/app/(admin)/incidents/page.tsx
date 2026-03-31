@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowUpDown, ChevronRight, ShieldAlert } from "lucide-react";
+import { AlertTriangle, ArrowUpDown, BarChart3, ChevronRight, ShieldAlert } from "lucide-react";
 
 import { AdminEmptyState, AdminFilterBar, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -127,7 +127,17 @@ export default function AdminIncidentsPage() {
             Triage, follow-up, and severity review queue for reportable and internal incident workflows.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/admin/incidents/trends"
+            className={cn(
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900",
+            )}
+          >
+            <BarChart3 className="mr-1.5 h-3.5 w-3.5" />
+            Trends
+          </Link>
           <Badge
             variant="outline"
             className="border-slate-200 bg-white px-3 py-1 dark:border-slate-800 dark:bg-slate-900"
