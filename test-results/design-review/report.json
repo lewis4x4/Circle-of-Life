@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-03-31T13:18:17.417Z",
-  "baseUrl": "http://127.0.0.1:4173",
+  "timestamp": "2026-03-31T14:01:47.822Z",
+  "baseUrl": "http://127.0.0.1:4310",
   "routes": [
     "/"
   ],
@@ -14,7 +14,7 @@
     {
       "route": "/",
       "viewport": "375",
-      "url": "http://127.0.0.1:4173/",
+      "url": "http://127.0.0.1:4310/",
       "status": 200,
       "title": "Haven — Circle of Life",
       "screenshot": "test-results/design-review/screenshots/_-375.png"
@@ -22,7 +22,7 @@
     {
       "route": "/",
       "viewport": "768",
-      "url": "http://127.0.0.1:4173/",
+      "url": "http://127.0.0.1:4310/",
       "status": 200,
       "title": "Haven — Circle of Life",
       "screenshot": "test-results/design-review/screenshots/_-768.png"
@@ -30,7 +30,7 @@
     {
       "route": "/",
       "viewport": "1024",
-      "url": "http://127.0.0.1:4173/",
+      "url": "http://127.0.0.1:4310/",
       "status": 200,
       "title": "Haven — Circle of Life",
       "screenshot": "test-results/design-review/screenshots/_-1024.png"
@@ -38,7 +38,7 @@
     {
       "route": "/",
       "viewport": "1440",
-      "url": "http://127.0.0.1:4173/",
+      "url": "http://127.0.0.1:4310/",
       "status": 200,
       "title": "Haven — Circle of Life",
       "screenshot": "test-results/design-review/screenshots/_-1440.png"

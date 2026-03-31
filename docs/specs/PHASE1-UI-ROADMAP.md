@@ -58,7 +58,7 @@ The absolute bedrock of the "Soft Precision" visual identity.
 ## Next Immediate Execution Step
 Sector 1 Admin scaffold routes are now in place (`/admin`, `/admin/residents`, `/admin/incidents`, `/admin/staff`, `/admin/billing`).
 
-**Next targeted UI file:** `src/app/(admin)/staff/page.tsx` data integration pass (replace mock roster with Supabase-backed query adapter while preserving shared list states), then `src/app/(admin)/billing/page.tsx`.
+**Next targeted UI file:** `src/app/(admin)/billing/page.tsx` data integration pass (replace mock ledger with Supabase-backed query adapter while preserving shared list states).
 
 ---
 

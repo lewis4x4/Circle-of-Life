@@ -1,14 +1,12 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowUpDown, ChevronRight, UserCog, UserRoundCheck } from "lucide-react";
 
-import {
-  AdminEmptyState,
-  AdminErrorState,
-  AdminFilterBar,
-  AdminTableLoadingState,
-} from "@/components/common/admin-list-patterns";
+import { AdminEmptyState, AdminFilterBar, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
+import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { createClient } from "@/lib/supabase/client";
+import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +26,7 @@ type StaffRow = {
   certifications: CertificationStatus;
   nextShift: string;
   overtimeRisk: "low" | "medium" | "high";
+  photoUrl?: string | null;
 };
 
 const DEFAULT_FILTERS = {
@@ -37,7 +36,34 @@ const DEFAULT_FILTERS = {
   cert: "all",
 };
 
+type SupabaseStaffRow = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  staff_role: string;
+  employment_status: string;
+  photo_url: string | null;
+  deleted_at: string | null;
+};
+
+type SupabaseCertRow = {
+  staff_id: string;
+  status: string;
+  expiration_date: string | null;
+  deleted_at: string | null;
+};
+
+type SupabaseShiftRow = {
+  staff_id: string;
+  shift_date: string;
+  shift_type: string;
+};
+
+type QueryError = { message: string };
+type QueryResult<T> = { data: T[] | null; error: QueryError | null };
+
 export default function AdminStaffPage() {
+  const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<StaffRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,22 +73,23 @@ export default function AdminStaffPage() {
   const [status, setStatus] = useState(DEFAULT_FILTERS.status);
   const [cert, setCert] = useState(DEFAULT_FILTERS.cert);
 
-  const loadStaff = async () => {
+  const loadStaff = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 900));
-      setRows(mockStaff);
+      const liveRows = await fetchStaffFromSupabase(selectedFacilityId);
+      setRows(liveRows.length > 0 ? liveRows : mockStaff);
     } catch {
-      setError("Staff directory feed is unavailable. Please retry.");
+      setRows(mockStaff);
+      setError("Live staff directory is unavailable. Showing demo roster data.");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedFacilityId]);
 
   useEffect(() => {
     void loadStaff();
-  }, []);
+  }, [loadStaff]);
 
   const filteredRows = useMemo(() => {
     const loweredSearch = search.trim().toLowerCase();
@@ -160,20 +187,22 @@ export default function AdminStaffPage() {
 
       {isLoading ? <AdminTableLoadingState /> : null}
       {!isLoading && error ? (
-        <AdminErrorState title="Could not load staff" message={error} onRetry={loadStaff} />
+        <Card className="border-amber-200/80 bg-amber-50/40 dark:border-amber-900/60 dark:bg-amber-950/20">
+          <CardContent className="py-3 text-sm text-amber-700 dark:text-amber-300">{error}</CardContent>
+        </Card>
       ) : null}
-      {!isLoading && !error && filteredRows.length === 0 ? (
+      {!isLoading && filteredRows.length === 0 ? (
         <AdminEmptyState
           title="No staff match the current filters"
-          description="Try broadening role, status, or certification filters to restore the roster results."
+          description="Try broadening role, status, or certification filters. Live roster is scoped by your current facility selection."
         />
       ) : null}
 
-      {!isLoading && !error && filteredRows.length > 0 ? (
+      {!isLoading && filteredRows.length > 0 ? (
         <Card className="overflow-hidden border-slate-200/70 bg-white shadow-soft dark:border-slate-800 dark:bg-slate-950">
           <CardHeader className="border-b border-slate-100 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/30">
             <CardTitle className="text-lg font-display">Team Directory</CardTitle>
-            <CardDescription>Scaffolded staffing table for scheduling, certifications, and time records modules.</CardDescription>
+            <CardDescription>Roster from staff, certifications, and upcoming shift assignments.</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             <Table>
@@ -199,7 +228,7 @@ export default function AdminStaffPage() {
                     <TableCell className="pl-4">
                       <div className="flex items-center gap-3">
                         <Avatar size="default" className="ring-1 ring-slate-200 dark:ring-slate-700">
-                          <AvatarImage src={`https://i.pravatar.cc/80?u=${staff.id}`} alt={staff.name} />
+                          <AvatarImage src={staff.photoUrl ?? `https://i.pravatar.cc/80?u=${staff.id}`} alt={staff.name} />
                           <AvatarFallback className="bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-100">
                             {staff.initials}
                           </AvatarFallback>
@@ -234,6 +263,159 @@ export default function AdminStaffPage() {
       ) : null}
     </div>
   );
+}
+
+async function fetchStaffFromSupabase(selectedFacilityId: string | null): Promise<StaffRow[]> {
+  const supabase = createClient();
+  let staffQuery = supabase
+    .from("staff" as never)
+    .select("id, first_name, last_name, staff_role, employment_status, photo_url, deleted_at")
+    .is("deleted_at", null)
+    .limit(300);
+
+  if (isValidFacilityIdForQuery(selectedFacilityId)) {
+    staffQuery = staffQuery.eq("facility_id", selectedFacilityId);
+  }
+
+  const staffResult = (await staffQuery) as unknown as QueryResult<SupabaseStaffRow>;
+  const staffList = staffResult.data ?? [];
+  if (staffResult.error) {
+    throw staffResult.error;
+  }
+  if (staffList.length === 0) {
+    return [];
+  }
+
+  const staffIds = staffList.map((s) => s.id);
+  const today = new Date().toISOString().slice(0, 10);
+
+  const certsResult = (await supabase
+    .from("staff_certifications" as never)
+    .select("staff_id, status, expiration_date, deleted_at")
+    .in("staff_id", staffIds)
+    .is("deleted_at", null)) as unknown as QueryResult<SupabaseCertRow>;
+  if (certsResult.error) {
+    throw certsResult.error;
+  }
+
+  let shiftsQuery = supabase
+    .from("shift_assignments" as never)
+    .select("staff_id, shift_date, shift_type")
+    .in("staff_id", staffIds)
+    .gte("shift_date", today)
+    .is("deleted_at", null)
+    .in("status", ["assigned", "confirmed"])
+    .order("shift_date", { ascending: true });
+
+  if (isValidFacilityIdForQuery(selectedFacilityId)) {
+    shiftsQuery = shiftsQuery.eq("facility_id", selectedFacilityId);
+  }
+
+  const shiftsResult = (await shiftsQuery) as unknown as QueryResult<SupabaseShiftRow>;
+  if (shiftsResult.error) {
+    throw shiftsResult.error;
+  }
+
+  const certsByStaff = new Map<string, SupabaseCertRow[]>();
+  for (const row of certsResult.data ?? []) {
+    const list = certsByStaff.get(row.staff_id) ?? [];
+    list.push(row);
+    certsByStaff.set(row.staff_id, list);
+  }
+
+  const nextShiftByStaff = new Map<string, SupabaseShiftRow>();
+  for (const row of shiftsResult.data ?? []) {
+    if (!nextShiftByStaff.has(row.staff_id)) {
+      nextShiftByStaff.set(row.staff_id, row);
+    }
+  }
+
+  return staffList.map((s) => {
+    const first = s.first_name?.trim() ?? "";
+    const last = s.last_name?.trim() ?? "";
+    const name = `${first} ${last}`.trim() || "Staff member";
+    const initials = `${first[0] ?? ""}${last[0] ?? ""}`.toUpperCase() || "ST";
+    const certState = aggregateCertStatus(certsByStaff.get(s.id) ?? []);
+    const uiRole = mapDbStaffRoleToUi(s.staff_role);
+    const uiStatus = mapEmploymentToUiStatus(s.employment_status);
+    const shift = nextShiftByStaff.get(s.id);
+    const nextShift = shift ? formatNextShiftLabel(shift.shift_date, shift.shift_type) : "—";
+    const overtimeRisk = deriveOvertimeRisk(certState, s.employment_status);
+
+    return {
+      id: s.id,
+      name,
+      initials,
+      role: uiRole,
+      status: uiStatus,
+      certifications: certState,
+      nextShift,
+      overtimeRisk,
+      photoUrl: s.photo_url,
+    };
+  });
+}
+
+function mapDbStaffRoleToUi(role: string): StaffRole {
+  if (role === "rn" || role === "lpn") return "nurse";
+  if (role === "cna") return "caregiver";
+  if (role === "dietary_staff") return "med_tech";
+  if (role === "administrator" || role === "activities_director" || role === "dietary_manager") return "admin";
+  if (role === "maintenance" || role === "housekeeping" || role === "driver" || role === "other") {
+    return "caregiver";
+  }
+  return "admin";
+}
+
+function mapEmploymentToUiStatus(employment: string): StaffStatus {
+  if (employment === "on_leave") return "on_leave";
+  if (employment === "terminated" || employment === "suspended") return "off_shift";
+  return "active";
+}
+
+function aggregateCertStatus(certs: SupabaseCertRow[]): CertificationStatus {
+  if (certs.length === 0) return "current";
+  const now = new Date();
+  const soon = new Date();
+  soon.setDate(soon.getDate() + 60);
+  let worst: CertificationStatus = "current";
+  for (const c of certs) {
+    if (c.status === "expired" || c.status === "revoked") {
+      return "expired";
+    }
+    if (c.expiration_date) {
+      const exp = new Date(`${c.expiration_date}T23:59:59`);
+      if (exp < now) return "expired";
+      if (exp <= soon) worst = "expiring_soon";
+    }
+    if (c.status === "pending_renewal") {
+      worst = "expiring_soon";
+    }
+  }
+  return worst;
+}
+
+function deriveOvertimeRisk(cert: CertificationStatus, employment: string): "low" | "medium" | "high" {
+  if (cert === "expired") return "high";
+  if (employment === "on_leave") return "medium";
+  if (cert === "expiring_soon") return "medium";
+  return "low";
+}
+
+function formatNextShiftLabel(shiftDate: string, shiftType: string): string {
+  const parsed = new Date(`${shiftDate}T12:00:00`);
+  const datePart = Number.isNaN(parsed.getTime())
+    ? shiftDate
+    : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(parsed);
+  const typeLabel =
+    shiftType === "day"
+      ? "Day"
+      : shiftType === "evening"
+        ? "Evening"
+        : shiftType === "night"
+          ? "Night"
+          : "Shift";
+  return `${datePart} · ${typeLabel}`;
 }
 
 function RoleBadge({ role }: { role: StaffRole }) {
@@ -295,6 +477,7 @@ const mockStaff: StaffRow[] = [
     certifications: "current",
     nextShift: "Today 3:00 PM",
     overtimeRisk: "low",
+    photoUrl: null,
   },
   {
     id: "staff-002",
@@ -305,6 +488,7 @@ const mockStaff: StaffRow[] = [
     certifications: "expiring_soon",
     nextShift: "Today 11:00 PM",
     overtimeRisk: "medium",
+    photoUrl: null,
   },
   {
     id: "staff-003",
@@ -315,6 +499,7 @@ const mockStaff: StaffRow[] = [
     certifications: "current",
     nextShift: "Tomorrow 7:00 AM",
     overtimeRisk: "low",
+    photoUrl: null,
   },
   {
     id: "staff-004",
@@ -325,5 +510,6 @@ const mockStaff: StaffRow[] = [
     certifications: "expired",
     nextShift: "Pending Return",
     overtimeRisk: "high",
+    photoUrl: null,
   },
 ];

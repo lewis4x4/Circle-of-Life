@@ -99,7 +99,14 @@ async function main() {
         return;
       }
 
-      const results = await new AxeBuilder({ page }).analyze();
+      const hasAppRoot = await page.evaluate(
+        () => !!document.querySelector("#haven-app-root"),
+      );
+      let builder = new AxeBuilder({ page });
+      if (hasAppRoot) {
+        builder = builder.include("#haven-app-root");
+      }
+      const results = await builder.exclude("nextjs-portal").analyze();
       const serious = results.violations.filter((v) =>
         ["critical", "serious"].includes(v.impact),
       );

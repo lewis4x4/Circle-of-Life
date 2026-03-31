@@ -12,6 +12,8 @@
  *   FAIL_ON_NEXT_DEPRECATIONS=1 — fail if Next build stderr contains middleware→proxy deprecation
  *   REQUIRE_PG_VERIFY=1 — in CI, fail if Docker Postgres migration verify cannot run
  *   SKIP_GITLEAKS=1 — skip gitleaks (local only; CI still requires gitleaks or Docker)
+ *   SEGMENT_GATES_USE_DEV_SERVER=1 — with --ui, use existing BASE_URL dev server instead of spawning `next start`
+ *   SEGMENT_PREVIEW_PORT — port for auto-started preview server (default 4310)
  */
 
 import { spawn } from "node:child_process";
@@ -88,6 +90,20 @@ function run(cmd, args, opts = {}) {
 async function npmRun(script, cwd = root) {
   const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
   return run(npmCmd, ["run", script, "--silent"], { cwd });
+}
+
+async function waitForHttpOk(url, timeoutMs) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const res = await fetch(url, { redirect: "manual" });
+      if (res.status >= 200 && res.status < 500) return;
+    } catch {
+      /* retry */
+    }
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  throw new Error(`[segment:gates] preview server did not respond in time: ${url}`);
 }
 
 async function nodeRun(relScript) {
@@ -267,43 +283,65 @@ async function main() {
   }
 
   if (args.ui) {
-    const design = await npmRun("design:review");
-    const required = !args.designAdvisory;
-    const ok = design.code === 0;
-    let status = "passed";
-    if (!ok) {
-      status = args.designAdvisory ? "advisory" : "failed";
-    }
-    checks.push({
-      id: "cdo.design-review",
-      required,
-      status,
-      command: "npm run design:review",
-      duration_ms: design.duration_ms,
-      stdout: design.stdout,
-      stderr: design.stderr,
-      artifacts: [path.join(root, "test-results", "design-review", "report.json")],
-    });
+    let previewChild = null;
+    const useDevServer = process.env.SEGMENT_GATES_USE_DEV_SERVER === "1";
 
-    if (!args.noA11y) {
-      const a11y = await npmRun("a11y:routes");
+    try {
+      if (!useDevServer) {
+        const previewPort = process.env.SEGMENT_PREVIEW_PORT ?? "4310";
+        const nextCli = path.join(root, "node_modules", "next", "dist", "bin", "next");
+        previewChild = spawn(process.execPath, [nextCli, "start", "-p", previewPort], {
+          cwd: root,
+          env: { ...process.env, PORT: previewPort },
+          stdio: "ignore",
+        });
+        await waitForHttpOk(`http://127.0.0.1:${previewPort}/`, 60_000);
+        process.env.BASE_URL = `http://127.0.0.1:${previewPort}`;
+      }
+
+      const design = await npmRun("design:review");
+      const required = !args.designAdvisory;
+      const ok = design.code === 0;
+      let status = "passed";
+      if (!ok) {
+        status = args.designAdvisory ? "advisory" : "failed";
+      }
       checks.push({
-        id: "cdo.a11y-axe",
+        id: "cdo.design-review",
         required,
-        status: a11y.code === 0 ? "passed" : "failed",
-        command: "npm run a11y:routes",
-        duration_ms: a11y.duration_ms,
-        stdout: a11y.stdout,
-        stderr: a11y.stderr,
+        status,
+        command: "npm run design:review",
+        duration_ms: design.duration_ms,
+        stdout: design.stdout,
+        stderr: design.stderr,
+        artifacts: [path.join(root, "test-results", "design-review", "report.json")],
       });
-    } else {
-      checks.push({
-        id: "cdo.a11y-axe",
-        required: false,
-        status: "skipped",
-        command: "npm run a11y:routes",
-        stdout: "skipped (--no-a11y)",
-      });
+
+      if (!args.noA11y) {
+        const a11y = await npmRun("a11y:routes");
+        checks.push({
+          id: "cdo.a11y-axe",
+          required,
+          status: a11y.code === 0 ? "passed" : "failed",
+          command: "npm run a11y:routes",
+          duration_ms: a11y.duration_ms,
+          stdout: a11y.stdout,
+          stderr: a11y.stderr,
+        });
+      } else {
+        checks.push({
+          id: "cdo.a11y-axe",
+          required: false,
+          status: "skipped",
+          command: "npm run a11y:routes",
+          stdout: "skipped (--no-a11y)",
+        });
+      }
+    } finally {
+      if (previewChild) {
+        previewChild.kill("SIGTERM");
+        await new Promise((r) => setTimeout(r, 400));
+      }
     }
   } else {
     checks.push({

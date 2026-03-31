@@ -15,7 +15,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Users, AlertCircle, ArrowUpRight, ArrowDownRight, Map as MapIcon, Maximize2 } from "lucide-react";
+import { Users, AlertCircle, Map as MapIcon, Maximize2 } from "lucide-react";
 
 export default function AdminDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -210,7 +210,19 @@ export default function AdminDashboardPage() {
 
 // ---- Sub-components ----
 
-function FloatingMetric({ title, value, sub, critical, icon }: any) {
+function FloatingMetric({
+  title,
+  value,
+  sub,
+  critical,
+  icon,
+}: {
+  title: string;
+  value: React.ReactNode;
+  sub: string;
+  critical?: boolean;
+  icon?: React.ReactNode;
+}) {
   return (
     <div className={`shrink-0 flex flex-col justify-center rounded-2xl border ${critical ? 'border-red-500/30 bg-red-950/40' : 'border-white/10 bg-slate-950/40'} backdrop-blur-md p-4 w-[140px] shadow-[0_8px_30px_rgb(0,0,0,0.12)]`}>
       <span className="text-[10px] font-bold uppercase tracking-wider text-slate-300 mb-1 opacity-80">{title}</span>

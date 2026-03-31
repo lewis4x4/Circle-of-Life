@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -36,12 +36,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const { selectedFacilityId, availableFacilities, setSelectedFacility } = useFacilityStore();
   const currentFacility = availableFacilities.find(f => f.id === selectedFacilityId) || availableFacilities[0];
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  // Prevent hydration errors with next-themes
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   const navItems = [
     { href: "/admin", label: "Dashboard", enabled: true, icon: LayoutDashboard },
