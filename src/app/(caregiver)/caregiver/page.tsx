@@ -1,6 +1,7 @@
 "use client";
 
-import { AlertTriangle, CheckCircle2, Clock3, Pill, UserRound, Waves } from "lucide-react";
+import Link from "next/link";
+import { AlertTriangle, BellRing, CheckCircle2, Clock3, MessageSquare, Pill, UserRound, Waves } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,10 +50,22 @@ export default function CaregiverHomePage() {
           <CardTitle className="text-base">Quick Actions</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-2">
-          <QuickAction icon={<Pill className="h-4 w-4" />} label="Open eMAR" />
-          <QuickAction icon={<CheckCircle2 className="h-4 w-4" />} label="Task Queue" />
-          <QuickAction icon={<AlertTriangle className="h-4 w-4" />} label="Report Incident" />
+          <QuickLink href="/caregiver/meds" icon={<Pill className="h-4 w-4" />} label="Open eMAR" />
+          <QuickLink href="/caregiver/tasks" icon={<CheckCircle2 className="h-4 w-4" />} label="Task Queue" />
+          <QuickLink href="/caregiver/incident-draft" icon={<AlertTriangle className="h-4 w-4" />} label="Report incident" />
           <QuickAction icon={<Clock3 className="h-4 w-4" />} label="Clock In/Out" />
+        </CardContent>
+      </Card>
+
+      <Card className="border-zinc-800 bg-zinc-950/60 text-zinc-100">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Shift workflows</CardTitle>
+          <CardDescription className="text-zinc-400">Follow-ups, handoff, and PRN reassessment.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-2">
+          <QuickLink href="/caregiver/followups" icon={<BellRing className="h-4 w-4" />} label="Follow-ups" />
+          <QuickLink href="/caregiver/handoff" icon={<MessageSquare className="h-4 w-4" />} label="Handoff" />
+          <QuickLink href="/caregiver/prn-followup" icon={<Pill className="h-4 w-4" />} label="PRN follow-up" />
         </CardContent>
       </Card>
 
@@ -127,6 +140,18 @@ function QuickAction({ icon, label }: { icon: React.ReactNode; label: string }) 
       {icon}
       <span className="text-xs">{label}</span>
     </Button>
+  );
+}
+
+function QuickLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex h-12 items-center justify-start gap-2 rounded-md border border-zinc-800 bg-zinc-900 px-3 text-zinc-100 transition-colors hover:bg-zinc-800 hover:text-white tap-responsive"
+    >
+      {icon}
+      <span className="text-xs">{label}</span>
+    </Link>
   );
 }
 

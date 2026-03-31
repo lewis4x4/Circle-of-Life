@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { AlertTriangle, CalendarClock, Droplets, HeartPulse, Pill, Plus, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,9 +65,22 @@ export default function CaregiverResidentQuickProfilePage() {
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-2">
           <ActionButton icon={<Pill className="h-4 w-4" />} label="Open eMAR" />
-          <ActionButton icon={<CalendarClock className="h-4 w-4" />} label="ADL Task Log" />
-          <ActionButton icon={<Droplets className="h-4 w-4" />} label="Add Intake" />
-          <ActionButton icon={<HeartPulse className="h-4 w-4" />} label="Vitals Entry" />
+          <ActionLink
+            href={`/caregiver/resident/${residentId}/adl`}
+            icon={<CalendarClock className="h-4 w-4" />}
+            label="ADL"
+          />
+          <ActionLink href={`/caregiver/resident/${residentId}/log`} icon={<HeartPulse className="h-4 w-4" />} label="Shift log" />
+          <ActionLink
+            href={`/caregiver/resident/${residentId}/behavior`}
+            icon={<AlertTriangle className="h-4 w-4" />}
+            label="Behavior"
+          />
+          <ActionLink
+            href={`/caregiver/resident/${residentId}/condition-change`}
+            icon={<Droplets className="h-4 w-4" />}
+            label="Condition change"
+          />
         </CardContent>
       </Card>
 
@@ -141,5 +155,17 @@ function ActionButton({ icon, label }: { icon: React.ReactNode; label: string })
       {icon}
       <span className="text-xs">{label}</span>
     </Button>
+  );
+}
+
+function ActionLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex h-12 items-center justify-start gap-2 rounded-md border border-zinc-800 bg-zinc-900 px-3 text-zinc-100 transition-colors hover:bg-zinc-800 hover:text-white tap-responsive"
+    >
+      {icon}
+      <span className="text-xs">{label}</span>
+    </Link>
   );
 }
