@@ -17,7 +17,6 @@ import {
   ShieldAlert,
   UserCog,
   CreditCard,
-  ClipboardList,
   ClipboardCheck,
   CalendarClock,
   Award,
@@ -55,9 +54,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const supabase = createClient();
     let cancelled = false;
-    void supabase.auth.getSession().then(({ data }) => {
-      if (!cancelled) setSessionEmail(data.session?.user?.email ?? null);
-    });
+    void (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!cancelled) setSessionEmail(data.session?.user?.email ?? null);
+      } catch {
+        if (!cancelled) setSessionEmail(null);
+      }
+    })();
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!cancelled) setSessionEmail(session?.user?.email ?? null);
     });
@@ -98,19 +102,24 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const navItems = [
-    { href: "/admin", label: "Dashboard", enabled: true, icon: LayoutDashboard },
-    { href: "/admin/residents", label: "Residents", enabled: true, icon: Users },
-    { href: "/admin/assessments/overdue", label: "Assessments", enabled: true, icon: ClipboardCheck },
-    { href: "/admin/care-plans/reviews-due", label: "Plan reviews", enabled: true, icon: CalendarClock },
-    { href: "/admin/incidents", label: "Incidents", enabled: true, icon: ShieldAlert },
-    { href: "/admin/staff", label: "Staff", enabled: true, icon: UserCog },
-    { href: "/admin/certifications", label: "Certifications", enabled: true, icon: Award },
-    { href: "/admin/schedules", label: "Schedules", enabled: true, icon: CalendarDays },
-    { href: "/admin/time-records", label: "Time records", enabled: true, icon: Clock },
-    { href: "/admin/staffing", label: "Staffing", enabled: true, icon: Activity },
-    { href: "/admin/billing", label: "Billing", enabled: true, icon: CreditCard },
-    { href: "/admin/residents", label: "Daily Operations", enabled: true, icon: ClipboardList },
+  const navItems: Array<{
+    key: string;
+    href: string;
+    label: string;
+    enabled: boolean;
+    icon: React.ComponentType<{ className?: string }>;
+  }> = [
+    { key: "dashboard", href: "/admin", label: "Dashboard", enabled: true, icon: LayoutDashboard },
+    { key: "residents", href: "/admin/residents", label: "Residents", enabled: true, icon: Users },
+    { key: "assessments", href: "/admin/assessments/overdue", label: "Assessments", enabled: true, icon: ClipboardCheck },
+    { key: "plan-reviews", href: "/admin/care-plans/reviews-due", label: "Plan reviews", enabled: true, icon: CalendarClock },
+    { key: "incidents", href: "/admin/incidents", label: "Incidents", enabled: true, icon: ShieldAlert },
+    { key: "staff", href: "/admin/staff", label: "Staff", enabled: true, icon: UserCog },
+    { key: "certifications", href: "/admin/certifications", label: "Certifications", enabled: true, icon: Award },
+    { key: "schedules", href: "/admin/schedules", label: "Schedules", enabled: true, icon: CalendarDays },
+    { key: "time-records", href: "/admin/time-records", label: "Time records", enabled: true, icon: Clock },
+    { key: "staffing", href: "/admin/staffing", label: "Staffing", enabled: true, icon: Activity },
+    { key: "billing", href: "/admin/billing", label: "Billing", enabled: true, icon: CreditCard },
   ];
 
   return (
@@ -143,7 +152,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             if (!item.enabled) {
               return (
                 <div
-                  key={item.label}
+                  key={item.key}
                   className="flex items-center gap-3 rounded-md px-3 py-2 cursor-not-allowed opacity-50"
                   title={isCollapsed ? item.label : undefined}
                 >
@@ -154,7 +163,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             }
             return (
               <Link
-                key={item.href}
+                key={item.key}
                 href={item.href}
                 title={isCollapsed ? item.label : undefined}
                 className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium tap-responsive transition-colors ${
