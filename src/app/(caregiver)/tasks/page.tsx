@@ -8,6 +8,7 @@ import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { fetchActiveResidentsWithRooms, type ResidentWithRoom } from "@/lib/caregiver/facility-residents";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 import { ADL_OPTIONS, ASSIST_OPTIONS } from "@/lib/caregiver/adl-form-options";
+import { fetchDailyLogIdForAdlLink } from "@/lib/caregiver/daily-log-link";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
@@ -127,10 +128,18 @@ export default function CaregiverTasksPage() {
     try {
       const ymd = zonedYmd(new Date(), ctx.timeZone);
       const shift = currentShiftForTimezone(ctx.timeZone);
+      const dailyLogId = await fetchDailyLogIdForAdlLink(supabase, {
+        residentId: resident.id,
+        facilityId: ctx.facilityId,
+        logDate: ymd,
+        shift,
+        loggedBy: user.id,
+      });
       const row: Database["public"]["Tables"]["adl_logs"]["Insert"] = {
         resident_id: resident.id,
         facility_id: ctx.facilityId,
         organization_id: ctx.organizationId,
+        daily_log_id: dailyLogId,
         log_date: ymd,
         log_time: new Date().toISOString(),
         shift,

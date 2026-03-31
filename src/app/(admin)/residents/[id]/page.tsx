@@ -7,13 +7,17 @@ import {
   ArrowLeft,
   ClipboardList,
   CreditCard,
+  FileText,
   HeartPulse,
+  ListChecks,
   MapPin,
   Phone,
   Shield,
   User,
   Utensils,
 } from "lucide-react";
+
+import { adlTypeLabel, assistanceLabel } from "@/lib/caregiver/adl-form-options";
 
 import { AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -297,6 +301,67 @@ export default function AdminResidentDetailPage() {
           </CardContent>
         </Card>
 
+        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800 lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-display text-lg">
+              <ListChecks className="h-4 w-4 text-brand-600" />
+              Recent daily notes &amp; ADL
+            </CardTitle>
+            <CardDescription>Latest documentation from the floor (RLS-scoped to your organization)</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-6 lg:grid-cols-2">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-200">
+                <FileText className="h-4 w-4 text-slate-500" />
+                Daily log notes
+              </div>
+              {detail.recentDailyNotes.length === 0 ? (
+                <p className="text-sm text-slate-500 dark:text-slate-400">No daily log rows yet.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {detail.recentDailyNotes.map((row) => (
+                    <li
+                      key={row.id}
+                      className="rounded-lg border border-slate-200/80 bg-slate-50/80 p-3 text-sm dark:border-slate-700 dark:bg-slate-900/40"
+                    >
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {row.logDate} · {row.shift} · {row.loggedByLabel}
+                      </p>
+                      <p className="mt-1 whitespace-pre-wrap text-slate-800 dark:text-slate-200">{row.snippet}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-200">
+                <ListChecks className="h-4 w-4 text-slate-500" />
+                ADL passes
+              </div>
+              {detail.recentAdl.length === 0 ? (
+                <p className="text-sm text-slate-500 dark:text-slate-400">No ADL entries yet.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {detail.recentAdl.map((row) => (
+                    <li
+                      key={row.id}
+                      className="rounded-lg border border-slate-200/80 bg-slate-50/80 p-3 text-sm dark:border-slate-700 dark:bg-slate-900/40"
+                    >
+                      <p className="font-medium text-slate-800 dark:text-slate-200">{row.summary}</p>
+                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                        {row.logTimeLabel} · {row.shift} · {row.logDate} · {row.loggedByLabel}
+                      </p>
+                      {row.detailNote ? (
+                        <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">{row.detailNote}</p>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="border-slate-200/70 shadow-soft dark:border-slate-800">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-display text-lg">
@@ -383,6 +448,22 @@ type ResidentDetailView = {
   emergency2Name: string | null;
   emergency2Relationship: string | null;
   emergency2Phone: string | null;
+  recentDailyNotes: Array<{
+    id: string;
+    logDate: string;
+    shift: string;
+    snippet: string;
+    loggedByLabel: string;
+  }>;
+  recentAdl: Array<{
+    id: string;
+    logTimeLabel: string;
+    logDate: string;
+    shift: string;
+    summary: string;
+    detailNote: string | null;
+    loggedByLabel: string;
+  }>;
 };
 
 async function fetchResidentDetail(
@@ -496,6 +577,74 @@ async function fetchResidentDetail(
     : "Unassigned";
   const unitName = unit?.name ?? "Unassigned";
 
+  const facilityId = resident.facility_id;
+  const [dailyResult, adlResult] = await Promise.all([
+    supabase
+      .from("daily_logs")
+      .select("id, log_date, shift, general_notes, logged_by")
+      .eq("resident_id", residentId)
+      .eq("facility_id", facilityId)
+      .is("deleted_at", null)
+      .order("log_date", { ascending: false })
+      .limit(8),
+    supabase
+      .from("adl_logs")
+      .select("id, log_time, log_date, shift, adl_type, assistance_level, refused, notes, logged_by")
+      .eq("resident_id", residentId)
+      .eq("facility_id", facilityId)
+      .is("deleted_at", null)
+      .order("log_time", { ascending: false })
+      .limit(12),
+  ]);
+
+  if (dailyResult.error) {
+    throw dailyResult.error;
+  }
+  if (adlResult.error) {
+    throw adlResult.error;
+  }
+
+  const dailyRows = dailyResult.data ?? [];
+  const adlRows = adlResult.data ?? [];
+  const userIds = [
+    ...new Set([
+      ...dailyRows.map((r) => r.logged_by),
+      ...adlRows.map((r) => r.logged_by),
+    ]),
+  ];
+  const nameById = new Map<string, string>();
+  if (userIds.length > 0) {
+    const profResult = await supabase.from("user_profiles").select("id, full_name").in("id", userIds);
+    if (profResult.error) {
+      throw profResult.error;
+    }
+    for (const p of profResult.data ?? []) {
+      nameById.set(p.id, p.full_name);
+    }
+  }
+
+  const recentDailyNotes = dailyRows.map((r) => ({
+    id: r.id,
+    logDate: r.log_date,
+    shift: r.shift,
+    snippet: truncateSnippet(r.general_notes?.trim() || "—", 360),
+    loggedByLabel: nameById.get(r.logged_by) ?? "Staff",
+  }));
+
+  const recentAdl = adlRows.map((r) => {
+    const base = `${adlTypeLabel(r.adl_type)} · ${assistanceLabel(r.assistance_level)}`;
+    const summary = r.refused ? `${base} · refused` : base;
+    return {
+      id: r.id,
+      logTimeLabel: formatLogTime(r.log_time),
+      logDate: r.log_date,
+      shift: r.shift,
+      summary,
+      detailNote: r.notes?.trim() ? truncateSnippet(r.notes.trim(), 240) : null,
+      loggedByLabel: nameById.get(r.logged_by) ?? "Staff",
+    };
+  });
+
   return {
     id: resident.id,
     fullName,
@@ -527,6 +676,8 @@ async function fetchResidentDetail(
     emergency2Name: resident.emergency_contact_2_name,
     emergency2Relationship: resident.emergency_contact_2_relationship,
     emergency2Phone: resident.emergency_contact_2_phone,
+    recentDailyNotes,
+    recentAdl,
   };
 }
 
@@ -587,6 +738,22 @@ function formatCodeStatus(value: string | null): string {
 function formatPayer(value: string | null): string {
   if (!value) return "—";
   return value.replace(/_/g, " ");
+}
+
+function truncateSnippet(text: string, max: number): string {
+  if (text.length <= max) return text;
+  return `${text.slice(0, max - 1)}…`;
+}
+
+function formatLogTime(iso: string): string {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return iso;
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(parsed);
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {
