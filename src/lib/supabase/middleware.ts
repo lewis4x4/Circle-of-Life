@@ -26,6 +26,10 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getUser();
+  try {
+    await supabase.auth.getUser();
+  } catch {
+    // Avoid failing every request when Supabase is unreachable or misconfigured at runtime.
+  }
   return response;
 }

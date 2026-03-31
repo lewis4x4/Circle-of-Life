@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { Loader2, ArrowRight } from "lucide-react";
 
 import { loginSchema, type LoginFormData } from "@/lib/validation/auth";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -26,14 +26,34 @@ export default function LoginPage() {
   const supabase = createClient();
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
+  const [sessionProbeError, setSessionProbeError] = useState<string | null>(null);
 
   const resolveRouteFromRole = useCallback(async () => {
+    let userResult: Awaited<ReturnType<typeof supabase.auth.getUser>>;
+    try {
+      userResult = await supabase.auth.getUser();
+    } catch {
+      throw new Error("AUTH_NETWORK");
+    }
+
     const {
       data: { user },
       error: userError,
-    } = await supabase.auth.getUser();
+    } = userResult;
 
-    if (userError || !user) return null;
+    if (userError) {
+      const hint = `${userError.message ?? ""} ${"name" in userError ? String(userError.name) : ""}`.toLowerCase();
+      if (
+        hint.includes("fetch") ||
+        hint.includes("network") ||
+        hint.includes("load failed") ||
+        hint.includes("failed to send")
+      ) {
+        throw new Error("AUTH_NETWORK");
+      }
+      return null;
+    }
+    if (!user) return null;
 
     const roleFromAppMetadata = user.app_metadata?.app_role;
     const roleFromUserMetadata = user.user_metadata?.app_role;
@@ -45,17 +65,43 @@ export default function LoginPage() {
   }, [supabase]);
 
   useEffect(() => {
+    let cancelled = false;
+
     const routeIfAuthenticated = async () => {
-      const destination = await resolveRouteFromRole();
-      if (!destination) {
-        setCheckingSession(false);
+      if (!isBrowserSupabaseConfigured()) {
+        if (!cancelled) {
+          setSessionProbeError(
+            "Sign-in is not configured. Copy .env.example to .env.local, set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY from your Supabase project (Settings → API), then restart `npm run dev`.",
+          );
+          setCheckingSession(false);
+        }
         return;
       }
-      router.replace(destination);
-      router.refresh();
+
+      try {
+        const destination = await resolveRouteFromRole();
+        if (cancelled) return;
+        if (!destination) {
+          setCheckingSession(false);
+          return;
+        }
+        router.replace(destination);
+        router.refresh();
+      } catch (e) {
+        if (cancelled) return;
+        const message =
+          e instanceof Error && e.message === "AUTH_NETWORK"
+            ? "Cannot reach Supabase (network or URL). Confirm the project is running, NEXT_PUBLIC_SUPABASE_URL is correct, and nothing is blocking the browser. Then restart the dev server."
+            : "Could not verify your session. Check your connection and Supabase settings, then refresh this page.";
+        setSessionProbeError(message);
+        setCheckingSession(false);
+      }
     };
 
     void routeIfAuthenticated();
+    return () => {
+      cancelled = true;
+    };
   }, [resolveRouteFromRole, router]);
 
   const form = useForm<LoginFormData>({
@@ -68,6 +114,10 @@ export default function LoginPage() {
 
   async function onSubmit(data: LoginFormData) {
     setGlobalError(null);
+    if (!isBrowserSupabaseConfigured()) {
+      setGlobalError("Supabase environment variables are missing. Configure .env.local and restart the dev server.");
+      return;
+    }
     try {
       // Execute strict Supabase SSR logic
       const { error } = await supabase.auth.signInWithPassword({
@@ -84,7 +134,9 @@ export default function LoginPage() {
       router.push(destination);
       router.refresh();
     } catch {
-      setGlobalError("An unexpected system error occurred. Please contact support.");
+      setGlobalError(
+        "Sign-in request failed to complete. This is usually a network issue or an invalid Supabase URL. Check .env.local and your Supabase project status.",
+      );
     }
   }
 
@@ -148,6 +200,12 @@ export default function LoginPage() {
               Use your organizational credentials. Your dashboard is selected automatically by role.
             </p>
           </div>
+
+          {sessionProbeError ? (
+            <div className="rounded-lg border border-amber-600/50 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">
+              {sessionProbeError}
+            </div>
+          ) : null}
 
           <Card className="border border-white/10 bg-slate-900/65 shadow-2xl backdrop-blur">
             <CardContent className="p-6 sm:p-8">
@@ -214,7 +272,7 @@ export default function LoginPage() {
                   <Button
                     type="submit"
                     className="h-12 w-full tap-responsive bg-amber-500 font-semibold text-slate-950 hover:bg-amber-400"
-                    disabled={form.formState.isSubmitting}
+                    disabled={form.formState.isSubmitting || !isBrowserSupabaseConfigured()}
                   >
                     {form.formState.isSubmitting ? (
                       <>
