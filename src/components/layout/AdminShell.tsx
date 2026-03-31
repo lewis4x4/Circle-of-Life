@@ -186,6 +186,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   </div>
                 ) : null}
 
+                {facilitiesLoadFailed ? (
+                  <DropdownMenuItem
+                    onClick={() => void refreshFacilities()}
+                    className="cursor-pointer dark:focus:bg-slate-800"
+                  >
+                    Retry loading facilities
+                  </DropdownMenuItem>
+                ) : null}
+
                 {availableFacilities.map((facility) => (
                   <DropdownMenuItem 
                     key={facility.id}

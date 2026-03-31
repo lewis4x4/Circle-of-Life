@@ -87,6 +87,32 @@ export function AdminTableLoadingState() {
   );
 }
 
+/** Amber banner when live Supabase load failed and the page is showing demo / stale fallback rows. */
+export function AdminLiveDataFallbackNotice({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <Card className="border-amber-200/80 bg-amber-50/40 dark:border-amber-900/60 dark:bg-amber-950/20">
+      <CardContent className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-amber-700 dark:text-amber-300">{message}</p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onRetry}
+          className="h-9 shrink-0 border-amber-300 bg-white text-amber-900 hover:bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-950/60"
+        >
+          Retry
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 type AdminErrorStateProps = {
   title?: string;
   message: string;

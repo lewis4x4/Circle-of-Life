@@ -4,7 +4,12 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, ArrowUpDown, BarChart3, ChevronRight, ShieldAlert } from "lucide-react";
 
-import { AdminEmptyState, AdminFilterBar, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
+import {
+  AdminEmptyState,
+  AdminFilterBar,
+  AdminLiveDataFallbackNotice,
+  AdminTableLoadingState,
+} from "@/components/common/admin-list-patterns";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { createClient } from "@/lib/supabase/client";
@@ -226,9 +231,7 @@ export default function AdminIncidentsPage() {
 
       {isLoading ? <AdminTableLoadingState /> : null}
       {!isLoading && error ? (
-        <Card className="border-amber-200/80 bg-amber-50/40 dark:border-amber-900/60 dark:bg-amber-950/20">
-          <CardContent className="py-3 text-sm text-amber-700 dark:text-amber-300">{error}</CardContent>
-        </Card>
+        <AdminLiveDataFallbackNotice message={error} onRetry={() => void loadIncidents()} />
       ) : null}
       {!isLoading && filteredRows.length === 0 ? (
         <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />

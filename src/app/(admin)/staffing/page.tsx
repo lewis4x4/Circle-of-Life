@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { SlidersHorizontal, Users } from "lucide-react";
 
-import { AdminEmptyState, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
+import { AdminEmptyState, AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -158,9 +158,7 @@ export default function AdminStaffingPage() {
 
       {isLoading ? <AdminTableLoadingState /> : null}
       {!isLoading && error ? (
-        <Card className="border-amber-200/80 bg-amber-50/40 dark:border-amber-900/60 dark:bg-amber-950/20">
-          <CardContent className="py-3 text-sm text-amber-700 dark:text-amber-300">{error}</CardContent>
-        </Card>
+        <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} />
       ) : null}
       {!isLoading && filteredRows.length === 0 ? (
         <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />

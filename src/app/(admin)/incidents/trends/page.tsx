@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { BarChart3, TrendingUp } from "lucide-react";
 
-import { AdminEmptyState, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
+import { AdminEmptyState, AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -131,9 +131,7 @@ export default function AdminIncidentTrendsPage() {
 
       {loading ? <AdminTableLoadingState /> : null}
       {!loading && error ? (
-        <Card className="border-amber-200/80 bg-amber-50/40 dark:border-amber-900/60 dark:bg-amber-950/20">
-          <CardContent className="py-3 text-sm text-amber-800 dark:text-amber-200">{error}</CardContent>
-        </Card>
+        <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} />
       ) : null}
       {!loading && !error && rows.length === 0 ? (
         <AdminEmptyState
