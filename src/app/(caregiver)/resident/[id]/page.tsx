@@ -1,15 +1,73 @@
 "use client";
 
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, CalendarClock, Droplets, HeartPulse, Pill, Plus, ShieldCheck } from "lucide-react";
+import { AlertTriangle, CalendarClock, Droplets, HeartPulse, Loader2, Pill, Plus, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useParams } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import type { CaregiverResidentProfile, RiskBanner } from "@/lib/caregiver/resident-profile";
+import { fetchCaregiverResidentProfile } from "@/lib/caregiver/resident-profile";
 
 export default function CaregiverResidentQuickProfilePage() {
   const params = useParams<{ id: string }>();
   const residentId = params?.id ?? "unknown";
+
+  const [profile, setProfile] = useState<CaregiverResidentProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const supabase = createClient();
+      const result = await fetchCaregiverResidentProfile(supabase, residentId);
+      if (!result.ok) {
+        setError(result.error);
+      } else {
+        setProfile(result.profile);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load resident profile");
+    } finally {
+      setLoading(false);
+    }
+  }, [residentId]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+      </div>
+    );
+  }
+
+  if (error || !profile) {
+    return (
+      <div className="space-y-3 py-12 text-center">
+        <p className="text-sm text-red-400">{error ?? "Resident not found"}</p>
+        <Button variant="outline" size="sm" onClick={load}>Retry</Button>
+      </div>
+    );
+  }
+
+  const p = profile;
+  const acuityTone = p.acuityLevel?.includes("3")
+    ? "danger"
+    : p.acuityLevel?.includes("2")
+      ? "warning"
+      : "neutral";
+
+  const medsTone = p.scheduledMedsDueNow > 0 ? "warning" : "success";
+  const moodTone = p.recentDailyLogMood?.toLowerCase().includes("anxious") ||
+    p.recentDailyLogMood?.toLowerCase().includes("restless")
+    ? "warning"
+    : "success";
 
   return (
     <div className="space-y-4">
@@ -17,47 +75,53 @@ export default function CaregiverResidentQuickProfilePage() {
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <CardTitle className="text-xl font-display">Margaret Johnson</CardTitle>
+              <CardTitle className="text-xl font-display">{p.displayName}</CardTitle>
               <CardDescription className="text-zinc-400">
-                Room 114 · Resident ID {residentId}
+                {p.roomLabel} · {p.status === "hospital_hold" ? "Hospital Hold" : p.primaryDiagnosis ?? ""}
               </CardDescription>
             </div>
-            <Badge className="border-rose-700 bg-rose-900/40 text-rose-200">High fall risk</Badge>
+            {p.fallRiskLevel === "high" && (
+              <Badge className="border-rose-700 bg-rose-900/40 text-rose-200">High fall risk</Badge>
+            )}
+            {p.fallRiskLevel === "moderate" && (
+              <Badge className="border-amber-700 bg-amber-900/40 text-amber-200">Fall risk</Badge>
+            )}
+            {p.elopementRisk && (
+              <Badge className="border-rose-700 bg-rose-900/40 text-rose-200">Elopement risk</Badge>
+            )}
           </div>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-2 text-xs">
-          <MetricPill label="Acuity" value="Level 3" tone="danger" />
-          <MetricPill label="Meds Due" value="2 now" tone="warning" />
-          <MetricPill label="Open Tasks" value="3" tone="neutral" />
-          <MetricPill label="Hydration" value="920 ml" tone="success" />
+          <MetricPill label="Acuity" value={p.acuityLevel ?? "—"} tone={acuityTone} />
+          <MetricPill
+            label="Meds Due"
+            value={p.scheduledMedsDueNow > 0 ? `${p.scheduledMedsDueNow} now` : "None"}
+            tone={medsTone}
+          />
+          <MetricPill label="Active Meds" value={String(p.activeMedCount)} tone="neutral" />
+          <MetricPill
+            label="Mood"
+            value={p.recentDailyLogMood ?? "—"}
+            tone={moodTone}
+          />
         </CardContent>
       </Card>
 
-      <Card className="border-amber-900/60 bg-amber-950/20 text-zinc-100">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <AlertTriangle className="h-4 w-4 text-amber-400" />
-            Risk Banners
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <Banner
-            title="Falls protocol active"
-            detail="Bed alarm + 2-hour rounding + toileting assist required."
-            tone="warning"
-          />
-          <Banner
-            title="Orthostatic hypotension watch"
-            detail="Take seated/standing BP before antihypertensive administration."
-            tone="danger"
-          />
-          <Banner
-            title="Care plan reviewed"
-            detail="Latest update accepted by nurse on current shift."
-            tone="ok"
-          />
-        </CardContent>
-      </Card>
+      {p.riskBanners.length > 0 && (
+        <Card className="border-amber-900/60 bg-amber-950/20 text-zinc-100">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <AlertTriangle className="h-4 w-4 text-amber-400" />
+              Risk Banners
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            {p.riskBanners.map((banner: RiskBanner, i: number) => (
+              <BannerRow key={`${banner.title}-${i}`} {...banner} />
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="border-zinc-800 bg-zinc-950/70 text-zinc-100">
         <CardHeader className="pb-2">
@@ -70,7 +134,11 @@ export default function CaregiverResidentQuickProfilePage() {
             icon={<CalendarClock className="h-4 w-4" />}
             label="ADL"
           />
-          <ActionLink href={`/caregiver/resident/${residentId}/log`} icon={<HeartPulse className="h-4 w-4" />} label="Shift log" />
+          <ActionLink
+            href={`/caregiver/resident/${residentId}/log`}
+            icon={<HeartPulse className="h-4 w-4" />}
+            label="Shift log"
+          />
           <ActionLink
             href={`/caregiver/resident/${residentId}/behavior`}
             icon={<AlertTriangle className="h-4 w-4" />}
@@ -118,7 +186,7 @@ function MetricPill({
   );
 }
 
-function Banner({
+function BannerRow({
   title,
   detail,
   tone,
