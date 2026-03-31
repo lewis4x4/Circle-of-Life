@@ -1,0 +1,123 @@
+{
+  "segment": "post-build-audit-remediation",
+  "timestamp": "2026-03-31T11:52:58.333Z",
+  "verdict": "PASS",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-env-example.mjs",
+      "duration_ms": 24,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "duration_ms": 70,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "status": "passed",
+      "command": "npm run audit:ci",
+      "duration_ms": 563,
+      "stdout": "found 0 vulnerabilities\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "status": "passed",
+      "command": "npm run secrets:gitleaks",
+      "duration_ms": 1121,
+      "stdout": "[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n\u001b[90m11:52AM\u001b[0m \u001b[32mINF\u001b[0m 18 commits scanned.\n\u001b[90m11:52AM\u001b[0m \u001b[32mINF\u001b[0m scan completed in 370ms\n\u001b[90m11:52AM\u001b[0m \u001b[32mINF\u001b[0m no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "status": "passed",
+      "command": "npm run lint",
+      "duration_ms": 1606,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "status": "passed",
+      "command": "npm run migrations:check",
+      "duration_ms": 122,
+      "stdout": "[migrations:check] PASS: 29 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..029\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": false,
+      "status": "passed",
+      "command": "npm run migrations:verify:pg",
+      "duration_ms": 9156,
+      "stdout": "[migrations:verify:pg] PASS (29 migration file(s))\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "status": "passed",
+      "command": "npm run build",
+      "duration_ms": 8169,
+      "stdout": "[migrations:check] PASS: 29 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..029\n▲ Next.js 16.2.1 (Turbopack)\n\n  Creating an optimized production build ...\n✓ Compiled successfully in 3.8s\n  Running TypeScript ...\n  Finished TypeScript in 2.9s ...\n  Collecting page data using 15 workers ...\n  Generating static pages using 15 workers (0/16) ...\n  Generating static pages using 15 workers (4/16) \r\n  Generating static pages using 15 workers (8/16) \r\n  Generating static pages using 15 workers (12/16) \r\n✓ Generating static pages using 15 workers (16/16) in 268ms\n  Finalizing page optimization ...\n\nRoute (app)\n┌ ○ /\n├ ○ /_not-found\n├ ○ /admin\n├ ○ /admin/billing\n├ ○ /admin/incidents\n├ ○ /admin/residents\n├ ○ /admin/staff\n├ ○ /billing\n├ ○ /caregiver\n├ ○ /family\n├ ○ /incidents\n├ ○ /login\n├ ○ /residents\n└ ○ /staff\n\n\nƒ Proxy (Middleware)\n\n○  (Static)  prerendered as static content\n\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run stress:test",
+      "stdout": "skipped (--no-chaos)"
+    },
+    {
+      "id": "cdo.design-review",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run design:review",
+      "stdout": "skipped (pass --ui to enable)"
+    },
+    {
+      "id": "cdo.a11y-axe",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run a11y:routes",
+      "stdout": "skipped (pass --ui to enable; omit --no-a11y)"
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 0,
+    "skipped": 4,
+    "blocking_failures": []
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/agent-gates/2026-03-31T11-52-58-333Z-post-build-audit-remediation.json"
+  ]
+}

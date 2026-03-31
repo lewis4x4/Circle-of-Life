@@ -15,7 +15,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Activity, Users, AlertCircle, Clock, ChevronRight, Bed, ArrowUpRight, ArrowDownRight, Stethoscope } from "lucide-react";
+import { Activity, Users, AlertCircle, Bed, ArrowUpRight, ArrowDownRight } from "lucide-react";
 
 export default function AdminDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);

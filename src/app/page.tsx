@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, Activity, ShieldCheck, Banknote, Users, Heart, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Activity, ShieldCheck, Banknote, Heart, CheckCircle2 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 
