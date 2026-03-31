@@ -74,9 +74,8 @@ export default function AdminCertificationsPage() {
     try {
       const live = await fetchCertificationsFromSupabase(selectedFacilityId);
       setRows(live);
-    } catch {
-      setRows(mockCertRows);
-      setError("Live certification directory is unavailable. Showing demo rows.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
       setIsLoading(false);
     }
@@ -365,42 +364,3 @@ function DbStatusBadge({ status }: { status: string }) {
           : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400";
   return <Badge className={className}>{label}</Badge>;
 }
-
-const mockCertRows: CertRow[] = [
-  {
-    id: "cert-demo-1",
-    staffId: "staff-001",
-    staffName: "John Davis",
-    certificationType: "rn",
-    certificationName: "Registered Nurse — State License",
-    issuingAuthority: "State BON",
-    issueDate: "2022-04-01",
-    expirationDate: "2026-12-31",
-    dbStatus: "active",
-    timeline: "current",
-  },
-  {
-    id: "cert-demo-2",
-    staffId: "staff-002",
-    staffName: "Maria Gomez",
-    certificationType: "cpr_first_aid",
-    certificationName: "CPR / First Aid",
-    issuingAuthority: "Red Cross",
-    issueDate: "2024-01-10",
-    expirationDate: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-    dbStatus: "active",
-    timeline: "expiring_soon",
-  },
-  {
-    id: "cert-demo-3",
-    staffId: "staff-004",
-    staffName: "Samuel Ortiz",
-    certificationType: "cna",
-    certificationName: "Nurse Aide Registry",
-    issuingAuthority: "State registry",
-    issueDate: "2019-06-01",
-    expirationDate: "2024-08-01",
-    dbStatus: "expired",
-    timeline: "expired",
-  },
-];

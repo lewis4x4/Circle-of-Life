@@ -92,9 +92,8 @@ export default function AdminIncidentsPage() {
     try {
       const liveRows = await fetchIncidentsFromSupabase(selectedFacilityId);
       setRows(liveRows);
-    } catch {
-      setRows(mockIncidents);
-      setError("Live incident data is unavailable. Showing demo queue data.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
       setIsLoading(false);
     }
@@ -496,50 +495,3 @@ function StatusBadge({ status }: { status: IncidentStatus }) {
   };
   return <Badge className={map[status].className}>{map[status].label}</Badge>;
 }
-
-const mockIncidents: IncidentRow[] = [
-  {
-    id: "inc-1001",
-    incidentNumber: "INC-2026-00142",
-    residentName: "Eleanor Vance",
-    category: "fall",
-    severity: "level_4",
-    status: "open",
-    reportedAt: "Today, 08:42",
-    reportedBy: "Maria G. (CNA)",
-    followupDue: "Today, 10:00",
-  },
-  {
-    id: "inc-1002",
-    incidentNumber: "INC-2026-00139",
-    residentName: "Margaret Sullivan",
-    category: "medication_error",
-    severity: "level_3",
-    status: "in_review",
-    reportedAt: "Today, 07:18",
-    reportedBy: "John D. (RN)",
-    followupDue: "Today, 12:00",
-  },
-  {
-    id: "inc-1003",
-    incidentNumber: "INC-2026-00137",
-    residentName: "Lucille Booth",
-    category: "behavioral",
-    severity: "level_2",
-    status: "open",
-    reportedAt: "Yesterday, 21:31",
-    reportedBy: "Theresa W. (Med Tech)",
-    followupDue: "Tomorrow, 09:00",
-  },
-  {
-    id: "inc-1004",
-    incidentNumber: "INC-2026-00129",
-    residentName: "William Hastings",
-    category: "other",
-    severity: "level_1",
-    status: "closed",
-    reportedAt: "Mar 27, 14:22",
-    reportedBy: "System Import",
-    followupDue: "Completed",
-  },
-];

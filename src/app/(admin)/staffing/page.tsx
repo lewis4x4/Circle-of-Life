@@ -54,9 +54,8 @@ export default function AdminStaffingPage() {
     try {
       const live = await fetchSnapshotsFromSupabase(selectedFacilityId);
       setRows(live);
-    } catch {
-      setRows(mockSnapshots);
-      setError("Live staffing snapshots are unavailable. Showing demo ratios.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
       setIsLoading(false);
     }
@@ -270,36 +269,3 @@ function ShiftBadge({ shift }: { shift: string }) {
             : shift;
   return <Badge variant="outline">{label}</Badge>;
 }
-
-const mockSnapshots: SnapshotRow[] = [
-  {
-    id: "snap-demo-1",
-    snapshotAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    shift: "day",
-    residentsPresent: 42,
-    staffOnDuty: 9,
-    ratio: 4.67,
-    requiredRatio: 8,
-    isCompliant: true,
-  },
-  {
-    id: "snap-demo-2",
-    snapshotAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-    shift: "evening",
-    residentsPresent: 40,
-    staffOnDuty: 5,
-    ratio: 8,
-    requiredRatio: 8,
-    isCompliant: true,
-  },
-  {
-    id: "snap-demo-3",
-    snapshotAt: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(),
-    shift: "night",
-    residentsPresent: 38,
-    staffOnDuty: 3,
-    ratio: 12.67,
-    requiredRatio: 10,
-    isCompliant: false,
-  },
-];

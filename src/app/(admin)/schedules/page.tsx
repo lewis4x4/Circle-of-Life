@@ -53,9 +53,8 @@ export default function AdminSchedulesPage() {
     try {
       const live = await fetchSchedulesFromSupabase(selectedFacilityId);
       setRows(live);
-    } catch {
-      setRows(mockSchedules);
-      setError("Live schedules are unavailable. Showing demo weeks.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
       setIsLoading(false);
     }
@@ -244,20 +243,3 @@ function ScheduleStatusBadge({ status }: { status: string }) {
   const m = map[status] ?? { label: status, className: "bg-slate-100 text-slate-600" };
   return <Badge className={m.className}>{m.label}</Badge>;
 }
-
-const mockSchedules: ScheduleRow[] = [
-  {
-    id: "sched-demo-1",
-    weekStartDate: "2026-03-03",
-    status: "published",
-    publishedAt: "2026-03-01T14:00:00.000Z",
-    notes: "Spring census staffing pattern",
-  },
-  {
-    id: "sched-demo-2",
-    weekStartDate: "2026-03-10",
-    status: "draft",
-    publishedAt: null,
-    notes: null,
-  },
-];

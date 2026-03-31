@@ -66,9 +66,8 @@ export default function AdminTimeRecordsPage() {
     try {
       const live = await fetchTimeRecordsFromSupabase(selectedFacilityId);
       setRows(live);
-    } catch {
-      setRows(mockTimeRows);
-      setError("Live time records are unavailable. Showing demo punches.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
       setIsLoading(false);
     }
@@ -275,24 +274,3 @@ function formatDateTime(iso: string): string {
     minute: "2-digit",
   }).format(d);
 }
-
-const mockTimeRows: TimeRow[] = [
-  {
-    id: "time-demo-1",
-    staffId: "staff-001",
-    staffName: "John Davis",
-    clockIn: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-    clockOut: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-    approved: true,
-    actualHours: 7.5,
-  },
-  {
-    id: "time-demo-2",
-    staffId: "staff-002",
-    staffName: "Maria Gomez",
-    clockIn: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-    clockOut: null,
-    approved: false,
-    actualHours: null,
-  },
-];

@@ -86,9 +86,8 @@ export default function AdminCarePlanReviewsDuePage() {
     try {
       const live = await fetchReviewsDue(selectedFacilityId);
       setRows(live);
-    } catch {
-      setRows(mockRows);
-      setError("Live care plan data is unavailable. Showing demo review queue.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
       setIsLoading(false);
     }
@@ -306,16 +305,3 @@ function formatDisplayDate(iso: string): string {
 function formatSnake(s: string): string {
   return s.replace(/_/g, " ");
 }
-
-const mockRows: Row[] = [
-  {
-    id: "mock-p1",
-    residentId: "00000000-0000-4000-8000-000000000002",
-    residentName: "Demo Resident",
-    version: 2,
-    status: "active",
-    effectiveDate: "Feb 1, 2026",
-    reviewDueDate: "Mar 20, 2026",
-    daysOverdue: 5,
-  },
-];

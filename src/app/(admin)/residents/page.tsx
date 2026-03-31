@@ -101,9 +101,8 @@ export default function AdminResidentsPage() {
     try {
       const liveRows = await fetchResidentsFromSupabase(selectedFacilityId);
       setRows(liveRows);
-    } catch {
-      setRows(mockResidents);
-      setError("Live resident data is unavailable. Showing demo census data.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
       setIsLoading(false);
     }
@@ -492,78 +491,3 @@ function ResidentStatusBadge({ status }: { status: ResidencyStatus }) {
 
   return <Badge className={map[status].className}>{map[status].label}</Badge>;
 }
-
-const mockResidents: ResidentRow[] = [
-  {
-    id: "res-001",
-    name: "Margaret Sullivan",
-    initials: "MS",
-    room: "101-A",
-    unit: "East Wing",
-    acuity: 2,
-    adlStatus: "assisted",
-    status: "active",
-    careSummary: "Needs 1-person assist for transfers",
-    updatedAt: "12 min ago",
-  },
-  {
-    id: "res-002",
-    name: "Arthur Pendelton",
-    initials: "AP",
-    room: "102-B",
-    unit: "East Wing",
-    acuity: 1,
-    adlStatus: "independent",
-    status: "active",
-    careSummary: "Independent ambulation, low fall risk",
-    updatedAt: "39 min ago",
-  },
-  {
-    id: "res-003",
-    name: "Eleanor Vance",
-    initials: "EV",
-    room: "104-A",
-    unit: "Memory Care",
-    acuity: 3,
-    adlStatus: "dependent",
-    status: "hospital",
-    careSummary: "Post-fall transfer, neuro checks in progress",
-    updatedAt: "6 min ago",
-  },
-  {
-    id: "res-004",
-    name: "Robert Chen",
-    initials: "RC",
-    room: "201-A",
-    unit: "West Wing",
-    acuity: 1,
-    adlStatus: "independent",
-    status: "active",
-    careSummary: "Physical therapy 3x/week",
-    updatedAt: "1 hr ago",
-  },
-  {
-    id: "res-005",
-    name: "Lucille Booth",
-    initials: "LB",
-    room: "205-B",
-    unit: "West Wing",
-    acuity: 2,
-    adlStatus: "assisted",
-    status: "active",
-    careSummary: "PRN pain protocol and hydration tracking",
-    updatedAt: "15 min ago",
-  },
-  {
-    id: "res-006",
-    name: "William Hastings",
-    initials: "WH",
-    room: "206-A",
-    unit: "West Wing",
-    acuity: 1,
-    adlStatus: "independent",
-    status: "loa",
-    careSummary: "Family leave approved until Monday",
-    updatedAt: "Yesterday",
-  },
-];

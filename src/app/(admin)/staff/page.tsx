@@ -87,9 +87,8 @@ export default function AdminStaffPage() {
     try {
       const liveRows = await fetchStaffFromSupabase(selectedFacilityId);
       setRows(liveRows);
-    } catch {
-      setRows(mockStaff);
-      setError("Live staff directory is unavailable. Showing demo roster data.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
       setIsLoading(false);
     }
@@ -491,50 +490,3 @@ function OvertimeRiskBadge({ risk }: { risk: "low" | "medium" | "high" }) {
   } as const;
   return <Badge className={map[risk].className}>{map[risk].label}</Badge>;
 }
-
-const mockStaff: StaffRow[] = [
-  {
-    id: "staff-001",
-    name: "John Davis",
-    initials: "JD",
-    role: "nurse",
-    status: "active",
-    certifications: "current",
-    nextShift: "Today 3:00 PM",
-    overtimeRisk: "low",
-    photoUrl: null,
-  },
-  {
-    id: "staff-002",
-    name: "Maria Gomez",
-    initials: "MG",
-    role: "caregiver",
-    status: "active",
-    certifications: "expiring_soon",
-    nextShift: "Today 11:00 PM",
-    overtimeRisk: "medium",
-    photoUrl: null,
-  },
-  {
-    id: "staff-003",
-    name: "Theresa Walker",
-    initials: "TW",
-    role: "med_tech",
-    status: "off_shift",
-    certifications: "current",
-    nextShift: "Tomorrow 7:00 AM",
-    overtimeRisk: "low",
-    photoUrl: null,
-  },
-  {
-    id: "staff-004",
-    name: "Samuel Ortiz",
-    initials: "SO",
-    role: "caregiver",
-    status: "on_leave",
-    certifications: "expired",
-    nextShift: "Pending Return",
-    overtimeRisk: "high",
-    photoUrl: null,
-  },
-];

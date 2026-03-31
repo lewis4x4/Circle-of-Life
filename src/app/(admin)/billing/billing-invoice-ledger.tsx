@@ -20,8 +20,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-import { DEMO_INVOICE_IDS } from "./demo-invoices";
-
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -102,13 +100,8 @@ export function BillingInvoiceLedger({
     try {
       const liveRows = await fetchInvoicesFromSupabase(selectedFacilityId, residentIdFilter);
       setRows(liveRows);
-    } catch {
-      setRows(residentIdFilter ? [] : mockInvoices);
-      setError(
-        residentIdFilter
-          ? "Live billing data is unavailable for this resident."
-          : "Live billing data is unavailable. Showing demo ledger data.",
-      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
       setIsLoading(false);
     }
@@ -423,46 +416,3 @@ export function InvoiceStatusBadge({ status }: { status: InvoiceStatusUi }) {
   };
   return <Badge className={map[status].className}>{map[status].label}</Badge>;
 }
-
-const mockInvoices: BillingRow[] = [
-  {
-    id: DEMO_INVOICE_IDS.inv1,
-    invoiceNumber: "INV-2026-03-145",
-    residentName: "Margaret Sullivan",
-    payerType: "private_pay",
-    status: "sent",
-    amountDueCents: 754250,
-    dueDate: "Apr 5, 2026",
-    updatedAt: "12 min ago",
-  },
-  {
-    id: DEMO_INVOICE_IDS.inv2,
-    invoiceNumber: "INV-2026-03-142",
-    residentName: "Arthur Pendelton",
-    payerType: "medicaid",
-    status: "paid",
-    amountDueCents: 0,
-    dueDate: "Paid",
-    updatedAt: "1 hr ago",
-  },
-  {
-    id: DEMO_INVOICE_IDS.inv3,
-    invoiceNumber: "INV-2026-03-140",
-    residentName: "Lucille Booth",
-    payerType: "ltc_insurance",
-    status: "partial",
-    amountDueCents: 215300,
-    dueDate: "Apr 2, 2026",
-    updatedAt: "Today, 08:10",
-  },
-  {
-    id: DEMO_INVOICE_IDS.inv4,
-    invoiceNumber: "INV-2026-02-098",
-    residentName: "William Hastings",
-    payerType: "private_pay",
-    status: "overdue",
-    amountDueCents: 198750,
-    dueDate: "Mar 10, 2026",
-    updatedAt: "Yesterday",
-  },
-];

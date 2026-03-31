@@ -88,9 +88,8 @@ export default function AdminAssessmentsOverduePage() {
     try {
       const live = await fetchOverdueAssessments(selectedFacilityId);
       setRows(live);
-    } catch {
-      setRows(mockRows);
-      setError("Live assessment queue is unavailable. Showing demo overdue items.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
       setIsLoading(false);
     }
@@ -318,17 +317,3 @@ function formatDisplayDate(iso: string): string {
 function formatType(t: string): string {
   return t.replace(/_/g, " ");
 }
-
-const mockRows: Row[] = [
-  {
-    id: "mock-a1",
-    residentId: "00000000-0000-4000-8000-000000000001",
-    residentName: "Demo Resident",
-    assessmentType: "braden",
-    assessmentDate: "Jan 1, 2026",
-    nextDueDate: "Mar 15, 2026",
-    daysOverdue: 12,
-    riskLevel: "moderate",
-    totalScore: "14",
-  },
-];
