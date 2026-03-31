@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import {
   ArrowLeft,
   ClipboardList,
+  CreditCard,
   HeartPulse,
   MapPin,
   Phone,
@@ -226,16 +227,28 @@ export default function AdminResidentDetailPage() {
           </div>
         </div>
         <div className="flex flex-col items-stretch gap-2 sm:items-end">
-          <Link
-            href={`/admin/residents/${detail.id}/care-plan`}
-            className={cn(
-              buttonVariants({ variant: "outline", size: "sm" }),
-              "inline-flex gap-2 border-slate-200 dark:border-slate-700",
-            )}
-          >
-            <ClipboardList className="h-3.5 w-3.5" />
-            Care plan
-          </Link>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Link
+              href={`/admin/residents/${detail.id}/care-plan`}
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "inline-flex gap-2 border-slate-200 dark:border-slate-700",
+              )}
+            >
+              <ClipboardList className="h-3.5 w-3.5" />
+              Care plan
+            </Link>
+            <Link
+              href={`/admin/residents/${detail.id}/billing`}
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "inline-flex gap-2 border-slate-200 dark:border-slate-700",
+              )}
+            >
+              <CreditCard className="h-3.5 w-3.5" />
+              Billing
+            </Link>
+          </div>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             Last updated {detail.updatedAtLabel}
           </p>
