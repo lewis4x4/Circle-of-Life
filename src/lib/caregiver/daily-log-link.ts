@@ -2,10 +2,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 
 /**
- * When a caregiver has already opened today's daily log row for this resident/shift,
- * link new ADL rows to it (optional FK on adl_logs).
+ * When the signed-in user already has a daily_logs row for this resident/date/shift,
+ * return its id so ADL / behavioral rows can attach (optional FKs).
  */
-export async function fetchDailyLogIdForAdlLink(
+export async function fetchShiftDailyLogId(
   supabase: SupabaseClient<Database>,
   args: {
     residentId: string;

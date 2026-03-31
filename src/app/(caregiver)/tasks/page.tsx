@@ -8,7 +8,7 @@ import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { fetchActiveResidentsWithRooms, type ResidentWithRoom } from "@/lib/caregiver/facility-residents";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 import { ADL_OPTIONS, ASSIST_OPTIONS } from "@/lib/caregiver/adl-form-options";
-import { fetchDailyLogIdForAdlLink } from "@/lib/caregiver/daily-log-link";
+import { fetchShiftDailyLogId } from "@/lib/caregiver/daily-log-link";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
@@ -128,7 +128,7 @@ export default function CaregiverTasksPage() {
     try {
       const ymd = zonedYmd(new Date(), ctx.timeZone);
       const shift = currentShiftForTimezone(ctx.timeZone);
-      const dailyLogId = await fetchDailyLogIdForAdlLink(supabase, {
+      const dailyLogId = await fetchShiftDailyLogId(supabase, {
         residentId: resident.id,
         facilityId: ctx.facilityId,
         logDate: ymd,

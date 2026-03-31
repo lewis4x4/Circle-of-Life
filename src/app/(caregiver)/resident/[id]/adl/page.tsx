@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, Bath, CheckCircle2, Loader2 } from "lucide-react";
 
 import { ADL_OPTIONS, ASSIST_OPTIONS, adlTypeLabel, assistanceLabel } from "@/lib/caregiver/adl-form-options";
-import { fetchDailyLogIdForAdlLink } from "@/lib/caregiver/daily-log-link";
+import { fetchShiftDailyLogId } from "@/lib/caregiver/daily-log-link";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
@@ -139,7 +139,7 @@ export default function CaregiverResidentAdlPage() {
     try {
       const ymd = zonedYmd(new Date(), ctx.timeZone);
       const shift = currentShiftForTimezone(ctx.timeZone);
-      const dailyLogId = await fetchDailyLogIdForAdlLink(supabase, {
+      const dailyLogId = await fetchShiftDailyLogId(supabase, {
         residentId,
         facilityId: ctx.facilityId,
         logDate: ymd,
