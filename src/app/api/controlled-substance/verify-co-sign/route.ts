@@ -64,6 +64,30 @@ export async function POST(request: Request) {
     );
   }
 
+  const { data: outgoingProfile, error: outProfErr } = await admin
+    .from("user_profiles")
+    .select("organization_id")
+    .eq("id", outgoing.id)
+    .maybeSingle();
+
+  if (outProfErr || !outgoingProfile?.organization_id) {
+    return NextResponse.json({ verified: false, error: "Outgoing profile not found" }, { status: 403 });
+  }
+
+  const { data: outgoingFac, error: outFacErr } = await admin
+    .from("user_facility_access")
+    .select("facility_id")
+    .eq("user_id", outgoing.id)
+    .eq("facility_id", facilityId)
+    .maybeSingle();
+
+  if (outFacErr || !outgoingFac) {
+    return NextResponse.json(
+      { verified: false, error: "Your session does not have access to this facility" },
+      { status: 403 },
+    );
+  }
+
   const { data: authData, error: authErr } = await admin.auth.signInWithPassword({
     email,
     password,
@@ -130,12 +154,22 @@ export async function POST(request: Request) {
   }
 
   const orgId = rows[0].organization_id;
+  if (orgId !== outgoingProfile.organization_id) {
+    return NextResponse.json({ verified: false, error: "Organization mismatch for session" }, { status: 403 });
+  }
+
   for (const row of rows) {
     if (row.facility_id !== facilityId) {
       return NextResponse.json({ verified: false, error: "Facility mismatch" }, { status: 400 });
     }
     if (row.organization_id !== orgId) {
       return NextResponse.json({ verified: false, error: "Organization mismatch" }, { status: 400 });
+    }
+    if (profile.organization_id !== row.organization_id) {
+      return NextResponse.json(
+        { verified: false, error: "Incoming staff organization does not match this count" },
+        { status: 403 },
+      );
     }
     if (row.outgoing_staff_id !== outgoing.id) {
       return NextResponse.json(
