@@ -1,0 +1,135 @@
+{
+  "segment": "feat-medication-management-advanced",
+  "timestamp": "2026-04-04T23:10:59.333Z",
+  "verdict": "FAIL",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-env-example.mjs",
+      "duration_ms": 33,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "duration_ms": 86,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "status": "passed",
+      "command": "npm run audit:ci",
+      "duration_ms": 682,
+      "stdout": "found 0 vulnerabilities\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "status": "passed",
+      "command": "npm run secrets:gitleaks",
+      "duration_ms": 14611,
+      "stdout": "[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n\u001b[90m11:11PM\u001b[0m \u001b[32mINF\u001b[0m 89 commits scanned.\n\u001b[90m11:11PM\u001b[0m \u001b[32mINF\u001b[0m scan completed in 1.79s\n\u001b[90m11:11PM\u001b[0m \u001b[32mINF\u001b[0m no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "status": "passed",
+      "command": "npm run lint",
+      "duration_ms": 5688,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "status": "passed",
+      "command": "npm run migrations:check",
+      "duration_ms": 218,
+      "stdout": "[migrations:check] PASS: 37 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..037\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": false,
+      "status": "passed",
+      "command": "npm run migrations:verify:pg",
+      "duration_ms": 46486,
+      "stdout": "[migrations:verify:pg] PASS (37 migration file(s))\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "status": "passed",
+      "command": "npm run build",
+      "duration_ms": 11432,
+      "stdout": "[migrations:check] PASS: 37 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..037\n▲ Next.js 16.2.1 (Turbopack)\n- Environments: .env.local\n\n  Creating an optimized production build ...\n✓ Compiled successfully in 4.6s\n  Running TypeScript ...\n  Finished TypeScript in 4.9s ...\n  Collecting page data using 15 workers ...\n  Generating static pages using 15 workers (0/76) ...\n  Generating static pages using 15 workers (19/76) \r\n  Generating static pages using 15 workers (38/76) \r\n  Generating static pages using 15 workers (57/76) \r\n✓ Generating static pages using 15 workers (76/76) in 325ms\n  Finalizing page optimization ...\n\nRoute (app)\n┌ ○ /\n├ ○ /_not-found\n├ ○ /admin\n├ ○ /admin/assessments/overdue\n├ ○ /admin/billing\n├ ○ /admin/billing/ar-aging\n├ ○ /admin/billing/invoices\n├ ƒ /admin/billing/invoices/[id]\n├ ○ /admin/billing/invoices/generate\n├ ○ /admin/billing/org-ar-aging\n├ ○ /admin/billing/payments/new\n├ ○ /admin/billing/rates\n├ ○ /admin/billing/revenue\n├ ○ /admin/care-plans/reviews-due\n├ ○ /admin/certifications\n├ ○ /admin/family-messages\n├ ○ /admin/incidents\n├ ƒ /admin/incidents/[id]\n├ ƒ /admin/incidents/[id]/rca\n├ ○ /admin/incidents/trends\n├ ○ /admin/medications\n├ ○ /admin/medications/controlled\n├ ○ /admin/medications/errors\n├ ○ /admin/medications/errors/new\n├ ○ /admin/medications/verbal-orders\n├ ○ /admin/medications/verbal-orders/new\n├ ○ /admin/residents\n├ ƒ /admin/residents/[id]\n├ ƒ /admin/residents/[id]/assessments\n├ ƒ /admin/residents/[id]/assessments/new\n├ ƒ /admin/residents/[id]/billing\n├ ƒ /admin/residents/[id]/care-plan\n├ ƒ /admin/residents/[id]/medications\n├ ○ /admin/schedules\n├ ○ /admin/staff\n├ ƒ /admin/staff/[id]\n├ ○ /admin/staffing\n├ ○ /admin/time-records\n├ ƒ /api/controlled-substance/verify-co-sign\n├ ○ /assessments/overdue\n├ ○ /billing\n├ ○ /billing/ar-aging\n├ ○ /billing/invoices\n├ ƒ /billing/invoices/[id]\n├ ○ /billing/invoices/generate\n├ ○ /billing/org-ar-aging\n├ ○ /billing/payments/new\n├ ○ /billing/rates\n├ ○ /billing/revenue\n├ ○ /care-plans/reviews-due\n├ ○ /caregiver\n├ ○ /caregiver/clock\n├ ○ /caregiver/controlled-count\n├ ○ /caregiver/followups\n├ ○ /caregiver/handoff\n├ ○ /caregiver/incident-draft\n├ ○ /caregiver/me\n├ ○ /caregiver/meds\n├ ○ /caregiver/prn-followup\n├ ƒ /caregiver/resident/[id]\n├ ƒ /caregiver/resident/[id]/adl\n├ ƒ /caregiver/resident/[id]/behavior\n├ ƒ /caregiver/resident/[id]/condition-change\n├ ƒ /caregiver/resident/[id]/log\n├ ○ /caregiver/schedules\n├ ○ /caregiver/tasks\n├ ○ /certifications\n├ ○ /clock\n├ ○ /family\n├ ○ /family/billing\n├ ○ /family/calendar\n├ ○ /family/care-plan\n├ ○ /family/invoices\n├ ○ /family/messages\n├ ○ /family/payments\n├ ○ /followups\n├ ○ /handoff\n├ ○ /incident-draft\n├ ○ /incidents\n├ ƒ /incidents/[id]\n├ ƒ /incidents/[id]/rca\n├ ○ /incidents/trends\n├ ○ /login\n├ ○ /me\n├ ○ /meds\n├ ○ /prn-followup\n├ ƒ /resident/[id]\n├ ƒ /resident/[id]/adl\n├ ƒ /resident/[id]/behavior\n├ ƒ /resident/[id]/condition-change\n├ ƒ /resident/[id]/log\n├ ○ /residents\n├ ƒ /residents/[id]\n├ ƒ /residents/[id]/assessments\n├ ƒ /residents/[id]/assessments/new\n├ ƒ /residents/[id]/billing\n├ ƒ /residents/[id]/care-plan\n├ ƒ /residents/[id]/medications\n├ ○ /schedules\n├ ○ /staff\n├ ƒ /staff/[id]\n├ ○ /staffing\n├ ○ /tasks\n└ ○ /time-records\n\n\nƒ Proxy (Middleware)\n\n○  (Static)   prerendered as static content\nƒ  (Dynamic)  server-rendered on demand\n\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": true,
+      "status": "passed",
+      "command": "npm run stress:test",
+      "duration_ms": 250,
+      "stdout": "PASS\tstress: suite loaded\nPASS\tstress: Number.parseInt rejects garbage\nPASS\tstress: parallel microtasks both ran\nADVISORY\tstress: add ALF/home-care workflow simulations when resident and census models exist\n",
+      "stderr": ""
+    },
+    {
+      "id": "cdo.design-review",
+      "required": true,
+      "status": "failed",
+      "command": "npm run design:review",
+      "duration_ms": 920,
+      "stdout": "",
+      "stderr": "browserType.launch: Executable doesn't exist at /var/folders/hs/_qwvnh5s2h194qyh71087psm0000gn/T/cursor-sandbox-cache/f02ef6e02bede0367e6493d9b5710b73/playwright/chromium_headless_shell-1208/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝\n    at main (/Users/brianlewis/Circle of Life/Circle-of-Life/.agents/design-review-runner.mjs:34:34)\n    at /Users/brianlewis/Circle of Life/Circle-of-Life/.agents/design-review-runner.mjs:102:1 {\n  name: 'Error'\n}\n",
+      "artifacts": [
+        "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/design-review/report.json"
+      ]
+    },
+    {
+      "id": "cdo.a11y-axe",
+      "required": true,
+      "status": "failed",
+      "command": "npm run a11y:routes",
+      "duration_ms": 868,
+      "stdout": "",
+      "stderr": "node:internal/modules/run_main:123\n    triggerUncaughtException(\n    ^\n\nbrowserType.launch: Executable doesn't exist at /var/folders/hs/_qwvnh5s2h194qyh71087psm0000gn/T/cursor-sandbox-cache/f02ef6e02bede0367e6493d9b5710b73/playwright/chromium_headless_shell-1208/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝\n    at main (/Users/brianlewis/Circle of Life/Circle-of-Life/scripts/a11y-axe-routes.mjs:25:34)\n    at /Users/brianlewis/Circle of Life/Circle-of-Life/scripts/a11y-axe-routes.mjs:139:7 {\n  name: 'Error'\n}\n\nNode.js v22.22.0\n"
+    }
+  ],
+  "summary": {
+    "passed": 10,
+    "failed": 2,
+    "skipped": 1,
+    "blocking_failures": [
+      "cdo.design-review",
+      "cdo.a11y-axe"
+    ]
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/agent-gates/2026-04-04T23-10-59-333Z-feat-medication-management-advanced.json"
+  ]
+}
