@@ -12,11 +12,13 @@
 -- ============================================================
 -- 1. Auth users (email / password = demo@haven.local / HavenDemo2026!)
 -- ============================================================
-CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+-- Vanilla Postgres (Docker verify) installs pgcrypto in public; Supabase may use extensions.
+-- Unqualified crypt/gen_salt work on both when pgcrypto is available.
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 DO $$
 DECLARE
-  pw text := extensions.crypt('HavenDemo2026!', extensions.gen_salt('bf'));
+  pw text := crypt('HavenDemo2026!', gen_salt('bf'));
   inst uuid := '00000000-0000-0000-0000-000000000000';
   ts  timestamptz := now();
 BEGIN
