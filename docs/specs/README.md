@@ -38,14 +38,17 @@ After this scaffold sprint, resume backend spec implementation in original order
 **Phase 1 Milestone:** At Week 12, COL can run daily operations on the platform at 1 pilot facility (Oakridge ALF). Caregivers document care, administer medications via eMAR, report incidents, view schedules, and clock in/out. Administrators manage staff, certifications, billing, and view facility dashboard.
 
 ### Phase 2: Clinical Depth & Compliance (Weeks 13-20)
-*Specs will be added here before Phase 1 completes.*
 
-| Order | Spec File | Module | Weeks |
-|-------|-----------|--------|-------|
-| 7 | `06-medication-management.md` | Medication Management (advanced) | 15-16 |
-| 8 | `08-compliance-engine.md` | Autonomous Compliance Engine | 17-18 |
-| 9 | `09-infection-control.md` | Infection Control & Health Monitoring | 19-20 |
-| 10 | `03-resident-profile-advanced.md` | Care Planning (advanced features) | 13-14 |
+**Scope & tiering guide:** `PHASE2-SCOPE.md` — defines Core/Enhanced/Future tiers per module. Specs implement Core; Enhanced is stretch; Future is explicitly deferred.
+
+**Phase 2 Milestone:** At Week 20, Haven enables one pilot facility to document structured assessments, maintain editable care plans, manage advanced medication workflows and controlled-substance accountability, monitor infections and vitals trends, and track survey/compliance deficiencies with operator-visible dashboards and follow-up workflows.
+
+| Order | Spec File | Module | Weeks | What It Adds |
+|-------|-----------|--------|-------|--------------|
+| 7 | `03-resident-profile-advanced.md` | Care Planning Advanced | 13-14 | Assessment entry + auto-scoring, care plan editing/versioning, acuity scoring, task generation from care plan items |
+| 8 | `06-medication-management.md` | Medication Management Advanced | 15-16 | PRN effectiveness prompts, medication error capture/trending, verbal orders, controlled substance count workflow |
+| 9 | `09-infection-control.md` | Infection Control & Health Monitoring | 17-18 | Infection surveillance, vitals trending + alerts, outbreak detection/management, staff illness tracking |
+| 10 | `08-compliance-engine.md` | Compliance Engine | 19-20 | Deficiency tracking, plans of correction, compliance dashboard, survey visit mode, policy library |
 
 ### Phase 3–7: Specs added on a rolling basis, always one phase ahead of build.
 

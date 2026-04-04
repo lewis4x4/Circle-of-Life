@@ -240,6 +240,16 @@ export default function AdminResidentDetailPage() {
         <div className="flex flex-col items-stretch gap-2 sm:items-end">
           <div className="flex flex-wrap justify-end gap-2">
             <Link
+              href={`/admin/residents/${detail.id}/assessments`}
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "gap-1 text-xs",
+              )}
+            >
+              <ClipboardList className="h-3.5 w-3.5" />
+              Assessments
+            </Link>
+            <Link
               href={`/admin/residents/${detail.id}/care-plan`}
               className={cn(
                 buttonVariants({ variant: "outline", size: "sm" }),

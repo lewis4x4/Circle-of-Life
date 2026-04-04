@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.4"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       activities: {
@@ -769,6 +794,193 @@ export type Database = {
           },
           {
             foreignKeyName: "care_plan_items_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_plan_review_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          care_plan_id: string
+          created_at: string
+          deleted_at: string | null
+          facility_id: string
+          id: string
+          organization_id: string
+          resident_id: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          trigger_detail: string | null
+          trigger_source_id: string | null
+          trigger_type: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          care_plan_id: string
+          created_at?: string
+          deleted_at?: string | null
+          facility_id: string
+          id?: string
+          organization_id: string
+          resident_id: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          trigger_detail?: string | null
+          trigger_source_id?: string | null
+          trigger_type: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          care_plan_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          facility_id?: string
+          id?: string
+          organization_id?: string
+          resident_id?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          trigger_detail?: string | null
+          trigger_source_id?: string | null
+          trigger_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_plan_review_alerts_care_plan_id_fkey"
+            columns: ["care_plan_id"]
+            isOneToOne: false
+            referencedRelation: "care_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_plan_review_alerts_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_plan_review_alerts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_plan_review_alerts_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_plan_tasks: {
+        Row: {
+          assistance_level: Database["public"]["Enums"]["assistance_level"]
+          care_plan_item_id: string
+          category: Database["public"]["Enums"]["care_plan_item_category"]
+          completed_at: string | null
+          completed_by: string | null
+          completion_notes: string | null
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          facility_id: string
+          id: string
+          organization_id: string
+          resident_id: string
+          scheduled_time: string | null
+          shift: Database["public"]["Enums"]["shift_type"] | null
+          skip_reason: string | null
+          status: string
+          task_date: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          assistance_level: Database["public"]["Enums"]["assistance_level"]
+          care_plan_item_id: string
+          category: Database["public"]["Enums"]["care_plan_item_category"]
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          facility_id: string
+          id?: string
+          organization_id: string
+          resident_id: string
+          scheduled_time?: string | null
+          shift?: Database["public"]["Enums"]["shift_type"] | null
+          skip_reason?: string | null
+          status?: string
+          task_date: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          assistance_level?: Database["public"]["Enums"]["assistance_level"]
+          care_plan_item_id?: string
+          category?: Database["public"]["Enums"]["care_plan_item_category"]
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          facility_id?: string
+          id?: string
+          organization_id?: string
+          resident_id?: string
+          scheduled_time?: string | null
+          shift?: Database["public"]["Enums"]["shift_type"] | null
+          skip_reason?: string | null
+          status?: string
+          task_date?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_plan_tasks_care_plan_item_id_fkey"
+            columns: ["care_plan_item_id"]
+            isOneToOne: false
+            referencedRelation: "care_plan_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_plan_tasks_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_plan_tasks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_plan_tasks_resident_id_fkey"
             columns: ["resident_id"]
             isOneToOne: false
             referencedRelation: "residents"
@@ -4649,6 +4861,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       acuity_level: ["level_1", "level_2", "level_3"],
