@@ -56,7 +56,12 @@ export default function CaregiverResidentQuickProfilePage() {
           .eq("resident_id", residentId)
           .is("deleted_at", null)
           .eq("status", "open");
-        setVitalAlerts((va.data ?? []) as never);
+        if (va.error) {
+          console.warn("[caregiver resident] vital_sign_alerts", va.error.message);
+          setVitalAlerts([]);
+        } else {
+          setVitalAlerts((va.data ?? []) as never);
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load resident profile");

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { evaluateVitalSignAlertsForDailyLog } from "@/lib/infection-control/evaluate-vitals";
+import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
 import type { Database } from "@/types/database";
 
 type Body = { dailyLogId?: string };
@@ -64,14 +65,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Organization mismatch" }, { status: 403 });
   }
 
-  const { data: facAccess, error: facErr } = await admin
-    .from("user_facility_access")
-    .select("facility_id")
-    .eq("user_id", user.id)
-    .eq("facility_id", row.facility_id)
-    .maybeSingle();
+  const okFac = await serviceRoleUserHasFacilityAccess(admin, {
+    userId: user.id,
+    facilityId: row.facility_id,
+    organizationId: profile.organization_id,
+    appRole: profile.app_role,
+  });
 
-  if (facErr || !facAccess) {
+  if (!okFac) {
     return NextResponse.json({ error: "No access to this facility" }, { status: 403 });
   }
 

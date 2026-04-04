@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { runOutbreakDetectionAfterSurveillance } from "@/lib/infection-control/outbreak-detection";
+import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
 
 type Body = { surveillanceId?: string };
 
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
 
   const { data: surv, error: sErr } = await admin
     .from("infection_surveillance")
-    .select("facility_id, organization_id, identified_by")
+    .select("facility_id, organization_id")
     .eq("id", surveillanceId)
     .is("deleted_at", null)
     .maybeSingle();
@@ -66,18 +67,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Organization mismatch" }, { status: 403 });
   }
 
-  const { data: facAccess, error: facErr } = await admin
-    .from("user_facility_access")
-    .select("facility_id")
-    .eq("user_id", user.id)
-    .eq("facility_id", surv.facility_id)
-    .maybeSingle();
+  const okFac = await serviceRoleUserHasFacilityAccess(admin, {
+    userId: user.id,
+    facilityId: surv.facility_id,
+    organizationId: profile.organization_id,
+    appRole: profile.app_role,
+  });
 
-  if (facErr || !facAccess) {
+  if (!okFac) {
     return NextResponse.json({ error: "No access to this facility" }, { status: 403 });
   }
 
-  const outcome = await runOutbreakDetectionAfterSurveillance(admin, surveillanceId, surv.identified_by);
+  const outcome = await runOutbreakDetectionAfterSurveillance(admin, surveillanceId, user.id);
 
   return NextResponse.json({ ok: true, outcome: outcome.outcome });
 }

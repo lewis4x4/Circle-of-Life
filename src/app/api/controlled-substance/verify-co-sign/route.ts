@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
 
 type Body = {
   /** Single row (legacy) */
@@ -66,7 +67,7 @@ export async function POST(request: Request) {
 
   const { data: outgoingProfile, error: outProfErr } = await admin
     .from("user_profiles")
-    .select("organization_id")
+    .select("organization_id, app_role")
     .eq("id", outgoing.id)
     .maybeSingle();
 
@@ -74,14 +75,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ verified: false, error: "Outgoing profile not found" }, { status: 403 });
   }
 
-  const { data: outgoingFac, error: outFacErr } = await admin
-    .from("user_facility_access")
-    .select("facility_id")
-    .eq("user_id", outgoing.id)
-    .eq("facility_id", facilityId)
-    .maybeSingle();
+  const okOutgoingFac = await serviceRoleUserHasFacilityAccess(admin, {
+    userId: outgoing.id,
+    facilityId,
+    organizationId: outgoingProfile.organization_id,
+    appRole: outgoingProfile.app_role,
+  });
 
-  if (outFacErr || !outgoingFac) {
+  if (!okOutgoingFac) {
     return NextResponse.json(
       { verified: false, error: "Your session does not have access to this facility" },
       { status: 403 },
