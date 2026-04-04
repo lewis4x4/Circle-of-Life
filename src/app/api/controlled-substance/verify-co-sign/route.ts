@@ -119,6 +119,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ verified: false, error: "Profile not found" }, { status: 403 });
   }
 
+  if (!profile.organization_id) {
+    return NextResponse.json(
+      { verified: false, error: "Incoming profile missing organization" },
+      { status: 403 },
+    );
+  }
+
   if (!ALLOWED_ROLES.has(profile.app_role)) {
     return NextResponse.json(
       { verified: false, error: "Only nurse or caregiver may co-sign" },
@@ -126,14 +133,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: facAccess, error: facErr } = await admin
-    .from("user_facility_access")
-    .select("facility_id")
-    .eq("user_id", incomingId)
-    .eq("facility_id", facilityId)
-    .maybeSingle();
+  const okIncomingFac = await serviceRoleUserHasFacilityAccess(admin, {
+    userId: incomingId,
+    facilityId,
+    organizationId: profile.organization_id,
+    appRole: profile.app_role,
+  });
 
-  if (facErr || !facAccess) {
+  if (!okIncomingFac) {
     return NextResponse.json(
       { verified: false, error: "Staff does not have access to this facility" },
       { status: 403 },
