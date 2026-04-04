@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
+  Activity,
   ArrowLeft,
   Brain,
   ClipboardList,
@@ -269,6 +270,16 @@ export default function AdminResidentDetailPage() {
             >
               <Pill className="h-3.5 w-3.5" />
               Medications
+            </Link>
+            <Link
+              href={`/admin/residents/${detail.id}/vitals`}
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "inline-flex gap-2 border-slate-200 dark:border-slate-700",
+              )}
+            >
+              <Activity className="h-3.5 w-3.5" />
+              Vitals
             </Link>
             <Link
               href={`/admin/residents/${detail.id}/billing`}

@@ -12,7 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 type ProfileRow = Pick<Database["public"]["Tables"]["user_profiles"]["Row"], "app_role">;
-type StaffMini = Pick<Database["public"]["Tables"]["staff"]["Row"], "first_name" | "last_name" | "staff_role">;
+type StaffMini = Pick<
+  Database["public"]["Tables"]["staff"]["Row"],
+  "id" | "facility_id" | "organization_id" | "first_name" | "last_name" | "staff_role"
+>;
 
 export default function CaregiverMePage() {
   const router = useRouter();
@@ -22,6 +25,9 @@ export default function CaregiverMePage() {
   const [profile, setProfile] = useState<ProfileRow | null>(null);
   const [staff, setStaff] = useState<StaffMini | null>(null);
   const [signingOut, setSigningOut] = useState(false);
+  const [illType, setIllType] = useState<Database["public"]["Tables"]["staff_illness_records"]["Row"]["illness_type"]>("other");
+  const [illSubmitting, setIllSubmitting] = useState(false);
+  const [illMsg, setIllMsg] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -39,7 +45,7 @@ export default function CaregiverMePage() {
       if (!pr.error && pr.data) setProfile(pr.data as ProfileRow);
       const st = await supabase
         .from("staff")
-        .select("first_name, last_name, staff_role")
+        .select("id, facility_id, organization_id, first_name, last_name, staff_role")
         .eq("user_id", user.id)
         .is("deleted_at", null)
         .maybeSingle();
@@ -53,6 +59,40 @@ export default function CaregiverMePage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function submitIllness() {
+    if (!staff) return;
+    setIllSubmitting(true);
+    setIllMsg(null);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setIllMsg("Not signed in.");
+        return;
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      const ins: Database["public"]["Tables"]["staff_illness_records"]["Insert"] = {
+        staff_id: staff.id,
+        facility_id: staff.facility_id,
+        organization_id: staff.organization_id,
+        reported_date: today,
+        illness_type: illType,
+        symptoms: ["self_report"],
+        absent_from: today,
+        absent_to: null,
+        created_by: user.id,
+      };
+      const { error } = await supabase.from("staff_illness_records").insert(ins);
+      if (error) throw error;
+      setIllMsg("Report submitted. A nurse may follow up.");
+    } catch (e) {
+      setIllMsg(e instanceof Error ? e.message : "Could not submit.");
+    } finally {
+      setIllSubmitting(false);
+    }
+  }
 
   async function signOut() {
     setSigningOut(true);
@@ -107,6 +147,45 @@ export default function CaregiverMePage() {
           ) : null}
         </CardContent>
       </Card>
+
+      {staff ? (
+        <Card className="border-zinc-800 bg-zinc-950/70 text-zinc-100">
+          <CardHeader>
+            <CardTitle className="text-base">Report illness</CardTitle>
+            <CardDescription className="text-zinc-400">
+              Self-report an absence. Your facility team will see this on the staff illness list.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {illMsg ? <p className="text-sm text-emerald-300">{illMsg}</p> : null}
+            <div className="flex flex-wrap gap-2">
+              <select
+                className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-2 text-sm text-zinc-100"
+                value={illType}
+                onChange={(e) =>
+                  setIllType(e.target.value as Database["public"]["Tables"]["staff_illness_records"]["Row"]["illness_type"])
+                }
+              >
+                {(
+                  ["respiratory", "gi", "covid", "influenza", "skin", "other", "personal"] as const
+                ).map((v) => (
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+              <Button
+                type="button"
+                disabled={illSubmitting}
+                className="bg-amber-700 hover:bg-amber-600"
+                onClick={() => void submitIllness()}
+              >
+                {illSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit report"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card className="border-zinc-800 bg-zinc-950/70 text-zinc-100">
         <CardHeader>

@@ -779,16 +779,22 @@ Runs after daily log save. Not a cron — real-time is important for vital sign 
 
 ## MIGRATION CHECKLIST
 
-New migration file: `037_infection_control.sql`
+**Implemented migration file:** `038_infection_control.sql` (sequence after `037_medication_management_advanced.sql`).
+
+Use **`haven_capture_audit_log()`** and **`haven_set_updated_at()`** (not the illustrative `audit_trigger_function` / `set_updated_at` names in the SQL blocks above). Add **`updated_by`** on tables that use `haven_set_updated_at` (e.g. `outbreak_actions`, `vital_sign_alert_thresholds`).
+
+**Caregiver `vital_sign_alerts` SELECT (normative):** caregivers may see alerts only for residents they have charted in `daily_logs` as `logged_by = auth.uid()`, same org/facility, `log_date >= CURRENT_DATE - interval '1 day'` (least privilege; not facility-wide).
+
+**Outbreak deduplication:** a **contained** outbreak may **reopen to active** when a new case matches within **14 days** of `contained_at` (see §Outbreak Deduplication).
 
 1. Create `infection_surveillance` table with indexes
 2. Create `infection_outbreaks` table with indexes
 3. Add FK from `infection_surveillance.outbreak_id` to `infection_outbreaks`
 4. Create `outbreak_actions` table with indexes
 5. Create `vital_sign_alert_thresholds` table with unique index
-6. Create `vital_sign_alerts` table with indexes
+6. Create `vital_sign_alerts` table with indexes (optional unique partial index on open alerts per `daily_log_id` + `vital_type` for idempotency)
 7. Create `staff_illness_records` table with indexes
 8. Enable RLS on all 6 tables
 9. Create RLS policies (17 total: 2 infection_surveillance, 2 infection_outbreaks, 3 outbreak_actions, 2 vital_sign_alert_thresholds, 3 vital_sign_alerts, 5 staff_illness_records)
 10. Create audit triggers on all 6 tables (except `vital_sign_alert_thresholds` — config, not clinical data)
-11. Create `set_updated_at` triggers on tables with `updated_at`
+11. Create `haven_set_updated_at` triggers on tables with `updated_at` (+ `updated_by` where applicable)

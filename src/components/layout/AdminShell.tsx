@@ -24,6 +24,7 @@ import {
   Clock,
   Activity,
   Pill,
+  Biohazard,
   MessageCircle,
   Sun,
   Moon,
@@ -118,6 +119,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     { key: "assessments", href: "/admin/assessments/overdue", label: "Assessments", enabled: true, icon: ClipboardCheck },
     { key: "plan-reviews", href: "/admin/care-plans/reviews-due", label: "Plan reviews", enabled: true, icon: CalendarClock },
     { key: "medications", href: "/admin/medications", label: "Medications", enabled: true, icon: Pill },
+    { key: "infection", href: "/admin/infection-control", label: "Infection", enabled: true, icon: Biohazard },
     { key: "incidents", href: "/admin/incidents", label: "Incidents", enabled: true, icon: ShieldAlert },
     { key: "staff", href: "/admin/staff", label: "Staff", enabled: true, icon: UserCog },
     { key: "certifications", href: "/admin/certifications", label: "Certifications", enabled: true, icon: Award },
@@ -154,7 +156,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           {navItems.map((item) => {
             const isActive =
               pathname === item.href ||
-              (item.key === "medications" && pathname.startsWith("/admin/medications"));
+              (item.key === "medications" && pathname.startsWith("/admin/medications")) ||
+              (item.key === "infection" && pathname.startsWith("/admin/infection-control"));
             const Icon = item.icon;
             
             if (!item.enabled) {

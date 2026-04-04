@@ -37,6 +37,9 @@ export default function CaregiverResidentQuickProfilePage() {
   const [noteDraft, setNoteDraft] = useState("");
   const [noteSaving, setNoteSaving] = useState(false);
   const [noteSaved, setNoteSaved] = useState(false);
+  const [vitalAlerts, setVitalAlerts] = useState<
+    { id: string; vital_type: string; recorded_value: number; threshold_value: number; direction: string }[]
+  >([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -47,6 +50,13 @@ export default function CaregiverResidentQuickProfilePage() {
         setError(result.error);
       } else {
         setProfile(result.profile);
+        const va = await supabase
+          .from("vital_sign_alerts")
+          .select("id, vital_type, recorded_value, threshold_value, direction")
+          .eq("resident_id", residentId)
+          .is("deleted_at", null)
+          .eq("status", "open");
+        setVitalAlerts((va.data ?? []) as never);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load resident profile");
@@ -89,6 +99,21 @@ export default function CaregiverResidentQuickProfilePage() {
 
   return (
     <div className="space-y-4">
+      {vitalAlerts.length > 0 && (
+        <div className="rounded-lg border border-rose-800/80 bg-rose-950/50 px-3 py-2 text-sm text-rose-100">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-300" />
+            <div>
+              {vitalAlerts.map((a) => (
+                <p key={a.id}>
+                  {a.vital_type.replace(/_/g, " ")} is {a.recorded_value} — exceeds threshold {a.threshold_value} (
+                  {a.direction}). Notify nurse.
+                </p>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       <Card className="border-zinc-800 bg-gradient-to-br from-zinc-950 to-zinc-900 text-zinc-100">
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between gap-2">

@@ -7,8 +7,10 @@ import { ArrowLeft, FileText, Loader2 } from "lucide-react";
 
 import { adlTypeLabel, assistanceLabel } from "@/lib/caregiver/adl-form-options";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+import { fetchShiftDailyLogId } from "@/lib/caregiver/daily-log-link";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
+import { requestEvaluateVitals } from "@/lib/infection-control/request-evaluate-vitals";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -55,6 +57,11 @@ export default function CaregiverResidentLogPage() {
   const [adlRecent, setAdlRecent] = useState<AdlRow[]>([]);
   const [noteDraft, setNoteDraft] = useState("");
   const [savingNote, setSavingNote] = useState(false);
+  const [temp, setTemp] = useState("");
+  const [bpSys, setBpSys] = useState("");
+  const [bpDia, setBpDia] = useState("");
+  const [pulse, setPulse] = useState("");
+  const [savingVitals, setSavingVitals] = useState(false);
 
   const idOk = isValidFacilityIdForQuery(residentId);
 
@@ -209,6 +216,67 @@ export default function CaregiverResidentLogPage() {
     }
   }
 
+  async function saveVitals() {
+    if (!ctx || !idOk) return;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setLoadError("Session expired.");
+      return;
+    }
+    setSavingVitals(true);
+    setLoadError(null);
+    try {
+      const ymd = zonedYmd(new Date(), ctx.timeZone);
+      const shift = currentShiftForTimezone(ctx.timeZone);
+      let dailyLogId = await fetchShiftDailyLogId(supabase, {
+        residentId,
+        facilityId: ctx.facilityId,
+        logDate: ymd,
+        shift,
+        loggedBy: user.id,
+      });
+      if (!dailyLogId) {
+        const ins: Database["public"]["Tables"]["daily_logs"]["Insert"] = {
+          resident_id: residentId,
+          facility_id: ctx.facilityId,
+          organization_id: ctx.organizationId,
+          log_date: ymd,
+          shift,
+          logged_by: user.id,
+        };
+        const insQ = await supabase.from("daily_logs").insert(ins).select("id").single();
+        if (insQ.error) throw insQ.error;
+        dailyLogId = (insQ.data as { id: string }).id;
+      }
+      const t = temp.trim() ? Number.parseFloat(temp) : null;
+      const ps = bpSys.trim() ? Number.parseInt(bpSys, 10) : null;
+      const pd = bpDia.trim() ? Number.parseInt(bpDia, 10) : null;
+      const pl = pulse.trim() ? Number.parseInt(pulse, 10) : null;
+      const upd = await supabase
+        .from("daily_logs")
+        .update({
+          temperature: t,
+          blood_pressure_systolic: ps,
+          blood_pressure_diastolic: pd,
+          pulse: pl,
+          updated_by: user.id,
+        })
+        .eq("id", dailyLogId);
+      if (upd.error) throw upd.error;
+      const ev = await requestEvaluateVitals(dailyLogId);
+      if (!ev.ok) {
+        setLoadError(ev.error ?? "Vital alert evaluation failed");
+      }
+      await load();
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : "Could not save vitals.");
+    } finally {
+      setSavingVitals(false);
+    }
+  }
+
   if (!idOk) {
     return (
       <div className="space-y-4">
@@ -311,6 +379,63 @@ export default function CaregiverResidentLogPage() {
               >
                 {savingNote ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 Save to daily log
+              </Button>
+            </div>
+          ) : null}
+
+          {ctx && residentLabel ? (
+            <div className="space-y-2 border-t border-zinc-800 pt-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Vitals (shift row)</p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div>
+                  <Label className="text-[10px] text-zinc-500">Temp °F</Label>
+                  <input
+                    className="mt-0.5 w-full rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-sm"
+                    inputMode="decimal"
+                    value={temp}
+                    onChange={(e) => setTemp(e.target.value)}
+                    placeholder="—"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-zinc-500">BP sys</Label>
+                  <input
+                    className="mt-0.5 w-full rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-sm"
+                    inputMode="numeric"
+                    value={bpSys}
+                    onChange={(e) => setBpSys(e.target.value)}
+                    placeholder="—"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-zinc-500">BP dia</Label>
+                  <input
+                    className="mt-0.5 w-full rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-sm"
+                    inputMode="numeric"
+                    value={bpDia}
+                    onChange={(e) => setBpDia(e.target.value)}
+                    placeholder="—"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-zinc-500">Pulse</Label>
+                  <input
+                    className="mt-0.5 w-full rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-sm"
+                    inputMode="numeric"
+                    value={pulse}
+                    onChange={(e) => setPulse(e.target.value)}
+                    placeholder="—"
+                  />
+                </div>
+              </div>
+              <Button
+                type="button"
+                disabled={savingVitals || (!temp.trim() && !bpSys.trim() && !bpDia.trim() && !pulse.trim())}
+                variant="secondary"
+                className="h-9"
+                onClick={() => void saveVitals()}
+              >
+                {savingVitals ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save vitals & check alerts"}
               </Button>
             </div>
           ) : null}

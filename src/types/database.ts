@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.4"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       activities: {
@@ -2383,6 +2358,262 @@ export type Database = {
           },
         ]
       }
+      infection_outbreaks: {
+        Row: {
+          ahca_report_notes: string | null
+          ahca_reported: boolean
+          ahca_reported_at: string | null
+          contained_at: string | null
+          created_at: string
+          created_by: string | null
+          declared_by: string
+          deleted_at: string | null
+          detected_at: string
+          detection_method: string
+          facility_id: string
+          id: string
+          infection_type: string
+          initial_case_count: number
+          notes: string | null
+          organization_id: string
+          peak_case_count: number | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          total_cases: number | null
+          unit_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          ahca_report_notes?: string | null
+          ahca_reported?: boolean
+          ahca_reported_at?: string | null
+          contained_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          declared_by: string
+          deleted_at?: string | null
+          detected_at?: string
+          detection_method?: string
+          facility_id: string
+          id?: string
+          infection_type: string
+          initial_case_count?: number
+          notes?: string | null
+          organization_id: string
+          peak_case_count?: number | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          total_cases?: number | null
+          unit_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          ahca_report_notes?: string | null
+          ahca_reported?: boolean
+          ahca_reported_at?: string | null
+          contained_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          declared_by?: string
+          deleted_at?: string | null
+          detected_at?: string
+          detection_method?: string
+          facility_id?: string
+          id?: string
+          infection_type?: string
+          initial_case_count?: number
+          notes?: string | null
+          organization_id?: string
+          peak_case_count?: number | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          total_cases?: number | null
+          unit_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "infection_outbreaks_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "infection_outbreaks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "infection_outbreaks_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      infection_surveillance: {
+        Row: {
+          ahca_reportable: boolean
+          ahca_reported: boolean
+          ahca_reported_at: string | null
+          antibiotic_end_date: string | null
+          antibiotic_name: string | null
+          antibiotic_start_date: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          facility_id: string
+          id: string
+          identified_at: string
+          identified_by: string
+          infection_type: string
+          lab_ordered: boolean
+          lab_result: string | null
+          lab_type: string | null
+          onset_date: string
+          organism: string | null
+          organization_id: string
+          outbreak_id: string | null
+          outcome: string | null
+          outcome_date: string | null
+          outcome_notes: string | null
+          physician_notified: boolean
+          physician_notified_at: string | null
+          resident_id: string
+          resolved_date: string | null
+          status: string
+          symptoms: string[]
+          temperature_at_onset: number | null
+          treatment_notes: string | null
+          treatment_type: string | null
+          unit_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          ahca_reportable?: boolean
+          ahca_reported?: boolean
+          ahca_reported_at?: string | null
+          antibiotic_end_date?: string | null
+          antibiotic_name?: string | null
+          antibiotic_start_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id: string
+          id?: string
+          identified_at?: string
+          identified_by: string
+          infection_type: string
+          lab_ordered?: boolean
+          lab_result?: string | null
+          lab_type?: string | null
+          onset_date: string
+          organism?: string | null
+          organization_id: string
+          outbreak_id?: string | null
+          outcome?: string | null
+          outcome_date?: string | null
+          outcome_notes?: string | null
+          physician_notified?: boolean
+          physician_notified_at?: string | null
+          resident_id: string
+          resolved_date?: string | null
+          status?: string
+          symptoms: string[]
+          temperature_at_onset?: number | null
+          treatment_notes?: string | null
+          treatment_type?: string | null
+          unit_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          ahca_reportable?: boolean
+          ahca_reported?: boolean
+          ahca_reported_at?: string | null
+          antibiotic_end_date?: string | null
+          antibiotic_name?: string | null
+          antibiotic_start_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id?: string
+          id?: string
+          identified_at?: string
+          identified_by?: string
+          infection_type?: string
+          lab_ordered?: boolean
+          lab_result?: string | null
+          lab_type?: string | null
+          onset_date?: string
+          organism?: string | null
+          organization_id?: string
+          outbreak_id?: string | null
+          outcome?: string | null
+          outcome_date?: string | null
+          outcome_notes?: string | null
+          physician_notified?: boolean
+          physician_notified_at?: string | null
+          resident_id?: string
+          resolved_date?: string | null
+          status?: string
+          symptoms?: string[]
+          temperature_at_onset?: number | null
+          treatment_notes?: string | null
+          treatment_type?: string | null
+          unit_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_infection_outbreak"
+            columns: ["outbreak_id"]
+            isOneToOne: false
+            referencedRelation: "infection_outbreaks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "infection_surveillance_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "infection_surveillance_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "infection_surveillance_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "infection_surveillance_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_line_items: {
         Row: {
           created_at: string
@@ -2792,6 +3023,91 @@ export type Database = {
           zip?: string | null
         }
         Relationships: []
+      }
+      outbreak_actions: {
+        Row: {
+          action_type: string
+          assigned_to: string | null
+          completed_at: string | null
+          completed_by: string | null
+          completion_notes: string | null
+          created_at: string
+          deleted_at: string | null
+          facility_id: string
+          id: string
+          instructions: string | null
+          organization_id: string
+          outbreak_id: string
+          priority: string
+          sort_order: number
+          status: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          action_type: string
+          assigned_to?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          facility_id: string
+          id?: string
+          instructions?: string | null
+          organization_id: string
+          outbreak_id: string
+          priority?: string
+          sort_order?: number
+          status?: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          action_type?: string
+          assigned_to?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          facility_id?: string
+          id?: string
+          instructions?: string | null
+          organization_id?: string
+          outbreak_id?: string
+          priority?: string
+          sort_order?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outbreak_actions_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outbreak_actions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outbreak_actions_outbreak_id_fkey"
+            columns: ["outbreak_id"]
+            isOneToOne: false
+            referencedRelation: "infection_outbreaks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {
@@ -4441,6 +4757,97 @@ export type Database = {
           },
         ]
       }
+      staff_illness_records: {
+        Row: {
+          absent_from: string
+          absent_to: string | null
+          clearance_notes: string | null
+          clearance_type: string | null
+          cleared_at: string | null
+          cleared_by: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          facility_id: string
+          id: string
+          illness_type: string
+          organization_id: string
+          reported_date: string
+          return_cleared: boolean
+          shifts_missed: number | null
+          staff_id: string
+          symptoms: string[] | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          absent_from: string
+          absent_to?: string | null
+          clearance_notes?: string | null
+          clearance_type?: string | null
+          cleared_at?: string | null
+          cleared_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id: string
+          id?: string
+          illness_type: string
+          organization_id: string
+          reported_date: string
+          return_cleared?: boolean
+          shifts_missed?: number | null
+          staff_id: string
+          symptoms?: string[] | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          absent_from?: string
+          absent_to?: string | null
+          clearance_notes?: string | null
+          clearance_type?: string | null
+          cleared_at?: string | null
+          cleared_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id?: string
+          id?: string
+          illness_type?: string
+          organization_id?: string
+          reported_date?: string
+          return_cleared?: boolean
+          shifts_missed?: number | null
+          staff_id?: string
+          symptoms?: string[] | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_illness_records_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_illness_records_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_illness_records_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staffing_ratio_snapshots: {
         Row: {
           created_at: string
@@ -4903,6 +5310,195 @@ export type Database = {
           },
         ]
       }
+      vital_sign_alert_thresholds: {
+        Row: {
+          bp_diastolic_high: number | null
+          bp_diastolic_low: number | null
+          bp_systolic_high: number | null
+          bp_systolic_low: number | null
+          configured_at: string
+          configured_by: string
+          created_at: string
+          deleted_at: string | null
+          facility_id: string
+          id: string
+          notes: string | null
+          organization_id: string
+          oxygen_saturation_low: number | null
+          pulse_high: number | null
+          pulse_low: number | null
+          resident_id: string
+          respiration_high: number | null
+          respiration_low: number | null
+          temperature_high: number | null
+          temperature_low: number | null
+          updated_at: string
+          updated_by: string | null
+          weight_change_lbs: number | null
+        }
+        Insert: {
+          bp_diastolic_high?: number | null
+          bp_diastolic_low?: number | null
+          bp_systolic_high?: number | null
+          bp_systolic_low?: number | null
+          configured_at?: string
+          configured_by: string
+          created_at?: string
+          deleted_at?: string | null
+          facility_id: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          oxygen_saturation_low?: number | null
+          pulse_high?: number | null
+          pulse_low?: number | null
+          resident_id: string
+          respiration_high?: number | null
+          respiration_low?: number | null
+          temperature_high?: number | null
+          temperature_low?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          weight_change_lbs?: number | null
+        }
+        Update: {
+          bp_diastolic_high?: number | null
+          bp_diastolic_low?: number | null
+          bp_systolic_high?: number | null
+          bp_systolic_low?: number | null
+          configured_at?: string
+          configured_by?: string
+          created_at?: string
+          deleted_at?: string | null
+          facility_id?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          oxygen_saturation_low?: number | null
+          pulse_high?: number | null
+          pulse_low?: number | null
+          resident_id?: string
+          respiration_high?: number | null
+          respiration_low?: number | null
+          temperature_high?: number | null
+          temperature_low?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          weight_change_lbs?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vital_sign_alert_thresholds_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vital_sign_alert_thresholds_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vital_sign_alert_thresholds_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vital_sign_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          created_at: string
+          daily_log_id: string
+          deleted_at: string | null
+          direction: string
+          facility_id: string
+          id: string
+          organization_id: string
+          recorded_value: number
+          resident_id: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          threshold_value: number
+          vital_type: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          created_at?: string
+          daily_log_id: string
+          deleted_at?: string | null
+          direction: string
+          facility_id: string
+          id?: string
+          organization_id: string
+          recorded_value: number
+          resident_id: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          threshold_value: number
+          vital_type: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          created_at?: string
+          daily_log_id?: string
+          deleted_at?: string | null
+          direction?: string
+          facility_id?: string
+          id?: string
+          organization_id?: string
+          recorded_value?: number
+          resident_id?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          threshold_value?: number
+          vital_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vital_sign_alerts_daily_log_id_fkey"
+            columns: ["daily_log_id"]
+            isOneToOne: false
+            referencedRelation: "daily_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vital_sign_alerts_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vital_sign_alerts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vital_sign_alerts_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -5204,9 +5800,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       acuity_level: ["level_1", "level_2", "level_3"],

@@ -66,7 +66,7 @@ Module numbers match the roadmap (27 modules total), NOT the build sequence. Not
 | 6 | Medication Management | 1 (basic in 04) + 2 (advanced) | Basic in 04-daily-operations. Advanced not yet spec'd |
 | 7 | Incident & Risk Management | 1 | ✅ Spec complete |
 | 8 | Autonomous Compliance Engine | 2 | Not yet spec'd |
-| 9 | Infection Control & Health Monitoring | 2 | Not yet spec'd |
+| 9 | Infection Control & Health Monitoring | 2 | `09-infection-control.md` |
 | 10 | Quality Metrics & Outcomes | 5 | Not yet spec'd |
 | 11 | Staff Management & Scheduling | 1 | ✅ Spec complete |
 | 12 | Training & Competency Management | 6 | Not yet spec'd |

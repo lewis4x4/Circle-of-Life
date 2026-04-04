@@ -32,6 +32,8 @@ export default function CaregiverHomePage() {
   const [facilityName, setFacilityName] = useState<string | null>(null);
   const [timeZone, setTimeZone] = useState("America/New_York");
   const [brief, setBrief] = useState<CaregiverShiftBrief | null>(null);
+  const [activeOutbreak, setActiveOutbreak] = useState<{ id: string; infection_type: string } | null>(null);
+  const [myOutbreakActions, setMyOutbreakActions] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -56,6 +58,30 @@ export default function CaregiverHomePage() {
       setTimeZone(ctx.timeZone);
       const b = await fetchCaregiverShiftBrief(supabase, ctx);
       setBrief(b);
+      const ob = await supabase
+        .from("infection_outbreaks")
+        .select("id, infection_type")
+        .eq("facility_id", ctx.facilityId)
+        .eq("status", "active")
+        .is("deleted_at", null)
+        .limit(1)
+        .maybeSingle();
+      const first = ob.data as { id: string; infection_type: string } | null;
+      setActiveOutbreak(first);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user && first) {
+        const cnt = await supabase
+          .from("outbreak_actions")
+          .select("id", { count: "exact", head: true })
+          .eq("outbreak_id", first.id)
+          .eq("assigned_to", user.id)
+          .in("status", ["pending", "in_progress"]);
+        setMyOutbreakActions(cnt.count ?? 0);
+      } else {
+        setMyOutbreakActions(0);
+      }
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : "Could not load shift brief.");
       setBrief(null);
@@ -132,6 +158,25 @@ export default function CaregiverHomePage() {
           />
         </CardContent>
       </Card>
+
+      {activeOutbreak ? (
+        <Card className="border-rose-900/50 bg-rose-950/25 text-zinc-100">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Active outbreak</CardTitle>
+            <CardDescription className="text-rose-200/90">
+              {activeOutbreak.infection_type.replace(/_/g, " ")} — follow facility protocol.
+              {myOutbreakActions > 0
+                ? ` ${myOutbreakActions} checklist item(s) assigned to you.`
+                : ""}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-zinc-400">
+              Complete any tasks assigned to you in the outbreak checklist. Ask your nurse for details.
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card className="border-amber-900/60 bg-amber-950/20 text-zinc-100">
         <CardHeader className="pb-2">
