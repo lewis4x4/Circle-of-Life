@@ -50,6 +50,13 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 - `/admin/billing/ar-aging`
 - `/admin/billing/revenue`
 - `/admin/billing/org-ar-aging`
+- `/admin/medications` (Phase 2 hub)
+- `/admin/medications/verbal-orders`
+- `/admin/medications/verbal-orders/new`
+- `/admin/medications/errors`
+- `/admin/medications/errors/new`
+- `/admin/medications/controlled`
+- `/admin/residents/[id]/medications`
 
 ### Caregiver shell routes
 
@@ -65,6 +72,7 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 - `/caregiver/resident/[id]/condition-change`
 - `/caregiver/handoff`
 - `/caregiver/prn-followup`
+- `/caregiver/controlled-count` (Phase 2 controlled substance reconciliation)
 
 ### Family shell routes
 

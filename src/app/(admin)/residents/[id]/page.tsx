@@ -13,6 +13,7 @@ import {
   ListChecks,
   MapPin,
   Phone,
+  Pill,
   Shield,
   Stethoscope,
   User,
@@ -258,6 +259,16 @@ export default function AdminResidentDetailPage() {
             >
               <ClipboardList className="h-3.5 w-3.5" />
               Care plan
+            </Link>
+            <Link
+              href={`/admin/residents/${detail.id}/medications`}
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "inline-flex gap-2 border-slate-200 dark:border-slate-700",
+              )}
+            >
+              <Pill className="h-3.5 w-3.5" />
+              Medications
             </Link>
             <Link
               href={`/admin/residents/${detail.id}/billing`}

@@ -1335,6 +1335,100 @@ export type Database = {
           },
         ]
       }
+      controlled_substance_counts: {
+        Row: {
+          actual_count: number
+          count_date: string
+          count_type: string
+          created_at: string
+          deleted_at: string | null
+          discrepancy: number
+          discrepancy_resolved: boolean | null
+          expected_count: number
+          facility_id: string
+          id: string
+          incoming_signed_at: string | null
+          incoming_staff_id: string | null
+          notes: string | null
+          organization_id: string
+          outgoing_signed_at: string
+          outgoing_staff_id: string
+          resident_medication_id: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          shift: Database["public"]["Enums"]["shift_type"]
+        }
+        Insert: {
+          actual_count: number
+          count_date: string
+          count_type?: string
+          created_at?: string
+          deleted_at?: string | null
+          discrepancy?: number
+          discrepancy_resolved?: boolean | null
+          expected_count: number
+          facility_id: string
+          id?: string
+          incoming_signed_at?: string | null
+          incoming_staff_id?: string | null
+          notes?: string | null
+          organization_id: string
+          outgoing_signed_at?: string
+          outgoing_staff_id: string
+          resident_medication_id: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          shift: Database["public"]["Enums"]["shift_type"]
+        }
+        Update: {
+          actual_count?: number
+          count_date?: string
+          count_type?: string
+          created_at?: string
+          deleted_at?: string | null
+          discrepancy?: number
+          discrepancy_resolved?: boolean | null
+          expected_count?: number
+          facility_id?: string
+          id?: string
+          incoming_signed_at?: string | null
+          incoming_staff_id?: string | null
+          notes?: string | null
+          organization_id?: string
+          outgoing_signed_at?: string
+          outgoing_staff_id?: string
+          resident_medication_id?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          shift?: Database["public"]["Enums"]["shift_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "controlled_substance_counts_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "controlled_substance_counts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "controlled_substance_counts_resident_medication_id_fkey"
+            columns: ["resident_medication_id"]
+            isOneToOne: false
+            referencedRelation: "resident_medications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_logs: {
         Row: {
           behavior_notes: string | null
@@ -2499,6 +2593,136 @@ export type Database = {
             columns: ["resident_id"]
             isOneToOne: false
             referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medication_errors: {
+        Row: {
+          contributing_factors: string[] | null
+          corrective_actions: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string
+          discovered_by: string
+          emar_record_id: string | null
+          error_type: string
+          facility_id: string
+          id: string
+          immediate_actions: string
+          linked_incident_id: string | null
+          occurred_at: string
+          organization_id: string
+          physician_notified: boolean
+          physician_notified_at: string | null
+          resident_id: string
+          resident_medication_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          root_cause: string | null
+          severity: string
+          shift: Database["public"]["Enums"]["shift_type"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          contributing_factors?: string[] | null
+          corrective_actions?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description: string
+          discovered_by: string
+          emar_record_id?: string | null
+          error_type: string
+          facility_id: string
+          id?: string
+          immediate_actions: string
+          linked_incident_id?: string | null
+          occurred_at?: string
+          organization_id: string
+          physician_notified?: boolean
+          physician_notified_at?: string | null
+          resident_id: string
+          resident_medication_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          root_cause?: string | null
+          severity?: string
+          shift: Database["public"]["Enums"]["shift_type"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          contributing_factors?: string[] | null
+          corrective_actions?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string
+          discovered_by?: string
+          emar_record_id?: string | null
+          error_type?: string
+          facility_id?: string
+          id?: string
+          immediate_actions?: string
+          linked_incident_id?: string | null
+          occurred_at?: string
+          organization_id?: string
+          physician_notified?: boolean
+          physician_notified_at?: string | null
+          resident_id?: string
+          resident_medication_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          root_cause?: string | null
+          severity?: string
+          shift?: Database["public"]["Enums"]["shift_type"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medication_errors_emar_record_id_fkey"
+            columns: ["emar_record_id"]
+            isOneToOne: false
+            referencedRelation: "emar_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_errors_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_errors_linked_incident_id_fkey"
+            columns: ["linked_incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_errors_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_errors_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_errors_resident_medication_id_fkey"
+            columns: ["resident_medication_id"]
+            isOneToOne: false
+            referencedRelation: "resident_medications"
             referencedColumns: ["id"]
           },
         ]
@@ -4556,6 +4780,125 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      verbal_orders: {
+        Row: {
+          cosignature_due_at: string
+          cosignature_status: string
+          cosigned_at: string | null
+          cosigned_by: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          facility_id: string
+          id: string
+          implementation_notes: string | null
+          implemented: boolean
+          implemented_at: string | null
+          implemented_by: string | null
+          indication: string | null
+          linked_medication_id: string | null
+          order_text: string
+          order_type: string
+          organization_id: string
+          physician_signed_date: string | null
+          prescriber_name: string
+          prescriber_phone: string | null
+          read_back_confirmed: boolean
+          received_at: string
+          received_by: string
+          resident_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          cosignature_due_at: string
+          cosignature_status?: string
+          cosigned_at?: string | null
+          cosigned_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id: string
+          id?: string
+          implementation_notes?: string | null
+          implemented?: boolean
+          implemented_at?: string | null
+          implemented_by?: string | null
+          indication?: string | null
+          linked_medication_id?: string | null
+          order_text: string
+          order_type: string
+          organization_id: string
+          physician_signed_date?: string | null
+          prescriber_name: string
+          prescriber_phone?: string | null
+          read_back_confirmed?: boolean
+          received_at?: string
+          received_by: string
+          resident_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          cosignature_due_at?: string
+          cosignature_status?: string
+          cosigned_at?: string | null
+          cosigned_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id?: string
+          id?: string
+          implementation_notes?: string | null
+          implemented?: boolean
+          implemented_at?: string | null
+          implemented_by?: string | null
+          indication?: string | null
+          linked_medication_id?: string | null
+          order_text?: string
+          order_type?: string
+          organization_id?: string
+          physician_signed_date?: string | null
+          prescriber_name?: string
+          prescriber_phone?: string | null
+          read_back_confirmed?: boolean
+          received_at?: string
+          received_by?: string
+          resident_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verbal_orders_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verbal_orders_linked_medication_id_fkey"
+            columns: ["linked_medication_id"]
+            isOneToOne: false
+            referencedRelation: "resident_medications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verbal_orders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verbal_orders_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
             referencedColumns: ["id"]
           },
         ]

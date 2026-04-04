@@ -605,14 +605,14 @@ Phase 1 already defines these cron functions — Phase 2 does not add new Edge F
 
 ## MIGRATION CHECKLIST
 
-New migration file: `036_medication_management_advanced.sql`
+New migration file: `037_medication_management_advanced.sql` (repo uses `036` for care plan alerts; use next free prefix at implementation time)
 
 1. Create `verbal_orders` table with indexes
 2. Create `medication_errors` table with indexes
 3. Create `controlled_substance_counts` table with indexes
 4. Enable RLS on all 3 tables
 5. Create RLS policies (10 total: 3 verbal_orders, 4 medication_errors, 3 controlled_substance_counts)
-6. Create audit triggers on all 3 tables
-7. Create `set_updated_at` triggers on `verbal_orders` and `medication_errors`
+6. Create audit triggers on all 3 tables using **`public.haven_capture_audit_log`** and **`public.haven_set_updated_at`** (not `audit_trigger_function` / `set_updated_at` placeholders)
+7. Create `updated_at` triggers on `verbal_orders` and `medication_errors` via Haven helpers; add `updated_by` columns where `haven_set_updated_at` applies
 
 No changes to existing `resident_medications` or `emar_records` tables — the Phase 1 schema already has all needed fields.

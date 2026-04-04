@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Check, Clock3, Loader2, Pill, ShieldAlert, X } from "lucide-react";
+import { Check, Clock3, Loader2, Pill, Shield, ShieldAlert, X } from "lucide-react";
 import { toDate } from "date-fns-tz";
 
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
@@ -270,6 +270,17 @@ export default function CaregiverMedsPage() {
 
   return (
     <div className="space-y-4">
+      <Link
+        href="/caregiver/controlled-count"
+        className="flex items-center justify-between rounded-lg border border-teal-900/50 bg-teal-950/40 px-4 py-3 text-sm text-teal-100 hover:bg-teal-950/60"
+      >
+        <span className="flex items-center gap-2 font-medium">
+          <Shield className="h-4 w-4 text-teal-400" />
+          Controlled substance count
+        </span>
+        <span className="text-xs text-teal-300">Shift reconciliation</span>
+      </Link>
+
       <Card className="border-zinc-800 bg-gradient-to-br from-zinc-950 to-zinc-900 text-zinc-100">
         <CardHeader className="pb-2">
           <CardTitle className="text-xl font-display">eMAR Queue</CardTitle>

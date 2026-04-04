@@ -23,6 +23,7 @@ import {
   CalendarDays,
   Clock,
   Activity,
+  Pill,
   MessageCircle,
   Sun,
   Moon,
@@ -116,6 +117,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     { key: "residents", href: "/admin/residents", label: "Residents", enabled: true, icon: Users },
     { key: "assessments", href: "/admin/assessments/overdue", label: "Assessments", enabled: true, icon: ClipboardCheck },
     { key: "plan-reviews", href: "/admin/care-plans/reviews-due", label: "Plan reviews", enabled: true, icon: CalendarClock },
+    { key: "medications", href: "/admin/medications", label: "Medications", enabled: true, icon: Pill },
     { key: "incidents", href: "/admin/incidents", label: "Incidents", enabled: true, icon: ShieldAlert },
     { key: "staff", href: "/admin/staff", label: "Staff", enabled: true, icon: UserCog },
     { key: "certifications", href: "/admin/certifications", label: "Certifications", enabled: true, icon: Award },
@@ -150,7 +152,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
         <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto overflow-x-hidden scrollbar-hide">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive =
+              pathname === item.href ||
+              (item.key === "medications" && pathname.startsWith("/admin/medications"));
             const Icon = item.icon;
             
             if (!item.enabled) {
