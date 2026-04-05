@@ -52,13 +52,33 @@ export default function EditPolicyPage() {
         .select("id", { count: "exact", head: true })
         .eq("policy_document_id", id);
 
+      const { data: facRow } = await supabase
+        .from("facilities")
+        .select("organization_id")
+        .eq("id", data.facility_id)
+        .maybeSingle();
+
       const { data: ufaRows } = await supabase
         .from("user_facility_access")
         .select("user_id")
         .eq("facility_id", data.facility_id)
         .is("revoked_at", null);
 
-      const userIds = Array.from(new Set((ufaRows ?? []).map((r) => r.user_id)));
+      const eligibleIds = new Set<string>((ufaRows ?? []).map((r) => r.user_id));
+
+      const orgId = facRow?.organization_id;
+      if (orgId) {
+        const { data: orgWide } = await supabase
+          .from("user_profiles")
+          .select("id")
+          .eq("organization_id", orgId)
+          .in("app_role", ["owner", "org_admin"]);
+        for (const row of orgWide ?? []) {
+          eligibleIds.add(row.id);
+        }
+      }
+
+      const userIds = Array.from(eligibleIds);
       let eligible = 0;
       if (userIds.length > 0) {
         const { data: profiles } = await supabase.from("user_profiles").select("id, app_role").in("id", userIds);

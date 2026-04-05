@@ -102,6 +102,7 @@ export function SurveyVisitSearchOverlay({
   const [debounced, setDebounced] = useState("");
   const [matches, setMatches] = useState<ResidentPick[]>([]);
   const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [selected, setSelected] = useState<ResidentPick | null>(null);
   const [chart, setChart] = useState<ChartState | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -123,6 +124,7 @@ export function SurveyVisitSearchOverlay({
     if (q.length < 2) {
       setMatches([]);
       setSearching(false);
+      setSearchError(null);
       return;
     }
     let cancelled = false;
@@ -142,8 +144,10 @@ export function SurveyVisitSearchOverlay({
       setSearching(false);
       if (error) {
         setMatches([]);
+        setSearchError(error.message);
         return;
       }
+      setSearchError(null);
       setMatches((data ?? []) as ResidentPick[]);
     })();
     return () => {
@@ -366,6 +370,11 @@ export function SurveyVisitSearchOverlay({
             </ul>
           ) : null}
         </div>
+        {searchError ? (
+          <p className="text-xs text-red-600 dark:text-red-400" role="alert">
+            {searchError}
+          </p>
+        ) : null}
       </div>
 
       {chartMs !== null ? (
