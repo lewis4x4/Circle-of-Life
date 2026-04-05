@@ -4,7 +4,7 @@
 
 **Do not overstate:** This document must distinguish **automated/repo verification** from **live UAT + RLS + production compliance**.
 
-**Last updated:** 2026-04-06 (non-UI closure pass)
+**Last updated:** 2026-04-06 (migrations **040–041** deployed to remote via `supabase db push`)
 
 ---
 
@@ -14,7 +14,7 @@
 |-----------|---------------------|
 | **Engineering baseline** (lint, build, migration replay, secrets, audit, segment gates) | **PASS** — see § Gate evidence |
 | **Target `.env` / Supabase project alignment** | **VERIFY** — canonical URL in [README.md](./README.md); owner confirms `.env.local` host; [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
-| **Remote migrations aligned** | **FAIL (gap)** — remote missing **040–041** per `supabase migration list` 2026-04-06; apply then re-check |
+| **Remote migrations aligned** | **PASS** — `supabase db push` 2026-04-06; Local/Remote **001–041** ([PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md)) |
 | **Seeded users (admin / caregiver / family) + facility context** | **PENDING** — owner UAT / [DEMO-SEED-RUNBOOK.md](./DEMO-SEED-RUNBOOK.md) |
 | **Checklist §A–F (real auth)** | **PENDING** — [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) |
 | **RLS matrix** | **PENDING** — [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md); procedure [PHASE1-RLS-MANUAL-PROCEDURE.md](./PHASE1-RLS-MANUAL-PROCEDURE.md) |
@@ -27,12 +27,12 @@
 
 **Blockers to full acceptance:**
 
-1. **Remote DB:** Apply migrations **040** and **041** to the linked Supabase project; re-run `supabase migration list` until Local/Remote match for all 41 files.
-2. **RLS:** Execute **RLS-01–07** on target project with real JWTs; record **PASS** in [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md).
-3. **UAT:** Complete [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) sections A–D and manual E rows with real auth.
-4. **Production compliance:** Owner confirms Pro / BAA / PITR in dashboard.
+1. **RLS:** Execute **RLS-01–07** on target project with real JWTs; record **PASS** in [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md).
+2. **UAT:** Complete [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) sections A–D and manual E rows with real auth.
+3. **Production compliance:** Owner confirms Pro / BAA / PITR in dashboard.
+4. **Environment:** Owner confirms `.env.local` host matches canonical project ([PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md)); seed users / facility selector per execution log.
 
-**Waivers alone do not close Phase 1** while migration gap, RLS, or checklist UAT remain open.
+**Waivers alone do not close Phase 1** while RLS or checklist UAT remain open.
 
 ---
 
@@ -72,8 +72,7 @@
 
 ## When Phase 1 can be marked “fully accepted”
 
-1. Resolve **remote migration gap** (040–041) or document exception (not recommended).
-2. **RLS** verdict **PASS** in [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md).
+1. **RLS** verdict **PASS** in [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md).
 3. **Execution log:** All applicable rows **PASS** or **WAIVED** (waivers already filed for §F).
 4. **PH1-P06** and **PH1-P03–P04** owner-confirmed.
 5. Mission alignment **pass** or **risk** (not fail).

@@ -2,7 +2,7 @@
 
 **Purpose:** Record **repo and CLI** checks for target Supabase alignment. **Dashboard-only** items (Pro, BAA, PITR) remain **owner-confirmed**.
 
-**Last run:** 2026-04-06 (`supabase migration list` from repo root)
+**Last run:** 2026-04-06 — `supabase db push` applied **040** and **041** to remote; `supabase migration list` shows Local/Remote aligned **001–041**.
 
 ---
 
@@ -20,9 +20,7 @@
 
 Command: `supabase migration list`
 
-**Result (2026-04-06):** Local and remote are aligned through **039**. Migrations **040** and **041** exist in [supabase/migrations/](../supabase/migrations/) but are **not** applied on the linked remote database (remote column empty for 040–041).
-
-| Action required | Apply `040_entity_facility_finance.sql` and `041_journal_draft_soft_delete.sql` to the remote project (`supabase db push`, linked CLI deploy, or SQL Editor) before claiming full migration parity with repo. |
+**Result (2026-04-06):** **PASS** — Local and remote both show **001 through 041** after `supabase db push` (deployed `040_entity_facility_finance.sql`, `041_journal_draft_soft_delete.sql`).
 
 ---
 
@@ -48,7 +46,7 @@ Command: `supabase migration list`
 | ID | Repo/CLI result | Owner still required |
 |----|-----------------|----------------------|
 | PH1-P01 | CLI links; canonical URL documented | Confirm `.env.local` host = `manfqmasfqppukpobpld.supabase.co` |
-| PH1-P02 | **GAP:** remote missing **040–041** | Apply migrations; re-run `supabase migration list` |
+| PH1-P02 | **PASS** (CLI) | `supabase db push` 2026-04-06; list aligned 001–041 |
 | PH1-P03–P04 | — | Seed + facility selector UAT |
 | PH1-P05 | N/A until Storage uploads | — |
 | PH1-P06 | — | Dashboard: Pro / BAA / PITR |

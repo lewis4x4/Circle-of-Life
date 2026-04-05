@@ -13,7 +13,7 @@
 | ID | Item | Result | Tester | Date | Notes |
 |----|------|--------|--------|------|-------|
 | PH1-P01 | `.env.local` → correct Supabase project | **VERIFY** | owner | | Repo canonical URL: `https://manfqmasfqppukpobpld.supabase.co` ([README.md](./README.md)). Supabase CLI connects. Owner confirms `NEXT_PUBLIC_SUPABASE_URL` matches (do not commit secrets). |
-| PH1-P02 | Migrations applied / list aligned remote | **FAIL** (gap) | agent | 2026-04-06 | `supabase migration list`: remote **missing 040–041**; local repo has 41 files. Apply to remote then re-check. |
+| PH1-P02 | Migrations applied / list aligned remote | **PASS** | agent | 2026-04-06 | `supabase db push`; `migration list` Local/Remote **001–041** |
 | PH1-P03 | Seeded users + roles + facility access | PENDING | | | [DEMO-SEED-RUNBOOK.md](./DEMO-SEED-RUNBOOK.md) — owner |
 | PH1-P04 | Facility context in admin shell | PENDING | | | Owner UAT |
 | PH1-P05 | Storage buckets (if/when uploads added) | **N/A** | | | No Storage in Phase 1 UI per checklist |
@@ -159,7 +159,7 @@
 | PH1-BE03 | `npm run migrations:verify:pg` | PASS | 2026-04-06 | |
 | PH1-BE04 | `npm run check:secrets` | PASS | 2026-04-06 | |
 | PH1-BE05 | `npm audit` | PASS | 2026-04-06 | 0 vulns |
-| PH1-BE06 | `supabase db push` / migration list aligned | **FAIL** (gap) | 2026-04-06 | Remote missing **040–041**; see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
+| PH1-BE06 | `supabase db push` / migration list aligned | **PASS** | 2026-04-06 | Deployed 040–041; see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
 
 ---
 
@@ -167,10 +167,9 @@
 
 | Category | PASS | FAIL | WAIVED | PENDING |
 |----------|------|------|--------|---------|
-| Preconditions | 0 | 1 | 1 N/A | 4 |
+| Preconditions | 1 | 0 | 1 N/A | 3 |
 | A–D | 0 | 0 | 0 | many |
 | E (manual) | 0 | 0 | 0 | 4 |
 | E (gates) | 1 | 0 | 0 | 0 |
 | F | 0 | 0 | 4 | 0 |
-| Backend BE01–BE05 | 5 | 0 | 0 | 0 |
-| BE06 | 0 | 1 | 0 | 0 |
+| Backend BE01–BE06 | 6 | 0 | 0 | 0 |

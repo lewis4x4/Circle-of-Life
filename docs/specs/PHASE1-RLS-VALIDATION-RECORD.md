@@ -44,4 +44,4 @@ When complete, set to **PASS** or **FAIL** (FAIL blocks Phase 1 full acceptance 
 ## Notes
 
 - Helpers live in schema **`haven`** (`haven.organization_id()`, `haven.accessible_facility_ids()`, `haven.app_role()`) — see migrations `004_haven_rls_helpers.sql` and table-specific policies.
-- **Remote migration gap:** Linked project was missing **040–041** as of 2026-04-06 ([PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md)). Phase 1 Core tables are through **029** billing + Phase 2 additions; RLS tests for Phase 1 paths should use remote **through 039** minimum. Apply **040–041** before asserting finance RLS.
+- **Remote migrations:** **040–041** deployed 2026-04-06 ([PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md)). Include **finance** tables in RLS tests if validating Module 17 on this project.

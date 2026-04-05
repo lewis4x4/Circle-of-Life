@@ -12,7 +12,7 @@ Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs 
 |-------|--------|
 | **Engineering baseline** | **PASS** — lint, build, migration replay, secrets, audit, segment gates; see §G and [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) |
 | **Known gap waivers (§F)** | **APPROVED** — [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) (2026-04-06) |
-| **Environment / remote migrations** | **GAP** — remote missing **040–041**; see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
+| **Environment / remote migrations** | **PASS** (migrations) — **040–041** deployed 2026-04-06; see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
 | **Full product acceptance** (remaining preconditions, A–D UAT, RLS, Pro/BAA/PITR) | **NOT COMPLETE** — [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md), [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) |
 
 **Closure record:** [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) — **NOT COMPLETE** until blockers in that file are cleared.
