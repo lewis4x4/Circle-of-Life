@@ -379,6 +379,9 @@ verify_jwt = true
 [functions.dispatch-push]
 verify_jwt = false
 
+[functions."generate-monthly-invoices"]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
