@@ -22,6 +22,7 @@ export function SurveyVisitModeBar() {
   const [busy, setBusy] = useState(false);
   const [logDescription, setLogDescription] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const canManage = ROLES_MANAGE_SESSION.has(appRole);
   const canLog = ROLES_LOG_ACCESS.has(appRole);
@@ -38,6 +39,7 @@ export function SurveyVisitModeBar() {
     }
     setLoading(true);
     setMessage(null);
+    setLoadError(null);
     try {
       const {
         data: { user },
@@ -60,10 +62,29 @@ export function SurveyVisitModeBar() {
           .is("deactivated_at", null)
           .maybeSingle(),
       ]);
-      if (prof.data?.app_role) setAppRole(prof.data.app_role as string);
-      else setAppRole("");
-      setOrgId(fac.data?.organization_id ?? null);
-      setActiveSessionId(sess.data?.id ?? null);
+      if (prof.error) {
+        setLoadError(prof.error.message);
+        setAppRole("");
+      } else if (prof.data?.app_role) {
+        setAppRole(prof.data.app_role as string);
+      } else {
+        setAppRole("");
+      }
+      if (fac.error) {
+        setLoadError((prev) => prev ?? fac.error.message);
+        setOrgId(null);
+      } else if (!fac.data?.organization_id) {
+        setLoadError((prev) => prev ?? "Facility organization not found or access denied.");
+        setOrgId(null);
+      } else {
+        setOrgId(fac.data.organization_id);
+      }
+      if (sess.error) {
+        setLoadError((prev) => prev ?? sess.error?.message ?? "Could not load survey session.");
+        setActiveSessionId(null);
+      } else {
+        setActiveSessionId(sess.data?.id ?? null);
+      }
     } finally {
       setLoading(false);
     }
@@ -74,7 +95,11 @@ export function SurveyVisitModeBar() {
   }, [refresh]);
 
   async function activateSession() {
-    if (!canManage || !userId || !selectedFacilityId || !orgId) return;
+    if (!canManage || !userId || !selectedFacilityId) return;
+    if (!orgId) {
+      setMessage("Organization could not be loaded for this facility. Refresh the page or check access.");
+      return;
+    }
     setBusy(true);
     setMessage(null);
     try {
@@ -116,7 +141,11 @@ export function SurveyVisitModeBar() {
   }
 
   async function submitLog() {
-    if (!canLog || !userId || !activeSessionId || !selectedFacilityId || !orgId) return;
+    if (!canLog || !userId || !activeSessionId || !selectedFacilityId) return;
+    if (!orgId) {
+      setMessage("Organization could not be loaded for this facility. Refresh the page or check access.");
+      return;
+    }
     const desc = logDescription.trim();
     if (!desc) {
       setMessage("Describe what was accessed.");
@@ -220,6 +249,11 @@ export function SurveyVisitModeBar() {
         </div>
       ) : null}
 
+      {loadError ? (
+        <p className="mx-auto mt-2 max-w-6xl text-xs text-red-600 dark:text-red-400" role="alert">
+          {loadError}
+        </p>
+      ) : null}
       {message ? <p className="mx-auto mt-2 max-w-6xl text-xs text-slate-600 dark:text-slate-400">{message}</p> : null}
     </div>
   );
