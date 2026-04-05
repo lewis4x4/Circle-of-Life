@@ -26,6 +26,7 @@ import {
   Pill,
   Biohazard,
   Scale,
+  Landmark,
   MessageCircle,
   Sun,
   Moon,
@@ -130,6 +131,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     { key: "time-records", href: "/admin/time-records", label: "Time records", enabled: true, icon: Clock },
     { key: "staffing", href: "/admin/staffing", label: "Staffing", enabled: true, icon: Activity },
     { key: "billing", href: "/admin/billing", label: "Billing", enabled: true, icon: CreditCard },
+    { key: "finance", href: "/admin/finance", label: "Finance", enabled: true, icon: Landmark },
     { key: "family-messages", href: "/admin/family-messages", label: "Family Messages", enabled: true, icon: MessageCircle },
   ];
 
@@ -161,7 +163,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               pathname === item.href ||
               (item.key === "medications" && pathname.startsWith("/admin/medications")) ||
               (item.key === "infection" && pathname.startsWith("/admin/infection-control")) ||
-              (item.key === "compliance" && pathname.startsWith("/admin/compliance"));
+              (item.key === "compliance" && pathname.startsWith("/admin/compliance")) ||
+              (item.key === "finance" && pathname.startsWith("/admin/finance"));
             const Icon = item.icon;
             
             if (!item.enabled) {

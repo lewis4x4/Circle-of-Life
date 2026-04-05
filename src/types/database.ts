@@ -1933,6 +1933,79 @@ export type Database = {
           },
         ]
       }
+      gl_accounts: {
+        Row: {
+          account_type: Database["public"]["Enums"]["gl_account_type"]
+          code: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          entity_id: string
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          parent_account_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          account_type: Database["public"]["Enums"]["gl_account_type"]
+          code: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          entity_id: string
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id: string
+          parent_account_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          account_type?: Database["public"]["Enums"]["gl_account_type"]
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          entity_id?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          parent_account_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gl_accounts_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gl_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gl_accounts_parent_account_id_fkey"
+            columns: ["parent_account_id"]
+            isOneToOne: false
+            referencedRelation: "gl_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incident_followups: {
         Row: {
           assigned_to: string | null
@@ -2824,6 +2897,149 @@ export type Database = {
             columns: ["resident_id"]
             isOneToOne: false
             referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          entity_id: string
+          entry_date: string
+          facility_id: string | null
+          id: string
+          memo: string | null
+          organization_id: string
+          posted_at: string | null
+          posted_by: string | null
+          source_id: string | null
+          source_type: string | null
+          status: Database["public"]["Enums"]["journal_entry_status"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          entity_id: string
+          entry_date: string
+          facility_id?: string | null
+          id?: string
+          memo?: string | null
+          organization_id: string
+          posted_at?: string | null
+          posted_by?: string | null
+          source_id?: string | null
+          source_type?: string | null
+          status?: Database["public"]["Enums"]["journal_entry_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          entity_id?: string
+          entry_date?: string
+          facility_id?: string | null
+          id?: string
+          memo?: string | null
+          organization_id?: string
+          posted_at?: string | null
+          posted_by?: string | null
+          source_id?: string | null
+          source_type?: string | null
+          status?: Database["public"]["Enums"]["journal_entry_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entry_lines: {
+        Row: {
+          created_at: string
+          credit_cents: number
+          debit_cents: number
+          deleted_at: string | null
+          description: string | null
+          gl_account_id: string
+          id: string
+          journal_entry_id: string
+          line_number: number
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          credit_cents?: number
+          debit_cents?: number
+          deleted_at?: string | null
+          description?: string | null
+          gl_account_id: string
+          id?: string
+          journal_entry_id: string
+          line_number: number
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          credit_cents?: number
+          debit_cents?: number
+          deleted_at?: string | null
+          description?: string | null
+          gl_account_id?: string
+          id?: string
+          journal_entry_id?: string
+          line_number?: number
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entry_lines_gl_account_id_fkey"
+            columns: ["gl_account_id"]
+            isOneToOne: false
+            referencedRelation: "gl_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_lines_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_lines_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -6006,6 +6222,7 @@ export type Database = {
       entity_status: "active" | "inactive" | "archived"
       facility_status: "active" | "inactive" | "under_renovation" | "archived"
       family_message_author: "family" | "staff"
+      gl_account_type: "asset" | "liability" | "equity" | "revenue" | "expense"
       gender: "male" | "female" | "other" | "prefer_not_to_say"
       incident_category:
         | "fall_with_injury"
@@ -6042,6 +6259,7 @@ export type Database = {
         | "overdue"
         | "void"
         | "written_off"
+      journal_entry_status: "draft" | "posted" | "voided"
       medication_frequency:
         | "daily"
         | "bid"
@@ -6303,6 +6521,7 @@ export const Constants = {
       entity_status: ["active", "inactive", "archived"],
       facility_status: ["active", "inactive", "under_renovation", "archived"],
       family_message_author: ["family", "staff"],
+      gl_account_type: ["asset", "liability", "equity", "revenue", "expense"],
       gender: ["male", "female", "other", "prefer_not_to_say"],
       incident_category: [
         "fall_with_injury",
@@ -6341,6 +6560,7 @@ export const Constants = {
         "void",
         "written_off",
       ],
+      journal_entry_status: ["draft", "posted", "voided"],
       medication_frequency: [
         "daily",
         "bid",
