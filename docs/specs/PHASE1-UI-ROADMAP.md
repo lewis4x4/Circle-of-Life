@@ -28,6 +28,7 @@ The absolute bedrock of the "Soft Precision" visual identity.
   - Front-Line Census Table (Dense data, severity badging, simulated avatars).
   - Live Shift Activity Feed (Chronological CSS-driven timeline).
 - [x] **Resident Master List (`/admin/residents`)**: Scaffolded premium data table with shared filtering/loading/error/empty states.
+- [x] **Add resident (`/admin/residents/new`)**: Minimal create flow (identity, status, acuity, admission date) for selected facility — addresses **W-ADMIN-01** incrementally.
 - [x] **Staffing Roster & Schedules (`/admin/staff`)**: Scaffolded roster table with role/status/certification filters and risk badging.
 - [x] **Incident Command (`/admin/incidents`)**: Scaffolded command queue with severity/status/category filters and standardized list states.
 - [x] **Billing Core (`/admin/billing`)**: Scaffolded ledger-focused billing list with payer/status filters and shared list patterns.

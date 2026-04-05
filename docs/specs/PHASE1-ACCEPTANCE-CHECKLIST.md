@@ -65,7 +65,8 @@ Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs 
 
 ### B2. Residents
 
-- [ ] `/admin/residents` — list loads, filters/search behave, row links work.
+- [ ] `/admin/residents` — list loads, filters/search behave, row links work; **Add resident** opens `/admin/residents/new` when a facility is selected.
+- [ ] `/admin/residents/new` — can create a resident (identity + status + acuity); redirects to profile (requires role allowed by RLS insert policy).
 - [ ] `/admin/residents/[id]` — detail loads; clinical snippets coherent.
 - [ ] `/admin/residents/[id]/care-plan` — plan/items load or empty state.
 - [ ] `/admin/residents/[id]/billing` — payer + invoice list scoped to resident.

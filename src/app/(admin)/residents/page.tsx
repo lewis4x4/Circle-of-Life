@@ -142,7 +142,7 @@ export default function AdminResidentsPage() {
         whenDatasetEmpty: {
           title: "No residents in this scope",
           description:
-            "Live census returned no active residents for the selected facility or organization filter. Add residents in Supabase or choose a different scope.",
+            "Live census returned no active residents for the selected facility. Use Add resident or choose a different facility.",
         },
         whenFiltersExcludeAll: {
           title: "No residents match the current filters",
@@ -167,7 +167,13 @@ export default function AdminResidentsPage() {
             Unified census view with acuity, unit, and ADL filtering for rapid shift decisions.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/admin/residents/new"
+            className={buttonVariants({ size: "sm" })}
+          >
+            Add resident
+          </Link>
           <Badge variant="outline" className="border-slate-200 bg-white px-3 py-1 dark:border-slate-800 dark:bg-slate-900">
             <Users className="mr-1 h-3.5 w-3.5" />
             {activeCount} active
