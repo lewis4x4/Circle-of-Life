@@ -63,6 +63,9 @@ After this scaffold sprint, resume backend spec implementation in original order
 | Order | Spec File | Module | Weeks | What It Adds |
 |-------|-----------|--------|-------|--------------|
 | 11 | `17-entity-facility-finance.md` | Entity & Facility Finance | 21–22 (slice 1) | Chart of accounts, journal entries/lines, read-only ledger; RLS; integration hooks to Module 16 (no auto-posting in slice 1) |
+| 12 | `18-insurance-risk-finance.md` | Insurance & Risk Finance | 23–24 | Policy inventory, renewals, data packages, claims (incident-linked), loss runs, premium allocations, COI tracking, workers’ comp headers; GL hooks to Module 17 |
+| 13 | `19-vendor-contract-management.md` | Vendor & Contract Management | 25–26 | Vendor master, facility links, contracts, terms, alerts, POs, vendor invoices, payments, vendor insurance, scorecards; spend analytics |
+| 14 | `24-executive-intelligence.md` | Executive Intelligence Layer v1 | 27–28 | Org command center, KPI snapshots, drill-down, prioritized alerts, saved reports; read-layer over existing modules |
 
 ## Module Number Reference
 
@@ -87,13 +90,13 @@ Module numbers match the roadmap (27 modules total), NOT the build sequence. Not
 | 15 | Transportation & Appointments | 6 | Not yet spec'd |
 | 16 | Resident Billing & Collections | 1 | ✅ Spec complete |
 | 17 | Entity & Facility Finance | 3 | `17-entity-facility-finance.md` |
-| 18 | Insurance & Risk Finance | 3 | Not yet spec'd |
-| 19 | Vendor & Contract Management | 3 | Not yet spec'd |
+| 18 | Insurance & Risk Finance | 3 | `18-insurance-risk-finance.md` |
+| 19 | Vendor & Contract Management | 3 | `19-vendor-contract-management.md` |
 | 20 | Expansion & Acquisition Planning | 7 | Not yet spec'd |
 | 21 | Family Portal | 5 | Not yet spec'd |
 | 22 | Referral Source CRM | 6 | Not yet spec'd |
 | 23 | Reputation & Online Presence | 6 | Not yet spec'd |
-| 24 | Executive Intelligence Layer | 3 (v1) + 7 (v2) | Not yet spec'd |
+| 24 | Executive Intelligence Layer | 3 (v1) + 7 (v2) | v1: `24-executive-intelligence.md` — v2 not yet spec'd |
 | 25 | Ambient Environment Intelligence | 5 | Not yet spec'd |
 | 26 | Facility Digital Twin | 6 | Not yet spec'd |
 | 27 | Regulatory Intelligence & Arbitrage | 7 | Not yet spec'd |
