@@ -10,10 +10,12 @@ Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs 
 
 | Layer | Status |
 |-------|--------|
-| **Engineering baseline** | **PASS** — lint, build, migration replay, secrets, audit; see §G and [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) |
-| **Full product acceptance** (§Preconditions, A–F, RLS, production compliance, waivers) | **NOT COMPLETE** — requires **target environment** execution; see [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md), [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md), [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) |
+| **Engineering baseline** | **PASS** — lint, build, migration replay, secrets, audit, segment gates; see §G and [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) |
+| **Known gap waivers (§F)** | **APPROVED** — [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) (2026-04-06) |
+| **Environment / remote migrations** | **GAP** — remote missing **040–041**; see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
+| **Full product acceptance** (remaining preconditions, A–D UAT, RLS, Pro/BAA/PITR) | **NOT COMPLETE** — [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md), [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) |
 
-**Closure record:** [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) — single verdict for **PASS** vs **PASS WITH WAIVERS** vs **NOT COMPLETE**.
+**Closure record:** [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) — **NOT COMPLETE** until blockers in that file are cleared.
 
 **Do not** treat repo-only verification as full Phase 1 acceptance.
 
@@ -194,11 +196,11 @@ Before closing Phase 1, record **mission alignment** `pass` | `risk` | `fail` wi
 | `npm audit` | 0 vulnerabilities |
 | Milestone routes compile (admin / caregiver / family) | PASS — see `next build` route list |
 
-**Verdict:** **Phase 1 engineering readiness: PASS.** Full acceptance of §A–F above remains **pending human UAT** on the target environment (or approved waivers). **Mission alignment until UAT:** `risk` (residual RLS/pilot verification per § Backend review).
+**Verdict:** **Phase 1 engineering readiness: PASS.** **§F gap waivers:** approved 2026-04-06. Full acceptance remains **NOT COMPLETE** — see [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) (remote migration gap, RLS, UAT, dashboard compliance). **Mission alignment:** `risk` until blockers close.
 
 ---
 
-## G. Gate evidence — Phase 1 closure hand-off (2026-04-05)
+## G. Gate evidence — Phase 1 closure (refreshed 2026-04-06)
 
 | Command / gate | Result |
 |----------------|--------|
@@ -207,9 +209,12 @@ Before closing Phase 1, record **mission alignment** `pass` | `risk` | `fail` wi
 | `npm run migrations:verify:pg` | PASS |
 | `npm run check:secrets` | PASS |
 | `npm audit` | 0 vulnerabilities |
-| `npm run segment:gates -- --segment "phase1-closure-handoff-2026-04-05" --ui --no-chaos` | PASS |
+| `npm run segment:gates -- --segment "phase1-final-closure-2026-04-06" --ui --no-chaos` | PASS |
 
-**Artifact:** `test-results/agent-gates/2026-04-05T01-54-07-938Z-phase1-closure-handoff-2026-04-05.json`
+**Artifacts:**
+
+- `test-results/agent-gates/2026-04-05T02-04-25-955Z-phase1-final-closure-2026-04-06.json`
+- `test-results/agent-gates/2026-04-05T01-54-07-938Z-phase1-closure-handoff-2026-04-05.json` (prior)
 
 **Detail:** [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md)
 
@@ -225,3 +230,4 @@ Before closing Phase 1, record **mission alignment** `pass` | `risk` | `fail` wi
 ## I. RLS validation (owner)
 
 - [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) — **PENDING** until executed on target project.
+- Procedure: [PHASE1-RLS-MANUAL-PROCEDURE.md](./PHASE1-RLS-MANUAL-PROCEDURE.md)

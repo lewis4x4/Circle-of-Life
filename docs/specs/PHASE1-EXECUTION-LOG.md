@@ -4,7 +4,7 @@
 
 **Rule:** A repo/agent cannot set PASS without owner (or delegated tester) execution on that environment.
 
-**Legend:** `PENDING` = not yet executed.
+**Legend:** `PENDING` = not yet executed. See [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) (2026-04-06 non-UI pass).
 
 ---
 
@@ -12,12 +12,12 @@
 
 | ID | Item | Result | Tester | Date | Notes |
 |----|------|--------|--------|------|-------|
-| PH1-P01 | `.env.local` → correct Supabase project | PENDING | | | |
-| PH1-P02 | Migrations applied / list aligned remote | PENDING | | | |
-| PH1-P03 | Seeded users + roles + facility access | PENDING | | | |
-| PH1-P04 | Facility context in admin shell | PENDING | | | |
-| PH1-P05 | Storage buckets (if/when uploads added) | PENDING | | | N/A until Storage used |
-| PH1-P06 | Pro plan, BAA before PHI, PITR (production) | PENDING | | | Dashboard only |
+| PH1-P01 | `.env.local` → correct Supabase project | **VERIFY** | owner | | Repo canonical URL: `https://manfqmasfqppukpobpld.supabase.co` ([README.md](./README.md)). Supabase CLI connects. Owner confirms `NEXT_PUBLIC_SUPABASE_URL` matches (do not commit secrets). |
+| PH1-P02 | Migrations applied / list aligned remote | **FAIL** (gap) | agent | 2026-04-06 | `supabase migration list`: remote **missing 040–041**; local repo has 41 files. Apply to remote then re-check. |
+| PH1-P03 | Seeded users + roles + facility access | PENDING | | | [DEMO-SEED-RUNBOOK.md](./DEMO-SEED-RUNBOOK.md) — owner |
+| PH1-P04 | Facility context in admin shell | PENDING | | | Owner UAT |
+| PH1-P05 | Storage buckets (if/when uploads added) | **N/A** | | | No Storage in Phase 1 UI per checklist |
+| PH1-P06 | Pro plan, BAA before PHI, PITR (production) | PENDING | | | Dashboard only — not inferable from repo |
 
 ---
 
@@ -135,7 +135,7 @@
 | PH1-E02 | Empty states | PENDING | | | |
 | PH1-E03 | Error states | PENDING | | | |
 | PH1-E04 | Mobile viewport (caregiver) | PENDING | | | |
-| PH1-E05 | Optional: segment gates `--ui` (see closure record) | PASS | agent | 2026-04-05 | Artifact in `test-results/agent-gates/` |
+| PH1-E05 | Optional: segment gates `--ui` (see closure record) | PASS | agent | 2026-04-06 | `phase1-final-closure-2026-04-06` |
 
 ---
 
@@ -143,10 +143,10 @@
 
 | ID | Item | Result | Tester | Date | Notes |
 |----|------|--------|--------|------|-------|
-| PH1-F01 | RCA workspace — localStorage only | PENDING | | | Waive or fix — [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) |
-| PH1-F02 | Billing edge functions (spec vs deployed) | PENDING | | | |
-| PH1-F03 | Collection activities UI | PENDING | | | |
-| PH1-F04 | List-heavy admin pages without create wizards | PENDING | | | |
+| PH1-F01 | RCA workspace — localStorage only | **WAIVED** | Brian Lewis | 2026-04-06 | [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) W-RCA-01 |
+| PH1-F02 | Billing edge functions (spec vs deployed) | **WAIVED** | Brian Lewis | 2026-04-06 | W-BILL-EF-01 |
+| PH1-F03 | Collection activities UI | **WAIVED** | Brian Lewis | 2026-04-06 | W-COLL-01 |
+| PH1-F04 | List-heavy admin pages without create wizards | **WAIVED** | Brian Lewis | 2026-04-06 | W-ADMIN-01 |
 
 ---
 
@@ -154,12 +154,12 @@
 
 | ID | Item | Result | Date | Notes |
 |----|------|--------|------|-------|
-| PH1-BE01 | `npm run build` | PASS | 2026-04-05 | |
-| PH1-BE02 | `npm run lint` | PASS | 2026-04-05 | |
-| PH1-BE03 | `npm run migrations:verify:pg` | PASS | 2026-04-05 | |
-| PH1-BE04 | `npm run check:secrets` | PASS | 2026-04-05 | |
-| PH1-BE05 | `npm audit` | PASS | 2026-04-05 | 0 vulns |
-| PH1-BE06 | `supabase db push` / migration list aligned | PENDING | | Owner |
+| PH1-BE01 | `npm run build` | PASS | 2026-04-06 | Refreshed |
+| PH1-BE02 | `npm run lint` | PASS | 2026-04-06 | |
+| PH1-BE03 | `npm run migrations:verify:pg` | PASS | 2026-04-06 | |
+| PH1-BE04 | `npm run check:secrets` | PASS | 2026-04-06 | |
+| PH1-BE05 | `npm audit` | PASS | 2026-04-06 | 0 vulns |
+| PH1-BE06 | `supabase db push` / migration list aligned | **FAIL** (gap) | 2026-04-06 | Remote missing **040–041**; see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
 
 ---
 
@@ -167,10 +167,10 @@
 
 | Category | PASS | FAIL | WAIVED | PENDING |
 |----------|------|------|--------|---------|
-| Preconditions | 0 | 0 | 0 | 6 |
+| Preconditions | 0 | 1 | 1 N/A | 4 |
 | A–D | 0 | 0 | 0 | many |
 | E (manual) | 0 | 0 | 0 | 4 |
 | E (gates) | 1 | 0 | 0 | 0 |
-| F | 0 | 0 | 0 | 4 |
+| F | 0 | 0 | 4 | 0 |
 | Backend BE01–BE05 | 5 | 0 | 0 | 0 |
-| BE06 | 0 | 0 | 0 | 1 |
+| BE06 | 0 | 1 | 0 | 0 |

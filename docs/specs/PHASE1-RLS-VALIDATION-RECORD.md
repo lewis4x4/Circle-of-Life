@@ -2,7 +2,9 @@
 
 **Purpose:** Prove **role-governed** access on the **target Supabase project** (not replaceable by repo review alone). See [PHASE1-ACCEPTANCE-CHECKLIST.md](./PHASE1-ACCEPTANCE-CHECKLIST.md) § Backend review.
 
-**Status (2026-04-05):** **NOT EXECUTED** — scenarios below are **PENDING** until tested with real JWTs / Supabase clients per role.
+**Procedure:** [PHASE1-RLS-MANUAL-PROCEDURE.md](./PHASE1-RLS-MANUAL-PROCEDURE.md)
+
+**Status (2026-04-06):** **NOT EXECUTED** — scenarios **RLS-01–07** require **owner or delegated tester** with real JWT sessions. This agent session did **not** run live queries against production identities.
 
 ---
 
@@ -19,13 +21,13 @@
 
 | # | Scenario | Expected | Result | Tester | Date | Evidence |
 |---|----------|----------|--------|--------|------|----------|
-| RLS-01 | Caregiver queries `residents` / `daily_logs` | Only rows for **accessible facilities** | PENDING | | | |
-| RLS-02 | Caregiver cannot read resident in **other** facility | 0 rows or RLS error | PENDING | | | |
-| RLS-03 | Family user queries clinical/financial tables | Only **linked** resident(s) per `family_resident_links` | PENDING | | | |
-| RLS-04 | Family cannot access **unlinked** resident | No row leakage | PENDING | | | |
-| RLS-05 | Admin (`facility_admin`) scope | Org + selected facility rules per policies | PENDING | | | |
-| RLS-06 | `invoices` / `payments` (billing) | No cross-org; facility/entity rules per migrations | PENDING | | | |
-| RLS-07 | Write attempts (caregiver) to out-of-scope `INSERT`/`UPDATE` | Denied by RLS | PENDING | | | |
+| RLS-01 | Caregiver queries `residents` / `daily_logs` | Only rows for **accessible facilities** | **PENDING** | | | |
+| RLS-02 | Caregiver cannot read resident in **other** facility | 0 rows or RLS error | **PENDING** | | | |
+| RLS-03 | Family user queries clinical/financial tables | Only **linked** resident(s) per `family_resident_links` | **PENDING** | | | |
+| RLS-04 | Family cannot access **unlinked** resident | No row leakage | **PENDING** | | | |
+| RLS-05 | Admin (`facility_admin`) scope | Org + selected facility rules per policies | **PENDING** | | | |
+| RLS-06 | `invoices` / `payments` (billing) | No cross-org; facility/entity rules per migrations | **PENDING** | | | |
+| RLS-07 | Write attempts (caregiver) to out-of-scope `INSERT`/`UPDATE` | Denied by RLS | **PENDING** | | | |
 
 ---
 
@@ -33,7 +35,7 @@
 
 | Verdict | Date | Signer |
 |---------|------|--------|
-| **PENDING** | 2026-04-05 | — |
+| **PENDING** | 2026-04-06 | — |
 
 When complete, set to **PASS** or **FAIL** (FAIL blocks Phase 1 full acceptance until remediated).
 
@@ -42,4 +44,4 @@ When complete, set to **PASS** or **FAIL** (FAIL blocks Phase 1 full acceptance 
 ## Notes
 
 - Helpers live in schema **`haven`** (`haven.organization_id()`, `haven.accessible_facility_ids()`, `haven.app_role()`) — see migrations `004_haven_rls_helpers.sql` and table-specific policies.
-- Phase 1 scope tables: through **`16-billing`** migrations; later migrations add Phase 2/3 tables — include in matrix if those routes are in scope for “Phase 1 app” on the same project.
+- **Remote migration gap:** Linked project was missing **040–041** as of 2026-04-06 ([PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md)). Phase 1 Core tables are through **029** billing + Phase 2 additions; RLS tests for Phase 1 paths should use remote **through 039** minimum. Apply **040–041** before asserting finance RLS.

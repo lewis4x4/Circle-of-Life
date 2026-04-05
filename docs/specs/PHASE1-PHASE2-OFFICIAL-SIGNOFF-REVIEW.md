@@ -35,7 +35,7 @@
 | Status | Meaning |
 |--------|---------|
 | **Engineering readiness** | **PASS** — lint, build, migration replay, secrets scan, and route compilation support the Phase 1 milestone. |
-| **Full acceptance** | **NOT COMPLETE** as of 2026-04-05 hand-off — see [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md). Completes when [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md), [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md), and [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) are satisfied on the **target environment**. |
+| **Full acceptance** | **NOT COMPLETE** (2026-04-06) — see [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md). **Waivers** for known Phase 1 gaps are **approved** in [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md). **Blockers:** remote migrations **040–041** not applied; RLS matrix not executed; checklist UAT A–D pending; dashboard Pro/BAA/PITR pending. |
 
 **Mission alignment (Phase 1 pending full UAT):** **risk** — platform scope is aligned with Haven’s mission; residual risk is unverified live RLS and pilot workflows until UAT completes.
 
