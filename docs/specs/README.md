@@ -54,18 +54,114 @@ After this scaffold sprint, resume backend spec implementation in original order
 | 9 | `09-infection-control.md` | Infection Control & Health Monitoring | 17-18 | Infection surveillance, vitals trending + alerts, outbreak detection/management, staff illness tracking |
 | 10 | `08-compliance-engine.md` | Compliance Engine | 19-20 | Deficiency tracking, plans of correction, compliance dashboard, survey visit mode, policy library |
 
-### Phase 3–7: Specs added on a rolling basis, always one phase ahead of build.
+### Phase 3: Multi-Entity Finance, Procurement & Executive Intelligence (Weeks 21–28+)
 
-**Phase 3 (orientation alignment with `docs/roadmap-overview.md`):** business and multi-entity depth — Modules **17** (Entity & Facility Finance), **18** (insurance & risk finance), **19** (vendor & contract management), **24** (executive intelligence v1). Implement only after a numbered spec exists in this folder.
+**Vision:** Close the loop between clinical operations, financial accountability, insurance risk, vendor procurement, and executive visibility — on one RLS-governed data layer. No ALF platform today connects double-entry finance, corporate insurance lifecycle, vendor three-way match, and a real-time executive command center in a single system. Haven does.
 
-### Phase 3: Multi-entity finance & operations (Weeks 21+)
+**Scope & tiering:** Each spec defines Core / Enhanced / Future tiers. Core ships first (one module at a time). Enhanced slices follow Core for Modules 17 and 18 within Phase 3. Future is explicitly Phase 5+.
 
-| Order | Spec File | Module | Weeks | What It Adds |
-|-------|-----------|--------|-------|--------------|
-| 11 | `17-entity-facility-finance.md` | Entity & Facility Finance | 21–22 (slice 1) | Chart of accounts, journal entries/lines, read-only ledger; RLS; integration hooks to Module 16 (no auto-posting in slice 1) |
-| 12 | `18-insurance-risk-finance.md` | Insurance & Risk Finance | 23–24 | Policy inventory, renewals, data packages, claims (incident-linked), loss runs, premium allocations, COI tracking, workers’ comp headers; GL hooks to Module 17 |
-| 13 | `19-vendor-contract-management.md` | Vendor & Contract Management | 25–26 | Vendor master, facility links, contracts, terms, alerts, POs, vendor invoices, payments, vendor insurance, scorecards; spend analytics |
-| 14 | `24-executive-intelligence.md` | Executive Intelligence Layer v1 | 27–28 | Org command center, KPI snapshots, drill-down, prioritized alerts, saved reports; read-layer over existing modules |
+#### Phase 3 build status
+
+| Status | Meaning |
+|--------|---------|
+| ✅ SHIPPED | Migration applied, UI live, gates passed |
+| 🔲 NEXT | Next on the docket — build this when asked "what's next" |
+| ⬜ QUEUED | Spec exists, waiting for predecessor |
+
+#### Phase 3 Core modules (strict dependency order)
+
+| Order | Spec File | Module | Migration | Status | What It Creates |
+|-------|-----------|--------|-----------|--------|-----------------|
+| 11 | `17-entity-facility-finance.md` | Entity & Facility Finance (Core) | `040`–`043` | ✅ SHIPPED | Chart of accounts, journal entries/lines, read-only ledger, GL settings, budget lines; RLS; `/admin/finance/*` (7 routes) |
+| 12 | `18-insurance-risk-finance.md` | Insurance & Risk Finance (Core) | `044`–`045` | ✅ SHIPPED | Policy inventory, renewals, data packages, claims (incident-linked), loss runs, premium allocations, COI tracking, workers' comp headers; GL hooks; `/admin/insurance/*` (10 routes) |
+| 13 | `19-vendor-contract-management.md` | Vendor & Contract Management (Core) | `046` | 🔲 NEXT | Vendor master, facility links, contracts, terms, alerts, POs with three-way match, vendor invoices, payments with GL hooks, vendor insurance (COI cross-ref to Module 18), scorecards; `/admin/vendors/*` (12 routes) |
+| 14 | `24-executive-intelligence.md` | Executive Intelligence Layer v1 | `047` | ⬜ QUEUED | Org command center, per-user dashboard config, KPI snapshots (8 domains from all shipped modules), prioritized alert feed with drill-down, saved reports; `/admin/executive/*` (6 routes) |
+
+#### Phase 3 Enhanced slices (after Core 13–14 complete)
+
+| Order | Module | Migration | Status | What It Adds |
+|-------|--------|-----------|--------|--------------|
+| 15 | Module 17 Enhanced — Finance Depth | `048` | ⬜ QUEUED | Trial balance, period close (`gl_period_closes`), budget vs actual variance UI, **auto-posting from billing** (`gl_posting_rules`: invoices/payments → balanced journal entries) |
+| 16 | Module 18 Enhanced — Insurance Intelligence | `049` | ⬜ QUEUED | Renewal data package assembly (census + incidents + staffing + billing aggregates → structured JSON), total cost of risk KPI, AI-assisted renewal narrative draft (human-review gated, audit trail) |
+
+#### Phase 3 implementation detail per module
+
+**Module 19 — Vendor & Contract Management** (🔲 NEXT)
+
+Migration `046_vendor_contract_management.sql`: 8 enums, 14 tables, full RLS, audit triggers.
+
+| Artifact | Path |
+|----------|------|
+| Migration | `supabase/migrations/046_vendor_contract_management.sql` |
+| Types | `src/types/database.ts` (extend with all Module 19 tables/enums) |
+| Admin UI | `src/app/(admin)/admin/vendors/*` — 12 routes |
+| Nav | `src/components/layout/AdminShell.tsx` — add Vendors item |
+| Auth gate | `src/lib/auth/admin-shell.ts` — add `"/vendors"` to `ADMIN_SHELL_SEGMENTS` |
+| Contract | `docs/specs/FRONTEND-CONTRACT.md` — add `/admin/vendors/*` routes |
+
+Tables: `vendors`, `vendor_facilities`, `contracts`, `contract_terms`, `contract_alerts`, `purchase_orders`, `po_line_items`, `vendor_invoices`, `vendor_invoice_lines`, `vendor_payments`, `vendor_payment_applications`, `vendor_insurance`, `vendor_scorecards`. RLS: owner/org_admin full CRUD; facility_admin SELECT + PO/invoice create for their facility only. GL hook: `journal_entries.source_type = 'vendor_payment'`.
+
+Routes: `/admin/vendors` (hub), `/admin/vendors/directory`, `/admin/vendors/[id]`, `/admin/vendors/contracts`, `/admin/vendors/contracts/[id]`, `/admin/vendors/purchase-orders`, `/admin/vendors/purchase-orders/new`, `/admin/vendors/purchase-orders/[id]`, `/admin/vendors/invoices`, `/admin/vendors/invoices/[id]`, `/admin/vendors/payments`, `/admin/vendors/spend`.
+
+---
+
+**Module 24 — Executive Intelligence Layer v1** (⬜ QUEUED after 19)
+
+Migration `047_executive_intelligence.sql`: 4 enums, 4 tables, full RLS, audit triggers.
+
+| Artifact | Path |
+|----------|------|
+| Migration | `supabase/migrations/047_executive_intelligence.sql` |
+| Types | `src/types/database.ts` (extend) |
+| KPI engine | `src/lib/exec-kpi-snapshot.ts` — typed computation across 8 domains |
+| Admin UI | `src/app/(admin)/admin/executive/*` — 6 routes |
+| Nav | `src/components/layout/AdminShell.tsx` — add Executive item (top of nav) |
+| Auth gate | `src/lib/auth/admin-shell.ts` — add `"/executive"` to `ADMIN_SHELL_SEGMENTS` |
+| Contract | `docs/specs/FRONTEND-CONTRACT.md` — add `/admin/executive/*` routes |
+
+Tables: `exec_dashboard_configs`, `exec_kpi_snapshots`, `exec_alerts`, `exec_saved_reports`. KPI domains: census/occupancy, financial, clinical/safety, infection, compliance, workforce, insurance (Module 18), vendors (Module 19). Alert scoring: `severity_weight × recency_factor × impact_weight`. RLS: owner/org_admin full access; facility_admin scoped to their facilities.
+
+Routes: `/admin/executive` (command center), `/admin/executive/entity/[id]`, `/admin/executive/facility/[id]`, `/admin/executive/alerts`, `/admin/executive/reports`, `/admin/executive/settings`.
+
+---
+
+**Module 17 Enhanced — Finance Depth** (⬜ QUEUED after 24)
+
+Migration `048_finance_enhanced.sql`.
+
+Adds: `gl_period_closes` table (entity + period + closed_by); `gl_posting_rules` table (event type → debit/credit account pairs per entity); trial balance SQL view/RPC; period-close enforcement (block posting to closed periods); budget vs actual variance computation in UI; `src/lib/finance/auto-posting.ts` batch function: invoices/payments create balanced journal entries with `source_type = 'invoice'` / `source_type = 'payment'`.
+
+---
+
+**Module 18 Enhanced — Insurance Intelligence** (⬜ QUEUED after 17-Enhanced)
+
+Migration `049_insurance_enhanced.sql`.
+
+Adds: `src/lib/insurance/renewal-package.ts` (server-side assembly: census counts, incident aggregates, staffing metrics, billing totals → `renewal_data_packages.payload` JSON); total cost of risk KPI (premiums + paid losses + reserves per entity per rolling 12 months, surfaced on insurance hub + executive dashboard); `src/app/api/insurance/renewal-narrative/route.ts` AI-assisted draft endpoint (**human must review and approve before external use** — `generated_by`, `reviewed_by`, `published_by` audit columns). Per mission: AI subordinate to human judgment.
+
+#### Phase 3 gate checklist (per module)
+
+```bash
+npm run migrations:check
+npm run check:admin-shell
+npm run lint
+npm run build
+npm run segment:gates -- --segment "<module-segment-id>" --ui
+```
+
+#### Phase 3 Milestone
+
+At completion, an ALF owner logs into Haven and sees their entire portfolio — every facility's census, revenue, incident count, compliance backlog, staffing gaps, insurance exposure, and vendor spend — in one command center. They click a critical alert, drill into the facility, trace from a workers' comp claim to the incident report to the GL reserve entry to the vendor scorecard. Every dollar, risk event, and vendor obligation is traceable from the executive layer down to the source row, under row-level security, in a single session.
+
+### Phase 4–7: Specs added on a rolling basis, always one phase ahead of build.
+
+**Phase 4:** Full resident lifecycle — Modules 1 (Referral & Inquiry), 2 (Admissions & Move-In), 5 (Discharge & Transition). Implement only after numbered specs exist in this folder.
+
+**Phase 5:** Quality, family portal, ambient intelligence — Modules 10, 21, 25, plus NLQ and AI insights for Module 24 v2.
+
+**Phase 6:** Operational depth — Modules 12–15, 22–23, 26.
+
+**Phase 7:** Strategic — Modules 20, 24 v2, 27.
 
 ## Module Number Reference
 
@@ -89,14 +185,14 @@ Module numbers match the roadmap (27 modules total), NOT the build sequence. Not
 | 14 | Dietary & Nutrition Management | 6 | Not yet spec'd |
 | 15 | Transportation & Appointments | 6 | Not yet spec'd |
 | 16 | Resident Billing & Collections | 1 | ✅ Spec complete |
-| 17 | Entity & Facility Finance | 3 | `17-entity-facility-finance.md` |
-| 18 | Insurance & Risk Finance | 3 | `18-insurance-risk-finance.md` |
-| 19 | Vendor & Contract Management | 3 | `19-vendor-contract-management.md` |
+| 17 | Entity & Facility Finance | 3 | `17-entity-facility-finance.md` — ✅ Core shipped; Enhanced queued |
+| 18 | Insurance & Risk Finance | 3 | `18-insurance-risk-finance.md` — ✅ Core shipped; Enhanced queued |
+| 19 | Vendor & Contract Management | 3 | `19-vendor-contract-management.md` — 🔲 NEXT |
 | 20 | Expansion & Acquisition Planning | 7 | Not yet spec'd |
 | 21 | Family Portal | 5 | Not yet spec'd |
 | 22 | Referral Source CRM | 6 | Not yet spec'd |
 | 23 | Reputation & Online Presence | 6 | Not yet spec'd |
-| 24 | Executive Intelligence Layer | 3 (v1) + 7 (v2) | v1: `24-executive-intelligence.md` — v2 not yet spec'd |
+| 24 | Executive Intelligence Layer | 3 (v1) + 7 (v2) | v1: `24-executive-intelligence.md` — ⬜ Queued after Module 19 |
 | 25 | Ambient Environment Intelligence | 5 | Not yet spec'd |
 | 26 | Facility Digital Twin | 6 | Not yet spec'd |
 | 27 | Regulatory Intelligence & Arbitrage | 7 | Not yet spec'd |
@@ -109,7 +205,7 @@ When applying SQL through **non-CLI** paths (e.g. some HTTP/MCP runners), prefer
 
 ## Critical Build Rules
 
-1. **RLS first.** Every table must have Row Level Security enabled and policies applied before any data enters. Create the **haven** helper functions in migration `004_haven_rls_helpers.sql` before other tables’ policies (equivalent to the `auth.*` helpers described in `00-foundation.md`).
+1. **RLS first.** Every table must have Row Level Security enabled and policies applied before any data enters. Create the **haven** helper functions in migration `004_haven_rls_helpers.sql` before other tables' policies (equivalent to the `auth.*` helpers described in `00-foundation.md`).
 
 2. **Audit everything.** Every table that stores clinical or financial data must have the audit trigger from `00-foundation.md` applied. The `audit_log` table is immutable — no UPDATE or DELETE policies.
 
