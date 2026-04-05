@@ -3773,6 +3773,73 @@ export type Database = {
           },
         ]
       }
+      incident_rca: {
+        Row: {
+          id: string
+          incident_id: string
+          organization_id: string
+          facility_id: string
+          contributing_factor_tags: string[]
+          root_cause_narrative: string
+          corrective_actions: string
+          preventative_actions: string
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          incident_id: string
+          organization_id: string
+          facility_id: string
+          contributing_factor_tags?: string[]
+          root_cause_narrative?: string
+          corrective_actions?: string
+          preventative_actions?: string
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          incident_id?: string
+          organization_id?: string
+          facility_id?: string
+          contributing_factor_tags?: string[]
+          root_cause_narrative?: string
+          corrective_actions?: string
+          preventative_actions?: string
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_rca_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: true
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_rca_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_rca_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incident_root_cause_taxonomy: {
         Row: {
           code: string

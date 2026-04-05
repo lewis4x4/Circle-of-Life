@@ -75,6 +75,7 @@ type QueryResult<T> = { data: T | null; error: QueryError | null };
 type IncidentMini = {
   id: string;
   facility_id: string;
+  organization_id: string;
   incident_number: string;
   category: string;
   severity: string;
@@ -100,6 +101,7 @@ export default function AdminIncidentRcaPage() {
   const [correctiveActions, setCorrectiveActions] = useState("");
   const [preventativeActions, setPreventativeActions] = useState("");
   const [savedFlash, setSavedFlash] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const storageKey = `${STORAGE_PREFIX}${incidentId}`;
 
@@ -120,7 +122,7 @@ export default function AdminIncidentRcaPage() {
       const res = (await supabase
         .from("incidents" as never)
         .select(
-          "id, facility_id, incident_number, category, severity, status, occurred_at, description, contributing_factors",
+          "id, facility_id, organization_id, incident_number, category, severity, status, occurred_at, description, contributing_factors",
         )
         .eq("id", incidentId)
         .is("deleted_at", null)
@@ -140,12 +142,33 @@ export default function AdminIncidentRcaPage() {
       }
       setIncident(row);
 
+      const rcaRes = (await supabase
+        .from("incident_rca" as never)
+        .select(
+          "contributing_factor_tags, root_cause_narrative, corrective_actions, preventative_actions",
+        )
+        .eq("incident_id", row.id)
+        .maybeSingle()) as unknown as QueryResult<{
+        contributing_factor_tags: string[] | null;
+        root_cause_narrative: string | null;
+        corrective_actions: string | null;
+        preventative_actions: string | null;
+      }>;
+
+      if (rcaRes.error) throw rcaRes.error;
+      const rca = rcaRes.data;
+
       let initialSelected = new Set<string>(row.contributing_factors ?? []);
       let narrative = "";
       let corrective = "";
       let preventative = "";
 
-      if (typeof window !== "undefined") {
+      if (rca) {
+        initialSelected = new Set(rca.contributing_factor_tags ?? []);
+        narrative = rca.root_cause_narrative ?? "";
+        corrective = rca.corrective_actions ?? "";
+        preventative = rca.preventative_actions ?? "";
+      } else if (typeof window !== "undefined") {
         try {
           const raw = window.localStorage.getItem(storageKey);
           if (raw) {
@@ -186,18 +209,81 @@ export default function AdminIncidentRcaPage() {
     });
   };
 
-  const saveDraft = () => {
-    if (typeof window === "undefined") return;
-    const payload: DraftShape = {
-      selected: [...selected],
-      rootCauseNarrative,
-      correctiveActions,
-      preventativeActions,
-    };
-    window.localStorage.setItem(storageKey, JSON.stringify(payload));
-    setSavedFlash(true);
-    window.setTimeout(() => setSavedFlash(false), 2000);
-  };
+  const saveRca = useCallback(async () => {
+    if (!incident) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user?.id) {
+        setError("You must be signed in to save RCA.");
+        return;
+      }
+
+      const payload = {
+        incident_id: incident.id,
+        organization_id: incident.organization_id,
+        facility_id: incident.facility_id,
+        contributing_factor_tags: [...selected],
+        root_cause_narrative: rootCauseNarrative,
+        corrective_actions: correctiveActions,
+        preventative_actions: preventativeActions,
+        updated_by: user.id,
+      };
+
+      const existing = (await supabase
+        .from("incident_rca" as never)
+        .select("id")
+        .eq("incident_id", incident.id)
+        .maybeSingle()) as unknown as QueryResult<{ id: string }>;
+
+      if (existing.error) throw existing.error;
+
+      if (existing.data?.id) {
+        const up = (await supabase
+          .from("incident_rca" as never)
+          .update({
+            contributing_factor_tags: payload.contributing_factor_tags,
+            root_cause_narrative: payload.root_cause_narrative,
+            corrective_actions: payload.corrective_actions,
+            preventative_actions: payload.preventative_actions,
+            updated_by: user.id,
+          } as never)
+          .eq("id", existing.data.id)) as unknown as QueryResult<unknown>;
+        if (up.error) throw up.error;
+      } else {
+        const ins = (await supabase.from("incident_rca" as never).insert({
+          ...payload,
+          created_by: user.id,
+        } as never)) as unknown as QueryResult<unknown>;
+        if (ins.error) throw ins.error;
+      }
+
+      if (typeof window !== "undefined") {
+        try {
+          window.localStorage.removeItem(storageKey);
+        } catch {
+          /* ignore */
+        }
+      }
+      setSavedFlash(true);
+      window.setTimeout(() => setSavedFlash(false), 2000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not save RCA.");
+    } finally {
+      setSaving(false);
+    }
+  }, [
+    incident,
+    selected,
+    rootCauseNarrative,
+    correctiveActions,
+    preventativeActions,
+    storageKey,
+  ]);
 
   const textareaClass = cn(
     "min-h-[120px] w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm shadow-sm outline-none transition-colors",
@@ -274,7 +360,7 @@ export default function AdminIncidentRcaPage() {
                 Root cause workspace
               </h1>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                Structured RCA checklist per spec 07 — draft persists in this browser only.
+                Structured RCA per spec 07 — saved to the incident record (audit trail on save).
               </p>
             </div>
           </div>
@@ -283,9 +369,15 @@ export default function AdminIncidentRcaPage() {
           <Badge variant="outline" className="font-mono text-xs">
             {incident.incident_number}
           </Badge>
-          <Button type="button" size="sm" onClick={saveDraft} className="gap-1.5">
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => void saveRca()}
+            disabled={saving}
+            className="gap-1.5"
+          >
             <Save className="h-3.5 w-3.5" />
-            {savedFlash ? "Saved" : "Save draft"}
+            {savedFlash ? "Saved" : saving ? "Saving…" : "Save"}
           </Button>
         </div>
       </div>
@@ -344,7 +436,7 @@ export default function AdminIncidentRcaPage() {
       <Card className="border-slate-200/70 dark:border-slate-800 lg:col-span-2">
         <CardHeader>
           <CardTitle className="font-display text-lg">Analysis &amp; actions</CardTitle>
-          <CardDescription>Free text — still browser-local until RCA persistence ships</CardDescription>
+          <CardDescription>Stored with the incident; visible to authorized staff across devices.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
