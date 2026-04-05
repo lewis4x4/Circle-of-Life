@@ -5,6 +5,7 @@ import { ClipboardList, Power, PowerOff } from "lucide-react";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { SurveyVisitSearchOverlay } from "@/components/compliance/SurveyVisitSearchOverlay";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -229,24 +230,33 @@ export function SurveyVisitModeBar() {
         </div>
       </div>
 
-      {active && canLog ? (
-        <div className="mx-auto mt-3 flex max-w-6xl flex-col gap-2 sm:flex-row sm:items-end">
-          <div className="flex-1 space-y-1">
-            <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="survey-log-desc">
-              Log chart / record access
-            </label>
-            <Input
-              id="survey-log-desc"
-              value={logDescription}
-              onChange={(e) => setLogDescription(e.target.value)}
-              placeholder="e.g. Eleanor Martinez — care plan review"
-              className="dark:bg-slate-900"
-            />
+      {active && canLog && userId && orgId && activeSessionId ? (
+        <>
+          <SurveyVisitSearchOverlay
+            supabase={supabase}
+            sessionId={activeSessionId}
+            facilityId={selectedFacilityId}
+            organizationId={orgId}
+            userId={userId}
+          />
+          <div className="mx-auto mt-3 flex max-w-6xl flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="flex-1 space-y-1">
+              <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="survey-log-desc">
+                Other access (free text)
+              </label>
+              <Input
+                id="survey-log-desc"
+                value={logDescription}
+                onChange={(e) => setLogDescription(e.target.value)}
+                placeholder="e.g. Policy binder — infection control"
+                className="dark:bg-slate-900"
+              />
+            </div>
+            <Button type="button" size="sm" disabled={busy} onClick={() => void submitLog()}>
+              Log other
+            </Button>
           </div>
-          <Button type="button" size="sm" disabled={busy} onClick={() => void submitLog()}>
-            Log access
-          </Button>
-        </div>
+        </>
       ) : null}
 
       {loadError ? (

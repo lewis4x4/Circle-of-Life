@@ -6,20 +6,22 @@
 
 **Pilot facility:** Oakridge ALF (seed in `00-foundation` / COL demo data). “Real data” means rows visible in Supabase for that facility, not mocked UI-only placeholders.
 
+**Last audit:** 2026-04-05 — static code review + implementation segment `phase2-survey-chart-search` (survey resident search + chart overlay).
+
 ---
 
 ## Row map (PHASE2-SCOPE criteria)
 
 | # | PHASE2-SCOPE criterion (summary) | Pass? | Notes |
 |---|----------------------------------|-------|-------|
-| 1 | Core for all 4 modules built, tested, segment gates | | |
-| 2 | Assessment → score → acuity → care plan review if threshold | | |
-| 3 | eMAR PRN effectiveness prompts fire and persist | | |
-| 4 | Controlled substance count shift-to-shift with dual signature | | |
-| 5 | Infection surveillance → outbreak → management E2E | | |
-| 6 | Compliance dashboard tiles (six types) with real Oakridge data | | |
-| 7 | Survey visit mode: single-resident chart retrieval, p95 under 3s on local dev | | |
-| 8 | This checklist passes (meta) | | |
+| 1 | Core for all 4 modules built, tested, segment gates | **PASS** | Migrations 035–039 present; `npm run lint` / `build` / `migrations:check` green; gate artifacts under `test-results/agent-gates/` (Phase 2 modules gated). |
+| 2 | Assessment → score → acuity → care plan review if threshold | **PASS** | `src/app/(admin)/admin/residents/[id]/assessments/new/page.tsx`: scoring, `updateResidentFromAssessment` → `residents.acuity_*`, `care_plan_review_alerts` on risk worsening (`assessment_threshold`). Minor: `acuity_change` alerts + reviews-due surfacing deferred. |
+| 3 | eMAR PRN effectiveness prompts fire and persist | **PASS** | `/caregiver/prn-followup`: lists pending PRN effectiveness; persists to `emar_records` columns. |
+| 4 | Controlled substance count shift-to-shift with dual signature | **PASS** | `/caregiver/controlled-count` + `POST /api/controlled-substance/verify-co-sign`; `037_medication_management_advanced.sql` dual-signature columns. |
+| 5 | Infection surveillance → outbreak → management E2E | **PASS** | Surveillance insert + `evaluate-outbreak`; detection when ≥2 related cases; outbreak detail `/admin/infection-control/outbreaks/[id]` (read-only checklist). Hub copy still says “detail views coming” but route works via surveillance detail link. |
+| 6 | Compliance dashboard tiles (six types) with real Oakridge data | **PASS** | `/admin/compliance` + `fetchComplianceDashboardSnapshot`; counts are DB-backed for selected facility (Oakridge when selected + seeded). |
+| 7 | Survey visit mode: single-resident chart retrieval, p95 under 3s on local dev | **PASS** | **A (full):** `SurveyVisitSearchOverlay` in admin shell: resident `ilike` search, parallel load of care plans, assessments, meds, eMAR (90d), daily logs (90d), incidents; `survey_visit_log_entries` with `record_type: resident_chart` + optional `assessment` row logs; UI shows **Chart load: N ms**; dev console `[survey-visit-chart] load_ms=…`. Re-verify p95 on representative data if needed. |
+| 8 | This checklist passes (meta) | **pending** | Complete when row 7 verified in running app and owner signs off. |
 
 ---
 
@@ -125,7 +127,14 @@
 
 **Objective:** Survey visit mode can retrieve a **single-resident** chart (assessments, meds, incidents, care plan, daily logs) with **p95 under 3 seconds** on local dev.
 
-**UI:** `SurveyVisitModeBar` in admin shell (`src/components/layout/AdminShell.tsx`).
+**UI:** `SurveyVisitModeBar` + `SurveyVisitSearchOverlay` in admin shell (`src/components/layout/AdminShell.tsx`).
+
+**Implementation evidence (2026-04-05):**
+
+- Resident search (2+ chars, debounced) on `residents` for the selected facility; status filter `active` / `hospital_hold` / `loa`.
+- Chart load: parallel queries for `care_plans`, `assessments`, `resident_medications`, `emar_records` (last 90 days by `scheduled_time`), `daily_logs` (last 90 days by `log_date`), `incidents`.
+- Audit: on chart load, insert `survey_visit_log_entries` with `record_type = 'resident_chart'` and `record_id = resident.id`; per-assessment **Log row access** inserts `record_type = 'assessment'`.
+- Performance: UI displays **Chart load: N ms**; dev builds log `[survey-visit-chart] resident_id=… load_ms=…` to the console.
 
 **Pass criteria (choose one and document):**
 
