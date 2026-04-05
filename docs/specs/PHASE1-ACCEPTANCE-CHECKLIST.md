@@ -12,7 +12,7 @@ Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs 
 |-------|--------|
 | **Engineering baseline** | **PASS** — lint, build, migration replay, secrets, audit, segment gates; see §G and [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) |
 | **Known gap waivers (§F)** | **APPROVED** — [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) (2026-04-06) |
-| **Environment / remote migrations** | **PASS** (migrations) — **040–041** deployed 2026-04-06; see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
+| **Environment / remote migrations** | **VERIFY** — repo **001–069**; remote last documented **001–041** (2026-04-06); see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
 | **Full product acceptance** (remaining preconditions, A–D UAT, RLS, Pro/BAA/PITR) | **NOT COMPLETE** — [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md), [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) |
 
 **Closure record:** [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) — **NOT COMPLETE** until blockers in that file are cleared.
@@ -196,25 +196,25 @@ Before closing Phase 1, record **mission alignment** `pass` | `risk` | `fail` wi
 | `npm audit` | 0 vulnerabilities |
 | Milestone routes compile (admin / caregiver / family) | PASS — see `next build` route list |
 
-**Verdict:** **Phase 1 engineering readiness: PASS.** **§F gap waivers:** approved 2026-04-06. Full acceptance remains **NOT COMPLETE** — see [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) (remote migration gap, RLS, UAT, dashboard compliance). **Mission alignment:** `risk` until blockers close.
+**Verdict:** **Phase 1 engineering readiness: PASS.** **§F gap waivers:** approved 2026-04-06. Full acceptance remains **NOT COMPLETE** — see [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) (remote migration parity per pilot, RLS, UAT, dashboard compliance). **Mission alignment:** `risk` until blockers close.
 
 ---
 
-## G. Gate evidence — Phase 1 closure (refreshed 2026-04-06)
+## G. Gate evidence — Phase 1 closure (refreshed 2026-04-05)
 
 | Command / gate | Result |
 |----------------|--------|
 | `npm run lint` | PASS |
-| `npm run build` | PASS |
+| `npm run build` | PASS (69 migrations 001–069) |
 | `npm run migrations:verify:pg` | PASS |
 | `npm run check:secrets` | PASS |
 | `npm audit` | 0 vulnerabilities |
-| `npm run segment:gates -- --segment "phase1-final-closure-2026-04-06" --ui --no-chaos` | PASS |
+| `npm run segment:gates -- --segment "phase1-closeout-2026-04-05" --ui --no-chaos` | PASS |
 
 **Artifacts:**
 
-- `test-results/agent-gates/2026-04-05T02-04-25-955Z-phase1-final-closure-2026-04-06.json`
-- `test-results/agent-gates/2026-04-05T01-54-07-938Z-phase1-closure-handoff-2026-04-05.json` (prior)
+- `test-results/agent-gates/2026-04-05T19-33-16-726Z-phase1-closeout-2026-04-05.json` (current)
+- `test-results/agent-gates/2026-04-05T02-04-25-955Z-phase1-final-closure-2026-04-06.json` (prior)
 
 **Detail:** [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md)
 

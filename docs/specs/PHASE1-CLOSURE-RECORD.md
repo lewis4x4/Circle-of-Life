@@ -4,17 +4,17 @@
 
 **Do not overstate:** This document must distinguish **automated/repo verification** from **live UAT + RLS + production compliance**.
 
-**Last updated:** 2026-04-06 (migrations **040–041** deployed to remote via `supabase db push`)
+**Last updated:** 2026-04-05 — engineering baseline + UI gates refreshed; remote DB alignment still **owner-verified** (see below).
 
 ---
 
 ## Verdict summary
 
-| Criterion | Status (2026-04-06) |
+| Criterion | Status (2026-04-05) |
 |-----------|---------------------|
 | **Engineering baseline** (lint, build, migration replay, secrets, audit, segment gates) | **PASS** — see § Gate evidence |
 | **Target `.env` / Supabase project alignment** | **VERIFY** — canonical URL in [README.md](./README.md); owner confirms `.env.local` host; [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
-| **Remote migrations aligned** | **PASS** — `supabase db push` 2026-04-06; Local/Remote **001–041** ([PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md)) |
+| **Remote migrations aligned** | **VERIFY** — repo contains **001–069** (`migrations:check`); last documented remote sync **001–041** (2026-04-06). Owner runs `supabase migration list` / `db push` until pilot remote matches intended ceiling |
 | **Seeded users (admin / caregiver / family) + facility context** | **PENDING** — owner UAT / [DEMO-SEED-RUNBOOK.md](./DEMO-SEED-RUNBOOK.md) |
 | **Checklist §A–F (real auth)** | **PENDING** — [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) |
 | **RLS matrix** | **PENDING** — [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md); procedure [PHASE1-RLS-MANUAL-PROCEDURE.md](./PHASE1-RLS-MANUAL-PROCEDURE.md) |
@@ -36,23 +36,26 @@
 
 ---
 
-## Gate evidence (2026-04-06 refresh)
+## Gate evidence (2026-04-05 automated closeout refresh)
 
 | Command | Result |
 |---------|--------|
-| `npm run lint` | PASS |
-| `npm run build` | PASS (includes `migrations:check`; 41 migrations 001–041 in repo) |
-| `npm run migrations:verify:pg` | PASS |
-| `npm run check:secrets` | PASS |
-| `npm audit` | 0 vulnerabilities |
-| `npm run segment:gates -- --segment "phase1-final-closure-2026-04-06" --ui --no-chaos` | PASS |
+| `npm run lint` | PASS (via `segment:gates`) |
+| `npm run build` | PASS (includes `migrations:check`; **69** migrations **001–069** in repo) |
+| `npm run migrations:verify:pg` | PASS (via `segment:gates`) |
+| `npm run check:secrets` / `audit:ci` / `secrets:gitleaks` | PASS (via `segment:gates`) |
+| `npm run segment:gates -- --segment "phase1-closeout-2026-04-05" --ui --no-chaos` | PASS |
 
 **Artifacts:**
 
-- `test-results/agent-gates/2026-04-05T02-04-25-955Z-phase1-final-closure-2026-04-06.json`
-- Prior: `test-results/agent-gates/2026-04-05T01-54-07-938Z-phase1-closure-handoff-2026-04-05.json`
+- `test-results/agent-gates/2026-04-05T19-33-16-726Z-phase1-closeout-2026-04-05.json` (current)
+- Prior: `test-results/agent-gates/2026-04-05T02-04-25-955Z-phase1-final-closure-2026-04-06.json`
 
-**Note:** Segment includes UI/design/axe when `--ui` is set. Re-run before pilot if env changes.
+**Note:** `--ui` runs `design:review` and `a11y:routes` (local `next start` preview). Re-run before pilot if env or routes change.
+
+### Owner-only (not replaced by gates)
+
+UAT ([PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md)), RLS ([PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md)), Pro/BAA/PITR dashboard checks, and **remote** migration parity remain **required** for full acceptance above.
 
 ---
 
@@ -64,7 +67,7 @@
 | **risk** | Accepted gaps waived with owner/expiry/remediation; or minor follow-ups documented; or **blockers remain** for full acceptance. |
 | **fail** | Block release: critical RLS or auth issue unfixed. |
 
-**Current (2026-04-06):** **risk** — Engineering baseline and Phase 1 **gap waivers** are documented; **residual risk** until remote migrations match repo, RLS matrix passes on target, and checklist UAT completes. Aligns with mission (secure, role-governed data layer; resident safety; regulatory readiness) **in intent**; **live verification** still outstanding.
+**Current (2026-04-05):** **risk** — Engineering baseline (including 2026-04-05 segment gates) and Phase 1 **gap waivers** are documented; **residual risk** until remote migrations match pilot intent, RLS matrix passes on target, and checklist UAT completes. Aligns with mission (secure, role-governed data layer; resident safety; regulatory readiness) **in intent**; **live verification** still outstanding.
 
 **Sentence:** Shipped scope supports Haven’s north star; **full acceptance** requires closing migration alignment, RLS proof, dashboard compliance attestation, and checklist rows per [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md).
 
@@ -83,6 +86,7 @@ Then set **Overall Phase 1 full acceptance** below to **PASS** or **PASS WITH WA
 |------|---------|-------|
 | 2026-04-05 | **NOT COMPLETE** — hand-off structure; UAT/RLS/compliance pending | — |
 | 2026-04-06 | **NOT COMPLETE** — baseline + waivers + env/CLI gap documented; RLS + UAT + remote migrations + dashboard compliance pending | Brian Lewis (review) |
+| 2026-04-05 | **NOT COMPLETE** — automated gates refreshed (`phase1-closeout-2026-04-05`); human blockers unchanged | Agent (repo) |
 
 ---
 
