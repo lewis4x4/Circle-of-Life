@@ -6,6 +6,19 @@ Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs 
 
 ---
 
+## Phase 1 full acceptance — current status (authoritative)
+
+| Layer | Status |
+|-------|--------|
+| **Engineering baseline** | **PASS** — lint, build, migration replay, secrets, audit; see §G and [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) |
+| **Full product acceptance** (§Preconditions, A–F, RLS, production compliance, waivers) | **NOT COMPLETE** — requires **target environment** execution; see [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md), [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md), [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) |
+
+**Closure record:** [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) — single verdict for **PASS** vs **PASS WITH WAIVERS** vs **NOT COMPLETE**.
+
+**Do not** treat repo-only verification as full Phase 1 acceptance.
+
+---
+
 ## When to run UI testing
 
 | Stage | What to do |
@@ -182,3 +195,33 @@ Before closing Phase 1, record **mission alignment** `pass` | `risk` | `fail` wi
 | Milestone routes compile (admin / caregiver / family) | PASS — see `next build` route list |
 
 **Verdict:** **Phase 1 engineering readiness: PASS.** Full acceptance of §A–F above remains **pending human UAT** on the target environment (or approved waivers). **Mission alignment until UAT:** `risk` (residual RLS/pilot verification per § Backend review).
+
+---
+
+## G. Gate evidence — Phase 1 closure hand-off (2026-04-05)
+
+| Command / gate | Result |
+|----------------|--------|
+| `npm run lint` | PASS |
+| `npm run build` | PASS |
+| `npm run migrations:verify:pg` | PASS |
+| `npm run check:secrets` | PASS |
+| `npm audit` | 0 vulnerabilities |
+| `npm run segment:gates -- --segment "phase1-closure-handoff-2026-04-05" --ui --no-chaos` | PASS |
+
+**Artifact:** `test-results/agent-gates/2026-04-05T01-54-07-938Z-phase1-closure-handoff-2026-04-05.json`
+
+**Detail:** [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md)
+
+---
+
+## H. Execution log & waivers (owner)
+
+- Row-by-row results: [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md)
+- Waivers: [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md)
+
+---
+
+## I. RLS validation (owner)
+
+- [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) — **PENDING** until executed on target project.
