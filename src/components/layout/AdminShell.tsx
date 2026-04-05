@@ -25,6 +25,7 @@ import {
   Activity,
   Pill,
   Biohazard,
+  Scale,
   MessageCircle,
   Sun,
   Moon,
@@ -39,6 +40,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { SurveyVisitModeBar } from "@/components/compliance/SurveyVisitModeBar";
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -120,6 +122,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     { key: "plan-reviews", href: "/admin/care-plans/reviews-due", label: "Plan reviews", enabled: true, icon: CalendarClock },
     { key: "medications", href: "/admin/medications", label: "Medications", enabled: true, icon: Pill },
     { key: "infection", href: "/admin/infection-control", label: "Infection", enabled: true, icon: Biohazard },
+    { key: "compliance", href: "/admin/compliance", label: "Compliance", enabled: true, icon: Scale },
     { key: "incidents", href: "/admin/incidents", label: "Incidents", enabled: true, icon: ShieldAlert },
     { key: "staff", href: "/admin/staff", label: "Staff", enabled: true, icon: UserCog },
     { key: "certifications", href: "/admin/certifications", label: "Certifications", enabled: true, icon: Award },
@@ -157,7 +160,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             const isActive =
               pathname === item.href ||
               (item.key === "medications" && pathname.startsWith("/admin/medications")) ||
-              (item.key === "infection" && pathname.startsWith("/admin/infection-control"));
+              (item.key === "infection" && pathname.startsWith("/admin/infection-control")) ||
+              (item.key === "compliance" && pathname.startsWith("/admin/compliance"));
             const Icon = item.icon;
             
             if (!item.enabled) {
@@ -286,6 +290,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         </header>
+
+        <SurveyVisitModeBar />
 
         {/* Dynamic Page Content */}
         <main className="flex-1 overflow-auto p-6 lg:p-8 relative">

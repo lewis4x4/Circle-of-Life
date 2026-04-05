@@ -3229,6 +3229,243 @@ export type Database = {
           },
         ]
       }
+      plans_of_correction: {
+        Row: {
+          accepted_at: string | null
+          completion_target_date: string
+          corrective_action: string
+          created_at: string
+          created_by: string | null
+          deficiency_id: string
+          deleted_at: string | null
+          evidence_description: string | null
+          evidence_document_ids: string[] | null
+          facility_id: string
+          id: string
+          monitoring_frequency: string | null
+          monitoring_plan: string | null
+          organization_id: string
+          policy_changes: string | null
+          responsible_party: string
+          reviewer_notes: string | null
+          status: string
+          submission_due_date: string
+          submitted_at: string | null
+          submitted_by: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          completion_target_date: string
+          corrective_action: string
+          created_at?: string
+          created_by?: string | null
+          deficiency_id: string
+          deleted_at?: string | null
+          evidence_description?: string | null
+          evidence_document_ids?: string[] | null
+          facility_id: string
+          id?: string
+          monitoring_frequency?: string | null
+          monitoring_plan?: string | null
+          organization_id: string
+          policy_changes?: string | null
+          responsible_party: string
+          reviewer_notes?: string | null
+          status?: string
+          submission_due_date: string
+          submitted_at?: string | null
+          submitted_by?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          completion_target_date?: string
+          corrective_action?: string
+          created_at?: string
+          created_by?: string | null
+          deficiency_id?: string
+          deleted_at?: string | null
+          evidence_description?: string | null
+          evidence_document_ids?: string[] | null
+          facility_id?: string
+          id?: string
+          monitoring_frequency?: string | null
+          monitoring_plan?: string | null
+          organization_id?: string
+          policy_changes?: string | null
+          responsible_party?: string
+          reviewer_notes?: string | null
+          status?: string
+          submission_due_date?: string
+          submitted_at?: string | null
+          submitted_by?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plans_of_correction_deficiency_id_fkey"
+            columns: ["deficiency_id"]
+            isOneToOne: false
+            referencedRelation: "survey_deficiencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plans_of_correction_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plans_of_correction_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      policy_acknowledgments: {
+        Row: {
+          acknowledged_at: string
+          created_at: string
+          facility_id: string
+          id: string
+          organization_id: string
+          policy_document_id: string
+          user_id: string
+        }
+        Insert: {
+          acknowledged_at?: string
+          created_at?: string
+          facility_id: string
+          id?: string
+          organization_id: string
+          policy_document_id: string
+          user_id: string
+        }
+        Update: {
+          acknowledged_at?: string
+          created_at?: string
+          facility_id?: string
+          id?: string
+          organization_id?: string
+          policy_document_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policy_acknowledgments_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "policy_acknowledgments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "policy_acknowledgments_policy_document_id_fkey"
+            columns: ["policy_document_id"]
+            isOneToOne: false
+            referencedRelation: "policy_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      policy_documents: {
+        Row: {
+          acknowledgment_due_days: number
+          category: string
+          content: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          facility_id: string
+          id: string
+          organization_id: string
+          previous_version_id: string | null
+          published_at: string | null
+          published_by: string | null
+          requires_acknowledgment: boolean
+          status: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          acknowledgment_due_days?: number
+          category: string
+          content: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id: string
+          id?: string
+          organization_id: string
+          previous_version_id?: string | null
+          published_at?: string | null
+          published_by?: string | null
+          requires_acknowledgment?: boolean
+          status?: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          acknowledgment_due_days?: number
+          category?: string
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id?: string
+          id?: string
+          organization_id?: string
+          previous_version_id?: string | null
+          published_at?: string | null
+          published_by?: string | null
+          requires_acknowledgment?: boolean
+          status?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policy_documents_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "policy_documents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "policy_documents_previous_version_id_fkey"
+            columns: ["previous_version_id"]
+            isOneToOne: false
+            referencedRelation: "policy_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rate_schedules: {
         Row: {
           base_rate_private: number
@@ -4901,6 +5138,207 @@ export type Database = {
           },
           {
             foreignKeyName: "staffing_ratio_snapshots_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_deficiencies: {
+        Row: {
+          corrected_at: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string
+          facility_id: string
+          follow_up_notes: string | null
+          follow_up_survey_date: string | null
+          id: string
+          organization_id: string
+          scope: string
+          severity: string
+          status: string
+          survey_date: string
+          survey_type: string
+          surveyor_agency: string
+          surveyor_name: string | null
+          tag_description: string
+          tag_number: string
+          updated_at: string
+          updated_by: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          corrected_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description: string
+          facility_id: string
+          follow_up_notes?: string | null
+          follow_up_survey_date?: string | null
+          id?: string
+          organization_id: string
+          scope?: string
+          severity: string
+          status?: string
+          survey_date: string
+          survey_type: string
+          surveyor_agency?: string
+          surveyor_name?: string | null
+          tag_description: string
+          tag_number: string
+          updated_at?: string
+          updated_by?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          corrected_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string
+          facility_id?: string
+          follow_up_notes?: string | null
+          follow_up_survey_date?: string | null
+          id?: string
+          organization_id?: string
+          scope?: string
+          severity?: string
+          status?: string
+          survey_date?: string
+          survey_type?: string
+          surveyor_agency?: string
+          surveyor_name?: string | null
+          tag_description?: string
+          tag_number?: string
+          updated_at?: string
+          updated_by?: string | null
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_deficiencies_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_deficiencies_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_visit_log_entries: {
+        Row: {
+          accessed_at: string
+          accessed_by: string
+          created_at: string
+          facility_id: string
+          id: string
+          organization_id: string
+          record_description: string
+          record_id: string | null
+          record_type: string
+          session_id: string
+        }
+        Insert: {
+          accessed_at?: string
+          accessed_by: string
+          created_at?: string
+          facility_id: string
+          id?: string
+          organization_id: string
+          record_description: string
+          record_id?: string | null
+          record_type: string
+          session_id: string
+        }
+        Update: {
+          accessed_at?: string
+          accessed_by?: string
+          created_at?: string
+          facility_id?: string
+          organization_id?: string
+          record_description?: string
+          record_id?: string | null
+          record_type?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_visit_log_entries_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_visit_log_entries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_visit_log_entries_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "survey_visit_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_visit_sessions: {
+        Row: {
+          activated_at: string
+          activated_by: string
+          created_at: string
+          deactivated_at: string | null
+          deactivated_by: string | null
+          facility_id: string
+          id: string
+          notes: string | null
+          organization_id: string
+        }
+        Insert: {
+          activated_at?: string
+          activated_by: string
+          created_at?: string
+          deactivated_at?: string | null
+          deactivated_by?: string | null
+          facility_id: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+        }
+        Update: {
+          activated_at?: string
+          activated_by?: string
+          created_at?: string
+          deactivated_at?: string | null
+          deactivated_by?: string | null
+          facility_id?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_visit_sessions_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_visit_sessions_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"

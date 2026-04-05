@@ -248,6 +248,12 @@ CREATE INDEX idx_svle_session ON survey_visit_log_entries(session_id);
 CREATE INDEX idx_svle_facility ON survey_visit_log_entries(facility_id, accessed_at DESC);
 ```
 
+### Implementation note (repository)
+
+- **Canonical survey visit model:** `survey_visit_sessions` plus `survey_visit_log_entries` (one row per access, append-only). Any older single-table sketch with a JSONB `documents_accessed` array is superseded; this split model is the **canonical** implementation for auditability and concurrency.
+- **Active POC (uniqueness):** `idx_poc_one_active_per_deficiency` applies to rows whose `status` is **`draft`, `submitted`, or `accepted`** (rows with `rejected` or `revised` are excluded so multiple historical rejected POCs may exist; resubmission creates a new row per workflow rules above).
+- **Triggers in shipped migrations:** Use `public.haven_capture_audit_log()` and `public.haven_set_updated_at()` from `006_audit_triggers.sql`, not generic `audit_trigger_function` / `set_updated_at` placeholders.
+
 ---
 
 ## RLS POLICIES
@@ -397,27 +403,34 @@ CREATE POLICY admin_nurse_create_log_entries ON survey_visit_log_entries
 
 -- Log entries are append-only — no UPDATE or DELETE policies for anyone.
 
--- Audit triggers
-CREATE TRIGGER audit_survey_deficiencies AFTER INSERT OR UPDATE OR DELETE ON survey_deficiencies
-  FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
-CREATE TRIGGER audit_plans_of_correction AFTER INSERT OR UPDATE OR DELETE ON plans_of_correction
-  FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
-CREATE TRIGGER audit_policy_documents AFTER INSERT OR UPDATE OR DELETE ON policy_documents
-  FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
-CREATE TRIGGER audit_policy_acknowledgments AFTER INSERT ON policy_acknowledgments
-  FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
-CREATE TRIGGER audit_survey_visit_sessions AFTER INSERT OR UPDATE ON survey_visit_sessions
-  FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
-CREATE TRIGGER audit_survey_visit_log_entries AFTER INSERT ON survey_visit_log_entries
-  FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
-
--- Updated_at triggers
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON survey_deficiencies
-  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON plans_of_correction
-  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON policy_documents
-  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+-- Audit + updated_at triggers (Haven: public.haven_capture_audit_log / public.haven_set_updated_at)
+CREATE TRIGGER tr_survey_deficiencies_set_updated_at
+  BEFORE UPDATE ON survey_deficiencies
+  FOR EACH ROW EXECUTE PROCEDURE public.haven_set_updated_at();
+CREATE TRIGGER tr_survey_deficiencies_audit
+  AFTER INSERT OR UPDATE OR DELETE ON survey_deficiencies
+  FOR EACH ROW EXECUTE PROCEDURE public.haven_capture_audit_log();
+CREATE TRIGGER tr_plans_of_correction_set_updated_at
+  BEFORE UPDATE ON plans_of_correction
+  FOR EACH ROW EXECUTE PROCEDURE public.haven_set_updated_at();
+CREATE TRIGGER tr_plans_of_correction_audit
+  AFTER INSERT OR UPDATE OR DELETE ON plans_of_correction
+  FOR EACH ROW EXECUTE PROCEDURE public.haven_capture_audit_log();
+CREATE TRIGGER tr_policy_documents_set_updated_at
+  BEFORE UPDATE ON policy_documents
+  FOR EACH ROW EXECUTE PROCEDURE public.haven_set_updated_at();
+CREATE TRIGGER tr_policy_documents_audit
+  AFTER INSERT OR UPDATE OR DELETE ON policy_documents
+  FOR EACH ROW EXECUTE PROCEDURE public.haven_capture_audit_log();
+CREATE TRIGGER tr_policy_acknowledgments_audit
+  AFTER INSERT ON policy_acknowledgments
+  FOR EACH ROW EXECUTE PROCEDURE public.haven_capture_audit_log();
+CREATE TRIGGER tr_survey_visit_sessions_audit
+  AFTER INSERT OR UPDATE ON survey_visit_sessions
+  FOR EACH ROW EXECUTE PROCEDURE public.haven_capture_audit_log();
+CREATE TRIGGER tr_survey_visit_log_entries_audit
+  AFTER INSERT ON survey_visit_log_entries
+  FOR EACH ROW EXECUTE PROCEDURE public.haven_capture_audit_log();
 ```
 
 ---
@@ -683,7 +696,7 @@ If compliance dashboard load performance becomes an issue, a materialized view o
 
 ## MIGRATION CHECKLIST
 
-New migration file: `038_compliance_engine.sql`
+New migration file: `039_compliance_engine.sql` (after `038_infection_control.sql`)
 
 1. Create `survey_deficiencies` table with indexes (no `poc_id` column — relationship lives on POC side)
 2. Create `plans_of_correction` table with indexes + unique constraint (`idx_poc_one_active_per_deficiency`)
@@ -693,5 +706,5 @@ New migration file: `038_compliance_engine.sql`
 6. Create `survey_visit_log_entries` table with indexes (append-only)
 7. Enable RLS on all 6 tables
 8. Create RLS policies (15 total: 3 deficiencies, 2 POC, 2 policy_documents, 3 policy_acknowledgments, 3 survey_visit_sessions, 2 survey_visit_log_entries)
-9. Create audit triggers on all 6 tables
-10. Create `set_updated_at` triggers on `survey_deficiencies`, `plans_of_correction`, `policy_documents`
+9. Create audit triggers using `public.haven_capture_audit_log()` on all 6 tables (see `006_audit_triggers.sql`)
+10. Create `public.haven_set_updated_at()` triggers on `survey_deficiencies`, `plans_of_correction`, `policy_documents`

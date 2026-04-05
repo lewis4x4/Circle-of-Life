@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, LogOut, UserCircle2 } from "lucide-react";
 
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
+import { fetchPendingPoliciesForUser, resolveAckFacilityId } from "@/lib/pending-policies";
 import type { Database } from "@/types/database";
 
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +30,7 @@ export default function CaregiverMePage() {
   const [illType, setIllType] = useState<Database["public"]["Tables"]["staff_illness_records"]["Row"]["illness_type"]>("other");
   const [illSubmitting, setIllSubmitting] = useState(false);
   const [illMsg, setIllMsg] = useState<string | null>(null);
+  const [pendingPolicyCount, setPendingPolicyCount] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -39,6 +42,7 @@ export default function CaregiverMePage() {
       if (!user) {
         setProfile(null);
         setStaff(null);
+        setPendingPolicyCount(0);
         return;
       }
       const pr = await supabase.from("user_profiles").select("app_role").eq("id", user.id).maybeSingle();
@@ -51,6 +55,14 @@ export default function CaregiverMePage() {
         .maybeSingle();
       if (!st.error && st.data) setStaff(st.data as StaffMini);
       else setStaff(null);
+
+      const facId = await resolveAckFacilityId(supabase, user.id);
+      if (facId) {
+        const pending = await fetchPendingPoliciesForUser(supabase, user.id, facId);
+        setPendingPolicyCount(pending.length);
+      } else {
+        setPendingPolicyCount(0);
+      }
     } finally {
       setLoading(false);
     }
@@ -147,6 +159,25 @@ export default function CaregiverMePage() {
           ) : null}
         </CardContent>
       </Card>
+
+      {pendingPolicyCount > 0 ? (
+        <Card className="border-amber-800/60 bg-amber-950/40 text-zinc-100">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base text-amber-100">Policies need your review</CardTitle>
+            <CardDescription className="text-amber-200/80">
+              {pendingPolicyCount} polic{pendingPolicyCount === 1 ? "y" : "ies"} require acknowledgment.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link
+              href="/caregiver/policies"
+              className="inline-flex rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
+            >
+              Review policies
+            </Link>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {staff ? (
         <Card className="border-zinc-800 bg-zinc-950/70 text-zinc-100">
