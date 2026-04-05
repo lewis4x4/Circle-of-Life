@@ -372,6 +372,13 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# Edge Functions: JWT verification at the API gateway (see also in-function auth for dispatch-push).
+[functions."export-audit-log"]
+verify_jwt = true
+
+[functions.dispatch-push]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
