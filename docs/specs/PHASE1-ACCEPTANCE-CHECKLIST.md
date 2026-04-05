@@ -196,7 +196,7 @@ Before closing Phase 1, record **mission alignment** `pass` | `risk` | `fail` wi
 | `npm audit` | 0 vulnerabilities |
 | Milestone routes compile (admin / caregiver / family) | PASS — see `next build` route list |
 
-**Verdict:** **Phase 1 engineering readiness: PASS.** **§F gap waivers:** approved 2026-04-06. Full acceptance remains **NOT COMPLETE** — see [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) (remote migration parity per pilot, RLS, UAT, dashboard compliance). **Mission alignment:** `risk` until blockers close.
+**Verdict:** **Phase 1 engineering readiness: PASS.** **§F gap waivers:** approved 2026-04-06. Full acceptance remains **NOT COMPLETE** — see [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) (RLS, UAT, `.env` host + seeds, dashboard Pro/BAA/PITR). **Mission alignment:** `risk` until blockers close.
 
 ---
 
