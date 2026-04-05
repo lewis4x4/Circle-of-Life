@@ -130,6 +130,12 @@ export default function AdminCompliancePage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/compliance/audit-export"
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          >
+            Audit log export
+          </Link>
           <Link href="/admin/compliance/policies" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
             Policy library
           </Link>
