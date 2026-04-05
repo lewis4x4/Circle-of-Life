@@ -101,17 +101,22 @@ export default function NewJournalEntryPage() {
     try {
       const orgId = ctx.ctx.organizationId;
       const parsedLines = lines
-        .map((l, idx) => {
+        .map((l) => {
           const dc = parseDollarsToCents(l.debit);
           const cc = parseDollarsToCents(l.credit);
           return {
-            line_number: idx + 1,
             gl_account_id: l.gl_account_id,
             debit_cents: dc && dc > 0 ? dc : 0,
             credit_cents: cc && cc > 0 ? cc : 0,
           };
         })
-        .filter((l) => l.gl_account_id && (l.debit_cents > 0 || l.credit_cents > 0));
+        .filter((l) => l.gl_account_id && (l.debit_cents > 0 || l.credit_cents > 0))
+        .map((l, i) => ({
+          line_number: i + 1,
+          gl_account_id: l.gl_account_id,
+          debit_cents: l.debit_cents,
+          credit_cents: l.credit_cents,
+        }));
 
       if (parsedLines.length < 2) {
         setError("Add at least two lines with accounts and a debit or credit amount.");
