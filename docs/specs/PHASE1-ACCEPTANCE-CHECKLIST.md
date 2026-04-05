@@ -11,8 +11,8 @@ Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs 
 | Layer | Status |
 |-------|--------|
 | **Engineering baseline** | **PASS** — lint, build, migration replay, secrets, audit, segment gates; see §G and [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) |
-| **Known gap waivers (§F)** | **APPROVED** — [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) (2026-04-06) |
-| **Environment / remote migrations** | **PASS** — Local/Remote **001–069** (2026-04-05); Edge Functions deployed; see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
+| **Known gap waivers (§F)** | **PARTIALLY REMEDIATED** — W-RCA-01 / W-COLL-01 / W-BILL-EF-01 closed in repo; **W-ADMIN-01** remains — [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) |
+| **Environment / remote migrations** | **PASS** — Repo migrations **001–071** (2026-04-06); apply **070–071** on remote via `supabase db push` before pilot; see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
 | **Full product acceptance** (remaining preconditions, A–D UAT, RLS, Pro/BAA/PITR) | **NOT COMPLETE** — [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md), [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) |
 
 **Closure record:** [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) — **NOT COMPLETE** until blockers in that file are cleared.
@@ -84,7 +84,7 @@ Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs 
 - [ ] `/admin/incidents` — queue loads, filters work.
 - [ ] `/admin/incidents/[id]` — detail and follow-ups.
 - [ ] `/admin/incidents/trends` — chart/summary for date window.
-- [ ] `/admin/incidents/[id]/rca` — **known gap:** RCA narrative/checklist is **browser localStorage only**, not persisted to Postgres. Accept for Phase 1 only if you explicitly waive persistence.
+- [ ] `/admin/incidents/[id]/rca` — RCA workspace persisted to **`incident_rca`** (Postgres); optional one-time import from localStorage. Verify save survives refresh.
 
 ### B5. Billing (admin milestone)
 
@@ -97,6 +97,7 @@ Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs 
 - [ ] `/admin/billing/ar-aging` — buckets make sense for open invoices.
 - [ ] `/admin/billing/org-ar-aging` — org view loads.
 - [ ] `/admin/billing/revenue` — payment rollup loads.
+- [ ] `/admin/billing/collections` — facility-scoped activity log loads; `/admin/billing/collections/new` — can log a touch linked to resident (optional invoice).
 
 ### B6. Other admin
 
@@ -151,9 +152,9 @@ Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs 
 
 Document waiver or backlog item if you accept these for “100% Phase 1”:
 
-- [ ] **RCA workspace** — not saved to DB (localStorage only).
-- [ ] **Edge functions** in `16-billing.md` (cron invoice generation, AR aging automation, etc.) — **not** required for UI checklist; track separately if you want parity with spec “Edge Functions” table.
-- [ ] **Collection activities** UI — may be minimal or absent; confirm against product expectations.
+- [x] **RCA workspace** — saved to **`incident_rca`** (replaces localStorage-only waiver).
+- [ ] **Edge functions** — monthly invoice generation deployed as `generate-monthly-invoices` + schedule docs; **AR aging** batch automation may still be backlog vs full `16-billing.md` table.
+- [x] **Collection activities** — admin list + create at `/admin/billing/collections*`.
 - [ ] **Some admin pages** are list-heavy with no create wizards — acceptable if milestone is “run daily ops” on seeded data.
 
 ---
@@ -205,7 +206,7 @@ Before closing Phase 1, record **mission alignment** `pass` | `risk` | `fail` wi
 | Command / gate | Result |
 |----------------|--------|
 | `npm run lint` | PASS |
-| `npm run build` | PASS (69 migrations 001–069) |
+| `npm run build` | PASS (71 migrations 001–071) |
 | `npm run migrations:verify:pg` | PASS |
 | `npm run check:secrets` | PASS |
 | `npm audit` | 0 vulnerabilities |

@@ -31,6 +31,7 @@ The absolute bedrock of the "Soft Precision" visual identity.
 - [x] **Staffing Roster & Schedules (`/admin/staff`)**: Scaffolded roster table with role/status/certification filters and risk badging.
 - [x] **Incident Command (`/admin/incidents`)**: Scaffolded command queue with severity/status/category filters and standardized list states.
 - [x] **Billing Core (`/admin/billing`)**: Scaffolded ledger-focused billing list with payer/status filters and shared list patterns.
+- [x] **Collections (`/admin/billing/collections`)**: Facility-scoped collections activity ledger + log flow (`collection_activities`).
 
 ---
 
@@ -56,9 +57,9 @@ The absolute bedrock of the "Soft Precision" visual identity.
 ---
 
 ## Next Immediate Execution Step
-Sector 1 Admin scaffold routes are now in place (`/admin`, `/admin/residents`, `/admin/incidents`, `/admin/staff`, `/admin/billing`).
+Sector 1 admin routes include billing collections and executive command center (`/admin/executive/*`) per Phase 3 Module 24 Core.
 
-**Next targeted UI file:** Sector 1 admin list routes (`/admin/residents`, `/admin/incidents`, `/admin/staff`, `/admin/billing`) now use Supabase-backed loaders with shared list patterns. Continue feature depth from **`docs/specs/README.md`** build order (next spec modules or UX hardening as prioritized).
+**Next prioritized UX gap (Phase 1 waiver W-ADMIN-01):** replace list-only admin flows with guided create/edit wizards **incrementally** (pick one module per segment). Alternatively continue **spec-driven** work from `docs/specs/README.md` (Phase 2/3 Enhanced slices) when the owner prioritizes them.
 
 ---
 

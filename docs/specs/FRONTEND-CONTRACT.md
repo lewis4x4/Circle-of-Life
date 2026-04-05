@@ -47,6 +47,8 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 - `/admin/billing/invoices/[id]`
 - `/admin/billing/invoices/generate`
 - `/admin/billing/payments/new`
+- `/admin/billing/collections`
+- `/admin/billing/collections/new`
 - `/admin/billing/ar-aging`
 - `/admin/billing/revenue`
 - `/admin/billing/org-ar-aging`
