@@ -32,7 +32,8 @@ import {
   MessageCircle,
   Sun,
   Moon,
-  Monitor
+  Monitor,
+  BarChart3,
 } from "lucide-react";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
@@ -120,6 +121,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     icon: React.ComponentType<{ className?: string }>;
   }> = [
     { key: "dashboard", href: "/admin", label: "Dashboard", enabled: true, icon: LayoutDashboard },
+    { key: "executive", href: "/admin/executive", label: "Executive", enabled: true, icon: BarChart3 },
     { key: "residents", href: "/admin/residents", label: "Residents", enabled: true, icon: Users },
     { key: "assessments", href: "/admin/assessments/overdue", label: "Assessments", enabled: true, icon: ClipboardCheck },
     { key: "plan-reviews", href: "/admin/care-plans/reviews-due", label: "Plan reviews", enabled: true, icon: CalendarClock },
@@ -165,6 +167,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           {navItems.map((item) => {
             const isActive =
               pathname === item.href ||
+              (item.key === "executive" && pathname.startsWith("/admin/executive")) ||
               (item.key === "medications" && pathname.startsWith("/admin/medications")) ||
               (item.key === "infection" && pathname.startsWith("/admin/infection-control")) ||
               (item.key === "compliance" && pathname.startsWith("/admin/compliance")) ||

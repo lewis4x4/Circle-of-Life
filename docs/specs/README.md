@@ -109,23 +109,23 @@ Routes: `/admin/vendors` (hub), `/admin/vendors/directory`, `/admin/vendors/[id]
 
 ---
 
-**Module 24 — Executive Intelligence Layer v1** (🟨 DB shipped / UI pending)
+**Module 24 — Executive Intelligence Layer v1** (🟩 Core admin UI shipped — entity/facility drill-downs & saved reports backlog)
 
 Migration `047_executive_intelligence.sql`: enums, **seven** tables (includes `exec_kpi_snapshots` with **`lineage`**, `exec_alert_user_state`, `benchmark_cohorts`), full RLS, audit triggers.
 
 | Artifact | Path |
 |----------|------|
 | Migration | `supabase/migrations/047_executive_intelligence.sql` |
-| Types | `src/types/database.ts` (extend) |
-| KPI engine | `src/lib/exec-kpi-snapshot.ts` — typed computation across domains |
-| Admin UI | `src/app/(admin)/admin/executive/*` — 6 routes |
-| Nav | `src/components/layout/AdminShell.tsx` — add Executive item (top of nav) |
-| Auth gate | `src/lib/auth/admin-shell.ts` — add `"/executive"` to `ADMIN_SHELL_SEGMENTS` |
-| Contract | `docs/specs/FRONTEND-CONTRACT.md` — add `/admin/executive/*` routes |
+| Types | `src/types/database.ts` |
+| KPI engine | `src/lib/exec-kpi-snapshot.ts` — live aggregates from source modules (+ versioned `ExecKpiPayload` for cron snapshots) |
+| Alerts | `src/lib/exec-alerts.ts` — list / acknowledge `exec_alerts` |
+| Admin UI | `src/app/(admin)/executive/*` (+ `/admin/*` re-exports) — overview, alerts, settings |
+| Nav | `src/components/layout/AdminShell.tsx` — Executive item after Dashboard |
+| Auth gate | `src/lib/auth/admin-shell.ts` — `"/executive"` in `ADMIN_SHELL_SEGMENTS` (short path group) |
 
 Tables: `exec_dashboard_configs`, `exec_kpi_snapshots` (**`lineage jsonb`**), `exec_alerts`, **`exec_alert_user_state`**, **`benchmark_cohorts`**, `exec_saved_reports`. KPI domains: census/occupancy, financial, clinical/safety, infection, compliance, workforce, insurance (Module 18), vendors (Module 19). Alert scoring: `severity_weight × recency_factor × impact_weight`. RLS: owner/org_admin full access; facility_admin scoped to their facilities.
 
-Routes: `/admin/executive` (command center), `/admin/executive/entity/[id]`, `/admin/executive/facility/[id]`, `/admin/executive/alerts`, `/admin/executive/reports`, `/admin/executive/settings`.
+Routes live: `/admin/executive` (command center), `/admin/executive/alerts`, `/admin/executive/settings`. Backlog: `/admin/executive/entity/[id]`, `/admin/executive/facility/[id]`, `/admin/executive/reports`, cron-filled `exec_kpi_snapshots`.
 
 ---
 
@@ -368,7 +368,7 @@ Module numbers match the product roadmap, **not** the build sequence. Build orde
 | 21 | Family Portal | 5 | `21-family-portal.md` — not yet written |
 | 22 | Referral Source CRM | 6 | `22-referral-crm.md` — not yet written |
 | 23 | Reputation & Online Presence | 6 | `23-reputation.md` — not yet written |
-| 24 | Executive Intelligence Layer | 3 (v1) + 5 (v2) | `24-executive-intelligence.md` — 🟨 DB shipped / UI pending (`047`); v2: `24-executive-v2.md` — Phase 5 |
+| 24 | Executive Intelligence Layer | 3 (v1) + 5 (v2) | `24-executive-intelligence.md` — 🟩 Core UI (`047`); drill-downs/reports backlog; v2: `24-executive-v2.md` — Phase 5 |
 | 25 | Ambient Environment Intelligence | 8 | `25-ambient-intelligence.md` — not yet written (`097`–`098`) |
 | 26 | Facility Digital Twin | 6 | `26-digital-twin.md` — not yet written |
 | 27 | Regulatory Intelligence & Arbitrage | 7 | `27-regulatory-intelligence.md` — not yet written |
