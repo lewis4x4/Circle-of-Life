@@ -77,7 +77,8 @@ Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs 
 - [ ] `/admin/staff/new` — can create a staff row (requires owner / org admin / facility admin per RLS); redirects to detail.
 - [ ] `/admin/staff/[id]` — detail, certifications, upcoming shifts (if data present).
 - [ ] `/admin/certifications` — list loads.
-- [ ] `/admin/schedules` — list loads.
+- [ ] `/admin/schedules` — list loads; **New schedule week** opens `/admin/schedules/new` (draft week per facility + Monday `week_start_date`).
+- [ ] `/admin/schedules/new` — creates a draft schedule row without using Supabase SQL (unique per facility + week).
 - [ ] `/admin/staffing` — list loads.
 - [ ] `/admin/time-records` — list loads.
 

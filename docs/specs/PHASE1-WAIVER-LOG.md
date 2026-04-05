@@ -20,7 +20,7 @@
 
 | ID | Gap | Owner | Reason | Expiry | Remediation issue | Approved date |
 |----|-----|-------|--------|--------|-------------------|---------------|
-| W-ADMIN-01 | Some admin pages list-heavy without create wizards | Brian Lewis | Milestone = run daily ops on seeded data; wizards added incrementally | 2026-10-01 | Per-module UX backlog — **partial:** `/admin/residents/new`, `/admin/staff/new` (2026-04-06); other modules remain | 2026-04-06 |
+| W-ADMIN-01 | Some admin pages list-heavy without create wizards | Brian Lewis | Milestone = run daily ops on seeded data; wizards added incrementally | 2026-10-01 | Per-module UX backlog — **partial:** `/admin/residents/new`, `/admin/staff/new`, `/admin/schedules/new` (2026-04-06); other modules remain | 2026-04-06 |
 
 **Note:** Replace remediation **TBD** with real issue URLs when filed.
 

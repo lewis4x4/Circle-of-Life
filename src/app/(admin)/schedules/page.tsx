@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { CalendarDays } from "lucide-react";
 
 import {
@@ -10,6 +11,7 @@ import {
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
@@ -83,7 +85,7 @@ export default function AdminSchedulesPage() {
         whenDatasetEmpty: {
           title: "No schedules in this scope",
           description:
-            "Live data returned no schedule weeks for the selected facility or organization filter. Create a week in Supabase or adjust scope.",
+            "Live data returned no schedule weeks for the selected facility. Use New schedule week or adjust scope.",
         },
         whenFiltersExcludeAll: {
           title: "No schedules match the current filters",
@@ -107,13 +109,18 @@ export default function AdminSchedulesPage() {
             Weekly schedule containers; shift assignments roll up under each published week.
           </p>
         </div>
-        <Badge
-          variant="outline"
-          className="border-slate-200 bg-white px-3 py-1 dark:border-slate-800 dark:bg-slate-900"
-        >
-          <CalendarDays className="mr-1 h-3.5 w-3.5" />
-          {draftCount} draft week{draftCount === 1 ? "" : "s"}
-        </Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/admin/schedules/new" className={buttonVariants({ size: "sm" })}>
+            New schedule week
+          </Link>
+          <Badge
+            variant="outline"
+            className="border-slate-200 bg-white px-3 py-1 dark:border-slate-800 dark:bg-slate-900"
+          >
+            <CalendarDays className="mr-1 h-3.5 w-3.5" />
+            {draftCount} draft week{draftCount === 1 ? "" : "s"}
+          </Badge>
+        </div>
       </header>
 
       <AdminFilterBar
