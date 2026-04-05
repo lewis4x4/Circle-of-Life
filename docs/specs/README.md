@@ -66,6 +66,7 @@ After this scaffold sprint, resume backend spec implementation in original order
 | Status | Meaning |
 |--------|---------|
 | ✅ SHIPPED | Migration applied, UI live, gates passed |
+| 🟨 DB SHIPPED / UI PENDING | Migration applied remotely; application routes/types still in progress |
 | 🔲 NEXT | Next on the docket — build this when asked "what's next" |
 | ⬜ QUEUED | Spec exists, waiting for predecessor |
 
@@ -76,16 +77,16 @@ After this scaffold sprint, resume backend spec implementation in original order
 | 11 | `17-entity-facility-finance.md` | Entity & Facility Finance (Core) | `040`–`043` | ✅ SHIPPED | Chart of accounts, journal entries/lines, read-only ledger, GL settings, budget lines; RLS; `/admin/finance/*` (7 routes) |
 | 12 | `18-insurance-risk-finance.md` | Insurance & Risk Finance (Core) | `044`–`045` | ✅ SHIPPED | Policy inventory, renewals, data packages, claims (incident-linked), loss runs, premium allocations, COI tracking, workers' comp headers; GL hooks; `/admin/insurance/*` (10 routes) |
 | 13 | `19-vendor-contract-management.md` | Vendor & Contract Management (Core) | `046` | ✅ SHIPPED | Vendor master, facility links, contracts, terms, alerts, POs with three-way match, vendor invoices, payments with GL hooks, vendor insurance (COI cross-ref to Module 18), scorecards; `/admin/vendors/*` (12 routes) |
-| 14 | `24-executive-intelligence.md` | Executive Intelligence Layer v1 | `047` | 🔲 NEXT | Org command center, KPI snapshots with **`lineage jsonb`**, **`exec_alert_user_state`** (snooze/ack), **`benchmark_cohorts`** (minimum-N), prioritized alerts, saved reports; `/admin/executive/*` (6 routes) |
+| 14 | `24-executive-intelligence.md` | Executive Intelligence Layer v1 | `047` | 🟨 DB SHIPPED / UI PENDING | Org command center, KPI snapshots with **`lineage jsonb`**, **`exec_alert_user_state`** (snooze/ack), **`benchmark_cohorts`** (minimum-N), prioritized alerts, saved reports; `/admin/executive/*` (6 routes) — **DB applied; UI backlog** |
 
-**Audit fix before building `047`:** `24-executive-intelligence.md` must include `exec_kpi_snapshots.lineage`, `exec_alert_user_state`, and `benchmark_cohorts` (minimum-N threshold) — see spec DDL.
+**Spec note:** `24-executive-intelligence.md` includes `exec_kpi_snapshots.lineage`, `exec_alert_user_state`, and `benchmark_cohorts` — see spec DDL.
 
 #### Phase 3 Enhanced slices (after Core 13–14 complete)
 
 | Order | Module | Migration | Status | What It Adds |
 |-------|--------|-----------|--------|--------------|
-| 15 | Module 17 Enhanced — Finance Depth | `048` | ⬜ QUEUED | **`gl_period_closes` early** (not deferred); trial balance; period close; budget vs actual variance UI; **`entity_gl_settings.accounts_payable_gl_account_id`** for vendor payment posting; **`intercompany_markers` on `journal_lines`**; auto-posting from billing (`gl_posting_rules`: invoices/payments → balanced journal entries) |
-| 16 | Module 18 Enhanced — Insurance Intelligence | `049` | ⬜ QUEUED | Renewal data package assembly (structured JSON), total cost of risk KPI, AI-assisted renewal narrative draft (human-review gated, audit trail) |
+| 15 | Module 17 Enhanced — Finance Depth | `048` | 🟨 DB SHIPPED / UI PENDING | **`gl_period_closes`**, **`gl_posting_rules`**, **`journal_entries.gl_period_close_id`** shipped in DB; trial balance / period-close UI and auto-posting still backlog |
+| 16 | Module 18 Enhanced — Insurance Intelligence | `049` | 🟨 DB SHIPPED / UI PENDING | **`renewal_data_packages`** AI narrative columns in DB; renewal package UI / TCoR / narrative workflow still backlog |
 
 #### Phase 3 implementation detail per module
 
@@ -108,7 +109,7 @@ Routes: `/admin/vendors` (hub), `/admin/vendors/directory`, `/admin/vendors/[id]
 
 ---
 
-**Module 24 — Executive Intelligence Layer v1** (🔲 NEXT)
+**Module 24 — Executive Intelligence Layer v1** (🟨 DB shipped / UI pending)
 
 Migration `047_executive_intelligence.sql`: enums, **seven** tables (includes `exec_kpi_snapshots` with **`lineage`**, `exec_alert_user_state`, `benchmark_cohorts`), full RLS, audit triggers.
 
@@ -128,7 +129,7 @@ Routes: `/admin/executive` (command center), `/admin/executive/entity/[id]`, `/a
 
 ---
 
-**Module 17 Enhanced — Finance Depth** (⬜ QUEUED after 24)
+**Module 17 Enhanced — Finance Depth** (🟨 DB shipped / UI pending after 24)
 
 Migration `048_finance_enhanced.sql`.
 
@@ -136,7 +137,7 @@ Adds: **`gl_period_closes`**; **`entity_gl_settings.accounts_payable_gl_account_
 
 ---
 
-**Module 18 Enhanced — Insurance Intelligence** (⬜ QUEUED after 17-Enhanced)
+**Module 18 Enhanced — Insurance Intelligence** (🟨 DB shipped / UI pending after 17-Enhanced)
 
 Migration `049_insurance_enhanced.sql`.
 
@@ -367,7 +368,7 @@ Module numbers match the product roadmap, **not** the build sequence. Build orde
 | 21 | Family Portal | 5 | `21-family-portal.md` — not yet written |
 | 22 | Referral Source CRM | 6 | `22-referral-crm.md` — not yet written |
 | 23 | Reputation & Online Presence | 6 | `23-reputation.md` — not yet written |
-| 24 | Executive Intelligence Layer | 3 (v1) + 5 (v2) | `24-executive-intelligence.md` — 🔲 NEXT (`047`); v2: `24-executive-v2.md` — Phase 5 |
+| 24 | Executive Intelligence Layer | 3 (v1) + 5 (v2) | `24-executive-intelligence.md` — 🟨 DB shipped / UI pending (`047`); v2: `24-executive-v2.md` — Phase 5 |
 | 25 | Ambient Environment Intelligence | 8 | `25-ambient-intelligence.md` — not yet written (`097`–`098`) |
 | 26 | Facility Digital Twin | 6 | `26-digital-twin.md` — not yet written |
 | 27 | Regulatory Intelligence & Arbitrage | 7 | `27-regulatory-intelligence.md` — not yet written |

@@ -50,6 +50,10 @@ yarn-error.log*
 # supabase CLI
 supabase/.temp/
 
+# Local IDE / agent plans (optional; keep out of shared repo unless explicitly curated)
+.cursor/plans/
+.omx/
+
 # vercel
 .vercel
 
