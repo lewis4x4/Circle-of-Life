@@ -10,6 +10,8 @@ import { getAppRoleFromClaims, isAdminEligibleAppRole } from "@/lib/auth/app-rol
 const ADMIN_SHELL_SEGMENTS = [
   "/admin",
   "/billing",
+  "/finance",
+  "/insurance",
   "/residents",
   "/staff",
   "/incidents",
