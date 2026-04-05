@@ -119,13 +119,12 @@
 - **Fix applied**: Policy dropped and recreated with `AND haven.app_role() NOT IN ('family', 'dietary', 'maintenance_role')`
 - **Status**: **RESOLVED** — dietary and maintenance staff can no longer read emergency contact PII
 
-### Gap R-3: `shift_swap_requests` SELECT leaks pending requests (LOW)
+### Gap R-3: `shift_swap_requests` SELECT leaks pending requests (LOW) — FIXED
 
-- **Migration**: `025_staff_management_rls.sql`
-- **Current policy**: Contains `OR status = 'pending'` clause allowing any staff to see ALL pending swap requests facility-wide
-- **Risk**: Staff can see which coworkers are requesting shift changes (scheduling flexibility signal, minor privacy concern)
-- **Fix**: Remove the `OR status = 'pending'` clause, or restrict it to staff in the same unit/shift
-- **Severity**: LOW — no PHI or PII exposure; employee scheduling preferences only
+- **Migration**: `025_staff_management_rls.sql` (original), **`069_shift_swap_requests_rls_tighten.sql`** (fix)
+- **Was**: `OR status = 'pending'` allowed any in-scope staff to read all pending swap rows in the facility
+- **Fix applied**: Policy recreated without `OR status = 'pending'`; matches least-privilege pattern used on UPDATE policy
+- **Status**: **RESOLVED** (2026-04-05)
 
 ### Overall RLS Assessment
 
