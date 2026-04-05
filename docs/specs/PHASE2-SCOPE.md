@@ -4,6 +4,15 @@
 **Weeks**: 13–20
 **Modules**: 4 (build order below)
 
+**Post-audit hardening:** Shipped Phase 2 modules receive **additive remediation** in **Phase 3.5** (migrations `061`–`064` for the four modules below). See **[README.md — Phase 3.5](./README.md)** (section *Phase 3.5: Platform Hardening & Shipped-Module Remediation*) for full segment IDs, DDL intent, and migration order. This document summarizes **what** lands where for **03-adv, 06, 08, 09** only.
+
+| Module | Phase 3.5 segment | Migration | Spec / notes |
+|--------|-------------------|-----------|----------------|
+| 03 Advanced (care planning) | `care-plan-billing-version-lock` | `061` | `care_plan_versions.billing_snapshot_hash`, `care_plan_change_tasks` on assessment save |
+| 06 Medication | `medication-rxnorm-witness` | `062` | `medication_reference` (RxNorm/NDC), `resident_medications.rxcui`, controlled variance witness events; `integrations/pharmacy-fhir.md` |
+| 09 Infection | `infection-jurisdiction-labs` | `063` | `infection_threshold_profiles`, RTW clearance fields, `lab_observations`, `integration_inbound_queue` |
+| 08 Compliance | `compliance-citation-keys` | `064` | `regulatory_rules` (citation PK), FK from deficiencies, policy publish approvals, `survey_visits` |
+
 ---
 
 ## Phase 2 Milestone
@@ -66,6 +75,10 @@
 - Auto-generated quarterly review narrative draft from 90-day structured data
 - Assessment overdue alerts surfaced on admin dashboard
 
+### Phase 3.5 remediation (after Phase 3 core queue)
+
+- **Billing / finance alignment:** `care_plan_versions` with **`billing_snapshot_hash`** and **`care_plan_change_tasks`** generated when assessments save — see segment **`care-plan-billing-version-lock`** (`061`) in [README.md](README.md).
+
 ### Future (not Phase 2)
 
 - AI pattern recognition for decline across multiple data streams
@@ -114,6 +127,10 @@
 - Med-pass exception handling: better UX for held, not available, self-administered statuses
 - Refusal/late-pass/error dashboards for admin oversight
 - Medication destruction log for discharge/death scenarios
+
+### Phase 3.5 remediation (after Phase 3 core queue)
+
+- **RxNorm / NDC reference:** `medication_reference`, **`resident_medications.rxcui`** FK, **`controlled_substance_count_variance_events`** (witness + supervisor notify); pharmacy FHIR placeholder **`integrations/pharmacy-fhir.md`** — segment **`medication-rxnorm-witness`** (`062`) in [README.md](README.md).
 
 ### Future (not Phase 2)
 
@@ -167,6 +184,10 @@
 - Trend analysis: infection rates per unit/facility/time window, benchmarking
 - Infection rate calculation: infections per 1,000 resident-days
 
+### Phase 3.5 remediation (after Phase 3 core queue)
+
+- **Thresholds & labs:** `infection_threshold_profiles` (org + facility override), **`staff_illness_episodes` return-to-work clearance**, **`lab_observations`** + **`integration_inbound_queue`** — segment **`infection-jurisdiction-labs`** (`063`) in [README.md](README.md).
+
 ### Future (not Phase 2)
 
 - Predictive outbreak detection (AI early warning from subtle vital sign patterns)
@@ -215,6 +236,10 @@
 - Compliance reminders and task generation (e.g., "3 assessments overdue this week")
 - Historical deficiency analysis: which tags cited most, recurrence tracking
 - Emergency preparedness checklist tracking (generator tests, fire drills, evacuation drills)
+
+### Phase 3.5 remediation (after Phase 3 core queue)
+
+- **Citations & surveys:** `regulatory_rules` with citation text as PK; FK **`deficiencies.citation`**; **`policy_documents`** AI + human publish fields; **`survey_visits`** + notes — segment **`compliance-citation-keys`** (`064`) in [README.md](README.md).
 
 ### Future (not Phase 2)
 

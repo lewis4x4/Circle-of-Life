@@ -3,6 +3,7 @@
 **This folder is the single source of truth for building Haven.** When spec content conflicts with the roadmap overview, trust these specs.
 
 ## Supabase Project
+
 - **URL:** https://manfqmasfqppukpobpld.supabase.co
 - **Timezone:** America/New_York (all facilities in North Florida)
 - **Critical:** Confirm Pro plan with signed BAA before any PHI enters. Confirm Point-in-Time Recovery enabled.
@@ -33,7 +34,7 @@ Before implementing Step 4 (`07-incident-reporting.md`), run a focused **one-wee
 - Keep data mocked or adapter-backed during this sprint; do not block on backend wiring.
 - Avoid adding new database migrations during this UI-only interlock unless explicitly approved.
 
-After this scaffold sprint, resume backend spec implementation in original order: **07 -> 11 -> 16**.
+After this scaffold sprint, resume backend spec implementation in original order: **07 → 11 → 16**.
 
 **Phase 1 Milestone:** At Week 12, COL can run daily operations on the platform at 1 pilot facility (Oakridge ALF). Caregivers document care, administer medications via eMAR, report incidents, view schedules, and clock in/out. Administrators manage staff, certifications, billing, and view facility dashboard.
 
@@ -41,7 +42,7 @@ After this scaffold sprint, resume backend spec implementation in original order
 
 ### Phase 2: Clinical Depth & Compliance (Weeks 13-20)
 
-**Scope & tiering guide:** `PHASE2-SCOPE.md` — defines Core/Enhanced/Future tiers per module. Specs implement Core; Enhanced is stretch; Future is explicitly deferred.
+**Scope & tiering guide:** `PHASE2-SCOPE.md` — defines Core/Enhanced/Future tiers per module. Specs implement Core; Enhanced is stretch; Future is explicitly deferred. **Phase 3.5** (below) captures post-audit remediation for shipped Phase 2 modules — see [PHASE2-SCOPE.md](./PHASE2-SCOPE.md) cross-references.
 
 **Phase 2 Milestone:** At Week 20, Haven enables one pilot facility to document structured assessments, maintain editable care plans, manage advanced medication workflows and controlled-substance accountability, monitor infections and vitals trends, and track survey/compliance deficiencies with operator-visible dashboards and follow-up workflows.
 
@@ -56,7 +57,7 @@ After this scaffold sprint, resume backend spec implementation in original order
 
 ### Phase 3: Multi-Entity Finance, Procurement & Executive Intelligence (Weeks 21–28+)
 
-**Vision:** Close the loop between clinical operations, financial accountability, insurance risk, vendor procurement, and executive visibility — on one RLS-governed data layer. No ALF platform today connects double-entry finance, corporate insurance lifecycle, vendor three-way match, and a real-time executive command center in a single system. Haven does.
+**Vision:** Close the loop between clinical operations, financial accountability, insurance risk, vendor procurement, and executive visibility — on one RLS-governed data layer.
 
 **Scope & tiering:** Each spec defines Core / Enhanced / Future tiers. Core ships first (one module at a time). Enhanced slices follow Core for Modules 17 and 18 within Phase 3. Future is explicitly Phase 5+.
 
@@ -75,14 +76,16 @@ After this scaffold sprint, resume backend spec implementation in original order
 | 11 | `17-entity-facility-finance.md` | Entity & Facility Finance (Core) | `040`–`043` | ✅ SHIPPED | Chart of accounts, journal entries/lines, read-only ledger, GL settings, budget lines; RLS; `/admin/finance/*` (7 routes) |
 | 12 | `18-insurance-risk-finance.md` | Insurance & Risk Finance (Core) | `044`–`045` | ✅ SHIPPED | Policy inventory, renewals, data packages, claims (incident-linked), loss runs, premium allocations, COI tracking, workers' comp headers; GL hooks; `/admin/insurance/*` (10 routes) |
 | 13 | `19-vendor-contract-management.md` | Vendor & Contract Management (Core) | `046` | ✅ SHIPPED | Vendor master, facility links, contracts, terms, alerts, POs with three-way match, vendor invoices, payments with GL hooks, vendor insurance (COI cross-ref to Module 18), scorecards; `/admin/vendors/*` (12 routes) |
-| 14 | `24-executive-intelligence.md` | Executive Intelligence Layer v1 | `047` | 🔲 NEXT | Org command center, per-user dashboard config, KPI snapshots (8 domains from all shipped modules), prioritized alert feed with drill-down, saved reports; `/admin/executive/*` (6 routes) |
+| 14 | `24-executive-intelligence.md` | Executive Intelligence Layer v1 | `047` | 🔲 NEXT | Org command center, KPI snapshots with **`lineage jsonb`**, **`exec_alert_user_state`** (snooze/ack), **`benchmark_cohorts`** (minimum-N), prioritized alerts, saved reports; `/admin/executive/*` (6 routes) |
+
+**Audit fix before building `047`:** `24-executive-intelligence.md` must include `exec_kpi_snapshots.lineage`, `exec_alert_user_state`, and `benchmark_cohorts` (minimum-N threshold) — see spec DDL.
 
 #### Phase 3 Enhanced slices (after Core 13–14 complete)
 
 | Order | Module | Migration | Status | What It Adds |
 |-------|--------|-----------|--------|--------------|
-| 15 | Module 17 Enhanced — Finance Depth | `048` | ⬜ QUEUED | Trial balance, period close (`gl_period_closes`), budget vs actual variance UI, **auto-posting from billing** (`gl_posting_rules`: invoices/payments → balanced journal entries) |
-| 16 | Module 18 Enhanced — Insurance Intelligence | `049` | ⬜ QUEUED | Renewal data package assembly (census + incidents + staffing + billing aggregates → structured JSON), total cost of risk KPI, AI-assisted renewal narrative draft (human-review gated, audit trail) |
+| 15 | Module 17 Enhanced — Finance Depth | `048` | ⬜ QUEUED | **`gl_period_closes` early** (not deferred); trial balance; period close; budget vs actual variance UI; **`entity_gl_settings.accounts_payable_gl_account_id`** for vendor payment posting; **`intercompany_markers` on `journal_lines`**; auto-posting from billing (`gl_posting_rules`: invoices/payments → balanced journal entries) |
+| 16 | Module 18 Enhanced — Insurance Intelligence | `049` | ⬜ QUEUED | Renewal data package assembly (structured JSON), total cost of risk KPI, AI-assisted renewal narrative draft (human-review gated, audit trail) |
 
 #### Phase 3 implementation detail per module
 
@@ -107,19 +110,19 @@ Routes: `/admin/vendors` (hub), `/admin/vendors/directory`, `/admin/vendors/[id]
 
 **Module 24 — Executive Intelligence Layer v1** (🔲 NEXT)
 
-Migration `047_executive_intelligence.sql`: 4 enums, 4 tables, full RLS, audit triggers.
+Migration `047_executive_intelligence.sql`: enums, **seven** tables (includes `exec_kpi_snapshots` with **`lineage`**, `exec_alert_user_state`, `benchmark_cohorts`), full RLS, audit triggers.
 
 | Artifact | Path |
 |----------|------|
 | Migration | `supabase/migrations/047_executive_intelligence.sql` |
 | Types | `src/types/database.ts` (extend) |
-| KPI engine | `src/lib/exec-kpi-snapshot.ts` — typed computation across 8 domains |
+| KPI engine | `src/lib/exec-kpi-snapshot.ts` — typed computation across domains |
 | Admin UI | `src/app/(admin)/admin/executive/*` — 6 routes |
 | Nav | `src/components/layout/AdminShell.tsx` — add Executive item (top of nav) |
 | Auth gate | `src/lib/auth/admin-shell.ts` — add `"/executive"` to `ADMIN_SHELL_SEGMENTS` |
 | Contract | `docs/specs/FRONTEND-CONTRACT.md` — add `/admin/executive/*` routes |
 
-Tables: `exec_dashboard_configs`, `exec_kpi_snapshots`, `exec_alerts`, `exec_saved_reports`. KPI domains: census/occupancy, financial, clinical/safety, infection, compliance, workforce, insurance (Module 18), vendors (Module 19). Alert scoring: `severity_weight × recency_factor × impact_weight`. RLS: owner/org_admin full access; facility_admin scoped to their facilities.
+Tables: `exec_dashboard_configs`, `exec_kpi_snapshots` (**`lineage jsonb`**), `exec_alerts`, **`exec_alert_user_state`**, **`benchmark_cohorts`**, `exec_saved_reports`. KPI domains: census/occupancy, financial, clinical/safety, infection, compliance, workforce, insurance (Module 18), vendors (Module 19). Alert scoring: `severity_weight × recency_factor × impact_weight`. RLS: owner/org_admin full access; facility_admin scoped to their facilities.
 
 Routes: `/admin/executive` (command center), `/admin/executive/entity/[id]`, `/admin/executive/facility/[id]`, `/admin/executive/alerts`, `/admin/executive/reports`, `/admin/executive/settings`.
 
@@ -129,7 +132,7 @@ Routes: `/admin/executive` (command center), `/admin/executive/entity/[id]`, `/a
 
 Migration `048_finance_enhanced.sql`.
 
-Adds: `gl_period_closes` table (entity + period + closed_by); `gl_posting_rules` table (event type → debit/credit account pairs per entity); trial balance SQL view/RPC; period-close enforcement (block posting to closed periods); budget vs actual variance computation in UI; `src/lib/finance/auto-posting.ts` batch function: invoices/payments create balanced journal entries with `source_type = 'invoice'` / `source_type = 'payment'`.
+Adds: **`gl_period_closes`**; **`entity_gl_settings.accounts_payable_gl_account_id`**; **`intercompany_markers` on `journal_lines`** (also listed in Phase 3.5 if not present after `048`); `gl_posting_rules` table (event type → debit/credit account pairs per entity); trial balance SQL view/RPC; period-close enforcement (block posting to closed periods); budget vs actual variance computation in UI; `src/lib/finance/auto-posting.ts` batch function: invoices/payments create balanced journal entries with `source_type = 'invoice'` / `source_type = 'payment'`.
 
 ---
 
@@ -153,49 +156,239 @@ npm run segment:gates -- --segment "<module-segment-id>" --ui
 
 At completion, an ALF owner logs into Haven and sees their entire portfolio — every facility's census, revenue, incident count, compliance backlog, staffing gaps, insurance exposure, and vendor spend — in one command center. They click a critical alert, drill into the facility, trace from a workers' comp claim to the incident report to the GL reserve entry to the vendor scorecard. Every dollar, risk event, and vendor obligation is traceable from the executive layer down to the source row, under row-level security, in a single session.
 
-### Phase 4–7: Specs added on a rolling basis, always one phase ahead of build.
+---
 
-**Phase 4:** Full resident lifecycle — Modules 1 (Referral & Inquiry), 2 (Admissions & Move-In), 5 (Discharge & Transition). Implement only after numbered specs exist in this folder.
+### Phase 3.5: Platform Hardening & Shipped-Module Remediation
 
-**Phase 5:** Quality, family portal, ambient intelligence — Modules 10, 21, 25, plus NLQ and AI insights for Module 24 v2.
+**Purpose:** Remediate retrospective audit gaps in Phases 1–3 **without** breaking existing data. Segments are **additive migrations** `050`–`068` (each its own gated segment). Placeholder / patch specs: `00-foundation-regulatory.md`, `platform-search.md`, `04-daily-operations-offline.md`, `pwa-caching-contract.md`.
 
-**Phase 6:** Operational depth — Modules 12–15, 22–23, 26.
+#### 3.5-A: Foundation and platform infrastructure (`050`–`053`)
 
-**Phase 7:** Strategic — Modules 20, 24 v2, 27.
+| Segment | Migration | Spec / artifact | What it does |
+|---------|-----------|-----------------|--------------|
+| `platform-audit-log-access` | `050` | Patch `00-foundation.md` | RLS SELECT on `audit_log` for owner/org_admin/facility_admin; `audit_log_export_jobs` + Edge Function `export-audit-log` (checksummed CSV/PDF); monthly partitions on `audit_log.created_at`. |
+| `platform-auth-role-reconciliation` | `051` | Patch `00-foundation.md` | `user_profiles.auth_claim_version integer` + middleware: reject session when `profiles.updated_at > token.iat`; document single source of truth for role. |
+| `platform-regulatory-jurisdiction` | `052` | `00-foundation-regulatory.md` | `facilities.license_authority`, `alf_license_type`, `cms_certification_number`, `medicaid_provider_id`; `ratio_rule_sets` + `facility_ratio_rule_set_id` FK; `shift_classification` enum on `shift_assignments`. |
+| `platform-search-index` | `053` | `platform-search.md` | `search_documents` tsvector + GIN + RLS; triggers on `residents`, `staff`, `vendors`, `incidents`; install `pgvector` for future hybrid search. |
 
-## Module Number Reference
+#### 3.5-B: PWA / offline / notifications (app + Edge Functions)
 
-Module numbers match the roadmap (27 modules total), NOT the build sequence. Not every module number has a Phase 1 spec because Modules 1, 2, 5 are Phase 4 features.
+| Segment | Migration / artifact | What it does |
+|---------|----------------------|--------------|
+| `pwa-offline-emar` | `054` + `04-daily-operations-offline.md` | SW cache partitions; `emar_idempotency_key uuid UNIQUE` on `emar_records`; Background Sync contract + IndexedDB queue schema. |
+| `pwa-push-notifications` | `055` + `supabase/functions/dispatch-push` | VAPID in secrets; `notification_subscriptions` (`user_id`, `endpoint`, `keys_json`, `created_at`); `dispatch-push` from incident/alert triggers. |
+| `pwa-sw-caching-contract` | `pwa-caching-contract.md` | Stale-while-revalidate max ages per resource per shell; **no offline writes without idempotency keys**; document PgBouncer transaction mode + pooler URL. |
 
-| Module # | Name | Phase | Spec Status |
-|----------|------|-------|-------------|
-| 1 | Referral & Inquiry Management | 4 | Not yet spec'd |
-| 2 | Admissions & Move-In | 4 | Not yet spec'd |
-| 3 | Resident Profile & Care Planning | 1 (core) + 2 (advanced) | ✅ Core spec complete |
-| 4 | Daily Operations & Logging | 1 | ✅ Spec complete |
-| 5 | Discharge & Transition | 4 | Not yet spec'd |
-| 6 | Medication Management | 1 (basic in 04) + 2 (advanced) | Basic in `04-daily-operations.md`. Advanced: `06-medication-management.md` |
-| 7 | Incident & Risk Management | 1 | ✅ Spec complete |
-| 8 | Autonomous Compliance Engine | 2 | `08-compliance-engine.md` |
-| 9 | Infection Control & Health Monitoring | 2 | `09-infection-control.md` |
-| 10 | Quality Metrics & Outcomes | 5 | Not yet spec'd |
-| 11 | Staff Management & Scheduling | 1 | ✅ Spec complete |
-| 12 | Training & Competency Management | 6 | Not yet spec'd |
-| 13 | Facility Maintenance & Environment | 6 | Not yet spec'd |
-| 14 | Dietary & Nutrition Management | 6 | Not yet spec'd |
-| 15 | Transportation & Appointments | 6 | Not yet spec'd |
-| 16 | Resident Billing & Collections | 1 | ✅ Spec complete |
-| 17 | Entity & Facility Finance | 3 | `17-entity-facility-finance.md` — ✅ Core shipped; Enhanced queued |
-| 18 | Insurance & Risk Finance | 3 | `18-insurance-risk-finance.md` — ✅ Core shipped; Enhanced queued |
-| 19 | Vendor & Contract Management | 3 | `19-vendor-contract-management.md` — ✅ SHIPPED |
-| 20 | Expansion & Acquisition Planning | 7 | Not yet spec'd |
-| 21 | Family Portal | 5 | Not yet spec'd |
-| 22 | Referral Source CRM | 6 | Not yet spec'd |
-| 23 | Reputation & Online Presence | 6 | Not yet spec'd |
-| 24 | Executive Intelligence Layer | 3 (v1) + 7 (v2) | v1: `24-executive-intelligence.md` — 🔲 NEXT |
-| 25 | Ambient Environment Intelligence | 5 | Not yet spec'd |
-| 26 | Facility Digital Twin | 6 | Not yet spec'd |
-| 27 | Regulatory Intelligence & Arbitrage | 7 | Not yet spec'd |
+#### 3.5-C: Shipped Phase 1 module patches (`056`–`060`)
+
+| Segment | Migration | Module | What it adds |
+|---------|-----------|--------|--------------|
+| `resident-advance-directives` | `056` | 03 Resident | `advance_directive_documents` (POLST, code status, physician signature, scan path, verified_by/at). |
+| `emar-witness-device` | `057` | 04 Daily Ops | `emar_administration_witnesses`; `emar_records.device_id`, `app_version`; optional `adl_logs.duration_seconds`, `assisting_staff_ids`. |
+| `incident-regulatory-timers` | `058` | 07 Incidents | `regulatory_reporting_obligations`; `notification_routes` + `on_call_schedules`; `incident_root_causes` + taxonomy. |
+| `staff-credentials-background` | `059` | 11 Staff | `staff_background_checks`; deferred trigger on `shift_assignments` vs `staff_certifications`. |
+| `billing-trust-ar-matview` | `060` | 16 Billing | `trust_account_entries`; `invoice_generation_profiles`; materialized view `ar_aging_facility_daily` + nightly refresh. |
+
+#### 3.5-D: Shipped Phase 2 module patches (`061`–`064`)
+
+| Segment | Migration | Module | What it adds |
+|---------|-----------|--------|--------------|
+| `care-plan-billing-version-lock` | `061` | 03 Advanced | `care_plan_versions.billing_snapshot_hash`; `care_plan_change_tasks` on assessment save. |
+| `medication-rxnorm-witness` | `062` | 06 Medication | `medication_reference` (rxcui, ndc); `resident_medications.rxcui` FK; `controlled_substance_count_variance_events`; `integrations/pharmacy-fhir.md`. |
+| `infection-jurisdiction-labs` | `063` | 09 Infection | `infection_threshold_profiles`; RTW clearance on illness episodes; `lab_observations` + `integration_inbound_queue`. |
+| `compliance-citation-keys` | `064` | 08 Compliance | `regulatory_rules` (citation PK); FK from `deficiencies.citation`; policy publish approvals; `survey_visits` + notes. |
+
+#### 3.5-E: Shipped Phase 3 module patches (`065`–`067`)
+
+| Segment | Migration | Module | What it adds |
+|---------|-----------|--------|--------------|
+| `finance-intercompany` | `065` | 17 Finance | `intercompany_markers` on `journal_lines`; `entity_gl_settings.accounts_payable_gl_account_id` if not already in `048`. |
+| `insurance-osha-allocation` | `066` | 18 Insurance | OSHA recordable flags; premium allocation enum + snapshot JSON; COI endorsement + `ai_extracted_json`. |
+| `vendor-match-storage-scorecard` | `067` | 19 Vendor | `invoice_match_rules` + tolerance trigger; Storage bucket `vendor-documents`; `vendor_scorecard_signals` nightly. |
+
+#### 3.5-F: AI invocation framework (`068`)
+
+| Segment | Migration | What it does |
+|---------|-----------|--------------|
+| `ai-invocation-framework` | `068` | `ai_invocations` (model, `phi_class` enum `none`/`limited`/`phi`, hashes, tokens); **REJECT** if `phi_class = 'phi'` and no BAA env flag; `ai_invocation_policies` per org — compliance chokepoint for later AI features. |
+
+#### Phase 3.5 gate checklist
+
+Same as Phase 3: `migrations:check`, `check:admin-shell`, `lint`, `build`, `segment:gates` per segment (`--ui` when routes/layouts/visuals change).
+
+---
+
+### Phase 4: Resident Lifecycle
+
+Implement after predecessor migrations and specs exist.
+
+| Order | Spec file | Module | Migration range | Audit / build notes |
+|-------|-----------|--------|-----------------|---------------------|
+| 17 | `01-referral-inquiry.md` | Referral and Inquiry | `069`–`070` | `referral_leads` with duplicate merge, source attribution, `pii_access_tier`, HIPAA minimum-necessary RLS; HL7 v2 ADT inbound via `integration_inbound_queue`. |
+| 18 | `02-admissions-move-in.md` | Admissions and Move-In | `071`–`072` | `admission_cases` (pending_clearance / bed_reserved / move_in / cancelled), FK to `beds.id`, `admission_case_rate_terms`, physician orders, financial clearance gate. |
+| 19 | `05-discharge-transition.md` | Discharge and Transition | `073`–`074` | `discharge_med_reconciliation` with pharmacist fields; `residents.discharge_target_date`, `hospice_status`; FHIR R4 transition summary export Edge Function. |
+
+---
+
+### Phase 5: Quality, Family, and Intelligence
+
+| Order | Spec file | Module | Migration range | Audit / build notes |
+|-------|-----------|--------|-----------------|---------------------|
+| 20 | `10-quality-metrics.md` | Quality Metrics | `075`–`076` | `quality_measures` + `quality_measure_results` (CMS ontology); PBJ export via `pbj_export_batches` + deterministic views. |
+| 21 | `21-family-portal.md` | Family Portal | `077`–`078` | `family_consent_records`; clinical triage table + keyword triggers; WebRTC care conferences + recording consent. |
+| 22 | `24-executive-v2.md` | Executive Intelligence v2 | `079` | NLQ routed through `ai_invocations`; scenario models; period deltas; Realtime dashboards. |
+
+---
+
+### Phase 6: Operational Depth
+
+| Order | Spec file | Module | Migration range | Audit / build notes |
+|-------|-----------|--------|-----------------|---------------------|
+| 23 | `12-training-competency.md` | Training and Competency | `080`–`081` | `competency_demonstrations` (evaluator, skills_json, attachments). |
+| 24 | `13-payroll-integration.md` | Payroll Integration | `082` | `payroll_export_batches` + `payroll_export_lines` with idempotency_key UNIQUE. |
+| 25 | `14-dietary-nutrition.md` | Dietary and Nutrition | `083` | `diet_orders` + `iddsi_level`; aspiration cross-check vs meds; allergy + texture constraints. |
+| 26 | `15-transportation.md` | Transportation | `084` | `fleet_vehicles`, `vehicle_inspection_logs`, `driver_credentials`. |
+| 27 | `22-referral-crm.md` | Referral Source CRM | `085` | HL7 ADT; `referral_hl7_inbound` queue. |
+| 28 | `23-reputation.md` | Reputation Management | `086` | `reputation_accounts`, `reputation_replies` with `posted_by_user_id`. |
+| 29 | `26-digital-twin.md` | Facility Digital Twin | `087` | `twin_scenario_runs` + deterministic seed; **~6 months live data** prerequisite. |
+| 30 | `13-maintenance.md` | Facility Maintenance | `088` | Shares `vendors.id` (Module 19); work orders, PM schedules, building inventory. |
+
+---
+
+### Phase 7: Strategic
+
+| Order | Spec file | Module | Migration range | Audit / build notes |
+|-------|-----------|--------|-----------------|---------------------|
+| 31 | `20-expansion-acquisition.md` | Expansion Planning | `089` | `expansion_scenarios` + immutable assumption hash; cap table modeling. |
+| 32 | `27-regulatory-intelligence.md` | Regulatory Intelligence | `090`–`091` | `regulatory_sources` (url, etag, sha256); diff pipeline; routed through `ai_invocations` with `phi_class = 'none'`. |
+
+---
+
+### Phase 8: Moonshot AI and Ambient Intelligence
+
+| Order | Spec file | Module / subsystem | Migration range | Description |
+|-------|-----------|---------------------|-----------------|-------------|
+| 33 | `ai-A-pattern-detection.md` | Cross-Resident Pattern Detection | `092`–`093` | `pattern_detection_jobs`, `pattern_detection_findings`; Edge Function; `phi_class` gate. |
+| 34 | `ai-B-cognitive-load.md` | Cognitive Load Engine | `094` | `caregiver_load_samples`, `caregiver_load_rules`; deterministic scoring v1. |
+| 35 | `ai-C-family-risk.md` | Family Relationship Health | `095` | `family_engagement_signals`, `family_risk_scores` — **blocked on BAA or de-ID pipeline**. |
+| 36 | `ai-D-placement-optimizer.md` | Portfolio Placement Optimizer | `096` | `placement_constraints`, `placement_recommendations`; OR solver over census + staffing + payer mix. |
+| 37 | `25-ambient-intelligence.md` | Ambient Environment Intelligence | `097`–`098` | `ambient_consent_policies`, `resident_sensor_opt_in`; BLE/MQTT gateway; retention TTL; redaction Edge Function. |
+
+---
+
+### Scale and technology fixes (woven into phases above)
+
+| Topic | Where it lands |
+|-------|----------------|
+| RLS performance / `facility_ids` session GUC | Phase 3.5-A `platform-search-index`; document GUC pattern in `00-foundation-regulatory.md`. |
+| Audit log partitioning | Phase 3.5-A `platform-audit-log-access`. |
+| Supabase connection pooling (PgBouncer transaction mode) | Phase 3.5-B `pwa-caching-contract.md` + `.env.local` pooler URL. |
+| Storage lifecycle / org-scoped buckets | Phase 3.5-E `vendor-match-storage-scorecard`; replicate pattern in Phase 4/5 for clinical media + legal hold. |
+| FHIR R4 export | Phase 4 Module 05 — `supabase/functions/fhir-export`. |
+| Realtime executive dashboards | Phase 5 Module 24 v2 — private channels + JWT mirroring RLS. |
+| Pre-aggregated KPIs | Phase 3 Module 24 — `exec_kpi_snapshots` + triggers on hot tables. |
+| CI design review routes | Phase 3.5-B — segment gate `DESIGN_REVIEW_ROUTES` per segment. |
+
+---
+
+### Data model time bomb defusal schedule
+
+| Column / table needed | Phase | Migration |
+|----------------------|-------|-----------|
+| `residents.discharge_target_date`, `hospice_status` | Phase 4 (Module 05) | `073` |
+| `invoices.legal_entity_id` | Phase 3 (Module 17 Enhanced `048`) | `048` |
+| `journal_entries.period_id` FK | Phase 3 (Module 17 Enhanced `048`) | `048` |
+| `incidents.regulatory_flags jsonb` | Phase 3.5-C | `058` |
+| `staff.excluded_from_care boolean` | Phase 3.5-C | `059` |
+| `facilities.cms_certification_number` | Phase 3.5-A | `052` |
+| `vendor_invoices.currency`, `tax_lines` | Phase 6+ (multi-state; Module 19 patch) | `086` or later |
+| `user_profiles.mfa_enforced_at` | Phase 3.5-A | `051` |
+| `emar_records.device_id`, `app_version` | Phase 3.5-C | `057` |
+| `family_portal_messages.encryption_key_id` | Phase 5 (Module 21) | `077` |
+
+---
+
+### Anthropic BAA blocker
+
+Until a BAA is executed: the **`ai_invocations`** framework (Phase 3.5-F, migration `068`) enforces a **`phi_class` gate**. Features that would put PHI in prompts (e.g. family risk scoring, ambient transcription, compliance narratives with resident data) must either:
+
+- Route through **Azure OpenAI with BAA**, or
+- Run on **self-hosted open-weights** models, or
+- Accept only **de-identified** payloads with structural redaction in the Edge Function.
+
+Per-org provider routing is stored in **`ai_invocation_policies`**.
+
+---
+
+### Segment count summary (post Phase 3 queue)
+
+| Phase | Segments / modules | Migration range |
+|-------|-------------------|-----------------|
+| Phase 3 remaining | 3 (24, 17-enh, 18-enh) | `047`–`049` |
+| Phase 3.5 | 19 segments | `050`–`068` |
+| Phase 4 | 3 modules | `069`–`074` |
+| Phase 5 | 3 modules | `075`–`079` |
+| Phase 6 | 8 modules | `080`–`088` |
+| Phase 7 | 2 modules | `089`–`091` |
+| Phase 8 | 5 modules / subsystems | `092`–`098` |
+
+**~43** discrete segments/modules beyond the current Phase 3 queue (see tables above for authoritative ordering).
+
+---
+
+## Module Number Reference (27 modules + 4 AI subsystems)
+
+Module numbers match the product roadmap, **not** the build sequence. Build order is in the phase tables above.
+
+### Core product modules (1–27)
+
+| Module # | Name | Phase | Spec file / status |
+|----------|------|-------|-------------------|
+| 1 | Referral & Inquiry Management | 4 | `01-referral-inquiry.md` — not yet written |
+| 2 | Admissions & Move-In | 4 | `02-admissions-move-in.md` — not yet written |
+| 3 | Resident Profile & Care Planning | 1 + 2 (adv) | `03-resident-profile.md`, `03-resident-profile-advanced.md` — ✅ |
+| 4 | Daily Operations & Logging | 1 + 3.5 offline | `04-daily-operations.md` — ✅; `04-daily-operations-offline.md` — placeholder |
+| 5 | Discharge & Transition | 4 | `05-discharge-transition.md` — not yet written |
+| 6 | Medication Management | 1 (in 04) + 2 (adv) + 3.5 patch | Basic in `04`; `06-medication-management.md` — ✅; Phase 3.5 `062` |
+| 7 | Incident & Risk Management | 1 + 3.5 patch | `07-incident-reporting.md` — ✅; Phase 3.5 `058` |
+| 8 | Autonomous Compliance Engine | 2 + 3.5 patch | `08-compliance-engine.md` — ✅; Phase 3.5 `064` |
+| 9 | Infection Control & Health Monitoring | 2 + 3.5 patch | `09-infection-control.md` — ✅; Phase 3.5 `063` |
+| 10 | Quality Metrics & Outcomes | 5 | `10-quality-metrics.md` — not yet written |
+| 11 | Staff Management & Scheduling | 1 + 3.5 patch | `11-staff-management.md` — ✅; Phase 3.5 `059` |
+| 12 | Training & Competency Management | 6 | `12-training-competency.md` — not yet written |
+| 13 | Facility Maintenance & Environment | 6 | `13-maintenance.md` — not yet written |
+| 14 | Dietary & Nutrition Management | 6 | `14-dietary-nutrition.md` — not yet written |
+| 15 | Transportation & Appointments | 6 | `15-transportation.md` — not yet written |
+| 16 | Resident Billing & Collections | 1 + 3.5 patch | `16-billing.md` — ✅; Phase 3.5 `060` |
+| 17 | Entity & Facility Finance | 3 + 3.5 patch | `17-entity-facility-finance.md` — ✅ Core; Enhanced `048` + `065` |
+| 18 | Insurance & Risk Finance | 3 + 3.5 patch | `18-insurance-risk-finance.md` — ✅ Core; Enhanced `049` + `066` |
+| 19 | Vendor & Contract Management | 3 + 3.5 patch | `19-vendor-contract-management.md` — ✅; Phase 3.5 `067` |
+| 20 | Expansion & Acquisition Planning | 7 | `20-expansion-acquisition.md` — not yet written |
+| 21 | Family Portal | 5 | `21-family-portal.md` — not yet written |
+| 22 | Referral Source CRM | 6 | `22-referral-crm.md` — not yet written |
+| 23 | Reputation & Online Presence | 6 | `23-reputation.md` — not yet written |
+| 24 | Executive Intelligence Layer | 3 (v1) + 5 (v2) | `24-executive-intelligence.md` — 🔲 NEXT (`047`); v2: `24-executive-v2.md` — Phase 5 |
+| 25 | Ambient Environment Intelligence | 8 | `25-ambient-intelligence.md` — not yet written (`097`–`098`) |
+| 26 | Facility Digital Twin | 6 | `26-digital-twin.md` — not yet written |
+| 27 | Regulatory Intelligence & Arbitrage | 7 | `27-regulatory-intelligence.md` — not yet written |
+
+### Cross-cutting AI subsystems (Phase 8)
+
+| ID | Name | Spec file | Migration | Notes |
+|----|------|-----------|-----------|-------|
+| AI-A | Cross-Resident Pattern Detection | `ai-A-pattern-detection.md` | `092`–`093` | `phi_class` gate via `ai_invocations` |
+| AI-B | Cognitive Load Engine | `ai-B-cognitive-load.md` | `094` | Reads Module 11 + 04 signals |
+| AI-C | Family Relationship Health | `ai-C-family-risk.md` | `095` | Blocked on BAA or de-ID |
+| AI-D | Portfolio Placement Optimizer | `ai-D-placement-optimizer.md` | `096` | OR over census + staffing |
+
+### Foundation addenda (not numbered modules)
+
+| Artifact | Purpose |
+|----------|---------|
+| `00-foundation.md` | Core tenancy, RLS, audit — patches in 3.5-A (`050`–`051`) |
+| `00-foundation-regulatory.md` | Regulatory/jurisdiction columns + ratio rules — `052` |
+
+---
 
 ## Implementation note (Supabase migrations in repo)
 

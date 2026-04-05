@@ -2,7 +2,7 @@
 
 **Dependencies:** Reads across **all shipped modules** — foundation, residents, daily ops, incidents, staff, billing, finance (17), compliance (08), infection (09), medication advanced (06), care planning advanced (03-adv). Optional aggregates from **18** and **19** when those tables exist.  
 **Build weeks (target):** 27–28 (Core v1)  
-**Migration sequence:** `046_*` (first migration for this module; follows `045_*` from Module 19)
+**Migration sequence:** `047_*` (first migration for this module; follows `046_*` from Module 19)
 
 ---
 
@@ -32,7 +32,10 @@
 
 ### Core (v1)
 
-- Tables: `exec_dashboard_configs`, `exec_kpi_snapshots`, `exec_alerts`, `exec_saved_reports`.
+- Tables: `exec_dashboard_configs`, `exec_kpi_snapshots`, `exec_alerts`, `exec_saved_reports`, **`exec_alert_user_state`**, **`benchmark_cohorts`**.
+- **`exec_kpi_snapshots.lineage`:** `jsonb` array of `{ "table": text, "id": uuid }` (or equivalent) so every aggregate can be traced to source rows for executive trust and audit.
+- **`exec_alert_user_state`:** per-user snooze / acknowledge separate from org-wide `exec_alerts.resolved_at` — prevents alert fatigue at portfolio scale (see § DATABASE SCHEMA).
+- **`benchmark_cohorts`:** optional peer-group definitions for KPI comparison; **`minimum_n integer NOT NULL CHECK (minimum_n >= 5)`** (or product-chosen floor) so small-N cohorts cannot be surfaced (antitrust / privacy).
 - **Computed KPIs** in application layer or SQL views/RPCs — no duplication of `invoices`, `incidents`, etc.
 - RLS: `owner`, `org_admin` full access to config/snapshots/alerts/reports; `facility_admin` **read-only** scoped to accessible facilities (snapshots and alerts filtered by `facility_id` when set).
 - Admin UI: routes in § Admin UI.
@@ -65,6 +68,8 @@ flowchart TB
   subgraph ei [Module 24]
     snap[exec_kpi_snapshots]
     alr[exec_alerts]
+    aus[exec_alert_user_state]
+    bench[benchmark_cohorts]
     cfg[exec_dashboard_configs]
   end
   sources -->|read queries| snap
@@ -72,9 +77,11 @@ flowchart TB
   cfg -->|widget layout| UI[Admin Executive UI]
   snap --> UI
   alr --> UI
+  alr --> aus
+  bench --> UI
 ```
 
-**No** ETL that copies resident PHI into new wide tables. **Optional** `metrics jsonb` in snapshots holds **aggregates only** (counts, sums in cents, rates).
+**No** ETL that copies resident PHI into new wide tables. **Optional** `metrics jsonb` in snapshots holds **aggregates only** (counts, sums in cents, rates). **`lineage jsonb`** on each snapshot row documents which source tables/rows fed the computation (drill-down trust and support).
 
 ---
 
@@ -176,6 +183,9 @@ CREATE TABLE exec_kpi_snapshots (
   metrics_version integer NOT NULL DEFAULT 1,
   metrics jsonb NOT NULL DEFAULT '{}'::jsonb,
 
+  -- Traceability: non-PHI references to contributing source rows (table name + record id).
+  lineage jsonb NOT NULL DEFAULT '[]'::jsonb,
+
   computed_at timestamptz NOT NULL DEFAULT now (),
   computed_by text DEFAULT 'cron',
 
@@ -226,6 +236,51 @@ WHERE
   deleted_at IS NULL;
 
 -- ============================================================
+-- ALERT USER STATE (snooze / per-user ack — portfolio scale)
+-- ============================================================
+CREATE TABLE exec_alert_user_state (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
+  organization_id uuid NOT NULL REFERENCES organizations (id),
+  exec_alert_id uuid NOT NULL REFERENCES exec_alerts (id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users (id),
+
+  acknowledged_at timestamptz,
+  snoozed_until timestamptz,
+  dismissed_at timestamptz,
+
+  created_at timestamptz NOT NULL DEFAULT now (),
+  updated_at timestamptz NOT NULL DEFAULT now (),
+  deleted_at timestamptz,
+
+  CONSTRAINT exec_alert_user_state_unique UNIQUE (exec_alert_id, user_id)
+);
+
+CREATE INDEX idx_exec_alert_user_state_user ON exec_alert_user_state (organization_id, user_id)
+WHERE
+  deleted_at IS NULL;
+
+-- ============================================================
+-- BENCHMARK COHORTS (peer groups; minimum-N privacy floor)
+-- ============================================================
+CREATE TABLE benchmark_cohorts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
+  organization_id uuid NOT NULL REFERENCES organizations (id),
+
+  name text NOT NULL,
+  description text,
+  facility_ids uuid[] NOT NULL DEFAULT '{}',
+  minimum_n integer NOT NULL DEFAULT 5 CHECK (minimum_n >= 5),
+
+  created_at timestamptz NOT NULL DEFAULT now (),
+  updated_at timestamptz NOT NULL DEFAULT now (),
+  deleted_at timestamptz
+);
+
+CREATE INDEX idx_benchmark_cohorts_org ON benchmark_cohorts (organization_id)
+WHERE
+  deleted_at IS NULL;
+
+-- ============================================================
 -- SAVED REPORTS
 -- ============================================================
 CREATE TABLE exec_saved_reports (
@@ -254,11 +309,11 @@ WHERE
 
 ## RLS POLICIES (policy intent)
 
-| Role | exec_dashboard_configs | exec_kpi_snapshots | exec_alerts | exec_saved_reports |
-|------|-------------------------|-------------------|-------------|-------------------|
-| `owner`, `org_admin` | CRUD own row (user_id = uid) | SELECT all in org; optional INSERT from service role for cron | SELECT/UPDATE (ack/resolve) all in org | Full CRUD |
-| `facility_admin` | CRUD own row | SELECT rows where `scope_type = 'facility'` AND `scope_id` in accessible facilities; SELECT org-level snapshots optional (read-only aggregate — product choice: **Core** = facility-scoped only for facility_admin) | SELECT/UPDATE where `facility_id` in accessible or null | No access (Core) |
-| Others | No access | No access | No access | No access |
+| Role | exec_dashboard_configs | exec_kpi_snapshots | exec_alerts | exec_alert_user_state | benchmark_cohorts | exec_saved_reports |
+|------|-------------------------|-------------------|-------------|----------------------|-------------------|-------------------|
+| `owner`, `org_admin` | CRUD own row (user_id = uid) | SELECT all in org; optional INSERT from service role for cron | SELECT/UPDATE (ack/resolve) all in org | CRUD own rows (user_id = uid) | Full CRUD | Full CRUD |
+| `facility_admin` | CRUD own row | SELECT rows where `scope_type = 'facility'` AND `scope_id` in accessible facilities; SELECT org-level snapshots optional (read-only aggregate — product choice: **Core** = facility-scoped only for facility_admin) | SELECT/UPDATE where `facility_id` in accessible or null | CRUD own rows for alerts they can see | SELECT cohorts that include only their facilities (or no access to cohort admin — product choice) | No access (Core) |
+| Others | No access | No access | No access | No access | No access | No access |
 
 **Recommended Core:** `facility_admin` sees **alerts** and **snapshots** only for their facilities; org-wide KPI tiles hidden or aggregated with label “Your facilities.”
 
@@ -266,7 +321,7 @@ WHERE
 
 ## Audit and updated_at
 
-- `exec_dashboard_configs`, `exec_kpi_snapshots`, `exec_alerts`, `exec_saved_reports`: `haven_set_updated_at` where updates allowed; `haven_capture_audit_log` on insert/update/delete for config, alerts, saved reports. Snapshots inserted by cron may use service role with audit metadata in `computed_by`.
+- `exec_dashboard_configs`, `exec_kpi_snapshots`, `exec_alerts`, `exec_alert_user_state`, `benchmark_cohorts`, `exec_saved_reports`: `haven_set_updated_at` where updates allowed; `haven_capture_audit_log` on insert/update/delete for config, alerts, user state, cohorts, saved reports. Snapshots inserted by cron may use service role with audit metadata in `computed_by`.
 
 ---
 
@@ -296,7 +351,7 @@ WHERE
 
 ## Acceptance criteria (Core v1)
 
-1. Migration `046_*` creates enums and four tables, indexes, RLS, triggers.
+1. Migration `047_*` creates enums and **seven** tables (`exec_dashboard_configs`, `exec_kpi_snapshots` with **`lineage`**, `exec_alerts`, **`exec_alert_user_state`**, **`benchmark_cohorts`**, `exec_saved_reports`), indexes, RLS, triggers.
 2. **owner** / **org_admin** see full org command center; **facility_admin** sees scoped snapshots/alerts per policy above.
 3. At least **five KPI families** wired from real queries (census, financial, incidents, compliance, workforce) — placeholders not allowed in production UAT.
 4. Drill-down links navigate to existing module routes with query params where helpful.
