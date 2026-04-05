@@ -4,11 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run migrations:check && next build",
+    "build": "npm run migrations:check && npm run check:admin-shell && next build",
     "build:web": "npm run build",
     "start": "next start",
     "lint": "eslint src",
     "audit:ci": "npm audit --audit-level=high",
+    "check:admin-shell": "node scripts/check-admin-shell-routes.mjs",
     "check:env-example": "node scripts/check-env-example.mjs",
     "check:secrets": "node scripts/check-tracked-secrets.mjs",
     "secrets:gitleaks": "node scripts/run-gitleaks.mjs",
