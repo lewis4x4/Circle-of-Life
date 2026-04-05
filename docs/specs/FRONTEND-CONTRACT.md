@@ -64,6 +64,18 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 - `/admin/infection-control/staff-illness`
 - `/admin/residents/[id]/vitals`
 - `/admin/residents/[id]/vitals/thresholds`
+- `/admin/compliance` (Phase 2 hub)
+- `/admin/compliance/deficiencies/new`
+- `/admin/compliance/deficiencies/[id]`
+- `/admin/compliance/policies`
+- `/admin/compliance/policies/new`
+- `/admin/compliance/policies/[id]/edit`
+- `/admin/finance` (Phase 3 Module 17 hub)
+- `/admin/finance/chart-of-accounts`
+- `/admin/finance/journal-entries`
+- `/admin/finance/journal-entries/new`
+- `/admin/finance/journal-entries/[id]`
+- `/admin/finance/ledger`
 
 ### Caregiver shell routes
 

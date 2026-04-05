@@ -52,7 +52,13 @@ After this scaffold sprint, resume backend spec implementation in original order
 
 ### Phase 3–7: Specs added on a rolling basis, always one phase ahead of build.
 
-**Phase 3 (orientation alignment with `docs/roadmap-overview.md`):** business and multi-entity depth — Modules **17** (entity & facility finance), **18** (insurance & risk finance), **19** (vendor & contract management), **24** (executive intelligence v1). Implement only after a numbered spec exists in this folder.
+**Phase 3 (orientation alignment with `docs/roadmap-overview.md`):** business and multi-entity depth — Modules **17** (Entity & Facility Finance), **18** (insurance & risk finance), **19** (vendor & contract management), **24** (executive intelligence v1). Implement only after a numbered spec exists in this folder.
+
+### Phase 3: Multi-entity finance & operations (Weeks 21+)
+
+| Order | Spec File | Module | Weeks | What It Adds |
+|-------|-----------|--------|-------|--------------|
+| 11 | `17-entity-facility-finance.md` | Entity & Facility Finance | 21–22 (slice 1) | Chart of accounts, journal entries/lines, read-only ledger; RLS; integration hooks to Module 16 (no auto-posting in slice 1) |
 
 ## Module Number Reference
 
@@ -76,7 +82,7 @@ Module numbers match the roadmap (27 modules total), NOT the build sequence. Not
 | 14 | Dietary & Nutrition Management | 6 | Not yet spec'd |
 | 15 | Transportation & Appointments | 6 | Not yet spec'd |
 | 16 | Resident Billing & Collections | 1 | ✅ Spec complete |
-| 17 | Entity & Facility Financial Management | 3 | Not yet spec'd |
+| 17 | Entity & Facility Finance | 3 | `17-entity-facility-finance.md` |
 | 18 | Insurance & Risk Finance | 3 | Not yet spec'd |
 | 19 | Vendor & Contract Management | 3 | Not yet spec'd |
 | 20 | Expansion & Acquisition Planning | 7 | Not yet spec'd |
