@@ -4,7 +4,7 @@
 
 **Do not overstate:** This document must distinguish **automated/repo verification** from **live UAT + RLS + production compliance**.
 
-**Last updated:** 2026-04-05 — engineering baseline + UI gates refreshed; remote DB alignment still **owner-verified** (see below).
+**Last updated:** 2026-04-05 — engineering baseline + UI gates; **remote migrations 001–069** and Edge Functions deploy verified via Supabase CLI (see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md)).
 
 ---
 
@@ -14,7 +14,7 @@
 |-----------|---------------------|
 | **Engineering baseline** (lint, build, migration replay, secrets, audit, segment gates) | **PASS** — see § Gate evidence |
 | **Target `.env` / Supabase project alignment** | **VERIFY** — canonical URL in [README.md](./README.md); owner confirms `.env.local` host; [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
-| **Remote migrations aligned** | **VERIFY** — repo contains **001–069** (`migrations:check`); last documented remote sync **001–041** (2026-04-06). Owner runs `supabase migration list` / `db push` until pilot remote matches intended ceiling |
+| **Remote migrations aligned** | **PASS** — `supabase migration list` Local/Remote **001–069** (2026-04-05); `db push` up to date |
 | **Seeded users (admin / caregiver / family) + facility context** | **PENDING** — owner UAT / [DEMO-SEED-RUNBOOK.md](./DEMO-SEED-RUNBOOK.md) |
 | **Checklist §A–F (real auth)** | **PENDING** — [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) |
 | **RLS matrix** | **PENDING** — [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md); procedure [PHASE1-RLS-MANUAL-PROCEDURE.md](./PHASE1-RLS-MANUAL-PROCEDURE.md) |
@@ -23,14 +23,14 @@
 
 ### Overall Phase 1 full acceptance
 
-**NOT COMPLETE** as of 2026-04-06.
+**NOT COMPLETE** as of 2026-04-05.
 
 **Blockers to full acceptance:**
 
 1. **RLS:** Execute **RLS-01–07** on target project with real JWTs; record **PASS** in [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md).
 2. **UAT:** Complete [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) sections A–D and manual E rows with real auth.
 3. **Production compliance:** Owner confirms Pro / BAA / PITR in dashboard.
-4. **Environment:** Owner confirms `.env.local` host matches canonical project ([PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md)); seed users / facility selector per execution log.
+4. **Environment:** Owner confirms `.env.local` host matches canonical project ([PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md)); demo seed + facility selector / **PH1-P03–P04** per execution log.
 
 **Waivers alone do not close Phase 1** while RLS or checklist UAT remain open.
 
