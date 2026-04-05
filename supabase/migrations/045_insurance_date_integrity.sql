@@ -15,8 +15,8 @@ ALTER TABLE premium_allocations
 ALTER TABLE loss_runs
   ADD CONSTRAINT loss_runs_period_chk CHECK (period_end >= period_start);
 
-ALTER TABLE insurance_renewals
-  ADD CONSTRAINT insurance_renewals_modified_duty_chk CHECK (
+ALTER TABLE workers_comp_claims
+  ADD CONSTRAINT workers_comp_claims_modified_duty_chk CHECK (
     modified_duty_start IS NULL
     OR modified_duty_end IS NULL
     OR modified_duty_end >= modified_duty_start
