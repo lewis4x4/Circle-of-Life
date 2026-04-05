@@ -28,6 +28,7 @@ import {
   Scale,
   Landmark,
   Umbrella,
+  Truck,
   MessageCircle,
   Sun,
   Moon,
@@ -134,6 +135,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     { key: "billing", href: "/admin/billing", label: "Billing", enabled: true, icon: CreditCard },
     { key: "finance", href: "/admin/finance", label: "Finance", enabled: true, icon: Landmark },
     { key: "insurance", href: "/admin/insurance", label: "Insurance", enabled: true, icon: Umbrella },
+    { key: "vendors", href: "/admin/vendors", label: "Vendors", enabled: true, icon: Truck },
     { key: "family-messages", href: "/admin/family-messages", label: "Family Messages", enabled: true, icon: MessageCircle },
   ];
 
@@ -167,7 +169,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               (item.key === "infection" && pathname.startsWith("/admin/infection-control")) ||
               (item.key === "compliance" && pathname.startsWith("/admin/compliance")) ||
               (item.key === "finance" && pathname.startsWith("/admin/finance")) ||
-              (item.key === "insurance" && pathname.startsWith("/admin/insurance"));
+              (item.key === "insurance" && pathname.startsWith("/admin/insurance")) ||
+              (item.key === "vendors" && pathname.startsWith("/admin/vendors"));
             const Icon = item.icon;
             
             if (!item.enabled) {

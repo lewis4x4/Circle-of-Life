@@ -74,8 +74,8 @@ After this scaffold sprint, resume backend spec implementation in original order
 |-------|-----------|--------|-----------|--------|-----------------|
 | 11 | `17-entity-facility-finance.md` | Entity & Facility Finance (Core) | `040`–`043` | ✅ SHIPPED | Chart of accounts, journal entries/lines, read-only ledger, GL settings, budget lines; RLS; `/admin/finance/*` (7 routes) |
 | 12 | `18-insurance-risk-finance.md` | Insurance & Risk Finance (Core) | `044`–`045` | ✅ SHIPPED | Policy inventory, renewals, data packages, claims (incident-linked), loss runs, premium allocations, COI tracking, workers' comp headers; GL hooks; `/admin/insurance/*` (10 routes) |
-| 13 | `19-vendor-contract-management.md` | Vendor & Contract Management (Core) | `046` | 🔲 NEXT | Vendor master, facility links, contracts, terms, alerts, POs with three-way match, vendor invoices, payments with GL hooks, vendor insurance (COI cross-ref to Module 18), scorecards; `/admin/vendors/*` (12 routes) |
-| 14 | `24-executive-intelligence.md` | Executive Intelligence Layer v1 | `047` | ⬜ QUEUED | Org command center, per-user dashboard config, KPI snapshots (8 domains from all shipped modules), prioritized alert feed with drill-down, saved reports; `/admin/executive/*` (6 routes) |
+| 13 | `19-vendor-contract-management.md` | Vendor & Contract Management (Core) | `046` | ✅ SHIPPED | Vendor master, facility links, contracts, terms, alerts, POs with three-way match, vendor invoices, payments with GL hooks, vendor insurance (COI cross-ref to Module 18), scorecards; `/admin/vendors/*` (12 routes) |
+| 14 | `24-executive-intelligence.md` | Executive Intelligence Layer v1 | `047` | 🔲 NEXT | Org command center, per-user dashboard config, KPI snapshots (8 domains from all shipped modules), prioritized alert feed with drill-down, saved reports; `/admin/executive/*` (6 routes) |
 
 #### Phase 3 Enhanced slices (after Core 13–14 complete)
 
@@ -86,7 +86,7 @@ After this scaffold sprint, resume backend spec implementation in original order
 
 #### Phase 3 implementation detail per module
 
-**Module 19 — Vendor & Contract Management** (🔲 NEXT)
+**Module 19 — Vendor & Contract Management** (✅ SHIPPED)
 
 Migration `046_vendor_contract_management.sql`: 8 enums, 14 tables, full RLS, audit triggers.
 
@@ -105,7 +105,7 @@ Routes: `/admin/vendors` (hub), `/admin/vendors/directory`, `/admin/vendors/[id]
 
 ---
 
-**Module 24 — Executive Intelligence Layer v1** (⬜ QUEUED after 19)
+**Module 24 — Executive Intelligence Layer v1** (🔲 NEXT)
 
 Migration `047_executive_intelligence.sql`: 4 enums, 4 tables, full RLS, audit triggers.
 
@@ -187,12 +187,12 @@ Module numbers match the roadmap (27 modules total), NOT the build sequence. Not
 | 16 | Resident Billing & Collections | 1 | ✅ Spec complete |
 | 17 | Entity & Facility Finance | 3 | `17-entity-facility-finance.md` — ✅ Core shipped; Enhanced queued |
 | 18 | Insurance & Risk Finance | 3 | `18-insurance-risk-finance.md` — ✅ Core shipped; Enhanced queued |
-| 19 | Vendor & Contract Management | 3 | `19-vendor-contract-management.md` — 🔲 NEXT |
+| 19 | Vendor & Contract Management | 3 | `19-vendor-contract-management.md` — ✅ SHIPPED |
 | 20 | Expansion & Acquisition Planning | 7 | Not yet spec'd |
 | 21 | Family Portal | 5 | Not yet spec'd |
 | 22 | Referral Source CRM | 6 | Not yet spec'd |
 | 23 | Reputation & Online Presence | 6 | Not yet spec'd |
-| 24 | Executive Intelligence Layer | 3 (v1) + 7 (v2) | v1: `24-executive-intelligence.md` — ⬜ Queued after Module 19 |
+| 24 | Executive Intelligence Layer | 3 (v1) + 7 (v2) | v1: `24-executive-intelligence.md` — 🔲 NEXT |
 | 25 | Ambient Environment Intelligence | 5 | Not yet spec'd |
 | 26 | Facility Digital Twin | 6 | Not yet spec'd |
 | 27 | Regulatory Intelligence & Arbitrage | 7 | Not yet spec'd |

@@ -7016,6 +7016,904 @@ export type Database = {
           },
         ]
       }
+      contract_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          alert_date: string
+          alert_type: Database["public"]["Enums"]["contract_alert_type"]
+          contract_id: string
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          id: string
+          organization_id: string
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["contract_alert_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_date: string
+          alert_type: Database["public"]["Enums"]["contract_alert_type"]
+          contract_id: string
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          organization_id: string
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["contract_alert_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_date?: string
+          alert_type?: Database["public"]["Enums"]["contract_alert_type"]
+          contract_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          organization_id?: string
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["contract_alert_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_alerts_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_alerts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contract_terms: {
+        Row: {
+          contract_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          insurance_requirements: string | null
+          notes: string | null
+          organization_id: string
+          price_escalation_percent: number | null
+          sla_response_hours: number | null
+          updated_at: string
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          insurance_requirements?: string | null
+          notes?: string | null
+          organization_id: string
+          price_escalation_percent?: number | null
+          sla_response_hours?: number | null
+          updated_at?: string
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          insurance_requirements?: string | null
+          notes?: string | null
+          organization_id?: string
+          price_escalation_percent?: number | null
+          sla_response_hours?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_terms_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_terms_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contracts: {
+        Row: {
+          auto_renew: boolean
+          contract_type: Database["public"]["Enums"]["contract_type"]
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          document_storage_path: string | null
+          effective_date: string
+          expiration_date: string | null
+          id: string
+          organization_id: string
+          payment_terms: string | null
+          termination_notice_days: number | null
+          title: string
+          total_value_cents: number | null
+          updated_at: string
+          updated_by: string | null
+          vendor_id: string
+        }
+        Insert: {
+          auto_renew?: boolean
+          contract_type?: Database["public"]["Enums"]["contract_type"]
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          document_storage_path?: string | null
+          effective_date: string
+          expiration_date?: string | null
+          id?: string
+          organization_id: string
+          payment_terms?: string | null
+          termination_notice_days?: number | null
+          title: string
+          total_value_cents?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          vendor_id: string
+        }
+        Update: {
+          auto_renew?: boolean
+          contract_type?: Database["public"]["Enums"]["contract_type"]
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          document_storage_path?: string | null
+          effective_date?: string
+          expiration_date?: string | null
+          id?: string
+          organization_id?: string
+          payment_terms?: string | null
+          termination_notice_days?: number | null
+          title?: string
+          total_value_cents?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      po_line_items: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          description: string
+          id: string
+          line_number: number
+          line_total_cents: number
+          organization_id: string
+          purchase_order_id: string
+          quantity: number
+          received_quantity: number
+          unit_cost_cents: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          description: string
+          id?: string
+          line_number: number
+          line_total_cents?: number
+          organization_id: string
+          purchase_order_id: string
+          quantity?: number
+          received_quantity?: number
+          unit_cost_cents?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          description?: string
+          id?: string
+          line_number?: number
+          line_total_cents?: number
+          organization_id?: string
+          purchase_order_id?: string
+          quantity?: number
+          received_quantity?: number
+          unit_cost_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "po_line_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "po_line_items_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          expected_date: string | null
+          facility_id: string
+          id: string
+          notes: string | null
+          order_date: string
+          organization_id: string
+          po_number: string
+          status: Database["public"]["Enums"]["po_status"]
+          total_cents: number
+          updated_at: string
+          updated_by: string | null
+          vendor_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          expected_date?: string | null
+          facility_id: string
+          id?: string
+          notes?: string | null
+          order_date: string
+          organization_id: string
+          po_number: string
+          status?: Database["public"]["Enums"]["po_status"]
+          total_cents?: number
+          updated_at?: string
+          updated_by?: string | null
+          vendor_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          expected_date?: string | null
+          facility_id?: string
+          id?: string
+          notes?: string | null
+          order_date?: string
+          organization_id?: string
+          po_number?: string
+          status?: Database["public"]["Enums"]["po_status"]
+          total_cents?: number
+          updated_at?: string
+          updated_by?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_facilities: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          facility_id: string
+          id: string
+          is_primary: boolean
+          organization_id: string
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          facility_id: string
+          id?: string
+          is_primary?: boolean
+          organization_id: string
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          facility_id?: string
+          id?: string
+          is_primary?: boolean
+          organization_id?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_facilities_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_facilities_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_facilities_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_invoice_lines: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          description: string
+          id: string
+          line_number: number
+          line_total_cents: number
+          organization_id: string
+          po_line_item_id: string | null
+          quantity: number
+          unit_cost_cents: number
+          vendor_invoice_id: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          description: string
+          id?: string
+          line_number: number
+          line_total_cents?: number
+          organization_id: string
+          po_line_item_id?: string | null
+          quantity?: number
+          unit_cost_cents?: number
+          vendor_invoice_id: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          description?: string
+          id?: string
+          line_number?: number
+          line_total_cents?: number
+          organization_id?: string
+          po_line_item_id?: string | null
+          quantity?: number
+          unit_cost_cents?: number
+          vendor_invoice_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_invoice_lines_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_invoice_lines_vendor_invoice_id_fkey"
+            columns: ["vendor_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_invoices: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          document_storage_path: string | null
+          due_date: string
+          facility_id: string
+          id: string
+          invoice_date: string
+          invoice_number: string
+          notes: string | null
+          organization_id: string
+          purchase_order_id: string | null
+          status: Database["public"]["Enums"]["vendor_invoice_status"]
+          total_cents: number
+          updated_at: string
+          updated_by: string | null
+          vendor_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          document_storage_path?: string | null
+          due_date: string
+          facility_id: string
+          id?: string
+          invoice_date: string
+          invoice_number: string
+          notes?: string | null
+          organization_id: string
+          purchase_order_id?: string | null
+          status?: Database["public"]["Enums"]["vendor_invoice_status"]
+          total_cents?: number
+          updated_at?: string
+          updated_by?: string | null
+          vendor_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          document_storage_path?: string | null
+          due_date?: string
+          facility_id?: string
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          notes?: string | null
+          organization_id?: string
+          purchase_order_id?: string | null
+          status?: Database["public"]["Enums"]["vendor_invoice_status"]
+          total_cents?: number
+          updated_at?: string
+          updated_by?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_invoices_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_invoices_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_payment_applications: {
+        Row: {
+          applied_amount_cents: number
+          created_at: string
+          deleted_at: string | null
+          id: string
+          organization_id: string
+          vendor_invoice_id: string
+          vendor_payment_id: string
+        }
+        Insert: {
+          applied_amount_cents: number
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          organization_id: string
+          vendor_invoice_id: string
+          vendor_payment_id: string
+        }
+        Update: {
+          applied_amount_cents?: number
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          organization_id?: string
+          vendor_invoice_id?: string
+          vendor_payment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_payment_applications_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_payment_applications_vendor_invoice_id_fkey"
+            columns: ["vendor_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_payment_applications_vendor_payment_id_fkey"
+            columns: ["vendor_payment_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_payments: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          entity_id: string
+          facility_id: string
+          id: string
+          notes: string | null
+          organization_id: string
+          payment_date: string
+          payment_method: string
+          reference_number: string | null
+          updated_at: string
+          updated_by: string | null
+          vendor_id: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          entity_id: string
+          facility_id: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          payment_date: string
+          payment_method: string
+          reference_number?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          vendor_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          entity_id?: string
+          facility_id?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          payment_date?: string
+          payment_method?: string
+          reference_number?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_payments_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_payments_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_payments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_payments_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_po_sequences: {
+        Row: {
+          last_number: number
+          organization_id: string
+          year: string
+        }
+        Insert: {
+          last_number?: number
+          organization_id: string
+          year: string
+        }
+        Update: {
+          last_number?: number
+          organization_id?: string
+          year?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_po_sequences_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_insurance: {
+        Row: {
+          additional_insured: boolean
+          carrier_name: string | null
+          certificate_of_insurance_id: string | null
+          compliant: boolean
+          created_at: string
+          deleted_at: string | null
+          effective_date: string
+          expiration_date: string
+          id: string
+          insurance_type: string
+          notes: string | null
+          organization_id: string
+          policy_number: string | null
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          additional_insured?: boolean
+          carrier_name?: string | null
+          certificate_of_insurance_id?: string | null
+          compliant?: boolean
+          created_at?: string
+          deleted_at?: string | null
+          effective_date: string
+          expiration_date: string
+          id?: string
+          insurance_type: string
+          notes?: string | null
+          organization_id: string
+          policy_number?: string | null
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          additional_insured?: boolean
+          carrier_name?: string | null
+          certificate_of_insurance_id?: string | null
+          compliant?: boolean
+          created_at?: string
+          deleted_at?: string | null
+          effective_date?: string
+          expiration_date?: string
+          id?: string
+          insurance_type?: string
+          notes?: string | null
+          organization_id?: string
+          policy_number?: string | null
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_insurance_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_insurance_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_scorecards: {
+        Row: {
+          compliance_score: number | null
+          cost_score: number | null
+          created_at: string
+          deleted_at: string | null
+          id: string
+          organization_id: string
+          quality_score: number | null
+          review_period_end: string
+          review_period_start: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewer_notes: string | null
+          timeliness_score: number | null
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          compliance_score?: number | null
+          cost_score?: number | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          organization_id: string
+          quality_score?: number | null
+          review_period_end: string
+          review_period_start: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_notes?: string | null
+          timeliness_score?: number | null
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          compliance_score?: number | null
+          cost_score?: number | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          organization_id?: string
+          quality_score?: number | null
+          review_period_end?: string
+          review_period_start?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_notes?: string | null
+          timeliness_score?: number | null
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_scorecards_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_scorecards_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendors: {
+        Row: {
+          category: Database["public"]["Enums"]["vendor_category"]
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          id: string
+          name: string
+          notes: string | null
+          organization_id: string
+          primary_contact_email: string | null
+          primary_contact_name: string | null
+          primary_contact_phone: string | null
+          remit_to_address: string | null
+          status: Database["public"]["Enums"]["vendor_status"]
+          tax_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["vendor_category"]
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          organization_id: string
+          primary_contact_email?: string | null
+          primary_contact_name?: string | null
+          primary_contact_phone?: string | null
+          remit_to_address?: string | null
+          status?: Database["public"]["Enums"]["vendor_status"]
+          tax_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["vendor_category"]
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          primary_contact_email?: string | null
+          primary_contact_name?: string | null
+          primary_contact_phone?: string | null
+          remit_to_address?: string | null
+          status?: Database["public"]["Enums"]["vendor_status"]
+          tax_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendors_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -7023,6 +7921,10 @@ export type Database = {
     Functions: {
       allocate_incident_number: {
         Args: { p_facility_id: string }
+        Returns: string
+      }
+      allocate_vendor_po_number: {
+        Args: { p_organization_id: string }
         Returns: string
       }
     }
@@ -7065,6 +7967,15 @@ export type Database = {
       care_plan_status: "draft" | "active" | "under_review" | "archived"
       certification_status: "active" | "expired" | "pending_renewal" | "revoked"
       coi_holder_type: "vendor" | "landlord" | "lender" | "other"
+      contract_alert_status: "pending" | "acknowledged" | "resolved" | "dismissed"
+      contract_alert_type:
+        | "renewal"
+        | "termination_notice"
+        | "auto_renew"
+        | "price_escalation"
+        | "coi_expiration"
+        | "other"
+      contract_type: "service" | "lease" | "license" | "subscription" | "maintenance" | "other"
       controlled_schedule: "ii" | "iii" | "iv" | "v" | "non_controlled"
       discharge_reason:
         | "higher_level_of_care"
@@ -7178,6 +8089,14 @@ export type Database = {
         | "ltc_insurance"
         | "va_aid_attendance"
         | "other"
+      po_status:
+        | "draft"
+        | "submitted"
+        | "approved"
+        | "partially_received"
+        | "received"
+        | "closed"
+        | "cancelled"
       payment_method:
         | "check"
         | "ach"
@@ -7216,6 +8135,23 @@ export type Database = {
         | "housekeeping"
         | "driver"
         | "other"
+      vendor_category:
+        | "maintenance"
+        | "medical_supply"
+        | "pharmacy"
+        | "food_service"
+        | "staffing_agency"
+        | "consulting"
+        | "technology"
+        | "other"
+      vendor_invoice_status:
+        | "draft"
+        | "submitted"
+        | "approved"
+        | "matched"
+        | "paid"
+        | "voided"
+      vendor_status: "draft" | "active" | "inactive" | "blocked"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -7384,6 +8320,16 @@ export const Constants = {
       care_plan_status: ["draft", "active", "under_review", "archived"],
       certification_status: ["active", "expired", "pending_renewal", "revoked"],
       coi_holder_type: ["vendor", "landlord", "lender", "other"],
+      contract_alert_status: ["pending", "acknowledged", "resolved", "dismissed"],
+      contract_alert_type: [
+        "renewal",
+        "termination_notice",
+        "auto_renew",
+        "price_escalation",
+        "coi_expiration",
+        "other",
+      ],
+      contract_type: ["service", "lease", "license", "subscription", "maintenance", "other"],
       controlled_schedule: ["ii", "iii", "iv", "v", "non_controlled"],
       discharge_reason: [
         "higher_level_of_care",
@@ -7506,6 +8452,15 @@ export const Constants = {
         "va_aid_attendance",
         "other",
       ],
+      po_status: [
+        "draft",
+        "submitted",
+        "approved",
+        "partially_received",
+        "received",
+        "closed",
+        "cancelled",
+      ],
       payment_method: [
         "check",
         "ach",
@@ -7548,6 +8503,18 @@ export const Constants = {
         "driver",
         "other",
       ],
+      vendor_category: [
+        "maintenance",
+        "medical_supply",
+        "pharmacy",
+        "food_service",
+        "staffing_agency",
+        "consulting",
+        "technology",
+        "other",
+      ],
+      vendor_invoice_status: ["draft", "submitted", "approved", "matched", "paid", "voided"],
+      vendor_status: ["draft", "active", "inactive", "blocked"],
     },
   },
 } as const

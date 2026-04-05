@@ -1,0 +1,1 @@
+export { default } from "../../../../vendors/purchase-orders/new/page";

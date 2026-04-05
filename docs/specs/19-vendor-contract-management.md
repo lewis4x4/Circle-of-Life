@@ -1,8 +1,8 @@
 # 19 — Vendor & Contract Management (Phase 3)
 
-**Dependencies:** `00-foundation`, `16-billing` (optional spend alignment), `17-entity-facility-finance` (vendor payment GL posting), `18-insurance-risk-finance` (COI cross-reference — optional FK)  
+**Dependencies:** `00-foundation`, `16-billing` (optional spend alignment), `17-entity-facility-finance` (vendor payment GL posting), `18-insurance-risk-finance` (COI cross-reference — FK on `certificates_of_insurance`)  
 **Build weeks (target):** 25–26 (Core slice 1)  
-**Migration sequence:** `045_*` (first migration for this module; follows `044_*` from Module 18)
+**Migration sequence:** `046_*` (first migration for this module; follows `045_*` date-integrity patch from Module 18)
 
 ---
 
@@ -28,6 +28,20 @@
 - **Payments** recorded in cents; optional GL posting via Module 17.
 
 **Non-goals (Core):** No vendor self-service portal; no RFP/RFQ bidding; no AI PDF extraction.
+
+### Control plane (Core) — create vs approve
+
+| Artifact | `facility_admin` | `owner` / `org_admin` |
+|----------|------------------|------------------------|
+| Vendor master & facility links | Read vendors linked to their facilities | Full CRUD |
+| Contracts & terms | Read (vendor-scoped) | Full CRUD |
+| PO | Create/edit **draft** and **submitted**; receive (**approved** → **received** / **partially_received**); cannot **approve**, **cancel**, or close books | Approve PO (**submitted** → **approved**), **cancel**, set **closed** when appropriate |
+| Vendor invoice | Create/edit **draft** / **submitted**; cannot set **matched**, **paid**, **voided** | Approve to **matched**; mark **paid** / **void** |
+| Vendor payment & applications | Read/create payments for **their facilities** (when Enhanced allows); Core UI may restrict payments to org_admin — see RLS | Full CRUD |
+
+**PO numbers:** Core allocates monotonic display numbers per org/year via `public.allocate_vendor_po_number(uuid)` (SECURITY DEFINER) and `vendor_po_sequences` — avoids collisions and manual entry drift.
+
+**Documents:** `document_storage_path` holds the **object key** (or path) for a future Supabase Storage bucket (e.g. `vendor-contracts/{org_id}/...`). Core does not require Storage wiring to ship; UI may accept a pasted path for traceability.
 
 ---
 
@@ -479,16 +493,29 @@ WHERE
   deleted_at IS NULL;
 ```
 
-**FK note:** In migration `045_*`, add `certificate_of_insurance_id uuid REFERENCES certificates_of_insurance(id)` when Module 18 migration is present; otherwise nullable without FK until 018 ships.
+**FK:** In migration `046_*`, `vendor_insurance.certificate_of_insurance_id uuid NULL REFERENCES certificates_of_insurance(id)` (Module 18 is a prerequisite in this repo).
+
+### PO sequence (implementation)
+
+```sql
+CREATE TABLE vendor_po_sequences (
+  organization_id uuid NOT NULL REFERENCES organizations (id),
+  year text NOT NULL,
+  last_number integer NOT NULL DEFAULT 0,
+  PRIMARY KEY (organization_id, year)
+);
+-- RLS: deny direct access; bumps happen only inside allocate_vendor_po_number (SECURITY DEFINER).
+```
 
 ---
 
 ## Business rules
 
 - **PO total** must equal sum of `po_line_items.line_total_cents` (app validation; optional DB deferred constraint).
-- **Three-way match:** `vendor_invoice_lines` quantities/costs should align with PO line receipts; status `matched` only when approved by owner/org_admin (or rule in Enhanced).
-- **Vendor payments:** `vendor_payment_applications` sum per `vendor_invoice_id` must not exceed invoice `total_cents`.
+- **Three-way match:** `vendor_invoice_lines` quantities/costs should align with PO line receipts; status `matched` only for **owner/org_admin** (enforced in RLS + triggers).
+- **Vendor payments:** `vendor_payment_applications` sum per `vendor_invoice_id` must not exceed invoice `total_cents` (DB trigger on `vendor_payment_applications`).
 - **Money:** all amounts **integer cents** on monetary fields.
+- **DB triggers (Core):** `facility_admin` cannot set `purchase_orders.status` to `approved` or `cancelled`; cannot set `vendor_invoices.status` to `matched`, `approved`, `paid`, or `voided`.
 
 ---
 
@@ -529,10 +556,11 @@ WHERE
 
 ## Acceptance criteria (Core)
 
-1. Migration `045_*` creates enums and tables, indexes, RLS, audit triggers.
-2. **owner** / **org_admin** can manage full vendor lifecycle; **facility_admin** can operate POs/invoices for assigned facilities only.
+1. Migration `046_*` creates enums, tables (including `vendor_po_sequences`), `allocate_vendor_po_number`, indexes, RLS, status-guard triggers, payment-application total trigger, audit/`updated_at` triggers.
+2. **owner** / **org_admin** can manage full vendor lifecycle; **facility_admin** is scoped per matrix above.
 3. `npm run migrations:check` and `npm run migrations:verify:pg` pass.
-4. Segment gate with `--ui` passes for `/admin/vendors/*` routes.
+4. `npm run check:admin-shell` passes (`/vendors` in `ADMIN_SHELL_SEGMENTS`).
+5. `npm run segment:gates -- --segment "module-19-vendor-contract-management" --ui` passes (design review + a11y use default routes unless `DESIGN_REVIEW_ROUTES` is set in CI).
 
 ---
 
