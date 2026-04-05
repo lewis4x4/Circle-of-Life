@@ -12,6 +12,7 @@ const LINKS = [
   { href: "/admin/billing/rates", label: "Rates" },
   { href: "/admin/billing/invoices/generate", label: "Generate" },
   { href: "/admin/billing/payments/new", label: "New payment" },
+  { href: "/admin/billing/collections", label: "Collections" },
   { href: "/admin/billing/ar-aging", label: "AR aging" },
   { href: "/admin/billing/revenue", label: "Revenue" },
   { href: "/admin/billing/org-ar-aging", label: "Org AR" },
