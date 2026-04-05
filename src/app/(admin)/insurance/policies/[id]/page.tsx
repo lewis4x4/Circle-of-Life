@@ -36,7 +36,7 @@ export default function InsurancePolicyDetailPage() {
     setError(null);
     const ctx = await loadFinanceRoleContext(supabase);
     if (!ctx.ok) {
-      setError("Sign-in required.");
+      setError(ctx.error);
       setLoading(false);
       return;
     }
@@ -49,10 +49,15 @@ export default function InsurancePolicyDetailPage() {
     }
     const p = pol as Policy;
     setPolicy(p);
-    const { data: ent } = await supabase.from("entities").select("name").eq("id", p.entity_id).maybeSingle();
+    const { data: ent, error: entErr } = await supabase.from("entities").select("name").eq("id", p.entity_id).maybeSingle();
+    if (entErr) {
+      setError(entErr.message);
+      setLoading(false);
+      return;
+    }
     setEntityName((ent as { name: string } | null)?.name ?? p.entity_id);
 
-    const [{ data: r }, { data: c }, { data: a }] = await Promise.all([
+    const [{ data: r, error: rErr }, { data: c, error: cErr }, { data: a, error: aErr }] = await Promise.all([
       supabase
         .from("insurance_renewals")
         .select("*")
@@ -72,6 +77,12 @@ export default function InsurancePolicyDetailPage() {
         .is("deleted_at", null)
         .order("period_end", { ascending: false }),
     ]);
+    const subErr = rErr ?? cErr ?? aErr;
+    if (subErr) {
+      setError(subErr.message);
+      setLoading(false);
+      return;
+    }
     setRenewals((r ?? []) as Renewal[]);
     setClaims((c ?? []) as Claim[]);
     setAllocs((a ?? []) as Alloc[]);

@@ -23,23 +23,32 @@ export default function InsurancePoliciesPage() {
   const [entityFilter, setEntityFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [ctx, setCtx] = useState<Awaited<ReturnType<typeof loadFinanceRoleContext>> | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     const c = await loadFinanceRoleContext(supabase);
     setCtx(c);
     if (!c.ok) {
       setRows([]);
+      setLoadError(c.error);
       setLoading(false);
       return;
     }
-    const { data: ent } = await supabase
+    const { data: ent, error: entErr } = await supabase
       .from("entities")
       .select("id, name")
       .eq("organization_id", c.ctx.organizationId)
       .is("deleted_at", null)
       .order("name");
+    if (entErr) {
+      setLoadError(entErr.message);
+      setRows([]);
+      setLoading(false);
+      return;
+    }
     setEntities((ent ?? []) as EntityMini[]);
 
     let q = supabase
@@ -50,7 +59,13 @@ export default function InsurancePoliciesPage() {
       .order("expiration_date", { ascending: true });
     if (entityFilter) q = q.eq("entity_id", entityFilter);
     if (statusFilter) q = q.eq("status", statusFilter as PolicyRow["status"]);
-    const { data } = await q;
+    const { data, error: polErr } = await q;
+    if (polErr) {
+      setLoadError(polErr.message);
+      setRows([]);
+      setLoading(false);
+      return;
+    }
     setRows((data ?? []) as PolicyRow[]);
     setLoading(false);
   }, [supabase, entityFilter, statusFilter]);
@@ -69,6 +84,12 @@ export default function InsurancePoliciesPage() {
   return (
     <div className="space-y-6">
       <InsuranceHubNav />
+      {loadError && (
+        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+          {loadError}
+        </p>
+      )}
+
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Policies</h1>

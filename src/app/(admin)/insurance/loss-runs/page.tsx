@@ -15,21 +15,30 @@ export default function InsuranceLossRunsPage() {
   const supabase = createClient();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     const ctx = await loadFinanceRoleContext(supabase);
     if (!ctx.ok) {
       setRows([]);
+      setLoadError(ctx.error);
       setLoading(false);
       return;
     }
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("loss_runs")
       .select("*")
       .eq("organization_id", ctx.ctx.organizationId)
       .is("deleted_at", null)
       .order("period_end", { ascending: false });
+    if (error) {
+      setLoadError(error.message);
+      setRows([]);
+      setLoading(false);
+      return;
+    }
     setRows((data ?? []) as Row[]);
     setLoading(false);
   }, [supabase]);
@@ -47,6 +56,11 @@ export default function InsuranceLossRunsPage() {
           Generated loss summaries by entity and period (export in a later iteration).
         </p>
       </div>
+      {loadError && (
+        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+          {loadError}
+        </p>
+      )}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">History</CardTitle>

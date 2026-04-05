@@ -33,6 +33,7 @@ export default function NewInsurancePolicyPage() {
   const [entities, setEntities] = useState<EntityMini[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const [entityId, setEntityId] = useState("");
   const [policyType, setPolicyType] = useState<Database["public"]["Enums"]["insurance_policy_type"]>("general_liability");
@@ -46,15 +47,23 @@ export default function NewInsurancePolicyPage() {
   const [notes, setNotes] = useState("");
 
   const load = useCallback(async () => {
+    setLoadError(null);
     const c = await loadFinanceRoleContext(supabase);
     setCtx(c);
-    if (!c.ok) return;
-    const { data: ent } = await supabase
+    if (!c.ok) {
+      setLoadError(c.error);
+      return;
+    }
+    const { data: ent, error: entErr } = await supabase
       .from("entities")
       .select("id, name")
       .eq("organization_id", c.ctx.organizationId)
       .is("deleted_at", null)
       .order("name");
+    if (entErr) {
+      setLoadError(entErr.message);
+      return;
+    }
     const list = (ent ?? []) as EntityMini[];
     setEntities(list);
     setEntityId((prev) => (prev && list.some((e) => e.id === prev) ? prev : list[0]?.id ?? ""));
@@ -124,9 +133,9 @@ export default function NewInsurancePolicyPage() {
         <p className="text-sm text-slate-600 dark:text-slate-400">Add an entity-level corporate insurance policy.</p>
       </div>
 
-      {error && (
+      {(loadError || error) && (
         <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-          {error}
+          {loadError ?? error}
         </p>
       )}
 

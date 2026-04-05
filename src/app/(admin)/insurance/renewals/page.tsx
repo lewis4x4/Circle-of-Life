@@ -16,21 +16,30 @@ export default function InsuranceRenewalsPage() {
   const supabase = createClient();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     const ctx = await loadFinanceRoleContext(supabase);
     if (!ctx.ok) {
       setRows([]);
+      setLoadError(ctx.error);
       setLoading(false);
       return;
     }
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("insurance_renewals")
       .select("*")
       .eq("organization_id", ctx.ctx.organizationId)
       .is("deleted_at", null)
       .order("target_effective_date", { ascending: true });
+    if (error) {
+      setLoadError(error.message);
+      setRows([]);
+      setLoading(false);
+      return;
+    }
     setRows((data ?? []) as Row[]);
     setLoading(false);
   }, [supabase]);
@@ -46,6 +55,11 @@ export default function InsuranceRenewalsPage() {
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Renewals</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">Renewal milestones and quoted or bound premiums.</p>
       </div>
+      {loadError && (
+        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+          {loadError}
+        </p>
+      )}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Renewal pipeline</CardTitle>

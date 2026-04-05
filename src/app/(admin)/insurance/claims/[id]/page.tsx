@@ -31,7 +31,7 @@ export default function InsuranceClaimDetailPage() {
     setError(null);
     const ctx = await loadFinanceRoleContext(supabase);
     if (!ctx.ok) {
-      setError("Sign-in required.");
+      setError(ctx.error);
       setLoading(false);
       return;
     }
@@ -43,12 +43,17 @@ export default function InsuranceClaimDetailPage() {
       return;
     }
     setClaim(c as Claim);
-    const { data: acts } = await supabase
+    const { data: acts, error: actsErr } = await supabase
       .from("claim_activities")
       .select("*")
       .eq("insurance_claim_id", id)
       .is("deleted_at", null)
       .order("activity_date", { ascending: false });
+    if (actsErr) {
+      setError(actsErr.message);
+      setLoading(false);
+      return;
+    }
     setActivities((acts ?? []) as Activity[]);
     setLoading(false);
   }, [supabase, id]);

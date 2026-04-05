@@ -15,38 +15,50 @@ export default function AdminInsuranceHubPage() {
   const [renewalsInFlight, setRenewalsInFlight] = useState<number | null>(null);
   const [openClaims, setOpenClaims] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const ctx = await loadFinanceRoleContext(supabase);
       if (!ctx.ok) {
         setActivePolicies(null);
         setRenewalsInFlight(null);
         setOpenClaims(null);
+        setLoadError(ctx.error);
         return;
       }
       const orgId = ctx.ctx.organizationId;
-      const [{ count: polCount }, { count: renCount }, { count: clCount }] = await Promise.all([
-        supabase
-          .from("insurance_policies")
-          .select("id", { count: "exact", head: true })
-          .eq("organization_id", orgId)
-          .eq("status", "active")
-          .is("deleted_at", null),
-        supabase
-          .from("insurance_renewals")
-          .select("id", { count: "exact", head: true })
-          .eq("organization_id", orgId)
-          .in("status", ["upcoming", "in_progress"])
-          .is("deleted_at", null),
-        supabase
-          .from("insurance_claims")
-          .select("id", { count: "exact", head: true })
-          .eq("organization_id", orgId)
-          .in("status", ["reported", "investigating", "reserved", "partially_paid"])
-          .is("deleted_at", null),
-      ]);
+      const [{ count: polCount, error: e1 }, { count: renCount, error: e2 }, { count: clCount, error: e3 }] =
+        await Promise.all([
+          supabase
+            .from("insurance_policies")
+            .select("id", { count: "exact", head: true })
+            .eq("organization_id", orgId)
+            .eq("status", "active")
+            .is("deleted_at", null),
+          supabase
+            .from("insurance_renewals")
+            .select("id", { count: "exact", head: true })
+            .eq("organization_id", orgId)
+            .in("status", ["upcoming", "in_progress"])
+            .is("deleted_at", null),
+          supabase
+            .from("insurance_claims")
+            .select("id", { count: "exact", head: true })
+            .eq("organization_id", orgId)
+            .in("status", ["reported", "investigating", "reserved", "partially_paid"])
+            .is("deleted_at", null),
+        ]);
+      const err = e1 ?? e2 ?? e3;
+      if (err) {
+        setLoadError(err.message);
+        setActivePolicies(null);
+        setRenewalsInFlight(null);
+        setOpenClaims(null);
+        return;
+      }
       setActivePolicies(polCount ?? 0);
       setRenewalsInFlight(renCount ?? 0);
       setOpenClaims(clCount ?? 0);
@@ -71,6 +83,12 @@ export default function AdminInsuranceHubPage() {
           </p>
         </div>
       </div>
+
+      {loadError && (
+        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+          {loadError}
+        </p>
+      )}
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
