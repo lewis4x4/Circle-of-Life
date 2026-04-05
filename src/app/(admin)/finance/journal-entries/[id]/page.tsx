@@ -226,11 +226,17 @@ export default function JournalEntryDetailPage() {
 
   async function deleteDraft() {
     if (!header || header.status !== "draft" || !ctx?.ok || !canMutateFinance(ctx.ctx.appRole)) return;
-    if (!globalThis.confirm("Delete this draft journal entry? This cannot be undone.")) return;
+    if (!globalThis.confirm("Remove this draft journal entry? It will be hidden from lists but retained for audit.")) return;
     setDeleting(true);
     setError(null);
     try {
-      const { error: delErr } = await supabase.from("journal_entries").delete().eq("id", header.id).eq("status", "draft");
+      const removedAt = new Date().toISOString();
+      const { error: delErr } = await supabase
+        .from("journal_entries")
+        .update({ deleted_at: removedAt })
+        .eq("id", header.id)
+        .eq("status", "draft")
+        .is("deleted_at", null);
       if (delErr) {
         setError(delErr.message);
         return;
@@ -436,7 +442,7 @@ export default function JournalEntryDetailPage() {
                   {saving ? "Saving…" : "Save draft"}
                 </Button>
                 <Button type="button" variant="destructive" onClick={() => void deleteDraft()} disabled={deleting}>
-                  {deleting ? "Deleting…" : "Delete draft"}
+                  {deleting ? "Removing…" : "Remove draft"}
                 </Button>
                 <Button type="button" onClick={() => void postEntry()} disabled={posting || !balanced}>
                   {posting ? "Posting…" : "Post entry"}
