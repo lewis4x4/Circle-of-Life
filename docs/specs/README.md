@@ -63,9 +63,9 @@ Module numbers match the roadmap (27 modules total), NOT the build sequence. Not
 | 3 | Resident Profile & Care Planning | 1 (core) + 2 (advanced) | ✅ Core spec complete |
 | 4 | Daily Operations & Logging | 1 | ✅ Spec complete |
 | 5 | Discharge & Transition | 4 | Not yet spec'd |
-| 6 | Medication Management | 1 (basic in 04) + 2 (advanced) | Basic in 04-daily-operations. Advanced not yet spec'd |
+| 6 | Medication Management | 1 (basic in 04) + 2 (advanced) | Basic in `04-daily-operations.md`. Advanced: `06-medication-management.md` |
 | 7 | Incident & Risk Management | 1 | ✅ Spec complete |
-| 8 | Autonomous Compliance Engine | 2 | Not yet spec'd |
+| 8 | Autonomous Compliance Engine | 2 | `08-compliance-engine.md` |
 | 9 | Infection Control & Health Monitoring | 2 | `09-infection-control.md` |
 | 10 | Quality Metrics & Outcomes | 5 | Not yet spec'd |
 | 11 | Staff Management & Scheduling | 1 | ✅ Spec complete |

@@ -285,7 +285,7 @@ Phase 2 is complete when:
 5. At least one infection surveillance → outbreak detection → management workflow completes end-to-end
 6. Compliance dashboard shows at minimum these tiles with real Oakridge data: overdue assessments, overdue care plan reviews, open incident follow-ups, active infections, expiring staff certifications, open deficiencies
 7. Survey visit mode can retrieve any single-resident chart (assessments, meds, incidents, care plan, daily logs) with p95 < 3 seconds on local dev
-8. Phase 2 acceptance checklist (to be written) passes
+8. [Phase 2 acceptance checklist](./PHASE2-ACCEPTANCE-CHECKLIST.md) passes
 
 ### Hidden complexity areas
 
