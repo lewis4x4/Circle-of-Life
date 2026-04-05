@@ -73,7 +73,8 @@ Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs 
 
 ### B3. Staff and workforce
 
-- [ ] `/admin/staff` — roster loads, filters work.
+- [ ] `/admin/staff` — roster loads, filters work; **Add staff** opens `/admin/staff/new` when a facility is selected.
+- [ ] `/admin/staff/new` — can create a staff row (requires owner / org admin / facility admin per RLS); redirects to detail.
 - [ ] `/admin/staff/[id]` — detail, certifications, upcoming shifts (if data present).
 - [ ] `/admin/certifications` — list loads.
 - [ ] `/admin/schedules` — list loads.

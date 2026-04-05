@@ -30,6 +30,7 @@ The absolute bedrock of the "Soft Precision" visual identity.
 - [x] **Resident Master List (`/admin/residents`)**: Scaffolded premium data table with shared filtering/loading/error/empty states.
 - [x] **Add resident (`/admin/residents/new`)**: Minimal create flow (identity, status, acuity, admission date) for selected facility — addresses **W-ADMIN-01** incrementally.
 - [x] **Staffing Roster & Schedules (`/admin/staff`)**: Scaffolded roster table with role/status/certification filters and risk badging.
+- [x] **Add staff (`/admin/staff/new`)**: Minimal create flow (name, role, hire date, optional phone/email) for owner/org_admin/facility_admin per RLS — extends **W-ADMIN-01**.
 - [x] **Incident Command (`/admin/incidents`)**: Scaffolded command queue with severity/status/category filters and standardized list states.
 - [x] **Billing Core (`/admin/billing`)**: Scaffolded ledger-focused billing list with payer/status filters and shared list patterns.
 - [x] **Collections (`/admin/billing/collections`)**: Facility-scoped collections activity ledger + log flow (`collection_activities`).
@@ -60,7 +61,7 @@ The absolute bedrock of the "Soft Precision" visual identity.
 ## Next Immediate Execution Step
 Sector 1 admin routes include billing collections and executive command center (`/admin/executive/*`) per Phase 3 Module 24 Core.
 
-**Next prioritized UX gap (Phase 1 waiver W-ADMIN-01):** replace list-only admin flows with guided create/edit wizards **incrementally** (pick one module per segment). Alternatively continue **spec-driven** work from `docs/specs/README.md` (Phase 2/3 Enhanced slices) when the owner prioritizes them.
+**Next prioritized UX gap (Phase 1 waiver W-ADMIN-01):** remaining list-only admin hubs (e.g. vendors PO wizard, compliance deficiency patterns) — **incrementally** one module per segment. Alternatively continue **spec-driven** work from `docs/specs/README.md` (Phase 2/3 Enhanced slices) when the owner prioritizes them.
 
 ---
 

@@ -119,7 +119,7 @@ export default function AdminStaffPage() {
         whenDatasetEmpty: {
           title: "No staff in this scope",
           description:
-            "Live roster returned no staff rows for the selected facility or organization filter. Add staff records or adjust scope.",
+            "Live roster returned no staff rows for the selected facility. Use Add staff or adjust scope.",
         },
         whenFiltersExcludeAll: {
           title: "No staff match the current filters",
@@ -144,7 +144,10 @@ export default function AdminStaffPage() {
             Certification-aware team directory with shift visibility and overtime risk cues.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/admin/staff/new" className={buttonVariants({ size: "sm" })}>
+            Add staff
+          </Link>
           <Badge
             variant="outline"
             className="border-slate-200 bg-white px-3 py-1 dark:border-slate-800 dark:bg-slate-900"
