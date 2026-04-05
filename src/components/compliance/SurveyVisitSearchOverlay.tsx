@@ -60,7 +60,11 @@ type ChartState = {
 };
 
 function sanitizeIlikeFragment(q: string): string {
-  return q.replace(/[%_\\]/g, "\\$&").trim().slice(0, 80);
+  return q
+    .replace(/[%_\\]/g, "\\$&")
+    .replace(/,/g, " ")
+    .trim()
+    .slice(0, 80);
 }
 
 function daysAgoIsoDate(days: number): string {

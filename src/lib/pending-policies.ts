@@ -21,12 +21,32 @@ const STAFF_ROLES = new Set([
 ]);
 
 /**
- * Resolves facility id for floor staff (staff row) or first UFA row.
+ * Resolves facility id for floor staff (staff row), first UFA row, or (owner/org_admin) first org facility.
  */
 export async function resolveAckFacilityId(
   supabase: SupabaseClient<Database>,
   userId: string,
 ): Promise<string | null> {
+  const profile = await supabase
+    .from("user_profiles")
+    .select("app_role, organization_id")
+    .eq("id", userId)
+    .maybeSingle();
+  const role = profile.data?.app_role;
+  const orgId = profile.data?.organization_id;
+
+  if ((role === "owner" || role === "org_admin") && orgId) {
+    const fac = await supabase
+      .from("facilities")
+      .select("id")
+      .eq("organization_id", orgId)
+      .is("deleted_at", null)
+      .order("name")
+      .limit(1)
+      .maybeSingle();
+    if (fac.data?.id) return fac.data.id;
+  }
+
   const staff = await supabase
     .from("staff")
     .select("facility_id")
