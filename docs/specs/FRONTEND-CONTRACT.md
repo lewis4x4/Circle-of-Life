@@ -40,6 +40,7 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 - `/admin/staff/new`
 - `/admin/staff/[id]`
 - `/admin/certifications`
+- `/admin/certifications/new`
 - `/admin/schedules`
 - `/admin/schedules/new`
 - `/admin/time-records`

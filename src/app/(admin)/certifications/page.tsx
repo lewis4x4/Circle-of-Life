@@ -107,7 +107,7 @@ export default function AdminCertificationsPage() {
         whenDatasetEmpty: {
           title: "No certifications in this scope",
           description:
-            "Live data returned no certification rows for the selected facility or organization filter.",
+            "No certification rows for this facility yet. Use Add certification or import from your prior system.",
         },
         whenFiltersExcludeAll: {
           title: "No certifications match the current filters",
@@ -133,6 +133,9 @@ export default function AdminCertificationsPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Link href="/admin/certifications/new" className={buttonVariants({ size: "sm" })}>
+            Add certification
+          </Link>
           <Badge
             variant="outline"
             className="border-amber-200 bg-amber-50 px-3 py-1 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300"

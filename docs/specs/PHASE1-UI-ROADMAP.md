@@ -32,6 +32,7 @@ The absolute bedrock of the "Soft Precision" visual identity.
 - [x] **Staffing Roster & Schedules (`/admin/staff`)**: Scaffolded roster table with role/status/certification filters and risk badging.
 - [x] **Add staff (`/admin/staff/new`)**: Minimal create flow (name, role, hire date, optional phone/email) for owner/org_admin/facility_admin per RLS — extends **W-ADMIN-01**.
 - [x] **New schedule week (`/admin/schedules/new`)**: Draft `schedules` row with Monday `week_start_date` (matches unique index) — extends **W-ADMIN-01**.
+- [x] **Add certification (`/admin/certifications/new`)**: `staff_certifications` for active staff in facility (owner/org_admin/facility_admin) — extends **W-ADMIN-01**.
 - [x] **Incident Command (`/admin/incidents`)**: Scaffolded command queue with severity/status/category filters and standardized list states.
 - [x] **Billing Core (`/admin/billing`)**: Scaffolded ledger-focused billing list with payer/status filters and shared list patterns.
 - [x] **Collections (`/admin/billing/collections`)**: Facility-scoped collections activity ledger + log flow (`collection_activities`).
