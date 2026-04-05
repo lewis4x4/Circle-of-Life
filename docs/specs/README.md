@@ -52,6 +52,8 @@ After this scaffold sprint, resume backend spec implementation in original order
 
 ### Phase 3–7: Specs added on a rolling basis, always one phase ahead of build.
 
+**Phase 3 (orientation alignment with `docs/roadmap-overview.md`):** business and multi-entity depth — Modules **17** (entity & facility finance), **18** (insurance & risk finance), **19** (vendor & contract management), **24** (executive intelligence v1). Implement only after a numbered spec exists in this folder.
+
 ## Module Number Reference
 
 Module numbers match the roadmap (27 modules total), NOT the build sequence. Not every module number has a Phase 1 spec because Modules 1, 2, 5 are Phase 4 features.
@@ -74,15 +76,15 @@ Module numbers match the roadmap (27 modules total), NOT the build sequence. Not
 | 14 | Dietary & Nutrition Management | 6 | Not yet spec'd |
 | 15 | Transportation & Appointments | 6 | Not yet spec'd |
 | 16 | Resident Billing & Collections | 1 | ✅ Spec complete |
-| 17 | Entity & Facility Financial Management | 4 | Not yet spec'd |
-| 18 | Insurance & Risk Finance | 4 | Not yet spec'd |
-| 19 | Vendor & Contract Management | 4 | Not yet spec'd |
+| 17 | Entity & Facility Financial Management | 3 | Not yet spec'd |
+| 18 | Insurance & Risk Finance | 3 | Not yet spec'd |
+| 19 | Vendor & Contract Management | 3 | Not yet spec'd |
 | 20 | Expansion & Acquisition Planning | 7 | Not yet spec'd |
 | 21 | Family Portal | 5 | Not yet spec'd |
 | 22 | Referral Source CRM | 6 | Not yet spec'd |
 | 23 | Reputation & Online Presence | 6 | Not yet spec'd |
-| 24 | Executive Intelligence Layer | 4 (v1) + 7 (v2) | Not yet spec'd |
-| 25 | Ambient Environment Intelligence | 3 | Not yet spec'd |
+| 24 | Executive Intelligence Layer | 3 (v1) + 7 (v2) | Not yet spec'd |
+| 25 | Ambient Environment Intelligence | 5 | Not yet spec'd |
 | 26 | Facility Digital Twin | 6 | Not yet spec'd |
 | 27 | Regulatory Intelligence & Arbitrage | 7 | Not yet spec'd |
 

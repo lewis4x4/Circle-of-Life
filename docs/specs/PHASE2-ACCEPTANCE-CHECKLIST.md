@@ -21,7 +21,7 @@
 | 5 | Infection surveillance → outbreak → management E2E | **PASS** | Surveillance insert + `evaluate-outbreak`; detection when ≥2 related cases; outbreak detail `/admin/infection-control/outbreaks/[id]` (read-only checklist). Hub copy still says “detail views coming” but route works via surveillance detail link. |
 | 6 | Compliance dashboard tiles (six types) with real Oakridge data | **PASS** | `/admin/compliance` + `fetchComplianceDashboardSnapshot`; counts are DB-backed for selected facility (Oakridge when selected + seeded). |
 | 7 | Survey visit mode: single-resident chart retrieval, p95 under 3s on local dev | **PASS** | **A (full):** `SurveyVisitSearchOverlay` in admin shell: resident `ilike` search, parallel load of care plans, assessments, meds, eMAR (90d), daily logs (90d), incidents; `survey_visit_log_entries` with `record_type: resident_chart` + optional `assessment` row logs; UI shows **Chart load: N ms**; dev console `[survey-visit-chart] load_ms=…`. Re-verify p95 on representative data if needed. |
-| 8 | This checklist passes (meta) | **pending** | Complete when row 7 verified in running app and owner signs off. |
+| 8 | This checklist passes (meta) | **PASS** | **2026-04-04** — Owner sign-off (Brian Lewis). Rows 1–7 are PASS; no waivers. Phase 2 acceptance complete. |
 
 ---
 
@@ -149,8 +149,12 @@
 
 **Pass when:** Rows 1–7 are **PASS** or **WAIVED** with owner, reason, expiry, and remediation issue per mission gate rules.
 
+**Recorded:** **PASS** (2026-04-04). Owner sign-off: Brian Lewis.
+
 ---
 
 ## Mission alignment
 
 Record for the Phase 2 closure segment: **pass** | **risk** | **fail** with one sentence (see `docs/mission-statement.md`).
+
+**Phase 2 closure:** **pass** — Phase 2 deepens clinical workflows, compliance, and operator-visible follow-up on the same role-governed data layer, aligned with resident safety and regulatory readiness.
