@@ -1127,6 +1127,138 @@ export type Database = {
           },
         ]
       }
+      certificates_of_insurance: {
+        Row: {
+          id: string
+          organization_id: string
+          entity_id: string | null
+          holder_name: string
+          holder_type: Database["public"]["Enums"]["coi_holder_type"]
+          carrier_name: string
+          policy_number: string | null
+          effective_date: string
+          expiration_date: string
+          additional_insured: boolean
+          waiver_of_subrogation: boolean
+          aggregate_limit_cents: number | null
+          document_storage_path: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          updated_by: string | null
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          entity_id?: string | null
+          holder_name: string
+          holder_type?: Database["public"]["Enums"]["coi_holder_type"]
+          carrier_name: string
+          policy_number?: string | null
+          effective_date: string
+          expiration_date: string
+          additional_insured?: boolean
+          waiver_of_subrogation?: boolean
+          aggregate_limit_cents?: number | null
+          document_storage_path?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          updated_by?: string | null
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          entity_id?: string | null
+          holder_name?: string
+          holder_type?: Database["public"]["Enums"]["coi_holder_type"]
+          carrier_name?: string
+          policy_number?: string | null
+          effective_date?: string
+          expiration_date?: string
+          additional_insured?: boolean
+          waiver_of_subrogation?: boolean
+          aggregate_limit_cents?: number | null
+          document_storage_path?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          updated_by?: string | null
+          deleted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificates_of_insurance_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificates_of_insurance_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claim_activities: {
+        Row: {
+          id: string
+          insurance_claim_id: string
+          organization_id: string
+          activity_date: string
+          activity_type: string
+          description: string
+          performed_by: string
+          created_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          insurance_claim_id: string
+          organization_id: string
+          activity_date: string
+          activity_type: string
+          description: string
+          performed_by: string
+          created_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          insurance_claim_id?: string
+          organization_id?: string
+          activity_date?: string
+          activity_type?: string
+          description?: string
+          performed_by?: string
+          created_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_activities_insurance_claim_id_fkey"
+            columns: ["insurance_claim_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_activities_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       collection_activities: {
         Row: {
           activity_date: string
@@ -1638,6 +1770,8 @@ export type Database = {
           accounts_receivable_id: string | null
           cash_id: string | null
           revenue_id: string | null
+          insurance_expense_gl_account_id: string | null
+          claims_reserve_gl_account_id: string | null
           created_at: string
           updated_at: string
           created_by: string | null
@@ -1650,6 +1784,8 @@ export type Database = {
           accounts_receivable_id?: string | null
           cash_id?: string | null
           revenue_id?: string | null
+          insurance_expense_gl_account_id?: string | null
+          claims_reserve_gl_account_id?: string | null
           created_at?: string
           updated_at?: string
           created_by?: string | null
@@ -1662,6 +1798,8 @@ export type Database = {
           accounts_receivable_id?: string | null
           cash_id?: string | null
           revenue_id?: string | null
+          insurance_expense_gl_account_id?: string | null
+          claims_reserve_gl_account_id?: string | null
           created_at?: string
           updated_at?: string
           created_by?: string | null
@@ -1699,6 +1837,20 @@ export type Database = {
           {
             foreignKeyName: "entity_gl_settings_revenue_id_fkey"
             columns: ["revenue_id"]
+            isOneToOne: false
+            referencedRelation: "gl_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entity_gl_settings_insurance_expense_gl_account_id_fkey"
+            columns: ["insurance_expense_gl_account_id"]
+            isOneToOne: false
+            referencedRelation: "gl_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entity_gl_settings_claims_reserve_gl_account_id_fkey"
+            columns: ["claims_reserve_gl_account_id"]
             isOneToOne: false
             referencedRelation: "gl_accounts"
             referencedColumns: ["id"]
@@ -2829,6 +2981,354 @@ export type Database = {
           },
         ]
       }
+      insurance_claims: {
+        Row: {
+          id: string
+          organization_id: string
+          entity_id: string
+          facility_id: string | null
+          insurance_policy_id: string | null
+          incident_id: string | null
+          claim_number: string | null
+          date_of_loss: string | null
+          reported_at: string | null
+          status: Database["public"]["Enums"]["insurance_claim_status"]
+          reserve_cents: number
+          paid_cents: number
+          adjuster_name: string | null
+          description: string | null
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          updated_by: string | null
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          entity_id: string
+          facility_id?: string | null
+          insurance_policy_id?: string | null
+          incident_id?: string | null
+          claim_number?: string | null
+          date_of_loss?: string | null
+          reported_at?: string | null
+          status?: Database["public"]["Enums"]["insurance_claim_status"]
+          reserve_cents?: number
+          paid_cents?: number
+          adjuster_name?: string | null
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          updated_by?: string | null
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          entity_id?: string
+          facility_id?: string | null
+          insurance_policy_id?: string | null
+          incident_id?: string | null
+          claim_number?: string | null
+          date_of_loss?: string | null
+          reported_at?: string | null
+          status?: Database["public"]["Enums"]["insurance_claim_status"]
+          reserve_cents?: number
+          paid_cents?: number
+          adjuster_name?: string | null
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          updated_by?: string | null
+          deleted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insurance_claims_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_claims_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_claims_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_claims_insurance_policy_id_fkey"
+            columns: ["insurance_policy_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_policies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_claims_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insurance_policies: {
+        Row: {
+          id: string
+          organization_id: string
+          entity_id: string
+          policy_type: Database["public"]["Enums"]["insurance_policy_type"]
+          carrier_name: string
+          broker_name: string | null
+          policy_number: string
+          effective_date: string
+          expiration_date: string
+          status: Database["public"]["Enums"]["insurance_policy_status"]
+          aggregate_limit_cents: number | null
+          occurrence_limit_cents: number | null
+          deductible_cents: number | null
+          premium_cents: number | null
+          premium_period: string | null
+          notes: string | null
+          document_storage_path: string | null
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          updated_by: string | null
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          entity_id: string
+          policy_type: Database["public"]["Enums"]["insurance_policy_type"]
+          carrier_name: string
+          broker_name?: string | null
+          policy_number: string
+          effective_date: string
+          expiration_date: string
+          status?: Database["public"]["Enums"]["insurance_policy_status"]
+          aggregate_limit_cents?: number | null
+          occurrence_limit_cents?: number | null
+          deductible_cents?: number | null
+          premium_cents?: number | null
+          premium_period?: string | null
+          notes?: string | null
+          document_storage_path?: string | null
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          updated_by?: string | null
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          entity_id?: string
+          policy_type?: Database["public"]["Enums"]["insurance_policy_type"]
+          carrier_name?: string
+          broker_name?: string | null
+          policy_number?: string
+          effective_date?: string
+          expiration_date?: string
+          status?: Database["public"]["Enums"]["insurance_policy_status"]
+          aggregate_limit_cents?: number | null
+          occurrence_limit_cents?: number | null
+          deductible_cents?: number | null
+          premium_cents?: number | null
+          premium_period?: string | null
+          notes?: string | null
+          document_storage_path?: string | null
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          updated_by?: string | null
+          deleted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insurance_policies_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_policies_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insurance_renewals: {
+        Row: {
+          id: string
+          organization_id: string
+          entity_id: string
+          insurance_policy_id: string
+          renewal_data_package_id: string | null
+          target_effective_date: string
+          status: Database["public"]["Enums"]["insurance_renewal_status"]
+          milestone_120_date: string | null
+          milestone_90_date: string | null
+          milestone_60_date: string | null
+          milestone_30_date: string | null
+          quoted_premium_cents: number | null
+          bound_premium_cents: number | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          updated_by: string | null
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          entity_id: string
+          insurance_policy_id: string
+          renewal_data_package_id?: string | null
+          target_effective_date: string
+          status?: Database["public"]["Enums"]["insurance_renewal_status"]
+          milestone_120_date?: string | null
+          milestone_90_date?: string | null
+          milestone_60_date?: string | null
+          milestone_30_date?: string | null
+          quoted_premium_cents?: number | null
+          bound_premium_cents?: number | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          updated_by?: string | null
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          entity_id?: string
+          insurance_policy_id?: string
+          renewal_data_package_id?: string | null
+          target_effective_date?: string
+          status?: Database["public"]["Enums"]["insurance_renewal_status"]
+          milestone_120_date?: string | null
+          milestone_90_date?: string | null
+          milestone_60_date?: string | null
+          milestone_30_date?: string | null
+          quoted_premium_cents?: number | null
+          bound_premium_cents?: number | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          updated_by?: string | null
+          deleted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insurance_renewals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_renewals_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_renewals_insurance_policy_id_fkey"
+            columns: ["insurance_policy_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_policies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_renewals_renewal_data_package_id_fkey"
+            columns: ["renewal_data_package_id"]
+            isOneToOne: false
+            referencedRelation: "renewal_data_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      renewal_data_packages: {
+        Row: {
+          id: string
+          organization_id: string
+          entity_id: string
+          insurance_policy_id: string
+          generated_at: string
+          period_start: string
+          period_end: string
+          payload: Json
+          created_by: string | null
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          entity_id: string
+          insurance_policy_id: string
+          generated_at?: string
+          period_start: string
+          period_end: string
+          payload?: Json
+          created_by?: string | null
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          entity_id?: string
+          insurance_policy_id?: string
+          generated_at?: string
+          period_start?: string
+          period_end?: string
+          payload?: Json
+          created_by?: string | null
+          deleted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "renewal_data_packages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "renewal_data_packages_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "renewal_data_packages_insurance_policy_id_fkey"
+            columns: ["insurance_policy_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_line_items: {
         Row: {
           created_at: string
@@ -3182,6 +3682,66 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loss_runs: {
+        Row: {
+          id: string
+          organization_id: string
+          entity_id: string
+          period_start: string
+          period_end: string
+          generated_at: string
+          total_claims_count: number
+          total_paid_cents: number
+          total_reserve_cents: number
+          payload: Json
+          created_by: string | null
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          entity_id: string
+          period_start: string
+          period_end: string
+          generated_at?: string
+          total_claims_count?: number
+          total_paid_cents?: number
+          total_reserve_cents?: number
+          payload?: Json
+          created_by?: string | null
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          entity_id?: string
+          period_start?: string
+          period_end?: string
+          generated_at?: string
+          total_claims_count?: number
+          total_paid_cents?: number
+          total_reserve_cents?: number
+          payload?: Json
+          created_by?: string | null
+          deleted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loss_runs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loss_runs_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
             referencedColumns: ["id"]
           },
         ]
@@ -3583,6 +4143,79 @@ export type Database = {
             columns: ["resident_id"]
             isOneToOne: false
             referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      premium_allocations: {
+        Row: {
+          id: string
+          organization_id: string
+          insurance_policy_id: string
+          facility_id: string
+          allocation_method: string
+          allocation_percent: number | null
+          allocated_premium_cents: number
+          period_start: string
+          period_end: string
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          updated_by: string | null
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          insurance_policy_id: string
+          facility_id: string
+          allocation_method?: string
+          allocation_percent?: number | null
+          allocated_premium_cents?: number
+          period_start: string
+          period_end: string
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          updated_by?: string | null
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          insurance_policy_id?: string
+          facility_id?: string
+          allocation_method?: string
+          allocation_percent?: number | null
+          allocated_premium_cents?: number
+          period_start?: string
+          period_end?: string
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          updated_by?: string | null
+          deleted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "premium_allocations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "premium_allocations_insurance_policy_id_fkey"
+            columns: ["insurance_policy_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_policies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "premium_allocations_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
             referencedColumns: ["id"]
           },
         ]
@@ -6295,6 +6928,94 @@ export type Database = {
           },
         ]
       }
+      workers_comp_claims: {
+        Row: {
+          id: string
+          organization_id: string
+          facility_id: string
+          staff_id: string | null
+          claim_number: string | null
+          injury_date: string
+          status: Database["public"]["Enums"]["insurance_claim_status"]
+          first_report_filed_at: string | null
+          modified_duty_start: string | null
+          modified_duty_end: string | null
+          return_to_work_date: string | null
+          reserve_cents: number
+          paid_cents: number
+          description: string | null
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          updated_by: string | null
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          facility_id: string
+          staff_id?: string | null
+          claim_number?: string | null
+          injury_date: string
+          status?: Database["public"]["Enums"]["insurance_claim_status"]
+          first_report_filed_at?: string | null
+          modified_duty_start?: string | null
+          modified_duty_end?: string | null
+          return_to_work_date?: string | null
+          reserve_cents?: number
+          paid_cents?: number
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          updated_by?: string | null
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          facility_id?: string
+          staff_id?: string | null
+          claim_number?: string | null
+          injury_date?: string
+          status?: Database["public"]["Enums"]["insurance_claim_status"]
+          first_report_filed_at?: string | null
+          modified_duty_start?: string | null
+          modified_duty_end?: string | null
+          return_to_work_date?: string | null
+          reserve_cents?: number
+          paid_cents?: number
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          updated_by?: string | null
+          deleted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workers_comp_claims_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workers_comp_claims_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workers_comp_claims_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -6343,6 +7064,7 @@ export type Database = {
         | "other"
       care_plan_status: "draft" | "active" | "under_review" | "archived"
       certification_status: "active" | "expired" | "pending_renewal" | "revoked"
+      coi_holder_type: "vendor" | "landlord" | "lender" | "other"
       controlled_schedule: "ii" | "iii" | "iv" | "v" | "non_controlled"
       discharge_reason:
         | "higher_level_of_care"
@@ -6393,6 +7115,27 @@ export type Database = {
         | "other"
       incident_severity: "level_1" | "level_2" | "level_3" | "level_4"
       incident_status: "open" | "investigating" | "resolved" | "closed"
+      insurance_claim_status:
+        | "reported"
+        | "investigating"
+        | "reserved"
+        | "partially_paid"
+        | "closed"
+        | "denied"
+        | "withdrawn"
+      insurance_policy_status: "draft" | "active" | "expired" | "cancelled" | "pending_renewal"
+      insurance_policy_type:
+        | "general_liability"
+        | "property"
+        | "workers_comp"
+        | "auto"
+        | "umbrella"
+        | "directors_officers"
+        | "cyber"
+        | "epli"
+        | "professional"
+        | "other"
+      insurance_renewal_status: "upcoming" | "in_progress" | "bound" | "expired" | "declined"
       invoice_status:
         | "draft"
         | "sent"
@@ -6640,6 +7383,7 @@ export const Constants = {
       ],
       care_plan_status: ["draft", "active", "under_review", "archived"],
       certification_status: ["active", "expired", "pending_renewal", "revoked"],
+      coi_holder_type: ["vendor", "landlord", "lender", "other"],
       controlled_schedule: ["ii", "iii", "iv", "v", "non_controlled"],
       discharge_reason: [
         "higher_level_of_care",
@@ -6693,6 +7437,29 @@ export const Constants = {
       ],
       incident_severity: ["level_1", "level_2", "level_3", "level_4"],
       incident_status: ["open", "investigating", "resolved", "closed"],
+      insurance_claim_status: [
+        "reported",
+        "investigating",
+        "reserved",
+        "partially_paid",
+        "closed",
+        "denied",
+        "withdrawn",
+      ],
+      insurance_policy_status: ["draft", "active", "expired", "cancelled", "pending_renewal"],
+      insurance_policy_type: [
+        "general_liability",
+        "property",
+        "workers_comp",
+        "auto",
+        "umbrella",
+        "directors_officers",
+        "cyber",
+        "epli",
+        "professional",
+        "other",
+      ],
+      insurance_renewal_status: ["upcoming", "in_progress", "bound", "expired", "declined"],
       invoice_status: [
         "draft",
         "sent",
