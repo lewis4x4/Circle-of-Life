@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Outfit, Lora } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 
 const interSans = Inter({
   variable: "--font-inter",
@@ -22,7 +23,6 @@ export const metadata: Metadata = {
   title: "Haven — Circle of Life",
   description:
     "Unified operations for assisted living, home health, and community-based care.",
-  manifest: "/manifest.json",
 };
 
 export const viewport: Viewport = {
@@ -55,6 +55,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <ServiceWorkerRegister />
           <div id="haven-app-root" className="flex min-h-full flex-col">
             <a
               href="#main-content"

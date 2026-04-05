@@ -34,6 +34,7 @@ import {
   Moon,
   Monitor,
   BarChart3,
+  Smartphone,
 } from "lucide-react";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
@@ -139,6 +140,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     { key: "insurance", href: "/admin/insurance", label: "Insurance", enabled: true, icon: Umbrella },
     { key: "vendors", href: "/admin/vendors", label: "Vendors", enabled: true, icon: Truck },
     { key: "family-messages", href: "/admin/family-messages", label: "Family Messages", enabled: true, icon: MessageCircle },
+    { key: "notifications", href: "/admin/settings/notifications", label: "Notifications", enabled: true, icon: Smartphone },
   ];
 
   return (
@@ -173,7 +175,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               (item.key === "compliance" && pathname.startsWith("/admin/compliance")) ||
               (item.key === "finance" && pathname.startsWith("/admin/finance")) ||
               (item.key === "insurance" && pathname.startsWith("/admin/insurance")) ||
-              (item.key === "vendors" && pathname.startsWith("/admin/vendors"));
+              (item.key === "vendors" && pathname.startsWith("/admin/vendors")) ||
+              (item.key === "notifications" && pathname.startsWith("/admin/settings"));
             const Icon = item.icon;
             
             if (!item.enabled) {
