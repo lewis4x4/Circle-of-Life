@@ -19,6 +19,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
 import { BillingHubNav } from "../../billing-hub-nav";
+import { billingCurrency } from "../../billing-invoice-ledger";
 
 const ACTIVITY_TYPES = [
   { value: "phone_call", label: "Phone call" },
@@ -31,7 +32,26 @@ const ACTIVITY_TYPES = [
 
 type ResidentOption = { id: string; name: string };
 
+type InvoiceOption = {
+  id: string;
+  invoice_number: string;
+  balance_due: number;
+  status: string;
+  period_start: string;
+  period_end: string;
+};
+
 type QueryError = { message: string };
+
+function formatDate(iso: string): string {
+  const d = new Date(`${iso}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(d);
+}
 
 export default function AdminNewCollectionActivityPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -39,6 +59,8 @@ export default function AdminNewCollectionActivityPage() {
 
   const [residents, setResidents] = useState<ResidentOption[]>([]);
   const [residentsLoading, setResidentsLoading] = useState(true);
+  const [invoices, setInvoices] = useState<InvoiceOption[]>([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
 
   const [residentId, setResidentId] = useState("");
   const [invoiceId, setInvoiceId] = useState("");
@@ -96,6 +118,49 @@ export default function AdminNewCollectionActivityPage() {
   useEffect(() => {
     void loadResidents();
   }, [loadResidents]);
+
+  const loadInvoices = useCallback(
+    async (rid: string) => {
+      if (!rid) {
+        setInvoices([]);
+        return;
+      }
+      setInvoicesLoading(true);
+      try {
+        let q = supabase
+          .from("invoices" as never)
+          .select("id, invoice_number, balance_due, status, period_start, period_end")
+          .eq("resident_id", rid)
+          .is("deleted_at", null)
+          .in("status", ["draft", "sent", "partial", "overdue"])
+          .order("invoice_date", { ascending: false })
+          .limit(50);
+        if (isValidFacilityIdForQuery(selectedFacilityId)) {
+          q = q.eq("facility_id", selectedFacilityId);
+        }
+        const { data, error: err } = (await q) as {
+          data: InvoiceOption[] | null;
+          error: QueryError | null;
+        };
+        if (err) throw err;
+        setInvoices(data ?? []);
+      } catch {
+        setInvoices([]);
+      } finally {
+        setInvoicesLoading(false);
+      }
+    },
+    [supabase, selectedFacilityId],
+  );
+
+  useEffect(() => {
+    setInvoiceId("");
+    if (residentId) {
+      void loadInvoices(residentId);
+    } else {
+      setInvoices([]);
+    }
+  }, [residentId, loadInvoices]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -188,6 +253,7 @@ export default function AdminNewCollectionActivityPage() {
                 setFollowUpDate("");
                 setFollowUpNotes("");
                 setInvoiceId("");
+                setResidentId("");
               }}
             >
               Log another
@@ -252,17 +318,35 @@ export default function AdminNewCollectionActivityPage() {
               </select>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                Invoice (optional)
-              </label>
-              <Input
-                value={invoiceId}
-                onChange={(e) => setInvoiceId(e.target.value)}
-                placeholder="Invoice UUID if linking to a statement"
-                className="font-mono text-xs"
-              />
-            </div>
+            {residentId && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                  Invoice (optional)
+                </label>
+                {invoicesLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading invoices…
+                  </div>
+                ) : invoices.length === 0 ? (
+                  <p className="text-sm text-slate-500">No open invoices for this resident.</p>
+                ) : (
+                  <select
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={invoiceId}
+                    onChange={(e) => setInvoiceId(e.target.value)}
+                  >
+                    <option value="">Not linked to a specific invoice</option>
+                    {invoices.map((inv) => (
+                      <option key={inv.id} value={inv.id}>
+                        {inv.invoice_number} — Balance {billingCurrency.format(inv.balance_due / 100)} (
+                        {formatDate(inv.period_start)} – {formatDate(inv.period_end)})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            )}
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
