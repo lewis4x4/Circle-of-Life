@@ -6,13 +6,15 @@ import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { postInvoiceToGl } from "@/lib/finance/post-to-gl";
+import { canMutateFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 
 import { BillingHubNav } from "../../billing-hub-nav";
 import {
@@ -86,6 +88,10 @@ export default function AdminInvoiceDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [glPosting, setGlPosting] = useState(false);
+  const [glResult, setGlResult] = useState<{ journalEntryId: string; alreadyPosted?: boolean } | null>(null);
+  const [glError, setGlError] = useState<string | null>(null);
+  const [canPost, setCanPost] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) {
@@ -140,6 +146,21 @@ export default function AdminInvoiceDetailPage() {
 
       setInvoice(inv);
       setLines(lineRes.data ?? []);
+
+      const finCtx = await loadFinanceRoleContext(supabase);
+      if (finCtx.ok && canMutateFinance(finCtx.ctx.appRole)) {
+        setCanPost(true);
+        const existingJe = await supabase
+          .from("journal_entries")
+          .select("id")
+          .eq("source_type", "invoice")
+          .eq("source_id", inv.id)
+          .is("deleted_at", null)
+          .maybeSingle();
+        if (existingJe.data) {
+          setGlResult({ journalEntryId: existingJe.data.id, alreadyPosted: true });
+        }
+      }
     } catch {
       setError("Could not load this invoice.");
       setInvoice(null);
@@ -191,6 +212,23 @@ export default function AdminInvoiceDetailPage() {
         />
       </div>
     );
+  }
+
+  async function postToGl() {
+    if (!invoice) return;
+    setGlPosting(true);
+    setGlError(null);
+    try {
+      const supabase = createClient();
+      const result = await postInvoiceToGl(supabase, invoice.id);
+      if (result.ok) {
+        setGlResult({ journalEntryId: result.journalEntryId, alreadyPosted: result.alreadyPosted });
+      } else {
+        setGlError(result.error);
+      }
+    } finally {
+      setGlPosting(false);
+    }
   }
 
   const uiStatus = mapDbInvoiceStatusToUi(invoice.status);
@@ -329,6 +367,43 @@ export default function AdminInvoiceDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {canPost && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">General ledger</CardTitle>
+            <CardDescription>Post this invoice to the GL as a balanced journal entry (Debit AR / Credit Revenue).</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {glError && (
+              <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+                {glError}
+              </p>
+            )}
+            {glResult ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-sm text-emerald-700 dark:text-emerald-400">
+                  {glResult.alreadyPosted ? "Already posted to GL." : "Posted to GL."}
+                </span>
+                <Link
+                  href={`/admin/finance/journal-entries/${glResult.journalEntryId}`}
+                  className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+                >
+                  View journal entry
+                </Link>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                onClick={() => void postToGl()}
+                disabled={glPosting || invoice.total <= 0}
+              >
+                {glPosting ? "Posting…" : "Post to GL"}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { createClient } from "@/lib/supabase/client";
 import { formatCents, parseDollarsToCents } from "@/lib/finance/format-cents";
-import { canMutateFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { canCreateDraftFinance, canPostFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 
@@ -120,7 +120,7 @@ export default function JournalEntryDetailPage() {
       }));
       setLines(rowsWithAccounts);
 
-      if (c.ok && canMutateFinance(c.ctx.appRole) && hRow.status === "draft") {
+      if (c.ok && canCreateDraftFinance(c.ctx.appRole) && hRow.status === "draft") {
         const [{ data: fac }, { data: accs }] = await Promise.all([
           supabase
             .from("facilities")
@@ -177,7 +177,7 @@ export default function JournalEntryDetailPage() {
   }
 
   async function saveDraft() {
-    if (!header || header.status !== "draft" || !ctx?.ok || !canMutateFinance(ctx.ctx.appRole)) return;
+    if (!header || header.status !== "draft" || !ctx?.ok || !canCreateDraftFinance(ctx.ctx.appRole)) return;
     const parsed = parseFormLines(formLines);
     if (parsed.length < 2) {
       setError("Add at least two lines with accounts and a debit or credit amount.");
@@ -225,7 +225,7 @@ export default function JournalEntryDetailPage() {
   }
 
   async function deleteDraft() {
-    if (!header || header.status !== "draft" || !ctx?.ok || !canMutateFinance(ctx.ctx.appRole)) return;
+    if (!header || header.status !== "draft" || !ctx?.ok || !canCreateDraftFinance(ctx.ctx.appRole)) return;
     if (!globalThis.confirm("Remove this draft journal entry? It will be hidden from lists but retained for audit.")) return;
     setDeleting(true);
     setError(null);
@@ -249,7 +249,7 @@ export default function JournalEntryDetailPage() {
   }
 
   async function postEntry() {
-    if (!header || header.status !== "draft" || !ctx?.ok || !canMutateFinance(ctx.ctx.appRole)) return;
+    if (!header || header.status !== "draft" || !ctx?.ok || !canPostFinance(ctx.ctx.appRole)) return;
     setPosting(true);
     setError(null);
     try {
@@ -280,7 +280,8 @@ export default function JournalEntryDetailPage() {
     }
   }
 
-  const canEditDraft = Boolean(ctx?.ok && canMutateFinance(ctx.ctx.appRole) && header?.status === "draft");
+  const canEditDraft = Boolean(ctx?.ok && canCreateDraftFinance(ctx.ctx.appRole) && header?.status === "draft");
+  const canPostEntry = Boolean(ctx?.ok && canPostFinance(ctx.ctx.appRole) && header?.status === "draft");
 
   let debitSum = 0;
   let creditSum = 0;
@@ -444,10 +445,14 @@ export default function JournalEntryDetailPage() {
                 <Button type="button" variant="destructive" onClick={() => void deleteDraft()} disabled={deleting}>
                   {deleting ? "Removing…" : "Remove draft"}
                 </Button>
-                <Button type="button" onClick={() => void postEntry()} disabled={posting || !balanced}>
-                  {posting ? "Posting…" : "Post entry"}
-                </Button>
-                {!balanced ? (
+                {canPostEntry ? (
+                  <Button type="button" onClick={() => void postEntry()} disabled={posting || !balanced}>
+                    {posting ? "Posting…" : "Post entry"}
+                  </Button>
+                ) : (
+                  <span className="text-sm text-slate-500">Only owner / org admin can post entries.</span>
+                )}
+                {canPostEntry && !balanced ? (
                   <span className="text-sm text-amber-800 dark:text-amber-300">
                     Debits must equal credits with a non-zero total to post.
                   </span>

@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 import { parseDollarsToCents } from "@/lib/finance/format-cents";
-import { canMutateFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { canCreateDraftFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 
@@ -95,7 +95,7 @@ export default function NewJournalEntryPage() {
   }
 
   async function saveDraft() {
-    if (!ctx?.ok || !canMutateFinance(ctx.ctx.appRole)) return;
+    if (!ctx?.ok || !canCreateDraftFinance(ctx.ctx.appRole)) return;
     setBusy(true);
     setError(null);
     try {
@@ -120,6 +120,11 @@ export default function NewJournalEntryPage() {
 
       if (parsedLines.length < 2) {
         setError("Add at least two lines with accounts and a debit or credit amount.");
+        return;
+      }
+
+      if (isFacilityAdmin && !facilityId) {
+        setError("Facility admins must select a facility for journal entries.");
         return;
       }
 
@@ -161,7 +166,9 @@ export default function NewJournalEntryPage() {
     }
   }
 
-  if (ctx && ctx.ok && !canMutateFinance(ctx.ctx.appRole)) {
+  const isFacilityAdmin = ctx?.ok && ctx.ctx.appRole === "facility_admin";
+
+  if (ctx && ctx.ok && !canCreateDraftFinance(ctx.ctx.appRole)) {
     return (
       <div className="space-y-6">
         <FinanceHubNav />
@@ -180,7 +187,9 @@ export default function NewJournalEntryPage() {
       <FinanceHubNav />
       <div>
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">New journal entry</h1>
-        <p className="text-sm text-slate-600 dark:text-slate-400">Creates a draft with lines (owner / org admin).</p>
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          Creates a draft with lines.{isFacilityAdmin ? " Facility admins can create drafts scoped to their facility." : ""}
+        </p>
       </div>
 
       {error ? (

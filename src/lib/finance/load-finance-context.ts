@@ -38,3 +38,12 @@ export async function loadFinanceRoleContext(
 export function canMutateFinance(role: Database["public"]["Enums"]["app_role"]): boolean {
   return role === "owner" || role === "org_admin";
 }
+
+/** facility_admin can create drafts (Enhanced tier) but not post. */
+export function canCreateDraftFinance(role: Database["public"]["Enums"]["app_role"]): boolean {
+  return role === "owner" || role === "org_admin" || role === "facility_admin";
+}
+
+export function canPostFinance(role: Database["public"]["Enums"]["app_role"]): boolean {
+  return role === "owner" || role === "org_admin";
+}

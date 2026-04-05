@@ -12,6 +12,9 @@ const LINKS = [
   { href: "/admin/finance/journal-entries", label: "Journal entries" },
   { href: "/admin/finance/journal-entries/new", label: "New journal" },
   { href: "/admin/finance/ledger", label: "Ledger" },
+  { href: "/admin/finance/trial-balance", label: "Trial balance" },
+  { href: "/admin/finance/budget", label: "Budget" },
+  { href: "/admin/finance/gl-settings", label: "GL settings" },
 ] as const;
 
 export function FinanceHubNav() {
