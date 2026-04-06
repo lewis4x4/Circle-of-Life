@@ -15,6 +15,7 @@ import {
   type CaregiverIncidentFormData,
 } from "@/lib/validation/caregiver-incident";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
+import { UUID_STRING_RE } from "@/lib/supabase/env";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,9 +58,6 @@ const SHIFT_LABELS: Record<(typeof caregiverIncidentShiftValues)[number], string
   night: "Night",
   custom: "Custom / overlap",
 };
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function toDatetimeLocalValue(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -230,7 +228,7 @@ function CaregiverIncidentDraftPageInner() {
   }, [loadContext]);
 
   useEffect(() => {
-    if (!queryResidentId || !UUID_RE.test(queryResidentId) || residents.length === 0) return;
+    if (!queryResidentId || !UUID_STRING_RE.test(queryResidentId) || residents.length === 0) return;
     const match = residents.some((r) => r.id === queryResidentId);
     if (match) {
       form.setValue("residentId", queryResidentId);

@@ -31,7 +31,7 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
-import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
 type Acuity = 1 | 2 | 3;
 type ResidencyStatus = "active" | "hospital" | "loa";
@@ -107,9 +107,7 @@ export default function AdminResidentDetailPage() {
     setNotFound(false);
     setDetail(null);
 
-    const uuidOk = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      residentId,
-    );
+    const uuidOk = UUID_STRING_RE.test(residentId);
     if (!residentId || !uuidOk) {
       setNotFound(true);
       setLoading(false);

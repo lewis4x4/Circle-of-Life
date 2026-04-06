@@ -12,13 +12,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
-import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 import { BillingInvoiceLedger, PayerTypeBadge, mapDbPayerTypeToUi } from "../../../billing/billing-invoice-ledger";
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type SupabaseResident = {
   id: string;
@@ -50,7 +47,7 @@ function formatDate(isoDate: string): string {
 export default function ResidentBillingPage() {
   const params = useParams();
   const rawId = typeof params?.id === "string" ? params.id : "";
-  const residentId = UUID_RE.test(rawId) ? rawId : "";
+  const residentId = UUID_STRING_RE.test(rawId) ? rawId : "";
   const { selectedFacilityId } = useFacilityStore();
 
   const [residentName, setResidentName] = useState("");

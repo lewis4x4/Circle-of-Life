@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { UUID_STRING_RE } from "@/lib/supabase/env";
+
 export const caregiverIncidentCategoryValues = [
   "fall_with_injury",
   "fall_without_injury",
@@ -19,12 +21,10 @@ export const caregiverIncidentShiftValues = ["day", "evening", "night", "custom"
 
 export const caregiverIncidentSeverityValues = ["level_1", "level_2", "level_3", "level_4"] as const;
 
-const uuidLoose = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 export const caregiverIncidentFormSchema = z.object({
   residentId: z
     .string()
-    .refine((s) => s === "" || uuidLoose.test(s), "Choose a resident or leave blank"),
+    .refine((s) => s === "" || UUID_STRING_RE.test(s), "Choose a resident or leave blank"),
   category: z.enum(caregiverIncidentCategoryValues),
   severity: z.enum(caregiverIncidentSeverityValues),
   occurredAtLocal: z.string().min(1, "Date and time are required"),

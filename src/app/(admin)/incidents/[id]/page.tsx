@@ -16,10 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
-import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
 type IncidentSeverityUi = "level_1" | "level_2" | "level_3" | "level_4";
 type IncidentStatusUi = "open" | "in_review" | "closed";
@@ -123,7 +120,7 @@ export default function AdminIncidentDetailPage() {
     setNotFound(false);
     setDetail(null);
 
-    if (!incidentId || !UUID_RE.test(incidentId)) {
+    if (!incidentId || !UUID_STRING_RE.test(incidentId)) {
       setNotFound(true);
       setLoading(false);
       return;

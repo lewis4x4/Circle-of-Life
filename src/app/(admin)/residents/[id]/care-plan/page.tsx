@@ -16,10 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
-import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
 const STATUS_RANK: Record<string, number> = {
   active: 0,
@@ -87,7 +84,7 @@ export default function AdminResidentCarePlanPage() {
     setNoPlan(false);
     setLoaded(null);
 
-    if (!residentId || !UUID_RE.test(residentId)) {
+    if (!residentId || !UUID_STRING_RE.test(residentId)) {
       setNotFound(true);
       setLoading(false);
       return;

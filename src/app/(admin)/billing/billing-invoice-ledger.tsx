@@ -13,15 +13,12 @@ import {
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { createClient } from "@/lib/supabase/client";
-import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export type InvoiceStatusUi = "draft" | "sent" | "partial" | "paid" | "overdue" | "void" | "written_off";
 export type PayerTypeUi = "private_pay" | "medicaid" | "ltc_insurance";
@@ -311,7 +308,7 @@ async function fetchInvoicesFromSupabase(
   if (isValidFacilityIdForQuery(selectedFacilityId)) {
     invQuery = invQuery.eq("facility_id", selectedFacilityId);
   }
-  if (residentIdFilter && UUID_RE.test(residentIdFilter)) {
+  if (residentIdFilter && UUID_STRING_RE.test(residentIdFilter)) {
     invQuery = invQuery.eq("resident_id", residentIdFilter);
   }
 

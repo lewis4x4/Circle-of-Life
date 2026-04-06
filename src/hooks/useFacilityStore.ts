@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
+import { UUID_STRING_RE } from "@/lib/supabase/env";
+
 export interface Facility {
   id: string;
   name: string;
@@ -12,9 +14,6 @@ interface FacilityState {
   setSelectedFacility: (id: string | null) => void;
   setAvailableFacilities: (facilities: Facility[]) => void;
 }
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export const useFacilityStore = create<FacilityState>()(
   persist(
@@ -31,7 +30,7 @@ export const useFacilityStore = create<FacilityState>()(
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<Pick<FacilityState, "selectedFacilityId">>;
         const id = p.selectedFacilityId;
-        const selectedFacilityId = id != null && UUID_RE.test(id) ? id : null;
+        const selectedFacilityId = id != null && UUID_STRING_RE.test(id) ? id : null;
         return { ...current, ...p, selectedFacilityId };
       },
     },

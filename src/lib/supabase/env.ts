@@ -13,10 +13,11 @@ export function isSupabaseEnvConfigured(): boolean {
   return true;
 }
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+/** 8-4-4-4-12 lowercase hex segments; matches Postgres `uuid` text including demo/seed IDs (not only RFC 4122 variant bits). */
+export const UUID_STRING_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function isValidFacilityIdForQuery(id: string | null): id is string {
   if (id == null) return false;
-  return UUID_RE.test(id);
+  return UUID_STRING_RE.test(id);
 }

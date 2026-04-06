@@ -17,10 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
-import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
 type StaffRoleUi = "nurse" | "caregiver" | "med_tech" | "admin";
 type StaffStatusUi = "active" | "on_leave" | "off_shift";
@@ -99,7 +96,7 @@ export default function AdminStaffDetailPage() {
     setCerts([]);
     setShifts([]);
 
-    if (!staffId || !UUID_RE.test(staffId)) {
+    if (!staffId || !UUID_STRING_RE.test(staffId)) {
       setNotFound(true);
       setLoading(false);
       return;
