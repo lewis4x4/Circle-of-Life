@@ -342,9 +342,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
         <SurveyVisitModeBar />
 
-        {/* Dynamic Page Content */}
-        <main className="flex-1 overflow-auto p-6 lg:p-8 relative">
-          {children}
+        {/* Dynamic Page Content with Global Ambient Matrix */}
+        <main className="flex-1 overflow-auto p-6 lg:p-8 relative dark:bg-[#020202]">
+          <div className="fixed top-0 right-0 h-[800px] w-[800px] rounded-full blur-[150px] bg-indigo-500/5 dark:bg-indigo-600/10 pointer-events-none transition-colors duration-[3000ms] z-0 mix-blend-screen" />
+          <div className="fixed bottom-0 left-0 h-[600px] w-[600px] rounded-full blur-[120px] bg-emerald-500/5 dark:bg-emerald-900/10 pointer-events-none transition-colors duration-[3000ms] z-0 mix-blend-screen" />
+          
+          <div className="relative z-10 w-full h-full">
+            {children}
+          </div>
         </main>
       </div>
     </div>

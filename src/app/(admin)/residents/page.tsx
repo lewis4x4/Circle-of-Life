@@ -19,6 +19,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { KineticGrid } from "@/components/ui/kinetic-grid";
+import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 
 type Acuity = 1 | 2 | 3;
 type AdlStatus = "independent" | "assisted" | "dependent";
@@ -157,32 +159,45 @@ export default function AdminResidentsPage() {
   const highAcuityCount = rows.filter((row) => row.acuity === 3).length;
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className="space-y-6">
+      <header className="mb-8">
         <div>
-          <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-            Resident Master List
+          <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 08 / Residents</p>
+          <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            Resident Hub {highAcuityCount > 0 && <span className="relative flex h-2 w-2 mt-1"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span></span>}
           </h2>
-          <p className="mt-1 text-slate-500 dark:text-slate-400">
-            Unified census view with acuity, unit, and ADL filtering for rapid shift decisions.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href="/admin/residents/new"
-            className={buttonVariants({ size: "sm" })}
-          >
-            Add resident
-          </Link>
-          <Badge variant="outline" className="border-slate-200 bg-white px-3 py-1 dark:border-slate-800 dark:bg-slate-900">
-            <Users className="mr-1 h-3.5 w-3.5" />
-            {activeCount} active
-          </Badge>
-          <Badge variant="outline" className="border-red-200 bg-red-50 px-3 py-1 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
-            {highAcuityCount} high acuity
-          </Badge>
         </div>
       </header>
+
+      <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
+        <Card className="relative overflow-hidden border-slate-200/70 bg-white dark:border-slate-800/80 dark:bg-[#0A0A0A]">
+          <MonolithicWatermark value={activeCount} />
+          <div className="relative z-10 p-5">
+            <h3 className="text-[10px] font-mono tracking-widest uppercase text-slate-500 mb-4 flex items-center gap-2">
+              <Users className="h-3.5 w-3.5" /> Total Census
+            </h3>
+            <p className="text-4xl font-mono tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-500 dark:from-white dark:to-slate-500 pb-2">{activeCount}</p>
+          </div>
+        </Card>
+        <Card className="relative overflow-hidden border-rose-500/30 bg-rose-50/50 dark:border-rose-500/20 dark:bg-rose-950/10 shadow-[inset_0_0_15px_rgba(244,63,94,0.05)]">
+          <MonolithicWatermark value={highAcuityCount} className="text-[160px] translate-x-10 text-rose-600/10 dark:text-rose-400/10" />
+          <div className="relative z-10 p-5">
+            <h3 className="text-[10px] font-mono tracking-widest uppercase text-rose-600 dark:text-rose-400 mb-4 flex items-center gap-2">
+               High Acuity Profile
+            </h3>
+            <p className="text-4xl font-mono tracking-tighter text-rose-600 dark:text-rose-400 pb-2">{highAcuityCount}</p>
+          </div>
+        </Card>
+        <Card className="col-span-1 md:col-span-2 relative overflow-hidden border-slate-200/70 bg-white dark:border-slate-800/80 dark:bg-[#0A0A0A] flex flex-col justify-center items-start lg:items-end p-5 lg:pr-8">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-slate-100/50 dark:to-slate-800/10 pointer-events-none"></div>
+          <div className="relative z-10 text-left lg:text-right w-full">
+             <p className="hidden lg:block text-xs font-mono text-slate-500 mb-4">Unified census view with acuity & ADL scope</p>
+             <Link href="/admin/residents/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none")} >
+               + Initialize Intake
+             </Link>
+          </div>
+        </Card>
+      </KineticGrid>
 
       <AdminFilterBar
         searchValue={search}

@@ -19,6 +19,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { KineticGrid } from "@/components/ui/kinetic-grid";
+import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 
 type IncidentSeverity = "level_1" | "level_2" | "level_3" | "level_4";
 type IncidentStatus = "open" | "in_review" | "closed";
@@ -140,43 +142,45 @@ export default function AdminIncidentsPage() {
   const criticalCount = rows.filter((row) => row.severity === "level_4").length;
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className="space-y-6">
+      <header className="mb-8">
         <div>
-          <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-            Incident Command
+          <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 14 / Incident Command</p>
+          <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            CQI Risk Matrix {criticalCount > 0 && <span className="relative flex h-2 w-2 mt-1"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span></span>}
           </h2>
-          <p className="mt-1 text-slate-500 dark:text-slate-400">
-            Triage, follow-up, and severity review queue for reportable and internal incident workflows.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href="/admin/incidents/trends"
-            className={cn(
-              buttonVariants({ variant: "outline", size: "sm" }),
-              "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900",
-            )}
-          >
-            <BarChart3 className="mr-1.5 h-3.5 w-3.5" />
-            Trends
-          </Link>
-          <Badge
-            variant="outline"
-            className="border-slate-200 bg-white px-3 py-1 dark:border-slate-800 dark:bg-slate-900"
-          >
-            <ShieldAlert className="mr-1 h-3.5 w-3.5" />
-            {openCount} active queue
-          </Badge>
-          <Badge
-            variant="outline"
-            className="border-red-200 bg-red-50 px-3 py-1 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
-          >
-            <AlertTriangle className="mr-1 h-3.5 w-3.5" />
-            {criticalCount} critical
-          </Badge>
         </div>
       </header>
+
+      <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
+        <Card className="relative overflow-hidden border-amber-500/30 bg-amber-50/50 dark:border-amber-500/20 dark:bg-amber-950/10 shadow-[inset_0_0_15px_rgba(245,158,11,0.05)]">
+          <MonolithicWatermark value={openCount} className="text-[160px] translate-x-10 text-amber-600/10 dark:text-amber-400/10" />
+          <div className="relative z-10 p-5">
+            <h3 className="text-[10px] font-mono tracking-widest uppercase text-amber-600 dark:text-amber-400 mb-4 flex items-center gap-2">
+              <ShieldAlert className="h-3.5 w-3.5" /> Active Queue
+            </h3>
+            <p className="text-4xl font-mono tracking-tighter text-amber-600 dark:text-amber-400 pb-2">{openCount}</p>
+          </div>
+        </Card>
+        <Card className="relative overflow-hidden border-rose-500/30 bg-rose-50/50 dark:border-rose-500/20 dark:bg-rose-950/10 shadow-[inset_0_0_15px_rgba(244,63,94,0.05)]">
+          <MonolithicWatermark value={criticalCount} className="text-[160px] translate-x-10 text-rose-600/10 dark:text-rose-400/10" />
+          <div className="relative z-10 p-5">
+            <h3 className="text-[10px] font-mono tracking-widest uppercase text-rose-600 dark:text-rose-400 mb-4 flex items-center gap-2">
+               Level 4 Criticals
+            </h3>
+            <p className="text-4xl font-mono tracking-tighter text-rose-600 dark:text-rose-400 pb-2">{criticalCount}</p>
+          </div>
+        </Card>
+        <Card className="col-span-1 md:col-span-2 relative overflow-hidden border-slate-200/70 bg-white dark:border-slate-800/80 dark:bg-[#0A0A0A] flex flex-col justify-center items-start lg:items-end p-5 lg:pr-8">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-slate-100/50 dark:to-slate-800/10 pointer-events-none"></div>
+          <div className="relative z-10 text-left lg:text-right w-full">
+             <p className="hidden lg:block text-xs font-mono text-slate-500 mb-4">Triage and severity escalation queue tracking</p>
+             <Link href="/admin/incidents/trends" className={cn(buttonVariants({ variant: "outline", size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive border-slate-200 dark:border-slate-700")} >
+               <BarChart3 className="mr-2 h-3.5 w-3.5" /> View Matrix Analytics
+             </Link>
+          </div>
+        </Card>
+      </KineticGrid>
 
       <AdminFilterBar
         searchValue={search}

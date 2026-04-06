@@ -19,6 +19,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { KineticGrid } from "@/components/ui/kinetic-grid";
+import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 
 export type InvoiceStatusUi = "draft" | "sent" | "partial" | "paid" | "overdue" | "void" | "written_off";
 export type PayerTypeUi = "private_pay" | "medicaid" | "ltc_insurance";
@@ -157,31 +159,47 @@ export function BillingInvoiceLedger({
   const overdueCount = rows.filter((row) => row.status === "overdue").length;
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className="space-y-6">
+      <header className="mb-8">
         <div>
-          <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-            {title}
+          <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 05 / Accounts Receivable</p>
+          <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            {title} {overdueCount > 0 && <span className="relative flex h-2 w-2 mt-1"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span></span>}
           </h2>
-          <p className="mt-1 text-slate-500 dark:text-slate-400">{description}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge
-            variant="outline"
-            className="border-slate-200 bg-white px-3 py-1 dark:border-slate-800 dark:bg-slate-900"
-          >
-            <CreditCard className="mr-1 h-3.5 w-3.5" />
-            {billingCurrency.format(outstandingCents / 100)} outstanding
-          </Badge>
-          <Badge
-            variant="outline"
-            className="border-red-200 bg-red-50 px-3 py-1 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
-          >
-            <Receipt className="mr-1 h-3.5 w-3.5" />
-            {overdueCount} overdue
-          </Badge>
         </div>
       </header>
+
+      <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
+        <Card className="col-span-1 md:col-span-2 relative overflow-hidden border-emerald-500/30 bg-emerald-50/50 dark:border-emerald-500/20 dark:bg-emerald-950/10 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]">
+          <MonolithicWatermark value={Math.round((outstandingCents / 100) / 1000) + 'k'} className="text-[180px] translate-x-12 text-emerald-600/10 dark:text-emerald-400/10" />
+          <div className="relative z-10 p-5">
+            <h3 className="text-[10px] font-mono tracking-widest uppercase text-emerald-600 dark:text-emerald-400 mb-4 flex items-center gap-2">
+              <CreditCard className="h-3.5 w-3.5" /> Total Outstanding AR
+            </h3>
+            <p className="text-4xl lg:text-5xl font-mono tracking-tighter tabular-nums text-emerald-600 dark:text-emerald-400 pb-2 flex flex-col">
+              {billingCurrency.format(outstandingCents / 100)}
+            </p>
+          </div>
+        </Card>
+        <Card className="relative overflow-hidden border-rose-500/30 bg-rose-50/50 dark:border-rose-500/20 dark:bg-rose-950/10 shadow-[inset_0_0_15px_rgba(244,63,94,0.05)]">
+          <MonolithicWatermark value={overdueCount} className="text-[160px] translate-x-10 text-rose-600/10 dark:text-rose-400/10" />
+          <div className="relative z-10 p-5">
+            <h3 className="text-[10px] font-mono tracking-widest uppercase text-rose-600 dark:text-rose-400 mb-4 flex items-center gap-2">
+               Overdue Invoices
+            </h3>
+            <p className="text-4xl font-mono tracking-tighter text-rose-600 dark:text-rose-400 pb-2">{overdueCount}</p>
+          </div>
+        </Card>
+        <Card className="relative overflow-hidden border-slate-200/70 bg-white dark:border-slate-800/80 dark:bg-[#0A0A0A] flex flex-col justify-center items-start p-5">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-slate-100/50 dark:to-slate-800/10 pointer-events-none"></div>
+          <div className="relative z-10 w-full text-left">
+             <p className="hidden lg:block text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-4">Batch Actions</p>
+             <Link href="/admin/billing/invoices/generate" className={cn(buttonVariants({ variant: "default", size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none w-full")} >
+               Generate Cycle
+             </Link>
+          </div>
+        </Card>
+      </KineticGrid>
 
       <AdminFilterBar
         searchValue={search}
