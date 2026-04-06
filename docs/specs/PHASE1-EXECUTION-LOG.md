@@ -51,7 +51,7 @@ Use `Tester` to record the human who ran the step. Use `Notes` to capture:
 
 | ID | Item | Result | Tester | Date | Notes |
 |----|------|--------|--------|------|-------|
-| PH1-P01 | `.env.local` → correct Supabase project | **VERIFY** | owner | | Repo canonical URL: `https://manfqmasfqppukpobpld.supabase.co` ([README.md](./README.md)). Supabase CLI connects. Owner confirms `NEXT_PUBLIC_SUPABASE_URL` matches (do not commit secrets). |
+| PH1-P01 | `.env.local` → correct Supabase project | **PASS** | owner | 2026-04-06 | Brian Lewis confirmed active project **`manfqmasfqppukpobpld`** (Supabase Authentication UI, PRODUCTION). Repo canonical URL: `https://manfqmasfqppukpobpld.supabase.co` ([README.md](./README.md)). Owner still responsible to keep local `.env.local` host aligned (never commit secrets). |
 | PH1-P02 | Migrations applied / list aligned remote | **PASS** | agent | 2026-04-06 | `supabase migration list` shows Local/Remote **001–095** after remote apply of `093`, `094`, and `095` |
 | PH1-P03 | Seeded users + roles + facility access | **FAIL** | agent | 2026-04-06 | Live sign-in still fails for `facility_admin`, `caregiver`, and `family` pilot users even after remote auth remediations `093` and `094`: `unexpected_failure` / `Database error querying schema`; facility access not verifiable without session |
 | PH1-P04 | Facility context in admin shell | PENDING | | | Owner UAT; single-facility pilot is acceptable if all executed rows name the same facility |
@@ -64,7 +64,7 @@ Use `Tester` to record the human who ran the step. Use `Notes` to capture:
 
 | ID | Item | Result | Tester | Date | Notes |
 |----|------|--------|--------|------|-------|
-| PH1-A01 | `/login` — admin / caregiver / family → correct shell | **FAIL** | agent | 2026-04-06 | Valid pilot-role login could not complete. Supabase Auth failed before route resolution first for `.demo` addresses, then again for `jessica@circleoflifealf.com`, `maria.garcia@circleoflifealf.com`, and `robert.sullivan@circleoflifealf.com` even after remote apply of `093`, `094`, and `095`, all with `Database error querying schema` |
+| PH1-A01 | `/login` — admin / caregiver / family → correct shell | **FAIL** | agent | 2026-04-06 | Valid pilot-role login could not complete. Supabase Auth failed before route resolution first for `.demo` addresses, then again for `jessica@circleoflifealf.com`, `maria.garcia@circleoflifealf.com`, and `robert.sullivan@circleoflifealf.com` even after remote apply of `093`, `094`, and `095`, all with `Database error querying schema`. Automated re-verification after A1 fix: `npm run demo:auth-smoke:real` |
 | PH1-A02 | Invalid credentials — clear error | **PASS** | agent | 2026-04-06 | Playwright UI run on `/login` with `nobody@example.com` + wrong password showed visible error: `Invalid login credentials`; future local reruns use `npm run demo:auth-smoke` |
 | PH1-A03 | Deep link logged out → login | **PASS** | agent | 2026-04-06 | `GET /admin/residents` redirected to `/login?next=%2Fadmin%2Fresidents`; Playwright and `curl -I` matched; future local reruns use `npm run demo:auth-smoke` |
 | PH1-A04 | Wrong role cannot open other shell routes | PENDING | | | Blocked by PH1-A01 auth failure; no valid non-admin session available for route guard verification |

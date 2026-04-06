@@ -71,6 +71,14 @@ async function main() {
   await deleteByOrg(supabase, "rooms");
   await deleteByOrg(supabase, "units");
 
+  await deleteByOrg(supabase, "search_documents");
+  await deleteByOrg(supabase, "payroll_export_batches");
+  await deleteByOrg(supabase, "diet_orders");
+  await deleteByOrg(supabase, "reputation_replies");
+  await deleteByOrg(supabase, "reputation_accounts");
+  await deleteByOrg(supabase, "competency_demonstrations");
+  await deleteByOrg(supabase, "insurance_policies");
+
   await assertNoError(
     "delete incident_sequences",
     supabase.from("incident_sequences").delete().eq("facility_id", facilityId),

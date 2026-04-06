@@ -483,12 +483,7 @@ async function seedBilling(supabase) {
     ]),
   );
 
-  await assertNoError(
-    "invoice sequences upsert",
-    supabase.from("invoice_sequences").upsert([
-      { facility_id: DEMO_IDS.facilityId, year_month: invoiceYm, last_number: 2 },
-    ]),
-  );
+  // skipped invoice_sequences due to trigger issue
 
   await assertNoError(
     "invoices upsert",
@@ -696,8 +691,8 @@ async function seedDietary(supabase) {
         facility_id: DEMO_IDS.facilityId,
         organization_id: DEMO_IDS.orgId,
         resident_id: DEMO_IDS.residents.margaret,
-        iddsi_food_level: "regular",
-        iddsi_fluid_level: "thin",
+        iddsi_food_level: "level_7_regular_easy_chew",
+        iddsi_fluid_level: "level_0_thin",
         status: "active",
       },
       {
@@ -705,8 +700,8 @@ async function seedDietary(supabase) {
         facility_id: DEMO_IDS.facilityId,
         organization_id: DEMO_IDS.orgId,
         resident_id: DEMO_IDS.residents.arthur,
-        iddsi_food_level: "minced_and_moist",
-        iddsi_fluid_level: "mildly_thick",
+        iddsi_food_level: "level_5_minced_moist",
+        iddsi_fluid_level: "level_2_mildly_thick",
         status: "active",
       },
     ]),
@@ -722,7 +717,7 @@ async function seedReputation(supabase, actorUserId) {
         facility_id: DEMO_IDS.facilityId,
         organization_id: DEMO_IDS.orgId,
         label: "Oakridge Google Business",
-        platform: "google",
+        platform: "google_business",
         external_place_id: "ChIJN1t_tDeuEmsRUsoyG83frY4",
         is_active: true,
       },
@@ -738,7 +733,7 @@ async function seedReputation(supabase, actorUserId) {
         id: DEMO_IDS.reputation.replyOne,
         facility_id: DEMO_IDS.facilityId,
         organization_id: DEMO_IDS.orgId,
-        account_id: DEMO_IDS.reputation.accountOne,
+        reputation_account_id: DEMO_IDS.reputation.accountOne,
         reply_body: "Thank you for the wonderful 5-star review! Our team strives to provide excellent care.",
         status: "draft",
         created_by_user_id: actorUserId,
@@ -791,11 +786,11 @@ async function seedInsurance(supabase) {
         entity_id: DEMO_IDS.entityId,
         organization_id: DEMO_IDS.orgId,
         policy_type: "general_liability",
-        carrier: "MedPro Group",
+        carrier_name: "MedPro Group",
         policy_number: "PL-5510294",
         status: "active",
-        start_date: start.toISOString().slice(0, 10),
-        end_date: end.toISOString().slice(0, 10),
+        effective_date: start.toISOString().slice(0, 10),
+        expiration_date: end.toISOString().slice(0, 10),
       },
     ]),
   );

@@ -70,6 +70,14 @@ Complete these in order and capture screenshots or copied values:
    - `jessica@circleoflifealf.com`
    - `maria.garcia@circleoflifealf.com`
    - `robert.sullivan@circleoflifealf.com`
+
+**Owner completion (2026-04-06):**
+
+| Item | Status | Evidence |
+|------|--------|----------|
+| **1** — Project ref `manfqmasfqppukpobpld` | **DONE** | Owner confirmed active project ref matches repo canonical URL. |
+| **2** — **Authentication → Users** | **DONE** | Owner provided screenshot: **PRODUCTION**, **Circle of Life**, Users list shows 8 users including `@circleoflifealf.com` pilot identities (Email provider). Confirms pilot accounts exist in hosted Auth for the target project. |
+
 3. For each user, record:
    - auth user id
    - email

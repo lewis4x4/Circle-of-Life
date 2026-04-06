@@ -25,46 +25,62 @@ function expectRedirect(result, expectedLocation) {
   );
 }
 
+const REDIRECT_PROBES = [
+  { path: "/admin/residents", expected: "/login?next=%2Fadmin%2Fresidents", shell: "admin" },
+  { path: "/admin/billing", expected: "/login?next=%2Fadmin%2Fbilling", shell: "admin" },
+  { path: "/admin/staff", expected: "/login?next=%2Fadmin%2Fstaff", shell: "admin" },
+  { path: "/admin/incidents", expected: "/login?next=%2Fadmin%2Fincidents", shell: "admin" },
+  { path: "/admin/executive", expected: "/login?next=%2Fadmin%2Fexecutive", shell: "admin" },
+  { path: "/finance", expected: "/login?next=%2Ffinance", shell: "admin" },
+  { path: "/vendors", expected: "/login?next=%2Fvendors", shell: "admin" },
+  { path: "/caregiver", expected: "/login?next=%2Fcaregiver", shell: "caregiver" },
+  { path: "/caregiver/tasks", expected: "/login?next=%2Fcaregiver%2Ftasks", shell: "caregiver" },
+  { path: "/caregiver/meds", expected: "/login?next=%2Fcaregiver%2Fmeds", shell: "caregiver" },
+  { path: "/meds", expected: "/login?next=%2Fmeds", shell: "caregiver" },
+  { path: "/family", expected: "/login?next=%2Ffamily", shell: "family" },
+  { path: "/family/billing", expected: "/login?next=%2Ffamily%2Fbilling", shell: "family" },
+  { path: "/family/messages", expected: "/login?next=%2Ffamily%2Fmessages", shell: "family" },
+];
+
 async function main() {
   const login = await request("/login");
-  const adminResidents = await request("/admin/residents");
-  const caregiver = await request("/caregiver");
-  const family = await request("/family");
+
+  const redirectResults = {};
+  let allRedirectsPass = true;
+
+  for (const probe of REDIRECT_PROBES) {
+    const result = await request(probe.path);
+    const pass = expectRedirect(result, probe.expected);
+    if (!pass) allRedirectsPass = false;
+    redirectResults[probe.path] = {
+      pass,
+      shell: probe.shell,
+      status: result.status,
+      location: result.location,
+    };
+  }
+
+  const loginPass =
+    login.status === 200 &&
+    ((login.body?.toLowerCase().includes("sign in") ?? false) ||
+      (login.body?.toLowerCase().includes("haven access") ?? false));
 
   const output = {
     checked_at: new Date().toISOString(),
     base_url: baseUrl,
     login_page: {
-      pass:
-        login.status === 200 &&
-        ((login.body?.toLowerCase().includes("sign in") ?? false) ||
-          (login.body?.toLowerCase().includes("haven access") ?? false)),
+      pass: loginPass,
       status: login.status,
     },
-    unauthenticated_redirects: {
-      admin_residents: {
-        pass: expectRedirect(adminResidents, "/login?next=%2Fadmin%2Fresidents"),
-        status: adminResidents.status,
-        location: adminResidents.location,
-      },
-      caregiver: {
-        pass: expectRedirect(caregiver, "/login?next=%2Fcaregiver"),
-        status: caregiver.status,
-        location: caregiver.location,
-      },
-      family: {
-        pass: expectRedirect(family, "/login?next=%2Ffamily"),
-        status: family.status,
-        location: family.location,
-      },
+    unauthenticated_redirects: redirectResults,
+    summary: {
+      total_probes: REDIRECT_PROBES.length,
+      passed: Object.values(redirectResults).filter((r) => r.pass).length,
+      failed: Object.values(redirectResults).filter((r) => !r.pass).length,
     },
   };
 
-  const verdict =
-    output.login_page.pass &&
-    output.unauthenticated_redirects.admin_residents.pass &&
-    output.unauthenticated_redirects.caregiver.pass &&
-    output.unauthenticated_redirects.family.pass;
+  const verdict = loginPass && allRedirectsPass;
 
   console.log(
     JSON.stringify(

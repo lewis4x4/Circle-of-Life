@@ -33,6 +33,12 @@ For a compact JSON summary of steps 2, 3, and the target-project part of step 5,
 npm run demo:ops-status
 ```
 
+For a **single local pilot-readiness bundle** (chains web-health, auth-smoke, auth-check, ops-status):
+
+```bash
+BASE_URL=http://127.0.0.1:3001 npm run demo:pilot-readiness
+```
+
 ---
 
 ## 1. Repo hygiene and build baseline
@@ -116,21 +122,38 @@ Required names:
 - `VAPID_SUBJECT`
 - `DISPATCH_PUSH_SECRET` if server or cron callers use secret-based dispatch
 
-### Cron ownership
+### Cron ownership register
 
-Confirm and record:
+| Job | Function | Schedule | Scheduler | Owner | Replay if failed |
+|-----|----------|----------|-----------|-------|------------------|
+| Monthly invoices | `generate-monthly-invoices` | 1st of month, ~02:00 UTC (per org) | Supabase Edge Cron / GitHub Actions / external | ☐ (record name) | Re-POST with same `organization_id` + explicit `billing_year`/`billing_month`; idempotent via unique index (migration `071`) |
+| Daily KPI snapshot | `exec-kpi-snapshot` | Daily ~03:00 UTC (per org) | Supabase Edge Cron / GitHub Actions / external | ☐ (record name) | Re-POST with same `organization_id` + `snapshot_date`; deletes same-day rows before insert |
+| Push dispatch | `dispatch-push` | Event-driven (not cron) | Application triggers | N/A | Retry the POST; no state mutation on failure |
+| Audit export | `export-audit-log` | On-demand (user-initiated) | Admin UI | N/A | Re-POST with same `job_id`; job row tracks state |
 
-- who owns `generate-monthly-invoices`
-- who owns `exec-kpi-snapshot`
-- where each cron is scheduled
-- expected schedule
-- replay path if a run fails
-- secret rotation owner
+Fill in **Owner** and **Scheduler** columns when crons are configured in the dashboard or CI.
 
-Minimum expected schedules:
+### Secret rotation
 
-- `generate-monthly-invoices`: monthly per org or facility
-- `exec-kpi-snapshot`: daily per org
+| Secret | Used by | Rotation cadence | Rotation owner | How to rotate |
+|--------|---------|-----------------|----------------|---------------|
+| `GENERATE_MONTHLY_INVOICES_SECRET` | `generate-monthly-invoices` | Quarterly or on leak | ☐ | `supabase secrets set GENERATE_MONTHLY_INVOICES_SECRET=<new>` then update scheduler header |
+| `EXEC_KPI_SNAPSHOT_SECRET` | `exec-kpi-snapshot` | Quarterly or on leak | ☐ | `supabase secrets set EXEC_KPI_SNAPSHOT_SECRET=<new>` then update scheduler header |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | `dispatch-push` | Rarely (key pair) | ☐ | Regenerate VAPID pair, `supabase secrets set` both, re-subscribe clients |
+| `VAPID_SUBJECT` | `dispatch-push` | On domain change | ☐ | `supabase secrets set VAPID_SUBJECT=mailto:<new>` |
+| `DISPATCH_PUSH_SECRET` | `dispatch-push` (server callers) | Quarterly or on leak | ☐ | `supabase secrets set DISPATCH_PUSH_SECRET=<new>` then update callers |
+
+**Auto-injected (no rotation needed):** `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
+
+### Edge Function failure triage
+
+| Symptom | Check first | Fix |
+|---------|-------------|-----|
+| 401 on cron call | Secret mismatch | Compare `x-cron-secret` header value with `supabase secrets list`; re-set if rotated |
+| 500 on invoice generation | Rate schedule or data issue | Check response `facilities[].outcome`; fix `blocked` sites (missing rate schedule, already invoiced); re-POST (idempotent) |
+| 500 on KPI snapshot | Source module empty | Verify org has at least one facility with census/billing data; check `lineage` in response |
+| Function not found | Not deployed | `supabase functions deploy <name> --project-ref manfqmasfqppukpobpld` |
+| Timeout | Payload too large | Use `max_facilities` cap for invoice generation; split org if needed |
 
 ### Production compliance
 

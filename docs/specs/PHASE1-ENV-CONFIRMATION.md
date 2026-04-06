@@ -18,6 +18,8 @@
 
 **Owner:** Confirm `NEXT_PUBLIC_SUPABASE_URL` in `.env.local` matches this host (never commit `.env.local`).
 
+**Owner confirmation (2026-04-06):** Brian Lewis — active Supabase project **is** `manfqmasfqppukpobpld` (Authentication dashboard, PRODUCTION). Align local `.env.local` with `https://manfqmasfqppukpobpld.supabase.co` before any UAT.
+
 ---
 
 ## Migration alignment (local vs remote)
@@ -57,7 +59,7 @@ Command: `supabase migration list`
 
 | ID | Repo/CLI result | Owner still required |
 |----|-----------------|----------------------|
-| PH1-P01 | CLI links; canonical URL documented | Confirm `.env.local` host = `manfqmasfqppukpobpld.supabase.co` |
+| PH1-P01 | **PASS** — owner confirmed project ref | Brian Lewis — 2026-04-06: active project `manfqmasfqppukpobpld`; confirm `.env.local` `NEXT_PUBLIC_SUPABASE_URL` still matches (not committed) |
 | PH1-P02 | **PASS** | `supabase migration list` now shows Local/Remote **001–095** (2026-04-06) |
 | PH1-P03–P04 | — | Seed + facility selector UAT; current remediation scope is single-facility pilot |
 | PH1-P05 | N/A until Storage uploads | — |

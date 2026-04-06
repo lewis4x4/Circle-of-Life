@@ -272,6 +272,8 @@ The repo now contains broad **Core-shipped** surface area across Phases 1–6. T
 
 #### Track A — Phase 1 acceptance closeout (blocking)
 
+**Single closeout roadmap:** [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md) — ordered steps A1–A6, owners, evidence, and definition of done.
+
 Use these authoritative files as the acceptance source of truth:
 
 - [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md)
@@ -298,10 +300,10 @@ Add the missing confidence layers that gates alone do not provide.
 
 | Order | Item | Scope |
 |-------|------|-------|
-| B1 | Automated regression layer | Critical-path browser tests, role/RLS contract checks, and repeatable smoke coverage for pilot workflows |
-| B2 | Observability | Structured logs, error tracking, Edge-function failure visibility, cron/job dashboards, deployment/run health visibility |
-| B3 | CI hardening | Expand beyond `segment:gates`; add selected `--ui` coverage and reduce dependence on visual/a11y-only proof |
-| B4 | Operational runbooks | Secret rotation, cron ownership, replay/failure handling, deployment verification, operator-facing failure paths; start with [PHASE1-OPS-VERIFICATION-RUNBOOK.md](./PHASE1-OPS-VERIFICATION-RUNBOOK.md) |
+| B1 | Automated regression layer | Critical-path browser tests, role/RLS contract checks, and repeatable smoke coverage for pilot workflows; unauthenticated: `web-health` (14 probes) + `auth-smoke`; authenticated: `auth-smoke:real` (blocked on A1) |
+| B2 | Observability | Structured logs, error tracking, Edge-function failure visibility, cron/job dashboards, deployment/run health visibility; spec: [OBSERVABILITY-SPEC.md](./OBSERVABILITY-SPEC.md) |
+| B3 | CI hardening | Expand beyond `segment:gates`; add selected `--ui` coverage and reduce dependence on visual/a11y-only proof; spec: [CI-HARDENING-SPEC.md](./CI-HARDENING-SPEC.md) |
+| B4 | Operational runbooks | Secret rotation, cron ownership, replay/failure handling, deployment verification, operator-facing failure paths; [PHASE1-OPS-VERIFICATION-RUNBOOK.md](./PHASE1-OPS-VERIFICATION-RUNBOOK.md) now includes cron register, secret rotation table, failure triage, and `pilot-readiness` bundle |
 
 **Rule:** New high-risk modules should not be marked “complete” without test coverage and observable runtime behavior.
 

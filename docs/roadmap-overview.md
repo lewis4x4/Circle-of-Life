@@ -89,6 +89,8 @@ For migration counts and environment alignment, use `PHASE1-ENV-CONFIRMATION.md`
 
 Treat the current repo state as **Core shipped across many modules**, not as universal operational completion. Migrations `093`–`095` are now reserved for Phase 1 auth remediation, so before resuming future roadmap work at `096+`, execute the remediation sequence now captured in `docs/specs/README.md`:
 
+**Track A single roadmap:** `docs/specs/TRACK-A-CLOSEOUT-ROADMAP.md` — ordered steps, owners, and evidence for closing Phase 1 acceptance.
+
 1. **Phase 1 acceptance closeout** — RLS JWT matrix, real-auth UAT, env/seed verification, Pro/BAA/PITR attestation, active waiver review.
 2. **Platform hardening** — automated regression coverage, observability, CI hardening, runbooks for cron/secrets/replay.
 3. **Workflow hardening** — billing, eMAR, referral/admission/discharge, family/audit, executive operations.

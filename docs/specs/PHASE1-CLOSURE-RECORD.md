@@ -2,6 +2,8 @@
 
 **Purpose:** Single place to record whether Phase 1 moved from **engineering-ready** to **fully accepted** on the **target environment**, per [PHASE1-ACCEPTANCE-CHECKLIST.md](./PHASE1-ACCEPTANCE-CHECKLIST.md).
 
+**Track A closeout roadmap:** [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md) — one execution order and checklist to finish Track A.
+
 **Do not overstate:** This document must distinguish **automated/repo verification** from **live UAT + RLS + production compliance**.
 
 **Last updated:** 2026-04-06 — engineering baseline + UI gates remain PASS; **remote migrations 001–095** and Edge Functions deploy verified via Supabase CLI. Phase 1 acceptance blockers remain open; remediation sequence now mirrors [README.md](./README.md).
@@ -13,7 +15,7 @@
 | Criterion | Status (2026-04-06) |
 |-----------|---------------------|
 | **Engineering baseline** (lint, build, migration replay, secrets, audit, segment gates) | **PASS** — see § Gate evidence |
-| **Target `.env` / Supabase project alignment** | **VERIFY** — canonical URL in [README.md](./README.md); owner confirms `.env.local` host; [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
+| **Target `.env` / Supabase project alignment** | **PASS (owner)** — 2026-04-06: Brian Lewis confirmed active project **`manfqmasfqppukpobpld`** in Supabase (PRODUCTION). Owner still keeps `.env.local` aligned with [README.md](./README.md); see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) and [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) **PH1-P01**. |
 | **Remote migrations aligned** | **PASS** — `supabase migration list` now shows Local/Remote **001–095** (2026-04-06) |
 | **Seeded users (admin / caregiver / family) + facility context** | **FAIL** — live sign-in attempts still return `Database error querying schema` after remote auth remediations `093`, `094`, and `095`; see [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) |
 | **Checklist §A–F (real auth)** | **FAIL / BLOCKED** — logged-out redirect and invalid-credential handling passed, but valid role login still fails before shell routing; see [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) |
@@ -115,6 +117,7 @@ Then set **Overall Phase 1 full acceptance** below to **PASS** or **PASS WITH WA
 ## References
 
 - [README.md](./README.md) — phase order
+- [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md) — Track A ordered closeout (A1–A6)
 - [PHASE1-AUTH-DEBUG-HANDOFF.md](./PHASE1-AUTH-DEBUG-HANDOFF.md) — project-level auth escalation packet
 - [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) — migration list / canonical URL
 - [PHASE1-OPS-VERIFICATION-RUNBOOK.md](./PHASE1-OPS-VERIFICATION-RUNBOOK.md) — deploy, function, secret, and smoke verification flow

@@ -1,0 +1,125 @@
+{
+  "segment": "track-a-closeout-roadmap",
+  "timestamp": "2026-04-06T23:33:09.311Z",
+  "verdict": "PASS",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-env-example.mjs",
+      "duration_ms": 24,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "duration_ms": 132,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "status": "passed",
+      "command": "npm run audit:ci",
+      "duration_ms": 677,
+      "stdout": "found 0 vulnerabilities\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "status": "passed",
+      "command": "npm run secrets:gitleaks",
+      "duration_ms": 3520,
+      "stdout": "[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n\u001b[90m11:33PM\u001b[0m \u001b[32mINF\u001b[0m 197 commits scanned.\n\u001b[90m11:33PM\u001b[0m \u001b[32mINF\u001b[0m scan completed in 2.32s\n\u001b[90m11:33PM\u001b[0m \u001b[32mINF\u001b[0m no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "status": "passed",
+      "command": "npm run lint",
+      "duration_ms": 6482,
+      "stdout": "\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/billing/billing-invoice-ledger.tsx\n   5:49  warning  'Receipt' is defined but never used               @typescript-eslint/no-unused-vars\n  19:10  warning  'Card' is defined but never used                  @typescript-eslint/no-unused-vars\n  19:16  warning  'CardContent' is defined but never used           @typescript-eslint/no-unused-vars\n  19:29  warning  'CardDescription' is defined but never used       @typescript-eslint/no-unused-vars\n  19:46  warning  'CardHeader' is defined but never used            @typescript-eslint/no-unused-vars\n  19:58  warning  'CardTitle' is defined but never used             @typescript-eslint/no-unused-vars\n  86:3   warning  'description' is assigned a value but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/certifications/page.tsx\n  15:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n  15:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n  15:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n  15:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n  15:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/dietary/page.tsx\n   9:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n   9:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n   9:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n   9:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n   9:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n  19:10  warning  'PulseDot' is defined but never used         @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/finance/page.tsx\n  8:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n  8:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n  8:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n  8:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n  8:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/incidents/page.tsx\n   5:10  warning  'AlertTriangle' is defined but never used    @typescript-eslint/no-unused-vars\n  19:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n  19:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n  19:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n  19:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n  19:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/insurance/page.tsx\n  9:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n  9:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n  9:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n  9:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n  9:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/payroll/page.tsx\n   9:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n   9:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n   9:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n   9:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n   9:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n  19:10  warning  'PulseDot' is defined but never used         @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/reputation/page.tsx\n  9:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n  9:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n  9:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n  9:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n  9:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/residents/page.tsx\n  20:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n  20:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n  20:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n  20:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n  20:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/schedules/page.tsx\n  15:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n  15:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n  15:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n  15:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n  15:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/search/page.tsx\n   8:10  warning  'Card' is defined but never used         @typescript-eslint/no-unused-vars\n   8:16  warning  'CardContent' is defined but never used  @typescript-eslint/no-unused-vars\n   8:29  warning  'CardHeader' is defined but never used   @typescript-eslint/no-unused-vars\n   8:41  warning  'CardTitle' is defined but never used    @typescript-eslint/no-unused-vars\n  10:10  warning  'Label' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/staff/page.tsx\n   5:37  warning  'UserCog' is defined but never used          @typescript-eslint/no-unused-vars\n  20:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n  20:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n  20:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n  20:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n  20:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/staffing/page.tsx\n  10:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n  10:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n  10:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n  10:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n  10:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/time-records/page.tsx\n  15:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n  15:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n  15:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n  15:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n  15:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/training/page.tsx\n   9:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n   9:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n   9:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n   9:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n   9:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n  19:10  warning  'PulseDot' is defined but never used         @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/transportation/page.tsx\n   9:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n   9:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n   9:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n   9:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n   9:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n  19:10  warning  'PulseDot' is defined but never used         @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/vendors/page.tsx\n  8:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n  8:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n  8:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n  8:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n  8:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/components/common/admin-list-patterns.tsx\n  7:10  warning  'Card' is defined but never used         @typescript-eslint/no-unused-vars\n  7:16  warning  'CardContent' is defined but never used  @typescript-eslint/no-unused-vars\n\n✖ 95 problems (0 errors, 95 warnings)\n\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "status": "passed",
+      "command": "npm run migrations:check",
+      "duration_ms": 101,
+      "stdout": "[migrations:check] PASS: 95 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..095\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": false,
+      "status": "passed",
+      "command": "npm run migrations:verify:pg",
+      "duration_ms": 8999,
+      "stdout": "[migrations:verify:pg] PASS (95 migration file(s))\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "status": "passed",
+      "command": "npm run build",
+      "duration_ms": 17614,
+      "stdout": "[migrations:check] PASS: 95 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..095\n[check:admin-shell] PASS: all 21 top-level (admin) route prefix(es) are gated\n▲ Next.js 16.2.1 (Turbopack)\n- Environments: .env.local\n\n  Creating an optimized production build ...\n✓ Compiled successfully in 7.0s\n  Running TypeScript ...\n  Finished TypeScript in 8.0s ...\n  Collecting page data using 15 workers ...\n  Generating static pages using 15 workers (0/217) ...\n  Generating static pages using 15 workers (54/217) \r\n  Generating static pages using 15 workers (108/217) \r\n  Generating static pages using 15 workers (162/217) \r\n✓ Generating static pages using 15 workers (217/217) in 460ms\n  Finalizing page optimization ...\n\nRoute (app)\n┌ ○ /\n├ ○ /_not-found\n├ ○ /admin\n├ ○ /admin/admissions\n├ ƒ /admin/admissions/[id]\n├ ○ /admin/admissions/new\n├ ○ /admin/assessments/overdue\n├ ○ /admin/billing\n├ ○ /admin/billing/ar-aging\n├ ○ /admin/billing/collections\n├ ○ /admin/billing/collections/new\n├ ○ /admin/billing/invoices\n├ ƒ /admin/billing/invoices/[id]\n├ ○ /admin/billing/invoices/generate\n├ ○ /admin/billing/org-ar-aging\n├ ○ /admin/billing/payments/new\n├ ○ /admin/billing/rates\n├ ○ /admin/billing/rates/new\n├ ○ /admin/billing/revenue\n├ ○ /admin/care-plans/reviews-due\n├ ○ /admin/certifications\n├ ○ /admin/certifications/new\n├ ○ /admin/compliance\n├ ○ /admin/compliance/audit-export\n├ ƒ /admin/compliance/deficiencies/[id]\n├ ○ /admin/compliance/deficiencies/new\n├ ○ /admin/compliance/policies\n├ ƒ /admin/compliance/policies/[id]/edit\n├ ○ /admin/compliance/policies/new\n├ ○ /admin/dietary\n├ ○ /admin/dietary/new\n├ ○ /admin/discharge\n├ ƒ /admin/discharge/[id]\n├ ○ /admin/discharge/new\n├ ○ /admin/executive\n├ ○ /admin/executive/alerts\n├ ○ /admin/executive/benchmarks\n├ ○ /admin/executive/entity\n├ ƒ /admin/executive/entity/[id]\n├ ƒ /admin/executive/facility/[id]\n├ ○ /admin/executive/nlq\n├ ○ /admin/executive/reports\n├ ○ /admin/executive/scenarios\n├ ○ /admin/executive/settings\n├ ○ /admin/family-messages\n├ ○ /admin/family-portal\n├ ○ /admin/finance\n├ ○ /admin/finance/budget\n├ ○ /admin/finance/chart-of-accounts\n├ ○ /admin/finance/gl-settings\n├ ○ /admin/finance/journal-entries\n├ ƒ /admin/finance/journal-entries/[id]\n├ ○ /admin/finance/journal-entries/new\n├ ○ /admin/finance/ledger\n├ ○ /admin/finance/period-close\n├ ○ /admin/finance/posting-rules\n├ ○ /admin/finance/trial-balance\n├ ○ /admin/incidents\n├ ƒ /admin/incidents/[id]\n├ ƒ /admin/incidents/[id]/rca\n├ ○ /admin/incidents/trends\n├ ○ /admin/infection-control\n├ ƒ /admin/infection-control/[id]\n├ ○ /admin/infection-control/new\n├ ƒ /admin/infection-control/outbreaks/[id]\n├ ○ /admin/infection-control/staff-illness\n├ ○ /admin/insurance\n├ ○ /admin/insurance/claims\n├ ƒ /admin/insurance/claims/[id]\n├ ○ /admin/insurance/coi\n├ ○ /admin/insurance/loss-runs\n├ ○ /admin/insurance/policies\n├ ƒ /admin/insurance/policies/[id]\n├ ○ /admin/insurance/policies/new\n├ ○ /admin/insurance/renewal-packages\n├ ƒ /admin/insurance/renewal-packages/[id]\n├ ○ /admin/insurance/renewals\n├ ○ /admin/insurance/workers-comp\n├ ○ /admin/medications\n├ ○ /admin/medications/controlled\n├ ○ /admin/medications/errors\n├ ○ /admin/medications/errors/new\n├ ○ /admin/medications/verbal-orders\n├ ○ /admin/medications/verbal-orders/new\n├ ○ /admin/payroll\n├ ○ /admin/payroll/new\n├ ○ /admin/quality\n├ ○ /admin/quality/measures/new\n├ ○ /admin/referrals\n├ ƒ /admin/referrals/[id]\n├ ○ /admin/referrals/hl7-inbound\n├ ○ /admin/referrals/hl7-inbound/new\n├ ○ /admin/referrals/new\n├ ○ /admin/referrals/sources\n├ ○ /admin/reputation\n├ ○ /admin/reputation/accounts/new\n├ ○ /admin/reputation/replies/new\n├ ○ /admin/residents\n├ ƒ /admin/residents/[id]\n├ ƒ /admin/residents/[id]/assessments\n├ ƒ /admin/residents/[id]/assessments/new\n├ ƒ /admin/residents/[id]/billing\n├ ƒ /admin/residents/[id]/care-plan\n├ ƒ /admin/residents/[id]/medications\n├ ƒ /admin/residents/[id]/vitals\n├ ƒ /admin/residents/[id]/vitals/thresholds\n├ ○ /admin/residents/new\n├ ○ /admin/schedules\n├ ○ /admin/schedules/new\n├ ○ /admin/search\n├ ○ /admin/settings/notifications\n├ ○ /admin/staff\n├ ƒ /admin/staff/[id]\n├ ○ /admin/staff/new\n├ ○ /admin/staffing\n├ ○ /admin/staffing/new\n├ ○ /admin/time-records\n├ ○ /admin/time-records/new\n├ ○ /admin/training\n├ ○ /admin/training/new\n├ ○ /admin/transportation\n├ ○ /admin/transportation/drivers/new\n├ ○ /admin/transportation/inspections/new\n├ ○ /admin/transportation/vehicles/new\n├ ○ /admin/vendors\n├ ƒ /admin/vendors/[id]\n├ ○ /admin/vendors/contracts\n├ ƒ /admin/vendors/contracts/[id]\n├ ○ /admin/vendors/directory\n├ ○ /admin/vendors/invoices\n├ ƒ /admin/vendors/invoices/[id]\n├ ○ /admin/vendors/payments\n├ ○ /admin/vendors/purchase-orders\n├ ƒ /admin/vendors/purchase-orders/[id]\n├ ○ /admin/vendors/purchase-orders/new\n├ ○ /admin/vendors/spend\n├ ƒ /api/controlled-substance/verify-co-sign\n├ ƒ /api/infection-control/evaluate-outbreak\n├ ƒ /api/infection-control/evaluate-vitals\n├ ƒ /api/insurance/renewal-narrative\n├ ○ /assessments/overdue\n├ ○ /billing\n├ ○ /billing/ar-aging\n├ ○ /billing/collections\n├ ○ /billing/collections/new\n├ ○ /billing/invoices\n├ ƒ /billing/invoices/[id]\n├ ○ /billing/invoices/generate\n├ ○ /billing/org-ar-aging\n├ ○ /billing/payments/new\n├ ○ /billing/rates\n├ ○ /billing/rates/new\n├ ○ /billing/revenue\n├ ○ /care-plans/reviews-due\n├ ○ /caregiver\n├ ○ /caregiver/clock\n├ ○ /caregiver/controlled-count\n├ ○ /caregiver/followups\n├ ○ /caregiver/handoff\n├ ○ /caregiver/incident-draft\n├ ○ /caregiver/me\n├ ○ /caregiver/meds\n├ ○ /caregiver/policies\n├ ƒ /caregiver/policies/[id]\n├ ○ /caregiver/prn-followup\n├ ƒ /caregiver/resident/[id]\n├ ƒ /caregiver/resident/[id]/adl\n├ ƒ /caregiver/resident/[id]/behavior\n├ ƒ /caregiver/resident/[id]/condition-change\n├ ƒ /caregiver/resident/[id]/log\n├ ○ /caregiver/schedules\n├ ○ /caregiver/tasks\n├ ○ /certifications\n├ ○ /certifications/new\n├ ○ /clock\n├ ○ /dietary\n├ ○ /dietary/new\n├ ○ /executive\n├ ○ /executive/alerts\n├ ○ /executive/benchmarks\n├ ƒ /executive/facility/[id]\n├ ○ /executive/nlq\n├ ○ /executive/reports\n├ ○ /executive/scenarios\n├ ○ /executive/settings\n├ ○ /family\n├ ○ /family/billing\n├ ○ /family/calendar\n├ ○ /family/care-plan\n├ ○ /family/invoices\n├ ○ /family/messages\n├ ○ /family/payments\n├ ○ /finance\n├ ○ /finance/budget\n├ ○ /finance/chart-of-accounts\n├ ○ /finance/gl-settings\n├ ○ /finance/journal-entries\n├ ƒ /finance/journal-entries/[id]\n├ ○ /finance/journal-entries/new\n├ ○ /finance/ledger\n├ ○ /finance/period-close\n├ ○ /finance/posting-rules\n├ ○ /finance/trial-balance\n├ ○ /followups\n├ ○ /handoff\n├ ○ /incident-draft\n├ ○ /incidents\n├ ƒ /incidents/[id]\n├ ƒ /incidents/[id]/rca\n├ ○ /incidents/trends\n├ ○ /insurance\n├ ○ /insurance/claims\n├ ƒ /insurance/claims/[id]\n├ ○ /insurance/coi\n├ ○ /insurance/loss-runs\n├ ○ /insurance/policies\n├ ƒ /insurance/policies/[id]\n├ ○ /insurance/policies/new\n├ ○ /insurance/renewal-packages\n├ ƒ /insurance/renewal-packages/[id]\n├ ○ /insurance/renewals\n├ ○ /insurance/workers-comp\n├ ○ /login\n├ ○ /manifest.webmanifest\n├ ○ /me\n├ ○ /meds\n├ ○ /payroll\n├ ○ /payroll/new\n├ ○ /prn-followup\n├ ○ /reputation\n├ ○ /reputation/accounts/new\n├ ○ /reputation/replies/new\n├ ƒ /resident/[id]\n├ ƒ /resident/[id]/adl\n├ ƒ /resident/[id]/behavior\n├ ƒ /resident/[id]/condition-change\n├ ƒ /resident/[id]/log\n├ ○ /residents\n├ ƒ /residents/[id]\n├ ƒ /residents/[id]/assessments\n├ ƒ /residents/[id]/assessments/new\n├ ƒ /residents/[id]/billing\n├ ƒ /residents/[id]/care-plan\n├ ƒ /residents/[id]/medications\n├ ○ /residents/new\n├ ○ /schedules\n├ ○ /schedules/new\n├ ○ /search\n├ ○ /staff\n├ ƒ /staff/[id]\n├ ○ /staff/new\n├ ○ /staffing\n├ ○ /staffing/new\n├ ○ /tasks\n├ ○ /time-records\n├ ○ /time-records/new\n├ ○ /training\n├ ○ /training/new\n├ ○ /transportation\n├ ○ /transportation/drivers/new\n├ ○ /transportation/inspections/new\n├ ○ /transportation/vehicles/new\n├ ○ /vendors\n├ ƒ /vendors/[id]\n├ ○ /vendors/contracts\n├ ƒ /vendors/contracts/[id]\n├ ○ /vendors/directory\n├ ○ /vendors/invoices\n├ ƒ /vendors/invoices/[id]\n├ ○ /vendors/payments\n├ ○ /vendors/purchase-orders\n├ ƒ /vendors/purchase-orders/[id]\n├ ○ /vendors/purchase-orders/new\n└ ○ /vendors/spend\n\n\nƒ Proxy (Middleware)\n\n○  (Static)   prerendered as static content\nƒ  (Dynamic)  server-rendered on demand\n\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": true,
+      "status": "passed",
+      "command": "npm run stress:test",
+      "duration_ms": 228,
+      "stdout": "PASS\tstress: suite loaded\nPASS\tstress: Number.parseInt rejects garbage\nPASS\tstress: parallel microtasks both ran\nADVISORY\tstress: add ALF/home-care workflow simulations when resident and census models exist\n",
+      "stderr": ""
+    },
+    {
+      "id": "cdo.design-review",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run design:review",
+      "stdout": "skipped (pass --ui to enable)"
+    },
+    {
+      "id": "cdo.a11y-axe",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run a11y:routes",
+      "stdout": "skipped (pass --ui to enable; omit --no-a11y)"
+    }
+  ],
+  "summary": {
+    "passed": 10,
+    "failed": 0,
+    "skipped": 3,
+    "blocking_failures": []
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/agent-gates/2026-04-06T23-33-09-311Z-track-a-closeout-roadmap.json"
+  ]
+}
