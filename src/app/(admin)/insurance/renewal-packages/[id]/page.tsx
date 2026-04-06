@@ -35,6 +35,7 @@ export default function RenewalPackageDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [canMutate, setCanMutate] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [lastSource, setLastSource] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -70,6 +71,30 @@ export default function RenewalPackageDetailPage() {
   useEffect(() => {
     queueMicrotask(() => void load());
   }, [load]);
+
+  async function generateAiDraft() {
+    if (!id || !canMutate) return;
+    setSaving(true);
+    setError(null);
+    setLastSource(null);
+    try {
+      const res = await fetch("/api/insurance/renewal-narrative", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ renewalDataPackageId: id }),
+      });
+      const data = (await res.json()) as { error?: string; draft?: string; source?: string };
+      if (!res.ok) {
+        setError(data.error ?? "Generation failed.");
+        return;
+      }
+      if (data.draft) setDraft(data.draft);
+      if (data.source) setLastSource(data.source);
+      await load();
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function saveDraft() {
     if (!id || !row || !canMutate) return;
@@ -239,8 +264,8 @@ export default function RenewalPackageDetailPage() {
         <CardHeader>
           <CardTitle className="text-base">Narrative</CardTitle>
           <CardDescription>
-            AI-assisted text is draft until reviewed. Only owner / org admin may edit (RLS). Publishing is for external-ready
-            copy.
+            Generate a draft from package metrics (optional OpenAI when configured). Human review is required before
+            external use. Only owner / org admin may generate or edit (RLS).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -257,8 +282,16 @@ export default function RenewalPackageDetailPage() {
               disabled={!canMutate}
             />
           </div>
+          {lastSource ? (
+            <p className="text-xs text-slate-500" role="status">
+              Last generation: {lastSource === "openai" ? "model-assisted" : "template (set OPENAI_API_KEY for model draft)"}.
+            </p>
+          ) : null}
           {canMutate ? (
             <div className="flex flex-wrap gap-2">
+              <Button type="button" size="sm" onClick={() => void generateAiDraft()} disabled={saving}>
+                {saving ? "Working…" : "Generate draft"}
+              </Button>
               <Button type="button" size="sm" variant="secondary" onClick={() => void saveDraft()} disabled={saving}>
                 {saving ? "Saving…" : "Save draft"}
               </Button>
