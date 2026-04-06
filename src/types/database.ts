@@ -6734,6 +6734,149 @@ export type Database = {
           },
         ]
       }
+      payroll_export_batches: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          facility_id: string
+          id: string
+          notes: string | null
+          organization_id: string
+          period_end: string
+          period_start: string
+          provider: string
+          status: Database["public"]["Enums"]["payroll_export_batch_status"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          period_end: string
+          period_start: string
+          provider?: string
+          status?: Database["public"]["Enums"]["payroll_export_batch_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          period_end?: string
+          period_start?: string
+          provider?: string
+          status?: Database["public"]["Enums"]["payroll_export_batch_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_export_batches_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_export_batches_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll_export_lines: {
+        Row: {
+          amount_cents: number | null
+          batch_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          id: string
+          idempotency_key: string
+          line_kind: string
+          organization_id: string
+          payload: Json
+          staff_id: string
+          time_record_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          amount_cents?: number | null
+          batch_id: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          idempotency_key: string
+          line_kind: string
+          organization_id: string
+          payload?: Json
+          staff_id: string
+          time_record_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          amount_cents?: number | null
+          batch_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          idempotency_key?: string
+          line_kind?: string
+          organization_id?: string
+          payload?: Json
+          staff_id?: string
+          time_record_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_export_lines_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_export_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_export_lines_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_export_lines_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_export_lines_time_record_id_fkey"
+            columns: ["time_record_id"]
+            isOneToOne: false
+            referencedRelation: "time_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pbj_export_batches: {
         Row: {
           created_at: string
@@ -11564,6 +11707,12 @@ export type Database = {
         | "medicaid_payment"
         | "insurance_payment"
         | "other"
+      payroll_export_batch_status:
+        | "draft"
+        | "queued"
+        | "exported"
+        | "failed"
+        | "voided"
       pbj_export_batch_status: "pending" | "processing" | "complete" | "failed"
       po_status:
         | "draft"
@@ -12022,6 +12171,7 @@ export const Constants = {
         "insurance_payment",
         "other",
       ],
+      payroll_export_batch_status: ["draft", "queued", "exported", "failed", "voided"],
       pbj_export_batch_status: ["pending", "processing", "complete", "failed"],
       po_status: [
         "draft",

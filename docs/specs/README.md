@@ -254,7 +254,7 @@ Implement after predecessor migrations and specs exist.
 | Order | Spec file | Module | Migration range | Audit / build notes |
 |-------|-----------|--------|-----------------|---------------------|
 | 23 | `12-training-competency.md` | Training and Competency | `086`–`087` | ✅ **Spec written.** `competency_demonstrations` (evaluator, skills_json, attachments jsonb); Storage upload UI Enhanced. |
-| 24 | `13-payroll-integration.md` | Payroll Integration | `088` | `payroll_export_batches` + `payroll_export_lines` with idempotency_key UNIQUE. |
+| 24 | `13-payroll-integration.md` | Payroll Integration | `088` | ✅ **Spec written.** `payroll_export_batches`, `payroll_export_lines` (`idempotency_key` UNIQUE); vendor CSV/API = Enhanced. |
 | 25 | `14-dietary-nutrition.md` | Dietary and Nutrition | `089` | `diet_orders` + `iddsi_level`; aspiration cross-check vs meds; allergy + texture constraints. |
 | 26 | `15-transportation.md` | Transportation | `090` | `fleet_vehicles`, `vehicle_inspection_logs`, `driver_credentials`. |
 | 27 | `22-referral-crm.md` | Referral Source CRM | `091` | HL7 ADT; `referral_hl7_inbound` queue. |

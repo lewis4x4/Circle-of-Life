@@ -19,6 +19,7 @@ const ADMIN_SHELL_SEGMENTS = [
   "/schedules",
   "/staffing",
   "/time-records",
+  "/payroll",
   "/certifications",
   "/training",
   "/assessments",

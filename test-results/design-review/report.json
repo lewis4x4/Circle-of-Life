@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-04-06T14:48:18.571Z",
+  "timestamp": "2026-04-06T14:54:48.065Z",
   "baseUrl": "http://127.0.0.1:4310",
   "routes": [
-    "/admin/training",
-    "/admin/training/new"
+    "/admin/payroll",
+    "/admin/payroll/new"
   ],
   "viewports": [
     "375",
@@ -13,68 +13,68 @@
   ],
   "shots": [
     {
-      "route": "/admin/training",
+      "route": "/admin/payroll",
       "viewport": "375",
-      "url": "http://127.0.0.1:4310/admin/training",
+      "url": "http://127.0.0.1:4310/admin/payroll",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_training-375.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_payroll-375.png"
     },
     {
-      "route": "/admin/training",
+      "route": "/admin/payroll",
       "viewport": "768",
-      "url": "http://127.0.0.1:4310/admin/training",
+      "url": "http://127.0.0.1:4310/admin/payroll",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_training-768.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_payroll-768.png"
     },
     {
-      "route": "/admin/training",
+      "route": "/admin/payroll",
       "viewport": "1024",
-      "url": "http://127.0.0.1:4310/admin/training",
+      "url": "http://127.0.0.1:4310/admin/payroll",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_training-1024.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_payroll-1024.png"
     },
     {
-      "route": "/admin/training",
+      "route": "/admin/payroll",
       "viewport": "1440",
-      "url": "http://127.0.0.1:4310/admin/training",
+      "url": "http://127.0.0.1:4310/admin/payroll",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_training-1440.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_payroll-1440.png"
     },
     {
-      "route": "/admin/training/new",
+      "route": "/admin/payroll/new",
       "viewport": "375",
-      "url": "http://127.0.0.1:4310/admin/training/new",
+      "url": "http://127.0.0.1:4310/admin/payroll/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_training_new-375.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_payroll_new-375.png"
     },
     {
-      "route": "/admin/training/new",
+      "route": "/admin/payroll/new",
       "viewport": "768",
-      "url": "http://127.0.0.1:4310/admin/training/new",
+      "url": "http://127.0.0.1:4310/admin/payroll/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_training_new-768.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_payroll_new-768.png"
     },
     {
-      "route": "/admin/training/new",
+      "route": "/admin/payroll/new",
       "viewport": "1024",
-      "url": "http://127.0.0.1:4310/admin/training/new",
+      "url": "http://127.0.0.1:4310/admin/payroll/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_training_new-1024.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_payroll_new-1024.png"
     },
     {
-      "route": "/admin/training/new",
+      "route": "/admin/payroll/new",
       "viewport": "1440",
-      "url": "http://127.0.0.1:4310/admin/training/new",
+      "url": "http://127.0.0.1:4310/admin/payroll/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_training_new-1440.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_payroll_new-1440.png"
     }
   ],
   "errors": []
