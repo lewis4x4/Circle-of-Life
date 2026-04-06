@@ -28,6 +28,36 @@ type CohortRow = Database["public"]["Tables"]["benchmark_cohorts"]["Row"];
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
+function pctBarWidth(value: number, max: number): number {
+  if (max <= 0 || !Number.isFinite(value)) return 0;
+  return Math.min(100, Math.max(0, (value / max) * 100));
+}
+
+function CohortBarRow({
+  label,
+  display,
+  widthPct,
+}: {
+  label: string;
+  display: string;
+  widthPct: number;
+}) {
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <span className="w-36 shrink-0 truncate font-medium sm:w-44" title={label}>
+        {label}
+      </span>
+      <div className="h-2.5 min-w-[72px] flex-1 rounded-full bg-slate-100 dark:bg-slate-800">
+        <div
+          className="h-2.5 rounded-full bg-primary/90 transition-[width] duration-300"
+          style={{ width: `${widthPct}%` }}
+        />
+      </div>
+      <span className="w-24 shrink-0 text-right tabular-nums text-slate-600 dark:text-slate-400">{display}</span>
+    </div>
+  );
+}
+
 export default function ExecutiveBenchmarkCohortsPage() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
@@ -530,6 +560,118 @@ export default function ExecutiveBenchmarkCohortsPage() {
                     </TableBody>
                   </Table>
                 </div>
+
+                {(() => {
+                  const series = [
+                    { label: "Organization (portfolio)", kpi: compareData.orgKpi },
+                    ...compareData.facilities.map((f) => ({ label: f.name, kpi: f.kpi })),
+                  ];
+                  const maxInc = Math.max(
+                    ...series.map((s) => s.kpi.clinical.openIncidents),
+                    1,
+                  );
+                  const maxDef = Math.max(
+                    ...series.map((s) => s.kpi.compliance.openSurveyDeficiencies),
+                    1,
+                  );
+                  const maxAr = Math.max(
+                    ...series.map((s) => s.kpi.financial.totalBalanceDueCents),
+                    1,
+                  );
+                  return (
+                    <div className="space-y-6 rounded-lg border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+                      <div>
+                        <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                          Visual comparison (CSS bars)
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                          Occupancy uses 0–100%. Incidents, deficiencies, and AR scale to the highest value in this
+                          cohort plus portfolio row (operational view, not statistical inference).
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Occupancy</p>
+                        <div className="space-y-1.5">
+                          {series.map((s, idx) => {
+                            const occ = s.kpi.census.occupancyPct;
+                            const w =
+                              occ != null && Number.isFinite(occ)
+                                ? pctBarWidth(Math.min(100, Math.max(0, occ)), 100)
+                                : 0;
+                            return (
+                              <CohortBarRow
+                                key={`occ-${idx}`}
+                                label={s.label}
+                                display={
+                                  occ != null && Number.isFinite(occ) ? `${occ.toFixed(1)}%` : "—"
+                                }
+                                widthPct={w}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Open incidents (vs max {maxInc})
+                        </p>
+                        <div className="space-y-1.5">
+                          {series.map((s, idx) => {
+                            const v = s.kpi.clinical.openIncidents;
+                            return (
+                              <CohortBarRow
+                                key={`inc-${idx}`}
+                                label={s.label}
+                                display={String(v)}
+                                widthPct={pctBarWidth(v, maxInc)}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Open deficiencies (vs max {maxDef})
+                        </p>
+                        <div className="space-y-1.5">
+                          {series.map((s, idx) => {
+                            const v = s.kpi.compliance.openSurveyDeficiencies;
+                            return (
+                              <CohortBarRow
+                                key={`def-${idx}`}
+                                label={s.label}
+                                display={String(v)}
+                                widthPct={pctBarWidth(v, maxDef)}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          AR balance (vs max {money.format(maxAr / 100)})
+                        </p>
+                        <div className="space-y-1.5">
+                          {series.map((s, idx) => {
+                            const c = s.kpi.financial.totalBalanceDueCents;
+                            return (
+                              <CohortBarRow
+                                key={`ar-${idx}`}
+                                label={s.label}
+                                display={money.format(c / 100)}
+                                widthPct={pctBarWidth(c, maxAr)}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </CardContent>
