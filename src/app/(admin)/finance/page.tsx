@@ -91,6 +91,9 @@ export default function AdminFinanceHubPage() {
             <Link className="text-primary underline-offset-4 hover:underline" href="/admin/finance/trial-balance">
               Trial balance
             </Link>
+            <Link className="text-primary underline-offset-4 hover:underline" href="/admin/finance/posting-rules">
+              GL posting rules
+            </Link>
             <Link className="text-primary underline-offset-4 hover:underline" href="/admin/finance/period-close">
               Period close
             </Link>
