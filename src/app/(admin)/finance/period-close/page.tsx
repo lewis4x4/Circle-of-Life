@@ -220,7 +220,9 @@ export default function FinancePeriodClosePage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Select period</CardTitle>
-          <CardDescription>Close prevents new posting to closed periods when journal workflows enforce it.</CardDescription>
+          <CardDescription>
+            Close blocks posting journal entries and billing-to-GL posts dated in a closed month (reopen to post).
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-end gap-4">
           <div className="space-y-1.5">

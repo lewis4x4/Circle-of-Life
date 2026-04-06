@@ -18,6 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { createClient } from "@/lib/supabase/client";
+import { checkPeriodOpenForPosting } from "@/lib/finance/gl-period-close";
 import { formatCents, parseDollarsToCents } from "@/lib/finance/format-cents";
 import { canCreateDraftFinance, canPostFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { cn } from "@/lib/utils";
@@ -260,12 +261,22 @@ export default function JournalEntryDetailPage() {
         setError("Not signed in");
         return;
       }
+      const periodCheck = await checkPeriodOpenForPosting(supabase, {
+        organizationId: header.organization_id,
+        entityId: header.entity_id,
+        entryDate: header.entry_date,
+      });
+      if (!periodCheck.ok) {
+        setError(periodCheck.error);
+        return;
+      }
       const { error: upErr } = await supabase
         .from("journal_entries")
         .update({
           status: "posted",
           posted_at: new Date().toISOString(),
           posted_by: user.id,
+          gl_period_close_id: periodCheck.glPeriodCloseId,
         })
         .eq("id", header.id)
         .eq("status", "draft");

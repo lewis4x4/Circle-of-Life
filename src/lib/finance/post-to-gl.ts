@@ -1,4 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+
+import { checkPeriodOpenForPosting } from "@/lib/finance/gl-period-close";
 import type { Database } from "@/types/database";
 
 export type PostResult =
@@ -118,6 +120,13 @@ export async function postInvoiceToGl(
   const userId = await getCurrentUserId(supabase);
   if (!userId) return { ok: false, error: "Not authenticated." };
 
+  const periodCheck = await checkPeriodOpenForPosting(supabase, {
+    organizationId: invoice.organization_id,
+    entityId: invoice.entity_id,
+    entryDate: invoice.invoice_date,
+  });
+  if (!periodCheck.ok) return { ok: false, error: periodCheck.error };
+
   const now = new Date().toISOString();
   const { data: je, error: jeErr } = await supabase
     .from("journal_entries")
@@ -130,6 +139,7 @@ export async function postInvoiceToGl(
       status: "draft" as const,
       source_type: "invoice",
       source_id: invoice.id,
+      gl_period_close_id: periodCheck.glPeriodCloseId,
     })
     .select("id")
     .single();
@@ -245,6 +255,13 @@ export async function postPaymentToGl(
   const userId = await getCurrentUserId(supabase);
   if (!userId) return { ok: false, error: "Not authenticated." };
 
+  const periodCheck = await checkPeriodOpenForPosting(supabase, {
+    organizationId: payment.organization_id,
+    entityId: payment.entity_id,
+    entryDate: payment.payment_date,
+  });
+  if (!periodCheck.ok) return { ok: false, error: periodCheck.error };
+
   const now = new Date().toISOString();
   const ref = payment.reference_number ? ` ref ${payment.reference_number}` : "";
   const payer = payment.payer_name ? ` from ${payment.payer_name}` : "";
@@ -261,6 +278,7 @@ export async function postPaymentToGl(
       status: "draft" as const,
       source_type: "payment",
       source_id: payment.id,
+      gl_period_close_id: periodCheck.glPeriodCloseId,
     })
     .select("id")
     .single();
