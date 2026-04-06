@@ -312,7 +312,7 @@ export default function LoginPage() {
             </CardContent>
           </Card>
 
-          <p className="text-center text-sm text-slate-500 lg:text-left">
+          <p className="text-center text-sm text-slate-300 lg:text-left">
             Need access? Contact your facility administrator.
           </p>
         </div>

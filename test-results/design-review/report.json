@@ -1,9 +1,12 @@
 {
-  "timestamp": "2026-04-06T02:15:33.027Z",
+  "timestamp": "2026-04-06T13:42:32.425Z",
   "baseUrl": "http://127.0.0.1:4310",
   "routes": [
     "/",
-    "/admin/search"
+    "/admin/referrals",
+    "/admin/referrals/new",
+    "/admin/referrals/sources",
+    "/admin/referrals/00000000-0000-0000-0000-000000000001"
   ],
   "viewports": [
     "375",
@@ -45,36 +48,132 @@
       "screenshot": "test-results/design-review/screenshots/_-1440.png"
     },
     {
-      "route": "/admin/search",
+      "route": "/admin/referrals",
       "viewport": "375",
-      "url": "http://127.0.0.1:4310/admin/search",
+      "url": "http://127.0.0.1:4310/admin/referrals",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_search-375.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals-375.png"
     },
     {
-      "route": "/admin/search",
+      "route": "/admin/referrals",
       "viewport": "768",
-      "url": "http://127.0.0.1:4310/admin/search",
+      "url": "http://127.0.0.1:4310/admin/referrals",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_search-768.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals-768.png"
     },
     {
-      "route": "/admin/search",
+      "route": "/admin/referrals",
       "viewport": "1024",
-      "url": "http://127.0.0.1:4310/admin/search",
+      "url": "http://127.0.0.1:4310/admin/referrals",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_search-1024.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals-1024.png"
     },
     {
-      "route": "/admin/search",
+      "route": "/admin/referrals",
       "viewport": "1440",
-      "url": "http://127.0.0.1:4310/admin/search",
+      "url": "http://127.0.0.1:4310/admin/referrals",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_search-1440.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals-1440.png"
+    },
+    {
+      "route": "/admin/referrals/new",
+      "viewport": "375",
+      "url": "http://127.0.0.1:4310/admin/referrals/new",
+      "status": 200,
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals_new-375.png"
+    },
+    {
+      "route": "/admin/referrals/new",
+      "viewport": "768",
+      "url": "http://127.0.0.1:4310/admin/referrals/new",
+      "status": 200,
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals_new-768.png"
+    },
+    {
+      "route": "/admin/referrals/new",
+      "viewport": "1024",
+      "url": "http://127.0.0.1:4310/admin/referrals/new",
+      "status": 200,
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals_new-1024.png"
+    },
+    {
+      "route": "/admin/referrals/new",
+      "viewport": "1440",
+      "url": "http://127.0.0.1:4310/admin/referrals/new",
+      "status": 200,
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals_new-1440.png"
+    },
+    {
+      "route": "/admin/referrals/sources",
+      "viewport": "375",
+      "url": "http://127.0.0.1:4310/admin/referrals/sources",
+      "status": 200,
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals_sources-375.png"
+    },
+    {
+      "route": "/admin/referrals/sources",
+      "viewport": "768",
+      "url": "http://127.0.0.1:4310/admin/referrals/sources",
+      "status": 200,
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals_sources-768.png"
+    },
+    {
+      "route": "/admin/referrals/sources",
+      "viewport": "1024",
+      "url": "http://127.0.0.1:4310/admin/referrals/sources",
+      "status": 200,
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals_sources-1024.png"
+    },
+    {
+      "route": "/admin/referrals/sources",
+      "viewport": "1440",
+      "url": "http://127.0.0.1:4310/admin/referrals/sources",
+      "status": 200,
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals_sources-1440.png"
+    },
+    {
+      "route": "/admin/referrals/00000000-0000-0000-0000-000000000001",
+      "viewport": "375",
+      "url": "http://127.0.0.1:4310/admin/referrals/00000000-0000-0000-0000-000000000001",
+      "status": 200,
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals_00000000-0000-0000-0000-000000000001-375.png"
+    },
+    {
+      "route": "/admin/referrals/00000000-0000-0000-0000-000000000001",
+      "viewport": "768",
+      "url": "http://127.0.0.1:4310/admin/referrals/00000000-0000-0000-0000-000000000001",
+      "status": 200,
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals_00000000-0000-0000-0000-000000000001-768.png"
+    },
+    {
+      "route": "/admin/referrals/00000000-0000-0000-0000-000000000001",
+      "viewport": "1024",
+      "url": "http://127.0.0.1:4310/admin/referrals/00000000-0000-0000-0000-000000000001",
+      "status": 200,
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals_00000000-0000-0000-0000-000000000001-1024.png"
+    },
+    {
+      "route": "/admin/referrals/00000000-0000-0000-0000-000000000001",
+      "viewport": "1440",
+      "url": "http://127.0.0.1:4310/admin/referrals/00000000-0000-0000-0000-000000000001",
+      "status": 200,
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals_00000000-0000-0000-0000-000000000001-1440.png"
     }
   ],
   "errors": []

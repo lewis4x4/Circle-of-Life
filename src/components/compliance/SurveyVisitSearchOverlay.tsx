@@ -316,7 +316,7 @@ export function SurveyVisitSearchOverlay({
       >
         <span>
           {title}{" "}
-          <span className="text-slate-500 dark:text-slate-400">({count})</span>
+          <span className="text-slate-600 dark:text-slate-300">({count})</span>
         </span>
         {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
       </button>
@@ -353,7 +353,7 @@ export function SurveyVisitSearchOverlay({
             autoComplete="off"
           />
           {searching ? (
-            <p className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-500">Searching…</p>
+            <p className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-600 dark:text-slate-300">Searching…</p>
           ) : null}
           {matches.length > 0 ? (
             <ul
@@ -393,7 +393,7 @@ export function SurveyVisitSearchOverlay({
       ) : null}
 
       {loggedChartFor && selected?.id === loggedChartFor ? (
-        <p className="text-xs text-slate-500">Logged survey access: resident chart (audit trail).</p>
+        <p className="text-xs text-slate-600 dark:text-slate-300">Logged survey access: resident chart (audit trail).</p>
       ) : null}
 
       {loadError ? (
@@ -423,7 +423,7 @@ export function SurveyVisitSearchOverlay({
               {openSections.care_plans ? (
                 <ul className="space-y-1 text-xs">
                   {chart.carePlans.length === 0 ? (
-                    <li className="text-slate-500">No care plans.</li>
+                    <li className="text-slate-600 dark:text-slate-300">No care plans.</li>
                   ) : (
                     chart.carePlans.map((c) => (
                       <li key={c.id} className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-1 dark:border-slate-800">
@@ -442,7 +442,7 @@ export function SurveyVisitSearchOverlay({
               {openSections.assessments ? (
                 <ul className="space-y-1 text-xs">
                   {chart.assessments.length === 0 ? (
-                    <li className="text-slate-500">No assessments.</li>
+                    <li className="text-slate-600 dark:text-slate-300">No assessments.</li>
                   ) : (
                     chart.assessments.map((a) => (
                       <li
@@ -476,7 +476,7 @@ export function SurveyVisitSearchOverlay({
               {openSections.medications ? (
                 <ul className="space-y-1 text-xs">
                   {chart.medications.length === 0 ? (
-                    <li className="text-slate-500">No medication orders.</li>
+                    <li className="text-slate-600 dark:text-slate-300">No medication orders.</li>
                   ) : (
                     chart.medications.map((m) => (
                       <li key={m.id} className="border-b border-slate-100 pb-1 dark:border-slate-800">
@@ -494,7 +494,7 @@ export function SurveyVisitSearchOverlay({
               {openSections.emar ? (
                 <ul className="space-y-1 text-xs">
                   {chart.emarRecords.length === 0 ? (
-                    <li className="text-slate-500">No eMAR rows in window.</li>
+                    <li className="text-slate-600 dark:text-slate-300">No eMAR rows in window.</li>
                   ) : (
                     chart.emarRecords.map((e) => (
                       <li key={e.id} className="border-b border-slate-100 pb-1 dark:border-slate-800">
@@ -512,7 +512,7 @@ export function SurveyVisitSearchOverlay({
               {openSections.daily_logs ? (
                 <ul className="space-y-1 text-xs">
                   {chart.dailyLogs.length === 0 ? (
-                    <li className="text-slate-500">No daily logs in window.</li>
+                    <li className="text-slate-600 dark:text-slate-300">No daily logs in window.</li>
                   ) : (
                     chart.dailyLogs.map((d) => (
                       <li key={d.id} className="border-b border-slate-100 pb-1 dark:border-slate-800">
@@ -529,7 +529,7 @@ export function SurveyVisitSearchOverlay({
               {openSections.incidents ? (
                 <ul className="space-y-1 text-xs">
                   {chart.incidents.length === 0 ? (
-                    <li className="text-slate-500">No incidents.</li>
+                    <li className="text-slate-600 dark:text-slate-300">No incidents.</li>
                   ) : (
                     chart.incidents.map((i) => (
                       <li key={i.id} className="border-b border-slate-100 pb-1 dark:border-slate-800">
