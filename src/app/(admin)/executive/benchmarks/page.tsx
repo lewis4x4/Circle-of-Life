@@ -19,11 +19,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { canMutateFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { fetchExecutiveKpiSnapshot, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 
 type CohortRow = Database["public"]["Tables"]["benchmark_cohorts"]["Row"];
+
+const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
 export default function ExecutiveBenchmarkCohortsPage() {
   const supabase = createClient();
@@ -41,6 +44,15 @@ export default function ExecutiveBenchmarkCohortsPage() {
   const [formDescription, setFormDescription] = useState("");
   const [formMinimumN, setFormMinimumN] = useState(5);
   const [formFacilityIds, setFormFacilityIds] = useState<Set<string>>(new Set());
+
+  const [compareCohortId, setCompareCohortId] = useState("");
+  const [compareLoading, setCompareLoading] = useState(false);
+  const [compareError, setCompareError] = useState<string | null>(null);
+  const [compareData, setCompareData] = useState<{
+    cohort: CohortRow;
+    orgKpi: ExecKpiPayload;
+    facilities: { id: string; name: string; kpi: ExecKpiPayload }[];
+  } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -181,6 +193,33 @@ export default function ExecutiveBenchmarkCohortsPage() {
     });
   }
 
+  async function runCohortComparison() {
+    if (!orgId || !compareCohortId) return;
+    const cohort = rows.find((r) => r.id === compareCohortId);
+    if (!cohort?.facility_ids?.length) {
+      setCompareError("Choose a cohort that includes at least one facility.");
+      return;
+    }
+    setCompareLoading(true);
+    setCompareError(null);
+    try {
+      const orgKpi = await fetchExecutiveKpiSnapshot(supabase, orgId, null);
+      const facResults = await Promise.all(
+        cohort.facility_ids.map(async (fid) => {
+          const kpi = await fetchExecutiveKpiSnapshot(supabase, orgId, fid);
+          const name = facilities.find((f) => f.id === fid)?.name ?? fid.slice(0, 8);
+          return { id: fid, name, kpi };
+        }),
+      );
+      setCompareData({ cohort, orgKpi, facilities: facResults });
+    } catch (e) {
+      setCompareData(null);
+      setCompareError(e instanceof Error ? e.message : "Comparison failed.");
+    } finally {
+      setCompareLoading(false);
+    }
+  }
+
   const facNameById = Object.fromEntries(facilities.map((f) => [f.id, f.name]));
 
   return (
@@ -315,8 +354,7 @@ export default function ExecutiveBenchmarkCohortsPage() {
           <CardHeader>
             <CardTitle className="text-lg">Cohort definitions</CardTitle>
             <CardDescription>
-              These rows configure peer groups only; executive KPI tiles use live aggregates until comparison views are
-              enabled.
+              Peer groups below; use the comparison table to view live KPIs side by side for each site in a cohort.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -385,6 +423,114 @@ export default function ExecutiveBenchmarkCohortsPage() {
                   })}
                 </TableBody>
               </Table>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {!loading && rows.length > 0 && orgId && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Peer comparison (live KPIs)</CardTitle>
+            <CardDescription>
+              Portfolio row uses all facilities; cohort rows use the same live aggregates as the executive command
+              center. Peer benchmarks require at least <strong>minimum N</strong> sites in the cohort (privacy).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="compare-cohort">Cohort</Label>
+                <select
+                  id="compare-cohort"
+                  className="flex h-10 min-w-[200px] rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950"
+                  value={compareCohortId}
+                  onChange={(e) => {
+                    setCompareCohortId(e.target.value);
+                    setCompareData(null);
+                    setCompareError(null);
+                  }}
+                >
+                  <option value="">Select cohort…</option>
+                  {rows.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <Button
+                type="button"
+                disabled={!compareCohortId || compareLoading}
+                onClick={() => void runCohortComparison()}
+              >
+                {compareLoading ? "Loading…" : "Compare KPIs"}
+              </Button>
+            </div>
+            {compareError && (
+              <p className="text-sm text-destructive">{compareError}</p>
+            )}
+            {compareData && (
+              <div className="space-y-3">
+                {compareData.cohort.facility_ids.length < compareData.cohort.minimum_n && (
+                  <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
+                    This cohort has fewer than <strong>{compareData.cohort.minimum_n}</strong> facilities — peer
+                    benchmarks are not statistically surfaced; table is for operational review only.
+                  </p>
+                )}
+                <div className="overflow-x-auto rounded-md border border-slate-200 dark:border-slate-800">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Scope</TableHead>
+                        <TableHead className="text-right">Occ. %</TableHead>
+                        <TableHead className="text-right">Residents / beds</TableHead>
+                        <TableHead className="text-right">AR balance</TableHead>
+                        <TableHead className="text-right">Open inc.</TableHead>
+                        <TableHead className="text-right">Deficiencies</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow className="bg-slate-50/80 dark:bg-slate-900/50">
+                        <TableCell className="font-medium">Organization (portfolio)</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {compareData.orgKpi.census.occupancyPct ?? "—"}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {compareData.orgKpi.census.occupiedResidents} / {compareData.orgKpi.census.licensedBeds}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {money.format(compareData.orgKpi.financial.totalBalanceDueCents / 100)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {compareData.orgKpi.clinical.openIncidents}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {compareData.orgKpi.compliance.openSurveyDeficiencies}
+                        </TableCell>
+                      </TableRow>
+                      {compareData.facilities.map((f) => (
+                        <TableRow key={f.id}>
+                          <TableCell className="font-medium">{f.name}</TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {f.kpi.census.occupancyPct ?? "—"}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {f.kpi.census.occupiedResidents} / {f.kpi.census.licensedBeds}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {money.format(f.kpi.financial.totalBalanceDueCents / 100)}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">{f.kpi.clinical.openIncidents}</TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {f.kpi.compliance.openSurveyDeficiencies}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>

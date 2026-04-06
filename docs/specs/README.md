@@ -77,7 +77,7 @@ After this scaffold sprint, resume backend spec implementation in original order
 | 11 | `17-entity-facility-finance.md` | Entity & Facility Finance (Core) | `040`–`043` | ✅ SHIPPED | Chart of accounts, journal entries/lines, read-only ledger, GL settings, budget lines; RLS; `/admin/finance/*` (7 routes) |
 | 12 | `18-insurance-risk-finance.md` | Insurance & Risk Finance (Core) | `044`–`045` | ✅ SHIPPED | Policy inventory, renewals, data packages, claims (incident-linked), loss runs, premium allocations, COI tracking, workers' comp headers; GL hooks; `/admin/insurance/*` (10 routes) |
 | 13 | `19-vendor-contract-management.md` | Vendor & Contract Management (Core) | `046` | ✅ SHIPPED | Vendor master, facility links, contracts, terms, alerts, POs with three-way match, vendor invoices, payments with GL hooks, vendor insurance (COI cross-ref to Module 18), scorecards; `/admin/vendors/*` (12 routes) |
-| 14 | `24-executive-intelligence.md` | Executive Intelligence Layer v1 | `047` | ✅ SHIPPED (Core + reports + cohorts + KPI deltas) | Org command center, KPI tiles w/ snapshot deltas, alerts, entity/facility drill-downs, saved reports (CSV + print/PDF), **`benchmark_cohorts`** CRUD, per-user settings; cron `exec-kpi-snapshot`; **Enhanced backlog:** cohort comparison charts / peer benchmarks |
+| 14 | `24-executive-intelligence.md` | Executive Intelligence Layer v1 | `047` | ✅ SHIPPED (Core + reports + cohorts + KPI deltas + cohort peer table) | Org command center, KPI tiles w/ snapshot deltas, alerts, entity/facility drill-downs, saved reports (CSV + print/PDF), **`benchmark_cohorts`** CRUD + **live KPI peer comparison table** on benchmarks, per-user settings; cron `exec-kpi-snapshot`; **Enhanced backlog:** cohort charts / richer dashboards (no chart lib in app yet) |
 
 **Spec note:** `24-executive-intelligence.md` includes `exec_kpi_snapshots.lineage`, `exec_alert_user_state`, and `benchmark_cohorts` — see spec DDL.
 
@@ -109,7 +109,7 @@ Routes: `/admin/vendors` (hub), `/admin/vendors/directory`, `/admin/vendors/[id]
 
 ---
 
-**Module 24 — Executive Intelligence Layer v1** (🟩 Core admin UI + **daily KPI snapshot Edge Function** + cohort admin + **tile deltas vs last snapshot** — cohort peer compare views Enhanced backlog)
+**Module 24 — Executive Intelligence Layer v1** (🟩 Core admin UI + **daily KPI snapshot Edge Function** + cohort admin + **tile deltas vs last snapshot** + **benchmarks peer comparison table** — charts/dashboards Enhanced backlog)
 
 Migration `047_executive_intelligence.sql`: enums, **seven** tables (includes `exec_kpi_snapshots` with **`lineage`**, `exec_alert_user_state`, `benchmark_cohorts`), full RLS, audit triggers.
 
@@ -125,7 +125,7 @@ Migration `047_executive_intelligence.sql`: enums, **seven** tables (includes `e
 
 Tables: `exec_dashboard_configs`, `exec_kpi_snapshots` (**`lineage jsonb`**), `exec_alerts`, **`exec_alert_user_state`**, **`benchmark_cohorts`**, `exec_saved_reports`. KPI domains: census/occupancy, financial, clinical/safety, infection, compliance, workforce, insurance (Module 18), vendors (Module 19). Alert scoring: `severity_weight × recency_factor × impact_weight`. RLS: owner/org_admin full access; facility_admin scoped to their facilities.
 
-Routes live: `/admin/executive` (command center), `/admin/executive/alerts`, `/admin/executive/reports`, `/admin/executive/benchmarks`, `/admin/executive/settings`, `/admin/executive/entity`, `/admin/executive/entity/[id]`, `/admin/executive/facility/[id]`. **Cron:** Edge Function `exec-kpi-snapshot` writes `exec_kpi_snapshots` daily per org (`EXEC_KPI_SNAPSHOT_SECRET`, `x-cron-secret`); see `supabase/functions/README.md`. Reports: CSV + browser print/save-as-PDF. **KPI tiles:** live vs latest `exec_kpi_snapshots` row (per scope). **Enhanced backlog:** cohort peer comparison charts / dashboards.
+Routes live: `/admin/executive` (command center), `/admin/executive/alerts`, `/admin/executive/reports`, `/admin/executive/benchmarks`, `/admin/executive/settings`, `/admin/executive/entity`, `/admin/executive/entity/[id]`, `/admin/executive/facility/[id]`. **Cron:** Edge Function `exec-kpi-snapshot` writes `exec_kpi_snapshots` daily per org (`EXEC_KPI_SNAPSHOT_SECRET`, `x-cron-secret`); see `supabase/functions/README.md`. Reports: CSV + browser print/save-as-PDF. **KPI tiles:** live vs latest `exec_kpi_snapshots` row (per scope). **Benchmarks:** select a cohort → **Compare KPIs** table (portfolio vs each facility; `minimum_n` warning). **Enhanced backlog:** cohort charts / richer dashboards.
 
 ---
 
