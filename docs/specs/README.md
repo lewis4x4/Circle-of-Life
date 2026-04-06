@@ -367,7 +367,7 @@ Module numbers match the product roadmap, **not** the build sequence. Build orde
 | 12 | Training & Competency Management | 6 | `12-training-competency.md` — ✅ Core (`086`–`087`) |
 | 13 | Facility Maintenance & Environment | 6 | `13-maintenance.md` — not yet written |
 | 14 | Dietary & Nutrition Management | 6 | `14-dietary-nutrition.md` — ✅ Core (`089`) |
-| 15 | Transportation & Appointments | 6 | `15-transportation.md` — not yet written |
+| 15 | Transportation & Appointments | 6 | `15-transportation.md` — ✅ Core (`090`) |
 | 16 | Resident Billing & Collections | 1 + 3.5 patch | `16-billing.md` — ✅; Phase 3.5 `060` |
 | 17 | Entity & Facility Finance | 3 + 3.5 patch | `17-entity-facility-finance.md` — ✅ Core; Enhanced `048` + `065` |
 | 18 | Insurance & Risk Finance | 3 + 3.5 patch | `18-insurance-risk-finance.md` — ✅ Core; Enhanced `049` + `066` |

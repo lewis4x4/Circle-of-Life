@@ -25,6 +25,7 @@ import {
   Award,
   GraduationCap,
   Utensils,
+  Bus,
   CalendarDays,
   Clock,
   Banknote,
@@ -146,6 +147,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     { key: "certifications", href: "/admin/certifications", label: "Certifications", enabled: true, icon: Award },
     { key: "training", href: "/admin/training", label: "Training", enabled: true, icon: GraduationCap },
     { key: "dietary", href: "/admin/dietary", label: "Dietary", enabled: true, icon: Utensils },
+    { key: "transportation", href: "/admin/transportation", label: "Transportation", enabled: true, icon: Bus },
     { key: "schedules", href: "/admin/schedules", label: "Schedules", enabled: true, icon: CalendarDays },
     { key: "time-records", href: "/admin/time-records", label: "Time records", enabled: true, icon: Clock },
     { key: "payroll", href: "/admin/payroll", label: "Payroll", enabled: true, icon: Banknote },
@@ -200,6 +202,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               (item.key === "training" && pathname.startsWith("/admin/training")) ||
               (item.key === "payroll" && pathname.startsWith("/admin/payroll")) ||
               (item.key === "dietary" && pathname.startsWith("/admin/dietary")) ||
+              (item.key === "transportation" && pathname.startsWith("/admin/transportation")) ||
               (item.key === "notifications" && pathname.startsWith("/admin/settings"));
             const Icon = item.icon;
             

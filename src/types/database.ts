@@ -2811,6 +2811,82 @@ export type Database = {
           },
         ]
       }
+      driver_credentials: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          facility_id: string
+          id: string
+          license_class: string | null
+          license_expires_on: string | null
+          license_number: string | null
+          medical_card_expires_on: string | null
+          notes: string | null
+          organization_id: string
+          staff_id: string
+          status: Database["public"]["Enums"]["driver_credential_status"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id: string
+          id?: string
+          license_class?: string | null
+          license_expires_on?: string | null
+          license_number?: string | null
+          medical_card_expires_on?: string | null
+          notes?: string | null
+          organization_id: string
+          staff_id: string
+          status?: Database["public"]["Enums"]["driver_credential_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id?: string
+          id?: string
+          license_class?: string | null
+          license_expires_on?: string | null
+          license_number?: string | null
+          medical_card_expires_on?: string | null
+          notes?: string | null
+          organization_id?: string
+          staff_id?: string
+          status?: Database["public"]["Enums"]["driver_credential_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_credentials_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_credentials_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_credentials_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       emar_administration_witnesses: {
         Row: {
           created_at: string
@@ -4108,6 +4184,87 @@ export type Database = {
             columns: ["resident_id"]
             isOneToOne: false
             referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fleet_vehicles: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          facility_id: string
+          id: string
+          insurance_expires_on: string | null
+          license_plate: string | null
+          make: string | null
+          model: string | null
+          model_year: number | null
+          name: string
+          notes: string | null
+          organization_id: string
+          passenger_capacity: number | null
+          registration_expires_on: string | null
+          status: Database["public"]["Enums"]["fleet_vehicle_status"]
+          updated_at: string
+          updated_by: string | null
+          vin: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id: string
+          id?: string
+          insurance_expires_on?: string | null
+          license_plate?: string | null
+          make?: string | null
+          model?: string | null
+          model_year?: number | null
+          name: string
+          notes?: string | null
+          organization_id: string
+          passenger_capacity?: number | null
+          registration_expires_on?: string | null
+          status?: Database["public"]["Enums"]["fleet_vehicle_status"]
+          updated_at?: string
+          updated_by?: string | null
+          vin?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id?: string
+          id?: string
+          insurance_expires_on?: string | null
+          license_plate?: string | null
+          make?: string | null
+          model?: string | null
+          model_year?: number | null
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          passenger_capacity?: number | null
+          registration_expires_on?: string | null
+          status?: Database["public"]["Enums"]["fleet_vehicle_status"]
+          updated_at?: string
+          updated_by?: string | null
+          vin?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fleet_vehicles_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fleet_vehicles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -11182,6 +11339,79 @@ export type Database = {
           },
         ]
       }
+      vehicle_inspection_logs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          defects_notes: string | null
+          deleted_at: string | null
+          facility_id: string
+          fleet_vehicle_id: string
+          id: string
+          inspected_at: string
+          inspector_label: string | null
+          odometer_miles: number | null
+          organization_id: string
+          result: Database["public"]["Enums"]["vehicle_inspection_result"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          defects_notes?: string | null
+          deleted_at?: string | null
+          facility_id: string
+          fleet_vehicle_id: string
+          id?: string
+          inspected_at?: string
+          inspector_label?: string | null
+          odometer_miles?: number | null
+          organization_id: string
+          result?: Database["public"]["Enums"]["vehicle_inspection_result"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          defects_notes?: string | null
+          deleted_at?: string | null
+          facility_id?: string
+          fleet_vehicle_id?: string
+          id?: string
+          inspected_at?: string
+          inspector_label?: string | null
+          odometer_miles?: number | null
+          organization_id?: string
+          result?: Database["public"]["Enums"]["vehicle_inspection_result"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_inspection_logs_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_inspection_logs_fleet_vehicle_id_fkey"
+            columns: ["fleet_vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_inspection_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vital_sign_alert_thresholds: {
         Row: {
           bp_diastolic_high: number | null
@@ -11649,6 +11879,7 @@ export type Database = {
         | "complete"
         | "cancelled"
       diet_order_status: "draft" | "active" | "discontinued"
+      driver_credential_status: "active" | "suspended" | "expired"
       emar_status:
         | "scheduled"
         | "given"
@@ -11678,6 +11909,7 @@ export type Database = {
         | "custom"
       exec_snapshot_scope: "organization" | "entity" | "facility"
       facility_status: "active" | "inactive" | "under_renovation" | "archived"
+      fleet_vehicle_status: "active" | "out_of_service" | "retired"
       iddsi_fluid_level:
         | "not_assessed"
         | "level_0_thin"
@@ -11878,6 +12110,7 @@ export type Database = {
         | "housekeeping"
         | "driver"
         | "other"
+      vehicle_inspection_result: "pass" | "fail" | "conditional"
       vendor_category:
         | "maintenance"
         | "medical_supply"
@@ -12114,6 +12347,7 @@ export const Constants = {
       ],
       discharge_med_reconciliation_status: ["draft", "pharmacist_review", "complete", "cancelled"],
       diet_order_status: ["draft", "active", "discontinued"],
+      driver_credential_status: ["active", "suspended", "expired"],
       emar_status: [
         "scheduled",
         "given",
@@ -12146,6 +12380,7 @@ export const Constants = {
       ],
       exec_snapshot_scope: ["organization", "entity", "facility"],
       facility_status: ["active", "inactive", "under_renovation", "archived"],
+      fleet_vehicle_status: ["active", "out_of_service", "retired"],
       iddsi_fluid_level: [
         "not_assessed",
         "level_0_thin",
@@ -12361,6 +12596,7 @@ export const Constants = {
         "driver",
         "other",
       ],
+      vehicle_inspection_result: ["pass", "fail", "conditional"],
       vendor_category: [
         "maintenance",
         "medical_supply",

@@ -68,6 +68,10 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 - `/admin/training/new`
 - `/admin/dietary` (Phase 6 Module 14 — `14-dietary-nutrition.md`)
 - `/admin/dietary/new`
+- `/admin/transportation` (Phase 6 Module 15 — `15-transportation.md`)
+- `/admin/transportation/vehicles/new`
+- `/admin/transportation/inspections/new`
+- `/admin/transportation/drivers/new`
 - `/admin/schedules`
 - `/admin/schedules/new`
 - `/admin/time-records`

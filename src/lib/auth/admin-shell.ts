@@ -23,6 +23,7 @@ const ADMIN_SHELL_SEGMENTS = [
   "/certifications",
   "/training",
   "/dietary",
+  "/transportation",
   "/assessments",
   "/care-plans",
   "/family-messages",
