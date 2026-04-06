@@ -1,0 +1,11 @@
+---
+name: Netlify production = main only
+description: Production deploys via Netlify track GitHub main; feature branches do not publish the production site.
+alwaysApply: true
+---
+
+# Production deploys (Netlify)
+
+- **Netlify auto-publishes from `main` only** (`circleoflifealf` / `Circle-of-Life`). Pushes to other branches do not update production.
+- **When a segment is ready to ship:** merge into `main` (PR or local merge) and `git push origin main` so Netlify builds. Do not rely on long-lived feature branches for production visibility.
+- Prefer short-lived branches + PR into `main`, or commit directly on `main` for small gated segments, per team preference.
