@@ -19,6 +19,10 @@
     "design:review": "node .agents/design-review-runner.mjs",
     "stress:test": "tsx .agents/stress-test/run.ts",
     "segment:gates": "node scripts/agent-gates/run-segment-gates.mjs",
+    "demo:auth-check": "node scripts/demo/check-auth-diagnostics.mjs",
+    "demo:auth-smoke": "node scripts/demo/auth-smoke.mjs",
+    "demo:ops-status": "node scripts/demo/phase1-ops-status.mjs",
+    "demo:web-health": "node scripts/demo/web-health.mjs",
     "demo:seed": "node scripts/demo/seed-demo-data.mjs",
     "demo:reset": "node scripts/demo/reset-demo-data.mjs",
     "demo:reseed": "npm run demo:reset && npm run demo:seed"

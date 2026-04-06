@@ -12,6 +12,8 @@ Purpose: provide management-demo data that is deterministic, repeatable, and ful
 ## Commands
 
 ```bash
+npm run demo:auth-check
+npm run demo:auth-smoke
 npm run demo:seed
 npm run demo:reset
 npm run demo:reseed
@@ -24,10 +26,25 @@ npm run demo:reseed
 
 Optional:
 
+- `PHASE1_DEMO_PASSWORD` — overrides the default pilot password (`HavenDemo2026!`) used by `demo:auth-check`.
 - `DEMO_ACTOR_USER_ID` — required only for auth-linked rows like incidents (`reported_by`) and clinical activity actor references.
 - `DEMO_FAMILY_USER_ID` — required only when seeding family access links and family profile rows.
 
 If optional IDs are missing, those auth-linked demo rows are skipped while core workspace/facility/resident/billing rows are still seeded.
+
+## Auth diagnostics
+
+- `demo:auth-check` is the canonical Track A auth probe.
+- `demo:auth-smoke` is the canonical local app smoke for Phase 1 `PH1-A02` and `PH1-A03`.
+- It reads `.env.local` when shell env vars are not already exported.
+- It checks:
+  - `auth/v1/settings`
+  - password login for current pilot addresses (`@circleoflifealf.com`)
+  - password login for legacy seed addresses (`.demo` / `.family.demo`)
+- If `SUPABASE_SERVICE_ROLE_KEY` is present, it also lists matching auth users through the Admin API for comparison.
+- `demo:auth-smoke` expects the app to already be running at `BASE_URL` (defaults to `http://127.0.0.1:3000`) and uses Playwright to verify:
+  - logged-out `/admin/residents` redirects to `/login?next=%2Fadmin%2Fresidents`
+  - invalid credentials show `Invalid login credentials`
 
 ## Included seed domains
 

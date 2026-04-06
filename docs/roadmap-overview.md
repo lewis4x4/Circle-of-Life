@@ -87,13 +87,13 @@ For migration counts and environment alignment, use `PHASE1-ENV-CONFIRMATION.md`
 
 ### Completion-first sequencing before future roadmap expansion
 
-Treat the current repo state as **Core shipped across many modules**, not as universal operational completion. Before resuming `093+`, execute the remediation sequence now captured in `docs/specs/README.md`:
+Treat the current repo state as **Core shipped across many modules**, not as universal operational completion. Migrations `093`–`095` are now reserved for Phase 1 auth remediation, so before resuming future roadmap work at `096+`, execute the remediation sequence now captured in `docs/specs/README.md`:
 
 1. **Phase 1 acceptance closeout** — RLS JWT matrix, real-auth UAT, env/seed verification, Pro/BAA/PITR attestation, active waiver review.
 2. **Platform hardening** — automated regression coverage, observability, CI hardening, runbooks for cron/secrets/replay.
 3. **Workflow hardening** — billing, eMAR, referral/admission/discharge, family/audit, executive operations.
 4. **Phase 6 completion pass** — deepen training, dietary, transportation, referral CRM, and reputation beyond manual Core flows.
-5. **Only then** resume remaining future modules (`093`–`104`).
+5. **Only then** resume remaining future modules (`096`–`107`).
 
 Use these delivery states consistently:
 

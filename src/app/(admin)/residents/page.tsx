@@ -451,27 +451,35 @@ function formatUpdatedAt(value: string | null): string {
 
 function AcuityBadge({ acuity }: { acuity: Acuity }) {
   if (acuity === 3) {
-    return <Badge className="bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300">Acuity 3</Badge>;
+    return (
+      <Badge className="border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400 gap-1.5 flex items-center">
+        <span className="relative flex h-1.5 w-1.5">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-rose-500"></span>
+        </span>
+        Acuity 3
+      </Badge>
+    );
   }
   if (acuity === 2) {
-    return <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">Acuity 2</Badge>;
+    return <Badge className="border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400">Acuity 2</Badge>;
   }
-  return <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">Acuity 1</Badge>;
+  return <Badge className="border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">Acuity 1</Badge>;
 }
 
 function AdlBadge({ status }: { status: AdlStatus }) {
   const map: Record<AdlStatus, { label: string; className: string }> = {
     independent: {
       label: "Independent",
-      className: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+      className: "border-slate-500/20 bg-slate-500/10 text-slate-600 dark:text-slate-400",
     },
     assisted: {
       label: "Assisted",
-      className: "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
+      className: "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400",
     },
     dependent: {
       label: "Dependent",
-      className: "bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300",
+      className: "border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-400",
     },
   };
 
@@ -482,15 +490,15 @@ function ResidentStatusBadge({ status }: { status: ResidencyStatus }) {
   const map: Record<ResidencyStatus, { label: string; className: string }> = {
     active: {
       label: "In Facility",
-      className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+      className: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
     },
     hospital: {
       label: "Hospital",
-      className: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300",
+      className: "border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400",
     },
     loa: {
       label: "LOA",
-      className: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+      className: "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400",
     },
   };
 

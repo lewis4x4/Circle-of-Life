@@ -103,6 +103,7 @@ Current failure reason: target Supabase Auth did not issue user JWTs for the see
 ## Notes
 
 - Helpers live in schema **`haven`** (`haven.organization_id()`, `haven.accessible_facility_ids()`, `haven.app_role()`) — see migrations `004_haven_rls_helpers.sql` and table-specific policies.
-- **Remote migrations:** **001–092** aligned on 2026-04-06 ([PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md)). Include **finance** tables in RLS tests if validating Module 17 on this project.
+- **Remote migrations:** **001–095** aligned on 2026-04-06 ([PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md)). Include **finance** tables in RLS tests if validating Module 17 on this project.
+- **Canonical auth repro:** run `npm run demo:auth-check` before re-attempting live JWT matrix execution so the handoff includes the current auth settings and login failure payloads.
 - **Current scope choice:** docs-only preparation + **single-facility** pilot. The owner/delegated tester still must sign in with non-service-role sessions and record evidence before this document can move from **PENDING** to **PASS**.
 - Mission alignment on completion should remain `risk` or `fail` if any role can see out-of-scope clinical or billing data.

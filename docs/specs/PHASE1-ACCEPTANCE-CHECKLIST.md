@@ -12,7 +12,7 @@ Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs 
 |-------|--------|
 | **Engineering baseline** | **PASS** — lint, build, migration replay, secrets, audit, segment gates; see §G and [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) |
 | **Known gap waivers (§F)** | **PARTIALLY REMEDIATED** — W-RCA-01 / W-COLL-01 / W-BILL-EF-01 closed in repo; **W-ADMIN-01** remains — [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) |
-| **Environment / remote migrations** | **PASS** — Repo and remote migrations aligned **001–092** (2026-04-06); see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
+| **Environment / remote migrations** | **PASS** — Repo and remote migrations aligned **001–095** (2026-04-06); see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
 | **Full product acceptance** (remaining preconditions, A–D UAT, RLS, Pro/BAA/PITR) | **NOT COMPLETE** — [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md), [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) |
 
 **Closure record:** [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) — **NOT COMPLETE** until blockers in that file are cleared.
@@ -56,6 +56,8 @@ Use this checklist as a **live execution packet** on the target environment, not
 - Error text or unexpected behavior
 - Whether the issue is reproducible after refresh
 
+For local repeatability, `npm run demo:auth-smoke` can be used to re-check `PH1-A02` and `PH1-A03` while the app is running locally. It does **not** replace the real-auth requirements for `PH1-A01` or `PH1-A04`.
+
 ### Recommended run order
 
 1. Complete **Preconditions** and confirm target host / migrations / seeded users
@@ -66,6 +68,8 @@ Use this checklist as a **live execution packet** on the target environment, not
 6. Run **E. Cross-cutting UX**
 7. Update [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) row by row
 8. Run or reference [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) before any final sign-off
+
+If valid pilot-role login still fails before shell routing, stop UAT and attach [PHASE1-AUTH-DEBUG-HANDOFF.md](./PHASE1-AUTH-DEBUG-HANDOFF.md) with the latest `npm run demo:auth-check` output.
 
 ### Single-facility pilot note
 
@@ -251,7 +255,7 @@ Before closing Phase 1, record **mission alignment** `pass` | `risk` | `fail` wi
 | Command / gate | Result |
 |----------------|--------|
 | `npm run lint` | PASS |
-| `npm run build` | PASS (92 migrations 001–092) |
+| `npm run build` | PASS (95 migrations 001–095) |
 | `npm run migrations:verify:pg` | PASS |
 | `npm run check:secrets` | PASS |
 | `npm audit` | 0 vulnerabilities |

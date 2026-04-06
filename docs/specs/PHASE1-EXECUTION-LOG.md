@@ -4,7 +4,7 @@
 
 **Rule:** A repo/agent cannot set PASS without owner (or delegated tester) execution on that environment.
 
-**Legend:** `PENDING` = not yet executed. See [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) (2026-04-06: remote migrations **001–092** PASS).
+**Legend:** `PENDING` = not yet executed. See [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) (2026-04-06: remote migrations **001–095** PASS).
 
 ---
 
@@ -21,6 +21,7 @@ Observed blocker:
     - `maria.garcia@circleoflifealf.com`
     - `robert.sullivan@circleoflifealf.com`
   - `095_restore_default_auth_instance.sql` was later applied remotely; auth still fails with the same `Database error querying schema`
+  - `npm run demo:auth-check` is now the canonical repro command for future auth retests and handoff packets
 
 Rows that do not require a successful authenticated session were still executed below.
 
@@ -64,8 +65,8 @@ Use `Tester` to record the human who ran the step. Use `Notes` to capture:
 | ID | Item | Result | Tester | Date | Notes |
 |----|------|--------|--------|------|-------|
 | PH1-A01 | `/login` — admin / caregiver / family → correct shell | **FAIL** | agent | 2026-04-06 | Valid pilot-role login could not complete. Supabase Auth failed before route resolution first for `.demo` addresses, then again for `jessica@circleoflifealf.com`, `maria.garcia@circleoflifealf.com`, and `robert.sullivan@circleoflifealf.com` even after remote apply of `093`, `094`, and `095`, all with `Database error querying schema` |
-| PH1-A02 | Invalid credentials — clear error | **PASS** | agent | 2026-04-06 | Playwright UI run on `/login` with `nobody@example.com` + wrong password showed visible error: `Invalid login credentials` |
-| PH1-A03 | Deep link logged out → login | **PASS** | agent | 2026-04-06 | `GET /admin/residents` redirected to `/login?next=%2Fadmin%2Fresidents`; Playwright and `curl -I` matched |
+| PH1-A02 | Invalid credentials — clear error | **PASS** | agent | 2026-04-06 | Playwright UI run on `/login` with `nobody@example.com` + wrong password showed visible error: `Invalid login credentials`; future local reruns use `npm run demo:auth-smoke` |
+| PH1-A03 | Deep link logged out → login | **PASS** | agent | 2026-04-06 | `GET /admin/residents` redirected to `/login?next=%2Fadmin%2Fresidents`; Playwright and `curl -I` matched; future local reruns use `npm run demo:auth-smoke` |
 | PH1-A04 | Wrong role cannot open other shell routes | PENDING | | | Blocked by PH1-A01 auth failure; no valid non-admin session available for route guard verification |
 
 ---

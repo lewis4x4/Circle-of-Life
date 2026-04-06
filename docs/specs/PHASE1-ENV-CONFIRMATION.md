@@ -24,6 +24,8 @@
 
 Command: `supabase migration list`
 
+**Canonical ops flow:** [PHASE1-OPS-VERIFICATION-RUNBOOK.md](./PHASE1-OPS-VERIFICATION-RUNBOOK.md)
+
 **Local repo (file count / sequence):** **PASS** — `migrations:check` reports **001–095** (2026-04-06).
 
 **Remote (target Supabase project):** **PASS** (2026-04-06) — `migration list` Local/Remote **001–095**; `db push` up to date.
@@ -34,6 +36,10 @@ Command: `supabase migration list`
 
 - **Procedure:** [DEMO-SEED-RUNBOOK.md](./DEMO-SEED-RUNBOOK.md)
 - **Status:** Live remediation attempted. Auth repair migrations **093**, **094**, and **095** are on the target project, but pilot sign-in still fails with `Database error querying schema`; owner still verifies `user_profiles`, `user_facility_access`, family links, and admin facility selector behavior once auth is repaired.
+- **Canonical probe:** `npm run demo:auth-check` captures current `auth/v1/settings`, pilot login results, legacy login results, and optional Admin API user inventory when `SUPABASE_SERVICE_ROLE_KEY` is available.
+- **Compact status:** `npm run demo:ops-status` summarizes migration parity, required function inventory, and the current auth probe verdict in one JSON payload.
+- **Local web health:** `BASE_URL=http://127.0.0.1:3001 npm run demo:web-health` checks local login reachability plus unauthenticated admin/caregiver/family redirect behavior.
+- **Local smoke:** `BASE_URL=http://127.0.0.1:3001 npm run demo:auth-smoke` re-checks `PH1-A02` and `PH1-A03` against a fresh local app instance.
 
 ---
 

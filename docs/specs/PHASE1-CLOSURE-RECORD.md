@@ -4,7 +4,7 @@
 
 **Do not overstate:** This document must distinguish **automated/repo verification** from **live UAT + RLS + production compliance**.
 
-**Last updated:** 2026-04-06 — engineering baseline + UI gates remain PASS; **remote migrations 001–092** and Edge Functions deploy verified via Supabase CLI. Phase 1 acceptance blockers remain open; remediation sequence now mirrors [README.md](./README.md).
+**Last updated:** 2026-04-06 — engineering baseline + UI gates remain PASS; **remote migrations 001–095** and Edge Functions deploy verified via Supabase CLI. Phase 1 acceptance blockers remain open; remediation sequence now mirrors [README.md](./README.md).
 
 ---
 
@@ -27,7 +27,7 @@
 
 **Blockers to full acceptance:**
 
-1. **Auth remediation:** current sign-in still returns `unexpected_failure` / `Database error querying schema` even after remote migrations `093`, `094`, and `095`.
+1. **Auth remediation:** current sign-in still returns `unexpected_failure` / `Database error querying schema` even after remote migrations `093`, `094`, and `095`; use [PHASE1-AUTH-DEBUG-HANDOFF.md](./PHASE1-AUTH-DEBUG-HANDOFF.md) as the canonical dashboard/support packet.
 2. **RLS:** Re-run **RLS-01–07** on target project with real JWTs after auth is fixed; record **PASS** in [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md).
 3. **UAT:** Resume [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) sections A–D and manual E rows after valid role login works.
 4. **Environment / seed / facility context:** Owner confirms `.env.local` host matches canonical project ([PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md)); demo seed + facility selector / **PH1-P03–P04** per execution log.
@@ -58,7 +58,7 @@ This closure record remains the authoritative verdict source for Phase 1 accepta
 | Command | Result |
 |---------|--------|
 | `npm run lint` | PASS (via `segment:gates`) |
-| `npm run build` | PASS (includes `migrations:check`; **92** migrations **001–092** in repo) |
+| `npm run build` | PASS (includes `migrations:check`; **95** migrations **001–095** in repo) |
 | `npm run migrations:verify:pg` | PASS (via `segment:gates`) |
 | `npm run check:secrets` / `audit:ci` / `secrets:gitleaks` | PASS (via `segment:gates`) |
 | `npm run segment:gates -- --segment "phase1-closeout-2026-04-05" --ui --no-chaos` | PASS |
@@ -73,6 +73,8 @@ This closure record remains the authoritative verdict source for Phase 1 accepta
 ### Owner-only (not replaced by gates)
 
 UAT ([PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md)), RLS ([PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md)), env/seed verification, Pro/BAA/PITR dashboard checks, waiver review, and **remote** migration parity remain **required** for full acceptance above.
+
+For repeatable ops checks before those owner-only steps, use [PHASE1-OPS-VERIFICATION-RUNBOOK.md](./PHASE1-OPS-VERIFICATION-RUNBOOK.md).
 
 ---
 
@@ -113,7 +115,9 @@ Then set **Overall Phase 1 full acceptance** below to **PASS** or **PASS WITH WA
 ## References
 
 - [README.md](./README.md) — phase order
+- [PHASE1-AUTH-DEBUG-HANDOFF.md](./PHASE1-AUTH-DEBUG-HANDOFF.md) — project-level auth escalation packet
 - [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) — migration list / canonical URL
+- [PHASE1-OPS-VERIFICATION-RUNBOOK.md](./PHASE1-OPS-VERIFICATION-RUNBOOK.md) — deploy, function, secret, and smoke verification flow
 - [PHASE1-PHASE2-OFFICIAL-SIGNOFF-REVIEW.md](./PHASE1-PHASE2-OFFICIAL-SIGNOFF-REVIEW.md)
 - [docs/agent-gates-runbook.md](../agent-gates-runbook.md)
 - [docs/mission-statement.md](../mission-statement.md)

@@ -261,14 +261,14 @@ Implement after predecessor migrations and specs exist.
 | 26 | `15-transportation.md` | Transportation | `090` | ✅ **Spec written.** `fleet_vehicles`, `vehicle_inspection_logs`, `driver_credentials`; trip scheduling/reminders remain follow-up depth. |
 | 27 | `22-referral-crm.md` | Referral Source CRM | `091` | ✅ **Spec written.** `referral_hl7_inbound` queue; HL7 listener = Enhanced. |
 | 28 | `23-reputation.md` | Reputation Management | `092` | ✅ **Spec written.** `reputation_accounts`, `reputation_replies` (`posted_by_user_id`); API sync = Enhanced. |
-| 29 | `26-digital-twin.md` | Facility Digital Twin | `093` | `twin_scenario_runs` + deterministic seed; **~6 months live data** prerequisite. |
-| 30 | `13-maintenance.md` | Facility Maintenance | `094` | Shares `vendors.id` (Module 19); work orders, PM schedules, building inventory. |
+| 29 | `26-digital-twin.md` | Facility Digital Twin | `096` | `twin_scenario_runs` + deterministic seed; **~6 months live data** prerequisite. |
+| 30 | `13-maintenance.md` | Facility Maintenance | `097` | Shares `vendors.id` (Module 19); work orders, PM schedules, building inventory. |
 
 ---
 
-### Completion remediation tracks (execute before `093+`, and before calling earlier phases “complete”)
+### Completion remediation tracks (execute before future roadmap migrations `096+`, and before calling earlier phases “complete”)
 
-The repo now contains broad **Core-shipped** surface area across Phases 1–6. That is **not** the same as operational readiness or acceptance. Before resuming **`093`** and beyond, execute the remediation tracks below in order.
+The repo now contains broad **Core-shipped** surface area across Phases 1–6. That is **not** the same as operational readiness or acceptance. Migrations `093`–`095` are now consumed by Phase 1 auth remediation, so before resuming future roadmap work at **`096`** and beyond, execute the remediation tracks below in order.
 
 #### Track A — Phase 1 acceptance closeout (blocking)
 
@@ -276,17 +276,19 @@ Use these authoritative files as the acceptance source of truth:
 
 - [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md)
 - [PHASE1-ACCEPTANCE-CHECKLIST.md](./PHASE1-ACCEPTANCE-CHECKLIST.md)
+- [PHASE1-AUTH-DEBUG-HANDOFF.md](./PHASE1-AUTH-DEBUG-HANDOFF.md)
 - [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md)
 - [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md)
 - [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md)
 
 | Order | Item | Why it blocks completion | Required evidence |
 |-------|------|--------------------------|-------------------|
-| A1 | RLS JWT matrix on target project | Policy existence in migrations is not enough; live tenant isolation must be proven | `PHASE1-RLS-VALIDATION-RECORD.md` = PASS |
-| A2 | Real-auth pilot UAT | UI + routes + gates do not replace operator workflows with real auth/session behavior | `PHASE1-EXECUTION-LOG.md` sections A–E completed |
-| A3 | Environment / seed / facility-context verification | Pilot readiness depends on correct target host, seeded users, and facility selector behavior | `PHASE1-ENV-CONFIRMATION.md` + execution log preconditions |
-| A4 | Pro / BAA / PITR attestation | PHI handling and recovery posture are part of release readiness, not optional follow-up | Owner confirmation in closure docs |
-| A5 | Active waiver review | Remaining waivers must map to named remediation work, not vague backlog language | `PHASE1-WAIVER-LOG.md` reviewed with owner |
+| A1 | Auth unblock on target project | RLS and UAT cannot proceed while pilot users fail before JWT issuance | `PHASE1-AUTH-DEBUG-HANDOFF.md` resolved + `npm run demo:auth-check` shows pilot login success |
+| A2 | RLS JWT matrix on target project | Policy existence in migrations is not enough; live tenant isolation must be proven | `PHASE1-RLS-VALIDATION-RECORD.md` = PASS |
+| A3 | Real-auth pilot UAT | UI + routes + gates do not replace operator workflows with real auth/session behavior | `PHASE1-EXECUTION-LOG.md` sections A–E completed |
+| A4 | Environment / seed / facility-context verification | Pilot readiness depends on correct target host, seeded users, and facility selector behavior | `PHASE1-ENV-CONFIRMATION.md` + execution log preconditions |
+| A5 | Pro / BAA / PITR attestation | PHI handling and recovery posture are part of release readiness, not optional follow-up | Owner confirmation in closure docs |
+| A6 | Active waiver review | Remaining waivers must map to named remediation work, not vague backlog language | `PHASE1-WAIVER-LOG.md` reviewed with owner |
 
 **Rule:** Phase 1 remains **NOT COMPLETE** until Track A closes. Do not describe Core-shipped scope as fully accepted before these artifacts are updated.
 
@@ -299,7 +301,7 @@ Add the missing confidence layers that gates alone do not provide.
 | B1 | Automated regression layer | Critical-path browser tests, role/RLS contract checks, and repeatable smoke coverage for pilot workflows |
 | B2 | Observability | Structured logs, error tracking, Edge-function failure visibility, cron/job dashboards, deployment/run health visibility |
 | B3 | CI hardening | Expand beyond `segment:gates`; add selected `--ui` coverage and reduce dependence on visual/a11y-only proof |
-| B4 | Operational runbooks | Secret rotation, cron ownership, replay/failure handling, deployment verification, operator-facing failure paths |
+| B4 | Operational runbooks | Secret rotation, cron ownership, replay/failure handling, deployment verification, operator-facing failure paths; start with [PHASE1-OPS-VERIFICATION-RUNBOOK.md](./PHASE1-OPS-VERIFICATION-RUNBOOK.md) |
 
 **Rule:** New high-risk modules should not be marked “complete” without test coverage and observable runtime behavior.
 
@@ -329,9 +331,9 @@ Before treating Phase 6 as “done,” revisit the recently shipped Core modules
 
 Only after Tracks A–D should roadmap execution resume with:
 
-1. `093`–`094` (remaining Phase 6)
-2. Phase 7 (`095`–`097`)
-3. Phase 8 (`098`–`104`)
+1. `096`–`097` (remaining Phase 6)
+2. Phase 7 (`098`–`100`)
+3. Phase 8 (`101`–`107`)
 
 ---
 
@@ -339,8 +341,8 @@ Only after Tracks A–D should roadmap execution resume with:
 
 | Order | Spec file | Module | Migration range | Audit / build notes |
 |-------|-----------|--------|-----------------|---------------------|
-| 31 | `20-expansion-acquisition.md` | Expansion Planning | `095` | `expansion_scenarios` + immutable assumption hash; cap table modeling. |
-| 32 | `27-regulatory-intelligence.md` | Regulatory Intelligence | `096`–`097` | `regulatory_sources` (url, etag, sha256); diff pipeline; routed through `ai_invocations` with `phi_class = 'none'`. |
+| 31 | `20-expansion-acquisition.md` | Expansion Planning | `098` | `expansion_scenarios` + immutable assumption hash; cap table modeling. |
+| 32 | `27-regulatory-intelligence.md` | Regulatory Intelligence | `099`–`100` | `regulatory_sources` (url, etag, sha256); diff pipeline; routed through `ai_invocations` with `phi_class = 'none'`. |
 
 ---
 
@@ -348,11 +350,11 @@ Only after Tracks A–D should roadmap execution resume with:
 
 | Order | Spec file | Module / subsystem | Migration range | Description |
 |-------|-----------|---------------------|-----------------|-------------|
-| 33 | `ai-A-pattern-detection.md` | Cross-Resident Pattern Detection | `098`–`099` | `pattern_detection_jobs`, `pattern_detection_findings`; Edge Function; `phi_class` gate. |
-| 34 | `ai-B-cognitive-load.md` | Cognitive Load Engine | `100` | `caregiver_load_samples`, `caregiver_load_rules`; deterministic scoring v1. |
-| 35 | `ai-C-family-risk.md` | Family Relationship Health | `101` | `family_engagement_signals`, `family_risk_scores` — **blocked on BAA or de-ID pipeline**. |
-| 36 | `ai-D-placement-optimizer.md` | Portfolio Placement Optimizer | `102` | `placement_constraints`, `placement_recommendations`; OR solver over census + staffing + payer mix. |
-| 37 | `25-ambient-intelligence.md` | Ambient Environment Intelligence | `103`–`104` | `ambient_consent_policies`, `resident_sensor_opt_in`; BLE/MQTT gateway; retention TTL; redaction Edge Function. |
+| 33 | `ai-A-pattern-detection.md` | Cross-Resident Pattern Detection | `101`–`102` | `pattern_detection_jobs`, `pattern_detection_findings`; Edge Function; `phi_class` gate. |
+| 34 | `ai-B-cognitive-load.md` | Cognitive Load Engine | `103` | `caregiver_load_samples`, `caregiver_load_rules`; deterministic scoring v1. |
+| 35 | `ai-C-family-risk.md` | Family Relationship Health | `104` | `family_engagement_signals`, `family_risk_scores` — **blocked on BAA or de-ID pipeline**. |
+| 36 | `ai-D-placement-optimizer.md` | Portfolio Placement Optimizer | `105` | `placement_constraints`, `placement_recommendations`; OR solver over census + staffing + payer mix. |
+| 37 | `25-ambient-intelligence.md` | Ambient Environment Intelligence | `106`–`107` | `ambient_consent_policies`, `resident_sensor_opt_in`; BLE/MQTT gateway; retention TTL; redaction Edge Function. |
 
 ---
 
@@ -411,9 +413,9 @@ Per-org provider routing is stored in **`ai_invocation_policies`**.
 | Phase 3.5 | 19 segments + audit `069` | `050`–`069` |
 | Phase 4 | 3 modules | `075`–`080` (after repo `070`–`074`) |
 | Phase 5 | 3 modules | `081`–`085` |
-| Phase 6 | 8 modules | `086`–`094` |
-| Phase 7 | 2 modules | `095`–`097` |
-| Phase 8 | 5 modules / subsystems | `098`–`104` |
+| Phase 6 | 8 modules | `086`–`092`, `096`–`097` (`093`–`095` reserved for auth remediation) |
+| Phase 7 | 2 modules | `098`–`100` |
+| Phase 8 | 5 modules / subsystems | `101`–`107` |
 
 **~43** discrete segments/modules beyond the current Phase 3 queue (see tables above for authoritative ordering).
 
@@ -439,30 +441,30 @@ Module numbers match the product roadmap, **not** the build sequence. Build orde
 | 10 | Quality Metrics & Outcomes | 5 | `10-quality-metrics.md` — ✅ Core (`081`–`082`) |
 | 11 | Staff Management & Scheduling | 1 + 3.5 patch | `11-staff-management.md` — ✅; Phase 3.5 `059` |
 | 12 | Training & Competency Management | 6 | `12-training-competency.md` — ✅ Core (`086`–`087`); operational depth in Completion Track D |
-| 13 | Facility Maintenance & Environment | 6 | `13-maintenance.md` — not yet written |
+| 13 | Facility Maintenance & Environment | 6 | `13-maintenance.md` — not yet written (`097`) |
 | 14 | Dietary & Nutrition Management | 6 | `14-dietary-nutrition.md` — ✅ Core (`089`); workflow depth in Completion Track D |
 | 15 | Transportation & Appointments | 6 | `15-transportation.md` — ✅ Core (`090`); workflow depth in Completion Track D |
 | 16 | Resident Billing & Collections | 1 + 3.5 patch | `16-billing.md` — ✅; Phase 3.5 `060` |
 | 17 | Entity & Facility Finance | 3 + 3.5 patch | `17-entity-facility-finance.md` — ✅ Core; Enhanced `048` + `065` |
 | 18 | Insurance & Risk Finance | 3 + 3.5 patch | `18-insurance-risk-finance.md` — ✅ Core; Enhanced `049` + `066` |
 | 19 | Vendor & Contract Management | 3 + 3.5 patch | `19-vendor-contract-management.md` — ✅; Phase 3.5 `067` |
-| 20 | Expansion & Acquisition Planning | 7 | `20-expansion-acquisition.md` — not yet written |
+| 20 | Expansion & Acquisition Planning | 7 | `20-expansion-acquisition.md` — not yet written (`098`) |
 | 21 | Family Portal | 5 | `21-family-portal.md` — ✅ Core (`083`–`084`); PHI / production readiness remains in Completion Track C |
 | 22 | Referral Source CRM | 6 | `22-referral-crm.md` — ✅ Core (`091`); HL7 automation remains in Completion Track D |
 | 23 | Reputation & Online Presence | 6 | `23-reputation.md` — ✅ Core (`092`); API sync remains in Completion Track D |
 | 24 | Executive Intelligence Layer | 3 (v1) + 5 (v2) | `24-executive-intelligence.md` — 🟩 Core UI (`047`); v2: `24-executive-v2.md` — ✅ Core schema + admin (`085`); operational hardening remains in Completion Track C |
-| 25 | Ambient Environment Intelligence | 8 | `25-ambient-intelligence.md` — not yet written (`098`–`099`) |
-| 26 | Facility Digital Twin | 6 | `26-digital-twin.md` — not yet written |
-| 27 | Regulatory Intelligence & Arbitrage | 7 | `27-regulatory-intelligence.md` — not yet written |
+| 25 | Ambient Environment Intelligence | 8 | `25-ambient-intelligence.md` — not yet written (`106`–`107`) |
+| 26 | Facility Digital Twin | 6 | `26-digital-twin.md` — not yet written (`096`) |
+| 27 | Regulatory Intelligence & Arbitrage | 7 | `27-regulatory-intelligence.md` — not yet written (`099`–`100`) |
 
 ### Cross-cutting AI subsystems (Phase 8)
 
 | ID | Name | Spec file | Migration | Notes |
 |----|------|-----------|-----------|-------|
-| AI-A | Cross-Resident Pattern Detection | `ai-A-pattern-detection.md` | `093`–`094` | `phi_class` gate via `ai_invocations` |
-| AI-B | Cognitive Load Engine | `ai-B-cognitive-load.md` | `095` | Reads Module 11 + 04 signals |
-| AI-C | Family Relationship Health | `ai-C-family-risk.md` | `096` | Blocked on BAA or de-ID |
-| AI-D | Portfolio Placement Optimizer | `ai-D-placement-optimizer.md` | `097` | OR over census + staffing |
+| AI-A | Cross-Resident Pattern Detection | `ai-A-pattern-detection.md` | `101`–`102` | `phi_class` gate via `ai_invocations` |
+| AI-B | Cognitive Load Engine | `ai-B-cognitive-load.md` | `103` | Reads Module 11 + 04 signals |
+| AI-C | Family Relationship Health | `ai-C-family-risk.md` | `104` | Blocked on BAA or de-ID |
+| AI-D | Portfolio Placement Optimizer | `ai-D-placement-optimizer.md` | `105` | OR over census + staffing |
 
 ### Foundation addenda (not numbered modules)
 
