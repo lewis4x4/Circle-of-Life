@@ -170,6 +170,19 @@ export async function fetchExecutiveKpiSnapshot(
     outbreaksActiveQuery,
   ]);
 
+  const batchErrors = [
+    residentsCountRes.error,
+    invoicesOpenRes.error,
+    incidentsOpenRes.error,
+    medErrorsMtdRes.error,
+    deficienciesOpenRes.error,
+    certsExpiringRes.error,
+    outbreaksActiveRes.error,
+  ].filter((e): e is NonNullable<typeof e> => e != null);
+  if (batchErrors.length > 0) {
+    throw new Error(batchErrors[0].message);
+  }
+
   const licensedBeds = facilities.reduce((sum, f) => sum + (f.total_licensed_beds ?? 0), 0);
   const occupiedResidents = residentsCountRes.count ?? 0;
   const occupancyPct =

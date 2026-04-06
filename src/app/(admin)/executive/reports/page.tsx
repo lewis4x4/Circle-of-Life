@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { FileSpreadsheet } from "lucide-react";
 
 import { ExecutiveHubNav } from "../executive-hub-nav";
@@ -144,7 +144,7 @@ export default function ExecutiveSavedReportsPage() {
     void load();
   }, [load]);
 
-  async function onCreate(e: React.FormEvent) {
+  async function onCreate(e: FormEvent) {
     e.preventDefault();
     if (!canManage || !orgId) return;
     const name = newName.trim();
