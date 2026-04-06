@@ -8344,6 +8344,145 @@ export type Database = {
           },
         ]
       }
+      reputation_accounts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          external_place_id: string | null
+          facility_id: string
+          id: string
+          is_active: boolean
+          label: string
+          notes: string | null
+          organization_id: string
+          platform: Database["public"]["Enums"]["reputation_platform"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          external_place_id?: string | null
+          facility_id: string
+          id?: string
+          is_active?: boolean
+          label: string
+          notes?: string | null
+          organization_id: string
+          platform?: Database["public"]["Enums"]["reputation_platform"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          external_place_id?: string | null
+          facility_id?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          notes?: string | null
+          organization_id?: string
+          platform?: Database["public"]["Enums"]["reputation_platform"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reputation_accounts_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reputation_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reputation_replies: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          external_review_id: string | null
+          facility_id: string
+          id: string
+          organization_id: string
+          posted_by_user_id: string | null
+          posted_to_platform_at: string | null
+          reply_body: string
+          reputation_account_id: string
+          review_excerpt: string | null
+          status: Database["public"]["Enums"]["reputation_reply_status"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          external_review_id?: string | null
+          facility_id: string
+          id?: string
+          organization_id: string
+          posted_by_user_id?: string | null
+          posted_to_platform_at?: string | null
+          reply_body: string
+          reputation_account_id: string
+          review_excerpt?: string | null
+          status?: Database["public"]["Enums"]["reputation_reply_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          external_review_id?: string | null
+          facility_id?: string
+          id?: string
+          organization_id?: string
+          posted_by_user_id?: string | null
+          posted_to_platform_at?: string | null
+          reply_body?: string
+          reputation_account_id?: string
+          review_excerpt?: string | null
+          status?: Database["public"]["Enums"]["reputation_reply_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reputation_replies_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reputation_replies_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reputation_replies_reputation_account_id_fkey"
+            columns: ["reputation_account_id"]
+            isOneToOne: false
+            referencedRelation: "reputation_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       resident_contacts: {
         Row: {
           address: string | null
@@ -12148,6 +12287,13 @@ export type Database = {
         | "converted"
         | "lost"
         | "merged"
+      reputation_platform:
+        | "google_business"
+        | "yelp"
+        | "facebook"
+        | "caring_com"
+        | "other"
+      reputation_reply_status: "draft" | "posted" | "failed"
       resident_status:
         | "inquiry"
         | "pending_admission"
@@ -12631,6 +12777,14 @@ export const Constants = {
         "lost",
         "merged",
       ],
+      reputation_platform: [
+        "google_business",
+        "yelp",
+        "facebook",
+        "caring_com",
+        "other",
+      ],
+      reputation_reply_status: ["draft", "posted", "failed"],
       resident_status: [
         "inquiry",
         "pending_admission",

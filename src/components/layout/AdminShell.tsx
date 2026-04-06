@@ -44,6 +44,7 @@ import {
   BarChart3,
   LineChart,
   Smartphone,
+  Star,
 } from "lucide-react";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
@@ -134,6 +135,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     { key: "executive", href: "/admin/executive", label: "Executive", enabled: true, icon: BarChart3 },
     { key: "residents", href: "/admin/residents", label: "Residents", enabled: true, icon: Users },
     { key: "referrals", href: "/admin/referrals", label: "Referrals", enabled: true, icon: UserPlus },
+    { key: "reputation", href: "/admin/reputation", label: "Reputation", enabled: true, icon: Star },
     { key: "admissions", href: "/admin/admissions", label: "Admissions", enabled: true, icon: Home },
     { key: "discharge", href: "/admin/discharge", label: "Discharge", enabled: true, icon: DoorOpen },
     { key: "quality", href: "/admin/quality", label: "Quality", enabled: true, icon: LineChart },
@@ -189,6 +191,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               pathname === item.href ||
               (item.key === "executive" && pathname.startsWith("/admin/executive")) ||
               (item.key === "referrals" && pathname.startsWith("/admin/referrals")) ||
+              (item.key === "reputation" && pathname.startsWith("/admin/reputation")) ||
               (item.key === "admissions" && pathname.startsWith("/admin/admissions")) ||
               (item.key === "discharge" && pathname.startsWith("/admin/discharge")) ||
               (item.key === "quality" && pathname.startsWith("/admin/quality")) ||

@@ -258,7 +258,7 @@ Implement after predecessor migrations and specs exist.
 | 25 | `14-dietary-nutrition.md` | Dietary and Nutrition | `089` | ✅ **Spec written.** `diet_orders`, `iddsi_food_level` / `iddsi_fluid_level`; med cross-check automation Enhanced. |
 | 26 | `15-transportation.md` | Transportation | `090` | `fleet_vehicles`, `vehicle_inspection_logs`, `driver_credentials`. |
 | 27 | `22-referral-crm.md` | Referral Source CRM | `091` | ✅ **Spec written.** `referral_hl7_inbound` queue; HL7 listener = Enhanced. |
-| 28 | `23-reputation.md` | Reputation Management | `092` | `reputation_accounts`, `reputation_replies` with `posted_by_user_id`. |
+| 28 | `23-reputation.md` | Reputation Management | `092` | ✅ **Spec written.** `reputation_accounts`, `reputation_replies` (`posted_by_user_id`); API sync = Enhanced. |
 | 29 | `26-digital-twin.md` | Facility Digital Twin | `093` | `twin_scenario_runs` + deterministic seed; **~6 months live data** prerequisite. |
 | 30 | `13-maintenance.md` | Facility Maintenance | `094` | Shares `vendors.id` (Module 19); work orders, PM schedules, building inventory. |
 
@@ -375,7 +375,7 @@ Module numbers match the product roadmap, **not** the build sequence. Build orde
 | 20 | Expansion & Acquisition Planning | 7 | `20-expansion-acquisition.md` — not yet written |
 | 21 | Family Portal | 5 | `21-family-portal.md` — ✅ Core (`083`–`084`) |
 | 22 | Referral Source CRM | 6 | `22-referral-crm.md` — ✅ Core (`091`) |
-| 23 | Reputation & Online Presence | 6 | `23-reputation.md` — not yet written |
+| 23 | Reputation & Online Presence | 6 | `23-reputation.md` — ✅ Core (`092`) |
 | 24 | Executive Intelligence Layer | 3 (v1) + 5 (v2) | `24-executive-intelligence.md` — 🟩 Core UI (`047`); v2: `24-executive-v2.md` — ✅ Core schema + admin (`085`) |
 | 25 | Ambient Environment Intelligence | 8 | `25-ambient-intelligence.md` — not yet written (`098`–`099`) |
 | 26 | Facility Digital Twin | 6 | `26-digital-twin.md` — not yet written |

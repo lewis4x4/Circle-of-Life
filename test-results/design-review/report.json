@@ -1,9 +1,10 @@
 {
-  "timestamp": "2026-04-06T15:22:27.968Z",
+  "timestamp": "2026-04-06T15:29:07.340Z",
   "baseUrl": "http://127.0.0.1:4310",
   "routes": [
-    "/admin/referrals/hl7-inbound",
-    "/admin/referrals/hl7-inbound/new"
+    "/admin/reputation",
+    "/admin/reputation/accounts/new",
+    "/admin/reputation/replies/new"
   ],
   "viewports": [
     "375",
@@ -13,68 +14,100 @@
   ],
   "shots": [
     {
-      "route": "/admin/referrals/hl7-inbound",
+      "route": "/admin/reputation",
       "viewport": "375",
-      "url": "http://127.0.0.1:4310/admin/referrals/hl7-inbound",
+      "url": "http://127.0.0.1:4310/admin/reputation",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_referrals_hl7-inbound-375.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_reputation-375.png"
     },
     {
-      "route": "/admin/referrals/hl7-inbound",
+      "route": "/admin/reputation",
       "viewport": "768",
-      "url": "http://127.0.0.1:4310/admin/referrals/hl7-inbound",
+      "url": "http://127.0.0.1:4310/admin/reputation",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_referrals_hl7-inbound-768.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_reputation-768.png"
     },
     {
-      "route": "/admin/referrals/hl7-inbound",
+      "route": "/admin/reputation",
       "viewport": "1024",
-      "url": "http://127.0.0.1:4310/admin/referrals/hl7-inbound",
+      "url": "http://127.0.0.1:4310/admin/reputation",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_referrals_hl7-inbound-1024.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_reputation-1024.png"
     },
     {
-      "route": "/admin/referrals/hl7-inbound",
+      "route": "/admin/reputation",
       "viewport": "1440",
-      "url": "http://127.0.0.1:4310/admin/referrals/hl7-inbound",
+      "url": "http://127.0.0.1:4310/admin/reputation",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_referrals_hl7-inbound-1440.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_reputation-1440.png"
     },
     {
-      "route": "/admin/referrals/hl7-inbound/new",
+      "route": "/admin/reputation/accounts/new",
       "viewport": "375",
-      "url": "http://127.0.0.1:4310/admin/referrals/hl7-inbound/new",
+      "url": "http://127.0.0.1:4310/admin/reputation/accounts/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_referrals_hl7-inbound_new-375.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_reputation_accounts_new-375.png"
     },
     {
-      "route": "/admin/referrals/hl7-inbound/new",
+      "route": "/admin/reputation/accounts/new",
       "viewport": "768",
-      "url": "http://127.0.0.1:4310/admin/referrals/hl7-inbound/new",
+      "url": "http://127.0.0.1:4310/admin/reputation/accounts/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_referrals_hl7-inbound_new-768.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_reputation_accounts_new-768.png"
     },
     {
-      "route": "/admin/referrals/hl7-inbound/new",
+      "route": "/admin/reputation/accounts/new",
       "viewport": "1024",
-      "url": "http://127.0.0.1:4310/admin/referrals/hl7-inbound/new",
+      "url": "http://127.0.0.1:4310/admin/reputation/accounts/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_referrals_hl7-inbound_new-1024.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_reputation_accounts_new-1024.png"
     },
     {
-      "route": "/admin/referrals/hl7-inbound/new",
+      "route": "/admin/reputation/accounts/new",
       "viewport": "1440",
-      "url": "http://127.0.0.1:4310/admin/referrals/hl7-inbound/new",
+      "url": "http://127.0.0.1:4310/admin/reputation/accounts/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_referrals_hl7-inbound_new-1440.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_reputation_accounts_new-1440.png"
+    },
+    {
+      "route": "/admin/reputation/replies/new",
+      "viewport": "375",
+      "url": "http://127.0.0.1:4310/admin/reputation/replies/new",
+      "status": 200,
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_reputation_replies_new-375.png"
+    },
+    {
+      "route": "/admin/reputation/replies/new",
+      "viewport": "768",
+      "url": "http://127.0.0.1:4310/admin/reputation/replies/new",
+      "status": 200,
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_reputation_replies_new-768.png"
+    },
+    {
+      "route": "/admin/reputation/replies/new",
+      "viewport": "1024",
+      "url": "http://127.0.0.1:4310/admin/reputation/replies/new",
+      "status": 200,
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_reputation_replies_new-1024.png"
+    },
+    {
+      "route": "/admin/reputation/replies/new",
+      "viewport": "1440",
+      "url": "http://127.0.0.1:4310/admin/reputation/replies/new",
+      "status": 200,
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_reputation_replies_new-1440.png"
     }
   ],
   "errors": []
