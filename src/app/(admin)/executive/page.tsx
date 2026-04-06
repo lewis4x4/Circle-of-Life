@@ -13,6 +13,15 @@ import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchExecutiveKpiSnapshot, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
+import {
+  arDeltaLine,
+  censusDeltaLine,
+  clinicalDeltaLine,
+  complianceDeltaLine,
+  fetchPriorExecSnapshotMetrics,
+  infectionDeltaLine,
+  workforceDeltaLine,
+} from "@/lib/exec-prior-snapshot";
 import { fetchExecutiveAlerts, type ExecutiveAlertRow } from "@/lib/exec-alerts";
 import { computeTotalCostOfRisk, type TcorSnapshot } from "@/lib/insurance/compute-tcor";
 import { cn } from "@/lib/utils";
@@ -31,6 +40,7 @@ export default function ExecutiveCommandCenterPage() {
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
   const [kpis, setKpis] = useState<ExecKpiPayload | null>(null);
+  const [priorKpi, setPriorKpi] = useState<ExecKpiPayload | null>(null);
   const [alerts, setAlerts] = useState<ExecutiveAlertRow[]>([]);
   const [tcor, setTcor] = useState<TcorSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,6 +54,7 @@ export default function ExecutiveCommandCenterPage() {
       if (!ctx.ok) {
         setError(ctx.error);
         setKpis(null);
+        setPriorKpi(null);
         setAlerts([]);
         setTcor(null);
         return;
@@ -62,16 +73,19 @@ export default function ExecutiveCommandCenterPage() {
         entityIdForTcor = fac?.entity_id ?? null;
       }
 
-      const [kpiData, alertData, tcorResult] = await Promise.all([
+      const [kpiData, priorData, alertData, tcorResult] = await Promise.all([
         fetchExecutiveKpiSnapshot(supabase, orgId, selectedFacilityId),
+        fetchPriorExecSnapshotMetrics(supabase, orgId, selectedFacilityId),
         fetchExecutiveAlerts(supabase, orgId, selectedFacilityId, 10),
         computeTotalCostOfRisk(supabase, { organizationId: orgId, entityId: entityIdForTcor }),
       ]);
       setKpis(kpiData);
+      setPriorKpi(priorData);
       setAlerts(alertData);
       setTcor(tcorResult.ok ? tcorResult.snapshot : null);
     } catch (e) {
       setKpis(null);
+      setPriorKpi(null);
       setAlerts([]);
       setTcor(null);
       setError(e instanceof Error ? e.message : "Unable to load executive data.");
@@ -96,7 +110,8 @@ export default function ExecutiveCommandCenterPage() {
           <div>
             <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Executive</h1>
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              Organization command center (Module 24) — portfolio KPIs, alerts, and links into source modules.
+              Organization command center (Module 24) — portfolio KPIs, alerts, and links into source modules. Tile
+              deltas use the latest stored snapshot for this scope (nightly `exec-kpi-snapshot` job).
             </p>
           </div>
         </div>
@@ -104,6 +119,14 @@ export default function ExecutiveCommandCenterPage() {
           Refresh
         </Button>
       </div>
+
+      {!loading && kpis && !priorKpi && (
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-400">
+          No prior snapshot for this scope yet. Deltas appear after the nightly job writes to{" "}
+          <code className="text-xs">exec_kpi_snapshots</code> (org admins see org scope; facility admins see selected
+          facility).
+        </p>
+      )}
 
       {error && (
         <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -123,6 +146,7 @@ export default function ExecutiveCommandCenterPage() {
                 }`
               : "—"
           }
+          delta={kpis ? censusDeltaLine(kpis, priorKpi) : null}
           href="/admin/residents"
           linkLabel="Residents"
         />
@@ -135,6 +159,7 @@ export default function ExecutiveCommandCenterPage() {
               ? `${kpis.financial.openInvoicesCount} open · ${money.format(kpis.financial.totalBalanceDueCents / 100)}`
               : "—"
           }
+          delta={kpis ? arDeltaLine(kpis, priorKpi) : null}
           href="/admin/billing/invoices"
           linkLabel="Invoices"
         />
@@ -143,6 +168,7 @@ export default function ExecutiveCommandCenterPage() {
           description="Open incidents; med errors (MTD)"
           loading={loading}
           value={kpis ? `${kpis.clinical.openIncidents} incidents · ${kpis.clinical.medicationErrorsMtd} med errors` : "—"}
+          delta={kpis ? clinicalDeltaLine(kpis, priorKpi) : null}
           href="/admin/incidents"
           linkLabel="Incidents"
         />
@@ -151,6 +177,7 @@ export default function ExecutiveCommandCenterPage() {
           description="Open survey deficiencies"
           loading={loading}
           value={kpis ? String(kpis.compliance.openSurveyDeficiencies) : "—"}
+          delta={kpis ? complianceDeltaLine(kpis, priorKpi) : null}
           href="/admin/compliance"
           linkLabel="Compliance"
         />
@@ -159,6 +186,7 @@ export default function ExecutiveCommandCenterPage() {
           description="Staff certifications expiring (30d)"
           loading={loading}
           value={kpis ? String(kpis.workforce.certificationsExpiring30d) : "—"}
+          delta={kpis ? workforceDeltaLine(kpis, priorKpi) : null}
           href="/admin/certifications"
           linkLabel="Certifications"
         />
@@ -167,6 +195,7 @@ export default function ExecutiveCommandCenterPage() {
           description="Active outbreaks"
           loading={loading}
           value={kpis ? String(kpis.infection.activeOutbreaks) : "—"}
+          delta={kpis ? infectionDeltaLine(kpis, priorKpi) : null}
           href="/admin/infection-control"
           linkLabel="Infection control"
         />
@@ -239,6 +268,7 @@ function KpiCard(props: {
   title: string;
   description: string;
   value: string;
+  delta?: string | null;
   loading: boolean;
   href: string;
   linkLabel: string;
@@ -251,6 +281,9 @@ function KpiCard(props: {
       </CardHeader>
       <CardContent className="space-y-2">
         {props.loading ? <Skeleton className="h-8 w-3/4" /> : <p className="text-xl font-semibold tabular-nums">{props.value}</p>}
+        {!props.loading && props.delta ? (
+          <p className="text-xs text-slate-600 dark:text-slate-400">{props.delta}</p>
+        ) : null}
         <Link className="text-sm text-primary underline-offset-4 hover:underline" href={props.href}>
           {props.linkLabel} →
         </Link>
