@@ -10,28 +10,29 @@
 
 ## Verdict summary
 
-| Criterion | Status (2026-04-05) |
+| Criterion | Status (2026-04-06) |
 |-----------|---------------------|
 | **Engineering baseline** (lint, build, migration replay, secrets, audit, segment gates) | **PASS** — see § Gate evidence |
 | **Target `.env` / Supabase project alignment** | **VERIFY** — canonical URL in [README.md](./README.md); owner confirms `.env.local` host; [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
-| **Remote migrations aligned** | **PASS** — `supabase migration list` Local/Remote **001–092** (2026-04-06); `db push` up to date |
-| **Seeded users (admin / caregiver / family) + facility context** | **PENDING** — owner UAT / [DEMO-SEED-RUNBOOK.md](./DEMO-SEED-RUNBOOK.md) |
-| **Checklist §A–F (real auth)** | **PENDING** — [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) |
-| **RLS matrix** | **PENDING** — [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md); procedure [PHASE1-RLS-MANUAL-PROCEDURE.md](./PHASE1-RLS-MANUAL-PROCEDURE.md) |
+| **Remote migrations aligned** | **PASS** — `supabase migration list` now shows Local/Remote **001–095** (2026-04-06) |
+| **Seeded users (admin / caregiver / family) + facility context** | **FAIL** — live sign-in attempts still return `Database error querying schema` after remote auth remediations `093`, `094`, and `095`; see [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) |
+| **Checklist §A–F (real auth)** | **FAIL / BLOCKED** — logged-out redirect and invalid-credential handling passed, but valid role login still fails before shell routing; see [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) |
+| **RLS matrix** | **FAIL** — required JWT sessions still cannot be established for admin/caregiver/family pilot users after auth seed repair; see [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md); procedure [PHASE1-RLS-MANUAL-PROCEDURE.md](./PHASE1-RLS-MANUAL-PROCEDURE.md) |
 | **Production compliance** (Pro, BAA before PHI, PITR) | **PENDING** — Supabase dashboard |
 | **Waivers (known Phase 1 gaps)** | **APPROVED** — [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) (RCA, billing EF, collections UI, list-only admin) |
 
 ### Overall Phase 1 full acceptance
 
-**NOT COMPLETE** as of 2026-04-05.
+**NOT COMPLETE** as of 2026-04-06.
 
 **Blockers to full acceptance:**
 
-1. **RLS:** Execute **RLS-01–07** on target project with real JWTs; record **PASS** in [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md).
-2. **UAT:** Complete [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) sections A–D and manual E rows with real auth.
-3. **Environment / seed / facility context:** Owner confirms `.env.local` host matches canonical project ([PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md)); demo seed + facility selector / **PH1-P03–P04** per execution log.
-4. **Production compliance:** Owner confirms Pro / BAA / PITR in dashboard.
-5. **Waiver review:** Confirm remaining waiver scope in [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) still matches pilot reality and has a named remediation path.
+1. **Auth remediation:** current sign-in still returns `unexpected_failure` / `Database error querying schema` even after remote migrations `093`, `094`, and `095`.
+2. **RLS:** Re-run **RLS-01–07** on target project with real JWTs after auth is fixed; record **PASS** in [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md).
+3. **UAT:** Resume [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) sections A–D and manual E rows after valid role login works.
+4. **Environment / seed / facility context:** Owner confirms `.env.local` host matches canonical project ([PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md)); demo seed + facility selector / **PH1-P03–P04** per execution log.
+5. **Production compliance:** Owner confirms Pro / BAA / PITR in dashboard.
+6. **Waiver review:** Confirm remaining waiver scope in [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) still matches pilot reality and has a named remediation path.
 
 **Waivers alone do not close Phase 1** while RLS or checklist UAT remain open.
 
@@ -41,22 +42,23 @@
 
 Phase 1 closeout is now the first blocking track in [README.md](./README.md) under **Completion remediation tracks**. Follow that sequence before resuming roadmap expansion or describing prior work as complete:
 
-1. RLS JWT matrix on target
-2. Real-auth pilot UAT
-3. Environment / seed / facility-context verification
-4. Pro / BAA / PITR attestation
-5. Active waiver review
+1. Auth remediation for seeded pilot users
+2. RLS JWT matrix on target
+3. Real-auth pilot UAT
+4. Environment / seed / facility-context verification
+5. Pro / BAA / PITR attestation
+6. Active waiver review
 
 This closure record remains the authoritative verdict source for Phase 1 acceptance.
 
 ---
 
-## Gate evidence (2026-04-05 automated closeout refresh)
+## Gate evidence (2026-04-06 automated closeout refresh)
 
 | Command | Result |
 |---------|--------|
 | `npm run lint` | PASS (via `segment:gates`) |
-| `npm run build` | PASS (includes `migrations:check`; **69** migrations **001–069** in repo) |
+| `npm run build` | PASS (includes `migrations:check`; **92** migrations **001–092** in repo) |
 | `npm run migrations:verify:pg` | PASS (via `segment:gates`) |
 | `npm run check:secrets` / `audit:ci` / `secrets:gitleaks` | PASS (via `segment:gates`) |
 | `npm run segment:gates -- --segment "phase1-closeout-2026-04-05" --ui --no-chaos` | PASS |
@@ -82,9 +84,9 @@ UAT ([PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md)), RLS ([PHASE1-RLS-VAL
 | **risk** | Accepted gaps waived with owner/expiry/remediation; or minor follow-ups documented; or **blockers remain** for full acceptance. |
 | **fail** | Block release: critical RLS or auth issue unfixed. |
 
-**Current (2026-04-06):** **risk** — Engineering baseline and remote migration parity are documented, but **residual risk** remains until RLS matrix passes on target, checklist UAT completes, env/seed proof is recorded, dashboard compliance is attested, and the active waiver is re-validated against pilot scope. Aligns with mission (secure, role-governed data layer; resident safety; regulatory readiness) **in intent**; **live verification** remains outstanding.
+**Current (2026-04-06):** **fail** — Engineering baseline and migration parity are now restored through `095`, but live validation still finds a blocking auth defect on the target project: pilot admin/caregiver/family users cannot sign in because Supabase Auth returns `Database error querying schema`.
 
-**Sentence:** Shipped scope supports Haven’s north star; **full acceptance** now explicitly depends on the remediation sequence in [README.md](./README.md): RLS proof, real-auth UAT, env/seed verification, dashboard compliance attestation, and waiver review.
+**Sentence:** Shipped scope supports Haven’s north star, but the target environment currently fails the mission’s secure, role-governed access requirement because pilot users still cannot obtain live sessions for validation even with the full migration set applied.
 
 ---
 
@@ -102,9 +104,9 @@ Then set **Overall Phase 1 full acceptance** below to **PASS** or **PASS WITH WA
 | Date | Outcome | Owner |
 |------|---------|-------|
 | 2026-04-05 | **NOT COMPLETE** — hand-off structure; UAT/RLS/compliance pending | — |
-| 2026-04-06 | **NOT COMPLETE** — baseline + waivers + env/CLI gap documented; RLS + UAT + remote migrations + dashboard compliance pending | Brian Lewis (review) |
+| 2026-04-06 | **NOT COMPLETE** — baseline + waivers + env/CLI gap documented; RLS + UAT + dashboard compliance pending | Brian Lewis (review) |
 | 2026-04-05 | **NOT COMPLETE** — automated gates refreshed (`phase1-closeout-2026-04-05`); human blockers unchanged | Agent (repo) |
-| 2026-04-06 | **NOT COMPLETE** — remote migrations now aligned through `092`, but acceptance blockers still governed by the remediation sequence in `README.md` | Agent (repo) |
+| 2026-04-06 | **NOT COMPLETE** — remote auth remediations `093`, `094`, and `095` applied, but pilot login still fails with `Database error querying schema` | Agent (live probe) |
 
 ---
 

@@ -12,7 +12,7 @@ Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs 
 |-------|--------|
 | **Engineering baseline** | **PASS** — lint, build, migration replay, secrets, audit, segment gates; see §G and [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) |
 | **Known gap waivers (§F)** | **PARTIALLY REMEDIATED** — W-RCA-01 / W-COLL-01 / W-BILL-EF-01 closed in repo; **W-ADMIN-01** remains — [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) |
-| **Environment / remote migrations** | **PASS** — Repo migrations **001–071** (2026-04-06); apply **070–071** on remote via `supabase db push` before pilot; see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
+| **Environment / remote migrations** | **PASS** — Repo and remote migrations aligned **001–092** (2026-04-06); see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
 | **Full product acceptance** (remaining preconditions, A–D UAT, RLS, Pro/BAA/PITR) | **NOT COMPLETE** — [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md), [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) |
 
 **Closure record:** [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) — **NOT COMPLETE** until blockers in that file are cleared.
@@ -34,6 +34,45 @@ Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs 
 
 ---
 
+## Real-auth UAT packet
+
+Use this checklist as a **live execution packet** on the target environment, not as a repo review substitute.
+
+### Recommended tester set
+
+| Role | Minimum purpose |
+|------|-----------------|
+| `owner` or `org_admin` | Validate admin shell, billing, dashboard, and cross-shell routing |
+| `facility_admin` | Validate facility-scoped admin behavior and switcher expectations |
+| `caregiver` | Validate daily ops milestone paths |
+| `family` | Validate least-privilege family access and messaging/billing views |
+
+### Evidence to capture for every failed or ambiguous row
+
+- Screenshot or short screen recording
+- URL / route
+- Signed-in role
+- Facility context selected
+- Error text or unexpected behavior
+- Whether the issue is reproducible after refresh
+
+### Recommended run order
+
+1. Complete **Preconditions** and confirm target host / migrations / seeded users
+2. Run **A. Authentication and routing**
+3. Run **B. Admin shell**
+4. Run **C. Caregiver shell**
+5. Run **D. Family shell**
+6. Run **E. Cross-cutting UX**
+7. Update [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) row by row
+8. Run or reference [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) before any final sign-off
+
+### Single-facility pilot note
+
+The current remediation track is using a **single-facility pilot**. That is acceptable for UAT packet prep, but any scenario that depends on a second facility must be marked explicitly as deferred or not executable on the current target data rather than silently skipped.
+
+---
+
 ## Preconditions
 
 **Who verifies:** Items below are **your** checks on the target environment. An AI/agent in the repo cannot log into your Supabase dashboard or confirm BAA/PITR; it can only confirm what the codebase does (e.g. no Storage API usage yet).
@@ -44,6 +83,8 @@ Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs 
 - [ ] Facility selected in admin shell where the UI expects it (facility store).
 - [ ] **Storage buckets:** Current Phase 1 UI does **not** call Supabase Storage (no `storage.from` / upload flows in `src/`). Bucket creation, CORS, and policies are **not** a Phase 1 app prerequisite until you add file uploads (e.g. incident photos, avatars). When you add them, verify buckets + RLS in the Supabase dashboard.
 - [ ] **Compliance / ops (production):** Pro plan, signed BAA before PHI, Point-in-Time Recovery — per `docs/specs/README.md`; confirm in Supabase **Project Settings** / billing, not in this repo.
+
+**Recording rule:** Do not mark a row PASS in [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) unless it was exercised with a real session on the target environment.
 
 ---
 
@@ -205,12 +246,12 @@ Before closing Phase 1, record **mission alignment** `pass` | `risk` | `fail` wi
 
 ---
 
-## G. Gate evidence — Phase 1 closure (refreshed 2026-04-05)
+## G. Gate evidence — Phase 1 closure (refreshed 2026-04-06)
 
 | Command / gate | Result |
 |----------------|--------|
 | `npm run lint` | PASS |
-| `npm run build` | PASS (71 migrations 001–071) |
+| `npm run build` | PASS (92 migrations 001–092) |
 | `npm run migrations:verify:pg` | PASS |
 | `npm run check:secrets` | PASS |
 | `npm audit` | 0 vulnerabilities |
