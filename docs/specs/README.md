@@ -77,7 +77,7 @@ After this scaffold sprint, resume backend spec implementation in original order
 | 11 | `17-entity-facility-finance.md` | Entity & Facility Finance (Core) | `040`–`043` | ✅ SHIPPED | Chart of accounts, journal entries/lines, read-only ledger, GL settings, budget lines; RLS; `/admin/finance/*` (7 routes) |
 | 12 | `18-insurance-risk-finance.md` | Insurance & Risk Finance (Core) | `044`–`045` | ✅ SHIPPED | Policy inventory, renewals, data packages, claims (incident-linked), loss runs, premium allocations, COI tracking, workers' comp headers; GL hooks; `/admin/insurance/*` (10 routes) |
 | 13 | `19-vendor-contract-management.md` | Vendor & Contract Management (Core) | `046` | ✅ SHIPPED | Vendor master, facility links, contracts, terms, alerts, POs with three-way match, vendor invoices, payments with GL hooks, vendor insurance (COI cross-ref to Module 18), scorecards; `/admin/vendors/*` (12 routes) |
-| 14 | `24-executive-intelligence.md` | Executive Intelligence Layer v1 | `047` | ✅ SHIPPED (Core + reports CSV/print) | Org command center, KPI tiles, alerts, entity/facility drill-downs, saved reports (CSV + print/PDF), per-user settings; cron `exec-kpi-snapshot`; **`benchmark_cohorts`** / KPI deltas remain Enhanced backlog |
+| 14 | `24-executive-intelligence.md` | Executive Intelligence Layer v1 | `047` | ✅ SHIPPED (Core + reports + cohort admin) | Org command center, KPI tiles, alerts, entity/facility drill-downs, saved reports (CSV + print/PDF), **`benchmark_cohorts`** CRUD, per-user settings; cron `exec-kpi-snapshot`; **Enhanced backlog:** KPI deltas / cohort comparison views |
 
 **Spec note:** `24-executive-intelligence.md` includes `exec_kpi_snapshots.lineage`, `exec_alert_user_state`, and `benchmark_cohorts` — see spec DDL.
 
@@ -109,7 +109,7 @@ Routes: `/admin/vendors` (hub), `/admin/vendors/directory`, `/admin/vendors/[id]
 
 ---
 
-**Module 24 — Executive Intelligence Layer v1** (🟩 Core admin UI + **daily KPI snapshot Edge Function** shipped — optional PDF export Enhanced backlog)
+**Module 24 — Executive Intelligence Layer v1** (🟩 Core admin UI + **daily KPI snapshot Edge Function** + cohort admin shipped — KPI delta / cohort compare views Enhanced backlog)
 
 Migration `047_executive_intelligence.sql`: enums, **seven** tables (includes `exec_kpi_snapshots` with **`lineage`**, `exec_alert_user_state`, `benchmark_cohorts`), full RLS, audit triggers.
 
@@ -119,13 +119,13 @@ Migration `047_executive_intelligence.sql`: enums, **seven** tables (includes `e
 | Types | `src/types/database.ts` |
 | KPI engine | `src/lib/exec-kpi-snapshot.ts` — live aggregates from source modules (+ versioned `ExecKpiPayload` for cron snapshots) |
 | Alerts | `src/lib/exec-alerts.ts` — list / acknowledge `exec_alerts` |
-| Admin UI | `src/app/(admin)/executive/*` (+ `/admin/*` re-exports) — overview, alerts, settings |
+| Admin UI | `src/app/(admin)/executive/*` (+ `/admin/*` re-exports) — overview, alerts, reports, benchmarks, settings |
 | Nav | `src/components/layout/AdminShell.tsx` — Executive item after Dashboard |
 | Auth gate | `src/lib/auth/admin-shell.ts` — `"/executive"` in `ADMIN_SHELL_SEGMENTS` (short path group) |
 
 Tables: `exec_dashboard_configs`, `exec_kpi_snapshots` (**`lineage jsonb`**), `exec_alerts`, **`exec_alert_user_state`**, **`benchmark_cohorts`**, `exec_saved_reports`. KPI domains: census/occupancy, financial, clinical/safety, infection, compliance, workforce, insurance (Module 18), vendors (Module 19). Alert scoring: `severity_weight × recency_factor × impact_weight`. RLS: owner/org_admin full access; facility_admin scoped to their facilities.
 
-Routes live: `/admin/executive` (command center), `/admin/executive/alerts`, `/admin/executive/reports`, `/admin/executive/settings`, `/admin/executive/entity`, `/admin/executive/entity/[id]`, `/admin/executive/facility/[id]`. **Cron:** Edge Function `exec-kpi-snapshot` writes `exec_kpi_snapshots` daily per org (`EXEC_KPI_SNAPSHOT_SECRET`, `x-cron-secret`); see `supabase/functions/README.md`. Reports: CSV + browser print/save-as-PDF. **Enhanced backlog:** period-over-period deltas on KPI tiles; `benchmark_cohorts` UI.
+Routes live: `/admin/executive` (command center), `/admin/executive/alerts`, `/admin/executive/reports`, `/admin/executive/benchmarks`, `/admin/executive/settings`, `/admin/executive/entity`, `/admin/executive/entity/[id]`, `/admin/executive/facility/[id]`. **Cron:** Edge Function `exec-kpi-snapshot` writes `exec_kpi_snapshots` daily per org (`EXEC_KPI_SNAPSHOT_SECRET`, `x-cron-secret`); see `supabase/functions/README.md`. Reports: CSV + browser print/save-as-PDF. **Enhanced backlog:** period-over-period deltas on KPI tiles; wire cohorts into comparison views when product enables.
 
 ---
 

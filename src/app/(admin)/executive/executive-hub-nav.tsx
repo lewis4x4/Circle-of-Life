@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/admin/executive/entity", label: "Entities" },
   { href: "/admin/executive/alerts", label: "Alerts" },
   { href: "/admin/executive/reports", label: "Reports" },
+  { href: "/admin/executive/benchmarks", label: "Benchmarks" },
   { href: "/admin/executive/settings", label: "Settings" },
 ] as const;
 
