@@ -295,17 +295,17 @@ export async function persistMonthlyInvoicesFromPreview(
 
   const facilityRow = (await supabase
     .from("facilities" as never)
-    .select("entity_id, code")
+    .select("entity_id")
     .eq("id", facilityId)
     .maybeSingle()) as unknown as {
-    data: { entity_id: string; code: string | null } | null;
+    data: { entity_id: string } | null;
     error: QueryError | null;
   };
   if (facilityRow.error) throw new Error(facilityRow.error.message);
   if (!facilityRow.data) throw new Error("Facility not found.");
 
   const entityId = facilityRow.data.entity_id;
-  const facilityCode = facilityRow.data.code ?? "FAC";
+  const facilityCode = facilityId.replace(/-/g, "").slice(0, 8).toUpperCase();
 
   let createdCount = 0;
   let skippedDuplicates = 0;
@@ -313,6 +313,7 @@ export async function persistMonthlyInvoicesFromPreview(
   const ym = `${billingYear}-${String(billingMonth).padStart(2, "0")}`;
   for (let i = 0; i < preview.length; i++) {
     const line = preview[i];
+    // Stable per resident+month (not preview index) so retries/idempotent runs do not collide on idx_invoices_number.
     const invoiceNumber = `${facilityCode}-${ym}-${line.residentId}`;
 
     const resRow = (await supabase
