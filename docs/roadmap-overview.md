@@ -80,7 +80,7 @@ Multi-entity architecture, insurance + clinical loop, AI-native workflows, **Flo
 | **Collections** | `collection_activities` admin list + log flow — closes **W-COLL-01**. |
 | **Billing automation** | Shared `src/lib/billing/generate-monthly-invoices.ts`, unique index `071`, Edge Function `generate-monthly-invoices` + cron docs — **W-BILL-EF-01** addressed for monthly generation; AR aging automation remains a follow-up where the spec calls for it. |
 | **Phase 3 Module 24 (Executive)** | Core command-center UI is live under `/admin/executive/*`; see `docs/specs/README.md` Phase 3 table for Enhanced backlog. |
-| **Admin create flows (W-ADMIN-01)** | **`/admin/residents/new`**, **`/admin/staff/new`**, **`/admin/schedules/new`**, **`/admin/certifications/new`**, **`/admin/staffing/new`** (staffing ratio snapshot + migration `072` insert policy); other admin modules may still be list-first where waived. |
+| **Admin create flows (W-ADMIN-01)** | **`/admin/residents/new`**, **`/admin/staff/new`**, **`/admin/schedules/new`**, **`/admin/certifications/new`**, **`/admin/staffing/new`**, **`/admin/time-records/new`** (manual punch + migration `073` RLS); other admin modules may still be list-first where waived. |
 
 For migration counts and environment alignment, use `PHASE1-ENV-CONFIRMATION.md` and Supabase CLI on the target project.
 

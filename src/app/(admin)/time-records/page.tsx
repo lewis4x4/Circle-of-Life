@@ -96,7 +96,7 @@ export default function AdminTimeRecordsPage() {
         whenDatasetEmpty: {
           title: "No time records in this scope",
           description:
-            "Live data returned no punches for the selected facility or organization filter. Clock events will appear here as staff use timekeeping.",
+            "Live data returned no punches for the selected facility or organization filter. Use Add time record for manual corrections or wait for staff clock events.",
         },
         whenFiltersExcludeAll: {
           title: "No time records match the current filters",
@@ -120,13 +120,18 @@ export default function AdminTimeRecordsPage() {
             Recent clock activity with approval state for payroll readiness.
           </p>
         </div>
-        <Badge
-          variant="outline"
-          className="border-amber-200 bg-amber-50 px-3 py-1 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300"
-        >
-          <Clock className="mr-1 h-3.5 w-3.5" />
-          {pendingApproval} pending approval
-        </Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/admin/time-records/new" className={buttonVariants({ size: "sm" })}>
+            Add time record
+          </Link>
+          <Badge
+            variant="outline"
+            className="border-amber-200 bg-amber-50 px-3 py-1 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300"
+          >
+            <Clock className="mr-1 h-3.5 w-3.5" />
+            {pendingApproval} pending approval
+          </Badge>
+        </div>
       </header>
 
       <AdminFilterBar
