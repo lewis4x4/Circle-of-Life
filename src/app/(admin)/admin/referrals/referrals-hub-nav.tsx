@@ -30,6 +30,7 @@ export function ReferralsHubNav() {
         <Link
           key={item.href}
           href={item.href}
+          aria-current={item.active ? "page" : undefined}
           className={cn(
             buttonVariants({ variant: item.active ? "default" : "outline", size: "sm" }),
             item.active && item.href === "/admin/referrals" && pathname === "/admin/referrals" && "pointer-events-none",

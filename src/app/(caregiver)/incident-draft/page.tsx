@@ -244,10 +244,10 @@ function CaregiverIncidentDraftPageInner() {
 
     setSubmitting(true);
     try {
-      const numResult = await supabase.rpc("allocate_incident_number" as never, {
+      const numResult = await supabase.rpc("allocate_incident_number", {
         p_facility_id: facilityId,
-      } as never);
-      const rpcData = numResult.data as unknown;
+      });
+      const rpcData = numResult.data;
       if (numResult.error) throw numResult.error;
       if (typeof rpcData !== "string" || rpcData.length < 3) {
         throw new Error("Could not allocate incident number.");
