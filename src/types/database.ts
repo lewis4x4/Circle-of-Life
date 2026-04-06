@@ -2568,6 +2568,85 @@ export type Database = {
           },
         ]
       }
+      discharge_med_reconciliation: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          facility_id: string
+          id: string
+          med_snapshot_json: Json | null
+          nurse_reconciliation_notes: string | null
+          organization_id: string
+          pharmacist_notes: string | null
+          pharmacist_npi: string | null
+          pharmacist_reviewed_at: string | null
+          pharmacist_reviewed_by: string | null
+          resident_id: string
+          status: Database["public"]["Enums"]["discharge_med_reconciliation_status"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id: string
+          id?: string
+          med_snapshot_json?: Json | null
+          nurse_reconciliation_notes?: string | null
+          organization_id: string
+          pharmacist_notes?: string | null
+          pharmacist_npi?: string | null
+          pharmacist_reviewed_at?: string | null
+          pharmacist_reviewed_by?: string | null
+          resident_id: string
+          status?: Database["public"]["Enums"]["discharge_med_reconciliation_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id?: string
+          id?: string
+          med_snapshot_json?: Json | null
+          nurse_reconciliation_notes?: string | null
+          organization_id?: string
+          pharmacist_notes?: string | null
+          pharmacist_npi?: string | null
+          pharmacist_reviewed_at?: string | null
+          pharmacist_reviewed_by?: string | null
+          resident_id?: string
+          status?: Database["public"]["Enums"]["discharge_med_reconciliation_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discharge_med_reconciliation_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discharge_med_reconciliation_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discharge_med_reconciliation_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       emar_administration_witnesses: {
         Row: {
           created_at: string
@@ -7744,6 +7823,7 @@ export type Database = {
           discharge_reason:
             | Database["public"]["Enums"]["discharge_reason"]
             | null
+          discharge_target_date: string | null
           elopement_risk: boolean
           emergency_contact_1_name: string | null
           emergency_contact_1_phone: string | null
@@ -7756,6 +7836,7 @@ export type Database = {
           first_name: string
           food_preferences: string | null
           gender: Database["public"]["Enums"]["gender"]
+          hospice_status: Database["public"]["Enums"]["hospice_status"]
           id: string
           last_name: string
           middle_name: string | null
@@ -7816,6 +7897,7 @@ export type Database = {
           discharge_reason?:
             | Database["public"]["Enums"]["discharge_reason"]
             | null
+          discharge_target_date?: string | null
           elopement_risk?: boolean
           emergency_contact_1_name?: string | null
           emergency_contact_1_phone?: string | null
@@ -7828,6 +7910,7 @@ export type Database = {
           first_name: string
           food_preferences?: string | null
           gender: Database["public"]["Enums"]["gender"]
+          hospice_status?: Database["public"]["Enums"]["hospice_status"]
           id?: string
           last_name: string
           middle_name?: string | null
@@ -7888,6 +7971,7 @@ export type Database = {
           discharge_reason?:
             | Database["public"]["Enums"]["discharge_reason"]
             | null
+          discharge_target_date?: string | null
           elopement_risk?: boolean
           emergency_contact_1_name?: string | null
           emergency_contact_1_phone?: string | null
@@ -7900,6 +7984,7 @@ export type Database = {
           first_name?: string
           food_preferences?: string | null
           gender?: Database["public"]["Enums"]["gender"]
+          hospice_status?: Database["public"]["Enums"]["hospice_status"]
           id?: string
           last_name?: string
           middle_name?: string | null
@@ -10647,6 +10732,11 @@ export type Database = {
         | "non_payment"
         | "behavioral"
         | "other"
+      discharge_med_reconciliation_status:
+        | "draft"
+        | "pharmacist_review"
+        | "complete"
+        | "cancelled"
       emar_status:
         | "scheduled"
         | "given"
@@ -10677,6 +10767,7 @@ export type Database = {
       facility_status: "active" | "inactive" | "under_renovation" | "archived"
       family_message_author: "family" | "staff"
       gender: "male" | "female" | "other" | "prefer_not_to_say"
+      hospice_status: "none" | "pending" | "active" | "ended"
       gl_account_type: "asset" | "liability" | "equity" | "revenue" | "expense"
       incident_category:
         | "fall_with_injury"
@@ -11080,6 +11171,7 @@ export const Constants = {
         "behavioral",
         "other",
       ],
+      discharge_med_reconciliation_status: ["draft", "pharmacist_review", "complete", "cancelled"],
       emar_status: [
         "scheduled",
         "given",
@@ -11113,6 +11205,7 @@ export const Constants = {
       facility_status: ["active", "inactive", "under_renovation", "archived"],
       family_message_author: ["family", "staff"],
       gender: ["male", "female", "other", "prefer_not_to_say"],
+      hospice_status: ["none", "pending", "active", "ended"],
       gl_account_type: ["asset", "liability", "equity", "revenue", "expense"],
       incident_category: [
         "fall_with_injury",

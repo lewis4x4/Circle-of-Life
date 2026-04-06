@@ -233,7 +233,7 @@ Implement after predecessor migrations and specs exist.
 |-------|-----------|--------|-----------------|---------------------|
 | 17 | `01-referral-inquiry.md` | Referral and Inquiry | `075`–`076` | ✅ **Spec written.** `referral_sources`, `referral_leads` with duplicate merge, `pii_access_tier`, RLS; HL7 v2 ADT Enhanced via existing `integration_inbound_queue` (`063`). |
 | 18 | `02-admissions-move-in.md` | Admissions and Move-In | `077`–`078` | ✅ **Spec written.** `admission_cases`, `admission_case_rate_terms`, RLS; optional `referral_leads` + `beds` + `rate_schedules` linkage. |
-| 19 | `05-discharge-transition.md` | Discharge and Transition | `079`–`080` | `discharge_med_reconciliation` with pharmacist fields; `residents.discharge_target_date`, `hospice_status`; FHIR R4 transition summary export Edge Function. |
+| 19 | `05-discharge-transition.md` | Discharge and Transition | `079`–`080` | ✅ **Spec written.** `discharge_med_reconciliation` + pharmacist fields; `residents.discharge_target_date`, `hospice_status`; FHIR export Enhanced. |
 
 **Note:** Repo migrations already use `070`–`074` for other segments; Phase 4 DDL **starts at `075`**. Older roadmap PDFs may show obsolete numbers.
 
@@ -357,7 +357,7 @@ Module numbers match the product roadmap, **not** the build sequence. Build orde
 | 2 | Admissions & Move-In | 4 | `02-admissions-move-in.md` |
 | 3 | Resident Profile & Care Planning | 1 + 2 (adv) | `03-resident-profile.md`, `03-resident-profile-advanced.md` — ✅ |
 | 4 | Daily Operations & Logging | 1 + 3.5 offline | `04-daily-operations.md` — ✅; `04-daily-operations-offline.md` — placeholder |
-| 5 | Discharge & Transition | 4 | `05-discharge-transition.md` — not yet written |
+| 5 | Discharge & Transition | 4 | `05-discharge-transition.md` |
 | 6 | Medication Management | 1 (in 04) + 2 (adv) + 3.5 patch | Basic in `04`; `06-medication-management.md` — ✅; Phase 3.5 `062` |
 | 7 | Incident & Risk Management | 1 + 3.5 patch | `07-incident-reporting.md` — ✅; Phase 3.5 `058` |
 | 8 | Autonomous Compliance Engine | 2 + 3.5 patch | `08-compliance-engine.md` — ✅; Phase 3.5 `064` |
