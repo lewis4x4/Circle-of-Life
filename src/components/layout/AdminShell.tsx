@@ -37,6 +37,7 @@ import {
   Moon,
   Monitor,
   BarChart3,
+  LineChart,
   Smartphone,
 } from "lucide-react";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -130,6 +131,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     { key: "referrals", href: "/admin/referrals", label: "Referrals", enabled: true, icon: UserPlus },
     { key: "admissions", href: "/admin/admissions", label: "Admissions", enabled: true, icon: Home },
     { key: "discharge", href: "/admin/discharge", label: "Discharge", enabled: true, icon: DoorOpen },
+    { key: "quality", href: "/admin/quality", label: "Quality", enabled: true, icon: LineChart },
     { key: "assessments", href: "/admin/assessments/overdue", label: "Assessments", enabled: true, icon: ClipboardCheck },
     { key: "plan-reviews", href: "/admin/care-plans/reviews-due", label: "Plan reviews", enabled: true, icon: CalendarClock },
     { key: "medications", href: "/admin/medications", label: "Medications", enabled: true, icon: Pill },
@@ -179,6 +181,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               (item.key === "referrals" && pathname.startsWith("/admin/referrals")) ||
               (item.key === "admissions" && pathname.startsWith("/admin/admissions")) ||
               (item.key === "discharge" && pathname.startsWith("/admin/discharge")) ||
+              (item.key === "quality" && pathname.startsWith("/admin/quality")) ||
               (item.key === "medications" && pathname.startsWith("/admin/medications")) ||
               (item.key === "infection" && pathname.startsWith("/admin/infection-control")) ||
               (item.key === "compliance" && pathname.startsWith("/admin/compliance")) ||

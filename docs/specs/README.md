@@ -243,7 +243,7 @@ Implement after predecessor migrations and specs exist.
 
 | Order | Spec file | Module | Migration range | Audit / build notes |
 |-------|-----------|--------|-----------------|---------------------|
-| 20 | `10-quality-metrics.md` | Quality Metrics | `081`–`082` | `quality_measures` + `quality_measure_results` (CMS ontology); PBJ export via `pbj_export_batches` + deterministic views. |
+| 20 | `10-quality-metrics.md` | Quality Metrics | `081`–`082` | ✅ **Spec written.** `quality_measures`, `quality_measure_results`, `pbj_export_batches`; view `quality_latest_facility_measures`; PBJ metadata Core. |
 | 21 | `21-family-portal.md` | Family Portal | `083`–`084` | `family_consent_records`; clinical triage table + keyword triggers; WebRTC care conferences + recording consent. |
 | 22 | `24-executive-v2.md` | Executive Intelligence v2 | `085` | NLQ routed through `ai_invocations`; scenario models; period deltas; Realtime dashboards. |
 
@@ -362,7 +362,7 @@ Module numbers match the product roadmap, **not** the build sequence. Build orde
 | 7 | Incident & Risk Management | 1 + 3.5 patch | `07-incident-reporting.md` — ✅; Phase 3.5 `058` |
 | 8 | Autonomous Compliance Engine | 2 + 3.5 patch | `08-compliance-engine.md` — ✅; Phase 3.5 `064` |
 | 9 | Infection Control & Health Monitoring | 2 + 3.5 patch | `09-infection-control.md` — ✅; Phase 3.5 `063` |
-| 10 | Quality Metrics & Outcomes | 5 | `10-quality-metrics.md` — not yet written |
+| 10 | Quality Metrics & Outcomes | 5 | `10-quality-metrics.md` |
 | 11 | Staff Management & Scheduling | 1 + 3.5 patch | `11-staff-management.md` — ✅; Phase 3.5 `059` |
 | 12 | Training & Competency Management | 6 | `12-training-competency.md` — not yet written |
 | 13 | Facility Maintenance & Environment | 6 | `13-maintenance.md` — not yet written |

@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-04-06T14:19:44.202Z",
+  "timestamp": "2026-04-06T14:28:13.611Z",
   "baseUrl": "http://127.0.0.1:4310",
   "routes": [
-    "/admin/discharge",
-    "/admin/discharge/new"
+    "/admin/quality",
+    "/admin/quality/measures/new"
   ],
   "viewports": [
     "375",
@@ -13,68 +13,68 @@
   ],
   "shots": [
     {
-      "route": "/admin/discharge",
+      "route": "/admin/quality",
       "viewport": "375",
-      "url": "http://127.0.0.1:4310/admin/discharge",
+      "url": "http://127.0.0.1:4310/admin/quality",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_discharge-375.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_quality-375.png"
     },
     {
-      "route": "/admin/discharge",
+      "route": "/admin/quality",
       "viewport": "768",
-      "url": "http://127.0.0.1:4310/admin/discharge",
+      "url": "http://127.0.0.1:4310/admin/quality",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_discharge-768.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_quality-768.png"
     },
     {
-      "route": "/admin/discharge",
+      "route": "/admin/quality",
       "viewport": "1024",
-      "url": "http://127.0.0.1:4310/admin/discharge",
+      "url": "http://127.0.0.1:4310/admin/quality",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_discharge-1024.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_quality-1024.png"
     },
     {
-      "route": "/admin/discharge",
+      "route": "/admin/quality",
       "viewport": "1440",
-      "url": "http://127.0.0.1:4310/admin/discharge",
+      "url": "http://127.0.0.1:4310/admin/quality",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_discharge-1440.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_quality-1440.png"
     },
     {
-      "route": "/admin/discharge/new",
+      "route": "/admin/quality/measures/new",
       "viewport": "375",
-      "url": "http://127.0.0.1:4310/admin/discharge/new",
+      "url": "http://127.0.0.1:4310/admin/quality/measures/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_discharge_new-375.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_quality_measures_new-375.png"
     },
     {
-      "route": "/admin/discharge/new",
+      "route": "/admin/quality/measures/new",
       "viewport": "768",
-      "url": "http://127.0.0.1:4310/admin/discharge/new",
+      "url": "http://127.0.0.1:4310/admin/quality/measures/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_discharge_new-768.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_quality_measures_new-768.png"
     },
     {
-      "route": "/admin/discharge/new",
+      "route": "/admin/quality/measures/new",
       "viewport": "1024",
-      "url": "http://127.0.0.1:4310/admin/discharge/new",
+      "url": "http://127.0.0.1:4310/admin/quality/measures/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_discharge_new-1024.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_quality_measures_new-1024.png"
     },
     {
-      "route": "/admin/discharge/new",
+      "route": "/admin/quality/measures/new",
       "viewport": "1440",
-      "url": "http://127.0.0.1:4310/admin/discharge/new",
+      "url": "http://127.0.0.1:4310/admin/quality/measures/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_discharge_new-1440.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_quality_measures_new-1440.png"
     }
   ],
   "errors": []

@@ -6303,6 +6303,72 @@ export type Database = {
           },
         ]
       }
+      pbj_export_batches: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          error_message: string | null
+          facility_id: string
+          id: string
+          organization_id: string
+          period_end: string
+          period_start: string
+          row_count: number | null
+          status: Database["public"]["Enums"]["pbj_export_batch_status"]
+          storage_path: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          error_message?: string | null
+          facility_id: string
+          id?: string
+          organization_id: string
+          period_end: string
+          period_start: string
+          row_count?: number | null
+          status?: Database["public"]["Enums"]["pbj_export_batch_status"]
+          storage_path?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          error_message?: string | null
+          facility_id?: string
+          id?: string
+          organization_id?: string
+          period_end?: string
+          period_start?: string
+          row_count?: number | null
+          status?: Database["public"]["Enums"]["pbj_export_batch_status"]
+          storage_path?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pbj_export_batches_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pbj_export_batches_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plans_of_correction: {
         Row: {
           accepted_at: string | null
@@ -6760,6 +6826,141 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quality_measure_results: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          facility_id: string
+          id: string
+          notes: string | null
+          organization_id: string
+          period_end: string
+          period_start: string
+          quality_measure_id: string
+          source: string
+          updated_at: string
+          updated_by: string | null
+          value_numeric: number | null
+          value_text: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          period_end: string
+          period_start: string
+          quality_measure_id: string
+          source?: string
+          updated_at?: string
+          updated_by?: string | null
+          value_numeric?: number | null
+          value_text?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          period_end?: string
+          period_start?: string
+          quality_measure_id?: string
+          source?: string
+          updated_at?: string
+          updated_by?: string | null
+          value_numeric?: number | null
+          value_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_measure_results_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_measure_results_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_measure_results_quality_measure_id_fkey"
+            columns: ["quality_measure_id"]
+            isOneToOne: false
+            referencedRelation: "quality_measures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quality_measures: {
+        Row: {
+          cms_tag: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          domain: string | null
+          id: string
+          is_active: boolean
+          measure_key: string
+          name: string
+          organization_id: string
+          unit: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          cms_tag?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          domain?: string | null
+          id?: string
+          is_active?: boolean
+          measure_key: string
+          name: string
+          organization_id: string
+          unit?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          cms_tag?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          domain?: string | null
+          id?: string
+          is_active?: boolean
+          measure_key?: string
+          name?: string
+          organization_id?: string
+          unit?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_measures_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -10638,6 +10839,48 @@ export type Database = {
           },
         ]
       }
+      quality_latest_facility_measures: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          deleted_at: string | null
+          facility_id: string | null
+          id: string | null
+          notes: string | null
+          organization_id: string | null
+          period_end: string | null
+          period_start: string | null
+          quality_measure_id: string | null
+          source: string | null
+          updated_at: string | null
+          updated_by: string | null
+          value_numeric: number | null
+          value_text: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_measure_results_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_measure_results_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_measure_results_quality_measure_id_fkey"
+            columns: ["quality_measure_id"]
+            isOneToOne: false
+            referencedRelation: "quality_measures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       allocate_incident_number: {
@@ -10877,6 +11120,7 @@ export type Database = {
         | "medicaid_payment"
         | "insurance_payment"
         | "other"
+      pbj_export_batch_status: "pending" | "processing" | "complete" | "failed"
       po_status:
         | "draft"
         | "submitted"
@@ -11325,6 +11569,7 @@ export const Constants = {
         "insurance_payment",
         "other",
       ],
+      pbj_export_batch_status: ["pending", "processing", "complete", "failed"],
       po_status: [
         "draft",
         "submitted",

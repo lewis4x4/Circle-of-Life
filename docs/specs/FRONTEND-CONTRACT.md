@@ -37,6 +37,8 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 - `/admin/discharge` (Phase 4 Module 3 — `05-discharge-transition.md`)
 - `/admin/discharge/new`
 - `/admin/discharge/[id]`
+- `/admin/quality` (Phase 5 — `10-quality-metrics.md`)
+- `/admin/quality/measures/new`
 - `/admin/residents`
 - `/admin/residents/new`
 - `/admin/residents/[id]`
