@@ -401,3 +401,19 @@ export async function persistMonthlyInvoicesFromPreview(
 
   return { createdCount, skippedDuplicates };
 }
+
+/** Active facilities for an organization (shared with Edge org batch). */
+export async function listActiveFacilitiesForOrganization(
+  supabase: SupabaseClient,
+  organizationId: string,
+): Promise<{ id: string; name: string }[]> {
+  const res = await supabase
+    .from("facilities" as never)
+    .select("id, name")
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .eq("status", "active")
+    .order("name", { ascending: true });
+  if (res.error) throw new Error(res.error.message);
+  return (res.data ?? []) as { id: string; name: string }[];
+}

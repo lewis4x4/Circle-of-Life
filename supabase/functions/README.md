@@ -4,7 +4,49 @@
 |----------|------------------------|---------|
 | `export-audit-log` | yes | `POST { "job_id" }` + user JWT — builds CSV from `audit_log`, updates `audit_log_export_jobs`, returns file + `X-Checksum-SHA256`. |
 | `dispatch-push` | no | `POST { "user_id", "title", "body", "url"? }` — Web Push via `notification_subscriptions`. Auth: `Authorization: Bearer` (owner/org_admin, same org) **or** `x-dispatch-secret` matching `DISPATCH_PUSH_SECRET`. |
-| `generate-monthly-invoices` | no | `POST { "facility_id", "billing_year", "billing_month" }` — draft invoices for active residents (same logic as admin **Generate**). Auth: **`x-cron-secret`** must equal `GENERATE_MONTHLY_INVOICES_SECRET`. Service role; idempotent per facility + resident + `period_start`. |
+| `generate-monthly-invoices` | no | Draft monthly invoices (same logic as admin **Billing → Generate**). Auth: **`x-cron-secret`** = `GENERATE_MONTHLY_INVOICES_SECRET`. Idempotent per facility + resident + `period_start` (migration `071`). |
+
+## `generate-monthly-invoices` — request body
+
+**Auth header:** `x-cron-secret: <GENERATE_MONTHLY_INVOICES_SECRET>`  
+**Content-Type:** `application/json`
+
+### Billing period
+
+- **`billing_year`** and **`billing_month`** (1–12): target calendar month.
+- If **both are omitted**, the function uses **`getNextBillingMonth()`** (aligned with admin UI: on/after the 25th local server day, the “next” month is the following calendar month; otherwise current month).
+- You cannot send only one of the two; both must be set or both omitted.
+
+### Single facility (one site per call)
+
+```json
+{
+  "facility_id": "<uuid>",
+  "billing_year": 2026,
+  "billing_month": 4
+}
+```
+
+Optional: omit `billing_year` / `billing_month` to use the next billing month rule above.
+
+### Organization (productized multi-site orchestration)
+
+One HTTP call walks **all active facilities** in the organization (name order), sequentially. Each facility uses the same preview + persist path as the admin UI; duplicates are skipped via the unique index (**idempotent retries**).
+
+```json
+{
+  "organization_id": "<uuid>",
+  "billing_year": 2026,
+  "billing_month": 4,
+  "max_facilities": 100
+}
+```
+
+- **`max_facilities`**: optional cap per invocation (default **100**, hard max **500**) so very large operators can split work or avoid Edge timeouts. If the org has more active sites than the cap, the response includes **`truncated: true`**; run again or raise the cap.
+- Response includes **`facilities[]`** with per-site **`outcome`**: `success` (invoices written or empty preview with no block), `blocked` (e.g. no rate schedule, or all residents already invoiced for the period — same cases as a 422 on single-facility), `error` (unexpected failure).
+- Top-level **`ok`** is `true` only when no facility row has `outcome: "error"` (blocked sites do not fail the job).
+
+Do **not** send `facility_id` and `organization_id` together.
 
 ## Secrets (dashboard: **Edge Functions → Secrets** or `supabase secrets set`)
 
@@ -16,16 +58,36 @@
 
 ### Scheduling (monthly invoice generation)
 
-Scope is **one facility per invocation** (pass `facility_id` for the site you are billing). Schedule one job per facility (or orchestrate a loop from your runner). Example cron (monthly, 02:00 UTC on the 1st) via Supabase **Edge Functions → Cron** or external HTTP cron:
+1. **One cron per organization (recommended):** `POST` with `organization_id` only (and optional explicit month). Supabase **Edge Functions → Cron**, GitHub Actions, or an external scheduler (e.g. monthly 02:00 UTC on the 1st).
+2. **One cron per facility (legacy):** `POST` with `facility_id` when you prefer explicit per-site jobs.
+
+Examples:
 
 ```bash
+# Org-wide, explicit month
 curl -sS -X POST "https://<project-ref>.supabase.co/functions/v1/generate-monthly-invoices" \
   -H "Content-Type: application/json" \
   -H "x-cron-secret: $GENERATE_MONTHLY_INVOICES_SECRET" \
-  -d '{"facility_id":"<uuid>","billing_year":2026,"billing_month":4}'
+  -d '{"organization_id":"<org-uuid>","billing_year":2026,"billing_month":4}'
 ```
 
-Use the target calendar month for `billing_year` / `billing_month` (same semantics as the admin UI month selector).
+```bash
+# Org-wide, next billing month (omit year/month)
+curl -sS -X POST "https://<project-ref>.supabase.co/functions/v1/generate-monthly-invoices" \
+  -H "Content-Type: application/json" \
+  -H "x-cron-secret: $GENERATE_MONTHLY_INVOICES_SECRET" \
+  -d '{"organization_id":"<org-uuid>"}'
+```
+
+```bash
+# Single facility
+curl -sS -X POST "https://<project-ref>.supabase.co/functions/v1/generate-monthly-invoices" \
+  -H "Content-Type: application/json" \
+  -H "x-cron-secret: $GENERATE_MONTHLY_INVOICES_SECRET" \
+  -d '{"facility_id":"<facility-uuid>","billing_year":2026,"billing_month":4}'
+```
+
+Monitor **`totals`** / **`facilities`** for blocked or error outcomes; fix rate schedules or data issues and re-run — safe due to idempotency.
 
 ## Deploy
 
