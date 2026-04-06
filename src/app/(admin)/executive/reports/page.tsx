@@ -76,6 +76,65 @@ function downloadTextFile(filename: string, body: string, mime: string) {
   URL.revokeObjectURL(url);
 }
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function buildExecutiveKpiPrintHtml(props: {
+  reportName: string;
+  templateLabel: string;
+  scopeLabel: string;
+  kpi: ExecKpiPayload;
+}): string {
+  const { reportName, templateLabel, scopeLabel, kpi } = props;
+  const generatedAt = new Date().toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+  const rows: { label: string; value: string }[] = [
+    { label: "Occupied residents", value: String(kpi.census.occupiedResidents) },
+    { label: "Licensed beds", value: String(kpi.census.licensedBeds) },
+    {
+      label: "Occupancy %",
+      value: kpi.census.occupancyPct == null ? "—" : String(kpi.census.occupancyPct),
+    },
+    { label: "Open invoices", value: String(kpi.financial.openInvoicesCount) },
+    {
+      label: "Total balance due",
+      value: money.format(kpi.financial.totalBalanceDueCents / 100),
+    },
+    { label: "Open incidents", value: String(kpi.clinical.openIncidents) },
+    { label: "Medication errors (MTD)", value: String(kpi.clinical.medicationErrorsMtd) },
+    { label: "Open survey deficiencies", value: String(kpi.compliance.openSurveyDeficiencies) },
+    { label: "Certs expiring (30d)", value: String(kpi.workforce.certificationsExpiring30d) },
+    { label: "Active outbreaks", value: String(kpi.infection.activeOutbreaks) },
+  ];
+  const bodyRows = rows
+    .map(
+      (r) =>
+        `<tr><td>${escapeHtml(r.label)}</td><td>${escapeHtml(r.value)}</td></tr>`,
+    )
+    .join("");
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>${escapeHtml(reportName)}</title>
+<style>
+  body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; padding: 24px; color: #111; max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 1.25rem; margin: 0 0 8px; }
+  .meta { font-size: 0.875rem; color: #444; margin-bottom: 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+  th, td { border: 1px solid #ccc; padding: 8px 10px; text-align: left; }
+  th { background: #f4f4f5; font-weight: 600; }
+  .foot { margin-top: 16px; font-size: 0.75rem; color: #666; }
+  @media print { body { padding: 12px; } }
+</style></head><body>
+<h1>${escapeHtml(reportName)}</h1>
+<div class="meta">Template: ${escapeHtml(templateLabel)} · Scope: ${escapeHtml(scopeLabel)} · Generated: ${escapeHtml(generatedAt)}</div>
+<table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>${bodyRows}</tbody></table>
+<p class="foot">Haven — Executive KPI snapshot (live aggregates). Use your browser &ldquo;Print&rdquo; dialog and choose &ldquo;Save as PDF&rdquo; if available.</p>
+</body></html>`;
+}
+
 export default function ExecutiveSavedReportsPage() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
@@ -184,6 +243,23 @@ export default function ExecutiveSavedReportsPage() {
     }
   }
 
+  async function persistLastGenerated(reportId: string) {
+    if (!orgId) return;
+    const { error: upErr } = await supabase
+      .from("exec_saved_reports")
+      .update({ last_generated_at: new Date().toISOString() })
+      .eq("id", reportId)
+      .eq("organization_id", orgId);
+    if (upErr) throw new Error(upErr.message);
+    await load();
+  }
+
+  function scopeLabelFor(report: ReportRow): string {
+    const { facilityId } = parseReportParameters(report.parameters);
+    if (!facilityId) return "Organization";
+    return facilities.find((f) => f.id === facilityId)?.name ?? "Facility";
+  }
+
   async function onGenerateCsv(report: ReportRow) {
     if (!canManage || !orgId) return;
     setBusyId(report.id);
@@ -194,16 +270,50 @@ export default function ExecutiveSavedReportsPage() {
       const csv = kpiToCsv(report.name, kpi);
       const safe = report.name.replace(/[^\w\-]+/g, "_").slice(0, 48);
       downloadTextFile(`haven-exec-${safe}-${new Date().toISOString().slice(0, 10)}.csv`, csv, "text/csv;charset=utf-8");
-
-      const { error: upErr } = await supabase
-        .from("exec_saved_reports")
-        .update({ last_generated_at: new Date().toISOString() })
-        .eq("id", report.id)
-        .eq("organization_id", orgId);
-      if (upErr) throw new Error(upErr.message);
-      await load();
+      await persistLastGenerated(report.id);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Export failed.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function onPrintPdf(report: ReportRow) {
+    if (!canManage || !orgId) return;
+    setBusyId(report.id);
+    setError(null);
+    try {
+      const { facilityId } = parseReportParameters(report.parameters);
+      const kpi = await fetchExecutiveKpiSnapshot(supabase, orgId, facilityId);
+      const html = buildExecutiveKpiPrintHtml({
+        reportName: report.name,
+        templateLabel: TEMPLATE_LABELS[report.template],
+        scopeLabel: scopeLabelFor(report),
+        kpi,
+      });
+      const w = window.open("", "_blank", "noopener,noreferrer");
+      if (!w) {
+        setError("Pop-up blocked. Allow pop-ups for this site to print or save as PDF.");
+        return;
+      }
+      w.document.write(html);
+      w.document.close();
+      w.focus();
+      const trigger = () => {
+        try {
+          w.print();
+        } catch {
+          /* ignore */
+        }
+      };
+      if (w.document.readyState === "complete") {
+        setTimeout(trigger, 0);
+      } else {
+        w.addEventListener("load", () => setTimeout(trigger, 0));
+      }
+      await persistLastGenerated(report.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Print failed.");
     } finally {
       setBusyId(null);
     }
@@ -239,7 +349,7 @@ export default function ExecutiveSavedReportsPage() {
           <div>
             <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Saved reports</h1>
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              Named report definitions; generate a CSV snapshot from live executive KPIs for the selected scope.
+              Named report definitions; export CSV or open a printable report (save as PDF from the browser).
             </p>
           </div>
         </div>
@@ -267,7 +377,7 @@ export default function ExecutiveSavedReportsPage() {
           <CardHeader>
             <CardTitle className="text-lg">Create saved report</CardTitle>
             <CardDescription>
-              Template labels help your team choose the right cadence; CSV export always uses current live KPIs.
+              Template labels help your team choose the right cadence; exports use current live KPIs.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -333,7 +443,7 @@ export default function ExecutiveSavedReportsPage() {
           <CardHeader>
             <CardTitle className="text-lg">Your reports</CardTitle>
             <CardDescription>
-              Download CSV for board packs or offline review. PDF exports can follow in an enhanced slice.
+              Download CSV for spreadsheets, or print / save as PDF for board packs.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -352,10 +462,7 @@ export default function ExecutiveSavedReportsPage() {
                 </TableHeader>
                 <TableBody>
                   {rows.map((r) => {
-                    const { facilityId } = parseReportParameters(r.parameters);
-                    const scopeLabel = facilityId
-                      ? facilities.find((f) => f.id === facilityId)?.name ?? "Facility"
-                      : "Organization";
+                    const scopeLabel = scopeLabelFor(r);
                     return (
                       <TableRow key={r.id}>
                         <TableCell className="font-medium">{r.name}</TableCell>
@@ -369,7 +476,7 @@ export default function ExecutiveSavedReportsPage() {
                             : "—"}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex flex-wrap justify-end gap-2">
                             <Button
                               type="button"
                               size="sm"
@@ -378,6 +485,15 @@ export default function ExecutiveSavedReportsPage() {
                               onClick={() => void onGenerateCsv(r)}
                             >
                               {busyId === r.id ? "Working…" : "Download CSV"}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={busyId !== null}
+                              onClick={() => void onPrintPdf(r)}
+                            >
+                              {busyId === r.id ? "Working…" : "Print / PDF"}
                             </Button>
                             <Button
                               type="button"
