@@ -20,6 +20,12 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { KineticGrid } from "@/components/ui/kinetic-grid";
+import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
+import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
+import { Sparkline } from "@/components/ui/moonshot/sparkline";
+import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 
 type StaffRole = "nurse" | "caregiver" | "med_tech" | "admin";
 type StaffStatus = "active" | "on_leave" | "off_shift";
@@ -134,36 +140,59 @@ export default function AdminStaffPage() {
   const certRiskCount = rows.filter((row) => row.certifications !== "current").length;
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-            Staffing Roster
-          </h2>
-          <p className="mt-1 text-slate-500 dark:text-slate-400">
-            Certification-aware team directory with shift visibility and overtime risk cues.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link href="/admin/staff/new" className={buttonVariants({ size: "sm" })}>
-            Add staff
-          </Link>
-          <Badge
-            variant="outline"
-            className="border-slate-200 bg-white px-3 py-1 dark:border-slate-800 dark:bg-slate-900"
-          >
-            <UserRoundCheck className="mr-1 h-3.5 w-3.5" />
-            {activeCount} on staff
-          </Badge>
-          <Badge
-            variant="outline"
-            className="border-amber-200 bg-amber-50 px-3 py-1 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300"
-          >
-            <UserCog className="mr-1 h-3.5 w-3.5" />
-            {certRiskCount} cert attention
-          </Badge>
-        </div>
-      </header>
+    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+      <AmbientMatrix hasCriticals={certRiskCount > 0} 
+        primaryClass="bg-blue-700/10"
+        secondaryClass="bg-indigo-900/10"
+        criticalPrimaryClass="bg-amber-700/20"
+        criticalSecondaryClass="bg-orange-900/10"
+      />
+      <div className="relative z-10 space-y-6">
+        <header className="mb-8">
+          <div>
+            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 06 / Human Capital</p>
+            <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+              Staffing Roster {certRiskCount > 0 && <PulseDot colorClass="bg-amber-500" />}
+            </h2>
+          </div>
+        </header>
+
+        <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
+          <div className="h-[160px]">
+            <V2Card hoverColor="blue">
+              <Sparkline colorClass="text-blue-500" variant={3} />
+              <MonolithicWatermark value={activeCount} className="text-blue-900/5 dark:text-blue-100/5 opacity-50" />
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                <h3 className="text-[10px] font-mono tracking-widest uppercase text-slate-500 flex items-center gap-2">
+                  <UserRoundCheck className="h-3.5 w-3.5" /> Total Active Roster
+                </h3>
+                <p className="text-4xl font-mono tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-500 dark:from-white dark:to-slate-500 pb-1">{activeCount}</p>
+              </div>
+            </V2Card>
+          </div>
+          <div className="h-[160px]">
+            <V2Card hoverColor="orange" className="border-amber-500/20 dark:border-amber-500/20 shadow-[inset_0_0_15px_rgba(245,158,11,0.05)]">
+              <Sparkline colorClass="text-amber-500" variant={4} />
+              <MonolithicWatermark value={certRiskCount} className="text-amber-600/5 dark:text-amber-400/5 opacity-50" />
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                <h3 className="text-[10px] font-mono tracking-widest uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                   Cert Attention
+                </h3>
+                <p className="text-4xl font-mono tracking-tighter text-amber-600 dark:text-amber-400 pb-1">{certRiskCount}</p>
+              </div>
+            </V2Card>
+          </div>
+          <div className="col-span-1 md:col-span-2 h-[160px]">
+            <V2Card hoverColor="indigo" className="flex flex-col justify-center items-start lg:items-end">
+              <div className="relative z-10 text-left lg:text-right w-full">
+                 <p className="hidden lg:block text-xs font-mono text-slate-500 mb-4">Certification-aware workforce array with predictive shift tracking.</p>
+                 <Link href="/admin/staff/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none")} >
+                   + Add Staff Member
+                 </Link>
+              </div>
+            </V2Card>
+          </div>
+        </KineticGrid>
 
       <AdminFilterBar
         searchValue={search}
@@ -222,15 +251,16 @@ export default function AdminStaffPage() {
       ) : null}
 
       {!isLoading && filteredRows.length > 0 ? (
-        <Card className="overflow-hidden border-slate-200/70 bg-white shadow-soft dark:border-slate-800 dark:bg-slate-950">
-          <CardHeader className="border-b border-slate-100 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/30">
-            <CardTitle className="text-lg font-display">Team Directory</CardTitle>
-            <CardDescription>Roster from staff, certifications, and upcoming shift assignments.</CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/5 bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl shadow-2xl">
+          <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent pointer-events-none" />
+          <div className="relative z-10 border-b border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 p-6 flex flex-col gap-1">
+            <h3 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">Team Directory</h3>
+            <p className="text-sm font-mono text-slate-500 dark:text-slate-400">Roster from staff, certifications, and upcoming shift assignments.</p>
+          </div>
+          <div className="relative z-10 overflow-x-auto">
             <Table>
-              <TableHeader className="bg-slate-50/70 dark:bg-slate-900/60">
-                <TableRow className="border-slate-100 hover:bg-transparent dark:border-slate-800">
+              <TableHeader className="bg-white/40 dark:bg-black/40 border-b border-white/20 dark:border-white/10">
+                <TableRow className="border-none hover:bg-transparent">
                   <TableHead className="pl-4 font-medium">Staff</TableHead>
                   <TableHead className="font-medium">Role</TableHead>
                   <TableHead className="font-medium">Status</TableHead>
@@ -247,7 +277,7 @@ export default function AdminStaffPage() {
               </TableHeader>
               <TableBody>
                 {filteredRows.map((staff) => (
-                  <TableRow key={staff.id} className="border-slate-100 dark:border-slate-800">
+                  <TableRow key={staff.id} className="border-slate-100 dark:border-slate-800 hover:bg-blue-500/5 dark:hover:bg-blue-500/10 transition-colors cursor-pointer group">
                     <TableCell className="pl-4">
                       <div className="flex items-center gap-3">
                         {staff.photoUrl ? (
@@ -294,9 +324,10 @@ export default function AdminStaffPage() {
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       ) : null}
+      </div>
     </div>
   );
 }

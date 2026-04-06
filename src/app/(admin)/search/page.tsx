@@ -12,6 +12,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
+import { KineticGrid } from "@/components/ui/kinetic-grid";
+import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
+import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 
 type SearchDocRow = Pick<
   Database["public"]["Tables"]["search_documents"]["Row"],
@@ -83,68 +87,74 @@ export default function AdminSearchPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          Search
-        </h1>
-        <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
-          Lexical index over linked records (residents today; more sources as triggers land). Minimum 2
-          characters.
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Find in Haven</CardTitle>
-          <p className="text-sm text-slate-700 dark:text-slate-300">
-            Results respect your org and facility access (RLS). Uses the platform search index (
-            <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs text-foreground">search_documents</code>
-            ).
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="admin-search-q">Query</Label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600 dark:text-slate-400" />
-                <Input
-                  id="admin-search-q"
-                  className="pl-9 placeholder:text-slate-600 dark:placeholder:text-slate-400"
-                  placeholder="Name or keywords…"
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  autoComplete="off"
-                />
-              </div>
-              <Button type="button" variant="secondary" onClick={() => void runSearch()} disabled={loading}>
-                {loading ? "Searching…" : "Search"}
-              </Button>
-            </div>
+    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+      <AmbientMatrix hasCriticals={false} 
+        primaryClass="bg-indigo-700/10"
+        secondaryClass="bg-slate-900/10"
+      />
+      
+      <div className="relative z-10 space-y-6">
+        <header className="mb-8">
+          <div>
+            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 00 / Global Index</p>
+            <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+              Unified Search
+            </h2>
           </div>
+        </header>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
-
-          {loading && debounced.length >= 2 && (
-            <div className="space-y-2">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
+        <KineticGrid className="grid-cols-1" staggerMs={75}>
+          <div className="col-span-1 min-h-[160px]">
+            <V2Card hoverColor="slate">
+              <MonolithicWatermark value={loading ? "?" : rows.length} className="text-slate-800/5 dark:text-white/5 opacity-50" />
+              <div className="relative z-10 flex flex-col h-full">
+            <div className="mb-6">
+              <h3 className="text-[10px] font-mono tracking-widest uppercase text-slate-500 mb-1 flex items-center gap-2">
+                Search the Platform
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Lexical index over linked records.</p>
             </div>
-          )}
+            <div className="space-y-6 max-w-3xl">
+              <div className="flex gap-2">
+                <div className="relative flex-1 group">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                  <Input
+                    id="admin-search-q"
+                    className="pl-9 placeholder:text-slate-400 border-slate-200 dark:border-slate-800 shadow-none focus-visible:ring-indigo-500 h-11"
+                    placeholder="Search query (min 2 chars)…"
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                    autoComplete="off"
+                  />
+                </div>
+                <Button type="button" className="tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none min-w-[100px] h-11" onClick={() => void runSearch()} disabled={loading}>
+                  {loading ? "Searching…" : "Search"}
+                </Button>
+              </div>
 
-          {!loading && debounced.length >= 2 && rows.length === 0 && !error && (
-            <p className="text-sm text-slate-700 dark:text-slate-300">No matches.</p>
-          )}
+              {error && <p className="text-sm text-rose-500">{error}</p>}
+
+              {loading && debounced.length >= 2 && (
+                <div className="space-y-2">
+                  <Skeleton className="h-14 w-full rounded-md" />
+                  <Skeleton className="h-14 w-full rounded-md" />
+                  <Skeleton className="h-14 w-full rounded-md" />
+                </div>
+              )}
+
+              {!loading && debounced.length >= 2 && rows.length === 0 && !error && (
+                <div className="py-8 text-center text-sm font-mono text-slate-500">
+                  NO MATCHES FOUND
+                </div>
+              )}
 
           {!loading && rows.length > 0 && (
-            <ul className="divide-y divide-slate-200 rounded-md border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
+            <ul className="divide-y divide-slate-100 dark:divide-slate-800 rounded-md border border-slate-100 dark:border-slate-800">
               {rows.map((r) => {
                 const href = hrefForSource(r.source_table, r.source_id);
                 const title = r.label?.trim() || `${r.source_table} ${r.source_id.slice(0, 8)}…`;
                 return (
-                  <li key={r.id} className="flex flex-col gap-1 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <li key={r.id} className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between group hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors cursor-pointer">
                     <div className="min-w-0">
                       {href ? (
                         <Link
@@ -169,8 +179,12 @@ export default function AdminSearchPage() {
               })}
             </ul>
           )}
-        </CardContent>
-      </Card>
+              </div>
+            </div>
+            </V2Card>
+          </div>
+        </KineticGrid>
+      </div>
     </div>
   );
 }

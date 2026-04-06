@@ -7,6 +7,7 @@ export default function AdminBillingPage() {
   return (
     <div className="space-y-6">
       <BillingHubNav />
+
       <BillingInvoiceLedger />
     </div>
   );

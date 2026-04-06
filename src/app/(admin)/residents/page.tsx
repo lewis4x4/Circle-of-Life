@@ -21,6 +21,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
+import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
+import { Sparkline } from "@/components/ui/moonshot/sparkline";
+import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 
 type Acuity = 1 | 2 | 3;
 type AdlStatus = "independent" | "assisted" | "dependent";
@@ -159,45 +163,55 @@ export default function AdminResidentsPage() {
   const highAcuityCount = rows.filter((row) => row.acuity === 3).length;
 
   return (
-    <div className="space-y-6">
-      <header className="mb-8">
-        <div>
-          <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 08 / Residents</p>
-          <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
-            Resident Hub {highAcuityCount > 0 && <span className="relative flex h-2 w-2 mt-1"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span></span>}
-          </h2>
-        </div>
-      </header>
+    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+      <AmbientMatrix hasCriticals={highAcuityCount > 0} />
+      
+      <div className="relative z-10 space-y-6">
+        <header className="mb-8">
+          <div>
+            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 08 / Residents</p>
+            <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+              Resident Hub {highAcuityCount > 0 && <PulseDot />}
+            </h2>
+          </div>
+        </header>
 
-      <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
-        <Card className="relative overflow-hidden border-slate-200/70 bg-white dark:border-slate-800/80 dark:bg-[#0A0A0A]">
-          <MonolithicWatermark value={activeCount} />
-          <div className="relative z-10 p-5">
-            <h3 className="text-[10px] font-mono tracking-widest uppercase text-slate-500 mb-4 flex items-center gap-2">
-              <Users className="h-3.5 w-3.5" /> Total Census
-            </h3>
-            <p className="text-4xl font-mono tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-500 dark:from-white dark:to-slate-500 pb-2">{activeCount}</p>
+        <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
+          <div className="h-[160px]">
+            <V2Card hoverColor="emerald">
+              <Sparkline colorClass="text-emerald-500" variant={1} />
+              <MonolithicWatermark value={activeCount} className="text-emerald-900/5 dark:text-emerald-100/5 opacity-50" />
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                <h3 className="text-[10px] font-mono tracking-widest uppercase text-slate-500 flex items-center gap-2">
+                  <Users className="h-3.5 w-3.5" /> Total Census
+                </h3>
+                <p className="text-4xl font-mono tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-500 dark:from-white dark:to-slate-500 pb-1">{activeCount}</p>
+              </div>
+            </V2Card>
           </div>
-        </Card>
-        <Card className="relative overflow-hidden border-rose-500/30 bg-rose-50/50 dark:border-rose-500/20 dark:bg-rose-950/10 shadow-[inset_0_0_15px_rgba(244,63,94,0.05)]">
-          <MonolithicWatermark value={highAcuityCount} className="text-[160px] translate-x-10 text-rose-600/10 dark:text-rose-400/10" />
-          <div className="relative z-10 p-5">
-            <h3 className="text-[10px] font-mono tracking-widest uppercase text-rose-600 dark:text-rose-400 mb-4 flex items-center gap-2">
-               High Acuity Profile
-            </h3>
-            <p className="text-4xl font-mono tracking-tighter text-rose-600 dark:text-rose-400 pb-2">{highAcuityCount}</p>
+          <div className="h-[160px]">
+            <V2Card hoverColor="rose" className="border-rose-500/20 dark:border-rose-500/20 shadow-[inset_0_0_15px_rgba(244,63,94,0.05)]">
+              <Sparkline colorClass="text-rose-500" variant={4} />
+              <MonolithicWatermark value={highAcuityCount} className="text-rose-600/5 dark:text-rose-400/5 opacity-50" />
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                <h3 className="text-[10px] font-mono tracking-widest uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2">
+                  High Acuity Profile
+                </h3>
+                <p className="text-4xl font-mono tracking-tighter text-rose-600 dark:text-rose-400 pb-1">{highAcuityCount}</p>
+              </div>
+            </V2Card>
           </div>
-        </Card>
-        <Card className="col-span-1 md:col-span-2 relative overflow-hidden border-slate-200/70 bg-white dark:border-slate-800/80 dark:bg-[#0A0A0A] flex flex-col justify-center items-start lg:items-end p-5 lg:pr-8">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-slate-100/50 dark:to-slate-800/10 pointer-events-none"></div>
-          <div className="relative z-10 text-left lg:text-right w-full">
-             <p className="hidden lg:block text-xs font-mono text-slate-500 mb-4">Unified census view with acuity & ADL scope</p>
-             <Link href="/admin/residents/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none")} >
-               + Initialize Intake
-             </Link>
+          <div className="col-span-1 md:col-span-2 h-[160px]">
+            <V2Card hoverColor="indigo" className="flex flex-col justify-center items-start lg:items-end">
+              <div className="relative z-10 text-left lg:text-right w-full">
+                <p className="hidden lg:block text-xs font-mono text-slate-500 mb-4">Unified census view with acuity & ADL scope</p>
+                <Link href="/admin/residents/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none")} >
+                  + Initialize Intake
+                </Link>
+              </div>
+            </V2Card>
           </div>
-        </Card>
-      </KineticGrid>
+        </KineticGrid>
 
       <AdminFilterBar
         searchValue={search}
@@ -250,15 +264,16 @@ export default function AdminResidentsPage() {
       ) : null}
 
       {!isLoading && filteredRows.length > 0 ? (
-        <Card className="overflow-hidden border-slate-200/70 bg-white shadow-soft dark:border-slate-800 dark:bg-slate-950">
-          <CardHeader className="border-b border-slate-100 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/30">
-            <CardTitle className="text-lg font-display">Census Table</CardTitle>
-            <CardDescription>Filterable scaffold pattern for Residents, Incidents, Staff, and Billing modules.</CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/5 bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl shadow-2xl">
+          <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent pointer-events-none" />
+          <div className="relative z-10 border-b border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 p-6 flex flex-col gap-1">
+            <h3 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">Census Table</h3>
+            <p className="text-sm font-mono text-slate-500 dark:text-slate-400">Filterable scaffold pattern for Residents, Incidents, Staff, and Billing modules.</p>
+          </div>
+          <div className="relative z-10 overflow-x-auto">
             <Table>
-              <TableHeader className="bg-slate-50/70 dark:bg-slate-900/60">
-                <TableRow className="border-slate-100 hover:bg-transparent dark:border-slate-800">
+              <TableHeader className="bg-white/40 dark:bg-black/40 border-b border-white/20 dark:border-white/10">
+                <TableRow className="border-none hover:bg-transparent">
                   <TableHead className="pl-4 font-medium">Resident</TableHead>
                   <TableHead className="font-medium">Room</TableHead>
                   <TableHead className="font-medium">Unit</TableHead>
@@ -276,7 +291,7 @@ export default function AdminResidentsPage() {
               </TableHeader>
               <TableBody>
                 {filteredRows.map((resident) => (
-                  <TableRow key={resident.id} className="border-slate-100 dark:border-slate-800">
+                  <TableRow key={resident.id} className="border-slate-100 dark:border-slate-800 hover:bg-indigo-500/5 dark:hover:bg-indigo-500/10 transition-colors cursor-pointer group">
                     <TableCell className="pl-4">
                       <div className="flex items-center gap-3">
                         <div
@@ -316,9 +331,10 @@ export default function AdminResidentsPage() {
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       ) : null}
+      </div>
     </div>
   );
 }
@@ -467,11 +483,8 @@ function formatUpdatedAt(value: string | null): string {
 function AcuityBadge({ acuity }: { acuity: Acuity }) {
   if (acuity === 3) {
     return (
-      <Badge className="border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400 gap-1.5 flex items-center">
-        <span className="relative flex h-1.5 w-1.5">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-rose-500"></span>
-        </span>
+      <Badge className="border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400 gap-1.5 flex items-center shadow-[inset_0_0_10px_rgba(244,63,94,0.1)]">
+        <PulseDot className="h-1.5 w-1.5" />
         Acuity 3
       </Badge>
     );

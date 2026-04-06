@@ -11,6 +11,7 @@ import {
 import { ExecutiveHubNav } from "./executive-hub-nav";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -330,11 +331,7 @@ export default function ExecutiveCommandCenterPage() {
           <V2Card href="/admin/residents" hoverColor="indigo">
             {/* Monolithic Watermark Typography */}
             {!loading && kpis && (
-              <div className="absolute inset-y-0 right-0 flex items-center overflow-hidden pointer-events-none mix-blend-overlay opacity-40 dark:opacity-20 z-0">
-                <span className="text-[180px] font-black tracking-tighter leading-none text-slate-800 dark:text-white -translate-y-4 translate-x-12">
-                  {kpis.census.occupiedResidents}
-                </span>
-              </div>
+              <MonolithicWatermark value={kpis.census.occupiedResidents} />
             )}
             <div className="relative z-10 flex flex-col h-full justify-between">
               <div className="flex items-start justify-between mb-4">
@@ -378,11 +375,7 @@ export default function ExecutiveCommandCenterPage() {
           <V2Card href="/admin/billing/invoices" hoverColor="emerald">
             {/* Monolithic Watermark Typography */}
             {!loading && kpis && (
-              <div className="absolute inset-y-0 right-0 flex items-center overflow-hidden pointer-events-none mix-blend-overlay opacity-40 dark:opacity-20 z-0">
-                <span className="text-[160px] font-black tracking-tighter leading-none text-slate-800 dark:text-white -translate-y-[15%] translate-x-12">
-                  {Math.round((kpis.financial.totalBalanceDueCents / 100) / 1000)}k
-                </span>
-              </div>
+              <MonolithicWatermark value={Math.round((kpis.financial.totalBalanceDueCents / 100) / 1000) + 'k'} />
             )}
              <div className="relative z-10 flex flex-col h-full justify-between">
               <div className="flex items-start justify-between mb-4">

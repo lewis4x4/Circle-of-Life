@@ -10,8 +10,8 @@ export function MonolithicWatermark({ value, className, containerClassName }: Mo
   return (
     <div className={cn("absolute inset-y-0 right-0 flex items-center overflow-hidden pointer-events-none mix-blend-overlay opacity-40 dark:opacity-20 z-0", containerClassName)}>
       <span className={cn(
-        "font-black tracking-tighter leading-none text-slate-800 dark:text-white pb-32", // large bottom padding ensures it scales correctly within tight flex cards
-        className || "text-[160px] translate-x-12"
+        "font-black tracking-tighter leading-none text-slate-800 dark:text-white pb-16 md:pb-24 lg:pb-32 translate-x-4 md:translate-x-8 lg:translate-x-12", 
+        className || "text-7xl sm:text-8xl md:text-9xl lg:text-[160px]"
       )}>
         {value}
       </span>

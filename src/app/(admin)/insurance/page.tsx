@@ -11,6 +11,12 @@ import { createClient } from "@/lib/supabase/client";
 import { computeTotalCostOfRisk, type TcorSnapshot } from "@/lib/insurance/compute-tcor";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { KineticGrid } from "@/components/ui/kinetic-grid";
+import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
+import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
+import { Sparkline } from "@/components/ui/moonshot/sparkline";
+import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 
 export default function AdminInsuranceHubPage() {
   const supabase = createClient();
@@ -119,64 +125,83 @@ export default function AdminInsuranceHubPage() {
   }, [orgId, loadTcor]);
 
   return (
-    <div className="space-y-6">
-      <InsuranceHubNav />
-      <div className="flex items-center gap-3">
-        <Umbrella className="h-8 w-8 text-slate-600 dark:text-slate-300" aria-hidden />
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Insurance & risk</h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Corporate policies, renewals, claims, COIs, and workers’ compensation (Module 18).
-          </p>
+    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+      <AmbientMatrix hasCriticals={openClaims ? openClaims > 0 : false} 
+        primaryClass="bg-blue-700/10"
+        secondaryClass="bg-red-900/10"
+      />
+      
+      <div className="relative z-10 space-y-6">
+        <InsuranceHubNav />
+        <div className="flex items-center gap-3">
+          <Umbrella className="h-8 w-8 text-slate-600 dark:text-slate-300" aria-hidden />
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Insurance & risk</h1>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Corporate policies, renewals, claims, COIs, and workers’ compensation (Module 18).
+            </p>
+          </div>
         </div>
-      </div>
 
-      {loadError && (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-          {loadError}
-        </p>
-      )}
+        {loadError && (
+          <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+            {loadError}
+          </p>
+        )}
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Active policies</CardTitle>
-            <CardDescription>Policies in active status.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold tabular-nums">{loading ? "…" : activePolicies ?? "—"}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Renewals in progress</CardTitle>
-            <CardDescription>Upcoming or in-progress renewal workflows.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold tabular-nums">{loading ? "…" : renewalsInFlight ?? "—"}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Open claims</CardTitle>
-            <CardDescription>GL claims not closed, denied, or withdrawn.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold tabular-nums">{loading ? "…" : openClaims ?? "—"}</p>
-          </CardContent>
-        </Card>
-      </div>
+        <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4" staggerMs={75}>
+          <div className="h-[160px]">
+            <V2Card hoverColor="slate">
+              <Sparkline colorClass="text-slate-400" variant={1} />
+              <MonolithicWatermark value={activePolicies ?? 0} className="text-slate-800/5 dark:text-white/5 opacity-50" />
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                <h3 className="text-[10px] font-mono tracking-widest uppercase text-slate-500 flex items-center gap-2">
+                  Active Policies
+                </h3>
+                <p className="text-4xl font-mono tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-500 dark:from-white dark:to-slate-500 pb-1">{loading ? "…" : activePolicies ?? "—"}</p>
+              </div>
+            </V2Card>
+          </div>
+          <div className="h-[160px]">
+            <V2Card hoverColor="emerald">
+              <Sparkline colorClass="text-emerald-500" variant={3} />
+              <MonolithicWatermark value={renewalsInFlight ?? 0} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                <h3 className="text-[10px] font-mono tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+                   Renewals in Flight
+                </h3>
+                <p className="text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1">{loading ? "…" : renewalsInFlight ?? "—"}</p>
+              </div>
+            </V2Card>
+          </div>
+          <div className="h-[160px]">
+            <V2Card hoverColor="red" className={openClaims ? "border-red-500/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]" : ""}>
+              <Sparkline colorClass="text-red-500" variant={2} />
+              <MonolithicWatermark value={openClaims ?? 0} className="text-red-600/5 dark:text-red-400/5 opacity-50" />
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[10px] font-mono tracking-widest uppercase text-red-600 dark:text-red-400 flex items-center gap-2">
+                     Open Claims
+                  </h3>
+                  {openClaims != null && openClaims > 0 && <PulseDot colorClass="bg-red-500" />}
+                </div>
+                <p className="text-4xl font-mono tracking-tighter text-red-600 dark:text-red-400 pb-1">{loading ? "…" : openClaims ?? "—"}</p>
+              </div>
+            </V2Card>
+          </div>
+        </KineticGrid>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Total cost of risk (TCoR)</CardTitle>
-          <CardDescription>
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/5 bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent pointer-events-none" />
+        <div className="relative z-10 border-b border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 p-6 flex flex-col gap-1">
+          <h3 className="text-base font-display font-semibold text-slate-900 dark:text-slate-100">Total cost of risk (TCoR)</h3>
+          <p className="text-sm font-mono text-slate-500 dark:text-slate-400">
             Module 18 Enhanced — rolling ~12 months. Premiums sum stated policy premiums for in-force policies
             overlapping the window; losses sum paid + reserve on claims whose loss date (or reported date) falls in the
             window. Operational estimate, not GAAP.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </p>
+        </div>
+        <div className="relative z-10 p-6 space-y-4">
           <div className="flex flex-wrap items-end gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="tcor-entity">Entity</Label>
@@ -233,35 +258,37 @@ export default function AdminInsuranceHubPage() {
           ) : (
             <p className="text-sm text-slate-500">No TCoR data.</p>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Quick links</CardTitle>
-          <CardDescription>Navigate insurance workflows.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-2 text-sm">
-          <Link className="text-primary underline-offset-4 hover:underline" href="/admin/insurance/policies">
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/5 bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent pointer-events-none" />
+        <div className="relative z-10 border-b border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 p-6 flex flex-col gap-1">
+          <h3 className="text-base font-display font-semibold text-slate-900 dark:text-slate-100">Quick links</h3>
+          <p className="text-sm font-mono text-slate-500 dark:text-slate-400">Navigate insurance workflows.</p>
+        </div>
+        <div className="relative z-10 p-6 flex flex-col gap-2 text-sm">
+          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-widest hover:text-indigo-500 transition-colors" href="/admin/insurance/policies">
             Policy inventory
           </Link>
-          <Link className="text-primary underline-offset-4 hover:underline" href="/admin/insurance/renewals">
+          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-widest hover:text-indigo-500 transition-colors" href="/admin/insurance/renewals">
             Renewals
           </Link>
-          <Link className="text-primary underline-offset-4 hover:underline" href="/admin/insurance/renewal-packages">
+          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-widest hover:text-indigo-500 transition-colors" href="/admin/insurance/renewal-packages">
             Renewal data packages
           </Link>
-          <Link className="text-primary underline-offset-4 hover:underline" href="/admin/insurance/claims">
+          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-widest hover:text-indigo-500 transition-colors" href="/admin/insurance/claims">
             Claims
           </Link>
-          <Link className="text-primary underline-offset-4 hover:underline" href="/admin/insurance/coi">
+          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-widest hover:text-indigo-500 transition-colors" href="/admin/insurance/coi">
             Certificates of insurance
           </Link>
-          <Link className="text-primary underline-offset-4 hover:underline" href="/admin/insurance/workers-comp">
+          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-widest hover:text-indigo-500 transition-colors" href="/admin/insurance/workers-comp">
             Workers’ comp
           </Link>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+      </div>
     </div>
   );
 }

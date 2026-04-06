@@ -13,6 +13,12 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
+import { KineticGrid } from "@/components/ui/kinetic-grid";
+import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
+import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
+import { Sparkline } from "@/components/ui/moonshot/sparkline";
+import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 
 type FleetRow = Database["public"]["Tables"]["fleet_vehicles"]["Row"];
 type InspectionRow = Database["public"]["Tables"]["vehicle_inspection_logs"]["Row"] & {
@@ -92,32 +98,63 @@ export default function AdminTransportationHubPage() {
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 p-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
-            Transportation
-          </h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            Fleet units, periodic inspections, and driver license snapshots for the selected facility.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href="/admin/transportation/vehicles/new"
-            className={cn(buttonVariants({ variant: "default" }), "inline-flex items-center gap-2")}
-          >
-            <Bus className="h-4 w-4" aria-hidden />
-            Add vehicle
-          </Link>
-          <Link href="/admin/transportation/inspections/new" className={cn(buttonVariants({ variant: "secondary" }))}>
-            Log inspection
-          </Link>
-          <Link href="/admin/transportation/drivers/new" className={cn(buttonVariants({ variant: "outline" }))}>
-            Add driver credential
-          </Link>
-        </div>
-      </div>
+    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+      <AmbientMatrix hasCriticals={false} 
+        primaryClass="bg-indigo-700/10"
+        secondaryClass="bg-slate-900/10"
+      />
+      
+      <div className="relative z-10 space-y-6">
+        <header className="mb-8">
+          <div>
+            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 19 / Site Logistics</p>
+            <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+              Fleet Operations
+            </h2>
+          </div>
+        </header>
+
+        <KineticGrid className="grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
+          <div className="h-[160px]">
+            <V2Card hoverColor="indigo" className="border-indigo-500/20 dark:border-indigo-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
+              <Sparkline colorClass="text-indigo-500" variant={3} />
+              <MonolithicWatermark value={fleet.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                <h3 className="text-[10px] font-mono tracking-widest uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                  <Bus className="h-3.5 w-3.5" /> Fleet Size
+                </h3>
+                <p className="text-4xl font-mono tracking-tighter text-indigo-600 dark:text-indigo-400 pb-1">{fleet.length}</p>
+              </div>
+            </V2Card>
+          </div>
+          <div className="h-[160px]">
+            <V2Card hoverColor="slate">
+              <Sparkline colorClass="text-slate-400" variant={1} />
+              <MonolithicWatermark value={drivers.length} className="text-slate-800/5 dark:text-white/5 opacity-50" />
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                <h3 className="text-[10px] font-mono tracking-widest uppercase text-slate-500 flex items-center gap-2">
+                   Active Drivers
+                </h3>
+                <p className="text-4xl font-mono tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-500 dark:from-white dark:to-slate-500 pb-1">{drivers.length}</p>
+              </div>
+            </V2Card>
+          </div>
+          <div className="col-span-1 md:col-span-2 h-[160px]">
+            <V2Card hoverColor="blue" className="flex flex-col justify-center items-start lg:items-end">
+              <div className="relative z-10 text-left lg:text-right w-full">
+                 <p className="hidden lg:block text-xs font-mono text-slate-500 mb-4">Fleet units, periodic inspections, and driver credentials.</p>
+                 <div className="flex gap-2 justify-start lg:justify-end">
+                   <Link href="/admin/transportation/vehicles/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none")} >
+                     + Vehicle
+                   </Link>
+                   <Link href="/admin/transportation/inspections/new" className={cn(buttonVariants({ variant: "outline" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800")} >
+                     + Inspection
+                   </Link>
+                 </div>
+              </div>
+            </V2Card>
+          </div>
+        </KineticGrid>
 
       {!facilityReady && (
         <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
@@ -131,20 +168,21 @@ export default function AdminTransportationHubPage() {
         </p>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Fleet</CardTitle>
-          <CardDescription>Active vans and shuttles registered for this site.</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/5 bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent pointer-events-none" />
+        <div className="relative z-10 border-b border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 p-6 flex flex-col gap-1">
+          <h3 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">Fleet</h3>
+          <p className="text-sm font-mono text-slate-500 dark:text-slate-400">Active vans and shuttles registered for this site.</p>
+        </div>
+        <div className="relative z-10 overflow-x-auto p-4">
           {loading ? (
-            <p className="text-sm text-slate-500">Loading…</p>
+            <p className="text-sm font-mono text-slate-500">Loading…</p>
           ) : !facilityReady ? null : fleet.length === 0 ? (
-            <p className="text-sm text-slate-500">No vehicles yet.</p>
+            <p className="text-sm font-mono text-slate-500">No vehicles yet.</p>
           ) : (
             <Table>
-              <TableHeader>
-                <TableRow>
+              <TableHeader className="bg-white/40 dark:bg-black/40 border-b border-white/20 dark:border-white/10">
+                <TableRow className="border-none hover:bg-transparent">
                   <TableHead>Name</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Plate</TableHead>
@@ -154,7 +192,7 @@ export default function AdminTransportationHubPage() {
               </TableHeader>
               <TableBody>
                 {fleet.map((row) => (
-                  <TableRow key={row.id}>
+                  <TableRow key={row.id} className="border-slate-100 dark:border-slate-800 hover:bg-indigo-500/5 dark:hover:bg-indigo-500/10 transition-colors cursor-pointer group">
                     <TableCell className="font-medium">{row.name}</TableCell>
                     <TableCell className="capitalize">{formatEnum(row.status)}</TableCell>
                     <TableCell className="text-xs text-slate-600 dark:text-slate-300">{row.license_plate ?? "—"}</TableCell>
@@ -167,23 +205,24 @@ export default function AdminTransportationHubPage() {
               </TableBody>
             </Table>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Recent inspections</CardTitle>
-          <CardDescription>Latest logged walk-arounds and safety checks.</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/5 bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent pointer-events-none" />
+        <div className="relative z-10 border-b border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 p-6 flex flex-col gap-1">
+          <h3 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">Recent inspections</h3>
+          <p className="text-sm font-mono text-slate-500 dark:text-slate-400">Latest logged walk-arounds and safety checks.</p>
+        </div>
+        <div className="relative z-10 overflow-x-auto p-4">
           {loading ? (
-            <p className="text-sm text-slate-500">Loading…</p>
+            <p className="text-sm font-mono text-slate-500">Loading…</p>
           ) : !facilityReady ? null : inspections.length === 0 ? (
-            <p className="text-sm text-slate-500">No inspections logged yet.</p>
+            <p className="text-sm font-mono text-slate-500">No inspections logged yet.</p>
           ) : (
             <Table>
-              <TableHeader>
-                <TableRow>
+              <TableHeader className="bg-white/40 dark:bg-black/40 border-b border-white/20 dark:border-white/10">
+                <TableRow className="border-none hover:bg-transparent">
                   <TableHead>Vehicle</TableHead>
                   <TableHead>When</TableHead>
                   <TableHead>Result</TableHead>
@@ -192,7 +231,7 @@ export default function AdminTransportationHubPage() {
               </TableHeader>
               <TableBody>
                 {inspections.map((row) => (
-                  <TableRow key={row.id}>
+                  <TableRow key={row.id} className="border-slate-100 dark:border-slate-800 hover:bg-amber-500/5 dark:hover:bg-amber-500/10 transition-colors cursor-pointer group">
                     <TableCell className="text-sm">{row.fleet_vehicles?.name ?? "—"}</TableCell>
                     <TableCell className="whitespace-nowrap text-xs text-slate-500">
                       {format(new Date(row.inspected_at), "MMM d, yyyy p")}
@@ -204,23 +243,24 @@ export default function AdminTransportationHubPage() {
               </TableBody>
             </Table>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Driver credentials</CardTitle>
-          <CardDescription>License class and expiration tracking (one active record per staff member per facility).</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/5 bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent pointer-events-none" />
+        <div className="relative z-10 border-b border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 p-6 flex flex-col gap-1">
+          <h3 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">Driver credentials</h3>
+          <p className="text-sm font-mono text-slate-500 dark:text-slate-400">License class and expiration tracking (one active record per staff member per facility).</p>
+        </div>
+        <div className="relative z-10 overflow-x-auto p-4">
           {loading ? (
-            <p className="text-sm text-slate-500">Loading…</p>
+            <p className="text-sm font-mono text-slate-500">Loading…</p>
           ) : !facilityReady ? null : drivers.length === 0 ? (
-            <p className="text-sm text-slate-500">No driver credentials yet.</p>
+            <p className="text-sm font-mono text-slate-500">No driver credentials yet.</p>
           ) : (
             <Table>
-              <TableHeader>
-                <TableRow>
+              <TableHeader className="bg-white/40 dark:bg-black/40 border-b border-white/20 dark:border-white/10">
+                <TableRow className="border-none hover:bg-transparent">
                   <TableHead>Staff</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>License expires</TableHead>
@@ -229,7 +269,7 @@ export default function AdminTransportationHubPage() {
               </TableHeader>
               <TableBody>
                 {drivers.map((row) => (
-                  <TableRow key={row.id}>
+                  <TableRow key={row.id} className="border-slate-100 dark:border-slate-800 hover:bg-emerald-500/5 dark:hover:bg-emerald-500/10 transition-colors cursor-pointer group">
                     <TableCell>
                       {row.staff ? `${row.staff.first_name} ${row.staff.last_name}`.trim() : "—"}
                     </TableCell>
@@ -245,8 +285,9 @@ export default function AdminTransportationHubPage() {
               </TableBody>
             </Table>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+      </div>
     </div>
   );
 }

@@ -19,6 +19,12 @@ import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { KineticGrid } from "@/components/ui/kinetic-grid";
+import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
+import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
+import { Sparkline } from "@/components/ui/moonshot/sparkline";
+import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 
 type TimeRow = {
   id: string;
@@ -110,29 +116,48 @@ export default function AdminTimeRecordsPage() {
   const pendingApproval = rows.filter((r) => !r.approved && r.clockOut).length;
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-            Time records
-          </h2>
-          <p className="mt-1 text-slate-500 dark:text-slate-400">
-            Recent clock activity with approval state for payroll readiness.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link href="/admin/time-records/new" className={buttonVariants({ size: "sm" })}>
-            Add time record
-          </Link>
-          <Badge
-            variant="outline"
-            className="border-amber-200 bg-amber-50 px-3 py-1 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300"
-          >
-            <Clock className="mr-1 h-3.5 w-3.5" />
-            {pendingApproval} pending approval
-          </Badge>
-        </div>
-      </header>
+    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+      <AmbientMatrix hasCriticals={pendingApproval > 0} 
+        primaryClass="bg-blue-700/10"
+        secondaryClass="bg-indigo-900/10"
+        criticalPrimaryClass="bg-amber-700/20"
+        criticalSecondaryClass="bg-orange-900/10"
+      />
+      
+      <div className="relative z-10 space-y-6">
+        <header className="mb-8">
+          <div>
+            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 18 / Time Records</p>
+            <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+              Time & Attendance {pendingApproval > 0 && <PulseDot colorClass="bg-amber-500" />}
+            </h2>
+          </div>
+        </header>
+
+        <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
+          <div className="h-[160px]">
+            <V2Card hoverColor="orange" className="border-amber-500/20 dark:border-amber-500/20 shadow-[inset_0_0_15px_rgba(245,158,11,0.05)]">
+              <Sparkline colorClass="text-amber-500" variant={4} />
+              <MonolithicWatermark value={pendingApproval} className="text-amber-600/5 dark:text-amber-400/5 opacity-50" />
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                <h3 className="text-[10px] font-mono tracking-widest uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5" /> Pending Approval
+                </h3>
+                <p className="text-4xl font-mono tracking-tighter text-amber-600 dark:text-amber-400 pb-1">{pendingApproval}</p>
+              </div>
+            </V2Card>
+          </div>
+          <div className="col-span-1 md:col-span-3 h-[160px]">
+            <V2Card hoverColor="blue" className="flex flex-col justify-center items-start lg:items-end">
+              <div className="relative z-10 text-left lg:text-right w-full">
+                 <p className="hidden lg:block text-xs font-mono text-slate-500 mb-4">Recent clock activity with approval state for payroll readiness.</p>
+                 <Link href="/admin/time-records/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none")} >
+                   + Log Manual Time
+                 </Link>
+              </div>
+            </V2Card>
+          </div>
+        </KineticGrid>
 
       <AdminFilterBar
         searchValue={search}
@@ -164,15 +189,16 @@ export default function AdminTimeRecordsPage() {
         <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />
       ) : null}
       {!isLoading && filteredRows.length > 0 ? (
-        <Card className="border-slate-200/80 shadow-sm dark:border-slate-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Recent punches</CardTitle>
-            <CardDescription>Newest first; open staff profile for employment context.</CardDescription>
-          </CardHeader>
-          <CardContent className="p-0 sm:p-0">
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/5 bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl shadow-2xl">
+          <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent pointer-events-none" />
+          <div className="relative z-10 border-b border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 p-6 flex flex-col gap-1">
+            <h3 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">Recent punches</h3>
+            <p className="text-sm font-mono text-slate-500 dark:text-slate-400">Newest first; open staff profile for employment context.</p>
+          </div>
+          <div className="relative z-10 overflow-x-auto">
             <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
+              <TableHeader className="bg-white/40 dark:bg-black/40 border-b border-white/20 dark:border-white/10">
+                <TableRow className="border-none hover:bg-transparent">
                   <TableHead>Staff</TableHead>
                   <TableHead className="hidden sm:table-cell">Clock in</TableHead>
                   <TableHead className="hidden sm:table-cell">Clock out</TableHead>
@@ -183,7 +209,7 @@ export default function AdminTimeRecordsPage() {
               </TableHeader>
               <TableBody>
                 {filteredRows.map((row) => (
-                  <TableRow key={row.id}>
+                  <TableRow key={row.id} className="border-slate-100 dark:border-slate-800 hover:bg-blue-500/5 dark:hover:bg-blue-500/10 transition-colors cursor-pointer group">
                     <TableCell className="font-medium text-slate-900 dark:text-slate-100">{row.staffName}</TableCell>
                     <TableCell className="hidden text-slate-600 dark:text-slate-400 sm:table-cell">
                       {formatDateTime(row.clockIn)}
@@ -218,9 +244,10 @@ export default function AdminTimeRecordsPage() {
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       ) : null}
+      </div>
     </div>
   );
 }
