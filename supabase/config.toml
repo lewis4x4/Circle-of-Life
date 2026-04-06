@@ -382,6 +382,9 @@ verify_jwt = false
 [functions."generate-monthly-invoices"]
 verify_jwt = false
 
+[functions."exec-kpi-snapshot"]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

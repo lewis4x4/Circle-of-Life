@@ -5,31 +5,7 @@
 | `export-audit-log` | yes | `POST { "job_id" }` + user JWT — builds CSV from `audit_log`, updates `audit_log_export_jobs`, returns file + `X-Checksum-SHA256`. |
 | `dispatch-push` | no | `POST { "user_id", "title", "body", "url"? }` — Web Push via `notification_subscriptions`. Auth: `Authorization: Bearer` (owner/org_admin, same org) **or** `x-dispatch-secret` matching `DISPATCH_PUSH_SECRET`. |
 | `generate-monthly-invoices` | no | Draft monthly invoices (same logic as admin **Billing → Generate**). Auth: **`x-cron-secret`** = `GENERATE_MONTHLY_INVOICES_SECRET`. Idempotent per facility + resident + `period_start` (migration `071`). |
-| `exec-kpi-snapshot` | no | Writes **`exec_kpi_snapshots`** for one org: `organization`, each **`entity`**, each **`facility`** scope (Module 24). Auth: **`x-cron-secret`** = **`EXEC_KPI_SNAPSHOT_SECRET`**. Replaces rows for the same `organization_id` + `snapshot_date`. |
-
-## `exec-kpi-snapshot` — request body
-
-**Auth header:** `x-cron-secret: <EXEC_KPI_SNAPSHOT_SECRET>`  
-**Content-Type:** `application/json`
-
-```json
-{
-  "organization_id": "<uuid>",
-  "snapshot_date": "2026-04-06"
-}
-```
-
-- **`snapshot_date`**: optional; defaults to **UTC calendar date** today (`YYYY-MM-DD`).
-- **Idempotency:** deletes existing `exec_kpi_snapshots` for that org + date, then inserts fresh rows (full refresh).
-
-```bash
-curl -sS -X POST "https://<project-ref>.supabase.co/functions/v1/exec-kpi-snapshot" \
-  -H "Content-Type: application/json" \
-  -H "x-cron-secret: $EXEC_KPI_SNAPSHOT_SECRET" \
-  -d '{"organization_id":"<org-uuid>"}'
-```
-
-Schedule **daily** per organization (e.g. 06:00 UTC) alongside Module 24 spec.
+| `exec-kpi-snapshot` | no | `POST { "organization_id", "snapshot_date"? }` — writes **`exec_kpi_snapshots`** for org, each entity, and each facility (Module 24). Auth: **`x-cron-secret`** = `EXEC_KPI_SNAPSHOT_SECRET`. Deletes same-day rows for that org before insert (idempotent per day). |
 
 ## `generate-monthly-invoices` — request body
 
@@ -78,7 +54,7 @@ Do **not** send `facility_id` and `organization_id` together.
 - `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (e.g. `mailto:ops@yourdomain`) — required for `dispatch-push`.
 - `DISPATCH_PUSH_SECRET` — optional but recommended for server/cron callers (header `x-dispatch-secret`).
 - `GENERATE_MONTHLY_INVOICES_SECRET` — required for `generate-monthly-invoices` (header `x-cron-secret`). Rotate if leaked.
-- **`EXEC_KPI_SNAPSHOT_SECRET`** — required for `exec-kpi-snapshot` (header `x-cron-secret`). Rotate if leaked.
+- `EXEC_KPI_SNAPSHOT_SECRET` — required for `exec-kpi-snapshot` (header `x-cron-secret`). Rotate if leaked.
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically.
 
@@ -114,6 +90,25 @@ curl -sS -X POST "https://<project-ref>.supabase.co/functions/v1/generate-monthl
 ```
 
 Monitor **`totals`** / **`facilities`** for blocked or error outcomes; fix rate schedules or data issues and re-run — safe due to idempotency.
+
+## `exec-kpi-snapshot` — request body
+
+**Auth header:** `x-cron-secret: <EXEC_KPI_SNAPSHOT_SECRET>`  
+**Content-Type:** `application/json`
+
+- **`organization_id`** (required): UUID of the tenant.
+- **`snapshot_date`** (optional): `YYYY-MM-DD` in UTC; defaults to **today** UTC.
+
+Writes one **organization** row, one row per **entity**, and one row per **facility** with `metrics`, `lineage`, and `computed_by: edge:exec-kpi-snapshot`.
+
+```bash
+curl -sS -X POST "https://<project-ref>.supabase.co/functions/v1/exec-kpi-snapshot" \
+  -H "Content-Type: application/json" \
+  -H "x-cron-secret: $EXEC_KPI_SNAPSHOT_SECRET" \
+  -d '{"organization_id":"<org-uuid>"}'
+```
+
+Schedule **daily** per org (e.g. Supabase **Edge Functions → Cron** or external scheduler) after `GENERATE_MONTHLY_INVOICES_SECRET` / billing jobs if needed.
 
 ## Deploy
 

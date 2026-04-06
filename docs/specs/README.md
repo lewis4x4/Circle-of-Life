@@ -109,7 +109,7 @@ Routes: `/admin/vendors` (hub), `/admin/vendors/directory`, `/admin/vendors/[id]
 
 ---
 
-**Module 24 — Executive Intelligence Layer v1** (🟩 Core UI + Edge `exec-kpi-snapshot` for `exec_kpi_snapshots`; optional PDF on reports = Enhanced backlog)
+**Module 24 — Executive Intelligence Layer v1** (🟩 Core admin UI + **daily KPI snapshot Edge Function** shipped — optional PDF export Enhanced backlog)
 
 Migration `047_executive_intelligence.sql`: enums, **seven** tables (includes `exec_kpi_snapshots` with **`lineage`**, `exec_alert_user_state`, `benchmark_cohorts`), full RLS, audit triggers.
 
@@ -125,7 +125,7 @@ Migration `047_executive_intelligence.sql`: enums, **seven** tables (includes `e
 
 Tables: `exec_dashboard_configs`, `exec_kpi_snapshots` (**`lineage jsonb`**), `exec_alerts`, **`exec_alert_user_state`**, **`benchmark_cohorts`**, `exec_saved_reports`. KPI domains: census/occupancy, financial, clinical/safety, infection, compliance, workforce, insurance (Module 18), vendors (Module 19). Alert scoring: `severity_weight × recency_factor × impact_weight`. RLS: owner/org_admin full access; facility_admin scoped to their facilities.
 
-Routes live: `/admin/executive` (command center), `/admin/executive/alerts`, `/admin/executive/reports`, `/admin/executive/settings`, `/admin/executive/entity`, `/admin/executive/entity/[id]`, `/admin/executive/facility/[id]`. **Cron:** Edge Function `exec-kpi-snapshot` writes `exec_kpi_snapshots` per org (deploy + `EXEC_KPI_SNAPSHOT_SECRET`). Backlog: optional PDF on reports page (Enhanced).
+Routes live: `/admin/executive` (command center), `/admin/executive/alerts`, `/admin/executive/reports`, `/admin/executive/settings`, `/admin/executive/entity`, `/admin/executive/entity/[id]`, `/admin/executive/facility/[id]`. **Cron:** Edge Function `exec-kpi-snapshot` writes `exec_kpi_snapshots` daily per org (`EXEC_KPI_SNAPSHOT_SECRET`, `x-cron-secret`); see `supabase/functions/README.md`. Backlog: optional PDF on reports page (Enhanced).
 
 ---
 
