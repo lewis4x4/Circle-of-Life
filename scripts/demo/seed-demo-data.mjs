@@ -656,6 +656,152 @@ async function seedUserLinks(supabase, actorUserId, familyUserId) {
   }
 }
 
+async function seedPayroll(supabase) {
+  const periodStart = new Date();
+  periodStart.setMonth(periodStart.getMonth() - 1);
+  periodStart.setDate(1);
+  const periodEnd = new Date(periodStart.getFullYear(), periodStart.getMonth() + 1, 0);
+
+  await assertNoError(
+    "payroll batches upsert",
+    supabase.from("payroll_export_batches").upsert([
+      {
+        id: DEMO_IDS.payroll.batchOne,
+        facility_id: DEMO_IDS.facilityId,
+        organization_id: DEMO_IDS.orgId,
+        period_start: periodStart.toISOString().slice(0, 10),
+        period_end: periodEnd.toISOString().slice(0, 10),
+        provider: "ADP Workforce Now",
+        status: "exported",
+      },
+      {
+        id: DEMO_IDS.payroll.batchTwo,
+        facility_id: DEMO_IDS.facilityId,
+        organization_id: DEMO_IDS.orgId,
+        period_start: new Date(periodStart.getFullYear(), periodStart.getMonth() - 1, 1).toISOString().slice(0, 10),
+        period_end: new Date(periodStart.getFullYear(), periodStart.getMonth(), 0).toISOString().slice(0, 10),
+        provider: "ADP Workforce Now",
+        status: "exported",
+      },
+    ]),
+  );
+}
+
+async function seedDietary(supabase) {
+  await assertNoError(
+    "diet orders upsert",
+    supabase.from("diet_orders").upsert([
+      {
+        id: DEMO_IDS.diet.orderOne,
+        facility_id: DEMO_IDS.facilityId,
+        organization_id: DEMO_IDS.orgId,
+        resident_id: DEMO_IDS.residents.margaret,
+        iddsi_food_level: "regular",
+        iddsi_fluid_level: "thin",
+        status: "active",
+      },
+      {
+        id: DEMO_IDS.diet.orderTwo,
+        facility_id: DEMO_IDS.facilityId,
+        organization_id: DEMO_IDS.orgId,
+        resident_id: DEMO_IDS.residents.arthur,
+        iddsi_food_level: "minced_and_moist",
+        iddsi_fluid_level: "mildly_thick",
+        status: "active",
+      },
+    ]),
+  );
+}
+
+async function seedReputation(supabase, actorUserId) {
+  await assertNoError(
+    "reputation accounts upsert",
+    supabase.from("reputation_accounts").upsert([
+      {
+        id: DEMO_IDS.reputation.accountOne,
+        facility_id: DEMO_IDS.facilityId,
+        organization_id: DEMO_IDS.orgId,
+        label: "Oakridge Google Business",
+        platform: "google",
+        external_place_id: "ChIJN1t_tDeuEmsRUsoyG83frY4",
+        is_active: true,
+      },
+    ]),
+  );
+
+  if (!actorUserId) return;
+
+  await assertNoError(
+    "reputation replies upsert",
+    supabase.from("reputation_replies").upsert([
+      {
+        id: DEMO_IDS.reputation.replyOne,
+        facility_id: DEMO_IDS.facilityId,
+        organization_id: DEMO_IDS.orgId,
+        account_id: DEMO_IDS.reputation.accountOne,
+        reply_body: "Thank you for the wonderful 5-star review! Our team strives to provide excellent care.",
+        status: "draft",
+        created_by_user_id: actorUserId,
+        updated_by: actorUserId,
+      },
+    ]),
+  );
+}
+
+async function seedTraining(supabase, actorUserId) {
+  if (!actorUserId) return;
+  
+  await assertNoError(
+    "training demonstrations upsert",
+    supabase.from("competency_demonstrations").upsert([
+      {
+        id: DEMO_IDS.training.demoOne,
+        facility_id: DEMO_IDS.facilityId,
+        organization_id: DEMO_IDS.orgId,
+        staff_id: DEMO_IDS.staff.rn,
+        demonstrated_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+        evaluator_user_id: actorUserId,
+        status: "passed",
+        skills_checklist: { items: [{ name: "Handwashing", passed: true }] },
+      },
+      {
+        id: DEMO_IDS.training.demoTwo,
+        facility_id: DEMO_IDS.facilityId,
+        organization_id: DEMO_IDS.orgId,
+        staff_id: DEMO_IDS.staff.cnaDay,
+        demonstrated_at: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
+        evaluator_user_id: actorUserId,
+        status: "passed",
+        skills_checklist: { items: [{ name: "Lift assist", passed: true }] },
+      },
+    ]),
+  );
+}
+
+async function seedInsurance(supabase) {
+  const start = new Date();
+  start.setMonth(start.getMonth() - 2);
+  const end = new Date(start.getFullYear() + 1, start.getMonth(), start.getDate());
+
+  await assertNoError(
+    "insurance policies upsert",
+    supabase.from("insurance_policies").upsert([
+      {
+        id: DEMO_IDS.insurance.policyOne,
+        entity_id: DEMO_IDS.entityId,
+        organization_id: DEMO_IDS.orgId,
+        policy_type: "general_liability",
+        carrier: "MedPro Group",
+        policy_number: "PL-5510294",
+        status: "active",
+        start_date: start.toISOString().slice(0, 10),
+        end_date: end.toISOString().slice(0, 10),
+      },
+    ]),
+  );
+}
+
+
 async function main() {
   const supabase = createAdminSupabaseClient();
   const actorUserId = optionalEnv("DEMO_ACTOR_USER_ID");
@@ -668,6 +814,11 @@ async function main() {
   await seedBilling(supabase);
   await seedIncidents(supabase, actorUserId);
   await seedUserLinks(supabase, actorUserId, familyUserId);
+  await seedPayroll(supabase);
+  await seedDietary(supabase);
+  await seedReputation(supabase, actorUserId);
+  await seedTraining(supabase, actorUserId);
+  await seedInsurance(supabase);
 
   console.log("[demo:seed] done");
   console.log(`[demo:seed] organization_id=${DEMO_IDS.orgId}`);
