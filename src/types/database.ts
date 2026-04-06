@@ -6669,6 +6669,183 @@ export type Database = {
           },
         ]
       }
+      referral_leads: {
+        Row: {
+          converted_at: string | null
+          converted_resident_id: string | null
+          created_at: string
+          created_by: string | null
+          date_of_birth: string | null
+          deleted_at: string | null
+          email: string | null
+          external_reference: string | null
+          facility_id: string
+          first_name: string
+          id: string
+          last_name: string
+          merged_at: string | null
+          merged_by: string | null
+          merged_into_lead_id: string | null
+          notes: string | null
+          organization_id: string
+          phone: string | null
+          pii_access_tier: Database["public"]["Enums"]["pii_access_tier"]
+          preferred_name: string | null
+          referral_source_id: string | null
+          status: Database["public"]["Enums"]["referral_lead_status"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          converted_at?: string | null
+          converted_resident_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_of_birth?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          external_reference?: string | null
+          facility_id: string
+          first_name: string
+          id?: string
+          last_name: string
+          merged_at?: string | null
+          merged_by?: string | null
+          merged_into_lead_id?: string | null
+          notes?: string | null
+          organization_id: string
+          phone?: string | null
+          pii_access_tier?: Database["public"]["Enums"]["pii_access_tier"]
+          preferred_name?: string | null
+          referral_source_id?: string | null
+          status?: Database["public"]["Enums"]["referral_lead_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          converted_at?: string | null
+          converted_resident_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_of_birth?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          external_reference?: string | null
+          facility_id?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          merged_at?: string | null
+          merged_by?: string | null
+          merged_into_lead_id?: string | null
+          notes?: string | null
+          organization_id?: string
+          phone?: string | null
+          pii_access_tier?: Database["public"]["Enums"]["pii_access_tier"]
+          preferred_name?: string | null
+          referral_source_id?: string | null
+          status?: Database["public"]["Enums"]["referral_lead_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_leads_converted_resident_id_fkey"
+            columns: ["converted_resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_leads_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_leads_merged_into_lead_id_fkey"
+            columns: ["merged_into_lead_id"]
+            isOneToOne: false
+            referencedRelation: "referral_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_leads_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_leads_referral_source_id_fkey"
+            columns: ["referral_source_id"]
+            isOneToOne: false
+            referencedRelation: "referral_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_sources: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          external_id: string | null
+          facility_id: string | null
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          source_type: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          external_id?: string | null
+          facility_id?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id: string
+          source_type: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          external_id?: string | null
+          facility_id?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          source_type?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_sources_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_sources_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       regulatory_reporting_obligations: {
         Row: {
           authority: string | null
@@ -7624,6 +7801,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "residents_referral_source_id_fkey"
+            columns: ["referral_source_id"]
+            isOneToOne: false
+            referencedRelation: "referral_sources"
             referencedColumns: ["id"]
           },
         ]
@@ -10451,12 +10635,23 @@ export type Database = {
         | "received"
         | "closed"
         | "cancelled"
+      pii_access_tier: "public_summary" | "standard_ops" | "clinical_precheck"
       polst_status: "none" | "on_file" | "verified" | "revoked"
       premium_allocation_method:
         | "per_licensed_bed"
         | "per_census_day"
         | "pct_of_premium"
         | "custom"
+      referral_lead_status:
+        | "new"
+        | "contacted"
+        | "tour_scheduled"
+        | "tour_completed"
+        | "application_pending"
+        | "waitlisted"
+        | "converted"
+        | "lost"
+        | "merged"
       resident_status:
         | "inquiry"
         | "pending_admission"
@@ -10885,12 +11080,24 @@ export const Constants = {
         "closed",
         "cancelled",
       ],
+      pii_access_tier: ["public_summary", "standard_ops", "clinical_precheck"],
       polst_status: ["none", "on_file", "verified", "revoked"],
       premium_allocation_method: [
         "per_licensed_bed",
         "per_census_day",
         "pct_of_premium",
         "custom",
+      ],
+      referral_lead_status: [
+        "new",
+        "contacted",
+        "tour_scheduled",
+        "tour_completed",
+        "application_pending",
+        "waitlisted",
+        "converted",
+        "lost",
+        "merged",
       ],
       resident_status: [
         "inquiry",
