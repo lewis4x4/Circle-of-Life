@@ -76,6 +76,7 @@ Multi-entity architecture, insurance + clinical loop, AI-native workflows, **Flo
 | Area | Status |
 |------|--------|
 | **Phase 1 core specs (00, 03, 04, 07, 11, 16)** | Implemented with migrations, RLS, and admin/caregiver/family routes per `docs/specs/README.md`. |
+| **Phase 1 full acceptance** | **NOT COMPLETE** — engineering baseline is strong, but `docs/specs/PHASE1-CLOSURE-RECORD.md` still requires live RLS validation, real-auth UAT, env/seed proof, and Pro/BAA/PITR attestation. |
 | **RCA persistence** | `incident_rca` (migration `070`); RCA UI reads/writes Postgres — closes waiver **W-RCA-01** (see `docs/specs/PHASE1-WAIVER-LOG.md`). |
 | **Collections** | `collection_activities` admin list + log flow — closes **W-COLL-01**. |
 | **Billing automation** | Shared `src/lib/billing/generate-monthly-invoices.ts`, unique index `071`, Edge Function `generate-monthly-invoices` + cron docs — **W-BILL-EF-01** addressed for monthly generation; AR aging automation remains a follow-up where the spec calls for it. |
@@ -83,6 +84,25 @@ Multi-entity architecture, insurance + clinical loop, AI-native workflows, **Flo
 | **Admin create flows (W-ADMIN-01)** | **`/admin/residents/new`**, **`/admin/staff/new`**, **`/admin/schedules/new`**, **`/admin/certifications/new`**, **`/admin/staffing/new`**, **`/admin/time-records/new`**, **`/admin/billing/rates/new`**; other admin modules may still be list-first where waived. |
 
 For migration counts and environment alignment, use `PHASE1-ENV-CONFIRMATION.md` and Supabase CLI on the target project.
+
+### Completion-first sequencing before future roadmap expansion
+
+Treat the current repo state as **Core shipped across many modules**, not as universal operational completion. Before resuming `093+`, execute the remediation sequence now captured in `docs/specs/README.md`:
+
+1. **Phase 1 acceptance closeout** — RLS JWT matrix, real-auth UAT, env/seed verification, Pro/BAA/PITR attestation, active waiver review.
+2. **Platform hardening** — automated regression coverage, observability, CI hardening, runbooks for cron/secrets/replay.
+3. **Workflow hardening** — billing, eMAR, referral/admission/discharge, family/audit, executive operations.
+4. **Phase 6 completion pass** — deepen training, dietary, transportation, referral CRM, and reputation beyond manual Core flows.
+5. **Only then** resume remaining future modules (`093`–`104`).
+
+Use these delivery states consistently:
+
+- **Spec written**
+- **Core shipped**
+- **Operationally hardened**
+- **Acceptance complete**
+
+This repo should not describe a module as “complete” when the evidence only supports “Core shipped.”
 
 ---
 

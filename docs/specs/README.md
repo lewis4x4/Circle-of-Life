@@ -65,7 +65,9 @@ After this scaffold sprint, resume backend spec implementation in original order
 
 | Status | Meaning |
 |--------|---------|
-| ✅ SHIPPED | Migration applied, UI live, gates passed |
+| ✅ SHIPPED CORE | Migration applied, primary UI live, gates passed |
+| 🟧 HARDENING REQUIRED | Core shipped, but still missing live acceptance proof, automation depth, observability, or workflow hardening required before calling it complete |
+| 🔒 ACCEPTANCE COMPLETE | Live-environment proof recorded: RLS/UAT/ops requirements closed for the target scope |
 | 🟨 DB SHIPPED / UI PENDING | Migration applied remotely; application routes/types still in progress |
 | 🔲 NEXT | Next on the docket — build this when asked "what's next" |
 | ⬜ QUEUED | Spec exists, waiting for predecessor |
@@ -256,11 +258,80 @@ Implement after predecessor migrations and specs exist.
 | 23 | `12-training-competency.md` | Training and Competency | `086`–`087` | ✅ **Spec written.** `competency_demonstrations` (evaluator, skills_json, attachments jsonb); Storage upload UI Enhanced. |
 | 24 | `13-payroll-integration.md` | Payroll Integration | `088` | ✅ **Spec written.** `payroll_export_batches`, `payroll_export_lines` (`idempotency_key` UNIQUE); vendor CSV/API = Enhanced. |
 | 25 | `14-dietary-nutrition.md` | Dietary and Nutrition | `089` | ✅ **Spec written.** `diet_orders`, `iddsi_food_level` / `iddsi_fluid_level`; med cross-check automation Enhanced. |
-| 26 | `15-transportation.md` | Transportation | `090` | `fleet_vehicles`, `vehicle_inspection_logs`, `driver_credentials`. |
+| 26 | `15-transportation.md` | Transportation | `090` | ✅ **Spec written.** `fleet_vehicles`, `vehicle_inspection_logs`, `driver_credentials`; trip scheduling/reminders remain follow-up depth. |
 | 27 | `22-referral-crm.md` | Referral Source CRM | `091` | ✅ **Spec written.** `referral_hl7_inbound` queue; HL7 listener = Enhanced. |
 | 28 | `23-reputation.md` | Reputation Management | `092` | ✅ **Spec written.** `reputation_accounts`, `reputation_replies` (`posted_by_user_id`); API sync = Enhanced. |
 | 29 | `26-digital-twin.md` | Facility Digital Twin | `093` | `twin_scenario_runs` + deterministic seed; **~6 months live data** prerequisite. |
 | 30 | `13-maintenance.md` | Facility Maintenance | `094` | Shares `vendors.id` (Module 19); work orders, PM schedules, building inventory. |
+
+---
+
+### Completion remediation tracks (execute before `093+`, and before calling earlier phases “complete”)
+
+The repo now contains broad **Core-shipped** surface area across Phases 1–6. That is **not** the same as operational readiness or acceptance. Before resuming **`093`** and beyond, execute the remediation tracks below in order.
+
+#### Track A — Phase 1 acceptance closeout (blocking)
+
+Use these authoritative files as the acceptance source of truth:
+
+- [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md)
+- [PHASE1-ACCEPTANCE-CHECKLIST.md](./PHASE1-ACCEPTANCE-CHECKLIST.md)
+- [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md)
+- [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md)
+- [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md)
+
+| Order | Item | Why it blocks completion | Required evidence |
+|-------|------|--------------------------|-------------------|
+| A1 | RLS JWT matrix on target project | Policy existence in migrations is not enough; live tenant isolation must be proven | `PHASE1-RLS-VALIDATION-RECORD.md` = PASS |
+| A2 | Real-auth pilot UAT | UI + routes + gates do not replace operator workflows with real auth/session behavior | `PHASE1-EXECUTION-LOG.md` sections A–E completed |
+| A3 | Environment / seed / facility-context verification | Pilot readiness depends on correct target host, seeded users, and facility selector behavior | `PHASE1-ENV-CONFIRMATION.md` + execution log preconditions |
+| A4 | Pro / BAA / PITR attestation | PHI handling and recovery posture are part of release readiness, not optional follow-up | Owner confirmation in closure docs |
+| A5 | Active waiver review | Remaining waivers must map to named remediation work, not vague backlog language | `PHASE1-WAIVER-LOG.md` reviewed with owner |
+
+**Rule:** Phase 1 remains **NOT COMPLETE** until Track A closes. Do not describe Core-shipped scope as fully accepted before these artifacts are updated.
+
+#### Track B — Platform hardening
+
+Add the missing confidence layers that gates alone do not provide.
+
+| Order | Item | Scope |
+|-------|------|-------|
+| B1 | Automated regression layer | Critical-path browser tests, role/RLS contract checks, and repeatable smoke coverage for pilot workflows |
+| B2 | Observability | Structured logs, error tracking, Edge-function failure visibility, cron/job dashboards, deployment/run health visibility |
+| B3 | CI hardening | Expand beyond `segment:gates`; add selected `--ui` coverage and reduce dependence on visual/a11y-only proof |
+| B4 | Operational runbooks | Secret rotation, cron ownership, replay/failure handling, deployment verification, operator-facing failure paths |
+
+**Rule:** New high-risk modules should not be marked “complete” without test coverage and observable runtime behavior.
+
+#### Track C — Workflow hardening
+
+Deepen the workflows that currently exist as schema + basic UI, but still depend on manual babysitting or deferred automation.
+
+| Order | Workflow area | Required hardening |
+|-------|---------------|--------------------|
+| C1 | Billing and revenue | AR aging automation parity, invoice-to-cash reconciliation proof, blocked-generation visibility, rerun workflow |
+| C2 | Medications / eMAR | Missed-dose / PRN / schedule automation from spec, controlled-substance validation against real procedures |
+| C3 | Referral → admission → discharge | Trace bed, payer, rate, resident conversion, discharge outcomes as one continuous lifecycle |
+| C4 | Family and audit operations | Routine audit review/export workflow, family portal production readiness under PHI constraints |
+| C5 | Executive operations | Snapshot cron ownership, secret setup, alert-evaluator strategy, KPI lineage/data-quality review |
+
+#### Track D — Phase 6 completion pass
+
+Before treating Phase 6 as “done,” revisit the recently shipped Core modules and close the major Enhanced gaps that matter operationally:
+
+- Training: attachment / evidence workflow depth
+- Dietary: medication / texture cross-check automation
+- Transportation: trip scheduling / compliance reminders where required
+- Referral CRM: HL7 listener / parser beyond manual queue ingest
+- Reputation: platform sync / publishing APIs beyond manual tracking
+
+#### Track E — Resume future roadmap modules
+
+Only after Tracks A–D should roadmap execution resume with:
+
+1. `093`–`094` (remaining Phase 6)
+2. Phase 7 (`095`–`097`)
+3. Phase 8 (`098`–`104`)
 
 ---
 
@@ -297,6 +368,9 @@ Implement after predecessor migrations and specs exist.
 | Realtime executive dashboards | Phase 5 Module 24 v2 — private channels + JWT mirroring RLS. |
 | Pre-aggregated KPIs | Phase 3 Module 24 — `exec_kpi_snapshots` + triggers on hot tables. |
 | CI design review routes | Phase 3.5-B — segment gate `DESIGN_REVIEW_ROUTES` per segment. |
+| Automated regression tests | Completion remediation Track B — critical-path browser coverage + role/RLS contract checks before future roadmap expansion. |
+| Observability / error tracking / job visibility | Completion remediation Track B — structured logs, runtime error capture, Edge-function and cron visibility. |
+| Cron ownership / secret rotation / replay runbooks | Completion remediation Track B — operational runbooks for deployed automation. |
 
 ---
 
@@ -353,30 +427,30 @@ Module numbers match the product roadmap, **not** the build sequence. Build orde
 
 | Module # | Name | Phase | Spec file / status |
 |----------|------|-------|-------------------|
-| 1 | Referral & Inquiry Management | 4 | `01-referral-inquiry.md` — ✅ spec written; implementation queued |
-| 2 | Admissions & Move-In | 4 | `02-admissions-move-in.md` |
+| 1 | Referral & Inquiry Management | 4 | `01-referral-inquiry.md` — ✅ Core (`075`–`076`); lifecycle hardening remains in Completion Track C |
+| 2 | Admissions & Move-In | 4 | `02-admissions-move-in.md` — ✅ Core (`077`–`078`); lifecycle hardening remains in Completion Track C |
 | 3 | Resident Profile & Care Planning | 1 + 2 (adv) | `03-resident-profile.md`, `03-resident-profile-advanced.md` — ✅ |
 | 4 | Daily Operations & Logging | 1 + 3.5 offline | `04-daily-operations.md` — ✅; `04-daily-operations-offline.md` — placeholder |
-| 5 | Discharge & Transition | 4 | `05-discharge-transition.md` |
+| 5 | Discharge & Transition | 4 | `05-discharge-transition.md` — ✅ Core (`079`–`080`); export / lifecycle hardening remains in Completion Track C |
 | 6 | Medication Management | 1 (in 04) + 2 (adv) + 3.5 patch | Basic in `04`; `06-medication-management.md` — ✅; Phase 3.5 `062` |
 | 7 | Incident & Risk Management | 1 + 3.5 patch | `07-incident-reporting.md` — ✅; Phase 3.5 `058` |
 | 8 | Autonomous Compliance Engine | 2 + 3.5 patch | `08-compliance-engine.md` — ✅; Phase 3.5 `064` |
 | 9 | Infection Control & Health Monitoring | 2 + 3.5 patch | `09-infection-control.md` — ✅; Phase 3.5 `063` |
-| 10 | Quality Metrics & Outcomes | 5 | `10-quality-metrics.md` |
+| 10 | Quality Metrics & Outcomes | 5 | `10-quality-metrics.md` — ✅ Core (`081`–`082`) |
 | 11 | Staff Management & Scheduling | 1 + 3.5 patch | `11-staff-management.md` — ✅; Phase 3.5 `059` |
-| 12 | Training & Competency Management | 6 | `12-training-competency.md` — ✅ Core (`086`–`087`) |
+| 12 | Training & Competency Management | 6 | `12-training-competency.md` — ✅ Core (`086`–`087`); operational depth in Completion Track D |
 | 13 | Facility Maintenance & Environment | 6 | `13-maintenance.md` — not yet written |
-| 14 | Dietary & Nutrition Management | 6 | `14-dietary-nutrition.md` — ✅ Core (`089`) |
-| 15 | Transportation & Appointments | 6 | `15-transportation.md` — ✅ Core (`090`) |
+| 14 | Dietary & Nutrition Management | 6 | `14-dietary-nutrition.md` — ✅ Core (`089`); workflow depth in Completion Track D |
+| 15 | Transportation & Appointments | 6 | `15-transportation.md` — ✅ Core (`090`); workflow depth in Completion Track D |
 | 16 | Resident Billing & Collections | 1 + 3.5 patch | `16-billing.md` — ✅; Phase 3.5 `060` |
 | 17 | Entity & Facility Finance | 3 + 3.5 patch | `17-entity-facility-finance.md` — ✅ Core; Enhanced `048` + `065` |
 | 18 | Insurance & Risk Finance | 3 + 3.5 patch | `18-insurance-risk-finance.md` — ✅ Core; Enhanced `049` + `066` |
 | 19 | Vendor & Contract Management | 3 + 3.5 patch | `19-vendor-contract-management.md` — ✅; Phase 3.5 `067` |
 | 20 | Expansion & Acquisition Planning | 7 | `20-expansion-acquisition.md` — not yet written |
-| 21 | Family Portal | 5 | `21-family-portal.md` — ✅ Core (`083`–`084`) |
-| 22 | Referral Source CRM | 6 | `22-referral-crm.md` — ✅ Core (`091`) |
-| 23 | Reputation & Online Presence | 6 | `23-reputation.md` — ✅ Core (`092`) |
-| 24 | Executive Intelligence Layer | 3 (v1) + 5 (v2) | `24-executive-intelligence.md` — 🟩 Core UI (`047`); v2: `24-executive-v2.md` — ✅ Core schema + admin (`085`) |
+| 21 | Family Portal | 5 | `21-family-portal.md` — ✅ Core (`083`–`084`); PHI / production readiness remains in Completion Track C |
+| 22 | Referral Source CRM | 6 | `22-referral-crm.md` — ✅ Core (`091`); HL7 automation remains in Completion Track D |
+| 23 | Reputation & Online Presence | 6 | `23-reputation.md` — ✅ Core (`092`); API sync remains in Completion Track D |
+| 24 | Executive Intelligence Layer | 3 (v1) + 5 (v2) | `24-executive-intelligence.md` — 🟩 Core UI (`047`); v2: `24-executive-v2.md` — ✅ Core schema + admin (`085`); operational hardening remains in Completion Track C |
 | 25 | Ambient Environment Intelligence | 8 | `25-ambient-intelligence.md` — not yet written (`098`–`099`) |
 | 26 | Facility Digital Twin | 6 | `26-digital-twin.md` — not yet written |
 | 27 | Regulatory Intelligence & Arbitrage | 7 | `27-regulatory-intelligence.md` — not yet written |

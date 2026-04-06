@@ -4,7 +4,7 @@
 
 **Do not overstate:** This document must distinguish **automated/repo verification** from **live UAT + RLS + production compliance**.
 
-**Last updated:** 2026-04-05 — engineering baseline + UI gates; **remote migrations 001–069** and Edge Functions deploy verified via Supabase CLI (see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md)).
+**Last updated:** 2026-04-06 — engineering baseline + UI gates remain PASS; **remote migrations 001–092** and Edge Functions deploy verified via Supabase CLI. Phase 1 acceptance blockers remain open; remediation sequence now mirrors [README.md](./README.md).
 
 ---
 
@@ -14,7 +14,7 @@
 |-----------|---------------------|
 | **Engineering baseline** (lint, build, migration replay, secrets, audit, segment gates) | **PASS** — see § Gate evidence |
 | **Target `.env` / Supabase project alignment** | **VERIFY** — canonical URL in [README.md](./README.md); owner confirms `.env.local` host; [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
-| **Remote migrations aligned** | **PASS** — `supabase migration list` Local/Remote **001–069** (2026-04-05); `db push` up to date |
+| **Remote migrations aligned** | **PASS** — `supabase migration list` Local/Remote **001–092** (2026-04-06); `db push` up to date |
 | **Seeded users (admin / caregiver / family) + facility context** | **PENDING** — owner UAT / [DEMO-SEED-RUNBOOK.md](./DEMO-SEED-RUNBOOK.md) |
 | **Checklist §A–F (real auth)** | **PENDING** — [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) |
 | **RLS matrix** | **PENDING** — [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md); procedure [PHASE1-RLS-MANUAL-PROCEDURE.md](./PHASE1-RLS-MANUAL-PROCEDURE.md) |
@@ -29,10 +29,25 @@
 
 1. **RLS:** Execute **RLS-01–07** on target project with real JWTs; record **PASS** in [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md).
 2. **UAT:** Complete [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) sections A–D and manual E rows with real auth.
-3. **Production compliance:** Owner confirms Pro / BAA / PITR in dashboard.
-4. **Environment:** Owner confirms `.env.local` host matches canonical project ([PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md)); demo seed + facility selector / **PH1-P03–P04** per execution log.
+3. **Environment / seed / facility context:** Owner confirms `.env.local` host matches canonical project ([PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md)); demo seed + facility selector / **PH1-P03–P04** per execution log.
+4. **Production compliance:** Owner confirms Pro / BAA / PITR in dashboard.
+5. **Waiver review:** Confirm remaining waiver scope in [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) still matches pilot reality and has a named remediation path.
 
 **Waivers alone do not close Phase 1** while RLS or checklist UAT remain open.
+
+---
+
+## Formal remediation sequence
+
+Phase 1 closeout is now the first blocking track in [README.md](./README.md) under **Completion remediation tracks**. Follow that sequence before resuming roadmap expansion or describing prior work as complete:
+
+1. RLS JWT matrix on target
+2. Real-auth pilot UAT
+3. Environment / seed / facility-context verification
+4. Pro / BAA / PITR attestation
+5. Active waiver review
+
+This closure record remains the authoritative verdict source for Phase 1 acceptance.
 
 ---
 
@@ -55,7 +70,7 @@
 
 ### Owner-only (not replaced by gates)
 
-UAT ([PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md)), RLS ([PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md)), Pro/BAA/PITR dashboard checks, and **remote** migration parity remain **required** for full acceptance above.
+UAT ([PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md)), RLS ([PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md)), env/seed verification, Pro/BAA/PITR dashboard checks, waiver review, and **remote** migration parity remain **required** for full acceptance above.
 
 ---
 
@@ -67,18 +82,20 @@ UAT ([PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md)), RLS ([PHASE1-RLS-VAL
 | **risk** | Accepted gaps waived with owner/expiry/remediation; or minor follow-ups documented; or **blockers remain** for full acceptance. |
 | **fail** | Block release: critical RLS or auth issue unfixed. |
 
-**Current (2026-04-05):** **risk** — Engineering baseline (including 2026-04-05 segment gates) and Phase 1 **gap waivers** are documented; **residual risk** until remote migrations match pilot intent, RLS matrix passes on target, and checklist UAT completes. Aligns with mission (secure, role-governed data layer; resident safety; regulatory readiness) **in intent**; **live verification** still outstanding.
+**Current (2026-04-06):** **risk** — Engineering baseline and remote migration parity are documented, but **residual risk** remains until RLS matrix passes on target, checklist UAT completes, env/seed proof is recorded, dashboard compliance is attested, and the active waiver is re-validated against pilot scope. Aligns with mission (secure, role-governed data layer; resident safety; regulatory readiness) **in intent**; **live verification** remains outstanding.
 
-**Sentence:** Shipped scope supports Haven’s north star; **full acceptance** requires closing migration alignment, RLS proof, dashboard compliance attestation, and checklist rows per [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md).
+**Sentence:** Shipped scope supports Haven’s north star; **full acceptance** now explicitly depends on the remediation sequence in [README.md](./README.md): RLS proof, real-auth UAT, env/seed verification, dashboard compliance attestation, and waiver review.
 
 ---
 
 ## When Phase 1 can be marked “fully accepted”
 
 1. **RLS** verdict **PASS** in [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md).
-3. **Execution log:** All applicable rows **PASS** or **WAIVED** (waivers already filed for §F).
-4. **PH1-P06** and **PH1-P03–P04** owner-confirmed.
-5. Mission alignment **pass** or **risk** (not fail).
+2. **Execution log:** All applicable rows **PASS** or **WAIVED** (waivers already filed for §F).
+3. **PH1-P06** and **PH1-P03–P04** owner-confirmed.
+4. **Dashboard compliance:** Pro / BAA / PITR attested.
+5. **Waiver review:** Remaining waiver scope still accepted with remediation path.
+6. Mission alignment **pass** or **risk** (not fail).
 
 Then set **Overall Phase 1 full acceptance** below to **PASS** or **PASS WITH WAIVERS**.
 
@@ -87,6 +104,7 @@ Then set **Overall Phase 1 full acceptance** below to **PASS** or **PASS WITH WA
 | 2026-04-05 | **NOT COMPLETE** — hand-off structure; UAT/RLS/compliance pending | — |
 | 2026-04-06 | **NOT COMPLETE** — baseline + waivers + env/CLI gap documented; RLS + UAT + remote migrations + dashboard compliance pending | Brian Lewis (review) |
 | 2026-04-05 | **NOT COMPLETE** — automated gates refreshed (`phase1-closeout-2026-04-05`); human blockers unchanged | Agent (repo) |
+| 2026-04-06 | **NOT COMPLETE** — remote migrations now aligned through `092`, but acceptance blockers still governed by the remediation sequence in `README.md` | Agent (repo) |
 
 ---
 

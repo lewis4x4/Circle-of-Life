@@ -20,9 +20,22 @@
 
 | ID | Gap | Owner | Reason | Expiry | Remediation issue | Approved date |
 |----|-----|-------|--------|--------|-------------------|---------------|
-| W-ADMIN-01 | Some admin pages list-heavy without create wizards | Brian Lewis | Milestone = run daily ops on seeded data; wizards added incrementally | 2026-10-01 | Per-module UX backlog — **partial:** `/admin/residents/new`, `/admin/staff/new`, `/admin/schedules/new`, `/admin/certifications/new`, `/admin/staffing/new` (migration `072`), `/admin/time-records/new` (migration `073`), `/admin/billing/rates/new` (`rate_schedules` insert via existing RLS); other modules remain | 2026-04-06 |
+| W-ADMIN-01 | Some admin pages list-heavy without create wizards | Brian Lewis | Milestone = run daily ops on seeded data; wizards added incrementally | 2026-10-01 | Completion remediation queue — Workflow Hardening / Phase 6 Completion Pass in `docs/specs/README.md`; **partial:** `/admin/residents/new`, `/admin/staff/new`, `/admin/schedules/new`, `/admin/certifications/new`, `/admin/staffing/new` (migration `072`), `/admin/time-records/new` (migration `073`), `/admin/billing/rates/new` (`rate_schedules` insert via existing RLS); other modules remain | 2026-04-06 |
 
 **Note:** Replace remediation **TBD** with real issue URLs when filed.
+
+---
+
+## Roadmap linkage
+
+Active waivers are not free-floating backlog. They must map to the **Completion remediation tracks** in [README.md](./README.md):
+
+1. Phase 1 acceptance closeout
+2. Platform hardening
+3. Workflow hardening
+4. Phase 6 completion pass
+
+`W-ADMIN-01` currently belongs to the **Workflow hardening** queue and the **Phase 6 completion pass** for list-first modules that still need operator-grade create/edit flows.
 
 ---
 
