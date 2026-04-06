@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, GitBranch, Save } from "lucide-react";
+import { ArrowLeft, CheckCircle2, GitBranch, RotateCcw, Save } from "lucide-react";
 
 import { AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,11 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const STORAGE_PREFIX = "haven-rca-draft-v1:";
+
+/** Minimum content before attesting investigation complete (UAT / audit bar). */
+const MIN_ROOT_LEN = 40;
+const MIN_CORRECTIVE_LEN = 30;
+const MIN_PREVENTATIVE_LEN = 30;
 
 type FactorGroup = {
   title: string;
@@ -85,6 +90,28 @@ type IncidentMini = {
   contributing_factors: string[] | null;
 };
 
+function validateRcaCompletion(d: {
+  selectedCount: number;
+  rootCauseNarrative: string;
+  correctiveActions: string;
+  preventativeActions: string;
+}): string[] {
+  const errors: string[] = [];
+  if (d.selectedCount < 1) {
+    errors.push("Select at least one contributing factor.");
+  }
+  if (d.rootCauseNarrative.trim().length < MIN_ROOT_LEN) {
+    errors.push(`Root cause narrative must be at least ${MIN_ROOT_LEN} characters.`);
+  }
+  if (d.correctiveActions.trim().length < MIN_CORRECTIVE_LEN) {
+    errors.push(`Corrective actions must be at least ${MIN_CORRECTIVE_LEN} characters.`);
+  }
+  if (d.preventativeActions.trim().length < MIN_PREVENTATIVE_LEN) {
+    errors.push(`Preventative actions must be at least ${MIN_PREVENTATIVE_LEN} characters.`);
+  }
+  return errors;
+}
+
 export default function AdminIncidentRcaPage() {
   const params = useParams();
   const rawId = params?.id;
@@ -102,14 +129,25 @@ export default function AdminIncidentRcaPage() {
   const [preventativeActions, setPreventativeActions] = useState("");
   const [savedFlash, setSavedFlash] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [investigationStatus, setInvestigationStatus] = useState<"none" | "draft" | "complete">("none");
+  const [completedAt, setCompletedAt] = useState<string | null>(null);
+  const [completerName, setCompleterName] = useState<string | null>(null);
+  const [completing, setCompleting] = useState(false);
+  const [reopening, setReopening] = useState(false);
+  const [completionErrors, setCompletionErrors] = useState<string[]>([]);
 
   const storageKey = `${STORAGE_PREFIX}${incidentId}`;
+  const locked = investigationStatus === "complete";
 
   const loadIncident = useCallback(async () => {
     setLoading(true);
     setError(null);
     setNotFound(false);
     setIncident(null);
+    setInvestigationStatus("none");
+    setCompletedAt(null);
+    setCompleterName(null);
+    setCompletionErrors([]);
 
     if (!incidentId || !UUID_RE.test(incidentId)) {
       setNotFound(true);
@@ -145,7 +183,7 @@ export default function AdminIncidentRcaPage() {
       const rcaRes = (await supabase
         .from("incident_rca" as never)
         .select(
-          "contributing_factor_tags, root_cause_narrative, corrective_actions, preventative_actions",
+          "contributing_factor_tags, root_cause_narrative, corrective_actions, preventative_actions, investigation_status, completed_at, completed_by",
         )
         .eq("incident_id", row.id)
         .maybeSingle()) as unknown as QueryResult<{
@@ -153,6 +191,9 @@ export default function AdminIncidentRcaPage() {
         root_cause_narrative: string | null;
         corrective_actions: string | null;
         preventative_actions: string | null;
+        investigation_status: string | null;
+        completed_at: string | null;
+        completed_by: string | null;
       }>;
 
       if (rcaRes.error) throw rcaRes.error;
@@ -189,6 +230,28 @@ export default function AdminIncidentRcaPage() {
       setRootCauseNarrative(narrative);
       setCorrectiveActions(corrective);
       setPreventativeActions(preventative);
+
+      if (rca) {
+        const inv = rca.investigation_status === "complete" ? "complete" : "draft";
+        setInvestigationStatus(inv);
+        setCompletedAt(rca.completed_at);
+        if (rca.completed_by) {
+          const prof = (await supabase
+            .from("user_profiles" as never)
+            .select("full_name")
+            .eq("id", rca.completed_by)
+            .maybeSingle()) as unknown as QueryResult<{ full_name: string | null }>;
+          if (prof.error) throw prof.error;
+          setCompleterName(prof.data?.full_name?.trim() || "Staff");
+        } else {
+          setCompleterName(null);
+        }
+      } else {
+        setInvestigationStatus("none");
+        setCompletedAt(null);
+        setCompleterName(null);
+      }
+      setCompletionErrors([]);
     } catch {
       setError("Could not load this incident for RCA.");
     } finally {
@@ -210,7 +273,7 @@ export default function AdminIncidentRcaPage() {
   };
 
   const saveRca = useCallback(async () => {
-    if (!incident) return;
+    if (!incident || locked) return;
     setSaving(true);
     setError(null);
     try {
@@ -257,10 +320,13 @@ export default function AdminIncidentRcaPage() {
       } else {
         const ins = (await supabase.from("incident_rca" as never).insert({
           ...payload,
+          investigation_status: "draft",
           created_by: user.id,
         } as never)) as unknown as QueryResult<unknown>;
         if (ins.error) throw ins.error;
       }
+
+      setInvestigationStatus("draft");
 
       if (typeof window !== "undefined") {
         try {
@@ -278,12 +344,148 @@ export default function AdminIncidentRcaPage() {
     }
   }, [
     incident,
+    locked,
     selected,
     rootCauseNarrative,
     correctiveActions,
     preventativeActions,
     storageKey,
   ]);
+
+  const completeInvestigation = useCallback(async () => {
+    if (!incident || locked) return;
+    const errs = validateRcaCompletion({
+      selectedCount: selected.size,
+      rootCauseNarrative,
+      correctiveActions,
+      preventativeActions,
+    });
+    if (errs.length) {
+      setCompletionErrors(errs);
+      return;
+    }
+    setCompletionErrors([]);
+    setCompleting(true);
+    setError(null);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user?.id) {
+        setError("You must be signed in to complete the investigation.");
+        return;
+      }
+
+      const now = new Date().toISOString();
+      const content = {
+        contributing_factor_tags: [...selected],
+        root_cause_narrative: rootCauseNarrative,
+        corrective_actions: correctiveActions,
+        preventative_actions: preventativeActions,
+      };
+
+      const existing = (await supabase
+        .from("incident_rca" as never)
+        .select("id")
+        .eq("incident_id", incident.id)
+        .maybeSingle()) as unknown as QueryResult<{ id: string }>;
+
+      if (existing.error) throw existing.error;
+
+      if (existing.data?.id) {
+        const up = (await supabase
+          .from("incident_rca" as never)
+          .update({
+            ...content,
+            investigation_status: "complete",
+            completed_at: now,
+            completed_by: user.id,
+            updated_by: user.id,
+          } as never)
+          .eq("id", existing.data.id)) as unknown as QueryResult<unknown>;
+        if (up.error) throw up.error;
+      } else {
+        const ins = (await supabase.from("incident_rca" as never).insert({
+          incident_id: incident.id,
+          organization_id: incident.organization_id,
+          facility_id: incident.facility_id,
+          ...content,
+          investigation_status: "complete",
+          completed_at: now,
+          completed_by: user.id,
+          created_by: user.id,
+          updated_by: user.id,
+        } as never)) as unknown as QueryResult<unknown>;
+        if (ins.error) throw ins.error;
+      }
+
+      setInvestigationStatus("complete");
+      setCompletedAt(now);
+      const prof = (await supabase
+        .from("user_profiles" as never)
+        .select("full_name")
+        .eq("id", user.id)
+        .maybeSingle()) as unknown as QueryResult<{ full_name: string | null }>;
+      setCompleterName(prof.data?.full_name?.trim() || "Staff");
+
+      if (typeof window !== "undefined") {
+        try {
+          window.localStorage.removeItem(storageKey);
+        } catch {
+          /* ignore */
+        }
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not complete investigation.");
+    } finally {
+      setCompleting(false);
+    }
+  }, [
+    incident,
+    locked,
+    selected,
+    rootCauseNarrative,
+    correctiveActions,
+    preventativeActions,
+    storageKey,
+  ]);
+
+  const reopenInvestigation = useCallback(async () => {
+    if (!incident || investigationStatus !== "complete") return;
+    setReopening(true);
+    setError(null);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user?.id) {
+        setError("You must be signed in to reopen the investigation.");
+        return;
+      }
+
+      const up = (await supabase
+        .from("incident_rca" as never)
+        .update({
+          investigation_status: "draft",
+          completed_at: null,
+          completed_by: null,
+          updated_by: user.id,
+        } as never)
+        .eq("incident_id", incident.id)) as unknown as QueryResult<unknown>;
+      if (up.error) throw up.error;
+
+      setInvestigationStatus("draft");
+      setCompletedAt(null);
+      setCompleterName(null);
+      setCompletionErrors([]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not reopen investigation.");
+    } finally {
+      setReopening(false);
+    }
+  }, [incident, investigationStatus]);
 
   const textareaClass = cn(
     "min-h-[120px] w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm shadow-sm outline-none transition-colors",
@@ -360,27 +562,124 @@ export default function AdminIncidentRcaPage() {
                 Root cause workspace
               </h1>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                Structured RCA per spec 07 — saved to the incident record (audit trail on save).
+                Structured RCA per spec 07 — persisted on save; marking complete records operator attestation (not a
+                regulatory sign-off).
               </p>
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <Badge variant="outline" className="font-mono text-xs">
             {incident.incident_number}
           </Badge>
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => void saveRca()}
-            disabled={saving}
-            className="gap-1.5"
-          >
-            <Save className="h-3.5 w-3.5" />
-            {savedFlash ? "Saved" : saving ? "Saving…" : "Save"}
-          </Button>
+          {investigationStatus === "complete" ? (
+            <Badge
+              variant="outline"
+              className="border-emerald-300/60 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
+            >
+              Investigation complete
+            </Badge>
+          ) : investigationStatus === "draft" ? (
+            <Badge variant="outline" className="font-normal">
+              Draft
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="font-normal text-slate-500">
+              Not saved
+            </Badge>
+          )}
+          {!locked ? (
+            <>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => void saveRca()}
+                disabled={saving}
+                className="gap-1.5"
+              >
+                <Save className="h-3.5 w-3.5" />
+                {savedFlash ? "Saved" : saving ? "Saving…" : "Save draft"}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => void completeInvestigation()}
+                disabled={completing}
+                className="gap-1.5"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                {completing ? "Completing…" : "Mark investigation complete"}
+              </Button>
+            </>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => void reopenInvestigation()}
+              disabled={reopening}
+              className="gap-1.5"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              {reopening ? "Reopening…" : "Reopen for edits"}
+            </Button>
+          )}
         </div>
       </div>
+
+      {locked && completedAt ? (
+        <Card className="border-emerald-200/80 bg-emerald-50/40 dark:border-emerald-900/50 dark:bg-emerald-950/25">
+          <CardContent className="py-4 text-sm text-emerald-950 dark:text-emerald-100">
+            <p className="font-medium">This investigation is marked complete.</p>
+            <p className="mt-1 text-emerald-900/90 dark:text-emerald-200/90">
+              {new Intl.DateTimeFormat("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+              }).format(new Date(completedAt))}
+              {completerName ? ` · ${completerName}` : ""}
+            </p>
+            <p className="mt-2 text-xs text-emerald-900/80 dark:text-emerald-300/80">
+              Reopen only if corrections are required; changes after completion should be rare and documented in
+              follow-up tasks when applicable.
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {completionErrors.length > 0 ? (
+        <Card className="border-amber-200/80 bg-amber-50/50 dark:border-amber-900/40 dark:bg-amber-950/20">
+          <CardContent className="py-3 text-sm text-amber-950 dark:text-amber-100">
+            <p className="font-medium">Before you can mark complete:</p>
+            <ul className="mt-2 list-inside list-disc space-y-1 text-amber-900/90 dark:text-amber-200/90">
+              {completionErrors.map((msg) => (
+                <li key={msg}>{msg}</li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {!locked ? (
+        <Card className="border-slate-200/70 dark:border-slate-800">
+          <CardHeader className="pb-2">
+            <CardTitle className="font-display text-base">Completion checklist</CardTitle>
+            <CardDescription>All items must pass to attest investigation complete (UAT / audit bar).</CardDescription>
+          </CardHeader>
+          <CardContent className="text-sm text-slate-700 dark:text-slate-300">
+            <ul className="list-inside list-disc space-y-1">
+              <li>At least one contributing factor selected ({selected.size} selected)</li>
+              <li>Root cause narrative ≥ {MIN_ROOT_LEN} characters (currently {rootCauseNarrative.trim().length})</li>
+              <li>Corrective actions ≥ {MIN_CORRECTIVE_LEN} characters (currently {correctiveActions.trim().length})</li>
+              <li>Preventative actions ≥ {MIN_PREVENTATIVE_LEN} characters (currently{" "}
+              {preventativeActions.trim().length})</li>
+            </ul>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card className="border-slate-200/70 shadow-soft dark:border-slate-800">
         <CardHeader>
@@ -423,6 +722,7 @@ export default function AdminIncidentRcaPage() {
                     type="checkbox"
                     className="mt-0.5 size-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
                     checked={selected.has(opt.id)}
+                    disabled={locked}
                     onChange={() => toggle(opt.id)}
                   />
                   <span>{opt.label}</span>
@@ -446,6 +746,7 @@ export default function AdminIncidentRcaPage() {
             <textarea
               className={cn(textareaClass, "mt-1.5 min-h-[100px]")}
               value={rootCauseNarrative}
+              disabled={locked}
               onChange={(e) => setRootCauseNarrative(e.target.value)}
               placeholder="Summarize the most likely root cause chain…"
             />
@@ -457,6 +758,7 @@ export default function AdminIncidentRcaPage() {
             <textarea
               className={cn(textareaClass, "mt-1.5")}
               value={correctiveActions}
+              disabled={locked}
               onChange={(e) => setCorrectiveActions(e.target.value)}
               placeholder="What will be done now to stabilize risk…"
             />
@@ -468,6 +770,7 @@ export default function AdminIncidentRcaPage() {
             <textarea
               className={cn(textareaClass, "mt-1.5")}
               value={preventativeActions}
+              disabled={locked}
               onChange={(e) => setPreventativeActions(e.target.value)}
               placeholder="Policy, training, environment, or monitoring changes…"
             />

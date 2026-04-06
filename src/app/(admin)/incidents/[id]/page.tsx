@@ -86,6 +86,8 @@ type QueryError = { message: string };
 type QueryResult<T> = { data: T | null; error: QueryError | null };
 type QueryListResult<T> = { data: T[] | null; error: QueryError | null };
 
+type RcaInvestigationUi = "none" | "draft" | "complete";
+
 type DetailView = {
   incident: SupabaseIncident;
   residentName: string | null;
@@ -93,6 +95,7 @@ type DetailView = {
   categoryUi: IncidentCategoryUi;
   severityUi: IncidentSeverityUi;
   statusUi: IncidentStatusUi;
+  rcaInvestigation: RcaInvestigationUi;
   followups: Array<{
     id: string;
     taskType: string;
@@ -193,7 +196,8 @@ export default function AdminIncidentDetailPage() {
     );
   }
 
-  const { incident, residentName, reporterName, categoryUi, severityUi, statusUi, followups } = detail;
+  const { incident, residentName, reporterName, categoryUi, severityUi, statusUi, rcaInvestigation, followups } =
+    detail;
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -232,16 +236,32 @@ export default function AdminIncidentDetailPage() {
           </div>
         </div>
         <div className="flex flex-col items-stretch gap-2 sm:items-end">
-          <Link
-            href={`/admin/incidents/${incident.id}/rca`}
-            className={cn(
-              buttonVariants({ variant: "outline", size: "sm" }),
-              "border-violet-200 bg-violet-50/50 text-violet-900 dark:border-violet-900/50 dark:bg-violet-950/30 dark:text-violet-100",
+          <div className="flex flex-col items-end gap-1.5">
+            <Link
+              href={`/admin/incidents/${incident.id}/rca`}
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "border-violet-200 bg-violet-50/50 text-violet-900 dark:border-violet-900/50 dark:bg-violet-950/30 dark:text-violet-100",
+              )}
+            >
+              <GitBranch className="mr-2 h-3.5 w-3.5" />
+              Root cause workspace
+            </Link>
+            {rcaInvestigation === "complete" ? (
+              <Badge
+                variant="outline"
+                className="border-emerald-300/60 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
+              >
+                RCA investigation complete
+              </Badge>
+            ) : rcaInvestigation === "draft" ? (
+              <Badge variant="outline" className="font-normal text-slate-600 dark:text-slate-400">
+                RCA in progress
+              </Badge>
+            ) : (
+              <span className="text-xs text-slate-500 dark:text-slate-400">No RCA record yet</span>
             )}
-          >
-            <GitBranch className="mr-2 h-3.5 w-3.5" />
-            Root cause workspace
-          </Link>
+          </div>
           {incident.resident_id && residentName ? (
             <Link
               href={`/admin/residents/${incident.resident_id}`}
@@ -553,6 +573,18 @@ async function fetchIncidentDetail(
     assignee: f.assigned_to ? assigneeById.get(f.assigned_to) ?? "Assigned" : "",
   }));
 
+  const rcaResult = (await supabase
+    .from("incident_rca" as never)
+    .select("investigation_status")
+    .eq("incident_id", incidentId)
+    .maybeSingle()) as unknown as QueryResult<{ investigation_status: string }>;
+
+  if (rcaResult.error) throw rcaResult.error;
+  let rcaInvestigation: RcaInvestigationUi = "none";
+  if (rcaResult.data) {
+    rcaInvestigation = rcaResult.data.investigation_status === "complete" ? "complete" : "draft";
+  }
+
   return {
     incident,
     residentName,
@@ -560,6 +592,7 @@ async function fetchIncidentDetail(
     categoryUi: mapDbCategoryToUi(incident.category),
     severityUi: mapDbSeverityToUi(incident.severity),
     statusUi: mapDbStatusToUi(incident.status),
+    rcaInvestigation,
     followups,
   };
 }
