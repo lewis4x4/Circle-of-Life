@@ -12,19 +12,12 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { canMutateFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { dollarsToCents } from "@/lib/money/dollars-to-cents";
 import { Constants } from "@/types/database";
 import type { Database } from "@/types/database";
 
 type PolicyInsert = Database["public"]["Tables"]["insurance_policies"]["Insert"];
 type EntityMini = { id: string; name: string };
-
-function dollarsToCents(raw: string): number | null {
-  const t = raw.trim();
-  if (!t) return null;
-  const n = Number.parseFloat(t);
-  if (Number.isNaN(n)) return null;
-  return Math.round(n * 100);
-}
 
 export default function NewInsurancePolicyPage() {
   const supabase = createClient();

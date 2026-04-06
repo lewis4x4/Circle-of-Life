@@ -11,25 +11,12 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
+import { dollarsToCents, dollarsToCentsOrZero, requiredPositiveCents } from "@/lib/money/dollars-to-cents";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
 import { BillingHubNav } from "../../billing-hub-nav";
 
 type QueryError = { message: string; code?: string };
-
-function dollarsToCents(raw: string): number | null {
-  const t = raw.trim();
-  if (!t) return null;
-  const n = Number.parseFloat(t.replace(/[$,]/g, ""));
-  if (!Number.isFinite(n) || n < 0) return null;
-  return Math.round(n * 100);
-}
-
-function requiredPositiveCents(raw: string): number | null {
-  const c = dollarsToCents(raw);
-  if (c === null || c < 1) return null;
-  return c;
-}
 
 export default function AdminNewRateSchedulePage() {
   const supabase = useMemo(() => createClient(), []);
@@ -86,9 +73,9 @@ export default function AdminNewRateSchedulePage() {
       return;
     }
 
-    const l1 = dollarsToCents(careL1) ?? 0;
-    const l2 = dollarsToCents(careL2) ?? 0;
-    const l3 = dollarsToCents(careL3) ?? 0;
+    const l1 = dollarsToCentsOrZero(careL1);
+    const l2 = dollarsToCentsOrZero(careL2);
+    const l3 = dollarsToCentsOrZero(careL3);
     const semi = baseSemi.trim() ? dollarsToCents(baseSemi) : null;
     const comm = communityFee.trim() ? dollarsToCents(communityFee) : null;
     if (baseSemi.trim() && semi === null) {
