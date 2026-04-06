@@ -1893,6 +1893,82 @@ export type Database = {
           },
         ]
       }
+      competency_demonstrations: {
+        Row: {
+          attachments: Json
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          demonstrated_at: string
+          evaluator_user_id: string
+          facility_id: string
+          id: string
+          notes: string | null
+          organization_id: string
+          skills_json: Json
+          staff_id: string
+          status: Database["public"]["Enums"]["competency_demonstration_status"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          attachments?: Json
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          demonstrated_at?: string
+          evaluator_user_id: string
+          facility_id: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          skills_json?: Json
+          staff_id: string
+          status?: Database["public"]["Enums"]["competency_demonstration_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          attachments?: Json
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          demonstrated_at?: string
+          evaluator_user_id?: string
+          facility_id?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          skills_json?: Json
+          staff_id?: string
+          status?: Database["public"]["Enums"]["competency_demonstration_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competency_demonstrations_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competency_demonstrations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competency_demonstrations_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compliance_survey_visit_notes: {
         Row: {
           body: string
@@ -11300,6 +11376,12 @@ export type Database = {
         | "other"
       care_plan_status: "draft" | "active" | "under_review" | "archived"
       certification_status: "active" | "expired" | "pending_renewal" | "revoked"
+      competency_demonstration_status:
+        | "draft"
+        | "submitted"
+        | "passed"
+        | "failed"
+        | "voided"
       coi_holder_type: "vendor" | "landlord" | "lender" | "other"
       contract_alert_status:
         | "pending"
@@ -11743,6 +11825,7 @@ export const Constants = {
       ],
       care_plan_status: ["draft", "active", "under_review", "archived"],
       certification_status: ["active", "expired", "pending_renewal", "revoked"],
+      competency_demonstration_status: ["draft", "submitted", "passed", "failed", "voided"],
       coi_holder_type: ["vendor", "landlord", "lender", "other"],
       contract_alert_status: [
         "pending",

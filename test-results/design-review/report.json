@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-04-06T14:42:57.280Z",
+  "timestamp": "2026-04-06T14:48:18.571Z",
   "baseUrl": "http://127.0.0.1:4310",
   "routes": [
-    "/admin/executive/nlq",
-    "/admin/executive/scenarios"
+    "/admin/training",
+    "/admin/training/new"
   ],
   "viewports": [
     "375",
@@ -13,68 +13,68 @@
   ],
   "shots": [
     {
-      "route": "/admin/executive/nlq",
+      "route": "/admin/training",
       "viewport": "375",
-      "url": "http://127.0.0.1:4310/admin/executive/nlq",
+      "url": "http://127.0.0.1:4310/admin/training",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_executive_nlq-375.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_training-375.png"
     },
     {
-      "route": "/admin/executive/nlq",
+      "route": "/admin/training",
       "viewport": "768",
-      "url": "http://127.0.0.1:4310/admin/executive/nlq",
+      "url": "http://127.0.0.1:4310/admin/training",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_executive_nlq-768.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_training-768.png"
     },
     {
-      "route": "/admin/executive/nlq",
+      "route": "/admin/training",
       "viewport": "1024",
-      "url": "http://127.0.0.1:4310/admin/executive/nlq",
+      "url": "http://127.0.0.1:4310/admin/training",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_executive_nlq-1024.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_training-1024.png"
     },
     {
-      "route": "/admin/executive/nlq",
+      "route": "/admin/training",
       "viewport": "1440",
-      "url": "http://127.0.0.1:4310/admin/executive/nlq",
+      "url": "http://127.0.0.1:4310/admin/training",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_executive_nlq-1440.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_training-1440.png"
     },
     {
-      "route": "/admin/executive/scenarios",
+      "route": "/admin/training/new",
       "viewport": "375",
-      "url": "http://127.0.0.1:4310/admin/executive/scenarios",
+      "url": "http://127.0.0.1:4310/admin/training/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_executive_scenarios-375.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_training_new-375.png"
     },
     {
-      "route": "/admin/executive/scenarios",
+      "route": "/admin/training/new",
       "viewport": "768",
-      "url": "http://127.0.0.1:4310/admin/executive/scenarios",
+      "url": "http://127.0.0.1:4310/admin/training/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_executive_scenarios-768.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_training_new-768.png"
     },
     {
-      "route": "/admin/executive/scenarios",
+      "route": "/admin/training/new",
       "viewport": "1024",
-      "url": "http://127.0.0.1:4310/admin/executive/scenarios",
+      "url": "http://127.0.0.1:4310/admin/training/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_executive_scenarios-1024.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_training_new-1024.png"
     },
     {
-      "route": "/admin/executive/scenarios",
+      "route": "/admin/training/new",
       "viewport": "1440",
-      "url": "http://127.0.0.1:4310/admin/executive/scenarios",
+      "url": "http://127.0.0.1:4310/admin/training/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_executive_scenarios-1440.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_training_new-1440.png"
     }
   ],
   "errors": []

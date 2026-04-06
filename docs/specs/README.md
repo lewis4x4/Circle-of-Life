@@ -253,7 +253,7 @@ Implement after predecessor migrations and specs exist.
 
 | Order | Spec file | Module | Migration range | Audit / build notes |
 |-------|-----------|--------|-----------------|---------------------|
-| 23 | `12-training-competency.md` | Training and Competency | `086`–`087` | `competency_demonstrations` (evaluator, skills_json, attachments). |
+| 23 | `12-training-competency.md` | Training and Competency | `086`–`087` | ✅ **Spec written.** `competency_demonstrations` (evaluator, skills_json, attachments jsonb); Storage upload UI Enhanced. |
 | 24 | `13-payroll-integration.md` | Payroll Integration | `088` | `payroll_export_batches` + `payroll_export_lines` with idempotency_key UNIQUE. |
 | 25 | `14-dietary-nutrition.md` | Dietary and Nutrition | `089` | `diet_orders` + `iddsi_level`; aspiration cross-check vs meds; allergy + texture constraints. |
 | 26 | `15-transportation.md` | Transportation | `090` | `fleet_vehicles`, `vehicle_inspection_logs`, `driver_credentials`. |
@@ -364,7 +364,7 @@ Module numbers match the product roadmap, **not** the build sequence. Build orde
 | 9 | Infection Control & Health Monitoring | 2 + 3.5 patch | `09-infection-control.md` — ✅; Phase 3.5 `063` |
 | 10 | Quality Metrics & Outcomes | 5 | `10-quality-metrics.md` |
 | 11 | Staff Management & Scheduling | 1 + 3.5 patch | `11-staff-management.md` — ✅; Phase 3.5 `059` |
-| 12 | Training & Competency Management | 6 | `12-training-competency.md` — not yet written |
+| 12 | Training & Competency Management | 6 | `12-training-competency.md` — ✅ Core (`086`–`087`) |
 | 13 | Facility Maintenance & Environment | 6 | `13-maintenance.md` — not yet written |
 | 14 | Dietary & Nutrition Management | 6 | `14-dietary-nutrition.md` — not yet written |
 | 15 | Transportation & Appointments | 6 | `15-transportation.md` — not yet written |

@@ -64,6 +64,8 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 - `/admin/staff/[id]`
 - `/admin/certifications`
 - `/admin/certifications/new`
+- `/admin/training` (Phase 6 Module 12 — `12-training-competency.md`)
+- `/admin/training/new`
 - `/admin/schedules`
 - `/admin/schedules/new`
 - `/admin/time-records`
