@@ -27,6 +27,10 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 
 - `/admin`
 - `/admin/search` (Phase 3.5 platform search index UI)
+- `/admin/referrals` (Phase 4 Module 1 hub — `01-referral-inquiry.md`)
+- `/admin/referrals/new`
+- `/admin/referrals/[id]`
+- `/admin/referrals/sources`
 - `/admin/residents`
 - `/admin/residents/new`
 - `/admin/residents/[id]`

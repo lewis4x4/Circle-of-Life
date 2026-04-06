@@ -231,9 +231,11 @@ Implement after predecessor migrations and specs exist.
 
 | Order | Spec file | Module | Migration range | Audit / build notes |
 |-------|-----------|--------|-----------------|---------------------|
-| 17 | `01-referral-inquiry.md` | Referral and Inquiry | `070`–`071` | `referral_leads` with duplicate merge, source attribution, `pii_access_tier`, HIPAA minimum-necessary RLS; HL7 v2 ADT inbound via `integration_inbound_queue`. |
-| 18 | `02-admissions-move-in.md` | Admissions and Move-In | `072`–`073` | `admission_cases` (pending_clearance / bed_reserved / move_in / cancelled), FK to `beds.id`, `admission_case_rate_terms`, physician orders, financial clearance gate. |
-| 19 | `05-discharge-transition.md` | Discharge and Transition | `074`–`075` | `discharge_med_reconciliation` with pharmacist fields; `residents.discharge_target_date`, `hospice_status`; FHIR R4 transition summary export Edge Function. |
+| 17 | `01-referral-inquiry.md` | Referral and Inquiry | `075`–`076` | ✅ **Spec written.** `referral_sources`, `referral_leads` with duplicate merge, `pii_access_tier`, RLS; HL7 v2 ADT Enhanced via existing `integration_inbound_queue` (`063`). |
+| 18 | `02-admissions-move-in.md` | Admissions and Move-In | `077`–`078` | `admission_cases` (pending_clearance / bed_reserved / move_in / cancelled), FK to `beds.id`, `admission_case_rate_terms`, physician orders, financial clearance gate. |
+| 19 | `05-discharge-transition.md` | Discharge and Transition | `079`–`080` | `discharge_med_reconciliation` with pharmacist fields; `residents.discharge_target_date`, `hospice_status`; FHIR R4 transition summary export Edge Function. |
+
+**Note:** Repo migrations already use `070`–`074` for other segments; Phase 4 DDL **starts at `075`**. Older roadmap PDFs may show obsolete numbers.
 
 ---
 
@@ -241,9 +243,9 @@ Implement after predecessor migrations and specs exist.
 
 | Order | Spec file | Module | Migration range | Audit / build notes |
 |-------|-----------|--------|-----------------|---------------------|
-| 20 | `10-quality-metrics.md` | Quality Metrics | `076`–`077` | `quality_measures` + `quality_measure_results` (CMS ontology); PBJ export via `pbj_export_batches` + deterministic views. |
-| 21 | `21-family-portal.md` | Family Portal | `078`–`079` | `family_consent_records`; clinical triage table + keyword triggers; WebRTC care conferences + recording consent. |
-| 22 | `24-executive-v2.md` | Executive Intelligence v2 | `080` | NLQ routed through `ai_invocations`; scenario models; period deltas; Realtime dashboards. |
+| 20 | `10-quality-metrics.md` | Quality Metrics | `081`–`082` | `quality_measures` + `quality_measure_results` (CMS ontology); PBJ export via `pbj_export_batches` + deterministic views. |
+| 21 | `21-family-portal.md` | Family Portal | `083`–`084` | `family_consent_records`; clinical triage table + keyword triggers; WebRTC care conferences + recording consent. |
+| 22 | `24-executive-v2.md` | Executive Intelligence v2 | `085` | NLQ routed through `ai_invocations`; scenario models; period deltas; Realtime dashboards. |
 
 ---
 
@@ -251,14 +253,14 @@ Implement after predecessor migrations and specs exist.
 
 | Order | Spec file | Module | Migration range | Audit / build notes |
 |-------|-----------|--------|-----------------|---------------------|
-| 23 | `12-training-competency.md` | Training and Competency | `081`–`082` | `competency_demonstrations` (evaluator, skills_json, attachments). |
-| 24 | `13-payroll-integration.md` | Payroll Integration | `083` | `payroll_export_batches` + `payroll_export_lines` with idempotency_key UNIQUE. |
-| 25 | `14-dietary-nutrition.md` | Dietary and Nutrition | `084` | `diet_orders` + `iddsi_level`; aspiration cross-check vs meds; allergy + texture constraints. |
-| 26 | `15-transportation.md` | Transportation | `085` | `fleet_vehicles`, `vehicle_inspection_logs`, `driver_credentials`. |
-| 27 | `22-referral-crm.md` | Referral Source CRM | `086` | HL7 ADT; `referral_hl7_inbound` queue. |
-| 28 | `23-reputation.md` | Reputation Management | `087` | `reputation_accounts`, `reputation_replies` with `posted_by_user_id`. |
-| 29 | `26-digital-twin.md` | Facility Digital Twin | `088` | `twin_scenario_runs` + deterministic seed; **~6 months live data** prerequisite. |
-| 30 | `13-maintenance.md` | Facility Maintenance | `089` | Shares `vendors.id` (Module 19); work orders, PM schedules, building inventory. |
+| 23 | `12-training-competency.md` | Training and Competency | `086`–`087` | `competency_demonstrations` (evaluator, skills_json, attachments). |
+| 24 | `13-payroll-integration.md` | Payroll Integration | `088` | `payroll_export_batches` + `payroll_export_lines` with idempotency_key UNIQUE. |
+| 25 | `14-dietary-nutrition.md` | Dietary and Nutrition | `089` | `diet_orders` + `iddsi_level`; aspiration cross-check vs meds; allergy + texture constraints. |
+| 26 | `15-transportation.md` | Transportation | `090` | `fleet_vehicles`, `vehicle_inspection_logs`, `driver_credentials`. |
+| 27 | `22-referral-crm.md` | Referral Source CRM | `091` | HL7 ADT; `referral_hl7_inbound` queue. |
+| 28 | `23-reputation.md` | Reputation Management | `092` | `reputation_accounts`, `reputation_replies` with `posted_by_user_id`. |
+| 29 | `26-digital-twin.md` | Facility Digital Twin | `093` | `twin_scenario_runs` + deterministic seed; **~6 months live data** prerequisite. |
+| 30 | `13-maintenance.md` | Facility Maintenance | `094` | Shares `vendors.id` (Module 19); work orders, PM schedules, building inventory. |
 
 ---
 
@@ -266,8 +268,8 @@ Implement after predecessor migrations and specs exist.
 
 | Order | Spec file | Module | Migration range | Audit / build notes |
 |-------|-----------|--------|-----------------|---------------------|
-| 31 | `20-expansion-acquisition.md` | Expansion Planning | `090` | `expansion_scenarios` + immutable assumption hash; cap table modeling. |
-| 32 | `27-regulatory-intelligence.md` | Regulatory Intelligence | `091`–`092` | `regulatory_sources` (url, etag, sha256); diff pipeline; routed through `ai_invocations` with `phi_class = 'none'`. |
+| 31 | `20-expansion-acquisition.md` | Expansion Planning | `095` | `expansion_scenarios` + immutable assumption hash; cap table modeling. |
+| 32 | `27-regulatory-intelligence.md` | Regulatory Intelligence | `096`–`097` | `regulatory_sources` (url, etag, sha256); diff pipeline; routed through `ai_invocations` with `phi_class = 'none'`. |
 
 ---
 
@@ -275,11 +277,11 @@ Implement after predecessor migrations and specs exist.
 
 | Order | Spec file | Module / subsystem | Migration range | Description |
 |-------|-----------|---------------------|-----------------|-------------|
-| 33 | `ai-A-pattern-detection.md` | Cross-Resident Pattern Detection | `093`–`094` | `pattern_detection_jobs`, `pattern_detection_findings`; Edge Function; `phi_class` gate. |
-| 34 | `ai-B-cognitive-load.md` | Cognitive Load Engine | `095` | `caregiver_load_samples`, `caregiver_load_rules`; deterministic scoring v1. |
-| 35 | `ai-C-family-risk.md` | Family Relationship Health | `096` | `family_engagement_signals`, `family_risk_scores` — **blocked on BAA or de-ID pipeline**. |
-| 36 | `ai-D-placement-optimizer.md` | Portfolio Placement Optimizer | `097` | `placement_constraints`, `placement_recommendations`; OR solver over census + staffing + payer mix. |
-| 37 | `25-ambient-intelligence.md` | Ambient Environment Intelligence | `098`–`099` | `ambient_consent_policies`, `resident_sensor_opt_in`; BLE/MQTT gateway; retention TTL; redaction Edge Function. |
+| 33 | `ai-A-pattern-detection.md` | Cross-Resident Pattern Detection | `098`–`099` | `pattern_detection_jobs`, `pattern_detection_findings`; Edge Function; `phi_class` gate. |
+| 34 | `ai-B-cognitive-load.md` | Cognitive Load Engine | `100` | `caregiver_load_samples`, `caregiver_load_rules`; deterministic scoring v1. |
+| 35 | `ai-C-family-risk.md` | Family Relationship Health | `101` | `family_engagement_signals`, `family_risk_scores` — **blocked on BAA or de-ID pipeline**. |
+| 36 | `ai-D-placement-optimizer.md` | Portfolio Placement Optimizer | `102` | `placement_constraints`, `placement_recommendations`; OR solver over census + staffing + payer mix. |
+| 37 | `25-ambient-intelligence.md` | Ambient Environment Intelligence | `103`–`104` | `ambient_consent_policies`, `resident_sensor_opt_in`; BLE/MQTT gateway; retention TTL; redaction Edge Function. |
 
 ---
 
@@ -302,16 +304,16 @@ Implement after predecessor migrations and specs exist.
 
 | Column / table needed | Phase | Migration |
 |----------------------|-------|-----------|
-| `residents.discharge_target_date`, `hospice_status` | Phase 4 (Module 05) | `074` |
+| `residents.discharge_target_date`, `hospice_status` | Phase 4 (Module 05) | `079`–`080` |
 | `invoices.legal_entity_id` | Phase 3 (Module 17 Enhanced `048`) | `048` |
 | `journal_entries.period_id` FK | Phase 3 (Module 17 Enhanced `048`) | `048` |
 | `incidents.regulatory_flags jsonb` | Phase 3.5-C | `058` |
 | `staff.excluded_from_care boolean` | Phase 3.5-C | `059` |
 | `facilities.cms_certification_number` | Phase 3.5-A | `052` |
-| `vendor_invoices.currency`, `tax_lines` | Phase 6+ (multi-state; Module 19 patch) | `087` or later |
+| `vendor_invoices.currency`, `tax_lines` | Phase 6+ (multi-state; Module 19 patch) | `092` or later |
 | `user_profiles.mfa_enforced_at` | Phase 3.5-A | `051` |
 | `emar_records.device_id`, `app_version` | Phase 3.5-C | `057` |
-| `family_portal_messages.encryption_key_id` | Phase 5 (Module 21) | `078` |
+| `family_portal_messages.encryption_key_id` | Phase 5 (Module 21) | `083`–`084` |
 
 ---
 
@@ -333,11 +335,11 @@ Per-org provider routing is stored in **`ai_invocation_policies`**.
 |-------|-------------------|-----------------|
 | Phase 3 remaining | 3 (24, 17-enh, 18-enh) | `047`–`049` |
 | Phase 3.5 | 19 segments + audit `069` | `050`–`069` |
-| Phase 4 | 3 modules | `070`–`075` |
-| Phase 5 | 3 modules | `076`–`080` |
-| Phase 6 | 8 modules | `081`–`089` |
-| Phase 7 | 2 modules | `090`–`092` |
-| Phase 8 | 5 modules / subsystems | `093`–`099` |
+| Phase 4 | 3 modules | `075`–`080` (after repo `070`–`074`) |
+| Phase 5 | 3 modules | `081`–`085` |
+| Phase 6 | 8 modules | `086`–`094` |
+| Phase 7 | 2 modules | `095`–`097` |
+| Phase 8 | 5 modules / subsystems | `098`–`104` |
 
 **~43** discrete segments/modules beyond the current Phase 3 queue (see tables above for authoritative ordering).
 
@@ -351,7 +353,7 @@ Module numbers match the product roadmap, **not** the build sequence. Build orde
 
 | Module # | Name | Phase | Spec file / status |
 |----------|------|-------|-------------------|
-| 1 | Referral & Inquiry Management | 4 | `01-referral-inquiry.md` — not yet written |
+| 1 | Referral & Inquiry Management | 4 | `01-referral-inquiry.md` — ✅ spec written; implementation queued |
 | 2 | Admissions & Move-In | 4 | `02-admissions-move-in.md` — not yet written |
 | 3 | Resident Profile & Care Planning | 1 + 2 (adv) | `03-resident-profile.md`, `03-resident-profile-advanced.md` — ✅ |
 | 4 | Daily Operations & Logging | 1 + 3.5 offline | `04-daily-operations.md` — ✅; `04-daily-operations-offline.md` — placeholder |
