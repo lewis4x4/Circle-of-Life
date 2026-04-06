@@ -117,6 +117,8 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 - `/admin/vendors/invoices/[id]`
 - `/admin/vendors/payments`
 - `/admin/vendors/spend`
+- `/admin/family-messages` (Phase 1 — family ↔ staff messaging)
+- `/admin/family-portal` (Phase 5 Module 21 — `21-family-portal.md` — triage, conferences, consents)
 
 ### Caregiver shell routes
 

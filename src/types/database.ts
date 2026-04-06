@@ -3463,6 +3463,247 @@ export type Database = {
           },
         ]
       }
+      family_care_conference_sessions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          external_room_id: string | null
+          facility_id: string
+          id: string
+          notes: string | null
+          organization_id: string
+          recording_consent: boolean
+          recording_consent_at: string | null
+          recording_consent_by: string | null
+          resident_id: string
+          scheduled_end: string | null
+          scheduled_start: string
+          status: Database["public"]["Enums"]["family_care_conference_status"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          external_room_id?: string | null
+          facility_id: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          recording_consent?: boolean
+          recording_consent_at?: string | null
+          recording_consent_by?: string | null
+          resident_id: string
+          scheduled_end?: string | null
+          scheduled_start: string
+          status?: Database["public"]["Enums"]["family_care_conference_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          external_room_id?: string | null
+          facility_id?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          recording_consent?: boolean
+          recording_consent_at?: string | null
+          recording_consent_by?: string | null
+          resident_id?: string
+          scheduled_end?: string | null
+          scheduled_start?: string
+          status?: Database["public"]["Enums"]["family_care_conference_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_care_conference_sessions_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_care_conference_sessions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_care_conference_sessions_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_consent_records: {
+        Row: {
+          consent_type: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          document_version: string
+          facility_id: string
+          family_user_id: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          organization_id: string
+          resident_id: string
+          signed_at: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          consent_type: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          document_version: string
+          facility_id: string
+          family_user_id: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          organization_id: string
+          resident_id: string
+          signed_at?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          consent_type?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          document_version?: string
+          facility_id?: string
+          family_user_id?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          organization_id?: string
+          resident_id?: string
+          signed_at?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_consent_records_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_consent_records_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_consent_records_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_message_triage_items: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          facility_id: string
+          family_portal_message_id: string
+          id: string
+          matched_keywords: string[]
+          notes: string | null
+          organization_id: string
+          resident_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          triage_status: Database["public"]["Enums"]["family_message_triage_status"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id: string
+          family_portal_message_id: string
+          id?: string
+          matched_keywords?: string[]
+          notes?: string | null
+          organization_id: string
+          resident_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          triage_status?: Database["public"]["Enums"]["family_message_triage_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id?: string
+          family_portal_message_id?: string
+          id?: string
+          matched_keywords?: string[]
+          notes?: string | null
+          organization_id?: string
+          resident_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          triage_status?: Database["public"]["Enums"]["family_message_triage_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_message_triage_items_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_message_triage_items_family_portal_message_id_fkey"
+            columns: ["family_portal_message_id"]
+            isOneToOne: false
+            referencedRelation: "family_portal_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_message_triage_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_message_triage_items_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       family_portal_messages: {
         Row: {
           author_kind: Database["public"]["Enums"]["family_message_author"]
@@ -11008,7 +11249,13 @@ export type Database = {
         | "custom"
       exec_snapshot_scope: "organization" | "entity" | "facility"
       facility_status: "active" | "inactive" | "under_renovation" | "archived"
+      family_care_conference_status: "scheduled" | "completed" | "cancelled"
       family_message_author: "family" | "staff"
+      family_message_triage_status:
+        | "pending_review"
+        | "in_review"
+        | "resolved"
+        | "false_positive"
       gender: "male" | "female" | "other" | "prefer_not_to_say"
       hospice_status: "none" | "pending" | "active" | "ended"
       gl_account_type: "asset" | "liability" | "equity" | "revenue" | "expense"
@@ -11447,7 +11694,14 @@ export const Constants = {
       ],
       exec_snapshot_scope: ["organization", "entity", "facility"],
       facility_status: ["active", "inactive", "under_renovation", "archived"],
+      family_care_conference_status: ["scheduled", "completed", "cancelled"],
       family_message_author: ["family", "staff"],
+      family_message_triage_status: [
+        "pending_review",
+        "in_review",
+        "resolved",
+        "false_positive",
+      ],
       gender: ["male", "female", "other", "prefer_not_to_say"],
       hospice_status: ["none", "pending", "active", "ended"],
       gl_account_type: ["asset", "liability", "equity", "revenue", "expense"],

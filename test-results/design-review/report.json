@@ -1,9 +1,8 @@
 {
-  "timestamp": "2026-04-06T14:28:13.611Z",
+  "timestamp": "2026-04-06T14:35:18.481Z",
   "baseUrl": "http://127.0.0.1:4310",
   "routes": [
-    "/admin/quality",
-    "/admin/quality/measures/new"
+    "/admin/family-portal"
   ],
   "viewports": [
     "375",
@@ -13,68 +12,36 @@
   ],
   "shots": [
     {
-      "route": "/admin/quality",
+      "route": "/admin/family-portal",
       "viewport": "375",
-      "url": "http://127.0.0.1:4310/admin/quality",
+      "url": "http://127.0.0.1:4310/admin/family-portal",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_quality-375.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_family-portal-375.png"
     },
     {
-      "route": "/admin/quality",
+      "route": "/admin/family-portal",
       "viewport": "768",
-      "url": "http://127.0.0.1:4310/admin/quality",
+      "url": "http://127.0.0.1:4310/admin/family-portal",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_quality-768.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_family-portal-768.png"
     },
     {
-      "route": "/admin/quality",
+      "route": "/admin/family-portal",
       "viewport": "1024",
-      "url": "http://127.0.0.1:4310/admin/quality",
+      "url": "http://127.0.0.1:4310/admin/family-portal",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_quality-1024.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_family-portal-1024.png"
     },
     {
-      "route": "/admin/quality",
+      "route": "/admin/family-portal",
       "viewport": "1440",
-      "url": "http://127.0.0.1:4310/admin/quality",
+      "url": "http://127.0.0.1:4310/admin/family-portal",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_quality-1440.png"
-    },
-    {
-      "route": "/admin/quality/measures/new",
-      "viewport": "375",
-      "url": "http://127.0.0.1:4310/admin/quality/measures/new",
-      "status": 200,
-      "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_quality_measures_new-375.png"
-    },
-    {
-      "route": "/admin/quality/measures/new",
-      "viewport": "768",
-      "url": "http://127.0.0.1:4310/admin/quality/measures/new",
-      "status": 200,
-      "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_quality_measures_new-768.png"
-    },
-    {
-      "route": "/admin/quality/measures/new",
-      "viewport": "1024",
-      "url": "http://127.0.0.1:4310/admin/quality/measures/new",
-      "status": 200,
-      "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_quality_measures_new-1024.png"
-    },
-    {
-      "route": "/admin/quality/measures/new",
-      "viewport": "1440",
-      "url": "http://127.0.0.1:4310/admin/quality/measures/new",
-      "status": 200,
-      "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_quality_measures_new-1440.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_family-portal-1440.png"
     }
   ],
   "errors": []

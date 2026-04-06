@@ -244,7 +244,7 @@ Implement after predecessor migrations and specs exist.
 | Order | Spec file | Module | Migration range | Audit / build notes |
 |-------|-----------|--------|-----------------|---------------------|
 | 20 | `10-quality-metrics.md` | Quality Metrics | `081`–`082` | ✅ **Spec written.** `quality_measures`, `quality_measure_results`, `pbj_export_batches`; view `quality_latest_facility_measures`; PBJ metadata Core. |
-| 21 | `21-family-portal.md` | Family Portal | `083`–`084` | `family_consent_records`; clinical triage table + keyword triggers; WebRTC care conferences + recording consent. |
+| 21 | `21-family-portal.md` | Family Portal | `083`–`084` | ✅ **Spec written.** `family_consent_records`, `family_message_triage_items`, `family_care_conference_sessions`; keyword DB triggers + WebRTC deferred to Enhanced. |
 | 22 | `24-executive-v2.md` | Executive Intelligence v2 | `085` | NLQ routed through `ai_invocations`; scenario models; period deltas; Realtime dashboards. |
 
 ---
@@ -373,7 +373,7 @@ Module numbers match the product roadmap, **not** the build sequence. Build orde
 | 18 | Insurance & Risk Finance | 3 + 3.5 patch | `18-insurance-risk-finance.md` — ✅ Core; Enhanced `049` + `066` |
 | 19 | Vendor & Contract Management | 3 + 3.5 patch | `19-vendor-contract-management.md` — ✅; Phase 3.5 `067` |
 | 20 | Expansion & Acquisition Planning | 7 | `20-expansion-acquisition.md` — not yet written |
-| 21 | Family Portal | 5 | `21-family-portal.md` — not yet written |
+| 21 | Family Portal | 5 | `21-family-portal.md` — ✅ Core (`083`–`084`) |
 | 22 | Referral Source CRM | 6 | `22-referral-crm.md` — not yet written |
 | 23 | Reputation & Online Presence | 6 | `23-reputation.md` — not yet written |
 | 24 | Executive Intelligence Layer | 3 (v1) + 5 (v2) | `24-executive-intelligence.md` — 🟩 Core UI (`047`); drill-downs/reports backlog; v2: `24-executive-v2.md` — Phase 5 |
