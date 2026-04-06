@@ -39,6 +39,16 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 - `/admin/discharge/[id]`
 - `/admin/quality` (Phase 5 — `10-quality-metrics.md`)
 - `/admin/quality/measures/new`
+- `/admin/executive` (Phase 3 Module 24 v1 — `24-executive-intelligence.md`)
+- `/admin/executive/entity`
+- `/admin/executive/entity/[id]`
+- `/admin/executive/facility/[id]`
+- `/admin/executive/alerts`
+- `/admin/executive/reports`
+- `/admin/executive/benchmarks`
+- `/admin/executive/nlq` (Phase 5 — `24-executive-v2.md`)
+- `/admin/executive/scenarios` (Phase 5 — `24-executive-v2.md`)
+- `/admin/executive/settings`
 - `/admin/residents`
 - `/admin/residents/new`
 - `/admin/residents/[id]`

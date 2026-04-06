@@ -245,7 +245,7 @@ Implement after predecessor migrations and specs exist.
 |-------|-----------|--------|-----------------|---------------------|
 | 20 | `10-quality-metrics.md` | Quality Metrics | `081`–`082` | ✅ **Spec written.** `quality_measures`, `quality_measure_results`, `pbj_export_batches`; view `quality_latest_facility_measures`; PBJ metadata Core. |
 | 21 | `21-family-portal.md` | Family Portal | `083`–`084` | ✅ **Spec written.** `family_consent_records`, `family_message_triage_items`, `family_care_conference_sessions`; keyword DB triggers + WebRTC deferred to Enhanced. |
-| 22 | `24-executive-v2.md` | Executive Intelligence v2 | `085` | NLQ routed through `ai_invocations`; scenario models; period deltas; Realtime dashboards. |
+| 22 | `24-executive-v2.md` | Executive Intelligence v2 | `085` | ✅ **Spec written.** `exec_nlq_sessions` (+ optional `ai_invocations` FK), `exec_scenarios`; NLQ Edge/solver + Realtime dashboards = Enhanced. |
 
 ---
 
@@ -376,7 +376,7 @@ Module numbers match the product roadmap, **not** the build sequence. Build orde
 | 21 | Family Portal | 5 | `21-family-portal.md` — ✅ Core (`083`–`084`) |
 | 22 | Referral Source CRM | 6 | `22-referral-crm.md` — not yet written |
 | 23 | Reputation & Online Presence | 6 | `23-reputation.md` — not yet written |
-| 24 | Executive Intelligence Layer | 3 (v1) + 5 (v2) | `24-executive-intelligence.md` — 🟩 Core UI (`047`); drill-downs/reports backlog; v2: `24-executive-v2.md` — Phase 5 |
+| 24 | Executive Intelligence Layer | 3 (v1) + 5 (v2) | `24-executive-intelligence.md` — 🟩 Core UI (`047`); v2: `24-executive-v2.md` — ✅ Core schema + admin (`085`) |
 | 25 | Ambient Environment Intelligence | 8 | `25-ambient-intelligence.md` — not yet written (`098`–`099`) |
 | 26 | Facility Digital Twin | 6 | `26-digital-twin.md` — not yet written |
 | 27 | Regulatory Intelligence & Arbitrage | 7 | `27-regulatory-intelligence.md` — not yet written |

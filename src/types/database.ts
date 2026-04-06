@@ -3292,6 +3292,66 @@ export type Database = {
           },
         ]
       }
+      exec_nlq_sessions: {
+        Row: {
+          ai_invocation_id: string | null
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          id: string
+          intent_json: Json
+          organization_id: string
+          result_summary: string | null
+          status: Database["public"]["Enums"]["exec_nlq_session_status"]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_invocation_id?: string | null
+          created_at?: string
+          created_by: string
+          deleted_at?: string | null
+          id?: string
+          intent_json?: Json
+          organization_id: string
+          result_summary?: string | null
+          status?: Database["public"]["Enums"]["exec_nlq_session_status"]
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_invocation_id?: string | null
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          id?: string
+          intent_json?: Json
+          organization_id?: string
+          result_summary?: string | null
+          status?: Database["public"]["Enums"]["exec_nlq_session_status"]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exec_nlq_sessions_ai_invocation_id_fkey"
+            columns: ["ai_invocation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_invocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exec_nlq_sessions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exec_saved_reports: {
         Row: {
           created_at: string
@@ -3335,6 +3395,60 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "exec_saved_reports_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exec_scenarios: {
+        Row: {
+          assumptions: Json
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          description: string | null
+          facility_id: string | null
+          id: string
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          assumptions?: Json
+          created_at?: string
+          created_by: string
+          deleted_at?: string | null
+          description?: string | null
+          facility_id?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          assumptions?: Json
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          description?: string | null
+          facility_id?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exec_scenarios_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exec_scenarios_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -11242,6 +11356,7 @@ export type Database = {
         | "insurance"
         | "vendors"
         | "system"
+      exec_nlq_session_status: "draft" | "submitted" | "completed" | "failed"
       exec_report_template:
         | "ops_weekly"
         | "financial_monthly"
@@ -11686,6 +11801,7 @@ export const Constants = {
         "vendors",
         "system",
       ],
+      exec_nlq_session_status: ["draft", "submitted", "completed", "failed"],
       exec_report_template: [
         "ops_weekly",
         "financial_monthly",
