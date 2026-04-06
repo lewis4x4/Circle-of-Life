@@ -191,8 +191,9 @@ export default function GlPostingRulesPage() {
       <div>
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">GL posting rules</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Map billing event types to debit and credit GL accounts per legal entity (Module 17 Enhanced). Used by automated
-          posting once wired; today, invoice/payment posting still uses GL Settings defaults in code.
+          Map billing event types to debit and credit GL accounts per legal entity (Module 17 Enhanced). Posting an
+          invoice or payment to the GL uses an <strong>active</strong> rule for this entity when present; otherwise
+          Finance → GL Settings (AR, revenue, cash).
         </p>
       </div>
 

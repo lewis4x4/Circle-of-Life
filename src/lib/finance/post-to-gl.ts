@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 
-type PostResult =
+export type PostResult =
   | { ok: true; journalEntryId: string; alreadyPosted?: boolean }
   | { ok: false; error: string };
 
@@ -21,6 +21,32 @@ async function loadGlSettings(
     .eq("entity_id", entityId)
     .maybeSingle();
   return data as GlSettings | null;
+}
+
+/** Active posting rule wins over GL Settings defaults (Module 17 Enhanced). */
+async function loadActivePostingRuleAccounts(
+  supabase: SupabaseClient<Database>,
+  organizationId: string,
+  entityId: string,
+  eventType: "invoice" | "payment",
+): Promise<{ debit_gl_account_id: string; credit_gl_account_id: string } | null> {
+  const { data } = await supabase
+    .from("gl_posting_rules")
+    .select("debit_gl_account_id, credit_gl_account_id")
+    .eq("organization_id", organizationId)
+    .eq("entity_id", entityId)
+    .eq("event_type", eventType)
+    .eq("is_active", true)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!data?.debit_gl_account_id || !data?.credit_gl_account_id) return null;
+  return {
+    debit_gl_account_id: data.debit_gl_account_id,
+    credit_gl_account_id: data.credit_gl_account_id,
+  };
 }
 
 async function getCurrentUserId(supabase: SupabaseClient<Database>): Promise<string | null> {
@@ -72,9 +98,21 @@ export async function postInvoiceToGl(
   if (!invoice) return { ok: false, error: "Invoice not found." };
   if (invoice.total <= 0) return { ok: false, error: "Invoice total must be positive." };
 
+  const ruleAccounts = await loadActivePostingRuleAccounts(
+    supabase,
+    invoice.organization_id,
+    invoice.entity_id,
+    "invoice",
+  );
   const settings = await loadGlSettings(supabase, invoice.entity_id);
-  if (!settings?.accounts_receivable_id || !settings?.revenue_id) {
-    return { ok: false, error: "GL settings missing: configure AR and Revenue accounts in Finance → GL Settings." };
+  const debitAccountId = ruleAccounts?.debit_gl_account_id ?? settings?.accounts_receivable_id ?? null;
+  const creditAccountId = ruleAccounts?.credit_gl_account_id ?? settings?.revenue_id ?? null;
+  if (!debitAccountId || !creditAccountId) {
+    return {
+      ok: false,
+      error:
+        "GL posting not configured: add an active invoice posting rule (Finance → Posting rules) or set AR and Revenue in GL Settings.",
+    };
   }
 
   const userId = await getCurrentUserId(supabase);
@@ -108,18 +146,18 @@ export async function postInvoiceToGl(
     {
       journal_entry_id: jid,
       organization_id: invoice.organization_id,
-      gl_account_id: settings.accounts_receivable_id,
+      gl_account_id: debitAccountId,
       line_number: 1,
-      description: `AR — Invoice ${invoice.invoice_number}`,
+      description: `Debit — Invoice ${invoice.invoice_number}`,
       debit_cents: invoice.total,
       credit_cents: 0,
     },
     {
       journal_entry_id: jid,
       organization_id: invoice.organization_id,
-      gl_account_id: settings.revenue_id,
+      gl_account_id: creditAccountId,
       line_number: 2,
-      description: `Revenue — Invoice ${invoice.invoice_number}`,
+      description: `Credit — Invoice ${invoice.invoice_number}`,
       debit_cents: 0,
       credit_cents: invoice.total,
     },
@@ -187,9 +225,21 @@ export async function postPaymentToGl(
   if (!payment) return { ok: false, error: "Payment not found." };
   if (payment.amount <= 0) return { ok: false, error: "Payment amount must be positive." };
 
+  const ruleAccounts = await loadActivePostingRuleAccounts(
+    supabase,
+    payment.organization_id,
+    payment.entity_id,
+    "payment",
+  );
   const settings = await loadGlSettings(supabase, payment.entity_id);
-  if (!settings?.accounts_receivable_id || !settings?.cash_id) {
-    return { ok: false, error: "GL settings missing: configure AR and Cash accounts in Finance → GL Settings." };
+  const debitAccountId = ruleAccounts?.debit_gl_account_id ?? settings?.cash_id ?? null;
+  const creditAccountId = ruleAccounts?.credit_gl_account_id ?? settings?.accounts_receivable_id ?? null;
+  if (!debitAccountId || !creditAccountId) {
+    return {
+      ok: false,
+      error:
+        "GL posting not configured: add an active payment posting rule (Finance → Posting rules) or set Cash and AR in GL Settings.",
+    };
   }
 
   const userId = await getCurrentUserId(supabase);
@@ -227,18 +277,18 @@ export async function postPaymentToGl(
     {
       journal_entry_id: jid,
       organization_id: payment.organization_id,
-      gl_account_id: settings.cash_id,
+      gl_account_id: debitAccountId,
       line_number: 1,
-      description: `Cash — Payment${ref}`,
+      description: `Debit — Payment${ref}`,
       debit_cents: payment.amount,
       credit_cents: 0,
     },
     {
       journal_entry_id: jid,
       organization_id: payment.organization_id,
-      gl_account_id: settings.accounts_receivable_id,
+      gl_account_id: creditAccountId,
       line_number: 2,
-      description: `AR — Payment${ref}`,
+      description: `Credit — Payment${ref}`,
       debit_cents: 0,
       credit_cents: payment.amount,
     },
