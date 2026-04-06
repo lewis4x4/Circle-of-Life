@@ -15,6 +15,7 @@ import {
   LayoutDashboard,
   Users,
   UserPlus,
+  Home,
   ShieldAlert,
   UserCog,
   CreditCard,
@@ -126,6 +127,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     { key: "executive", href: "/admin/executive", label: "Executive", enabled: true, icon: BarChart3 },
     { key: "residents", href: "/admin/residents", label: "Residents", enabled: true, icon: Users },
     { key: "referrals", href: "/admin/referrals", label: "Referrals", enabled: true, icon: UserPlus },
+    { key: "admissions", href: "/admin/admissions", label: "Admissions", enabled: true, icon: Home },
     { key: "assessments", href: "/admin/assessments/overdue", label: "Assessments", enabled: true, icon: ClipboardCheck },
     { key: "plan-reviews", href: "/admin/care-plans/reviews-due", label: "Plan reviews", enabled: true, icon: CalendarClock },
     { key: "medications", href: "/admin/medications", label: "Medications", enabled: true, icon: Pill },
@@ -173,6 +175,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               pathname === item.href ||
               (item.key === "executive" && pathname.startsWith("/admin/executive")) ||
               (item.key === "referrals" && pathname.startsWith("/admin/referrals")) ||
+              (item.key === "admissions" && pathname.startsWith("/admin/admissions")) ||
               (item.key === "medications" && pathname.startsWith("/admin/medications")) ||
               (item.key === "infection" && pathname.startsWith("/admin/infection-control")) ||
               (item.key === "compliance" && pathname.startsWith("/admin/compliance")) ||

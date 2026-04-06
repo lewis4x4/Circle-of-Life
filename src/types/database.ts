@@ -508,6 +508,159 @@ export type Database = {
           },
         ]
       }
+      admission_case_rate_terms: {
+        Row: {
+          accommodation_type: Database["public"]["Enums"]["admission_accommodation_quote"]
+          admission_case_id: string
+          created_at: string
+          created_by: string | null
+          effective_date: string | null
+          id: string
+          notes: string | null
+          quoted_base_rate_cents: number
+          quoted_care_surcharge_cents: number
+          rate_schedule_id: string | null
+        }
+        Insert: {
+          accommodation_type: Database["public"]["Enums"]["admission_accommodation_quote"]
+          admission_case_id: string
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string | null
+          id?: string
+          notes?: string | null
+          quoted_base_rate_cents: number
+          quoted_care_surcharge_cents?: number
+          rate_schedule_id?: string | null
+        }
+        Update: {
+          accommodation_type?: Database["public"]["Enums"]["admission_accommodation_quote"]
+          admission_case_id?: string
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string | null
+          id?: string
+          notes?: string | null
+          quoted_base_rate_cents?: number
+          quoted_care_surcharge_cents?: number
+          rate_schedule_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admission_case_rate_terms_admission_case_id_fkey"
+            columns: ["admission_case_id"]
+            isOneToOne: false
+            referencedRelation: "admission_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admission_case_rate_terms_rate_schedule_id_fkey"
+            columns: ["rate_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "rate_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admission_cases: {
+        Row: {
+          bed_id: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          facility_id: string
+          financial_clearance_at: string | null
+          financial_clearance_by: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          physician_orders_received_at: string | null
+          physician_orders_summary: string | null
+          referral_lead_id: string | null
+          resident_id: string
+          status: Database["public"]["Enums"]["admission_case_status"]
+          target_move_in_date: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          bed_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id: string
+          financial_clearance_at?: string | null
+          financial_clearance_by?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          physician_orders_received_at?: string | null
+          physician_orders_summary?: string | null
+          referral_lead_id?: string | null
+          resident_id: string
+          status?: Database["public"]["Enums"]["admission_case_status"]
+          target_move_in_date?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          bed_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id?: string
+          financial_clearance_at?: string | null
+          financial_clearance_by?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          physician_orders_received_at?: string | null
+          physician_orders_summary?: string | null
+          referral_lead_id?: string | null
+          resident_id?: string
+          status?: Database["public"]["Enums"]["admission_case_status"]
+          target_move_in_date?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admission_cases_bed_id_fkey"
+            columns: ["bed_id"]
+            isOneToOne: false
+            referencedRelation: "beds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admission_cases_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admission_cases_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admission_cases_referral_lead_id_fkey"
+            columns: ["referral_lead_id"]
+            isOneToOne: false
+            referencedRelation: "referral_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admission_cases_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessment_templates: {
         Row: {
           assessment_type: string
@@ -10413,6 +10566,12 @@ export type Database = {
     }
     Enums: {
       acuity_level: "level_1" | "level_2" | "level_3"
+      admission_accommodation_quote: "private" | "semi_private"
+      admission_case_status:
+        | "pending_clearance"
+        | "bed_reserved"
+        | "move_in"
+        | "cancelled"
       ai_phi_class: "none" | "limited" | "phi"
       app_role:
         | "owner"
@@ -10836,6 +10995,8 @@ export const Constants = {
   public: {
     Enums: {
       acuity_level: ["level_1", "level_2", "level_3"],
+      admission_accommodation_quote: ["private", "semi_private"],
+      admission_case_status: ["pending_clearance", "bed_reserved", "move_in", "cancelled"],
       ai_phi_class: ["none", "limited", "phi"],
       app_role: [
         "owner",

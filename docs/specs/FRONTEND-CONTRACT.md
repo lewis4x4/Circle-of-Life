@@ -31,6 +31,9 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 - `/admin/referrals/new`
 - `/admin/referrals/[id]`
 - `/admin/referrals/sources`
+- `/admin/admissions` (Phase 4 Module 2 — `02-admissions-move-in.md`)
+- `/admin/admissions/new`
+- `/admin/admissions/[id]`
 - `/admin/residents`
 - `/admin/residents/new`
 - `/admin/residents/[id]`
