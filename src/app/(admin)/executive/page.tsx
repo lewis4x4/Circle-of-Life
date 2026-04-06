@@ -14,6 +14,7 @@ import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchExecutiveKpiSnapshot, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
 import { fetchExecutiveAlerts, type ExecutiveAlertRow } from "@/lib/exec-alerts";
+import { computeTotalCostOfRisk, type TcorSnapshot } from "@/lib/insurance/compute-tcor";
 import { cn } from "@/lib/utils";
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
@@ -31,6 +32,7 @@ export default function ExecutiveCommandCenterPage() {
   const { selectedFacilityId } = useFacilityStore();
   const [kpis, setKpis] = useState<ExecKpiPayload | null>(null);
   const [alerts, setAlerts] = useState<ExecutiveAlertRow[]>([]);
+  const [tcor, setTcor] = useState<TcorSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,17 +45,35 @@ export default function ExecutiveCommandCenterPage() {
         setError(ctx.error);
         setKpis(null);
         setAlerts([]);
+        setTcor(null);
         return;
       }
-      const [kpiData, alertData] = await Promise.all([
-        fetchExecutiveKpiSnapshot(supabase, ctx.ctx.organizationId, selectedFacilityId),
-        fetchExecutiveAlerts(supabase, ctx.ctx.organizationId, selectedFacilityId, 10),
+      const orgId = ctx.ctx.organizationId;
+
+      let entityIdForTcor: string | null = null;
+      if (selectedFacilityId) {
+        const { data: fac } = await supabase
+          .from("facilities")
+          .select("entity_id")
+          .eq("id", selectedFacilityId)
+          .eq("organization_id", orgId)
+          .is("deleted_at", null)
+          .maybeSingle();
+        entityIdForTcor = fac?.entity_id ?? null;
+      }
+
+      const [kpiData, alertData, tcorResult] = await Promise.all([
+        fetchExecutiveKpiSnapshot(supabase, orgId, selectedFacilityId),
+        fetchExecutiveAlerts(supabase, orgId, selectedFacilityId, 10),
+        computeTotalCostOfRisk(supabase, { organizationId: orgId, entityId: entityIdForTcor }),
       ]);
       setKpis(kpiData);
       setAlerts(alertData);
+      setTcor(tcorResult.ok ? tcorResult.snapshot : null);
     } catch (e) {
       setKpis(null);
       setAlerts([]);
+      setTcor(null);
       setError(e instanceof Error ? e.message : "Unable to load executive data.");
     } finally {
       setLoading(false);
@@ -149,6 +169,18 @@ export default function ExecutiveCommandCenterPage() {
           value={kpis ? String(kpis.infection.activeOutbreaks) : "—"}
           href="/admin/infection-control"
           linkLabel="Infection control"
+        />
+        <KpiCard
+          title="Insurance (TCoR)"
+          description="Rolling ~12 months — premiums + incurred losses (Module 18)"
+          loading={loading}
+          value={
+            tcor
+              ? `${money.format(tcor.tcorCents / 100)} total · ${money.format(tcor.premiumsCents / 100)} prem · ${money.format(tcor.incurredLossesCents / 100)} loss`
+              : "—"
+          }
+          href="/admin/insurance"
+          linkLabel="Insurance hub"
         />
       </div>
 
