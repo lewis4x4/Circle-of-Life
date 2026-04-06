@@ -89,14 +89,25 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: authData, error: authErr } = await admin.auth.signInWithPassword({
-    email,
-    password,
-  });
+  type SignInResult = Awaited<ReturnType<typeof admin.auth.signInWithPassword>>;
+  let authData: SignInResult["data"] | null = null;
+  let authErr: SignInResult["error"] | null = null;
+  try {
+    const result = await admin.auth.signInWithPassword({
+      email,
+      password,
+    });
+    authData = result.data;
+    authErr = result.error;
+  } finally {
+    try {
+      await admin.auth.signOut();
+    } catch {
+      /* service-role session must not persist if signOut fails */
+    }
+  }
 
-  await admin.auth.signOut();
-
-  if (authErr || !authData.user) {
+  if (authErr || !authData?.user) {
     return NextResponse.json({ verified: false, error: "Invalid credentials" }, { status: 401 });
   }
 
