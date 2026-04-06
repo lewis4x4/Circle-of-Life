@@ -132,6 +132,9 @@ export default function AdminInsuranceHubPage() {
           <Link className="text-primary underline-offset-4 hover:underline" href="/admin/insurance/renewals">
             Renewals
           </Link>
+          <Link className="text-primary underline-offset-4 hover:underline" href="/admin/insurance/renewal-packages">
+            Renewal data packages
+          </Link>
           <Link className="text-primary underline-offset-4 hover:underline" href="/admin/insurance/claims">
             Claims
           </Link>

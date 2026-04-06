@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/admin/insurance/policies", label: "Policies" },
   { href: "/admin/insurance/policies/new", label: "New policy" },
   { href: "/admin/insurance/renewals", label: "Renewals" },
+  { href: "/admin/insurance/renewal-packages", label: "Renewal packages" },
   { href: "/admin/insurance/claims", label: "Claims" },
   { href: "/admin/insurance/loss-runs", label: "Loss runs" },
   { href: "/admin/insurance/coi", label: "Certificates (COI)" },
