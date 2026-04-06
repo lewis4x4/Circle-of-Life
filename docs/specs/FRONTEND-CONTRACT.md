@@ -26,6 +26,7 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 ### Admin shell routes
 
 - `/admin`
+- `/admin/search` (Phase 3.5 platform search index UI)
 - `/admin/residents`
 - `/admin/residents/new`
 - `/admin/residents/[id]`

@@ -170,7 +170,7 @@ At completion, an ALF owner logs into Haven and sees their entire portfolio — 
 | `platform-audit-log-access` | `050` | Patch `00-foundation.md` | RLS SELECT on `audit_log` for owner/org_admin/facility_admin; `audit_log_export_jobs` + Edge Function `export-audit-log` (checksummed CSV/PDF); monthly partitions on `audit_log.created_at`. |
 | `platform-auth-role-reconciliation` | `051` | Patch `00-foundation.md` | `user_profiles.auth_claim_version integer` + middleware: reject session when `profiles.updated_at > token.iat`; document single source of truth for role. |
 | `platform-regulatory-jurisdiction` | `052` | `00-foundation-regulatory.md` | `facilities.license_authority`, `alf_license_type`, `cms_certification_number`, `medicaid_provider_id`; `ratio_rule_sets` + `facility_ratio_rule_set_id` FK; `shift_classification` enum on `shift_assignments`. |
-| `platform-search-index` | `053` | `platform-search.md` | `search_documents` tsvector + GIN + RLS; triggers on `residents`, `staff`, `vendors`, `incidents`; install `pgvector` for future hybrid search. |
+| `platform-search-index` | `053` | `platform-search.md` | `search_documents` tsvector + GIN + RLS; **Admin UI** `/admin/search` (header search icon); resident trigger live — staff/vendors/incidents triggers backlog per spec. |
 
 #### 3.5-B: PWA / offline / notifications (app + Edge Functions)
 

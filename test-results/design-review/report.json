@@ -1,8 +1,9 @@
 {
-  "timestamp": "2026-04-06T01:15:13.444Z",
+  "timestamp": "2026-04-06T02:15:33.027Z",
   "baseUrl": "http://127.0.0.1:4310",
   "routes": [
-    "/"
+    "/",
+    "/admin/search"
   ],
   "viewports": [
     "375",
@@ -42,6 +43,38 @@
       "status": 200,
       "title": "Haven — Circle of Life",
       "screenshot": "test-results/design-review/screenshots/_-1440.png"
+    },
+    {
+      "route": "/admin/search",
+      "viewport": "375",
+      "url": "http://127.0.0.1:4310/admin/search",
+      "status": 200,
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_search-375.png"
+    },
+    {
+      "route": "/admin/search",
+      "viewport": "768",
+      "url": "http://127.0.0.1:4310/admin/search",
+      "status": 200,
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_search-768.png"
+    },
+    {
+      "route": "/admin/search",
+      "viewport": "1024",
+      "url": "http://127.0.0.1:4310/admin/search",
+      "status": 200,
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_search-1024.png"
+    },
+    {
+      "route": "/admin/search",
+      "viewport": "1440",
+      "url": "http://127.0.0.1:4310/admin/search",
+      "status": 200,
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_search-1440.png"
     }
   ],
   "errors": []

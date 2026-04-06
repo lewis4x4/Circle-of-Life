@@ -48,4 +48,5 @@ Provide a **single searchable index** for admin workflows (survey visit mode, ex
 
 1. Migration `053_*` creates table, indexes, triggers, RLS.
 2. Explainability: each row traceable to `source_table` + `source_id`.
-3. Segment gates pass.
+3. Admin UI: `/admin/search` queries `search_documents` with lexical match; deep links by `source_table` (at minimum residents).
+4. Segment gates pass.

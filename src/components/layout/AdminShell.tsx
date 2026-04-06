@@ -158,7 +158,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </span>
             <button 
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-1.5 rounded-md text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+              className="p-1.5 rounded-md text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
             >
               {isCollapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5 flex-shrink-0" />}
             </button>
@@ -199,10 +199,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium tap-responsive transition-colors ${
                   isActive
                     ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-white"
-                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900/50 hover:text-slate-900 dark:hover:text-slate-300"
+                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/50 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
-                <Icon className={`w-5 h-5 shrink-0 ${isActive ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`} />
+                <Icon className={`w-5 h-5 shrink-0 ${isActive ? "text-slate-900 dark:text-white" : "text-slate-600 dark:text-slate-300"}`} />
                 <span className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? "opacity-0 invisible w-0" : "opacity-100 visible"}`}>
                   {item.label}
                 </span>
@@ -222,7 +222,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 <span className="text-sm font-medium text-slate-900 dark:text-slate-200 truncate max-w-[200px]">
                   {facilityTriggerLabel}
                 </span>
-                <ChevronDown className="h-4 w-4 text-slate-500" />
+                <ChevronDown className="h-4 w-4 text-slate-600 dark:text-slate-300" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-[220px] dark:bg-slate-950 dark:border-slate-800">
                 <DropdownMenuItem
@@ -263,10 +263,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </div>
           
           <div className="flex items-center gap-3">
-            <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 tap-responsive" aria-label="Search">
+            <Link
+              href="/admin/search"
+              className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 tap-responsive"
+              aria-label="Search"
+            >
               <Search className="w-5 h-5" />
-            </button>
-            <button className="relative p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 tap-responsive" aria-label="Notifications">
+            </Link>
+            <button className="relative p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 tap-responsive" aria-label="Notifications">
               <Bell className="w-5 h-5" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-600 border-2 border-white dark:border-slate-950"></span>
             </button>
@@ -275,7 +279,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
             {sessionEmail ? (
               <span
-                className="hidden max-w-[168px] truncate text-xs text-slate-500 dark:text-slate-400 md:inline"
+                className="hidden max-w-[168px] truncate text-xs text-slate-600 dark:text-slate-300 md:inline"
                 title={sessionEmail}
               >
                 {sessionEmail}
@@ -284,7 +288,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
             {/* Global Theme Toggle */}
             <DropdownMenu>
-              <DropdownMenuTrigger className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 tap-responsive outline-none">
+              <DropdownMenuTrigger className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 tap-responsive outline-none">
                 {mounted && theme === "dark" ? <Moon className="w-5 h-5" /> : mounted && theme === "light" ? <Sun className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-36 dark:bg-slate-950 dark:border-slate-800">
@@ -301,7 +305,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </DropdownMenu>
 
             <button className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 tap-responsive ml-1" aria-label="Profile">
-              <UserCircle2 className="w-7 h-7 text-slate-400 dark:text-slate-500" />
+              <UserCircle2 className="w-7 h-7 text-slate-600 dark:text-slate-300" />
             </button>
           </div>
         </header>
