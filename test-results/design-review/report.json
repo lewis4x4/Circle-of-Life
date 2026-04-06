@@ -1,11 +1,9 @@
 {
-  "timestamp": "2026-04-06T15:16:27.500Z",
+  "timestamp": "2026-04-06T15:22:27.968Z",
   "baseUrl": "http://127.0.0.1:4310",
   "routes": [
-    "/admin/transportation",
-    "/admin/transportation/vehicles/new",
-    "/admin/transportation/inspections/new",
-    "/admin/transportation/drivers/new"
+    "/admin/referrals/hl7-inbound",
+    "/admin/referrals/hl7-inbound/new"
   ],
   "viewports": [
     "375",
@@ -15,132 +13,68 @@
   ],
   "shots": [
     {
-      "route": "/admin/transportation",
+      "route": "/admin/referrals/hl7-inbound",
       "viewport": "375",
-      "url": "http://127.0.0.1:4310/admin/transportation",
+      "url": "http://127.0.0.1:4310/admin/referrals/hl7-inbound",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_transportation-375.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals_hl7-inbound-375.png"
     },
     {
-      "route": "/admin/transportation",
+      "route": "/admin/referrals/hl7-inbound",
       "viewport": "768",
-      "url": "http://127.0.0.1:4310/admin/transportation",
+      "url": "http://127.0.0.1:4310/admin/referrals/hl7-inbound",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_transportation-768.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals_hl7-inbound-768.png"
     },
     {
-      "route": "/admin/transportation",
+      "route": "/admin/referrals/hl7-inbound",
       "viewport": "1024",
-      "url": "http://127.0.0.1:4310/admin/transportation",
+      "url": "http://127.0.0.1:4310/admin/referrals/hl7-inbound",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_transportation-1024.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals_hl7-inbound-1024.png"
     },
     {
-      "route": "/admin/transportation",
+      "route": "/admin/referrals/hl7-inbound",
       "viewport": "1440",
-      "url": "http://127.0.0.1:4310/admin/transportation",
+      "url": "http://127.0.0.1:4310/admin/referrals/hl7-inbound",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_transportation-1440.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals_hl7-inbound-1440.png"
     },
     {
-      "route": "/admin/transportation/vehicles/new",
+      "route": "/admin/referrals/hl7-inbound/new",
       "viewport": "375",
-      "url": "http://127.0.0.1:4310/admin/transportation/vehicles/new",
+      "url": "http://127.0.0.1:4310/admin/referrals/hl7-inbound/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_transportation_vehicles_new-375.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals_hl7-inbound_new-375.png"
     },
     {
-      "route": "/admin/transportation/vehicles/new",
+      "route": "/admin/referrals/hl7-inbound/new",
       "viewport": "768",
-      "url": "http://127.0.0.1:4310/admin/transportation/vehicles/new",
+      "url": "http://127.0.0.1:4310/admin/referrals/hl7-inbound/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_transportation_vehicles_new-768.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals_hl7-inbound_new-768.png"
     },
     {
-      "route": "/admin/transportation/vehicles/new",
+      "route": "/admin/referrals/hl7-inbound/new",
       "viewport": "1024",
-      "url": "http://127.0.0.1:4310/admin/transportation/vehicles/new",
+      "url": "http://127.0.0.1:4310/admin/referrals/hl7-inbound/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_transportation_vehicles_new-1024.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals_hl7-inbound_new-1024.png"
     },
     {
-      "route": "/admin/transportation/vehicles/new",
+      "route": "/admin/referrals/hl7-inbound/new",
       "viewport": "1440",
-      "url": "http://127.0.0.1:4310/admin/transportation/vehicles/new",
+      "url": "http://127.0.0.1:4310/admin/referrals/hl7-inbound/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_transportation_vehicles_new-1440.png"
-    },
-    {
-      "route": "/admin/transportation/inspections/new",
-      "viewport": "375",
-      "url": "http://127.0.0.1:4310/admin/transportation/inspections/new",
-      "status": 200,
-      "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_transportation_inspections_new-375.png"
-    },
-    {
-      "route": "/admin/transportation/inspections/new",
-      "viewport": "768",
-      "url": "http://127.0.0.1:4310/admin/transportation/inspections/new",
-      "status": 200,
-      "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_transportation_inspections_new-768.png"
-    },
-    {
-      "route": "/admin/transportation/inspections/new",
-      "viewport": "1024",
-      "url": "http://127.0.0.1:4310/admin/transportation/inspections/new",
-      "status": 200,
-      "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_transportation_inspections_new-1024.png"
-    },
-    {
-      "route": "/admin/transportation/inspections/new",
-      "viewport": "1440",
-      "url": "http://127.0.0.1:4310/admin/transportation/inspections/new",
-      "status": 200,
-      "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_transportation_inspections_new-1440.png"
-    },
-    {
-      "route": "/admin/transportation/drivers/new",
-      "viewport": "375",
-      "url": "http://127.0.0.1:4310/admin/transportation/drivers/new",
-      "status": 200,
-      "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_transportation_drivers_new-375.png"
-    },
-    {
-      "route": "/admin/transportation/drivers/new",
-      "viewport": "768",
-      "url": "http://127.0.0.1:4310/admin/transportation/drivers/new",
-      "status": 200,
-      "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_transportation_drivers_new-768.png"
-    },
-    {
-      "route": "/admin/transportation/drivers/new",
-      "viewport": "1024",
-      "url": "http://127.0.0.1:4310/admin/transportation/drivers/new",
-      "status": 200,
-      "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_transportation_drivers_new-1024.png"
-    },
-    {
-      "route": "/admin/transportation/drivers/new",
-      "viewport": "1440",
-      "url": "http://127.0.0.1:4310/admin/transportation/drivers/new",
-      "status": 200,
-      "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_transportation_drivers_new-1440.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_referrals_hl7-inbound_new-1440.png"
     }
   ],
   "errors": []

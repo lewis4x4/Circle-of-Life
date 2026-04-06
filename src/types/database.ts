@@ -7921,6 +7921,79 @@ export type Database = {
           },
         ]
       }
+      referral_hl7_inbound: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          facility_id: string
+          id: string
+          linked_referral_lead_id: string | null
+          message_control_id: string | null
+          organization_id: string
+          parse_error: string | null
+          raw_message: string
+          status: Database["public"]["Enums"]["referral_hl7_inbound_status"]
+          trigger_event: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id: string
+          id?: string
+          linked_referral_lead_id?: string | null
+          message_control_id?: string | null
+          organization_id: string
+          parse_error?: string | null
+          raw_message: string
+          status?: Database["public"]["Enums"]["referral_hl7_inbound_status"]
+          trigger_event?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id?: string
+          id?: string
+          linked_referral_lead_id?: string | null
+          message_control_id?: string | null
+          organization_id?: string
+          parse_error?: string | null
+          raw_message?: string
+          status?: Database["public"]["Enums"]["referral_hl7_inbound_status"]
+          trigger_event?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_hl7_inbound_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_hl7_inbound_linked_referral_lead_id_fkey"
+            columns: ["linked_referral_lead_id"]
+            isOneToOne: false
+            referencedRelation: "referral_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_hl7_inbound_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referral_leads: {
         Row: {
           converted_at: string | null
@@ -12064,6 +12137,7 @@ export type Database = {
         | "per_census_day"
         | "pct_of_premium"
         | "custom"
+      referral_hl7_inbound_status: "pending" | "processed" | "failed" | "ignored"
       referral_lead_status:
         | "new"
         | "contacted"
@@ -12545,6 +12619,7 @@ export const Constants = {
         "pct_of_premium",
         "custom",
       ],
+      referral_hl7_inbound_status: ["pending", "processed", "failed", "ignored"],
       referral_lead_status: [
         "new",
         "contacted",

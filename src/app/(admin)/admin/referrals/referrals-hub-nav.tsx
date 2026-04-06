@@ -13,12 +13,18 @@ export function ReferralsHubNav() {
     pathname === "/admin/referrals" ||
     (pathname.startsWith("/admin/referrals/") &&
       !pathname.startsWith("/admin/referrals/new") &&
-      !pathname.startsWith("/admin/referrals/sources"));
+      !pathname.startsWith("/admin/referrals/sources") &&
+      !pathname.startsWith("/admin/referrals/hl7-inbound"));
 
   const links = [
     { href: "/admin/referrals", label: "Pipeline", active: isPipeline },
     { href: "/admin/referrals/new", label: "New lead", active: pathname.startsWith("/admin/referrals/new") },
     { href: "/admin/referrals/sources", label: "Sources", active: pathname.startsWith("/admin/referrals/sources") },
+    {
+      href: "/admin/referrals/hl7-inbound",
+      label: "HL7 inbound",
+      active: pathname.startsWith("/admin/referrals/hl7-inbound"),
+    },
   ] as const;
 
   return (

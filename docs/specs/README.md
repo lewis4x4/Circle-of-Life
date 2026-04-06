@@ -257,7 +257,7 @@ Implement after predecessor migrations and specs exist.
 | 24 | `13-payroll-integration.md` | Payroll Integration | `088` | ✅ **Spec written.** `payroll_export_batches`, `payroll_export_lines` (`idempotency_key` UNIQUE); vendor CSV/API = Enhanced. |
 | 25 | `14-dietary-nutrition.md` | Dietary and Nutrition | `089` | ✅ **Spec written.** `diet_orders`, `iddsi_food_level` / `iddsi_fluid_level`; med cross-check automation Enhanced. |
 | 26 | `15-transportation.md` | Transportation | `090` | `fleet_vehicles`, `vehicle_inspection_logs`, `driver_credentials`. |
-| 27 | `22-referral-crm.md` | Referral Source CRM | `091` | HL7 ADT; `referral_hl7_inbound` queue. |
+| 27 | `22-referral-crm.md` | Referral Source CRM | `091` | ✅ **Spec written.** `referral_hl7_inbound` queue; HL7 listener = Enhanced. |
 | 28 | `23-reputation.md` | Reputation Management | `092` | `reputation_accounts`, `reputation_replies` with `posted_by_user_id`. |
 | 29 | `26-digital-twin.md` | Facility Digital Twin | `093` | `twin_scenario_runs` + deterministic seed; **~6 months live data** prerequisite. |
 | 30 | `13-maintenance.md` | Facility Maintenance | `094` | Shares `vendors.id` (Module 19); work orders, PM schedules, building inventory. |
@@ -374,7 +374,7 @@ Module numbers match the product roadmap, **not** the build sequence. Build orde
 | 19 | Vendor & Contract Management | 3 + 3.5 patch | `19-vendor-contract-management.md` — ✅; Phase 3.5 `067` |
 | 20 | Expansion & Acquisition Planning | 7 | `20-expansion-acquisition.md` — not yet written |
 | 21 | Family Portal | 5 | `21-family-portal.md` — ✅ Core (`083`–`084`) |
-| 22 | Referral Source CRM | 6 | `22-referral-crm.md` — not yet written |
+| 22 | Referral Source CRM | 6 | `22-referral-crm.md` — ✅ Core (`091`) |
 | 23 | Reputation & Online Presence | 6 | `23-reputation.md` — not yet written |
 | 24 | Executive Intelligence Layer | 3 (v1) + 5 (v2) | `24-executive-intelligence.md` — 🟩 Core UI (`047`); v2: `24-executive-v2.md` — ✅ Core schema + admin (`085`) |
 | 25 | Ambient Environment Intelligence | 8 | `25-ambient-intelligence.md` — not yet written (`098`–`099`) |

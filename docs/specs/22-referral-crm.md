@@ -1,0 +1,47 @@
+# 22 — Referral Source CRM (Phase 6)
+
+**Module:** Hospital and partner feeds into the referral pipeline  
+**Dependencies:** [`01-referral-inquiry.md`](01-referral-inquiry.md) (`referral_sources`, `referral_leads`)  
+**Migration:** `091_referral_hl7_inbound.sql`  
+**Canonical routes:** [`FRONTEND-CONTRACT.md`](FRONTEND-CONTRACT.md) — `/admin/referrals/hl7-inbound`
+
+---
+
+## Implementation note (repo migrations vs spec SQL)
+
+Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()`**, **`haven.app_role()`**, and `public.haven_set_updated_at` / `haven_capture_audit_log`.
+
+---
+
+## Purpose (Core)
+
+- **`referral_hl7_inbound`:** Durable queue for HL7 v2 ADT-style payloads (raw text), processing status, optional HL7 message control id (MSH-10) for deduplication, and optional link to a **`referral_leads`** row once reconciled.
+
+**Non-goals (Core):** Full HL7 parser, MLLP listener, or automatic lead creation (Enhanced / integration).
+
+---
+
+## Scope tiers
+
+### Core
+
+- Queue table + enums + RLS + audit; admin list + manual ingest form under Referrals.
+
+### Enhanced
+
+- Edge ingress (MLLP/HTTPS), ADT segment parsing, auto-draft leads, idempotent replay.
+
+---
+
+## RLS (normative)
+
+Aligned with **`referral_leads`** (`076_referral_inquiry_rls_audit.sql`):
+
+- **SELECT:** `organization_id = haven.organization_id()`, `deleted_at IS NULL`, `facility_id` in **`haven.accessible_facility_ids()`**.
+- **INSERT / UPDATE:** Same facility guard; roles `owner`, `org_admin`, `facility_admin`, `nurse`.
+
+---
+
+## Definition of done
+
+- Migration `091` applies; types updated; segment gates **PASS** when UI ships.
