@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-04-06T14:54:48.065Z",
+  "timestamp": "2026-04-06T15:04:49.007Z",
   "baseUrl": "http://127.0.0.1:4310",
   "routes": [
-    "/admin/payroll",
-    "/admin/payroll/new"
+    "/admin/dietary",
+    "/admin/dietary/new"
   ],
   "viewports": [
     "375",
@@ -13,68 +13,68 @@
   ],
   "shots": [
     {
-      "route": "/admin/payroll",
+      "route": "/admin/dietary",
       "viewport": "375",
-      "url": "http://127.0.0.1:4310/admin/payroll",
+      "url": "http://127.0.0.1:4310/admin/dietary",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_payroll-375.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_dietary-375.png"
     },
     {
-      "route": "/admin/payroll",
+      "route": "/admin/dietary",
       "viewport": "768",
-      "url": "http://127.0.0.1:4310/admin/payroll",
+      "url": "http://127.0.0.1:4310/admin/dietary",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_payroll-768.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_dietary-768.png"
     },
     {
-      "route": "/admin/payroll",
+      "route": "/admin/dietary",
       "viewport": "1024",
-      "url": "http://127.0.0.1:4310/admin/payroll",
+      "url": "http://127.0.0.1:4310/admin/dietary",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_payroll-1024.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_dietary-1024.png"
     },
     {
-      "route": "/admin/payroll",
+      "route": "/admin/dietary",
       "viewport": "1440",
-      "url": "http://127.0.0.1:4310/admin/payroll",
+      "url": "http://127.0.0.1:4310/admin/dietary",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_payroll-1440.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_dietary-1440.png"
     },
     {
-      "route": "/admin/payroll/new",
+      "route": "/admin/dietary/new",
       "viewport": "375",
-      "url": "http://127.0.0.1:4310/admin/payroll/new",
+      "url": "http://127.0.0.1:4310/admin/dietary/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_payroll_new-375.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_dietary_new-375.png"
     },
     {
-      "route": "/admin/payroll/new",
+      "route": "/admin/dietary/new",
       "viewport": "768",
-      "url": "http://127.0.0.1:4310/admin/payroll/new",
+      "url": "http://127.0.0.1:4310/admin/dietary/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_payroll_new-768.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_dietary_new-768.png"
     },
     {
-      "route": "/admin/payroll/new",
+      "route": "/admin/dietary/new",
       "viewport": "1024",
-      "url": "http://127.0.0.1:4310/admin/payroll/new",
+      "url": "http://127.0.0.1:4310/admin/dietary/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_payroll_new-1024.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_dietary_new-1024.png"
     },
     {
-      "route": "/admin/payroll/new",
+      "route": "/admin/dietary/new",
       "viewport": "1440",
-      "url": "http://127.0.0.1:4310/admin/payroll/new",
+      "url": "http://127.0.0.1:4310/admin/dietary/new",
       "status": 200,
       "title": "Haven — Circle of Life",
-      "screenshot": "test-results/design-review/screenshots/_admin_payroll_new-1440.png"
+      "screenshot": "test-results/design-review/screenshots/_admin_dietary_new-1440.png"
     }
   ],
   "errors": []

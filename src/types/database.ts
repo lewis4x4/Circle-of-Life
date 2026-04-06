@@ -2723,6 +2723,94 @@ export type Database = {
           },
         ]
       }
+      diet_orders: {
+        Row: {
+          allergy_constraints: string[]
+          aspiration_notes: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          effective_from: string | null
+          effective_to: string | null
+          facility_id: string
+          id: string
+          iddsi_fluid_level: Database["public"]["Enums"]["iddsi_fluid_level"]
+          iddsi_food_level: Database["public"]["Enums"]["iddsi_food_level"]
+          medication_texture_review_notes: string | null
+          organization_id: string
+          requires_swallow_eval: boolean
+          resident_id: string
+          status: Database["public"]["Enums"]["diet_order_status"]
+          texture_constraints: string[]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          allergy_constraints?: string[]
+          aspiration_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          effective_from?: string | null
+          effective_to?: string | null
+          facility_id: string
+          id?: string
+          iddsi_fluid_level?: Database["public"]["Enums"]["iddsi_fluid_level"]
+          iddsi_food_level?: Database["public"]["Enums"]["iddsi_food_level"]
+          medication_texture_review_notes?: string | null
+          organization_id: string
+          requires_swallow_eval?: boolean
+          resident_id: string
+          status?: Database["public"]["Enums"]["diet_order_status"]
+          texture_constraints?: string[]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          allergy_constraints?: string[]
+          aspiration_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          effective_from?: string | null
+          effective_to?: string | null
+          facility_id?: string
+          id?: string
+          iddsi_fluid_level?: Database["public"]["Enums"]["iddsi_fluid_level"]
+          iddsi_food_level?: Database["public"]["Enums"]["iddsi_food_level"]
+          medication_texture_review_notes?: string | null
+          organization_id?: string
+          requires_swallow_eval?: boolean
+          resident_id?: string
+          status?: Database["public"]["Enums"]["diet_order_status"]
+          texture_constraints?: string[]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diet_orders_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diet_orders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diet_orders_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       emar_administration_witnesses: {
         Row: {
           created_at: string
@@ -11560,6 +11648,7 @@ export type Database = {
         | "pharmacist_review"
         | "complete"
         | "cancelled"
+      diet_order_status: "draft" | "active" | "discontinued"
       emar_status:
         | "scheduled"
         | "given"
@@ -11589,6 +11678,20 @@ export type Database = {
         | "custom"
       exec_snapshot_scope: "organization" | "entity" | "facility"
       facility_status: "active" | "inactive" | "under_renovation" | "archived"
+      iddsi_fluid_level:
+        | "not_assessed"
+        | "level_0_thin"
+        | "level_1_slightly_thick"
+        | "level_2_mildly_thick"
+        | "level_3_moderately_thick"
+        | "level_4_extremely_thick"
+      iddsi_food_level:
+        | "not_assessed"
+        | "level_3_liquidized"
+        | "level_4_pureed"
+        | "level_5_minced_moist"
+        | "level_6_soft_bite_sized"
+        | "level_7_regular_easy_chew"
       family_care_conference_status: "scheduled" | "completed" | "cancelled"
       family_message_author: "family" | "staff"
       family_message_triage_status:
@@ -12010,6 +12113,7 @@ export const Constants = {
         "other",
       ],
       discharge_med_reconciliation_status: ["draft", "pharmacist_review", "complete", "cancelled"],
+      diet_order_status: ["draft", "active", "discontinued"],
       emar_status: [
         "scheduled",
         "given",
@@ -12042,6 +12146,22 @@ export const Constants = {
       ],
       exec_snapshot_scope: ["organization", "entity", "facility"],
       facility_status: ["active", "inactive", "under_renovation", "archived"],
+      iddsi_fluid_level: [
+        "not_assessed",
+        "level_0_thin",
+        "level_1_slightly_thick",
+        "level_2_mildly_thick",
+        "level_3_moderately_thick",
+        "level_4_extremely_thick",
+      ],
+      iddsi_food_level: [
+        "not_assessed",
+        "level_3_liquidized",
+        "level_4_pureed",
+        "level_5_minced_moist",
+        "level_6_soft_bite_sized",
+        "level_7_regular_easy_chew",
+      ],
       family_care_conference_status: ["scheduled", "completed", "cancelled"],
       family_message_author: ["family", "staff"],
       family_message_triage_status: [

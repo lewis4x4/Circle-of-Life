@@ -255,7 +255,7 @@ Implement after predecessor migrations and specs exist.
 |-------|-----------|--------|-----------------|---------------------|
 | 23 | `12-training-competency.md` | Training and Competency | `086`–`087` | ✅ **Spec written.** `competency_demonstrations` (evaluator, skills_json, attachments jsonb); Storage upload UI Enhanced. |
 | 24 | `13-payroll-integration.md` | Payroll Integration | `088` | ✅ **Spec written.** `payroll_export_batches`, `payroll_export_lines` (`idempotency_key` UNIQUE); vendor CSV/API = Enhanced. |
-| 25 | `14-dietary-nutrition.md` | Dietary and Nutrition | `089` | `diet_orders` + `iddsi_level`; aspiration cross-check vs meds; allergy + texture constraints. |
+| 25 | `14-dietary-nutrition.md` | Dietary and Nutrition | `089` | ✅ **Spec written.** `diet_orders`, `iddsi_food_level` / `iddsi_fluid_level`; med cross-check automation Enhanced. |
 | 26 | `15-transportation.md` | Transportation | `090` | `fleet_vehicles`, `vehicle_inspection_logs`, `driver_credentials`. |
 | 27 | `22-referral-crm.md` | Referral Source CRM | `091` | HL7 ADT; `referral_hl7_inbound` queue. |
 | 28 | `23-reputation.md` | Reputation Management | `092` | `reputation_accounts`, `reputation_replies` with `posted_by_user_id`. |
@@ -366,7 +366,7 @@ Module numbers match the product roadmap, **not** the build sequence. Build orde
 | 11 | Staff Management & Scheduling | 1 + 3.5 patch | `11-staff-management.md` — ✅; Phase 3.5 `059` |
 | 12 | Training & Competency Management | 6 | `12-training-competency.md` — ✅ Core (`086`–`087`) |
 | 13 | Facility Maintenance & Environment | 6 | `13-maintenance.md` — not yet written |
-| 14 | Dietary & Nutrition Management | 6 | `14-dietary-nutrition.md` — not yet written |
+| 14 | Dietary & Nutrition Management | 6 | `14-dietary-nutrition.md` — ✅ Core (`089`) |
 | 15 | Transportation & Appointments | 6 | `15-transportation.md` — not yet written |
 | 16 | Resident Billing & Collections | 1 + 3.5 patch | `16-billing.md` — ✅; Phase 3.5 `060` |
 | 17 | Entity & Facility Finance | 3 + 3.5 patch | `17-entity-facility-finance.md` — ✅ Core; Enhanced `048` + `065` |
