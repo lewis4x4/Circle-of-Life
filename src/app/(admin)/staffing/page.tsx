@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { SlidersHorizontal, Users } from "lucide-react";
 
 import { AdminEmptyState, AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
@@ -83,7 +84,7 @@ export default function AdminStaffingPage() {
         whenDatasetEmpty: {
           title: "No staffing snapshots in this scope",
           description:
-            "Live data returned no ratio snapshots for the selected facility or organization filter. Snapshots appear as they are recorded.",
+            "Live data returned no ratio snapshots for the selected facility or organization filter. Use Add snapshot or record coverage from your staffing tools.",
         },
         whenFiltersExcludeAll: {
           title: "No staffing snapshots match the current filters",
@@ -107,13 +108,18 @@ export default function AdminStaffingPage() {
             Point-in-time coverage snapshots versus required ratios.
           </p>
         </div>
-        <Badge
-          variant="outline"
-          className="border-red-200 bg-red-50 px-3 py-1 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
-        >
-          <Users className="mr-1 h-3.5 w-3.5" />
-          {nonCompliant} non-compliant
-        </Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/admin/staffing/new" className={buttonVariants({ size: "sm" })}>
+            Add snapshot
+          </Link>
+          <Badge
+            variant="outline"
+            className="border-red-200 bg-red-50 px-3 py-1 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
+          >
+            <Users className="mr-1 h-3.5 w-3.5" />
+            {nonCompliant} non-compliant
+          </Badge>
+        </div>
       </header>
 
       <div className="flex flex-col gap-3 rounded-xl border border-slate-200/80 bg-white/80 p-3 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/70 md:flex-row md:items-center md:justify-end">
