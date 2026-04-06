@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { Percent } from "lucide-react";
 
 import {
@@ -9,6 +10,7 @@ import {
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
@@ -102,10 +104,15 @@ export default function AdminBillingRatesPage() {
             Private base rate and surcharges live on each schedule row (detail editing comes later).
           </p>
         </div>
-        <Badge variant="outline" className="w-fit">
-          <Percent className="mr-1 h-3.5 w-3.5" />
-          {rows.filter((r) => r.current).length} current
-        </Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/admin/billing/rates/new" className={buttonVariants({ size: "sm" })}>
+            Add rate schedule
+          </Link>
+          <Badge variant="outline" className="w-fit">
+            <Percent className="mr-1 h-3.5 w-3.5" />
+            {rows.filter((r) => r.current).length} current
+          </Badge>
+        </div>
       </header>
 
       {error ? <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} /> : null}
@@ -114,7 +121,7 @@ export default function AdminBillingRatesPage() {
       {!isLoading && rows.length === 0 && !error ? (
         <AdminEmptyState
           title="No rate schedules"
-          description="Create schedules in Supabase or pick a facility that has pricing configured."
+          description="Add a rate schedule for this facility or pick a facility that already has pricing configured."
         />
       ) : null}
       {!isLoading && rows.length > 0 ? (
