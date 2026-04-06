@@ -125,7 +125,7 @@ Migration `047_executive_intelligence.sql`: enums, **seven** tables (includes `e
 
 Tables: `exec_dashboard_configs`, `exec_kpi_snapshots` (**`lineage jsonb`**), `exec_alerts`, **`exec_alert_user_state`**, **`benchmark_cohorts`**, `exec_saved_reports`. KPI domains: census/occupancy, financial, clinical/safety, infection, compliance, workforce, insurance (Module 18), vendors (Module 19). Alert scoring: `severity_weight × recency_factor × impact_weight`. RLS: owner/org_admin full access; facility_admin scoped to their facilities.
 
-Routes live: `/admin/executive` (command center), `/admin/executive/alerts`, `/admin/executive/settings`. Backlog: `/admin/executive/entity/[id]`, `/admin/executive/facility/[id]`, `/admin/executive/reports`, cron-filled `exec_kpi_snapshots`.
+Routes live: `/admin/executive` (command center), `/admin/executive/alerts`, `/admin/executive/settings`, `/admin/executive/entity`, `/admin/executive/entity/[id]`, `/admin/executive/facility/[id]`. Backlog: `/admin/executive/reports`, cron-filled `exec_kpi_snapshots`.
 
 ---
 

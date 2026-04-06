@@ -173,13 +173,21 @@ export default function ExecutiveEntityDetailPage() {
                     <Badge variant="outline">Facility</Badge>
                   </CardDescription>
                 </div>
-                <Link
-                  href="/admin/residents"
-                  className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "shrink-0 gap-1")}
-                >
-                  Residents
-                  <ExternalLink className="h-4 w-4" aria-hidden />
-                </Link>
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    href={`/admin/executive/facility/${f.id}`}
+                    className={cn(buttonVariants({ variant: "default", size: "sm" }), "shrink-0 gap-1")}
+                  >
+                    Facility view
+                  </Link>
+                  <Link
+                    href="/admin/residents"
+                    className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "shrink-0 gap-1")}
+                  >
+                    Residents
+                    <ExternalLink className="h-4 w-4" aria-hidden />
+                  </Link>
+                </div>
               </CardHeader>
               <CardContent>
                 {kpi ? (

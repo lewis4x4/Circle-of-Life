@@ -26,7 +26,9 @@ export function ExecutiveHubNav() {
           item.href === "/admin/executive"
             ? pathname === "/admin/executive"
             : item.href === "/admin/executive/entity"
-              ? pathname === "/admin/executive/entity" || pathname.startsWith("/admin/executive/entity/")
+              ? pathname === "/admin/executive/entity" ||
+                pathname.startsWith("/admin/executive/entity/") ||
+                pathname.startsWith("/admin/executive/facility/")
               : pathname === item.href;
         return (
           <Link
