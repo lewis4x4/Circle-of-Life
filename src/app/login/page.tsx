@@ -22,6 +22,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 
+function readSafeNextDestination(): string | null {
+  if (typeof window === "undefined") return null;
+  const next = new URLSearchParams(window.location.search).get("next");
+  if (!next || !next.startsWith("/") || next.startsWith("//")) return null;
+  if (next === "/login" || next.startsWith("/login?")) return null;
+  return next;
+}
+
 function LoginForbiddenNotice() {
   const searchParams = useSearchParams();
   if (searchParams.get("reason") !== "forbidden") return null;
@@ -96,7 +104,7 @@ export default function LoginPage() {
           setCheckingSession(false);
           return;
         }
-        router.replace(destination);
+        router.replace(readSafeNextDestination() ?? destination);
         router.refresh();
       } catch (e) {
         if (cancelled) return;
@@ -148,7 +156,7 @@ export default function LoginPage() {
         );
         return;
       }
-      router.push(destination);
+      router.push(readSafeNextDestination() ?? destination);
       router.refresh();
     } catch {
       setGlobalError(

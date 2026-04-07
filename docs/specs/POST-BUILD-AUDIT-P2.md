@@ -50,7 +50,7 @@ P0 and P1 issues were fixed across both sessions. The items below are medium-pri
 
 | File | Issue | Severity |
 |------|-------|----------|
-| `src/app/login/page.tsx` | Login page ignores `?next=` query parameter — deep-link return after auth doesn't work; after successful sign-in, validate `next` (same-origin, allowed path) and redirect when present | Medium |
+| `src/app/login/page.tsx` | **Fixed:** login now honors safe internal `?next=` values and falls back to role-based shell routing when absent/invalid | Low |
 | `src/proxy.ts` | No CSRF layer for cookie session + POST APIs — protection relies on SameSite cookies only | Low |
 | Shell UI components (`AdminShell`, `CaregiverShell`, `FamilyShell`) | No client-side auth re-redirect as defense-in-depth if proxy is bypassed or misconfigured | Low |
 
@@ -75,7 +75,7 @@ Many pages use `useEffect(() => { void load(); }, [load])` with no `cancelled` f
 
 | Item | Severity |
 |------|----------|
-| No first-class error tracking SDK (Sentry etc.) integrated in Next.js app | High — see [OBSERVABILITY-SPEC.md](./OBSERVABILITY-SPEC.md) |
+| Error tracking is wired in code, but production DSN/source-map env setup is still manual | Medium — see [OBSERVABILITY-SPEC.md](./OBSERVABILITY-SPEC.md) |
 | No unit/E2E test tree in repo (relies on segment:gates + manual UAT) | High — see [CI-HARDENING-SPEC.md](./CI-HARDENING-SPEC.md) |
 | Mission statement references home health + HCBS but implementation skews ALF/admin-heavy | Medium — intentional pilot scope; track for Phase 7+ |
 | `shadcn` package in `dependencies` but unused at runtime — move to `devDependencies` or remove | Low |

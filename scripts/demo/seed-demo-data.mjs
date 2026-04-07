@@ -6,6 +6,7 @@ import {
   DEMO_IDS,
   optionalEnv,
 } from "./_config.mjs";
+import { seedExecutiveIntelligence } from "./_seed-executive-intelligence.mjs";
 
 async function seedFoundation(supabase) {
   await assertNoError(
@@ -816,6 +817,10 @@ async function main() {
   await seedInsurance(supabase);
 
   console.log("[demo:seed] done");
+  
+  await seedExecutiveIntelligence(supabase, actorUserId);
+  console.log("[demo:seed] executive intelligence seeded");
+
   console.log(`[demo:seed] organization_id=${DEMO_IDS.orgId}`);
   console.log(`[demo:seed] facility_id=${DEMO_IDS.facilityId}`);
 }

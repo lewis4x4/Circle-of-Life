@@ -1,539 +1,299 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState, useId } from "react";
-import { 
-  Activity, Users, ShieldAlert, 
-  CheckCircle, Shield, Briefcase, AlertTriangle, 
-  Wallet, ArrowUpRight, Stethoscope
-} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { format } from "date-fns";
+import { Activity, AlertTriangle, ArrowRight, CheckCircle2, TrendingDown, TrendingUp, Users } from "lucide-react";
+
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { createClient } from "@/lib/supabase/client";
+import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { cn } from "@/lib/utils";
+import { KineticGrid } from "@/components/ui/kinetic-grid";
+import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
+import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
+import { Sparkline } from "@/components/ui/moonshot/sparkline";
+import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 
 import { ExecutiveHubNav } from "./executive-hub-nav";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
-import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
-import { useFacilityStore } from "@/hooks/useFacilityStore";
-import { fetchExecutiveKpiSnapshot, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
-import {
-  arDeltaLine,
-  censusDeltaLine,
-  clinicalDeltaLine,
-  complianceDeltaLine,
-  fetchPriorExecSnapshotMetrics,
-  infectionDeltaLine,
-  workforceDeltaLine,
-} from "@/lib/exec-prior-snapshot";
-import { fetchExecutiveAlerts, type ExecutiveAlertRow } from "@/lib/exec-alerts";
-import { computeTotalCostOfRisk, type TcorSnapshot } from "@/lib/insurance/compute-tcor";
-import { cn } from "@/lib/utils";
 
-const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-
-function severityTheme(s: string) {
-  if (s === "critical") return "text-red-500 border-red-500/20 bg-red-500/5";
-  if (s === "warning") return "text-orange-500 border-orange-500/20 bg-orange-500/5";
-  return "text-blue-500 border-blue-500/20 bg-blue-500/5";
-}
-
-function V2Card({ children, className, href, hoverColor = "indigo" }: { children: React.ReactNode; className?: string; href?: string; hoverColor?: string }) {
-  const hoverGradient = {
-    indigo: "group-hover:from-indigo-500/10",
-    emerald: "group-hover:from-emerald-500/10",
-    rose: "group-hover:from-rose-500/10",
-    orange: "group-hover:from-orange-500/10",
-    cyan: "group-hover:from-cyan-500/10",
-    blue: "group-hover:from-blue-500/10",
-  }[hoverColor] || "group-hover:from-slate-500/10";
-
-  const content = (
-    <div className={cn(
-      "group relative h-full w-full overflow-hidden rounded-xl border border-slate-200 bg-white p-5 transition-all duration-300",
-      "dark:border-slate-800/80 dark:bg-[#0A0A0A] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]",
-      href && "cursor-pointer dark:hover:border-slate-600/80 hover:border-slate-300 shadow-sm",
-      className
-    )}>
-      {/* Subtle hover backlight radial/linear gradient */}
-      <div className={cn("absolute inset-0 z-0 bg-gradient-to-br via-transparent to-transparent opacity-0 transition-opacity duration-300 pointer-events-none", hoverGradient, "opacity-0")} />
-      
-      {/* Content wrapper */}
-      <div className="relative z-10 flex h-full flex-col">
-        {children}
-      </div>
-    </div>
-  );
-
-  if (href) {
-    return <Link href={href} className="block h-full outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-xl">{content}</Link>;
-  }
-  return content;
-}
-
-// Simulated SVG data sparkline
-function Sparkline({ colorClass = "text-indigo-500", variant = 1 }) {
-  const paths = {
-    1: { fill: "M0 25 L15 15 L30 20 L45 5 L60 12 L75 2 L100 10 L100 30 L0 30 Z", stroke: "M0 25 L15 15 L30 20 L45 5 L60 12 L75 2 L100 10" },
-    2: { fill: "M0 10 L20 18 L40 5 L60 22 L80 15 L100 5 L100 30 L0 30 Z", stroke: "M0 10 L20 18 L40 5 L60 22 L80 15 L100 5" },
-    3: { fill: "M0 20 L25 22 L50 15 L75 18 L100 8 L100 30 L0 30 Z", stroke: "M0 20 L25 22 L50 15 L75 18 L100 8" },
-    4: { fill: "M0 5 L20 10 L40 25 L60 15 L80 18 L100 5 L100 30 L0 30 Z", stroke: "M0 5 L20 10 L40 25 L60 15 L80 18 L100 5" },
-  };
-  const path = paths[variant as keyof typeof paths] || paths[1];
-  const idValue = useId().replace(/:/g, ""); // Clean the id for SVG/CSS
-
-  return (
-    <svg className={cn("absolute bottom-0 left-0 w-full h-14 opacity-15 group-hover:opacity-30 transition-opacity duration-300 pointer-events-none", colorClass)} viewBox="0 0 100 30" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id={`grad-${idValue}`} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="currentColor" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={path.fill} fill={`url(#grad-${idValue})`} />
-      <path d={path.stroke} fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function ARAgingBar() {
-  return (
-    <div className="mt-5 w-full">
-      <div className="flex justify-between text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-1.5 dark:text-slate-400">
-        <span>0-30d</span>
-        <span>31-60d</span>
-        <span>60-90+</span>
-      </div>
-      <div className="flex h-[6px] w-full overflow-hidden rounded-full gap-0.5 bg-slate-100 dark:bg-slate-800/50">
-        <div className="bg-emerald-500 dark:bg-emerald-400 w-[55%] transition-all" />
-        <div className="bg-amber-500 dark:bg-amber-400 w-[30%] transition-all" />
-        <div className="bg-rose-500 dark:bg-rose-500 w-[15%] transition-all" />
-      </div>
-    </div>
-  );
-}
-
-function PulseDot({ colorClass = "bg-rose-500" }: { colorClass?: string }) {
-  return (
-    <span className="relative flex h-2.5 w-2.5 ml-2">
-      <span className={cn("animate-ping absolute inline-flex h-full w-full rounded-full opacity-75", colorClass)}></span>
-      <span className={cn("relative inline-flex rounded-full h-2.5 w-2.5", colorClass)}></span>
-    </span>
-  );
-}
-
-function RadarMatrix({ alerts, loading }: { alerts: ExecutiveAlertRow[], loading: boolean }) {
-  const hasCritical = alerts.some(a => a.severity === "critical");
-  
-  return (
-    <div className="flex h-full flex-col overflow-hidden rounded-[14px] border border-slate-200 bg-black dark:border-slate-800/80 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]">
-      <div className="relative z-20 flex items-center justify-between border-b px-5 py-4 border-slate-800 bg-[#0A0A0A]/80 backdrop-blur-sm">
-        <h2 className="flex items-center gap-2 text-sm font-medium text-slate-100">
-          <AlertTriangle className={cn("h-4 w-4", hasCritical ? "text-rose-500" : "text-emerald-500")} /> 
-          Telemetry & Risk
-          {hasCritical && <PulseDot colorClass="bg-rose-500" />}
-        </h2>
-        <Link href="/admin/executive/alerts" className="text-[10px] font-mono uppercase tracking-wider text-slate-400 hover:text-white transition-colors">
-          Log →
-        </Link>
-      </div>
-
-      <div className="relative flex-1 flex flex-col xl:flex-row overflow-hidden bg-[#040405]">
-        {/* SVG Radar Canvas */}
-        <div className="relative flex h-64 w-full xl:w-1/2 items-center justify-center border-b xl:border-b-0 xl:border-r border-slate-800/50 overflow-hidden">
-          <div className={cn("absolute inset-0 opacity-20 blur-2xl transition-colors duration-1000", hasCritical ? "bg-rose-600/30" : "bg-emerald-600/20")} />
-          
-          <div className="absolute inset-0 flex items-center justify-center opacity-80 mix-blend-screen">
-            <div className="h-[200px] w-[200px] rounded-full border border-emerald-500/20" />
-            <div className="absolute h-[140px] w-[140px] rounded-full border border-emerald-500/20" />
-            <div className="absolute h-[80px] w-[80px] rounded-full border border-emerald-500/40" />
-            <div className="absolute h-[250px] w-[1px] bg-emerald-500/30" />
-            <div className="absolute w-[250px] h-[1px] bg-emerald-500/30" />
-          </div>
-
-          {!loading && (
-            <div className="absolute inset-0 flex items-center justify-center mix-blend-screen">
-              <div 
-                className="h-[500px] w-[500px] rounded-full origin-center animate-[spin_4s_linear_infinite]" 
-                style={{ background: "conic-gradient(from 0deg, transparent 270deg, rgba(16, 185, 129, 0.4) 360deg)" }} 
-              />
-            </div>
-          )}
-
-          {!loading && alerts.map((a, i) => {
-            const isCrit = a.severity === "critical";
-            const top = `${25 + (i * 17 % 50)}%`;
-            const left = `${25 + (i * 23 % 50)}%`;
-            return (
-              <div key={a.id} className="absolute z-10 animate-in zoom-in duration-500" style={{ top, left, animationDelay: `${i * 100}ms` }}>
-                <span className="relative flex h-2 w-2">
-                  <span className={cn("animate-ping absolute inline-flex h-full w-full rounded-full opacity-75", isCrit ? "bg-rose-500" : "bg-emerald-500")}></span>
-                  <span className={cn("relative inline-flex rounded-full h-2 w-2", isCrit ? "bg-rose-500" : "bg-emerald-500")}></span>
-                </span>
-                {isCrit && <div className="absolute top-3 left-3 text-[8px] font-mono text-rose-500 whitespace-nowrap bg-black/80 px-1 border border-rose-500/30">ID_{a.id.slice(0,4)}</div>}
-              </div>
-            );
-          })}
-        </div>
-        
-        {/* Telemetry Stream */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-[#020202] mix-blend-lighten">
-          {loading ? (
-            <Skeleton className="h-16 w-full rounded-md bg-slate-800/50" />
-          ) : alerts.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center text-center opacity-50">
-              <CheckCircle className="h-6 w-6 text-emerald-500 mb-2" />
-              <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">System Nominal</p>
-            </div>
-          ) : (
-            alerts.map((a, i) => (
-              <Link key={a.id} href={a.deep_link_path || "#"} className={cn(
-                "group flex flex-col p-3 rounded-md border text-left transition-all hover:bg-slate-900 animate-in slide-in-from-right-4 fade-in duration-500",
-                severityTheme(a.severity)
-              )} style={{ animationDelay: `${i * 150}ms`, animationFillMode: 'both' }}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[9px] font-mono font-bold tracking-widest uppercase opacity-80">{a.source_module}</span>
-                  <span className={cn("text-[9px] font-mono font-bold tracking-widest uppercase px-1.5 py-0.5 border rounded-sm", a.severity === "critical" ? "bg-rose-500/20 border-rose-500/30 text-rose-400" : "bg-amber-500/10 border-amber-500/20 text-amber-500")}>
-                    {a.severity}
-                  </span>
-                </div>
-                <p className="text-xs font-semibold truncate text-slate-300">{a.title}</p>
-              </Link>
-            ))
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function ExecutiveCommandCenterPage() {
+export default function ExecutiveOverviewPage() {
   const supabase = createClient();
-  const { selectedFacilityId } = useFacilityStore();
-  const [kpis, setKpis] = useState<ExecKpiPayload | null>(null);
-  const [priorKpi, setPriorKpi] = useState<ExecKpiPayload | null>(null);
-  const [alerts, setAlerts] = useState<ExecutiveAlertRow[]>([]);
-  const [tcor, setTcor] = useState<TcorSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Core metrics
+  const [metrics, setMetrics] = useState<Record<string, number>>({});
+  
+  // Watchlist alerts
+  const [alerts, setAlerts] = useState<any[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) {
-        setError(ctx.error);
-        setKpis(null);
-        setPriorKpi(null);
-        setAlerts([]);
-        setTcor(null);
-        return;
+      // 1. Fetch latest snapshots from the synthetic data
+      const { data: snapData, error: snapErr } = await supabase
+        .from("exec_metric_snapshots")
+        .select("metric_code, metric_value_numeric")
+        .order("snapshot_date", { ascending: false })
+        .limit(20);
+        
+      if (snapErr) throw snapErr;
+      
+      // Reduce to latest by code
+      const latestMap: Record<string, number> = {};
+      for (const row of (snapData || [])) {
+        if (!latestMap[row.metric_code]) {
+          latestMap[row.metric_code] = row.metric_value_numeric || 0;
+        }
       }
-      const orgId = ctx.ctx.organizationId;
+      setMetrics(latestMap);
 
-      let entityIdForTcor: string | null = null;
-      if (selectedFacilityId) {
-        const { data: fac } = await supabase
-          .from("facilities")
-          .select("entity_id")
-          .eq("id", selectedFacilityId)
-          .eq("organization_id", orgId)
-          .is("deleted_at", null)
-          .maybeSingle();
-        entityIdForTcor = fac?.entity_id ?? null;
-      }
+      // 2. Fetch Executive Alerts
+      const { data: alertData, error: alertErr } = await supabase
+        .from("exec_alerts")
+        .select("*, facilities(name)")
+        .eq("status", "open")
+        .order("severity", { ascending: false })
+        .limit(5);
 
-      const [kpiData, priorData, alertData, tcorResult] = await Promise.all([
-        fetchExecutiveKpiSnapshot(supabase, orgId, selectedFacilityId),
-        fetchPriorExecSnapshotMetrics(supabase, orgId, selectedFacilityId),
-        fetchExecutiveAlerts(supabase, orgId, selectedFacilityId, 10),
-        computeTotalCostOfRisk(supabase, { organizationId: orgId, entityId: entityIdForTcor }),
-      ]);
-      setKpis(kpiData);
-      setPriorKpi(priorData);
-      setAlerts(alertData);
-      setTcor(tcorResult.ok ? tcorResult.snapshot : null);
+      if (alertErr) throw alertErr;
+      setAlerts(alertData || []);
+
     } catch (e) {
-      setKpis(null);
-      setPriorKpi(null);
-      setAlerts([]);
-      setTcor(null);
-      setError(e instanceof Error ? e.message : "Unable to load executive data.");
+      setError(e instanceof Error ? e.message : "Failed to load executive overview.");
     } finally {
       setLoading(false);
     }
-  }, [supabase, selectedFacilityId]);
+  }, [supabase]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  const topAlerts = alerts.slice(0, 4);
-  const hasCriticals = topAlerts.some((a) => a.severity === "critical");
+  // View helpers
+  const formatPct = (val?: number) => val !== undefined ? `${(val * 100).toFixed(1)}%` : "--%";
+  const formatNum = (val?: number) => val !== undefined ? Math.round(val).toLocaleString() : "--";
+  const formatCur = (val?: number) => val !== undefined ? `$${(val / 100).toLocaleString()}` : "--";
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full">
-      {/* Ambient Environmental Lighting Matrix */}
-      <div className={cn(
-        "fixed top-0 right-0 h-[800px] w-[800px] rounded-full blur-[120px] opacity-20 pointer-events-none transition-colors duration-[3000ms] ease-in-out",
-        hasCriticals ? "bg-rose-700/30" : "bg-indigo-700/10"
-      )} />
-      <div className={cn(
-        "fixed bottom-0 left-0 h-[600px] w-[600px] rounded-full blur-[100px] opacity-10 pointer-events-none transition-colors duration-[3000ms] ease-in-out",
-        hasCriticals ? "bg-rose-900/20" : "bg-emerald-900/10"
-      )} />
-
-      <div className="relative z-10 space-y-8 pb-10">
-        <ExecutiveHubNav />
-
-      {/* Header - V2 Sharp Lineage */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b pb-4 dark:border-slate-800">
-        <div>
-          <div className="mb-1.5 flex items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center">
-              Command Base
-              {hasCriticals && <PulseDot />}
-            </h1>
+    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+      <AmbientMatrix hasCriticals={alerts.some(a => a.severity === 'critical')} />
+      
+      <div className="relative z-10 space-y-6">
+        <header className="mb-6 mt-2">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6 mb-4">
+            <div>
+              <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Command Center</p>
+              <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+                Executive Intelligence
+              </h2>
+              <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">Enterprise Portfolio Overview</p>
+            </div>
+            <div className="hidden md:block">
+              <ExecutiveHubNav />
+            </div>
           </div>
-          <p className="max-w-2xl text-xs uppercase tracking-widest text-slate-500 font-mono">
-            SYS: Module 24 / Matrix Sync
-            {!loading && kpis && !priorKpi && (
-              <span className="ml-2 text-amber-500">
-                [Awaiting Nightly Batch]
-              </span>
-            )}
-          </p>
-        </div>
-        <Button 
-          type="button" 
-          variant="outline" 
-          className="gap-2 shrink-0 h-9 font-mono text-xs uppercase tracking-wider dark:hover:bg-primary/10 dark:hover:text-primary transition-colors border-slate-200 dark:border-slate-800" 
-          onClick={() => void load()} 
-          disabled={loading}
-        >
-          <Activity className={cn("h-3.5 w-3.5", loading && "animate-pulse")} />
-          <span>{loading ? "Syncing..." : "Sync Matrix"}</span>
-        </Button>
-      </div>
+        </header>
 
-      {error && (
-        <div className="flex items-center gap-2 rounded-md border border-rose-500/20 bg-rose-500/5 px-4 py-3 text-sm font-medium text-rose-500">
-          <AlertTriangle className="h-4 w-4" />
-          {error}
-        </div>
-      )}
+        {/* Top Command Strip */}
+        <KineticGrid className="grid-cols-2 md:grid-cols-5 gap-4 mb-6" staggerMs={50}>
+          <div className="h-[120px]">
+             <V2Card hoverColor="emerald" className="border-emerald-500/20 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]">
+               <Sparkline colorClass="text-emerald-500" variant={2} />
+               <div className="relative z-10 flex flex-col h-full justify-between">
+                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+                   Occupancy
+                 </h3>
+                 <div className="flex items-end gap-2 pb-1">
+                   <p className="text-3xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400">{formatPct(metrics['occ_pt'])}</p>
+                   <TrendingUp className="h-4 w-4 text-emerald-500 mb-1" />
+                 </div>
+               </div>
+             </V2Card>
+          </div>
+          <div className="h-[120px]">
+             <V2Card hoverColor="indigo" className="border-indigo-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
+               <Sparkline colorClass="text-indigo-500" variant={1} />
+               <div className="relative z-10 flex flex-col h-full justify-between">
+                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                   Billed MTD
+                 </h3>
+                 <p className="text-2xl font-mono tracking-tighter text-indigo-600 dark:text-indigo-400 pb-1">{formatCur(metrics['rev_mtd'])}</p>
+               </div>
+             </V2Card>
+          </div>
+          <div className="h-[120px]">
+             <V2Card hoverColor="amber" className="border-amber-500/20 shadow-[inset_0_0_15px_rgba(245,158,11,0.05)]">
+               <Sparkline colorClass="text-amber-500" variant={3} />
+               <div className="relative z-10 flex flex-col h-full justify-between">
+                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-amber-600 dark:text-amber-500 flex items-center gap-2">
+                   Labor Cost %
+                 </h3>
+                 <div className="flex items-end gap-2 pb-1">
+                   <p className="text-3xl font-mono tracking-tighter text-amber-600 dark:text-amber-500">{formatPct(metrics['labor_pct'])}</p>
+                   <TrendingDown className="h-4 w-4 text-amber-500 mb-1" />
+                 </div>
+               </div>
+             </V2Card>
+          </div>
+          <div className="h-[120px]">
+             <V2Card hoverColor="rose" className="border-rose-500/20 shadow-[inset_0_0_15px_rgba(244,63,94,0.05)]">
+               <div className="relative z-10 flex flex-col h-full justify-between">
+                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2">
+                   Incidents / 1k Days
+                 </h3>
+                 <p className="text-3xl font-mono tracking-tighter text-rose-600 dark:text-rose-400 pb-1">{formatNum(metrics['inc_rate'])}</p>
+               </div>
+             </V2Card>
+          </div>
+          <div className="h-[120px]">
+             <V2Card hoverColor="blue" className="border-blue-500/20 shadow-[inset_0_0_15px_rgba(59,130,246,0.05)]">
+               <Sparkline colorClass="text-blue-500" variant={2} />
+               <div className="relative z-10 flex flex-col h-full justify-between">
+                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                   Survey Readiness
+                 </h3>
+                 <p className="text-3xl font-mono tracking-tighter text-blue-600 dark:text-blue-400 pb-1">{formatPct(metrics['survey_rd'])}</p>
+               </div>
+             </V2Card>
+          </div>
+        </KineticGrid>
 
-      {/* Bento Grid Layout - V2 Strict Structure */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4 auto-rows-fr">
-        
-        {/* === HERO: Census & Occupancy === */}
-        <div className="xl:col-span-4 h-full animate-in fade-in zoom-in-95 duration-700" style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
-          <V2Card href="/admin/residents" hoverColor="indigo">
-            {/* Monolithic Watermark Typography */}
-            {!loading && kpis && (
-              <MonolithicWatermark value={kpis.census.occupiedResidents} />
-            )}
-            <div className="relative z-10 flex flex-col h-full justify-between">
-              <div className="flex items-start justify-between mb-4">
-                <h2 className="flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-slate-300">
-                  <Users className="h-4 w-4 text-indigo-500" /> Census & Occupancy
-                </h2>
-                <ArrowUpRight className="h-4 w-4 text-slate-400 opacity-0 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
-              </div>
-              
-              <div>
-                {loading ? <Skeleton className="h-10 w-24 mb-2" /> : (
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-mono tracking-tighter tabular-nums bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-500 dark:from-white dark:to-slate-400">
-                      {kpis ? kpis.census.occupiedResidents : "—"}
-                    </span>
-                    <span className="text-sm font-mono text-slate-500 dark:text-slate-500">/ {kpis ? kpis.census.licensedBeds : "—"}</span>
-                  </div>
-                )}
-                
-                <div className="flex items-center justify-between mt-4 border-t pt-3 dark:border-slate-800/50 border-slate-100">
-                  <div className="h-4 flex items-center">
-                    {!loading && kpis && censusDeltaLine(kpis, priorKpi) ? (
-                      <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500">{censusDeltaLine(kpis, priorKpi)}</span>
-                    ) : <Skeleton className="h-3 w-16" />}
-                  </div>
-                  {!loading && kpis && (
-                    <span className="text-[11px] font-mono font-bold tracking-wider px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-                      {kpis.census.occupancyPct}% RATE
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-            {/* Ambient visual effect */}
-            <div className="absolute -right-10 -bottom-10 h-32 w-32 rounded-full bg-indigo-500/5 blur-3xl group-hover:bg-indigo-500/10 transition-colors duration-500 pointer-events-none" />
-          </V2Card>
-        </div>
-
-        {/* === HERO: Financial (AR) === */}
-        <div className="xl:col-span-4 h-full animate-in fade-in zoom-in-95 duration-700" style={{ animationDelay: '200ms', animationFillMode: 'both' }}>
-          <V2Card href="/admin/billing/invoices" hoverColor="emerald">
-            {/* Monolithic Watermark Typography */}
-            {!loading && kpis && (
-              <MonolithicWatermark value={Math.round((kpis.financial.totalBalanceDueCents / 100) / 1000) + 'k'} />
-            )}
-             <div className="relative z-10 flex flex-col h-full justify-between">
-              <div className="flex items-start justify-between mb-4">
-                <h2 className="flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-slate-300">
-                  <Wallet className="h-4 w-4 text-emerald-500" /> Accounts Receivable
-                </h2>
-                <ArrowUpRight className="h-4 w-4 text-slate-400 opacity-0 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
-              </div>
-              
-              <div>
-                {loading ? <Skeleton className="h-10 w-32 mb-2" /> : (
-                  <div className="text-5xl font-mono tracking-tighter tabular-nums bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-500 dark:from-white dark:to-slate-400">
-                    {kpis ? money.format(kpis.financial.totalBalanceDueCents / 100) : "—"}
-                  </div>
-                )}
-                
-                <ARAgingBar />
-
-                <div className="flex items-center justify-between mt-4 border-t pt-3 dark:border-slate-800/50 border-slate-100">
-                  <div className="h-4 flex items-center">
-                    {!loading && kpis && arDeltaLine(kpis, priorKpi) ? (
-                      <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500">{arDeltaLine(kpis, priorKpi)}</span>
-                    ) : <Skeleton className="h-3 w-16" />}
-                  </div>
-                  {!loading && kpis && (
-                    <span className="text-[11px] font-mono tracking-wider text-slate-500">
-                      {kpis.financial.openInvoicesCount} OPEN
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="absolute -left-10 -bottom-10 h-32 w-32 rounded-full bg-emerald-500/5 blur-3xl group-hover:bg-emerald-500/10 transition-colors duration-500 pointer-events-none" />
-          </V2Card>
-        </div>
-
-        {/* === SIDE ALERTS PANEL -> V4 CORE REACTOR === */}
-        <div className="md:col-span-2 xl:col-span-4 xl:row-span-2 h-full animate-in fade-in zoom-in-95 duration-700" style={{ animationDelay: '300ms', animationFillMode: 'both' }}>
-          <RadarMatrix alerts={topAlerts} loading={loading} />
-        </div>
-
-        {/* === SECONDARY GRID === */}
-        <div className="xl:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <MetricBlock 
-            title="Clinical"
-            icon={<Stethoscope className="h-3.5 w-3.5 text-blue-500" />}
-            value={kpis ? String(kpis.clinical.openIncidents) : "—"}
-            delta={kpis ? clinicalDeltaLine(kpis, priorKpi) : null}
-            loading={loading}
-            href="/admin/incidents"
-            highlight={kpis && kpis.clinical.openIncidents > 3}
-            hoverColor="blue"
-            sparkVariant={1}
-          />
-          <MetricBlock 
-            title="Compliance"
-            icon={<ShieldAlert className="h-3.5 w-3.5 text-orange-500" />}
-            value={kpis ? String(kpis.compliance.openSurveyDeficiencies) : "—"}
-            delta={kpis ? complianceDeltaLine(kpis, priorKpi) : null}
-            loading={loading}
-            href="/admin/compliance"
-            highlight={kpis && kpis.compliance.openSurveyDeficiencies > 0}
-            hoverColor="orange"
-            sparkVariant={2}
-          />
-          <MetricBlock 
-            title="Workforce"
-            icon={<Briefcase className="h-3.5 w-3.5 text-cyan-500" />}
-            value={kpis ? String(kpis.workforce.certificationsExpiring30d) : "—"}
-            delta={kpis ? workforceDeltaLine(kpis, priorKpi) : null}
-            loading={loading}
-            href="/admin/certifications"
-            hoverColor="cyan"
-            sparkVariant={3}
-          />
-          <MetricBlock 
-            title="Infection"
-            icon={<Activity className="h-3.5 w-3.5 text-rose-500" />}
-            value={kpis ? String(kpis.infection.activeOutbreaks) : "—"}
-            delta={kpis ? infectionDeltaLine(kpis, priorKpi) : null}
-            loading={loading}
-            href="/admin/infection-control"
-            highlight={kpis && kpis.infection.activeOutbreaks > 0}
-            hoverColor="rose"
-            sparkVariant={4}
-          />
-          
-          {/* TCoR Spans full width of this subgrid on smallest, but sm:col-span-4 */}
-          <div className="col-span-2 sm:col-span-4">
-            <V2Card href="/admin/insurance" hoverColor="emerald" className="group flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500 font-mono">
-                  <Shield className="h-3.5 w-3.5 text-emerald-500" /> TCoR (12m)
-                </h2>
-                <ArrowUpRight className="h-3.5 w-3.5 text-slate-500 opacity-0 transition-all group-hover:opacity-100" />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  {loading ? <Skeleton className="h-8 w-24" /> : (
-                    <p className="text-3xl font-mono tracking-tighter tabular-nums bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-500 dark:from-white dark:to-slate-400">
-                      {tcor ? money.format(tcor.tcorCents / 100) : "—"}
-                    </p>
-                  )}
-                </div>
-                <div className="text-right hidden sm:flex gap-4">
-                  {loading ? <Skeleton className="h-4 w-32" /> : tcor && (
-                    <>
-                      <div className="flex flex-col items-end">
-                        <span className="text-[9px] uppercase font-mono text-slate-500">Premiums</span>
-                        <span className="text-sm font-mono text-slate-900 dark:text-slate-300">{money.format(tcor.premiumsCents / 100)}</span>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Watchlist */}
+          <div className="lg:col-span-1 space-y-4">
+            <h3 className="text-sm font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-500" /> Executive Watchlist
+            </h3>
+            {alerts.length === 0 ? (
+               <Card className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border-slate-200 dark:border-slate-800">
+                <CardContent className="flex flex-col items-center justify-center p-8 text-center text-slate-500 dark:text-slate-400">
+                  <CheckCircle2 className="h-8 w-8 text-emerald-500 mb-2 opacity-50" />
+                  <p className="text-sm">No critical alerts requiring leadership intervention.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {alerts.map((alert) => (
+                  <V2Card 
+                    key={alert.id} 
+                    hoverColor={alert.severity === 'critical' ? 'rose' : 'amber'} 
+                    className={cn(
+                      "p-4 flex flex-col gap-3",
+                      alert.severity === 'critical' ? 'border-rose-500/30 bg-rose-500/5' : 'border-amber-500/30 bg-amber-500/5'
+                    )}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        {alert.severity === 'critical' && <PulseDot colorClass="bg-rose-500" />}
+                        <span className="text-[10px] uppercase tracking-wider font-mono font-semibold text-slate-500 dark:text-slate-400">
+                           {alert.category} • {alert.facilities?.name || 'Enterprise'}
+                        </span>
                       </div>
-                      <div className="flex flex-col items-end">
-                         <span className="text-[9px] uppercase font-mono text-slate-500">Losses</span>
-                         <span className="text-sm font-mono text-slate-900 dark:text-slate-300">{money.format(tcor.incurredLossesCents / 100)}</span>
+                      <span className={cn(
+                        "text-[10px] uppercase tracking-widest font-mono font-bold px-1.5 py-0.5 rounded",
+                        alert.severity === 'critical' ? "bg-rose-500/10 text-rose-500" : "bg-amber-500/10 text-amber-500"
+                      )}>
+                        {alert.severity}
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100">{alert.title}</h4>
+                      {alert.body && <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{alert.body}</p>}
+                    </div>
+                    {alert.why_it_matters && (
+                      <div className="text-[11px] bg-slate-900/5 dark:bg-slate-900/50 p-2 rounded text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50">
+                        <span className="font-semibold block mb-0.5">Business Impact:</span>
+                        {alert.why_it_matters}
                       </div>
-                    </>
-                  )}
-                </div>
+                    )}
+                  </V2Card>
+                ))}
               </div>
-            </V2Card>
+            )}
           </div>
 
+          {/* Portfolio Grid */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-sm font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Activity className="h-4 w-4 text-indigo-500" /> Portfolio Health
+              </h3>
+              <Link className="text-[11px] font-mono tracking-widest uppercase text-indigo-500 hover:text-indigo-400 transition-colors flex items-center gap-1" href="/executive/reports">
+                Detailed Views <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+            
+            <Card className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border-slate-200 dark:border-slate-800 overflow-hidden shadow-2xl">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="dark:border-slate-800 hover:bg-transparent">
+                      <TableHead className="font-mono text-[10px] tracking-widest uppercase py-3">Facility</TableHead>
+                      <TableHead className="font-mono text-[10px] tracking-widest uppercase text-right py-3">Occupancy</TableHead>
+                      <TableHead className="font-mono text-[10px] tracking-widest uppercase text-right py-3">Labor %</TableHead>
+                      <TableHead className="font-mono text-[10px] tracking-widest uppercase text-right py-3">Inc/1k</TableHead>
+                      <TableHead className="font-mono text-[10px] tracking-widest uppercase text-right py-3">Survey %</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {/* Simulated Rows for V1 Placeholder since we only have Oakridge seeded thoroughly */}
+                    <TableRow className="dark:border-slate-800/50 transition-colors cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                      <TableCell className="font-medium">Oakridge Senior Living</TableCell>
+                      <TableCell className="text-right">
+                        <span className="text-emerald-500 font-mono inline-flex items-center gap-1">{formatPct(metrics['occ_pt'])}<TrendingUp className="h-3 w-3"/></span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className="text-amber-500 font-mono inline-flex items-center gap-1">{formatPct(metrics['labor_pct'])}<TrendingDown className="h-3 w-3"/></span>
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-slate-600 dark:text-slate-300">{formatNum(metrics['inc_rate'])}</TableCell>
+                      <TableCell className="text-right font-mono text-blue-500">{formatPct(metrics['survey_rd'])}</TableCell>
+                    </TableRow>
+                    
+                    {/* Mock facilities to show the portfolio table UI structure */}
+                    <TableRow className="dark:border-slate-800/50 transition-colors cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                      <TableCell className="font-medium">Pines Assisted Care</TableCell>
+                      <TableCell className="text-right font-mono text-emerald-500">92.4%</TableCell>
+                      <TableCell className="text-right font-mono text-emerald-500">48.2%</TableCell>
+                      <TableCell className="text-right font-mono text-slate-600 dark:text-slate-300">1.8</TableCell>
+                      <TableCell className="text-right font-mono text-blue-500">98.1%</TableCell>
+                    </TableRow>
+                    <TableRow className="dark:border-slate-800/50 transition-colors cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                      <TableCell className="font-medium flex items-center gap-2">Maplewood Annex <PulseDot colorClass="bg-amber-500" /></TableCell>
+                      <TableCell className="text-right font-mono text-amber-500">88.5%</TableCell>
+                      <TableCell className="text-right font-mono text-emerald-500">51.0%</TableCell>
+                      <TableCell className="text-right font-mono text-slate-600 dark:text-slate-300">2.9</TableCell>
+                      <TableCell className="text-right font-mono text-amber-500">82.4%</TableCell>
+                    </TableRow>
+                    <TableRow className="dark:border-slate-800/50 transition-colors cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                      <TableCell className="font-medium flex items-center gap-2">Cedar Creek Estates <PulseDot colorClass="bg-rose-500" /></TableCell>
+                      <TableCell className="text-right font-mono text-rose-500">79.2%</TableCell>
+                      <TableCell className="text-right font-mono text-rose-500">62.8%</TableCell>
+                      <TableCell className="text-right font-mono text-amber-500">4.1</TableCell>
+                      <TableCell className="text-right font-mono text-rose-500">76.0%</TableCell>
+                    </TableRow>
+                    
+                    <TableRow className="bg-slate-50 dark:bg-slate-900/80 font-bold border-t-2 border-slate-200 dark:border-slate-700">
+                      <TableCell>Enterprise Total Avg</TableCell>
+                      <TableCell className="text-right font-mono text-amber-500">86.1%</TableCell>
+                      <TableCell className="text-right font-mono text-amber-500">54.5%</TableCell>
+                      <TableCell className="text-right font-mono text-slate-600 dark:text-slate-300">3.5</TableCell>
+                      <TableCell className="text-right font-mono text-amber-500">86.4%</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
+          </div>
         </div>
+
       </div>
     </div>
-  </div>
-  );
-}
-
-function MetricBlock({
-  title, icon, value, delta, loading, href, highlight, hoverColor, sparkVariant
-}: {
-  title: string; icon: React.ReactNode; value: string; delta?: string | null; loading: boolean; href: string; highlight?: boolean | null; hoverColor: string; sparkVariant: number;
-}) {
-  return (
-    <V2Card href={href} hoverColor={hoverColor} className={cn("flex flex-col p-3.5 sm:p-4", highlight && "border-rose-500/50 dark:border-rose-500/30 shadow-[inset_0_0_15px_rgba(244,63,94,0.05)]")}>
-      <Sparkline colorClass={`text-${hoverColor}-500`} variant={sparkVariant} />
-      
-      <div className="relative z-10 flex items-center justify-between mb-4">
-        <h3 className="text-[10px] sm:text-[11px] font-mono font-bold tracking-wider text-slate-500 uppercase flex items-center gap-1.5 cursor-default min-w-0">
-          <span className="shrink-0">{icon}</span>
-          <span className="truncate">{title}</span>
-          {highlight && <PulseDot />}
-        </h3>
-      </div>
-      
-      <div className="relative z-10 mt-auto flex flex-col justify-end">
-        {loading ? <Skeleton className="h-8 w-12 mb-1" /> : (
-          <p className={cn("text-3xl font-mono tracking-tighter tabular-nums", highlight ? "text-rose-600 dark:text-rose-400" : "bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-600 dark:from-white dark:to-slate-400")}>
-            {value}
-          </p>
-        )}
-        <div className="h-4">
-          {!loading && delta && (
-            <p className="text-[10px] font-mono tracking-wider uppercase text-slate-500 truncate">{delta}</p>
-          )}
-        </div>
-      </div>
-    </V2Card>
   );
 }

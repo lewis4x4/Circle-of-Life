@@ -2,33 +2,20 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Bell } from "lucide-react";
+import { Bell, ShieldAlert, ArrowRight, Clock, MapPin, Search, CheckCircle2 } from "lucide-react";
 
 import { ExecutiveHubNav } from "../executive-hub-nav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchExecutiveAlerts, acknowledgeExecutiveAlert, type ExecutiveAlertRow } from "@/lib/exec-alerts";
 import { cn } from "@/lib/utils";
-
-function severityBadgeVariant(
-  s: ExecutiveAlertRow["severity"],
-): "destructive" | "secondary" | "outline" {
-  if (s === "critical") return "destructive";
-  if (s === "warning") return "secondary";
-  return "outline";
-}
+import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
+import { KineticGrid } from "@/components/ui/kinetic-grid";
+import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 
 export default function ExecutiveAlertsPage() {
   const supabase = createClient();
@@ -82,92 +69,163 @@ export default function ExecutiveAlertsPage() {
     }
   }
 
+  const criticals = rows.filter(r => r.severity === 'critical');
+  const warnings = rows.filter(r => r.severity === 'warning');
+  const infos = rows.filter(r => r.severity === 'info');
+
   return (
-    <div className="space-y-6">
-      <ExecutiveHubNav />
+    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+      <AmbientMatrix hasCriticals={criticals.length > 0} primaryClass="bg-amber-900/10" secondaryClass="bg-rose-900/10" />
 
-      <div className="flex items-center gap-3">
-        <Bell className="h-8 w-8 text-slate-600 dark:text-slate-300" aria-hidden />
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Executive alerts</h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Open alerts from Module 24. Acknowledging records who saw the item; resolve in source workflows where applicable.
-          </p>
-        </div>
-      </div>
-
-      {error && (
-        <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {error}
-        </p>
-      )}
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <div>
-            <CardTitle>Inbox</CardTitle>
-            <CardDescription>Unresolved alerts for your scope (org or selected facility).</CardDescription>
+      <div className="relative z-10 space-y-6">
+        <header className="mb-6 mt-2">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6 mb-4">
+            <div>
+              <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Exception Engine</p>
+              <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+                Action Center
+              </h2>
+              <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">Workflow routing and executive intervention queue</p>
+            </div>
+            <div className="hidden md:block">
+              <ExecutiveHubNav />
+            </div>
           </div>
-          <Button type="button" variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
-            Refresh
+        </header>
+
+        {error && (
+          <p className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-500">
+            {error}
+          </p>
+        )}
+
+        {/* Action Center Dash */}
+        <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4 mb-6" staggerMs={50}>
+          <div className="h-[140px]">
+             <V2Card hoverColor="rose" className="border-rose-500/20 shadow-[inset_0_0_15px_rgba(244,63,94,0.05)] bg-rose-950/10 items-center justify-center flex flex-col text-center">
+               <h3 className="text-[10px] font-mono tracking-widest uppercase text-rose-600 dark:text-rose-400 mb-2">
+                 Critical Thresholds
+               </h3>
+               <p className="text-5xl font-mono tracking-tighter text-rose-600 dark:text-rose-500">{criticals.length}</p>
+             </V2Card>
+          </div>
+          <div className="h-[140px]">
+             <V2Card hoverColor="amber" className="border-amber-500/20 shadow-[inset_0_0_15px_rgba(245,158,11,0.05)] bg-amber-950/10 items-center justify-center flex flex-col text-center">
+               <h3 className="text-[10px] font-mono tracking-widest uppercase text-amber-600 dark:text-amber-500 mb-2">
+                 Active Warnings
+               </h3>
+               <p className="text-5xl font-mono tracking-tighter text-amber-600 dark:text-amber-500">{warnings.length}</p>
+             </V2Card>
+          </div>
+          <div className="h-[140px]">
+             <V2Card hoverColor="indigo" className="border-indigo-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)] bg-indigo-950/10 items-center justify-center flex flex-col text-center">
+               <h3 className="text-[10px] font-mono tracking-widest uppercase text-indigo-600 dark:text-indigo-400 mb-2">
+                 Routing Actions
+               </h3>
+               <p className="text-5xl font-mono tracking-tighter text-indigo-600 dark:text-indigo-400">{infos.length}</p>
+             </V2Card>
+          </div>
+        </KineticGrid>
+
+        <div className="flex justify-between items-center mb-4 mt-8">
+           <h3 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
+             Triage Queue
+           </h3>
+           <Button type="button" variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
+            Refresh Queue
           </Button>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <p className="text-sm text-slate-500">Loading…</p>
-          ) : rows.length === 0 ? (
-            <p className="text-sm text-slate-500">No open alerts.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Severity</TableHead>
-                  <TableHead>Source</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((a) => (
-                  <TableRow key={a.id}>
-                    <TableCell>
-                      <Badge variant={severityBadgeVariant(a.severity)}>{a.severity}</Badge>
-                    </TableCell>
-                    <TableCell className="text-sm capitalize">{a.source_module.replace(/_/g, " ")}</TableCell>
-                    <TableCell>
-                      <div className="font-medium text-slate-900 dark:text-slate-100">{a.title}</div>
-                      {a.body && <div className="text-sm text-slate-600 dark:text-slate-400">{a.body}</div>}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        {a.deep_link_path && (
-                          <Link
-                            href={a.deep_link_path}
-                            className={cn(
-                              "text-sm text-primary underline-offset-4 hover:underline",
-                            )}
-                          >
-                            Open
-                          </Link>
-                        )}
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="secondary"
-                          disabled={busyId === a.id || !!a.acknowledged_at}
-                          onClick={() => void onAck(a)}
-                        >
-                          {a.acknowledged_at ? "Acknowledged" : busyId === a.id ? "…" : "Acknowledge"}
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+
+        {loading ? (
+           <div className="flex items-center justify-center py-20 text-slate-500 font-mono text-sm uppercase tracking-widest animate-pulse">
+             Syncing Exception Engine...
+           </div>
+        ) : rows.length === 0 ? (
+           <Card className="bg-emerald-950/5 border-emerald-500/20">
+            <CardContent className="flex flex-col items-center justify-center p-16 text-center text-emerald-600 dark:text-emerald-500">
+              <CheckCircle2 className="h-12 w-12 mb-4 opacity-50" />
+              <p className="text-lg font-semibold">Triage Queue Clear</p>
+              <p className="text-sm mt-2 opacity-80">All interventions routed and resolved.</p>
+            </CardContent>
+          </Card>
+        ) : (
+           <div className="space-y-4">
+              {rows.map((a) => {
+                 const isCrit = a.severity === 'critical';
+                 const isWarn = a.severity === 'warning';
+                 const colorTag = isCrit ? 'rose' : isWarn ? 'amber' : 'slate';
+                 
+                 return (
+                    <V2Card 
+                       key={a.id} 
+                       hoverColor={colorTag} 
+                       className={cn(
+                          "p-0 overflow-hidden",
+                          isCrit ? "border-rose-500/30" : isWarn ? "border-amber-500/30" : "border-slate-500/30"
+                       )}
+                    >
+                       <div className="flex flex-col md:flex-row">
+                          <div className={cn(
+                             "md:w-64 p-5 flex flex-col justify-center border-b md:border-b-0 md:border-r",
+                             isCrit ? "bg-rose-500/5 border-rose-500/20" : isWarn ? "bg-amber-500/5 border-amber-500/20" : "bg-slate-500/5 border-slate-500/20"
+                          )}>
+                             <div className="flex items-center gap-2 mb-3">
+                                <PulseDot colorClass={isCrit ? "bg-rose-500" : isWarn ? "bg-amber-500" : "bg-slate-500"} />
+                                <span className={cn(
+                                   "text-[10px] uppercase font-mono font-bold tracking-widest px-2 py-0.5 rounded",
+                                   isCrit ? "bg-rose-500/20 text-rose-500" : isWarn ? "bg-amber-500/20 text-amber-500" : "bg-slate-500/20 text-slate-500"
+                                )}>
+                                   {a.severity}
+                                </span>
+                             </div>
+                             <p className={cn("text-xs font-mono uppercase tracking-widest opacity-70", isCrit ? "text-rose-500" : isWarn ? "text-amber-500" : "text-slate-500")}>
+                                Module • {a.source_module.replace(/_/g, " ")}
+                             </p>
+                          </div>
+                          
+                          <div className="flex-1 p-5 flex flex-col justify-between">
+                             <div>
+                                <h4 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-1">{a.title}</h4>
+                                {a.body && <p className="text-sm text-slate-600 dark:text-slate-400 max-w-3xl">{a.body}</p>}
+                             </div>
+                             
+                             <div className="flex items-center justify-between mt-6">
+                                <div className="text-[10px] font-mono tracking-widest text-slate-500 uppercase flex items-center gap-4">
+                                   <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {format(new Date(a.created_at), 'MMM d, h:mm a')}</span>
+                                   {(a as any).facilities?.name && (
+                                     <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {(a as any).facilities.name}</span>
+                                   )}
+                                </div>
+                                
+                                <div className="flex items-center gap-2">
+                                   {a.deep_link_path && (
+                                      <Link href={a.deep_link_path} className="text-xs font-semibold px-3 py-1.5 rounded bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20 transition-colors">
+                                         Inspect Source
+                                      </Link>
+                                   )}
+                                   <Button
+                                      size="sm"
+                                      variant={a.acknowledged_at ? "outline" : isCrit ? "destructive" : "default"}
+                                      disabled={busyId === a.id || !!a.acknowledged_at}
+                                      onClick={() => void onAck(a)}
+                                      className={cn(
+                                         "h-8 text-xs font-semibold px-4",
+                                         isWarn && !a.acknowledged_at ? "bg-amber-500 hover:bg-amber-600 text-amber-950" : ""
+                                      )}
+                                    >
+                                      {a.acknowledged_at ? "Acknowledged" : busyId === a.id ? "Working…" : "Acknowledge"}
+                                    </Button>
+                                </div>
+                             </div>
+                          </div>
+                       </div>
+                    </V2Card>
+                 )
+              })}
+           </div>
+        )}
+
+      </div>
     </div>
   );
 }

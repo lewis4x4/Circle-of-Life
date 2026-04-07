@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronRight, Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -112,6 +112,7 @@ export function SurveyVisitSearchOverlay({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [chartMs, setChartMs] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
+  const chartRequestRef = useRef(0);
   const [openSections, setOpenSections] = useState<Partial<Record<SectionKey, boolean>>>({
     care_plans: true,
     assessments: true,
@@ -181,6 +182,7 @@ export function SurveyVisitSearchOverlay({
 
   const loadChart = useCallback(
     async (resident: ResidentPick) => {
+      const requestId = ++chartRequestRef.current;
       setLoadError(null);
       setChart(null);
       setChartMs(null);
@@ -246,6 +248,9 @@ export function SurveyVisitSearchOverlay({
       const errs = [cpRes.error, asRes.error, medRes.error, emarRes.error, dlRes.error, incRes.error].filter(
         Boolean,
       );
+      if (requestId !== chartRequestRef.current) {
+        return;
+      }
       if (errs.length) {
         const msg = errs.map((e) => e?.message).filter(Boolean).join("; ") || "Chart load failed";
         setLoadError(msg);
@@ -270,6 +275,9 @@ export function SurveyVisitSearchOverlay({
 
       const name = residentLabel(resident);
       await logEntry("resident_chart", resident.id, `Survey visit — full chart retrieved: ${name}`);
+      if (requestId !== chartRequestRef.current) {
+        return;
+      }
       setLoggedChartFor(resident.id);
     },
     [logEntry, residentLabel, supabase],
@@ -342,6 +350,7 @@ export function SurveyVisitSearchOverlay({
             onChange={(e) => {
               setQuery(e.target.value);
               if (selected && e.target.value !== residentLabel(selected)) {
+                chartRequestRef.current += 1;
                 setSelected(null);
                 setChart(null);
                 setChartMs(null);

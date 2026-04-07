@@ -8,13 +8,13 @@ import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/admin/executive", label: "Overview" },
-  { href: "/admin/executive/entity", label: "Entities" },
+  { href: "/admin/executive/ceo", label: "CEO View" },
+  { href: "/admin/executive/cfo", label: "CFO View" },
+  { href: "/admin/executive/coo", label: "COO View" },
   { href: "/admin/executive/alerts", label: "Alerts" },
   { href: "/admin/executive/reports", label: "Reports" },
   { href: "/admin/executive/benchmarks", label: "Benchmarks" },
   { href: "/admin/executive/nlq", label: "NLQ" },
-  { href: "/admin/executive/scenarios", label: "Scenarios" },
-  { href: "/admin/executive/settings", label: "Settings" },
 ] as const;
 
 export function ExecutiveHubNav() {
@@ -29,11 +29,7 @@ export function ExecutiveHubNav() {
         const isActive =
           item.href === "/admin/executive"
             ? pathname === "/admin/executive"
-            : item.href === "/admin/executive/entity"
-              ? pathname === "/admin/executive/entity" ||
-                pathname.startsWith("/admin/executive/entity/") ||
-                pathname.startsWith("/admin/executive/facility/")
-              : pathname === item.href;
+            : pathname.startsWith(item.href);
         return (
           <Link
             key={item.href}
