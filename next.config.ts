@@ -1,11 +1,22 @@
-import type { NextConfig } from "next";
 import path from "path";
+import { withSentryConfig } from "@sentry/nextjs";
+import type { NextConfig } from "next";
 
 const isProd = process.env.NODE_ENV === "production";
 
 const supabaseHost = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")
   .replace(/^https?:\/\//, "")
   .replace(/\/$/, "");
+const sentryHost = [process.env.NEXT_PUBLIC_SENTRY_DSN, process.env.SENTRY_DSN]
+  .map((dsn) => {
+    if (!dsn) return "";
+    try {
+      return new URL(dsn).host;
+    } catch {
+      return "";
+    }
+  })
+  .find(Boolean);
 
 const cspDirectives = [
   "default-src 'self'",
@@ -13,7 +24,7 @@ const cspDirectives = [
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob:${supabaseHost ? ` https://${supabaseHost}` : ""}`,
   "font-src 'self'",
-  `connect-src 'self'${supabaseHost ? ` https://${supabaseHost} wss://${supabaseHost}` : ""}`,
+  `connect-src 'self'${supabaseHost ? ` https://${supabaseHost} wss://${supabaseHost}` : ""}${sentryHost ? ` https://${sentryHost}` : ""}`,
   "frame-src 'none'",
   "object-src 'none'",
   "base-uri 'self'",
@@ -57,4 +68,9 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  silent: true,
+});

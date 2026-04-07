@@ -30,7 +30,7 @@ P0 and P1 issues were fixed across both sessions. The items below are medium-pri
 
 | File | Issue | Severity |
 |------|-------|----------|
-| `src/app/api/controlled-substance/verify-co-sign/route.ts` | No rate limiting on password-verify endpoint — brute-force risk at API speed | High |
+| `src/app/api/controlled-substance/verify-co-sign/route.ts` | **Fixed in Track B:** in-memory failure limiter now returns `429` + `Retry-After` after repeated failures; remaining gap is distributed/shared-store enforcement across instances | Medium |
 | Multiple files | `as unknown as` type assertion chains (billing, incidents, admin) weaken compile-time safety | Medium |
 | `src/app/(admin)/residents/[id]/page.tsx` (~1010 lines) | Large client component — split by section when touched | Low |
 | Rare use of `Suspense` in `src/` | Most routes are client-heavy; streaming boundaries are optional but would improve perceived perf | Low |

@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import {
+  checkFailureRateLimit,
+  clearFailureRateLimit,
+  recordFailureRateLimit,
+} from "@/lib/security/in-memory-failure-rate-limit";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
 
@@ -14,6 +19,18 @@ type Body = {
 };
 
 const ALLOWED_ROLES = new Set(["nurse", "caregiver"]);
+const FAILURE_LIMIT = {
+  maxFailures: 5,
+  windowMs: 10 * 60 * 1000,
+} as const;
+
+function getRequestIp(request: Request) {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  if (forwardedFor) {
+    return forwardedFor.split(",")[0]?.trim() ?? "unknown";
+  }
+  return request.headers.get("x-real-ip")?.trim() ?? "unknown";
+}
 
 /**
  * Verifies incoming staff credentials without creating a browser session.
@@ -89,6 +106,25 @@ export async function POST(request: Request) {
     );
   }
 
+  const limiterKey = [
+    getRequestIp(request),
+    outgoing.id,
+    facilityId,
+    email,
+  ].join(":");
+  const rateLimit = checkFailureRateLimit(limiterKey, FAILURE_LIMIT);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { verified: false, error: "Too many failed verification attempts" },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rateLimit.retryAfterSeconds),
+        },
+      },
+    );
+  }
+
   type SignInResult = Awaited<ReturnType<typeof admin.auth.signInWithPassword>>;
   let authData: SignInResult["data"] | null = null;
   let authErr: SignInResult["error"] | null = null;
@@ -108,8 +144,11 @@ export async function POST(request: Request) {
   }
 
   if (authErr || !authData?.user) {
+    recordFailureRateLimit(limiterKey, FAILURE_LIMIT);
     return NextResponse.json({ verified: false, error: "Invalid credentials" }, { status: 401 });
   }
+
+  clearFailureRateLimit(limiterKey);
 
   const incomingId = authData.user.id;
 

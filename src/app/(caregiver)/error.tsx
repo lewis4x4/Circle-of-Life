@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 
 export default function CaregiverError({
   error,
@@ -9,6 +11,10 @@ export default function CaregiverError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   return (
     <div className="flex min-h-[60vh] items-center justify-center p-8">
       <div className="mx-auto max-w-md space-y-4 text-center">

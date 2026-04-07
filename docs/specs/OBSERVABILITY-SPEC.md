@@ -19,11 +19,11 @@ Integrate one client + server error capture tool. Sentry is the default recommen
 
 ### Setup checklist
 
-- [ ] Add SDK dependency (e.g. `@sentry/nextjs`).
-- [ ] Add DSN env vars to `.env.example` (placeholder only, no real keys committed).
-- [ ] Configure `sentry.client.config.ts` and `sentry.server.config.ts` (or framework equivalent).
+- [x] Add SDK dependency (e.g. `@sentry/nextjs`).
+- [x] Add DSN env vars to `.env.example` (placeholder only, no real keys committed).
+- [x] Configure root Sentry files (`instrumentation-client.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`) and wrap `next.config.ts` with `withSentryConfig`.
 - [ ] Verify errors appear in dashboard after a deliberate test throw.
-- [ ] Confirm source maps upload is configured for production builds (Netlify plugin or build step).
+- [ ] Confirm source maps upload is configured for production builds (requires Netlify env + `SENTRY_AUTH_TOKEN` / org / project).
 - [ ] Document in this file when setup is complete.
 
 ### What NOT to send
@@ -124,7 +124,13 @@ These are **Track B2 Enhanced** or **post-pilot** scope.
 
 | Item | Status |
 |------|--------|
-| Error tracking SDK integrated | ☐ Not started |
+| Error tracking SDK integrated | **DONE (code)** — `@sentry/nextjs`, root config files, CSP host allowlist, and error boundary capture are wired; real DSN/env verification still pending |
 | Edge Function log shape adopted | ☐ Not started (existing functions work without it) |
 | Cron monthly review checklist | ☐ Ready to use (manual) |
 | Application health scripts | **DONE** — `web-health`, `auth-smoke`, `auth-check`, `ops-status`, `pilot-readiness` |
+
+## Manual completion steps (owner / ops)
+
+- Set `NEXT_PUBLIC_SENTRY_DSN` and `SENTRY_DSN` in Netlify for the app.
+- Set `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` only if source map upload is desired.
+- Trigger one deliberate client error and one server/API error, then confirm both appear in Sentry without PHI fields.

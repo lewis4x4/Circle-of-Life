@@ -52,7 +52,7 @@ Do **not** pass `--ui` for:
 | Lint, build, secrets, audit, gitleaks | **yes** | same |
 | Docker Postgres migration replay | **yes** (`REQUIRE_PG_VERIFY=1`) | same |
 | Stress suite | skipped (`--no-chaos`) | enable on nightly schedule |
-| `--ui` design review + axe | **not run in CI** | run on PR when `src/app/` changes detected |
+| `--ui` design review + axe | **partially yes** — conditional on `src/app/` changes; design review advisory, axe required | stabilize and expand if broader UI directories need coverage |
 | `demo:web-health` route probes | **not run in CI** | add as post-build check |
 | `demo:auth-smoke` (Playwright) | **not run in CI** | add as post-build check (needs Playwright in CI) |
 | Supabase type generation check | **not run** | `supabase gen types` → diff, fail on drift |
@@ -150,8 +150,8 @@ After the build step, record `.next/` artifact sizes and compare against a commi
 | Item | Status |
 |------|--------|
 | Base CI gate pipeline (ci-gates.yml) | **DONE** — runs on push/PR |
-| Route-probe gate in CI (4a) | ☐ Not implemented |
-| Selective `--ui` on PR (4b) | ☐ Not implemented |
+| Route-probe gate in CI (4a) | **DONE** — `ci-gates.yml` starts `next start` on `127.0.0.1:4310` and runs `demo:web-health` |
+| Selective `--ui` on PR (4b) | **DONE (initial)** — conditional on `src/app/` changes; installs Playwright Chromium; runs `segment:gates --ui --design-advisory --no-chaos` |
 | Nightly stress + extended (4c) | ☐ Not implemented |
 | Bundle size budget (4d) | ☐ Not implemented |
 | Gate matrix documented | **DONE** — this file |

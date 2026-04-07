@@ -11,6 +11,8 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -26,3 +28,54 @@ jobs:
           CI: true
           # Require Docker-backed migration replay on CI (ubuntu provides Docker)
           REQUIRE_PG_VERIFY: "1"
+
+      - name: Route probe (web-health)
+        run: |
+          npm run start -- --hostname 127.0.0.1 --port 4310 > /tmp/haven-next-start.log 2>&1 &
+          server_pid=$!
+          trap 'kill ${server_pid}' EXIT
+
+          ready=0
+          for i in {1..60}; do
+            if curl -sSf -o /dev/null http://127.0.0.1:4310/login; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "${ready}" -ne 1 ]; then
+            cat /tmp/haven-next-start.log
+            exit 1
+          fi
+
+          BASE_URL=http://127.0.0.1:4310 npm run demo:web-health
+        env:
+          CI: true
+
+      - name: Detect UI changes
+        id: ui_changes
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin "${{ github.base_ref }}" --depth=1
+            diff_range="origin/${{ github.base_ref }}...HEAD"
+          else
+            diff_range="HEAD~1..HEAD"
+          fi
+
+          if git diff --name-only "${diff_range}" | grep -q '^src/app/'; then
+            echo "ui_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ui_changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install Playwright Chromium
+        if: steps.ui_changes.outputs.ui_changed == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: UI gates (conditional)
+        if: steps.ui_changes.outputs.ui_changed == 'true'
+        run: npm run segment:gates -- --segment "ci-ui-${{ github.run_id }}" --ui --no-chaos --design-advisory
+        env:
+          CI: true
+          REQUIRE_PG_VERIFY: "0"
