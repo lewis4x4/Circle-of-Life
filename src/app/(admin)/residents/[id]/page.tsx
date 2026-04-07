@@ -19,6 +19,7 @@ import {
   Stethoscope,
   User,
   Utensils,
+  CheckCircle2,
 } from "lucide-react";
 
 import { adlTypeLabel, assistanceLabel } from "@/lib/caregiver/adl-form-options";
@@ -26,7 +27,7 @@ import { adlTypeLabel, assistanceLabel } from "@/lib/caregiver/adl-form-options"
 import { AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -137,12 +138,8 @@ export default function AdminResidentDetailPage() {
     return (
       <div className="space-y-6 animate-in fade-in duration-300">
         <div className="flex items-center gap-3">
-          <Link
-            href="/admin/residents"
-            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1")}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Census
+          <Link href="/admin/residents" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1")}>
+            <ArrowLeft className="h-4 w-4" /> Census
           </Link>
         </div>
         <AdminTableLoadingState />
@@ -153,20 +150,13 @@ export default function AdminResidentDetailPage() {
   if (notFound) {
     return (
       <div className="space-y-6 animate-in fade-in duration-300">
-        <Link
-          href="/admin/residents"
-          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1")}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to census
+        <Link href="/admin/residents" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1")}>
+          <ArrowLeft className="h-4 w-4" /> Back to census
         </Link>
         <Card className="border-slate-200/70 dark:border-slate-800">
           <CardHeader>
             <CardTitle className="font-display text-xl">Resident not found</CardTitle>
-            <CardDescription>
-              This profile may be outside your current facility filter, removed from the census, or the link
-              may be invalid.
-            </CardDescription>
+            <CardDescription>This profile may be outside your current facility filter, removed from the census, or the link may be invalid.</CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -176,356 +166,218 @@ export default function AdminResidentDetailPage() {
   if (error || !detail) {
     return (
       <div className="space-y-6 animate-in fade-in duration-300">
-        <Link
-          href="/admin/residents"
-          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1")}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to census
+        <Link href="/admin/residents" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1")}>
+          <ArrowLeft className="h-4 w-4" /> Back to census
         </Link>
         {error ? <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} /> : null}
       </div>
     );
   }
 
+  // Aggregate exceptions for the center feed
+  const feedItems = [
+    ...detail.recentConditionChanges.map(c => ({ type: 'condition', time: new Date(c.reportedLabel).getTime() || 0, label: c.reportedLabel, content: c })),
+    ...detail.recentBehavior.map(b => ({ type: 'behavior', time: new Date(b.occurredLabel).getTime() || 0, label: b.occurredLabel, content: b })),
+    ...detail.recentAdl.filter(a => a.summary.includes('refused')).map(a => ({ type: 'adl', time: new Date(a.logTimeLabel).getTime() || 0, label: a.logTimeLabel, content: a }))
+  ].sort((a, b) => b.time - a.time);
+
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-3">
-          <Link
-            href="/admin/residents"
-            className={cn(
-              buttonVariants({ variant: "ghost", size: "sm" }),
-              "inline-flex w-fit gap-1 px-0 sm:px-3",
-            )}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Census
+    <div className="h-[calc(100vh-6rem)] flex flex-col space-y-4 animate-in fade-in duration-500 pb-2">
+      {/* HEADER NAV */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between shrink-0 pl-1">
+        <div className="flex gap-4 items-center">
+          <Link href="/admin/residents" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "px-2 h-8")}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Census 
           </Link>
-          <div className="flex flex-wrap items-center gap-4">
-            {detail.photoUrl ? (
-              <Avatar className="h-16 w-16 ring-2 ring-slate-200 dark:ring-slate-700">
-                <AvatarImage src={detail.photoUrl} alt={detail.fullName} />
-                <AvatarFallback className="bg-brand-100 text-lg font-medium text-brand-900 dark:bg-brand-900 dark:text-brand-100">
-                  {detail.initials}
-                </AvatarFallback>
-              </Avatar>
-            ) : (
-              <div
-                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-slate-200 text-lg font-medium text-slate-600 ring-2 ring-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:ring-slate-700"
-                aria-hidden
-              >
-                {detail.fullName.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <div>
-              <h1 className="font-display text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-                {detail.fullName}
-              </h1>
-              {detail.preferredName ? (
-                <p className="text-slate-500 dark:text-slate-400">&ldquo;{detail.preferredName}&rdquo;</p>
-              ) : null}
-              <div className="mt-2 flex flex-wrap gap-2">
-                <AcuityBadge acuity={detail.acuity} />
-                <ResidentStatusBadge status={detail.status} />
-                {detail.fallRiskLabel ? (
-                  <Badge variant="outline" className="border-slate-300 dark:border-slate-600">
-                    Fall risk: {detail.fallRiskLabel}
-                  </Badge>
-                ) : null}
-              </div>
-            </div>
+          <div className="flex items-center gap-3">
+             <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
+               {detail.fullName}
+               {detail.status === "hospital" && <Badge variant="destructive" className="ml-2 font-mono text-[10px]">HOSPITAL HOLD</Badge>}
+             </h1>
           </div>
         </div>
-        <div className="flex flex-col items-stretch gap-2 sm:items-end">
-          <div className="flex flex-wrap justify-end gap-2">
-            <Link
-              href={`/admin/residents/${detail.id}/assessments`}
-              className={cn(
-                buttonVariants({ variant: "outline", size: "sm" }),
-                "gap-1 text-xs",
-              )}
-            >
-              <ClipboardList className="h-3.5 w-3.5" />
-              Assessments
+        <div className="flex gap-2">
+          {['Assessments', 'Care Plan', 'Medications', 'Vitals', 'Billing'].map(tab => (
+            <Link key={tab} href={`/admin/residents/${detail.id}/${tab.toLowerCase().replace(' ', '-')}`} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8 text-[11px] font-medium")}>
+              {tab}
             </Link>
-            <Link
-              href={`/admin/residents/${detail.id}/care-plan`}
-              className={cn(
-                buttonVariants({ variant: "outline", size: "sm" }),
-                "inline-flex gap-2 border-slate-200 dark:border-slate-700",
-              )}
-            >
-              <ClipboardList className="h-3.5 w-3.5" />
-              Care plan
-            </Link>
-            <Link
-              href={`/admin/residents/${detail.id}/medications`}
-              className={cn(
-                buttonVariants({ variant: "outline", size: "sm" }),
-                "inline-flex gap-2 border-slate-200 dark:border-slate-700",
-              )}
-            >
-              <Pill className="h-3.5 w-3.5" />
-              Medications
-            </Link>
-            <Link
-              href={`/admin/residents/${detail.id}/vitals`}
-              className={cn(
-                buttonVariants({ variant: "outline", size: "sm" }),
-                "inline-flex gap-2 border-slate-200 dark:border-slate-700",
-              )}
-            >
-              <Activity className="h-3.5 w-3.5" />
-              Vitals
-            </Link>
-            <Link
-              href={`/admin/residents/${detail.id}/billing`}
-              className={cn(
-                buttonVariants({ variant: "outline", size: "sm" }),
-                "inline-flex gap-2 border-slate-200 dark:border-slate-700",
-              )}
-            >
-              <CreditCard className="h-3.5 w-3.5" />
-              Billing
-            </Link>
-          </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Last updated {detail.updatedAtLabel}
-          </p>
+          ))}
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-display text-lg">
-              <MapPin className="h-4 w-4 text-brand-600" />
-              Location &amp; stay
-            </CardTitle>
-            <CardDescription>Bed assignment and admission context</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <DetailRow label="Room" value={detail.roomLabel} />
-            <DetailRow label="Unit" value={detail.unitName} />
-            <DetailRow label="Admission" value={detail.admissionLabel} />
-          </CardContent>
-        </Card>
+      {/* COCKPIT 3-COLUMN GRID */}
+      <div className="flex-1 min-h-0 grid lg:grid-cols-12 gap-5 px-1">
+        
+        {/* LEFT COLUMN: Face Sheet */}
+        <div className="lg:col-span-3 flex flex-col gap-4 h-full overflow-hidden">
+          <Card className="flex flex-col h-full border-slate-200 shadow-sm dark:border-slate-800 bg-white dark:bg-slate-950 overflow-y-auto scrollbar-hide">
+             <CardHeader className="bg-slate-50/50 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-800 pb-4">
+                <div className="flex items-start gap-4">
+                  <Avatar className="h-16 w-16 shadow-sm border border-slate-200 dark:border-slate-700">
+                    <AvatarImage src={detail.photoUrl!} alt={detail.fullName} />
+                    <AvatarFallback className="bg-slate-100 text-slate-500 dark:bg-slate-800 font-medium text-lg">{detail.initials}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col gap-1.5 mt-1">
+                    <span className="text-xs font-mono text-slate-500">M/F: {detail.gender ? detail.gender.charAt(0).toUpperCase() : 'U'} · DOB: {detail.dobLabel}</span>
+                    <ResidentStatusBadge status={detail.status} />
+                    <AcuityBadge acuity={detail.acuity} />
+                  </div>
+                </div>
+             </CardHeader>
+             <CardContent className="p-4 space-y-5">
+                <div>
+                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Code Status</p>
+                   <p className="font-semibold text-rose-600 dark:text-rose-400">{formatCodeStatus(detail.codeStatus)}</p>
+                </div>
+                <div>
+                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Allergies</p>
+                   {detail.allergiesLine !== "—" ? (
+                     <Badge variant="destructive" className="bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 hover:bg-rose-100 border-0">{detail.allergiesLine}</Badge>
+                   ) : <span className="text-sm text-slate-600">NKA</span>}
+                </div>
+                <div>
+                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Primary Dx</p>
+                   <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{detail.primaryDiagnosis || "—"}</p>
+                </div>
+                <div>
+                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Contacts</p>
+                   <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{detail.emergency1Name || "—"}</p>
+                   <p className="text-xs text-slate-500">{detail.emergency1Relationship} · {detail.emergency1Phone}</p>
+                </div>
+             </CardContent>
+          </Card>
+        </div>
 
-        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-display text-lg">
-              <User className="h-4 w-4 text-brand-600" />
-              Demographics
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <DetailRow label="Date of birth" value={detail.dobLabel} />
-            <DetailRow label="Gender" value={formatGender(detail.gender)} />
-          </CardContent>
-        </Card>
+        {/* CENTER COLUMN: Triage Feed */}
+        <div className="lg:col-span-6 flex flex-col h-full overflow-hidden">
+          <Card className="flex flex-col h-full border-slate-200 shadow-sm dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
+            <CardHeader className="shrink-0 pb-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                <Activity className="w-4 h-4 text-brand-500" /> Exception & Activity Timeline
+              </CardTitle>
+            </CardHeader>
+             <CardContent className="flex-1 p-0 min-h-0 bg-transparent flex flex-col">
+               <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                 {feedItems.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                       <CheckCircle2 className="w-8 h-8 mb-2 opacity-50" />
+                       <p className="text-sm font-medium">No recent exceptions or behavioral triggers.</p>
+                    </div>
+                 ) : (
+                    feedItems.map((item, idx) => {
+                       if (item.type === 'condition') {
+                          const c = item.content as any;
+                          return (
+                             <div key={`cond-${c.id}-${idx}`} className="flex gap-4">
+                               <div className="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-600 flex items-center justify-center shrink-0">
+                                 <Stethoscope className="w-4 h-4" />
+                               </div>
+                               <div className="flex-1 rounded-xl border border-rose-200 dark:border-rose-800/80 bg-white dark:bg-slate-950 p-3 shadow-sm">
+                                 <div className="flex justify-between items-start mb-1">
+                                    <span className="font-semibold text-sm text-slate-900 dark:text-slate-100">{c.typeLabel} <span className="uppercase text-[10px] text-rose-500 ml-1 font-bold">({c.severity})</span></span>
+                                    <span className="text-[10px] text-slate-400">{item.label}</span>
+                                 </div>
+                                 <p className="text-xs text-slate-600 dark:text-slate-300 mb-2">{c.description}</p>
+                                 <p className="text-[10px] text-slate-400 font-mono">By {c.loggedByLabel} {c.nurseNotified && '· MD Notified'}</p>
+                               </div>
+                             </div>
+                          )
+                       } else if (item.type === 'behavior') {
+                          const b = item.content as any;
+                          return (
+                             <div key={`beh-${b.id}-${idx}`} className="flex gap-4">
+                               <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-600 flex items-center justify-center shrink-0">
+                                 <Brain className="w-4 h-4" />
+                               </div>
+                               <div className="flex-1 rounded-xl border border-amber-200 dark:border-amber-800/80 bg-white dark:bg-slate-950 p-3 shadow-sm">
+                                 <div className="flex justify-between items-start mb-1">
+                                    <span className="font-semibold text-sm text-slate-900 dark:text-slate-100">{b.typeLabel}</span>
+                                    <span className="text-[10px] text-slate-400">{item.label}</span>
+                                 </div>
+                                 <p className="text-xs text-slate-600 dark:text-slate-300 mb-2">{b.behaviorText}</p>
+                                 <p className="text-[10px] text-slate-400 font-mono">By {b.loggedByLabel} {b.injuryOccurred && "· INJURY REPORTED"}</p>
+                               </div>
+                             </div>
+                          )
+                       } else {
+                          const a = item.content as any;
+                          return (
+                             <div key={`adl-${a.id}-${idx}`} className="flex gap-4">
+                               <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0">
+                                 <User className="w-4 h-4" />
+                               </div>
+                               <div className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-3 shadow-sm">
+                                 <div className="flex justify-between items-start mb-1">
+                                    <span className="font-semibold text-sm text-slate-900 dark:text-slate-100">{a.summary}</span>
+                                    <span className="text-[10px] text-slate-400">{item.label}</span>
+                                 </div>
+                                 <p className="text-[10px] text-slate-400 font-mono mt-1">Logged by {a.loggedByLabel}</p>
+                               </div>
+                             </div>
+                          )
+                       }
+                    })
+                 )}
+               </div>
+               
+               {/* Quick Action Bar */}
+               <div className="shrink-0 p-3 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex gap-2">
+                 <Button size="sm" variant="outline" className="text-xs flex-1"><Brain className="w-3.5 h-3.5 mr-1" /> Log Behavior</Button>
+                 <Button size="sm" variant="outline" className="text-xs flex-1"><Stethoscope className="w-3.5 h-3.5 mr-1" /> Log Condition</Button>
+                 <Button size="sm" variant="default" className="text-xs flex-1"><FileText className="w-3.5 h-3.5 mr-1" /> General Note</Button>
+               </div>
+             </CardContent>
+          </Card>
+        </div>
 
-        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800 lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-display text-lg">
-              <HeartPulse className="h-4 w-4 text-brand-600" />
-              Clinical snapshot
-            </CardTitle>
-            <CardDescription>High-signal fields for shift handoff (full care plan is a separate workflow)</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            <DetailRow label="Primary diagnosis" value={detail.primaryDiagnosis ?? "—"} />
-            <DetailRow label="Other diagnoses" value={detail.diagnosesLine} />
-            <DetailRow label="Allergies" value={detail.allergiesLine} />
-            <DetailRow label="Diet order" value={detail.dietOrder ?? "—"} />
-            <DetailRow label="Code status" value={formatCodeStatus(detail.codeStatus)} />
-          </CardContent>
-        </Card>
+        {/* RIGHT COLUMN: Context Vectors */}
+        <div className="lg:col-span-3 flex flex-col h-full gap-4 overflow-hidden">
+          <Card className="border-slate-200 shadow-sm dark:border-slate-800 bg-white dark:bg-slate-950">
+             <CardHeader className="bg-slate-50/50 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-800 pb-3 pt-4">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                  <MapPin className="w-4 h-4 text-brand-500" /> Location Context
+                </CardTitle>
+             </CardHeader>
+             <CardContent className="p-4 space-y-4">
+                <div>
+                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-0.5">Unit</p>
+                   <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{detail.unitName}</p>
+                </div>
+                <div>
+                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-0.5">Room & Bed</p>
+                   <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{detail.roomLabel}</p>
+                </div>
+             </CardContent>
+          </Card>
 
-        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800 lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-display text-lg">
-              <ListChecks className="h-4 w-4 text-brand-600" />
-              Recent daily notes &amp; ADL
-            </CardTitle>
-            <CardDescription>Latest documentation from the floor (RLS-scoped to your organization)</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-6 lg:grid-cols-2">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-200">
-                <FileText className="h-4 w-4 text-slate-500" />
-                Daily log notes
-              </div>
-              {detail.recentDailyNotes.length === 0 ? (
-                <p className="text-sm text-slate-500 dark:text-slate-400">No daily log rows yet.</p>
-              ) : (
-                <ul className="space-y-3">
-                  {detail.recentDailyNotes.map((row) => (
-                    <li
-                      key={row.id}
-                      className="rounded-lg border border-slate-200/80 bg-slate-50/80 p-3 text-sm dark:border-slate-700 dark:bg-slate-900/40"
-                    >
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {row.logDate} · {row.shift} · {row.loggedByLabel}
-                      </p>
-                      <p className="mt-1 whitespace-pre-wrap text-slate-800 dark:text-slate-200">{row.snippet}</p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-200">
-                <ListChecks className="h-4 w-4 text-slate-500" />
-                ADL passes
-              </div>
-              {detail.recentAdl.length === 0 ? (
-                <p className="text-sm text-slate-500 dark:text-slate-400">No ADL entries yet.</p>
-              ) : (
-                <ul className="space-y-3">
-                  {detail.recentAdl.map((row) => (
-                    <li
-                      key={row.id}
-                      className="rounded-lg border border-slate-200/80 bg-slate-50/80 p-3 text-sm dark:border-slate-700 dark:bg-slate-900/40"
-                    >
-                      <p className="font-medium text-slate-800 dark:text-slate-200">{row.summary}</p>
-                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                        {row.logTimeLabel} · {row.shift} · {row.logDate} · {row.loggedByLabel}
-                      </p>
-                      {row.detailNote ? (
-                        <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">{row.detailNote}</p>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+          <Card className="flex-1 border-slate-200 shadow-sm dark:border-slate-800 bg-white dark:bg-slate-950 overflow-y-auto scrollbar-hide">
+             <CardHeader className="bg-slate-50/50 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-800 pb-3 pt-4 sticky top-0 z-10">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                  <ListChecks className="w-4 h-4 text-brand-500" /> Active Orders
+                </CardTitle>
+             </CardHeader>
+             <CardContent className="p-4 space-y-5">
+                <div>
+                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Diet Order</p>
+                   <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{detail.dietOrder || "Regular"}</p>
+                </div>
+                <div>
+                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Fall Risk</p>
+                   {detail.fallRiskLabel ? (
+                     <Badge variant="outline" className="border-amber-300 text-amber-800 dark:bg-amber-950/30 font-medium">{detail.fallRiskLabel}</Badge>
+                   ) : <span className="text-sm text-slate-500">Not assessed</span>}
+                </div>
+                <div>
+                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 mt-4 inline-flex items-center gap-1.5"><ClipboardList className="w-3.5 h-3.5"/> Care Plan Status</p>
+                   <div className="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg">
+                      <p className="text-sm font-medium text-slate-800 dark:text-slate-200 mb-1">Active (v3)</p>
+                      <p className="text-[10px] text-slate-500">Effective Since: Oct 12, 2024</p>
+                   </div>
+                </div>
+             </CardContent>
+          </Card>
+        </div>
 
-        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800 lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-display text-lg">
-              <Brain className="h-4 w-4 text-brand-600" />
-              Behavior &amp; condition reports
-            </CardTitle>
-            <CardDescription>Recent behavioral events and reported condition changes from floor documentation</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-6 lg:grid-cols-2">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-200">
-                <Brain className="h-4 w-4 text-slate-500" />
-                Behavioral events
-              </div>
-              {detail.recentBehavior.length === 0 ? (
-                <p className="text-sm text-slate-500 dark:text-slate-400">No behavioral log entries yet.</p>
-              ) : (
-                <ul className="space-y-3">
-                  {detail.recentBehavior.map((row) => (
-                    <li
-                      key={row.id}
-                      className="rounded-lg border border-slate-200/80 bg-slate-50/80 p-3 text-sm dark:border-slate-700 dark:bg-slate-900/40"
-                    >
-                      <p className="font-medium text-slate-800 dark:text-slate-200">{row.typeLabel}</p>
-                      <p className="mt-1 text-slate-700 dark:text-slate-300">{truncateSnippet(row.behaviorText, 320)}</p>
-                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                        {row.occurredLabel} · {row.shift} · {row.loggedByLabel}
-                      </p>
-                      {row.injuryOccurred ? (
-                        <p className="mt-1 text-xs font-medium text-rose-600 dark:text-rose-400">Injury documented</p>
-                      ) : null}
-                      {row.notesSnippet ? (
-                        <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{row.notesSnippet}</p>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-200">
-                <Stethoscope className="h-4 w-4 text-slate-500" />
-                Condition changes
-              </div>
-              {detail.recentConditionChanges.length === 0 ? (
-                <p className="text-sm text-slate-500 dark:text-slate-400">No condition change reports yet.</p>
-              ) : (
-                <ul className="space-y-3">
-                  {detail.recentConditionChanges.map((row) => (
-                    <li
-                      key={row.id}
-                      className="rounded-lg border border-slate-200/80 bg-slate-50/80 p-3 text-sm dark:border-slate-700 dark:bg-slate-900/40"
-                    >
-                      <p className="font-medium text-slate-800 dark:text-slate-200">
-                        {row.typeLabel}
-                        <span className="font-normal text-slate-500"> · </span>
-                        <span className="capitalize text-slate-600 dark:text-slate-300">{row.severity}</span>
-                      </p>
-                      <p className="mt-1 text-slate-700 dark:text-slate-300">{truncateSnippet(row.description, 360)}</p>
-                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                        {row.reportedLabel} · {row.shift} · {row.loggedByLabel}
-                        {row.nurseNotified ? (
-                          <span className="text-emerald-600 dark:text-emerald-400"> · nurse notified</span>
-                        ) : null}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-display text-lg">
-              <Phone className="h-4 w-4 text-brand-600" />
-              Responsible party
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <DetailRow label="Name" value={detail.responsiblePartyName ?? "—"} />
-            <DetailRow label="Relationship" value={detail.responsiblePartyRelationship ?? "—"} />
-            <DetailRow label="Phone" value={detail.responsiblePartyPhone ?? "—"} />
-            <DetailRow label="Email" value={detail.responsiblePartyEmail ?? "—"} />
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-display text-lg">
-              <Shield className="h-4 w-4 text-brand-600" />
-              Emergency contacts
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Contact 1</p>
-              <DetailRow label="Name" value={detail.emergency1Name ?? "—"} />
-              <DetailRow label="Relationship" value={detail.emergency1Relationship ?? "—"} />
-              <DetailRow label="Phone" value={detail.emergency1Phone ?? "—"} />
-            </div>
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Contact 2</p>
-              <DetailRow label="Name" value={detail.emergency2Name ?? "—"} />
-              <DetailRow label="Relationship" value={detail.emergency2Relationship ?? "—"} />
-              <DetailRow label="Phone" value={detail.emergency2Phone ?? "—"} />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800 lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-display text-lg">
-              <Utensils className="h-4 w-4 text-brand-600" />
-              Billing (read-only)
-            </CardTitle>
-            <CardDescription>Primary payer classification — ledger detail stays in Billing</CardDescription>
-          </CardHeader>
-          <CardContent className="text-sm">
-            <DetailRow label="Primary payer" value={formatPayer(detail.primaryPayer)} />
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
