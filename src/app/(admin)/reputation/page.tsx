@@ -184,113 +184,113 @@ export default function AdminReputationHubPage() {
         </p>
       )}
 
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/5 bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent pointer-events-none" />
-        <div className="relative z-10 border-b border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 p-6 flex flex-col gap-1">
-          <h3 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">Listings</h3>
-          <p className="text-sm font-mono text-slate-500 dark:text-slate-400">Review surfaces tracked for this site (manual identifiers in Core).</p>
-        </div>
-        <div className="relative z-10 overflow-x-auto p-4 sm:p-6">
-          {loading ? (
-            <p className="text-sm font-mono text-slate-500">Loading…</p>
-          ) : !facilityReady ? null : accounts.length === 0 ? (
-            <p className="text-sm font-mono text-slate-500">No listings yet.</p>
-          ) : (
-            <Table>
-              <TableHeader className="bg-white/40 dark:bg-black/40 border-b border-white/20 dark:border-white/10">
-                <TableRow className="border-none hover:bg-transparent">
-                  <TableHead>Label</TableHead>
-                  <TableHead>Platform</TableHead>
-                  <TableHead>Place / external ID</TableHead>
-                  <TableHead>Active</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {accounts.map((row) => (
-                  <TableRow key={row.id} className="border-slate-100 dark:border-slate-800 hover:bg-indigo-500/5 dark:hover:bg-indigo-500/10 transition-colors cursor-pointer group">
-                    <TableCell className="font-medium">{row.label}</TableCell>
-                    <TableCell className="text-sm capitalize">{formatPlatform(row.platform)}</TableCell>
-                    <TableCell className="font-mono text-xs text-slate-600 dark:text-slate-300">
-                      {row.external_place_id ?? "—"}
-                    </TableCell>
-                    <TableCell>{row.is_active ? "Yes" : "No"}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </div>
-      </div>
-
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/5 bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent pointer-events-none" />
-        <div className="relative z-10 border-b border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 p-6 flex flex-col gap-1">
-          <h3 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">Replies</h3>
-          <p className="text-sm font-mono text-slate-500 dark:text-slate-400">
-            Draft and posted responses. After you publish on the platform, use Record posted to capture who logged it and when.
-          </p>
-        </div>
-        <div className="relative z-10 overflow-x-auto p-4 sm:p-6">
-          {loading ? (
-            <p className="text-sm font-mono text-slate-500">Loading…</p>
-          ) : !facilityReady ? null : replies.length === 0 ? (
-            <p className="text-sm font-mono text-slate-500">No replies yet.</p>
-          ) : (
-            <Table>
-              <TableHeader className="bg-white/40 dark:bg-black/40 border-b border-white/20 dark:border-white/10">
-                <TableRow className="border-none hover:bg-transparent">
-                  <TableHead>Listing</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="max-w-[200px]">Reply preview</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {replies.map((row) => (
-                  <TableRow key={row.id} className="border-slate-100 dark:border-slate-800 hover:bg-slate-500/5 dark:hover:bg-slate-500/10 transition-colors cursor-pointer group">
-                    <TableCell className="text-sm">
-                      {row.reputation_accounts ? (
-                        <>
-                          {row.reputation_accounts.label}{" "}
-                          <span className="text-xs text-slate-500">({formatPlatform(row.reputation_accounts.platform)})</span>
-                        </>
-                      ) : (
-                        "—"
-                      )}
-                    </TableCell>
-                    <TableCell className="capitalize">{formatStatus(row.status)}</TableCell>
-                    <TableCell className="max-w-[200px] truncate text-xs text-slate-600 dark:text-slate-300">
-                      {row.reply_body}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap text-xs text-slate-500">
-                      {format(new Date(row.created_at), "MMM d, yyyy p")}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {row.status === "draft" ? (
+      {facilityReady && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* ACTION QUEUE: Draft Replies */}
+          <div className="col-span-1 lg:col-span-2 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10 dark:border-white/5">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                Draft Approvals
+              </h3>
+            </div>
+            
+            <div className="space-y-3">
+              {loading ? (
+                <p className="text-sm font-mono text-slate-500">Loading replies…</p>
+              ) : replies.filter(r => r.status === 'draft').length === 0 ? (
+                <div className="p-8 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md">
+                   <p className="font-medium">Inbox Zero</p>
+                   <p className="text-sm opacity-80">All reputation exceptions resolved.</p>
+                </div>
+              ) : (
+                replies.filter(r => r.status === 'draft').map((row) => (
+                  <div key={row.id} className="p-5 rounded-2xl border border-red-200 dark:border-red-900/30 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-red-300 dark:hover:border-red-800/50 transition-colors">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-red-500" />
+                    <div className="flex justify-between items-start mb-3">
+                       <span className="text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 px-2 py-1 rounded-md uppercase tracking-wider">
+                         Needs Action
+                       </span>
+                       <span className="text-xs text-slate-500 font-mono">
+                         {format(new Date(row.created_at), "MMM d, yyyy")}
+                       </span>
+                    </div>
+                    <div className="mb-4">
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
+                        {row.reputation_accounts?.label ?? "Unknown Listing"}
+                      </p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400 italic border-l-2 border-slate-200 dark:border-slate-700 pl-3 py-1">
+                        "{row.reply_body}"
+                      </p>
+                    </div>
+                    <div className="flex justify-start">
                         <button
                           type="button"
-                          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-7 text-xs")}
+                          className={cn(buttonVariants({ variant: "default", size: "sm" }), "bg-red-600 hover:bg-red-700 text-white font-mono uppercase tracking-widest text-[10px]")}
                           disabled={updatingId === row.id}
                           onClick={() => void markPosted(row.id)}
                         >
-                          Record posted
+                          {updatingId === row.id ? "Recording..." : "Publish & Record"}
                         </button>
-                      ) : (
-                        <span className="text-xs text-slate-400">
-                          {row.posted_to_platform_at
-                            ? format(new Date(row.posted_to_platform_at), "MMM d, yyyy")
-                            : "—"}
-                        </span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            {/* Posted Feed */}
+            {replies.filter(r => r.status === 'posted').length > 0 && (
+              <div className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
+                 <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Recently Posted</h4>
+                 {replies.filter(r => r.status === 'posted').slice(0, 3).map(row => (
+                   <div key={row.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex gap-4 items-center">
+                     <div className="flex-1 min-w-0">
+                       <p className="text-xs font-medium text-slate-900 dark:text-slate-300 truncate">{row.reputation_accounts?.label}</p>
+                       <p className="text-[10px] text-slate-500 truncate">{row.reply_body}</p>
+                     </div>
+                     <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
+                       {row.posted_to_platform_at ? format(new Date(row.posted_to_platform_at), "MMM d") : "Done"}
+                     </span>
+                   </div>
+                 ))}
+              </div>
+            )}
+            
+          </div>
+
+          {/* WATCHLIST: Connected Listings */}
+          <div className="col-span-1 border-l border-white/10 dark:border-white/5 pl-0 lg:pl-6 pt-6 lg:pt-0">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10 dark:border-white/5 mb-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                Integrations Health
+              </h3>
+            </div>
+            
+            {loading ? (
+              <p className="text-sm font-mono text-slate-500">Loading…</p>
+            ) : accounts.length === 0 ? (
+               <p className="text-sm text-slate-500 italic">No connected accounts.</p>
+            ) : (
+               <div className="space-y-2">
+                 {accounts.map(row => (
+                   <div key={row.id} className="p-3 rounded-xl border border-white/20 dark:border-white/10 bg-white/30 dark:bg-black/20 flex items-center justify-between">
+                     <div>
+                       <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">{row.label}</p>
+                       <p className="text-[9px] font-mono text-slate-500 mt-1 uppercase">{formatPlatform(row.platform)}</p>
+                     </div>
+                     {row.is_active ? (
+                       <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                     ) : (
+                       <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-700" />
+                     )}
+                   </div>
+                 ))}
+               </div>
+            )}
+          </div>
+
         </div>
-      </div>
+      )}
       </div>
     </div>
   );

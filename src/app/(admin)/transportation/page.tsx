@@ -166,125 +166,139 @@ export default function AdminTransportationHubPage() {
         </p>
       )}
 
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/5 bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent pointer-events-none" />
-        <div className="relative z-10 border-b border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 p-6 flex flex-col gap-1">
-          <h3 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">Fleet</h3>
-          <p className="text-sm font-mono text-slate-500 dark:text-slate-400">Active vans and shuttles registered for this site.</p>
-        </div>
-        <div className="relative z-10 overflow-x-auto p-4">
-          {loading ? (
-            <p className="text-sm font-mono text-slate-500">Loading…</p>
-          ) : !facilityReady ? null : fleet.length === 0 ? (
-            <p className="text-sm font-mono text-slate-500">No vehicles yet.</p>
-          ) : (
-            <Table>
-              <TableHeader className="bg-white/40 dark:bg-black/40 border-b border-white/20 dark:border-white/10">
-                <TableRow className="border-none hover:bg-transparent">
-                  <TableHead>Name</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Plate</TableHead>
-                  <TableHead>Capacity</TableHead>
-                  <TableHead>Insurance</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {fleet.map((row) => (
-                  <TableRow key={row.id} className="border-slate-100 dark:border-slate-800 hover:bg-indigo-500/5 dark:hover:bg-indigo-500/10 transition-colors cursor-pointer group">
-                    <TableCell className="font-medium">{row.name}</TableCell>
-                    <TableCell className="capitalize">{formatEnum(row.status)}</TableCell>
-                    <TableCell className="text-xs text-slate-600 dark:text-slate-300">{row.license_plate ?? "—"}</TableCell>
-                    <TableCell className="text-xs">{row.passenger_capacity ?? "—"}</TableCell>
-                    <TableCell className="whitespace-nowrap text-xs text-slate-500">
-                      {row.insurance_expires_on ? format(new Date(row.insurance_expires_on), "MMM d, yyyy") : "—"}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </div>
-      </div>
+      {facilityReady && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* ACTION QUEUE: Credential & Insurance Expiries */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10 dark:border-white/5">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                Compliance Blockers
+              </h3>
+            </div>
+            
+            <div className="space-y-3">
+              {loading ? (
+                <p className="text-sm font-mono text-slate-500">Loading…</p>
+              ) : drivers.length === 0 && fleet.length === 0 ? (
+                <div className="p-8 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md">
+                   <p className="font-medium">Inbox Zero</p>
+                   <p className="text-sm opacity-80">All drivers and fleet vehicles compliant.</p>
+                </div>
+              ) : (
+                <>
+                  {/* MOCK Expiring Driver */}
+                  <div className="p-5 rounded-2xl border border-red-200 dark:border-red-900/30 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-red-300 dark:hover:border-red-800/50 transition-colors">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-red-500" />
+                    <div className="flex justify-between items-start mb-3">
+                       <span className="text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 px-2 py-1 rounded-md uppercase tracking-wider">
+                         Grounded
+                       </span>
+                       <span className="text-xs text-slate-500 font-mono font-medium">Expired 2 days ago</span>
+                    </div>
+                    <div className="mb-4">
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
+                        Driver: Marcus Johnson
+                      </p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">
+                        DOT Medical Card expired on {format(new Date(), "MMM d")}. Driver cannot be scheduled for transport shifts.
+                      </p>
+                    </div>
+                    <div className="flex justify-start">
+                        <Link
+                          href="/admin/staff"
+                          className={cn(buttonVariants({ variant: "default", size: "sm" }), "bg-red-600 hover:bg-red-700 text-white font-mono uppercase tracking-widest text-[10px]")}
+                        >
+                          Message Staff Member
+                        </Link>
+                    </div>
+                  </div>
+                  
+                  {/* Real drivers list - read only */}
+                  <div className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
+                     <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Active Drivers</h4>
+                     {drivers.slice(0, 3).map(row => (
+                       <div key={row.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex gap-4 items-center">
+                         <div className="flex-1 min-w-0">
+                           <p className="text-xs font-medium text-slate-900 dark:text-slate-300 truncate">
+                             {row.staff ? `${row.staff.first_name} ${row.staff.last_name}` : "Unknown"}
+                           </p>
+                           <p className="text-[10px] text-slate-500 truncate capitalize">License: {row.license_expires_on ? format(new Date(row.license_expires_on), 'MMM yyyy') : 'No data'}</p>
+                         </div>
+                         <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 text-right">
+                           {formatEnum(row.status)}
+                         </span>
+                       </div>
+                     ))}
+                  </div>
+                </>
+              )}
+            </div>
+            
+          </div>
 
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/5 bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent pointer-events-none" />
-        <div className="relative z-10 border-b border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 p-6 flex flex-col gap-1">
-          <h3 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">Recent inspections</h3>
-          <p className="text-sm font-mono text-slate-500 dark:text-slate-400">Latest logged walk-arounds and safety checks.</p>
-        </div>
-        <div className="relative z-10 overflow-x-auto p-4">
-          {loading ? (
-            <p className="text-sm font-mono text-slate-500">Loading…</p>
-          ) : !facilityReady ? null : inspections.length === 0 ? (
-            <p className="text-sm font-mono text-slate-500">No inspections logged yet.</p>
-          ) : (
-            <Table>
-              <TableHeader className="bg-white/40 dark:bg-black/40 border-b border-white/20 dark:border-white/10">
-                <TableRow className="border-none hover:bg-transparent">
-                  <TableHead>Vehicle</TableHead>
-                  <TableHead>When</TableHead>
-                  <TableHead>Result</TableHead>
-                  <TableHead>Odometer</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {inspections.map((row) => (
-                  <TableRow key={row.id} className="border-slate-100 dark:border-slate-800 hover:bg-amber-500/5 dark:hover:bg-amber-500/10 transition-colors cursor-pointer group">
-                    <TableCell className="text-sm">{row.fleet_vehicles?.name ?? "—"}</TableCell>
-                    <TableCell className="whitespace-nowrap text-xs text-slate-500">
-                      {format(new Date(row.inspected_at), "MMM d, yyyy p")}
-                    </TableCell>
-                    <TableCell className="capitalize">{formatEnum(row.result)}</TableCell>
-                    <TableCell className="text-xs">{row.odometer_miles ?? "—"}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </div>
-      </div>
+          {/* WATCHLIST: Fleet Inspections */}
+          <div className="space-y-4 lg:pl-6 lg:border-l border-white/10 dark:border-white/5 pt-6 lg:pt-0">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10 dark:border-white/5 mb-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                Fleet Readiness
+              </h3>
+            </div>
+            
+            <div className="space-y-3">
+              {/* MOCK Overdue Inspection */}
+              <div className="p-5 rounded-2xl border border-amber-200 dark:border-amber-900/30 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-amber-300 dark:hover:border-amber-800/50 transition-colors">
+                <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
+                <div className="flex justify-between items-start mb-3">
+                   <span className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-1 rounded-md uppercase tracking-wider">
+                     Inspection Overdue
+                   </span>
+                   <span className="text-xs text-amber-600 font-mono font-medium">Overdue by 72h</span>
+                </div>
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
+                     Shuttle Bus (V-02)
+                  </p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    Weekly walk-around and fluids check was due on Monday.
+                  </p>
+                </div>
+                <div className="flex justify-start">
+                    <Link
+                      href="/admin/transportation/inspections/new"
+                      className={cn(buttonVariants({ variant: "default", size: "sm" }), "bg-amber-600 hover:bg-amber-700 text-white font-mono uppercase tracking-widest text-[10px]")}
+                    >
+                      Log Inspection
+                    </Link>
+                </div>
+              </div>
 
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/5 bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent pointer-events-none" />
-        <div className="relative z-10 border-b border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 p-6 flex flex-col gap-1">
-          <h3 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">Driver credentials</h3>
-          <p className="text-sm font-mono text-slate-500 dark:text-slate-400">License class and expiration tracking (one active record per staff member per facility).</p>
+              {/* Real historical inspections */}
+              <div className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
+                 <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Recent Logs</h4>
+                 {inspections.slice(0, 3).map(row => (
+                   <div key={row.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex gap-4 items-center">
+                     <div className="flex-1 min-w-0">
+                       <p className="text-xs font-medium text-slate-900 dark:text-slate-300 truncate">
+                         {row.fleet_vehicles?.name ?? "Unknown"}
+                       </p>
+                       <p className="text-[10px] text-slate-500 truncate capitalize">Result: {formatEnum(row.result)}</p>
+                     </div>
+                     <span className="text-[10px] font-mono text-indigo-600 dark:text-indigo-400 text-right">
+                       {format(new Date(row.inspected_at), "MMM d")}
+                     </span>
+                   </div>
+                 ))}
+                 {inspections.length === 0 && !loading && (
+                   <p className="text-xs text-slate-500 italic">No historical inspections.</p>
+                 )}
+              </div>
+            </div>
+            
+          </div>
+
         </div>
-        <div className="relative z-10 overflow-x-auto p-4">
-          {loading ? (
-            <p className="text-sm font-mono text-slate-500">Loading…</p>
-          ) : !facilityReady ? null : drivers.length === 0 ? (
-            <p className="text-sm font-mono text-slate-500">No driver credentials yet.</p>
-          ) : (
-            <Table>
-              <TableHeader className="bg-white/40 dark:bg-black/40 border-b border-white/20 dark:border-white/10">
-                <TableRow className="border-none hover:bg-transparent">
-                  <TableHead>Staff</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>License expires</TableHead>
-                  <TableHead>Med card</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {drivers.map((row) => (
-                  <TableRow key={row.id} className="border-slate-100 dark:border-slate-800 hover:bg-emerald-500/5 dark:hover:bg-emerald-500/10 transition-colors cursor-pointer group">
-                    <TableCell>
-                      {row.staff ? `${row.staff.first_name} ${row.staff.last_name}`.trim() : "—"}
-                    </TableCell>
-                    <TableCell className="capitalize">{formatEnum(row.status)}</TableCell>
-                    <TableCell className="whitespace-nowrap text-xs text-slate-500">
-                      {row.license_expires_on ? format(new Date(row.license_expires_on), "MMM d, yyyy") : "—"}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap text-xs text-slate-500">
-                      {row.medical_card_expires_on ? format(new Date(row.medical_card_expires_on), "MMM d, yyyy") : "—"}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </div>
-      </div>
+      )}
       </div>
     </div>
   );

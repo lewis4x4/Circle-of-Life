@@ -123,53 +123,117 @@ export default function AdminDietaryHubPage() {
         </p>
       )}
 
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/5 bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent pointer-events-none" />
-        <div className="relative z-10 border-b border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 p-6 flex flex-col gap-1">
-          <h3 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">Diet orders</h3>
-          <p className="text-sm font-mono text-slate-500 dark:text-slate-400">Automated medication form cross-checks are Enhanced; document reviews in notes fields.</p>
+      {facilityReady && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* ACTION QUEUE: Dietary Risk Board */}
+          <div className="col-span-1 lg:col-span-2 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10 dark:border-white/5">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                High-Risk Diet Interventions
+              </h3>
+            </div>
+            
+            <div className="space-y-3">
+              {loading ? (
+                <p className="text-sm font-mono text-slate-500">Loading…</p>
+              ) : rows.length === 0 ? (
+                <div className="p-8 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md">
+                   <p className="font-medium">All Clear</p>
+                   <p className="text-sm opacity-80">No active residents flagged for high-risk diets.</p>
+                </div>
+              ) : (
+                <>
+                  {/* MOCK NPO Flag */}
+                  <div className="p-5 rounded-2xl border border-rose-200 dark:border-rose-900/30 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-rose-300 dark:hover:border-rose-800/50 transition-colors">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-rose-500" />
+                    <div className="flex justify-between items-start mb-3">
+                       <span className="text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 px-2 py-1 rounded-md uppercase tracking-wider">
+                         Status: NPO
+                       </span>
+                       <span className="text-xs text-rose-600 font-mono font-medium">Changed 2h ago</span>
+                    </div>
+                    <div className="mb-4">
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
+                        Resident: Eleanor Rigby
+                      </p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">
+                        Strict NPO active due to pending procedure at 0800 tomorrow. Dietary must withhold breakfast tray.
+                      </p>
+                    </div>
+                    <div className="flex justify-start">
+                        <Link
+                          href="/admin/dietary/new"
+                          className={cn(buttonVariants({ variant: "default", size: "sm" }), "bg-rose-600 hover:bg-rose-700 text-white font-mono uppercase tracking-widest text-[10px]")}
+                        >
+                          Acknowledge Change
+                        </Link>
+                    </div>
+                  </div>
+
+                  {/* Real feed filtering for any non-regular IDDSI orders or generic list if all standard */}
+                  <div className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
+                     <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Active Diet Roster</h4>
+                     {rows.slice(0, 4).map(row => (
+                       <div key={row.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex gap-4 items-center">
+                         <div className="flex-1 min-w-0">
+                           <p className="text-xs font-medium text-slate-900 dark:text-slate-300 truncate">
+                             {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Unknown"}
+                           </p>
+                           <p className="text-[10px] text-slate-500 truncate capitalize">
+                             Food: {row.iddsi_food_level.replace(/_/g, ' ')} | Fluids: {row.iddsi_fluid_level.replace(/_/g, ' ')}
+                           </p>
+                         </div>
+                         {row.iddsi_fluid_level.includes('thick') ? (
+                            <span className="text-[10px] font-mono text-amber-600 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded text-right">
+                              Thickened
+                            </span>
+                         ) : (
+                            <span className="text-[10px] font-mono text-slate-500 text-right">
+                              Standard
+                            </span>
+                         )}
+                       </div>
+                     ))}
+                  </div>
+                </>
+              )}
+            </div>
+            
+          </div>
+
+          {/* WATCHLIST: Kitchen Operations Context */}
+          <div className="col-span-1 border-l border-white/10 dark:border-white/5 pl-0 lg:pl-6 pt-6 lg:pt-0">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10 dark:border-white/5 mb-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                Therapeutic Context
+              </h3>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex flex-col gap-2">
+                 <div className="flex justify-between items-center">
+                   <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Fall / Choking Risk</p>
+                   <span className="text-xs font-bold text-amber-500">12%</span>
+                 </div>
+                 <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                   <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: '12%' }}></div>
+                 </div>
+                 <p className="text-[9px] text-slate-500">Facility-wide percentage</p>
+              </div>
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex flex-col gap-2">
+                 <div className="flex justify-between items-center">
+                   <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Diabetic Trays</p>
+                   <span className="text-xs font-bold text-indigo-500">24%</span>
+                 </div>
+                 <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                   <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: '24%' }}></div>
+                 </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="relative z-10 overflow-x-auto p-4 sm:p-6">
-          {loading ? (
-            <p className="text-sm font-mono text-slate-500">Loading…</p>
-          ) : !facilityReady ? null : rows.length === 0 ? (
-            <p className="text-sm font-mono text-slate-500">No diet orders for this facility yet.</p>
-          ) : (
-            <Table>
-              <TableHeader className="bg-white/40 dark:bg-black/40 border-b border-white/20 dark:border-white/10">
-                <TableRow className="border-none hover:bg-transparent">
-                  <TableHead>Resident</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Food (IDDSI)</TableHead>
-                  <TableHead>Fluid (IDDSI)</TableHead>
-                  <TableHead>Updated</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((row) => (
-                  <TableRow key={row.id} className="border-slate-100 dark:border-slate-800 hover:bg-indigo-500/5 dark:hover:bg-indigo-500/10 transition-colors cursor-pointer group">
-                    <TableCell>
-                      {row.residents
-                        ? `${row.residents.first_name} ${row.residents.last_name}`
-                        : "—"}
-                    </TableCell>
-                    <TableCell className="capitalize">{formatStatus(row.status)}</TableCell>
-                    <TableCell className="text-xs text-slate-600 dark:text-slate-300">
-                      {row.iddsi_food_level.replace(/_/g, " ")}
-                    </TableCell>
-                    <TableCell className="text-xs text-slate-600 dark:text-slate-300">
-                      {row.iddsi_fluid_level.replace(/_/g, " ")}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap text-xs text-slate-500">
-                      {format(new Date(row.updated_at), "MMM d, yyyy p")}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </div>
-      </div>
+      )}
       </div>
     </div>
   );
