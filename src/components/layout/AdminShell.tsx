@@ -158,7 +158,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       items: [
         { key: "residents", href: "/admin/residents", label: "Roster", enabled: true, icon: Users },
         { key: "assessments", href: "/admin/assessments/overdue", label: "Clinical Desk", enabled: true, icon: ClipboardCheck },
-        { key: "plan-reviews", href: "/admin/care-plans/reviews-due", label: "Plan Reviews", enabled: true, icon: CalendarClock },
         { key: "medications", href: "/admin/medications", label: "Medications", enabled: true, icon: Pill },
         { key: "dietary", href: "/admin/dietary", label: "Dietary", enabled: true, icon: Utensils },
         { key: "transportation", href: "/admin/transportation", label: "Transportation", enabled: true, icon: Bus },
