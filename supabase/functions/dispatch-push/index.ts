@@ -45,6 +45,11 @@ Deno.serve(async (req) => {
     );
   }
 
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID_RE.test(targetUserId)) {
+    return jsonResponse({ error: "user_id must be a UUID" }, 400);
+  }
+
   const cronSecret = Deno.env.get("DISPATCH_PUSH_SECRET");
   const headerSecret = req.headers.get("x-dispatch-secret");
   const admin = createClient(supabaseUrl, serviceKey);
@@ -124,7 +129,8 @@ Deno.serve(async (req) => {
     .is("deleted_at", null);
 
   if (sErr) {
-    return jsonResponse({ error: sErr.message }, 500);
+    console.error("[dispatch-push] subscriptions", sErr);
+    return jsonResponse({ error: "Could not load subscriptions" }, 500);
   }
 
   const payload = JSON.stringify({
@@ -159,8 +165,8 @@ Deno.serve(async (req) => {
         .eq("id", sub.id);
       results.push({ id: sub.id, ok: true });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      results.push({ id: sub.id, ok: false, error: msg });
+      console.error(`[dispatch-push] sub=${sub.id}`, e);
+      results.push({ id: sub.id, ok: false, error: "send_failed" });
     }
   }
 

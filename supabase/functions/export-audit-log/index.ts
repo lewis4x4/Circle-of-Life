@@ -98,6 +98,8 @@ Deno.serve(async (req) => {
       .order("created_at", { ascending: true });
 
     if (job.facility_id) {
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!UUID_RE.test(job.facility_id)) throw new Error("Invalid facility_id in job");
       q = q.or(`facility_id.eq.${job.facility_id},facility_id.is.null`);
     }
     if (job.date_from) {
@@ -167,15 +169,16 @@ Deno.serve(async (req) => {
       },
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[export-audit-log]", e);
+    const internalMsg = e instanceof Error ? e.message : String(e);
     await admin
       .from("audit_log_export_jobs")
       .update({
         status: "failed",
-        error_message: msg,
+        error_message: internalMsg,
         completed_at: new Date().toISOString(),
       })
       .eq("id", jobId);
-    return jsonResponse({ error: msg }, 500);
+    return jsonResponse({ error: "Export failed" }, 500);
   }
 });

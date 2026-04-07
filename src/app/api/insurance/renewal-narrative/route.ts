@@ -162,7 +162,7 @@ export async function POST(request: Request) {
 
   if (upErr) {
     console.error("[renewal-narrative] update", upErr);
-    return NextResponse.json({ error: upErr.message }, { status: 500 });
+    return NextResponse.json({ error: "Could not save narrative" }, { status: 500 });
   }
 
   return NextResponse.json({

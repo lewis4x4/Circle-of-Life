@@ -71,7 +71,8 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   if (orgErr) {
-    return jsonResponse({ error: orgErr.message }, 500);
+    console.error("[exec-kpi-snapshot] org lookup", orgErr);
+    return jsonResponse({ error: "Database error" }, 500);
   }
   if (!orgRow) {
     return jsonResponse({ error: "Organization not found" }, 404);
@@ -85,7 +86,8 @@ Deno.serve(async (req) => {
       .eq("snapshot_date", snapshotDate);
 
     if (delErr) {
-      return jsonResponse({ error: delErr.message }, 500);
+      console.error("[exec-kpi-snapshot] delete", delErr);
+      return jsonResponse({ error: "Database error" }, 500);
     }
 
     const allFacs = await loadFacilitiesForOrganization(supabase, organizationId);
@@ -153,7 +155,8 @@ Deno.serve(async (req) => {
 
     const { error: insErr } = await supabase.from("exec_kpi_snapshots").insert(rows);
     if (insErr) {
-      return jsonResponse({ error: insErr.message }, 500);
+      console.error("[exec-kpi-snapshot] insert", insErr);
+      return jsonResponse({ error: "Database error" }, 500);
     }
 
     return jsonResponse({
@@ -168,7 +171,7 @@ Deno.serve(async (req) => {
       },
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Unknown error";
-    return jsonResponse({ error: msg }, 500);
+    console.error("[exec-kpi-snapshot]", e);
+    return jsonResponse({ error: "Internal error" }, 500);
   }
 });

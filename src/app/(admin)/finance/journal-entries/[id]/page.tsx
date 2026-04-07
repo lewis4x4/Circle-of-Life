@@ -34,10 +34,16 @@ type FacilityMini = { id: string; name: string; entity_id: string };
 type GlMini = { id: string; code: string; name: string };
 
 type LineForm = {
+  _key: string;
   gl_account_id: string;
   debit: string;
   credit: string;
 };
+
+let _lineSeq = 0;
+function nextLineKey() {
+  return `line-${++_lineSeq}-${Date.now()}`;
+}
 
 function parseFormLines(formLines: LineForm[]) {
   return formLines
@@ -144,13 +150,14 @@ export default function JournalEntryDetailPage() {
         const fl: LineForm[] =
           rowsWithAccounts.length > 0
             ? rowsWithAccounts.map((l) => ({
+                _key: nextLineKey(),
                 gl_account_id: l.gl_account_id,
                 debit: l.debit_cents ? (l.debit_cents / 100).toFixed(2) : "",
                 credit: l.credit_cents ? (l.credit_cents / 100).toFixed(2) : "",
               }))
             : [];
         while (fl.length < 2) {
-          fl.push({ gl_account_id: "", debit: "", credit: "" });
+          fl.push({ _key: nextLineKey(), gl_account_id: "", debit: "", credit: "" });
         }
         setFormLines(fl);
       } else {
@@ -170,11 +177,11 @@ export default function JournalEntryDetailPage() {
   }
 
   function addLine() {
-    setFormLines((prev) => [...prev, { gl_account_id: "", debit: "", credit: "" }]);
+    setFormLines((prev) => [...prev, { _key: nextLineKey(), gl_account_id: "", debit: "", credit: "" }]);
   }
 
-  function removeLine(i: number) {
-    setFormLines((prev) => (prev.length <= 2 ? prev : prev.filter((_, j) => j !== i)));
+  function removeLine(key: string) {
+    setFormLines((prev) => (prev.length <= 2 ? prev : prev.filter((l) => l._key !== key)));
   }
 
   async function saveDraft() {
@@ -395,7 +402,7 @@ export default function JournalEntryDetailPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {formLines.map((line, i) => (
-                    <div key={i} className="grid gap-2 md:grid-cols-5 md:items-end">
+                    <div key={line._key} className="grid gap-2 md:grid-cols-5 md:items-end">
                       <div className="space-y-1 md:col-span-2">
                         <Label>Account</Label>
                         <select
@@ -436,7 +443,7 @@ export default function JournalEntryDetailPage() {
                           size="sm"
                           className="text-slate-600"
                           disabled={formLines.length <= 2}
-                          onClick={() => removeLine(i)}
+                          onClick={() => removeLine(line._key)}
                         >
                           Remove
                         </Button>

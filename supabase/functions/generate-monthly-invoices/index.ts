@@ -124,10 +124,8 @@ Deno.serve(async (req) => {
   try {
     facilities = await listActiveFacilitiesForOrganization(admin, organizationId!);
   } catch (e) {
-    return jsonResponse(
-      { error: e instanceof Error ? e.message : "Could not list facilities" },
-      500,
-    );
+    console.error("[generate-monthly-invoices] listActiveFacilities", e);
+    return jsonResponse({ error: "Could not list facilities" }, 500);
   }
 
   const truncated = facilities.length > maxFacilities;
@@ -196,6 +194,7 @@ Deno.serve(async (req) => {
         warning: previewResult.error,
       });
     } catch (e) {
+      console.error(`[generate-monthly-invoices] facility=${f.id}`, e);
       rows.push({
         facility_id: f.id,
         facility_name: f.name,
@@ -205,7 +204,7 @@ Deno.serve(async (req) => {
         preview_count: 0,
         billing_label: monthLabel(billingYear, billingMonth),
         warning: null,
-        detail: e instanceof Error ? e.message : String(e),
+        detail: "Invoice generation failed for this facility",
       });
     }
   }

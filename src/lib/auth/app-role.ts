@@ -18,9 +18,9 @@ export function getAppRoleFromClaims(user: {
   user_metadata?: Record<string, unknown>;
 } | null): string {
   if (!user) return "";
-  const fromApp = user.app_metadata?.app_role;
-  const fromUser = user.user_metadata?.app_role;
-  const raw = fromApp ?? fromUser;
+  // Only trust app_metadata for authorization — user_metadata is user-editable
+  // in many Supabase configurations and must not be used for role decisions.
+  const raw = user.app_metadata?.app_role;
   return typeof raw === "string" ? raw : "";
 }
 

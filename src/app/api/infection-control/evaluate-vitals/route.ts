@@ -50,7 +50,7 @@ export async function POST(request: Request) {
 
   const { data: log, error: logErr } = await admin
     .from("daily_logs")
-    .select("*")
+    .select("id, organization_id, facility_id, resident_id, log_date, logged_by, temperature, blood_pressure_systolic, blood_pressure_diastolic, pulse, respiration, oxygen_saturation, weight_lbs")
     .eq("id", dailyLogId)
     .is("deleted_at", null)
     .maybeSingle();

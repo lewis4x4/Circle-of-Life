@@ -1,0 +1,125 @@
+{
+  "segment": "audit-pass-2-fixes",
+  "timestamp": "2026-04-07T00:01:11.485Z",
+  "verdict": "FAIL",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-env-example.mjs",
+      "duration_ms": 23,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "duration_ms": 72,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "status": "passed",
+      "command": "npm run audit:ci",
+      "duration_ms": 593,
+      "stdout": "found 0 vulnerabilities\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "status": "passed",
+      "command": "npm run secrets:gitleaks",
+      "duration_ms": 2671,
+      "stdout": "[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n\u001b[90m12:01AM\u001b[0m \u001b[32mINF\u001b[0m 198 commits scanned.\n\u001b[90m12:01AM\u001b[0m \u001b[32mINF\u001b[0m scan completed in 1.94s\n\u001b[90m12:01AM\u001b[0m \u001b[32mINF\u001b[0m no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "status": "passed",
+      "command": "npm run lint",
+      "duration_ms": 6085,
+      "stdout": "\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/billing/billing-invoice-ledger.tsx\n   5:49  warning  'Receipt' is defined but never used               @typescript-eslint/no-unused-vars\n  19:10  warning  'Card' is defined but never used                  @typescript-eslint/no-unused-vars\n  19:16  warning  'CardContent' is defined but never used           @typescript-eslint/no-unused-vars\n  19:29  warning  'CardDescription' is defined but never used       @typescript-eslint/no-unused-vars\n  19:46  warning  'CardHeader' is defined but never used            @typescript-eslint/no-unused-vars\n  19:58  warning  'CardTitle' is defined but never used             @typescript-eslint/no-unused-vars\n  86:3   warning  'description' is assigned a value but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/certifications/page.tsx\n  15:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n  15:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n  15:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n  15:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n  15:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/dietary/page.tsx\n   9:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n   9:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n   9:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n   9:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n   9:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n  19:10  warning  'PulseDot' is defined but never used         @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/finance/page.tsx\n  8:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n  8:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n  8:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n  8:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n  8:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/incidents/page.tsx\n   5:10  warning  'AlertTriangle' is defined but never used    @typescript-eslint/no-unused-vars\n  19:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n  19:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n  19:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n  19:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n  19:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/insurance/page.tsx\n  9:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n  9:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n  9:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n  9:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n  9:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/payroll/page.tsx\n   9:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n   9:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n   9:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n   9:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n   9:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n  19:10  warning  'PulseDot' is defined but never used         @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/reputation/page.tsx\n  9:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n  9:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n  9:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n  9:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n  9:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/residents/page.tsx\n  20:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n  20:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n  20:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n  20:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n  20:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/schedules/page.tsx\n  15:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n  15:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n  15:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n  15:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n  15:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/search/page.tsx\n   8:10  warning  'Card' is defined but never used         @typescript-eslint/no-unused-vars\n   8:16  warning  'CardContent' is defined but never used  @typescript-eslint/no-unused-vars\n   8:29  warning  'CardHeader' is defined but never used   @typescript-eslint/no-unused-vars\n   8:41  warning  'CardTitle' is defined but never used    @typescript-eslint/no-unused-vars\n  10:10  warning  'Label' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/staff/page.tsx\n   5:37  warning  'UserCog' is defined but never used          @typescript-eslint/no-unused-vars\n  20:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n  20:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n  20:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n  20:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n  20:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/staffing/page.tsx\n  10:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n  10:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n  10:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n  10:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n  10:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/time-records/page.tsx\n  15:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n  15:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n  15:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n  15:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n  15:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/training/page.tsx\n   9:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n   9:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n   9:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n   9:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n   9:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n  19:10  warning  'PulseDot' is defined but never used         @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/transportation/page.tsx\n   9:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n   9:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n   9:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n   9:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n   9:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n  19:10  warning  'PulseDot' is defined but never used         @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/vendors/page.tsx\n  8:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars\n  8:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars\n  8:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars\n  8:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars\n  8:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/components/common/admin-list-patterns.tsx\n  7:10  warning  'Card' is defined but never used         @typescript-eslint/no-unused-vars\n  7:16  warning  'CardContent' is defined but never used  @typescript-eslint/no-unused-vars\n\n✖ 95 problems (0 errors, 95 warnings)\n\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "status": "passed",
+      "command": "npm run migrations:check",
+      "duration_ms": 111,
+      "stdout": "[migrations:check] PASS: 95 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..095\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": false,
+      "status": "passed",
+      "command": "npm run migrations:verify:pg",
+      "duration_ms": 9274,
+      "stdout": "[migrations:verify:pg] PASS (95 migration file(s))\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "status": "failed",
+      "command": "npm run build",
+      "duration_ms": 9675,
+      "stdout": "[migrations:check] PASS: 95 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..095\n[check:admin-shell] PASS: all 21 top-level (admin) route prefix(es) are gated\n▲ Next.js 16.2.1 (Turbopack)\n- Environments: .env.local\n\n  Creating an optimized production build ...\n",
+      "stderr": "\n> Build error occurred\nError: Turbopack build failed with 1 errors:\n./src/app/page.tsx:3:21\n`ssr: false` is not allowed with `next/dynamic` in Server Components. Please move it into a Client Component.\n  \u001b[90m 1 |\u001b[0m \u001b[36mimport\u001b[0m dynamic \u001b[36mfrom\u001b[0m \u001b[32m\"next/dynamic\"\u001b[0m;\n  \u001b[90m 2 |\u001b[0m\n\u001b[31m\u001b[1m>\u001b[0m \u001b[90m 3 |\u001b[0m \u001b[36mconst\u001b[0m \u001b[33mLandingHome\u001b[0m = dynamic(() => \u001b[36mimport\u001b[0m(\u001b[32m\"@/components/landing/landing-home\"\u001b[0m), {\n  \u001b[90m   |\u001b[0m                     \u001b[31m\u001b[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\u001b[0m\n\u001b[31m\u001b[1m>\u001b[0m \u001b[90m 4 |\u001b[0m   loading: () => (\n  \u001b[90m   |\u001b[0m \u001b[31m\u001b[1m^^^^^^^^^^^^^^^^^^\u001b[0m\n\u001b[31m\u001b[1m>\u001b[0m \u001b[90m 5 |\u001b[0m     <div className=\u001b[32m\"flex min-h-screen items-center justify-center\"\u001b[0m>\n  \u001b[90m   |\u001b[0m \u001b[31m\u001b[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\u001b[0m\n\u001b[31m\u001b[1m>\u001b[0m \u001b[90m 6 |\u001b[0m       <div className=\u001b[32m\"h-8 w-8 animate-spin rounded-full border-4 border-teal-600 border-t-...\u001b[0m\n  \u001b[90m   |\u001b[0m \u001b[31m\u001b[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\u001b[0m\n\u001b[31m\u001b[1m>\u001b[0m \u001b[90m 7 |\u001b[0m     </div>\n  \u001b[90m   |\u001b[0m \u001b[31m\u001b[1m^^^^^^^^^^\u001b[0m\n\u001b[31m\u001b[1m>\u001b[0m \u001b[90m 8 |\u001b[0m   ),\n  \u001b[90m   |\u001b[0m \u001b[31m\u001b[1m^^^^\u001b[0m\n\u001b[31m\u001b[1m>\u001b[0m \u001b[90m 9 |\u001b[0m   ssr: \u001b[36mfalse\u001b[0m,\n  \u001b[90m   |\u001b[0m \u001b[31m\u001b[1m^^^^^^^^^^^^^\u001b[0m\n\u001b[31m\u001b[1m>\u001b[0m \u001b[90m10 |\u001b[0m });\n  \u001b[90m   |\u001b[0m \u001b[31m\u001b[1m^^\u001b[0m\n  \u001b[90m11 |\u001b[0m\n  \u001b[90m12 |\u001b[0m \u001b[36mexport\u001b[0m \u001b[36mdefault\u001b[0m \u001b[36mfunction\u001b[0m \u001b[33mHome\u001b[0m() {\n  \u001b[90m13 |\u001b[0m   \u001b[36mreturn\u001b[0m <\u001b[33mLandingHome\u001b[0m />;\n\nEcmascript file had an error\n\n\n    at <unknown> (./src/app/page.tsx:3:21)\n"
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run stress:test",
+      "stdout": "skipped (--no-chaos)"
+    },
+    {
+      "id": "cdo.design-review",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run design:review",
+      "stdout": "skipped (pass --ui to enable)"
+    },
+    {
+      "id": "cdo.a11y-axe",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run a11y:routes",
+      "stdout": "skipped (pass --ui to enable; omit --no-a11y)"
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 1,
+    "skipped": 4,
+    "blocking_failures": [
+      "qa.root-build"
+    ]
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/agent-gates/2026-04-07T00-01-11-485Z-audit-pass-2-fixes.json"
+  ]
+}
