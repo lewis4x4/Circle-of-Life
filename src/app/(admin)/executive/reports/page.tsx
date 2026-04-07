@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { FileSpreadsheet } from "lucide-react";
 
 import { ExecutiveHubNav } from "../executive-hub-nav";
@@ -359,6 +360,14 @@ export default function ExecutiveSavedReportsPage() {
           </Button>
         )}
       </div>
+
+      <p className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-200">
+        Reporting has moved to the dedicated module. Use{" "}
+        <Link href="/admin/reports" className="underline underline-offset-2">
+          /admin/reports
+        </Link>{" "}
+        for template library, scheduling, packs, and audit history.
+      </p>
 
       {error && (
         <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">

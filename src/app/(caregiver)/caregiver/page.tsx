@@ -212,7 +212,7 @@ export default function CaregiverHomePage() {
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-2">
           <QuickLink href="/caregiver/meds" icon={<Pill className="h-4 w-4" />} label="Open eMAR" />
-          <QuickLink href="/caregiver/tasks" icon={<CheckCircle2 className="h-4 w-4" />} label="Task Queue" />
+          <QuickLink href="/caregiver/rounds" icon={<CheckCircle2 className="h-4 w-4" />} label="Smart Rounds" />
           <QuickLink href="/caregiver/incident-draft" icon={<AlertTriangle className="h-4 w-4" />} label="Report incident" />
           <QuickLink href="/caregiver/clock" icon={<LogIn className="h-4 w-4" />} label="Clock in / out" />
         </CardContent>

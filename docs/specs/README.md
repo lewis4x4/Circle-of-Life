@@ -333,9 +333,9 @@ Before treating Phase 6 as “done,” revisit the recently shipped Core modules
 
 Only after Tracks A–D should roadmap execution resume with:
 
-1. `096`–`097` (remaining Phase 6)
-2. Phase 7 (`098`–`100`)
-3. Phase 8 (`101`–`107`)
+1. Phase 7 foundation for Resident Assurance (`098`–`101`)
+2. Remaining strategic modules (`102`–`105`)
+3. Phase 8 moonshot AI / ambient tracks (`106`–`111`)
 
 ---
 
@@ -343,8 +343,9 @@ Only after Tracks A–D should roadmap execution resume with:
 
 | Order | Spec file | Module | Migration range | Audit / build notes |
 |-------|-----------|--------|-----------------|---------------------|
-| 31 | `20-expansion-acquisition.md` | Expansion Planning | `098` | `expansion_scenarios` + immutable assumption hash; cap table modeling. |
-| 32 | `27-regulatory-intelligence.md` | Regulatory Intelligence | `099`–`100` | `regulatory_sources` (url, etag, sha256); diff pipeline; routed through `ai_invocations` with `phi_class = 'none'`. |
+| 31 | `25-resident-assurance-engine.md` | Resident Assurance Engine | `098`–`101` | Resident observation plans, task generation, caregiver rounding workflow, supervisor live board, and completion reports. |
+| 32 | `20-expansion-acquisition.md` | Expansion Planning | `102` | `expansion_scenarios` + immutable assumption hash; cap table modeling. |
+| 33 | `27-regulatory-intelligence.md` | Regulatory Intelligence | `103`–`104` | `regulatory_sources` (url, etag, sha256); diff pipeline; routed through `ai_invocations` with `phi_class = 'none'`. |
 
 ---
 
@@ -352,11 +353,11 @@ Only after Tracks A–D should roadmap execution resume with:
 
 | Order | Spec file | Module / subsystem | Migration range | Description |
 |-------|-----------|---------------------|-----------------|-------------|
-| 33 | `ai-A-pattern-detection.md` | Cross-Resident Pattern Detection | `101`–`102` | `pattern_detection_jobs`, `pattern_detection_findings`; Edge Function; `phi_class` gate. |
-| 34 | `ai-B-cognitive-load.md` | Cognitive Load Engine | `103` | `caregiver_load_samples`, `caregiver_load_rules`; deterministic scoring v1. |
-| 35 | `ai-C-family-risk.md` | Family Relationship Health | `104` | `family_engagement_signals`, `family_risk_scores` — **blocked on BAA or de-ID pipeline**. |
-| 36 | `ai-D-placement-optimizer.md` | Portfolio Placement Optimizer | `105` | `placement_constraints`, `placement_recommendations`; OR solver over census + staffing + payer mix. |
-| 37 | `25-ambient-intelligence.md` | Ambient Environment Intelligence | `106`–`107` | `ambient_consent_policies`, `resident_sensor_opt_in`; BLE/MQTT gateway; retention TTL; redaction Edge Function. |
+| 34 | `ai-A-pattern-detection.md` | Cross-Resident Pattern Detection | `106`–`107` | `pattern_detection_jobs`, `pattern_detection_findings`; Edge Function; `phi_class` gate. |
+| 35 | `ai-B-cognitive-load.md` | Cognitive Load Engine | `108` | `caregiver_load_samples`, `caregiver_load_rules`; deterministic scoring v1. |
+| 36 | `ai-C-family-risk.md` | Family Relationship Health | `109` | `family_engagement_signals`, `family_risk_scores` — **blocked on BAA or de-ID pipeline**. |
+| 37 | `ai-D-placement-optimizer.md` | Portfolio Placement Optimizer | `110` | `placement_constraints`, `placement_recommendations`; OR solver over census + staffing + payer mix. |
+| 38 | `26-ambient-intelligence.md` | Ambient Environment Intelligence | `111` | `ambient_consent_policies`, `resident_sensor_opt_in`; BLE/MQTT gateway; retention TTL; redaction Edge Function. |
 
 ---
 
@@ -416,18 +417,18 @@ Per-org provider routing is stored in **`ai_invocation_policies`**.
 | Phase 4 | 3 modules | `075`–`080` (after repo `070`–`074`) |
 | Phase 5 | 3 modules | `081`–`085` |
 | Phase 6 | 8 modules | `086`–`092`, `096`–`097` (`093`–`095` reserved for auth remediation) |
-| Phase 7 | 2 modules | `098`–`100` |
-| Phase 8 | 5 modules / subsystems | `101`–`107` |
+| Phase 7 | 3 modules | `098`–`104` |
+| Phase 8 | 5 modules / subsystems | `106`–`111` |
 
 **~43** discrete segments/modules beyond the current Phase 3 queue (see tables above for authoritative ordering).
 
 ---
 
-## Module Number Reference (27 modules + 4 AI subsystems)
+## Module Number Reference (28 modules + 4 AI subsystems)
 
 Module numbers match the product roadmap, **not** the build sequence. Build order is in the phase tables above.
 
-### Core product modules (1–27)
+### Core product modules (1–28)
 
 | Module # | Name | Phase | Spec file / status |
 |----------|------|-------|-------------------|
@@ -450,23 +451,24 @@ Module numbers match the product roadmap, **not** the build sequence. Build orde
 | 17 | Entity & Facility Finance | 3 + 3.5 patch | `17-entity-facility-finance.md` — ✅ Core; Enhanced `048` + `065` |
 | 18 | Insurance & Risk Finance | 3 + 3.5 patch | `18-insurance-risk-finance.md` — ✅ Core; Enhanced `049` + `066` |
 | 19 | Vendor & Contract Management | 3 + 3.5 patch | `19-vendor-contract-management.md` — ✅; Phase 3.5 `067` |
-| 20 | Expansion & Acquisition Planning | 7 | `20-expansion-acquisition.md` — not yet written (`098`) |
+| 20 | Expansion & Acquisition Planning | 7 | `20-expansion-acquisition.md` — not yet written (`102`) |
 | 21 | Family Portal | 5 | `21-family-portal.md` — ✅ Core (`083`–`084`); PHI / production readiness remains in Completion Track C |
 | 22 | Referral Source CRM | 6 | `22-referral-crm.md` — ✅ Core (`091`); HL7 automation remains in Completion Track D |
 | 23 | Reputation & Online Presence | 6 | `23-reputation.md` — ✅ Core (`092`); API sync remains in Completion Track D |
 | 24 | Executive Intelligence Layer | 3 (v1) + 5 (v2) | `24-executive-intelligence.md` — 🟩 Core UI (`047`); v2: `24-executive-v2.md` — ✅ Core schema + admin (`085`); operational hardening remains in Completion Track C |
-| 25 | Ambient Environment Intelligence | 8 | `25-ambient-intelligence.md` — not yet written (`106`–`107`) |
-| 26 | Facility Digital Twin | 6 | `26-digital-twin.md` — not yet written (`096`) |
-| 27 | Regulatory Intelligence & Arbitrage | 7 | `27-regulatory-intelligence.md` — not yet written (`099`–`100`) |
+| 25 | Resident Assurance Engine | 7 | `25-resident-assurance-engine.md` — spec written (`098`–`101`) |
+| 26 | Ambient Environment Intelligence | 8 | `26-ambient-intelligence.md` — not yet written (`111`) |
+| 27 | Facility Digital Twin | 6 | `27-digital-twin.md` — not yet written (`105`) |
+| 28 | Regulatory Intelligence & Arbitrage | 7 | `28-regulatory-intelligence.md` — not yet written (`103`–`104`) |
 
 ### Cross-cutting AI subsystems (Phase 8)
 
 | ID | Name | Spec file | Migration | Notes |
 |----|------|-----------|-----------|-------|
-| AI-A | Cross-Resident Pattern Detection | `ai-A-pattern-detection.md` | `101`–`102` | `phi_class` gate via `ai_invocations` |
-| AI-B | Cognitive Load Engine | `ai-B-cognitive-load.md` | `103` | Reads Module 11 + 04 signals |
-| AI-C | Family Relationship Health | `ai-C-family-risk.md` | `104` | Blocked on BAA or de-ID |
-| AI-D | Portfolio Placement Optimizer | `ai-D-placement-optimizer.md` | `105` | OR over census + staffing |
+| AI-A | Cross-Resident Pattern Detection | `ai-A-pattern-detection.md` | `106`–`107` | `phi_class` gate via `ai_invocations` |
+| AI-B | Cognitive Load Engine | `ai-B-cognitive-load.md` | `108` | Reads Module 11 + 04 signals |
+| AI-C | Family Relationship Health | `ai-C-family-risk.md` | `109` | Blocked on BAA or de-ID |
+| AI-D | Portfolio Placement Optimizer | `ai-D-placement-optimizer.md` | `110` | OR over census + staffing |
 
 ### Foundation addenda (not numbered modules)
 

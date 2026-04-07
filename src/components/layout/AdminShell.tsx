@@ -42,6 +42,7 @@ import {
   Monitor,
   BarChart3,
   LineChart,
+  FileText,
   Smartphone,
   Star,
 } from "lucide-react";
@@ -140,6 +141,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       items: [
         { key: "dashboard", href: "/admin", label: "Triage Inbox", enabled: true, icon: LayoutDashboard },
         { key: "executive", href: "/admin/executive", label: "Executive", enabled: true, icon: BarChart3 },
+        { key: "reports", href: "/admin/reports", label: "Reports", enabled: true, icon: FileText },
       ]
     },
     {
@@ -157,6 +159,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       items: [
         { key: "residents", href: "/admin/residents", label: "Roster", enabled: true, icon: Users },
         { key: "assessments", href: "/admin/assessments/overdue", label: "Clinical Desk", enabled: true, icon: ClipboardCheck },
+        { key: "rounding", href: "/admin/rounding", label: "Rounding", enabled: true, icon: Clock },
         { key: "medications", href: "/admin/medications", label: "Medications", enabled: true, icon: Pill },
         { key: "dietary", href: "/admin/dietary", label: "Dietary", enabled: true, icon: Utensils },
         { key: "transportation", href: "/admin/transportation", label: "Transportation", enabled: true, icon: Bus },
@@ -264,6 +267,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                       const isActive =
                         pathname === item.href ||
                         (item.key === "executive" && pathname.startsWith("/admin/executive")) ||
+                        (item.key === "reports" && pathname.startsWith("/admin/reports")) ||
                         (item.key === "referrals" && pathname.startsWith("/admin/referrals")) ||
                         (item.key === "reputation" && pathname.startsWith("/admin/reputation")) ||
                         (item.key === "admissions" && pathname.startsWith("/admin/admissions")) ||

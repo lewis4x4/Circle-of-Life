@@ -1,0 +1,128 @@
+{
+  "segment": "segment-rounding-api",
+  "timestamp": "2026-04-07T16:47:34.575Z",
+  "verdict": "FAIL",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-env-example.mjs",
+      "duration_ms": 23,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "duration_ms": 77,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "status": "passed",
+      "command": "npm run audit:ci",
+      "duration_ms": 513,
+      "stdout": "found 0 vulnerabilities\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "status": "passed",
+      "command": "npm run secrets:gitleaks",
+      "duration_ms": 50720,
+      "stdout": "[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n\u001b[90m4:48PM\u001b[0m \u001b[32mINF\u001b[0m 220 commits scanned.\n\u001b[90m4:48PM\u001b[0m \u001b[32mINF\u001b[0m scan completed in 49.9s\n\u001b[90m4:48PM\u001b[0m \u001b[32mINF\u001b[0m no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "status": "failed",
+      "command": "npm run lint",
+      "duration_ms": 6597,
+      "stdout": "\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/api/rounding/generate-tasks/route.ts\n  117:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  118:84  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  119:76  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  122:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/api/rounding/tasks/route.ts\n  68:41  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/lib/rounding/auth.ts\n   8:10  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  29:14  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  31:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n\n✖ 8 problems (8 errors, 0 warnings)\n\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "status": "passed",
+      "command": "npm run migrations:check",
+      "duration_ms": 112,
+      "stdout": "[migrations:check] PASS: 101 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..101\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": false,
+      "status": "passed",
+      "command": "npm run migrations:verify:pg",
+      "duration_ms": 55499,
+      "stdout": "[migrations:verify:pg] PASS (101 migration file(s))\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "status": "failed",
+      "command": "npm run build",
+      "duration_ms": 44448,
+      "stdout": "[migrations:check] PASS: 101 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..101\n[check:admin-shell] PASS: all 20 top-level (admin) route prefix(es) are gated\n▲ Next.js 16.2.1 (Turbopack)\n- Environments: .env.local\n- Experiments (use with caution):\n  · clientTraceMetadata\n\n  Creating an optimized production build ...\n✓ Compiled successfully in 24.6s\n  Running next.config.js provided runAfterProductionCompile ...\n✓ Completed runAfterProductionCompile in 460ms\n  Running TypeScript ...\n",
+      "stderr": "Failed to type check.\n\n./src/app/api/rounding/generate-tasks/route.ts:156:31\nType error: Parameter 'task' implicitly has an 'any' type.\n\n  \u001b[90m154 |\u001b[0m   }\n  \u001b[90m155 |\u001b[0m\n\u001b[31m\u001b[1m>\u001b[0m \u001b[90m156 |\u001b[0m   \u001b[36mconst\u001b[0m rows = generated.map((task) => ({\n  \u001b[90m    |\u001b[0m                               \u001b[31m\u001b[1m^\u001b[0m\n  \u001b[90m157 |\u001b[0m     organization_id: task.organizationId,\n  \u001b[90m158 |\u001b[0m     entity_id: task.entityId ?? \u001b[36mnull\u001b[0m,\n  \u001b[90m159 |\u001b[0m     facility_id: task.facilityId,\nNext.js build worker exited with code: 1 and signal: null\n"
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": true,
+      "status": "passed",
+      "command": "npm run stress:test",
+      "duration_ms": 405,
+      "stdout": "PASS\tstress: suite loaded\nPASS\tstress: Number.parseInt rejects garbage\nPASS\tstress: parallel microtasks both ran\nADVISORY\tstress: add ALF/home-care workflow simulations when resident and census models exist\n",
+      "stderr": ""
+    },
+    {
+      "id": "cdo.design-review",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run design:review",
+      "stdout": "skipped (pass --ui to enable)"
+    },
+    {
+      "id": "cdo.a11y-axe",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run a11y:routes",
+      "stdout": "skipped (pass --ui to enable; omit --no-a11y)"
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 2,
+    "skipped": 3,
+    "blocking_failures": [
+      "qa.eslint",
+      "qa.root-build"
+    ]
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/agent-gates/2026-04-07T16-47-34-575Z-segment-rounding-api.json"
+  ]
+}

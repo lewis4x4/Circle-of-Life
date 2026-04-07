@@ -3882,6 +3882,600 @@ export type Database = {
           },
         ]
       }
+      report_benchmarks: {
+        Row: {
+          benchmark_type: string
+          created_at: string
+          deleted_at: string | null
+          effective_from: string
+          effective_to: string | null
+          id: string
+          metric_key: string
+          organization_id: string
+          scope_id: string | null
+          scope_type: Database["public"]["Enums"]["exec_snapshot_scope"]
+          updated_at: string
+          value_definition_json: Json
+        }
+        Insert: {
+          benchmark_type: string
+          created_at?: string
+          deleted_at?: string | null
+          effective_from: string
+          effective_to?: string | null
+          id?: string
+          metric_key: string
+          organization_id: string
+          scope_id?: string | null
+          scope_type: Database["public"]["Enums"]["exec_snapshot_scope"]
+          updated_at?: string
+          value_definition_json?: Json
+        }
+        Update: {
+          benchmark_type?: string
+          created_at?: string
+          deleted_at?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          metric_key?: string
+          organization_id?: string
+          scope_id?: string | null
+          scope_type?: Database["public"]["Enums"]["exec_snapshot_scope"]
+          updated_at?: string
+          value_definition_json?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_benchmarks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_exports: {
+        Row: {
+          created_at: string
+          delivered_to_json: Json
+          export_format: Database["public"]["Enums"]["report_export_format"]
+          expires_at: string | null
+          file_name: string | null
+          id: string
+          organization_id: string
+          report_run_id: string
+          storage_path: string | null
+        }
+        Insert: {
+          created_at?: string
+          delivered_to_json?: Json
+          export_format: Database["public"]["Enums"]["report_export_format"]
+          expires_at?: string | null
+          file_name?: string | null
+          id?: string
+          organization_id: string
+          report_run_id: string
+          storage_path?: string | null
+        }
+        Update: {
+          created_at?: string
+          delivered_to_json?: Json
+          export_format?: Database["public"]["Enums"]["report_export_format"]
+          expires_at?: string | null
+          file_name?: string | null
+          id?: string
+          organization_id?: string
+          report_run_id?: string
+          storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_exports_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_exports_report_run_id_fkey"
+            columns: ["report_run_id"]
+            isOneToOne: false
+            referencedRelation: "report_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_packs: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          description: string | null
+          entity_id: string | null
+          facility_id: string | null
+          id: string
+          locked_definition: boolean
+          name: string
+          notes: string | null
+          official_pack: boolean
+          organization_id: string
+          owner_scope: Database["public"]["Enums"]["report_sharing_scope"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          created_by: string
+          deleted_at?: string | null
+          description?: string | null
+          entity_id?: string | null
+          facility_id?: string | null
+          id?: string
+          locked_definition?: boolean
+          name: string
+          notes?: string | null
+          official_pack?: boolean
+          organization_id: string
+          owner_scope?: Database["public"]["Enums"]["report_sharing_scope"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          description?: string | null
+          entity_id?: string | null
+          facility_id?: string | null
+          id?: string
+          locked_definition?: boolean
+          name?: string
+          notes?: string | null
+          official_pack?: boolean
+          organization_id?: string
+          owner_scope?: Database["public"]["Enums"]["report_sharing_scope"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_packs_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_packs_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_packs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_runs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_json: Json | null
+          filter_snapshot_json: Json
+          generated_by_user_id: string | null
+          id: string
+          organization_id: string
+          run_scope_json: Json
+          runtime_classification: string | null
+          source_id: string
+          source_type: Database["public"]["Enums"]["report_source_type"]
+          started_at: string
+          status: Database["public"]["Enums"]["report_run_status"]
+          template_id: string | null
+          template_version_id: string | null
+          warnings_json: Json
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_json?: Json | null
+          filter_snapshot_json?: Json
+          generated_by_user_id?: string | null
+          id?: string
+          organization_id: string
+          run_scope_json?: Json
+          runtime_classification?: string | null
+          source_id: string
+          source_type: Database["public"]["Enums"]["report_source_type"]
+          started_at?: string
+          status?: Database["public"]["Enums"]["report_run_status"]
+          template_id?: string | null
+          template_version_id?: string | null
+          warnings_json?: Json
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_json?: Json | null
+          filter_snapshot_json?: Json
+          generated_by_user_id?: string | null
+          id?: string
+          organization_id?: string
+          run_scope_json?: Json
+          runtime_classification?: string | null
+          source_id?: string
+          source_type?: Database["public"]["Enums"]["report_source_type"]
+          started_at?: string
+          status?: Database["public"]["Enums"]["report_run_status"]
+          template_id?: string | null
+          template_version_id?: string | null
+          warnings_json?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_runs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_runs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "report_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_runs_template_version_id_fkey"
+            columns: ["template_version_id"]
+            isOneToOne: false
+            referencedRelation: "report_template_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_saved_views: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          custom_filters_json: Json
+          custom_grouping_json: Json
+          custom_sort_json: Json
+          deleted_at: string | null
+          entity_id: string | null
+          facility_id: string | null
+          id: string
+          is_favorite: boolean
+          name: string
+          organization_id: string
+          owner_user_id: string
+          pinned_template_version: boolean
+          sharing_scope: Database["public"]["Enums"]["report_sharing_scope"]
+          template_id: string
+          template_version_id: string
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          custom_filters_json?: Json
+          custom_grouping_json?: Json
+          custom_sort_json?: Json
+          deleted_at?: string | null
+          entity_id?: string | null
+          facility_id?: string | null
+          id?: string
+          is_favorite?: boolean
+          name: string
+          organization_id: string
+          owner_user_id: string
+          pinned_template_version?: boolean
+          sharing_scope?: Database["public"]["Enums"]["report_sharing_scope"]
+          template_id: string
+          template_version_id: string
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          custom_filters_json?: Json
+          custom_grouping_json?: Json
+          custom_sort_json?: Json
+          deleted_at?: string | null
+          entity_id?: string | null
+          facility_id?: string | null
+          id?: string
+          is_favorite?: boolean
+          name?: string
+          organization_id?: string
+          owner_user_id?: string
+          pinned_template_version?: boolean
+          sharing_scope?: Database["public"]["Enums"]["report_sharing_scope"]
+          template_id?: string
+          template_version_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_saved_views_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_saved_views_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_saved_views_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_saved_views_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "report_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_saved_views_template_version_id_fkey"
+            columns: ["template_version_id"]
+            isOneToOne: false
+            referencedRelation: "report_template_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_schedules: {
+        Row: {
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          entity_id: string | null
+          facility_id: string | null
+          id: string
+          last_error: string | null
+          last_run_at: string | null
+          next_run_at: string | null
+          organization_id: string
+          output_format: Database["public"]["Enums"]["report_export_format"]
+          recurrence_rule: string
+          source_id: string
+          source_type: Database["public"]["Enums"]["report_source_type"]
+          status: Database["public"]["Enums"]["report_schedule_status"]
+          timezone: string
+          title_pattern: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          deleted_at?: string | null
+          entity_id?: string | null
+          facility_id?: string | null
+          id?: string
+          last_error?: string | null
+          last_run_at?: string | null
+          next_run_at?: string | null
+          organization_id: string
+          output_format?: Database["public"]["Enums"]["report_export_format"]
+          recurrence_rule: string
+          source_id: string
+          source_type: Database["public"]["Enums"]["report_source_type"]
+          status?: Database["public"]["Enums"]["report_schedule_status"]
+          timezone?: string
+          title_pattern?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          entity_id?: string | null
+          facility_id?: string | null
+          id?: string
+          last_error?: string | null
+          last_run_at?: string | null
+          next_run_at?: string | null
+          organization_id?: string
+          output_format?: Database["public"]["Enums"]["report_export_format"]
+          recurrence_rule?: string
+          source_id?: string
+          source_type?: Database["public"]["Enums"]["report_source_type"]
+          status?: Database["public"]["Enums"]["report_schedule_status"]
+          timezone?: string
+          title_pattern?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_schedules_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_schedules_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_schedules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_template_versions: {
+        Row: {
+          change_summary: string | null
+          created_at: string
+          definition_json: Json
+          deleted_at: string | null
+          id: string
+          published_at: string
+          published_by: string | null
+          status: Database["public"]["Enums"]["report_template_status"]
+          template_id: string
+          version_number: number
+        }
+        Insert: {
+          change_summary?: string | null
+          created_at?: string
+          definition_json?: Json
+          deleted_at?: string | null
+          id?: string
+          published_at?: string
+          published_by?: string | null
+          status?: Database["public"]["Enums"]["report_template_status"]
+          template_id: string
+          version_number: number
+        }
+        Update: {
+          change_summary?: string | null
+          created_at?: string
+          definition_json?: Json
+          deleted_at?: string | null
+          id?: string
+          published_at?: string
+          published_by?: string | null
+          status?: Database["public"]["Enums"]["report_template_status"]
+          template_id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_template_versions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "report_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_templates: {
+        Row: {
+          benchmark_capable: boolean
+          category: string
+          clonable: boolean
+          created_at: string
+          created_by: string | null
+          default_pack_membership: string[]
+          deleted_at: string | null
+          id: string
+          intended_roles: Database["public"]["Enums"]["app_role"][]
+          locked_definition: boolean
+          long_description: string | null
+          name: string
+          official_template: boolean
+          organization_id: string | null
+          owner_type: Database["public"]["Enums"]["report_owner_type"]
+          owner_user_id: string | null
+          short_description: string
+          slug: string
+          status: Database["public"]["Enums"]["report_template_status"]
+          supports_nlq_mapping: boolean
+          supports_pack_membership: boolean
+          supports_schedule: boolean
+          tags: string[]
+          updated_at: string
+          updated_by: string | null
+          use_cases: string[]
+        }
+        Insert: {
+          benchmark_capable?: boolean
+          category: string
+          clonable?: boolean
+          created_at?: string
+          created_by?: string | null
+          default_pack_membership?: string[]
+          deleted_at?: string | null
+          id?: string
+          intended_roles?: Database["public"]["Enums"]["app_role"][]
+          locked_definition?: boolean
+          long_description?: string | null
+          name: string
+          official_template?: boolean
+          organization_id?: string | null
+          owner_type?: Database["public"]["Enums"]["report_owner_type"]
+          owner_user_id?: string | null
+          short_description?: string
+          slug: string
+          status?: Database["public"]["Enums"]["report_template_status"]
+          supports_nlq_mapping?: boolean
+          supports_pack_membership?: boolean
+          supports_schedule?: boolean
+          tags?: string[]
+          updated_at?: string
+          updated_by?: string | null
+          use_cases?: string[]
+        }
+        Update: {
+          benchmark_capable?: boolean
+          category?: string
+          clonable?: boolean
+          created_at?: string
+          created_by?: string | null
+          default_pack_membership?: string[]
+          deleted_at?: string | null
+          id?: string
+          intended_roles?: Database["public"]["Enums"]["app_role"][]
+          locked_definition?: boolean
+          long_description?: string | null
+          name?: string
+          official_template?: boolean
+          organization_id?: string | null
+          owner_type?: Database["public"]["Enums"]["report_owner_type"]
+          owner_user_id?: string | null
+          short_description?: string
+          slug?: string
+          status?: Database["public"]["Enums"]["report_template_status"]
+          supports_nlq_mapping?: boolean
+          supports_pack_membership?: boolean
+          supports_schedule?: boolean
+          tags?: string[]
+          updated_at?: string
+          updated_by?: string | null
+          use_cases?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exec_scenarios: {
         Row: {
           assumptions: Json
@@ -12183,6 +12777,1201 @@ export type Database = {
           },
         ]
       }
+      resident_observation_assignments: {
+        Row: {
+          assigned_at: string
+          assignment_type: Database["public"]["Enums"]["resident_observation_assignment_type"]
+          created_at: string
+          created_by: string | null
+          entity_id: string | null
+          facility_id: string
+          id: string
+          organization_id: string
+          reason: string | null
+          released_at: string | null
+          resident_id: string
+          shift_assignment_id: string | null
+          staff_id: string
+          task_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assignment_type?: Database["public"]["Enums"]["resident_observation_assignment_type"]
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string | null
+          facility_id: string
+          id?: string
+          organization_id: string
+          reason?: string | null
+          released_at?: string | null
+          resident_id: string
+          shift_assignment_id?: string | null
+          staff_id: string
+          task_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assignment_type?: Database["public"]["Enums"]["resident_observation_assignment_type"]
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string | null
+          facility_id?: string
+          id?: string
+          organization_id?: string
+          reason?: string | null
+          released_at?: string | null
+          resident_id?: string
+          shift_assignment_id?: string | null
+          staff_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resident_observation_assignments_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_assignments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_assignments_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_assignments_shift_assignment_id_fkey"
+            columns: ["shift_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "shift_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_assignments_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_assignments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "resident_observation_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resident_observation_escalations: {
+        Row: {
+          acknowledged_at: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          entity_id: string | null
+          escalated_to_staff_id: string | null
+          escalation_level: number
+          escalation_type: string
+          facility_id: string
+          id: string
+          organization_id: string
+          resolution_note: string | null
+          resolved_at: string | null
+          resident_id: string
+          status: Database["public"]["Enums"]["resident_observation_follow_up_status"]
+          task_id: string
+          triggered_at: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          entity_id?: string | null
+          escalated_to_staff_id?: string | null
+          escalation_level?: number
+          escalation_type: string
+          facility_id: string
+          id?: string
+          organization_id: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resident_id: string
+          status?: Database["public"]["Enums"]["resident_observation_follow_up_status"]
+          task_id: string
+          triggered_at?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          entity_id?: string | null
+          escalated_to_staff_id?: string | null
+          escalation_level?: number
+          escalation_type?: string
+          facility_id?: string
+          id?: string
+          organization_id?: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resident_id?: string
+          status?: Database["public"]["Enums"]["resident_observation_follow_up_status"]
+          task_id?: string
+          triggered_at?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resident_observation_escalations_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_escalations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_escalations_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_escalations_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "resident_observation_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resident_observation_exceptions: {
+        Row: {
+          assigned_to_staff_id: string | null
+          created_at: string
+          deleted_at: string | null
+          entity_id: string | null
+          exception_type: Database["public"]["Enums"]["resident_observation_exception_type"]
+          facility_id: string
+          follow_up_status: Database["public"]["Enums"]["resident_observation_follow_up_status"]
+          id: string
+          linked_incident_id: string | null
+          log_id: string
+          organization_id: string
+          requires_follow_up: boolean
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          resident_id: string
+          severity: Database["public"]["Enums"]["resident_observation_severity"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          assigned_to_staff_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          entity_id?: string | null
+          exception_type: Database["public"]["Enums"]["resident_observation_exception_type"]
+          facility_id: string
+          follow_up_status?: Database["public"]["Enums"]["resident_observation_follow_up_status"]
+          id?: string
+          linked_incident_id?: string | null
+          log_id: string
+          organization_id: string
+          requires_follow_up?: boolean
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resident_id: string
+          severity?: Database["public"]["Enums"]["resident_observation_severity"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          assigned_to_staff_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          entity_id?: string | null
+          exception_type?: Database["public"]["Enums"]["resident_observation_exception_type"]
+          facility_id?: string
+          follow_up_status?: Database["public"]["Enums"]["resident_observation_follow_up_status"]
+          id?: string
+          linked_incident_id?: string | null
+          log_id?: string
+          organization_id?: string
+          requires_follow_up?: boolean
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resident_id?: string
+          severity?: Database["public"]["Enums"]["resident_observation_severity"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resident_observation_exceptions_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_exceptions_linked_incident_id_fkey"
+            columns: ["linked_incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_exceptions_log_id_fkey"
+            columns: ["log_id"]
+            isOneToOne: false
+            referencedRelation: "resident_observation_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_exceptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_exceptions_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resident_observation_integrity_flags: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          detected_at: string
+          disposition_note: string | null
+          entity_id: string | null
+          facility_id: string
+          flag_type: string
+          id: string
+          log_id: string | null
+          organization_id: string
+          resident_id: string | null
+          reviewed_by: string | null
+          severity: Database["public"]["Enums"]["resident_observation_severity"]
+          staff_id: string | null
+          status: Database["public"]["Enums"]["resident_observation_follow_up_status"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          detected_at?: string
+          disposition_note?: string | null
+          entity_id?: string | null
+          facility_id: string
+          flag_type: string
+          id?: string
+          log_id?: string | null
+          organization_id: string
+          resident_id?: string | null
+          reviewed_by?: string | null
+          severity?: Database["public"]["Enums"]["resident_observation_severity"]
+          staff_id?: string | null
+          status?: Database["public"]["Enums"]["resident_observation_follow_up_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          detected_at?: string
+          disposition_note?: string | null
+          entity_id?: string | null
+          facility_id?: string
+          flag_type?: string
+          id?: string
+          log_id?: string | null
+          organization_id?: string
+          resident_id?: string | null
+          reviewed_by?: string | null
+          severity?: Database["public"]["Enums"]["resident_observation_severity"]
+          staff_id?: string | null
+          status?: Database["public"]["Enums"]["resident_observation_follow_up_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resident_observation_integrity_flags_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_integrity_flags_log_id_fkey"
+            columns: ["log_id"]
+            isOneToOne: false
+            referencedRelation: "resident_observation_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_integrity_flags_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_integrity_flags_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_integrity_flags_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resident_observation_logs: {
+        Row: {
+          assigned_staff_id: string | null
+          breathing_concern: boolean
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          distress_present: boolean
+          entered_at: string
+          entity_id: string | null
+          exception_present: boolean
+          facility_id: string
+          fall_hazard_observed: boolean
+          hydration_offered: boolean
+          id: string
+          intervention_codes: string[]
+          late_reason: string | null
+          note: string | null
+          observed_at: string
+          organization_id: string
+          pain_concern: boolean
+          quick_status: Database["public"]["Enums"]["resident_observation_quick_status"]
+          refused_assistance: boolean
+          repositioned: boolean
+          resident_id: string
+          resident_location: string | null
+          resident_position: string | null
+          resident_state: string | null
+          skin_concern_observed: boolean
+          staff_id: string
+          task_id: string
+          toileting_assisted: boolean
+          updated_at: string
+          updated_by: string | null
+          entry_mode: Database["public"]["Enums"]["resident_observation_entry_mode"]
+        }
+        Insert: {
+          assigned_staff_id?: string | null
+          breathing_concern?: boolean
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          distress_present?: boolean
+          entered_at?: string
+          entity_id?: string | null
+          exception_present?: boolean
+          facility_id: string
+          fall_hazard_observed?: boolean
+          hydration_offered?: boolean
+          id?: string
+          intervention_codes?: string[]
+          late_reason?: string | null
+          note?: string | null
+          observed_at: string
+          organization_id: string
+          pain_concern?: boolean
+          quick_status: Database["public"]["Enums"]["resident_observation_quick_status"]
+          refused_assistance?: boolean
+          repositioned?: boolean
+          resident_id: string
+          resident_location?: string | null
+          resident_position?: string | null
+          resident_state?: string | null
+          skin_concern_observed?: boolean
+          staff_id: string
+          task_id: string
+          toileting_assisted?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          entry_mode?: Database["public"]["Enums"]["resident_observation_entry_mode"]
+        }
+        Update: {
+          assigned_staff_id?: string | null
+          breathing_concern?: boolean
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          distress_present?: boolean
+          entered_at?: string
+          entity_id?: string | null
+          exception_present?: boolean
+          facility_id?: string
+          fall_hazard_observed?: boolean
+          hydration_offered?: boolean
+          id?: string
+          intervention_codes?: string[]
+          late_reason?: string | null
+          note?: string | null
+          observed_at?: string
+          organization_id?: string
+          pain_concern?: boolean
+          quick_status?: Database["public"]["Enums"]["resident_observation_quick_status"]
+          refused_assistance?: boolean
+          repositioned?: boolean
+          resident_id?: string
+          resident_location?: string | null
+          resident_position?: string | null
+          resident_state?: string | null
+          skin_concern_observed?: boolean
+          staff_id?: string
+          task_id?: string
+          toileting_assisted?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          entry_mode?: Database["public"]["Enums"]["resident_observation_entry_mode"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resident_observation_logs_assigned_staff_id_fkey"
+            columns: ["assigned_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_logs_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_logs_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_logs_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_logs_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "resident_observation_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resident_observation_plan_rules: {
+        Row: {
+          active: boolean
+          daypart_end: string | null
+          daypart_start: string | null
+          days_of_week: number[]
+          deleted_at: string | null
+          entity_id: string | null
+          escalation_policy_key: string | null
+          facility_id: string
+          grace_minutes: number
+          id: string
+          interval_minutes: number | null
+          interval_type: Database["public"]["Enums"]["resident_observation_interval_type"]
+          organization_id: string
+          plan_id: string
+          required_fields_schema: Json
+          resident_id: string
+          shift: Database["public"]["Enums"]["shift_type"] | null
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          daypart_end?: string | null
+          daypart_start?: string | null
+          days_of_week?: number[]
+          deleted_at?: string | null
+          entity_id?: string | null
+          escalation_policy_key?: string | null
+          facility_id: string
+          grace_minutes?: number
+          id?: string
+          interval_minutes?: number | null
+          interval_type?: Database["public"]["Enums"]["resident_observation_interval_type"]
+          organization_id: string
+          plan_id: string
+          required_fields_schema?: Json
+          resident_id: string
+          shift?: Database["public"]["Enums"]["shift_type"] | null
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          daypart_end?: string | null
+          daypart_start?: string | null
+          days_of_week?: number[]
+          deleted_at?: string | null
+          entity_id?: string | null
+          escalation_policy_key?: string | null
+          facility_id?: string
+          grace_minutes?: number
+          id?: string
+          interval_minutes?: number | null
+          interval_type?: Database["public"]["Enums"]["resident_observation_interval_type"]
+          organization_id?: string
+          plan_id?: string
+          required_fields_schema?: Json
+          resident_id?: string
+          shift?: Database["public"]["Enums"]["shift_type"] | null
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resident_observation_plan_rules_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_plan_rules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_plan_rules_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "resident_observation_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_plan_rules_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resident_observation_plans: {
+        Row: {
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          effective_from: string
+          effective_to: string | null
+          entity_id: string | null
+          facility_id: string
+          id: string
+          organization_id: string
+          rationale: string | null
+          resident_id: string
+          source_type: Database["public"]["Enums"]["resident_observation_source_type"]
+          status: Database["public"]["Enums"]["resident_observation_plan_status"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          entity_id?: string | null
+          facility_id: string
+          id?: string
+          organization_id: string
+          rationale?: string | null
+          resident_id: string
+          source_type?: Database["public"]["Enums"]["resident_observation_source_type"]
+          status?: Database["public"]["Enums"]["resident_observation_plan_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          entity_id?: string | null
+          facility_id?: string
+          id?: string
+          organization_id?: string
+          rationale?: string | null
+          resident_id?: string
+          source_type?: Database["public"]["Enums"]["resident_observation_source_type"]
+          status?: Database["public"]["Enums"]["resident_observation_plan_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resident_observation_plans_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_plans_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_plans_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_plans_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resident_observation_tasks: {
+        Row: {
+          assigned_staff_id: string | null
+          completed_log_id: string | null
+          created_at: string
+          deleted_at: string | null
+          due_at: string
+          entity_id: string | null
+          escalated_at: string | null
+          excused_by: string | null
+          excused_reason: string | null
+          facility_id: string
+          grace_ends_at: string
+          id: string
+          notes: string | null
+          organization_id: string
+          plan_id: string
+          plan_rule_id: string | null
+          reassigned_from_staff_id: string | null
+          reassignment_reason: string | null
+          resident_id: string
+          scheduled_for: string
+          shift_assignment_id: string | null
+          status: Database["public"]["Enums"]["resident_observation_task_status"]
+          updated_at: string
+          updated_by: string | null
+          watch_instance_id: string | null
+        }
+        Insert: {
+          assigned_staff_id?: string | null
+          completed_log_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          due_at: string
+          entity_id?: string | null
+          escalated_at?: string | null
+          excused_by?: string | null
+          excused_reason?: string | null
+          facility_id: string
+          grace_ends_at: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          plan_id: string
+          plan_rule_id?: string | null
+          reassigned_from_staff_id?: string | null
+          reassignment_reason?: string | null
+          resident_id: string
+          scheduled_for: string
+          shift_assignment_id?: string | null
+          status?: Database["public"]["Enums"]["resident_observation_task_status"]
+          updated_at?: string
+          updated_by?: string | null
+          watch_instance_id?: string | null
+        }
+        Update: {
+          assigned_staff_id?: string | null
+          completed_log_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          due_at?: string
+          entity_id?: string | null
+          escalated_at?: string | null
+          excused_by?: string | null
+          excused_reason?: string | null
+          facility_id?: string
+          grace_ends_at?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          plan_id?: string
+          plan_rule_id?: string | null
+          reassigned_from_staff_id?: string | null
+          reassignment_reason?: string | null
+          resident_id?: string
+          scheduled_for?: string
+          shift_assignment_id?: string | null
+          status?: Database["public"]["Enums"]["resident_observation_task_status"]
+          updated_at?: string
+          updated_by?: string | null
+          watch_instance_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resident_observation_tasks_assigned_staff_id_fkey"
+            columns: ["assigned_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_tasks_completed_log_id_fkey"
+            columns: ["completed_log_id"]
+            isOneToOne: false
+            referencedRelation: "resident_observation_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_tasks_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_tasks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_tasks_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "resident_observation_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_tasks_plan_rule_id_fkey"
+            columns: ["plan_rule_id"]
+            isOneToOne: false
+            referencedRelation: "resident_observation_plan_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_tasks_reassigned_from_staff_id_fkey"
+            columns: ["reassigned_from_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_tasks_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_tasks_shift_assignment_id_fkey"
+            columns: ["shift_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "shift_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_tasks_watch_instance_id_fkey"
+            columns: ["watch_instance_id"]
+            isOneToOne: false
+            referencedRelation: "resident_watch_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resident_observation_templates: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          entity_id: string | null
+          facility_id: string | null
+          id: string
+          name: string
+          organization_id: string
+          preset_definition: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          category: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          entity_id?: string | null
+          facility_id?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          preset_definition?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          entity_id?: string | null
+          facility_id?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          preset_definition?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resident_observation_templates_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_observation_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resident_watch_events: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          entity_id: string | null
+          event_type: string
+          facility_id: string
+          id: string
+          log_id: string | null
+          note: string | null
+          occurred_at: string
+          organization_id: string
+          resident_id: string
+          task_id: string | null
+          watch_instance_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string | null
+          event_type: string
+          facility_id: string
+          id?: string
+          log_id?: string | null
+          note?: string | null
+          occurred_at?: string
+          organization_id: string
+          resident_id: string
+          task_id?: string | null
+          watch_instance_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string | null
+          event_type?: string
+          facility_id?: string
+          id?: string
+          log_id?: string | null
+          note?: string | null
+          occurred_at?: string
+          organization_id?: string
+          resident_id?: string
+          task_id?: string | null
+          watch_instance_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resident_watch_events_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_watch_events_log_id_fkey"
+            columns: ["log_id"]
+            isOneToOne: false
+            referencedRelation: "resident_observation_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_watch_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_watch_events_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_watch_events_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "resident_observation_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_watch_events_watch_instance_id_fkey"
+            columns: ["watch_instance_id"]
+            isOneToOne: false
+            referencedRelation: "resident_watch_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resident_watch_instances: {
+        Row: {
+          approved_by: string | null
+          created_at: string
+          deleted_at: string | null
+          end_reason: string | null
+          ended_by: string | null
+          ends_at: string | null
+          entity_id: string | null
+          facility_id: string
+          id: string
+          organization_id: string
+          protocol_id: string | null
+          resident_id: string
+          starts_at: string
+          status: Database["public"]["Enums"]["resident_watch_status"]
+          triggered_by_id: string | null
+          triggered_by_type: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          approved_by?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          end_reason?: string | null
+          ended_by?: string | null
+          ends_at?: string | null
+          entity_id?: string | null
+          facility_id: string
+          id?: string
+          organization_id: string
+          protocol_id?: string | null
+          resident_id: string
+          starts_at?: string
+          status?: Database["public"]["Enums"]["resident_watch_status"]
+          triggered_by_id?: string | null
+          triggered_by_type: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          approved_by?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          end_reason?: string | null
+          ended_by?: string | null
+          ends_at?: string | null
+          entity_id?: string | null
+          facility_id?: string
+          id?: string
+          organization_id?: string
+          protocol_id?: string | null
+          resident_id?: string
+          starts_at?: string
+          status?: Database["public"]["Enums"]["resident_watch_status"]
+          triggered_by_id?: string | null
+          triggered_by_type?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resident_watch_instances_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_watch_instances_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_watch_instances_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "resident_watch_protocols"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_watch_instances_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resident_watch_protocols: {
+        Row: {
+          active: boolean
+          approval_required: boolean
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          duration_rule: string | null
+          entity_id: string | null
+          facility_id: string
+          id: string
+          name: string
+          organization_id: string
+          rule_definition_json: Json
+          trigger_type: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          approval_required?: boolean
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          duration_rule?: string | null
+          entity_id?: string | null
+          facility_id: string
+          id?: string
+          name: string
+          organization_id: string
+          rule_definition_json?: Json
+          trigger_type: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          approval_required?: boolean
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          duration_rule?: string | null
+          entity_id?: string | null
+          facility_id?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          rule_definition_json?: Json
+          trigger_type?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resident_watch_protocols_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_watch_protocols_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quality_latest_facility_measures: {
         Row: {
           created_at: string | null
@@ -12360,6 +14149,18 @@ export type Database = {
         | "board_quarterly"
         | "custom"
       exec_snapshot_scope: "organization" | "entity" | "facility"
+      report_export_format: "csv" | "pdf" | "print" | "xlsx"
+      report_owner_type: "system" | "organization" | "facility" | "user"
+      report_run_status:
+        | "queued"
+        | "running"
+        | "completed"
+        | "failed"
+        | "cancelled"
+      report_schedule_status: "active" | "paused" | "failed"
+      report_sharing_scope: "private" | "team" | "facility" | "organization"
+      report_source_type: "template" | "saved_view" | "pack"
+      report_template_status: "draft" | "active" | "deprecated" | "archived"
       facility_status: "active" | "inactive" | "under_renovation" | "archived"
       family_care_conference_status: "scheduled" | "completed" | "cancelled"
       family_message_author: "family" | "staff"
@@ -12516,6 +14317,67 @@ export type Database = {
         | "per_census_day"
         | "pct_of_premium"
         | "custom"
+      resident_observation_assignment_type: "primary" | "reassignment" | "rescue"
+      resident_observation_entry_mode: "live" | "late" | "offline_synced" | "bulk"
+      resident_observation_exception_type:
+        | "resident_not_found"
+        | "resident_declined_interaction"
+        | "resident_appears_ill"
+        | "resident_appears_injured"
+        | "environmental_hazard_present"
+        | "family_concern_reported"
+        | "assignment_impossible"
+        | "other"
+      resident_observation_follow_up_status:
+        | "open"
+        | "in_progress"
+        | "resolved"
+        | "dismissed"
+      resident_observation_interval_type:
+        | "continuous"
+        | "fixed_minutes"
+        | "per_shift"
+        | "daypart"
+      resident_observation_plan_status:
+        | "draft"
+        | "active"
+        | "paused"
+        | "ended"
+        | "cancelled"
+      resident_observation_quick_status:
+        | "awake"
+        | "asleep"
+        | "calm"
+        | "agitated"
+        | "confused"
+        | "distressed"
+        | "not_found"
+        | "refused"
+      resident_observation_severity: "low" | "medium" | "high" | "critical"
+      resident_observation_source_type:
+        | "care_plan"
+        | "manual"
+        | "policy"
+        | "order"
+        | "triggered"
+      resident_observation_task_status:
+        | "upcoming"
+        | "due_soon"
+        | "due_now"
+        | "overdue"
+        | "critically_overdue"
+        | "missed"
+        | "completed_on_time"
+        | "completed_late"
+        | "excused"
+        | "reassigned"
+        | "escalated"
+      resident_watch_status:
+        | "pending_approval"
+        | "active"
+        | "paused"
+        | "ended"
+        | "cancelled"
       referral_hl7_inbound_status:
         | "pending"
         | "processed"
@@ -12859,6 +14721,13 @@ export const Constants = {
         "custom",
       ],
       exec_snapshot_scope: ["organization", "entity", "facility"],
+      report_export_format: ["csv", "pdf", "print", "xlsx"],
+      report_owner_type: ["system", "organization", "facility", "user"],
+      report_run_status: ["queued", "running", "completed", "failed", "cancelled"],
+      report_schedule_status: ["active", "paused", "failed"],
+      report_sharing_scope: ["private", "team", "facility", "organization"],
+      report_source_type: ["template", "saved_view", "pack"],
+      report_template_status: ["draft", "active", "deprecated", "archived"],
       facility_status: ["active", "inactive", "under_renovation", "archived"],
       family_care_conference_status: ["scheduled", "completed", "cancelled"],
       family_message_author: ["family", "staff"],
@@ -13030,6 +14899,75 @@ export const Constants = {
         "per_census_day",
         "pct_of_premium",
         "custom",
+      ],
+      resident_observation_assignment_type: ["primary", "reassignment", "rescue"],
+      resident_observation_entry_mode: ["live", "late", "offline_synced", "bulk"],
+      resident_observation_exception_type: [
+        "resident_not_found",
+        "resident_declined_interaction",
+        "resident_appears_ill",
+        "resident_appears_injured",
+        "environmental_hazard_present",
+        "family_concern_reported",
+        "assignment_impossible",
+        "other",
+      ],
+      resident_observation_follow_up_status: [
+        "open",
+        "in_progress",
+        "resolved",
+        "dismissed",
+      ],
+      resident_observation_interval_type: [
+        "continuous",
+        "fixed_minutes",
+        "per_shift",
+        "daypart",
+      ],
+      resident_observation_plan_status: [
+        "draft",
+        "active",
+        "paused",
+        "ended",
+        "cancelled",
+      ],
+      resident_observation_quick_status: [
+        "awake",
+        "asleep",
+        "calm",
+        "agitated",
+        "confused",
+        "distressed",
+        "not_found",
+        "refused",
+      ],
+      resident_observation_severity: ["low", "medium", "high", "critical"],
+      resident_observation_source_type: [
+        "care_plan",
+        "manual",
+        "policy",
+        "order",
+        "triggered",
+      ],
+      resident_observation_task_status: [
+        "upcoming",
+        "due_soon",
+        "due_now",
+        "overdue",
+        "critically_overdue",
+        "missed",
+        "completed_on_time",
+        "completed_late",
+        "excused",
+        "reassigned",
+        "escalated",
+      ],
+      resident_watch_status: [
+        "pending_approval",
+        "active",
+        "paused",
+        "ended",
+        "cancelled",
       ],
       referral_hl7_inbound_status: [
         "pending",

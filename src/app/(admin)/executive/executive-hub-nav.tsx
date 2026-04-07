@@ -12,7 +12,7 @@ const LINKS = [
   { href: "/admin/executive/cfo", label: "CFO View" },
   { href: "/admin/executive/coo", label: "COO View" },
   { href: "/admin/executive/alerts", label: "Alerts" },
-  { href: "/admin/executive/reports", label: "Reports" },
+  { href: "/admin/reports", label: "Reports" },
   { href: "/admin/executive/benchmarks", label: "Benchmarks" },
   { href: "/admin/executive/nlq", label: "NLQ" },
 ] as const;

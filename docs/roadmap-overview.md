@@ -38,7 +38,7 @@ A **multi-facility assisted living (ALF)** operations platform for **owner-opera
 
 ---
 
-## 24 modules by domain (names only)
+## 25 modules by domain (names only)
 
 | Domain | Modules |
 |--------|---------|
@@ -47,7 +47,7 @@ A **multi-facility assisted living (ALF)** operations platform for **owner-opera
 | **C — Workforce & operations** | 11 Staff & scheduling, 12 Training & competency, 13 Maintenance & environment, 14 Dietary & nutrition, 15 Transportation & appointments |
 | **D — Financial & business** | 16 Resident billing & collections, 17 Entity & facility finance, 18 Insurance & risk finance, 19 Vendor & contracts, 20 Expansion & acquisition |
 | **E — Family & community** | 21 Family portal, 22 Referral source CRM, 23 Reputation & online presence |
-| **F — Intelligence** | 24 Executive intelligence layer |
+| **F — Intelligence** | 24 Executive intelligence layer, 25 Resident assurance engine |
 
 ---
 
@@ -58,6 +58,7 @@ A **multi-facility assisted living (ALF)** operations platform for **owner-opera
 3. **Phase 3 (21–28):** Multi-entity finance, insurance module, vendors, exec command center v1.
 4. **Phase 4 (29–36):** Family portal, referral, admissions, discharge—full resident lifecycle.
 5. **Phase 5 (37–48):** Quality, LMS, dietary, maintenance, transport, CRM, reputation, expansion modeling, advanced exec/AI.
+6. **Phase 7+ moonshot expansion:** resident assurance / rounding, regulatory intelligence, digital twin, ambient intelligence, and AI operating systems after completion-first tracks are closed.
 
 **~30-day standalone wedge** in the roadmap: mobile incident reporting + multi-facility census dashboard + basic family comms—**still subject to your phase handoffs**, not auto-built from this summary.
 
@@ -95,7 +96,7 @@ Treat the current repo state as **Core shipped across many modules**, not as uni
 2. **Platform hardening** — automated regression coverage, observability, CI hardening, runbooks for cron/secrets/replay.
 3. **Workflow hardening** — billing, eMAR, referral/admission/discharge, family/audit, executive operations.
 4. **Phase 6 completion pass** — deepen training, dietary, transportation, referral CRM, and reputation beyond manual Core flows.
-5. **Only then** resume remaining future modules (`096`–`107`).
+5. **Only then** resume remaining future modules starting with **Resident Assurance Engine** (`098`–`101`) and then the remaining strategic / moonshot roadmap.
 
 Use these delivery states consistently:
 

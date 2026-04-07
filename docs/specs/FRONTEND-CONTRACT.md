@@ -58,6 +58,12 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 - `/admin/residents/new`
 - `/admin/residents/[id]`
 - `/admin/residents/[id]/care-plan`
+- `/admin/rounding`
+- `/admin/rounding/live`
+- `/admin/rounding/plans`
+- `/admin/rounding/plans/new`
+- `/admin/rounding/plans/[id]`
+- `/admin/rounding/reports`
 - `/admin/assessments/overdue`
 - `/admin/care-plans/reviews-due`
 - `/admin/incidents`
@@ -149,6 +155,8 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 
 - `/caregiver`
 - `/caregiver/meds`
+- `/caregiver/rounds`
+- `/caregiver/rounds/[residentId]`
 - `/caregiver/tasks`
 - `/caregiver/incident-draft`
 - `/caregiver/followups`

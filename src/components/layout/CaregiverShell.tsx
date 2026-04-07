@@ -59,9 +59,9 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
         />
         <TabItem
           icon={<ClipboardList className="w-6 h-6" />}
-          label="Tasks"
-          href="/caregiver/tasks"
-          active={pathname.startsWith("/caregiver/tasks")}
+          label="Rounds"
+          href="/caregiver/rounds"
+          active={pathname.startsWith("/caregiver/rounds")}
         />
         <TabItem
           icon={<AlertTriangle className="w-6 h-6" />}

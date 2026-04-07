@@ -1,0 +1,127 @@
+{
+  "segment": "segment-rounding-api",
+  "timestamp": "2026-04-07T16:51:20.383Z",
+  "verdict": "FAIL",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-env-example.mjs",
+      "duration_ms": 26,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "duration_ms": 87,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "status": "passed",
+      "command": "npm run audit:ci",
+      "duration_ms": 640,
+      "stdout": "found 0 vulnerabilities\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "status": "passed",
+      "command": "npm run secrets:gitleaks",
+      "duration_ms": 3584,
+      "stdout": "[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n\u001b[90m4:51PM\u001b[0m \u001b[32mINF\u001b[0m 220 commits scanned.\n\u001b[90m4:51PM\u001b[0m \u001b[32mINF\u001b[0m scan completed in 2.73s\n\u001b[90m4:51PM\u001b[0m \u001b[32mINF\u001b[0m no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "status": "passed",
+      "command": "npm run lint",
+      "duration_ms": 8617,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "status": "passed",
+      "command": "npm run migrations:check",
+      "duration_ms": 284,
+      "stdout": "[migrations:check] PASS: 101 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..101\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": false,
+      "status": "passed",
+      "command": "npm run migrations:verify:pg",
+      "duration_ms": 64817,
+      "stdout": "[migrations:verify:pg] PASS (101 migration file(s))\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "status": "failed",
+      "command": "npm run build",
+      "duration_ms": 164758,
+      "stdout": "[migrations:check] PASS: 101 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..101\n[check:admin-shell] PASS: all 20 top-level (admin) route prefix(es) are gated\n▲ Next.js 16.2.1 (Turbopack)\n- Environments: .env.local\n- Experiments (use with caution):\n  · clientTraceMetadata\n\n  Creating an optimized production build ...\n✓ Compiled successfully in 9.2s\n  Running next.config.js provided runAfterProductionCompile ...\n✓ Completed runAfterProductionCompile in 579ms\n  Running TypeScript ...\n",
+      "stderr": "Failed to type check.\n\n./src/app/api/rounding/generate-tasks/route.ts:96:25\nType error: Type instantiation is excessively deep and possibly infinite.\n\n  \u001b[90m94 |\u001b[0m   }\n  \u001b[90m95 |\u001b[0m\n\u001b[31m\u001b[1m>\u001b[0m \u001b[90m96 |\u001b[0m   \u001b[36mconst\u001b[0m basePlanQuery = context.admin\n  \u001b[90m   |\u001b[0m                         \u001b[31m\u001b[1m^\u001b[0m\n  \u001b[90m97 |\u001b[0m     .\u001b[36mfrom\u001b[0m(\u001b[32m\"resident_observation_plans\"\u001b[0m)\n  \u001b[90m98 |\u001b[0m     .select(\u001b[32m`\u001b[0m\n  \u001b[90m99 |\u001b[0m \u001b[32m      id,\u001b[0m\nNext.js build worker exited with code: 1 and signal: null\n"
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": true,
+      "status": "passed",
+      "command": "npm run stress:test",
+      "duration_ms": 318,
+      "stdout": "PASS\tstress: suite loaded\nPASS\tstress: Number.parseInt rejects garbage\nPASS\tstress: parallel microtasks both ran\nADVISORY\tstress: add ALF/home-care workflow simulations when resident and census models exist\n",
+      "stderr": ""
+    },
+    {
+      "id": "cdo.design-review",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run design:review",
+      "stdout": "skipped (pass --ui to enable)"
+    },
+    {
+      "id": "cdo.a11y-axe",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run a11y:routes",
+      "stdout": "skipped (pass --ui to enable; omit --no-a11y)"
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 1,
+    "skipped": 3,
+    "blocking_failures": [
+      "qa.root-build"
+    ]
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/agent-gates/2026-04-07T16-51-20-383Z-segment-rounding-api.json"
+  ]
+}

@@ -30,6 +30,7 @@ const ADMIN_SHELL_SEGMENTS = [
   "/family-messages",
   "/executive",
   "/search",
+  "/reports",
 ] as const;
 
 export function isAdminShellPath(pathname: string): boolean {
