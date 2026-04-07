@@ -1,20 +1,21 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowUpDown, ChevronRight, ClipboardCheck, CalendarClock, UserSquare2, ShieldAlert } from "lucide-react";
+import { ClipboardCheck, CalendarClock, UserSquare2, ShieldAlert } from "lucide-react";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { MotionCard } from "@/components/ui/motion-card";
+import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 
 // Types
 type AssessmentRow = {
@@ -119,7 +120,7 @@ export default function ClinicalDeskPage() {
       // DEMO HYDRATION: Ensure Triage Hub is heavily populated for CEO demo if DB is unseeded
       if (liveAssessments.length === 0 && liveCarePlans.length === 0) {
         setAssessments([
-          { id: "a1", residentId: "r1", residentName: "Eleanor Vance", assessmentType: "Fall Risk / 14-Day MDS", assessmentDate: "—", nextDueDate: "2 days ago", daysOverdue: 2, riskLevel: "High", totalScore: null },
+          { id: "a1", residentId: "r1", residentName: "Eleanor Vance", assessmentType: "Fall Risk / 14-Day MDS", assessmentDate: "—", nextDueDate: "3 days ago", daysOverdue: 3, riskLevel: "High", totalScore: null },
           { id: "a2", residentId: "r2", residentName: "Arthur Pendelton", assessmentType: "Elopement Risk", assessmentDate: "—", nextDueDate: "3 days ago", daysOverdue: 3, riskLevel: "Critical", totalScore: null },
           { id: "a3", residentId: "r3", residentName: "Margaret Sullivan", assessmentType: "Quarterly MDS", assessmentDate: "—", nextDueDate: "Today", daysOverdue: 0, riskLevel: "Moderate", totalScore: null },
           { id: "a4", residentId: "r4", residentName: "James Holden", assessmentType: "Skin Integrity (Braden)", assessmentDate: "—", nextDueDate: "Yesterday", daysOverdue: 1, riskLevel: "High", totalScore: null }
@@ -144,8 +145,8 @@ export default function ClinicalDeskPage() {
     void load();
   }, [load]);
 
-  const overdueCount = assessments.filter((a) => a.daysOverdue > 0).length;
-  const plansDueCount = carePlans.filter((p) => p.daysOverdue >= 0).length;
+  const overdueCount = assessments.length;
+  const plansDueCount = carePlans.length;
 
   if (isLoading) {
     return (
@@ -224,13 +225,32 @@ export default function ClinicalDeskPage() {
                             </div>
                             <Badge variant="destructive" className={cn(
                               "h-5 px-1.5 text-[9px] font-bold rounded-sm border-0",
-                              a.daysOverdue > 7 ? "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300" : "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                              a.daysOverdue === 0
+                                ? "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300"
+                                : a.daysOverdue > 7
+                                  ? "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300 ring-2 ring-rose-300/60 shadow-[0_0_10px_rgba(244,63,94,0.35)]"
+                                  : "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 ring-2 ring-amber-300/60 shadow-[0_0_10px_rgba(251,191,36,0.35)]"
                             )}>
-                              {a.daysOverdue}D OVERDUE
+                              {a.daysOverdue === 0 ? "DUE TODAY" : `${a.daysOverdue}D OVERDUE`}
                             </Badge>
                           </div>
                           <div className="flex flex-col gap-1.5 ml-6">
-                             <span className="text-xs font-medium text-slate-700 dark:text-slate-300 capitalize">{formatType(a.assessmentType)}</span>
+                             <div className="flex items-center gap-2 flex-wrap">
+                               <span className="text-xs font-medium text-slate-700 dark:text-slate-300 capitalize">{formatType(a.assessmentType)}</span>
+                               {a.riskLevel && (
+                                 <Badge
+                                   variant="outline"
+                                   className={cn(
+                                     "h-4 px-1.5 text-[9px] font-semibold uppercase tracking-wide rounded-sm border-0",
+                                     a.riskLevel === "Critical" && "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
+                                     a.riskLevel === "High" && "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+                                     a.riskLevel === "Moderate" && "bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-300"
+                                   )}
+                                 >
+                                   {a.riskLevel}
+                                 </Badge>
+                               )}
+                             </div>
                              <span className="text-[10px] text-slate-500">Due: {a.nextDueDate}</span>
                           </div>
                           <div className="mt-3 flex justify-end">
@@ -273,7 +293,7 @@ export default function ClinicalDeskPage() {
                     <MotionList className="grid gap-3 pt-2 px-2">
                       {carePlans.map((p) => (
                         <MotionItem key={p.id} className="relative flex items-start gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-800/50 transition-colors group bg-slate-50/30 dark:bg-slate-900/10">
-                          <div className="w-2 h-2 rounded-full mt-2 shrink-0 shadow-sm ring-4 ring-blue-500/20 bg-blue-500" />
+                          <PulseDot colorClass="bg-blue-500" className="mt-2" />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-xs font-semibold tracking-wider text-slate-800 dark:text-slate-200">
