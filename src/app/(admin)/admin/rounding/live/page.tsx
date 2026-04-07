@@ -7,11 +7,13 @@ import {
   Clock,
   Clock3,
   Eye,
+  Play,
   RefreshCw,
   UserRound,
 } from "lucide-react";
 
 import { RoundingHubNav } from "../rounding-hub-nav";
+import { QuickCheckDrawer, type QuickCheckTask } from "@/components/rounding/QuickCheckDrawer";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
@@ -64,14 +66,27 @@ function statusConfig(status: string) {
 function formatDueLabel(value: string) {
   const dueAt = new Date(value);
   if (Number.isNaN(dueAt.getTime())) return "Unknown";
-  const now = Date.now();
-  const diff = dueAt.getTime() - now;
-  const absDiff = Math.abs(diff);
-  const mins = Math.round(absDiff / 60000);
-
+  const diff = dueAt.getTime() - Date.now();
+  const mins = Math.round(Math.abs(diff) / 60000);
   if (mins < 1) return "Now";
   if (diff > 0) return `in ${mins}m`;
   return `${mins}m ago`;
+}
+
+function isActionable(status: string) {
+  return !status.startsWith("completed") && status !== "excused";
+}
+
+function toDrawerTask(task: LiveTaskRow): QuickCheckTask {
+  return {
+    id: task.id,
+    residentName: displayName(task.residents) || "Resident",
+    roomLabel: (task.residents as LiveTaskRow["residents"] & { room_number?: string | null })?.room_number
+      ? `RM ${(task.residents as LiveTaskRow["residents"] & { room_number?: string | null })?.room_number}`
+      : null,
+    dueAt: task.due_at,
+    status: task.status,
+  };
 }
 
 export default function AdminRoundingLivePage() {
@@ -79,6 +94,12 @@ export default function AdminRoundingLivePage() {
   const supabase = useMemo(() => createClient(), []);
   const [loading, setLoading] = useState(true);
   const [tasks, setTasks] = useState<LiveTaskRow[]>(DEMO_TASKS);
+
+  // Drawer state
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerTask, setDrawerTask] = useState<QuickCheckTask | null>(null);
+  const [sequentialMode, setSequentialMode] = useState(false);
+  const [sequentialIndex, setSequentialIndex] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -118,11 +139,54 @@ export default function AdminRoundingLivePage() {
     [tasks],
   );
 
+  const actionableQueue = useMemo(
+    () => sorted.filter((t) => isActionable(t.status)),
+    [sorted],
+  );
+
   const criticalCount = sorted.filter((t) => t.status === "critically_overdue" || t.status === "missed").length;
   const overdueCount = sorted.filter((t) => t.status === "overdue").length;
-  const pendingCount = sorted.filter((t) => t.status === "pending").length;
-  const completedCount = sorted.filter((t) => (t.status).startsWith("completed")).length;
+  const pendingCount = sorted.filter((t) => isActionable(t.status) && t.status !== "overdue" && t.status !== "critically_overdue" && t.status !== "missed").length;
+  const completedCount = sorted.filter((t) => t.status.startsWith("completed")).length;
   const hasCriticals = criticalCount > 0;
+
+  function openSingleCheck(task: LiveTaskRow) {
+    setSequentialMode(false);
+    setDrawerTask(toDrawerTask(task));
+    setDrawerOpen(true);
+  }
+
+  function startSequentialRounds() {
+    if (actionableQueue.length === 0) return;
+    setSequentialMode(true);
+    setSequentialIndex(0);
+    setDrawerTask(toDrawerTask(actionableQueue[0]));
+    setDrawerOpen(true);
+  }
+
+  function advanceSequential() {
+    const nextIdx = sequentialIndex + 1;
+    if (nextIdx < actionableQueue.length) {
+      setSequentialIndex(nextIdx);
+      setDrawerTask(toDrawerTask(actionableQueue[nextIdx]));
+    } else {
+      setDrawerOpen(false);
+      setSequentialMode(false);
+      void load();
+    }
+  }
+
+  function handleCompleted(taskId: string) {
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, status: "completed_on_time" } : t)),
+    );
+  }
+
+  function handleDrawerClose() {
+    setDrawerOpen(false);
+    setSequentialMode(false);
+    if (drawerTask) void load();
+  }
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -142,7 +206,7 @@ export default function AdminRoundingLivePage() {
                 {hasCriticals && <PulseDot colorClass="bg-rose-500" />}
               </h2>
               <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">
-                Due, overdue, and completed checks by resident, shift, and assigned staff
+                Tap any resident to record a check, or start sequential rounds
               </p>
             </div>
             <div className="hidden md:block">
@@ -158,27 +222,53 @@ export default function AdminRoundingLivePage() {
           <QuickStat label="Completed" value={String(completedCount)} color="emerald" />
         </KineticGrid>
 
-        <div className="flex items-center gap-3">
+        {/* Primary actions */}
+        <div className="flex flex-wrap items-center gap-3">
+          {actionableQueue.length > 0 && (
+            <button
+              onClick={startSequentialRounds}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-200",
+                "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white",
+                "hover:from-emerald-500 hover:to-emerald-400 active:scale-[0.98]",
+                "shadow-lg shadow-emerald-900/30",
+              )}
+            >
+              <Play className="h-4 w-4" />
+              Start Rounds ({actionableQueue.length} due)
+            </button>
+          )}
           <Button
             onClick={() => void load()}
             variant="outline"
             className="border-slate-700 bg-slate-900/40 text-slate-200 hover:bg-slate-800"
           >
             <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh board
+            Refresh
           </Button>
         </div>
 
+        {/* Task list */}
         <KineticGrid className="grid-cols-1 gap-3" staggerMs={30} baseDelayMs={100}>
           {sorted.map((task) => {
             const cfg = statusConfig(task.status);
             const Icon = cfg.icon;
+            const canCheck = isActionable(task.status);
+
             return (
-              <div key={task.id} className={cn(
-                "group relative overflow-hidden rounded-[14px] border p-4 transition-all duration-300",
-                "bg-white/5 backdrop-blur-md dark:bg-[#0A0A0A]/50",
-                cfg.bg,
-              )}>
+              <div
+                key={task.id}
+                className={cn(
+                  "group relative overflow-hidden rounded-[14px] border p-4 transition-all duration-300",
+                  "bg-white/5 backdrop-blur-md dark:bg-[#0A0A0A]/50",
+                  cfg.bg,
+                  canCheck && "cursor-pointer hover:brightness-110",
+                )}
+                onClick={canCheck ? () => openSingleCheck(task) : undefined}
+                role={canCheck ? "button" : undefined}
+                tabIndex={canCheck ? 0 : undefined}
+                onKeyDown={canCheck ? (e) => { if (e.key === "Enter" || e.key === " ") openSingleCheck(task); } : undefined}
+              >
                 <div className="flex items-center gap-4">
                   <div className={cn("flex items-center gap-2 shrink-0", cfg.color)}>
                     <Icon aria-hidden className="h-5 w-5" />
@@ -203,13 +293,24 @@ export default function AdminRoundingLivePage() {
                     </div>
                   </div>
 
-                  <div className="text-right shrink-0">
-                    <span className={cn("text-sm font-mono", cfg.color)}>{formatDueLabel(task.due_at)}</span>
-                    <div className="mt-1">
-                      <Badge variant={cfg.badgeVariant} className="text-[10px]">
-                        {cfg.label}
-                      </Badge>
+                  <div className="text-right shrink-0 flex items-center gap-3">
+                    <div>
+                      <span className={cn("text-sm font-mono", cfg.color)}>{formatDueLabel(task.due_at)}</span>
+                      <div className="mt-1">
+                        <Badge variant={cfg.badgeVariant} className="text-[10px]">
+                          {cfg.label}
+                        </Badge>
+                      </div>
                     </div>
+                    {canCheck && (
+                      <div className={cn(
+                        "rounded-lg border px-3 py-2 text-xs font-semibold transition-all",
+                        "border-emerald-500/50 bg-emerald-950/40 text-emerald-300",
+                        "group-hover:bg-emerald-500 group-hover:text-white group-hover:border-emerald-400",
+                      )}>
+                        Check In
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -229,6 +330,16 @@ export default function AdminRoundingLivePage() {
           <RoundingHubNav />
         </div>
       </div>
+
+      {/* The QuickCheck slide-up drawer */}
+      <QuickCheckDrawer
+        task={drawerTask}
+        open={drawerOpen}
+        onClose={handleDrawerClose}
+        onCompleted={handleCompleted}
+        queuePosition={sequentialMode ? { current: sequentialIndex + 1, total: actionableQueue.length } : null}
+        onNextTask={sequentialMode ? advanceSequential : undefined}
+      />
     </div>
   );
 }

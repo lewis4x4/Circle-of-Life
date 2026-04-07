@@ -143,6 +143,45 @@ export default function AdminRoundingHubPage() {
           </div>
         </header>
 
+        {/* Hero Start Rounds CTA */}
+        <Link
+          href="/admin/rounding/live"
+          className={cn(
+            "group relative block overflow-hidden rounded-2xl border p-6 transition-all duration-300",
+            "bg-gradient-to-r from-emerald-950/60 via-emerald-900/30 to-cyan-950/40",
+            "border-emerald-500/30 hover:border-emerald-400/50",
+            "shadow-lg shadow-emerald-900/20 hover:shadow-emerald-800/30",
+          )}
+        >
+          <div className="flex items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="rounded-xl bg-emerald-500/20 p-3 group-hover:bg-emerald-500/30 transition-colors">
+                <Play className="h-8 w-8 text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-display font-semibold text-emerald-100">Start Rounds</h3>
+                <p className="text-sm text-emerald-300/70 mt-0.5">
+                  {summary.activeTasks > 0
+                    ? `${summary.activeTasks} checks due — tap to begin sequential rounding`
+                    : "Open the live board to begin rounding"
+                  }
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {summary.urgentTasks > 0 && (
+                <span className="flex items-center gap-1.5 rounded-full bg-rose-500/20 px-3 py-1 text-xs font-mono text-rose-300">
+                  <PulseDot colorClass="bg-rose-400" />
+                  {summary.urgentTasks} urgent
+                </span>
+              )}
+              <div className="rounded-full bg-emerald-500/20 p-2 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                <Play className="h-5 w-5 text-emerald-400 group-hover:text-white" />
+              </div>
+            </div>
+          </div>
+        </Link>
+
         <KineticGrid className="grid-cols-2 md:grid-cols-4 gap-4" staggerMs={50}>
           <MetricV2
             label="Active Plans"
