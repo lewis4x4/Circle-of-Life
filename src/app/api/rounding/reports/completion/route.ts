@@ -139,11 +139,12 @@ export async function GET(request: Request) {
       byShift.get(shiftLabel)!.late += 1;
       byStaff.get(staffLabel)!.late += 1;
       byResident.get(residentLabel)!.late += 1;
-      totalDelayMinutes += Math.max(
-        0,
-        Math.round((new Date(task.grace_ends_at).getTime() - new Date(task.due_at).getTime()) / (60 * 1000)),
-      );
-      totalDelayRows += 1;
+      const graceMs = new Date(task.grace_ends_at).getTime();
+      const dueMs = new Date(task.due_at).getTime();
+      if (!Number.isNaN(graceMs) && !Number.isNaN(dueMs)) {
+        totalDelayMinutes += Math.max(0, Math.round((graceMs - dueMs) / (60 * 1000)));
+        totalDelayRows += 1;
+      }
     } else if (terminalStatus === "missed") {
       missed += 1;
       byShift.get(shiftLabel)!.missed += 1;

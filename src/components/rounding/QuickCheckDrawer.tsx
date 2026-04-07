@@ -13,7 +13,6 @@ import {
   RotateCw,
 } from "lucide-react";
 
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { cn } from "@/lib/utils";
 import type { CompletionPayload, ObservationQuickStatus, ObservationExceptionType } from "@/lib/rounding/types";
 
@@ -76,6 +75,7 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
   const [justCompleted, setJustCompleted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const titleId = "qc-drawer-title";
 
   const resetForm = useCallback(() => {
     setQuickStatus("awake");
@@ -94,6 +94,7 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
   useEffect(() => {
     if (open && task) {
       resetForm();
+      requestAnimationFrame(() => panelRef.current?.focus());
     }
   }, [open, task, resetForm]);
 
@@ -163,9 +164,10 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
 
       <div
         ref={panelRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        aria-label={task ? `Quick check for ${task.residentName}` : "Quick check"}
+        aria-labelledby={titleId}
         className={cn(
           "fixed inset-x-0 bottom-0 z-50 max-h-[92vh] overflow-y-auto rounded-t-2xl border-t border-slate-700/50",
           "bg-gradient-to-b from-slate-900 to-slate-950 shadow-2xl shadow-black/50",
@@ -178,7 +180,7 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
             {task && (
               <>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-display font-semibold text-slate-100 truncate">{task.residentName}</h2>
+                  <h2 id={titleId} className="text-lg font-display font-semibold text-slate-100 truncate">{task.residentName}</h2>
                   {task.roomLabel && (
                     <span className="text-[10px] font-mono tracking-wider text-slate-500 bg-slate-800/50 px-1.5 py-0.5 rounded shrink-0">
                       {task.roomLabel}
@@ -186,7 +188,7 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
                   )}
                 </div>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Due {new Date(task.dueAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  Due {Number.isNaN(new Date(task.dueAt).getTime()) ? "time unavailable" : new Date(task.dueAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   {queuePosition && (
                     <span className="ml-2 text-cyan-400">{queuePosition.current} of {queuePosition.total}</span>
                   )}
@@ -226,7 +228,7 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
         ) : (
           <div className="px-5 py-4 space-y-5">
             {error && (
-              <div className="flex items-center gap-2 rounded-lg border border-rose-700/50 bg-rose-950/30 px-3 py-2 text-sm text-rose-200">
+              <div role="alert" className="flex items-center gap-2 rounded-lg border border-rose-700/50 bg-rose-950/30 px-3 py-2 text-sm text-rose-200">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 {error}
               </div>
@@ -235,7 +237,7 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
             {/* Step 1: Quick Status — the most important tap */}
             <div>
               <label className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-2 block">Status</label>
-              <div className="grid grid-cols-4 gap-2">
+              <div role="radiogroup" aria-label="Quick status" className="grid grid-cols-4 gap-2">
                 {QUICK_STATUSES.map((opt) => (
                   <button
                     key={opt.value}

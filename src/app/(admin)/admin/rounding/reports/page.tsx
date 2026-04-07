@@ -7,7 +7,6 @@ import {
   Download,
   FileBarChart,
   RefreshCw,
-  XCircle,
 } from "lucide-react";
 
 import { RoundingHubNav } from "../rounding-hub-nav";
@@ -17,7 +16,7 @@ import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
-import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
+import { isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 type BreakdownRow = {
@@ -77,7 +76,6 @@ const DEMO_BY_RESIDENT: BreakdownRow[] = [
 
 export default function AdminRoundingReportsPage() {
   const { selectedFacilityId } = useFacilityStore();
-  const supabase = useMemo(() => createClient(), []);
   const [from, setFrom] = useState(() => new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 16));
   const [to, setTo] = useState(() => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16));
   const [loading, setLoading] = useState(true);
@@ -138,7 +136,7 @@ export default function AdminRoundingReportsPage() {
     } finally {
       setLoading(false);
     }
-  }, [from, selectedFacilityId, to, supabase]);
+  }, [from, selectedFacilityId, to]);
 
   useEffect(() => {
     void load();
@@ -153,8 +151,14 @@ export default function AdminRoundingReportsPage() {
     ];
   }, [breakdowns]);
 
+  function csvCell(value: string | number) {
+    const s = String(value);
+    if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+    return s;
+  }
+
   function exportCsv() {
-    const text = csvRows.map((row) => row.join(",")).join("\n");
+    const text = csvRows.map((row) => row.map(csvCell).join(",")).join("\n");
     const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");

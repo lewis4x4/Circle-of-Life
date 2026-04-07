@@ -163,7 +163,7 @@ export default function AdminRoundingPlansPage() {
           <div className="h-[90px]">
             <V2Card hoverColor="emerald" className="border-emerald-500/20">
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-emerald-400">Residents Covered</h3>
+                <h3 className="text-[10px] font-mono tracking-widest uppercase text-emerald-400">Total Plans</h3>
                 <p className="text-2xl font-mono tracking-tighter text-emerald-400 pb-1">{plans.length}</p>
               </div>
             </V2Card>

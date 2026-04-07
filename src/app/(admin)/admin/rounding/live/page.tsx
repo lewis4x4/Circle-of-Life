@@ -267,7 +267,7 @@ export default function AdminRoundingLivePage() {
                 onClick={canCheck ? () => openSingleCheck(task) : undefined}
                 role={canCheck ? "button" : undefined}
                 tabIndex={canCheck ? 0 : undefined}
-                onKeyDown={canCheck ? (e) => { if (e.key === "Enter" || e.key === " ") openSingleCheck(task); } : undefined}
+                onKeyDown={canCheck ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openSingleCheck(task); } } : undefined}
               >
                 <div className="flex items-center gap-4">
                   <div className={cn("flex items-center gap-2 shrink-0", cfg.color)}>

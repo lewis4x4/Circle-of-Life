@@ -45,6 +45,24 @@ export async function POST(
     return NextResponse.json({ error: "A valid quickStatus is required" }, { status: 400 });
   }
 
+  const VALID_EXCEPTION_TYPES = new Set<ObservationExceptionType>([
+    "resident_not_found", "resident_declined_interaction", "resident_appears_ill",
+    "resident_appears_injured", "environmental_hazard_present", "family_concern_reported",
+    "assignment_impossible", "other",
+  ]);
+  if (body.exceptionType && !VALID_EXCEPTION_TYPES.has(body.exceptionType)) {
+    return NextResponse.json({ error: "Invalid exceptionType" }, { status: 400 });
+  }
+
+  const VALID_SEVERITIES = new Set(["low", "medium", "high", "critical"]);
+  if (body.exceptionSeverity && !VALID_SEVERITIES.has(body.exceptionSeverity)) {
+    return NextResponse.json({ error: "Invalid exceptionSeverity" }, { status: 400 });
+  }
+
+  if (body.interventionCodes !== undefined && !Array.isArray(body.interventionCodes)) {
+    return NextResponse.json({ error: "interventionCodes must be an array" }, { status: 400 });
+  }
+
   const { data: task, error: taskError } = await context.admin
     .from("resident_observation_tasks")
     .select("*")
@@ -58,6 +76,11 @@ export async function POST(
   }
   if (taskError || !task) {
     return NextResponse.json({ error: "Observation task not found" }, { status: 404 });
+  }
+
+  const TERMINAL_STATUSES = new Set(["completed_on_time", "completed_late", "excused"]);
+  if (TERMINAL_STATUSES.has(task.status as string)) {
+    return NextResponse.json({ error: `Task is already ${task.status}` }, { status: 409 });
   }
 
   const hasAccess = await assertRoundingFacilityAccess(context, task.facility_id);
