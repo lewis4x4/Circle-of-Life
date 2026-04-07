@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowUpDown, ChevronRight, CreditCard, Receipt } from "lucide-react";
+import { ArrowUpDown, ChevronRight, CreditCard } from "lucide-react";
 
 import {
   AdminEmptyState,
@@ -16,7 +16,6 @@ import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
@@ -83,7 +82,6 @@ export type BillingInvoiceLedgerProps = {
 
 export function BillingInvoiceLedger({
   title = "Billing Core",
-  description = "Invoice queue, payer visibility, and AR signal layer for Phase 1 billing operations.",
   cardTitle = "Invoice Ledger",
   cardDescription = "Open invoices and balances from the billing schema (RLS-scoped).",
   residentIdFilter = null,

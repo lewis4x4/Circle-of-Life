@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { AlertCircle, Clock, ShieldAlert, Pill, FileWarning, Search, ChevronRight, CheckCircle2, UserCog, Activity, type LucideIcon } from "lucide-react";
+import { AlertCircle, Clock, ShieldAlert, Pill, FileWarning, CheckCircle2, UserCog, type LucideIcon } from "lucide-react";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminDashboardSnapshot, type AdminDashboardSnapshot } from "@/lib/admin-dashboard-snapshot";
 import { createClient } from "@/lib/supabase/client";

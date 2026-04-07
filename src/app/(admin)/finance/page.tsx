@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from "react";
 import { Landmark } from "lucide-react";
 
 import { FinanceHubNav } from "./finance-hub-nav";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";

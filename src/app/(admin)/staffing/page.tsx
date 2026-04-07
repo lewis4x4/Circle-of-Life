@@ -2,14 +2,14 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { UserCog, Users, AlertCircle, Clock, FileWarning, CalendarPlus, Activity } from "lucide-react";
+import { Users, AlertCircle, Clock, FileWarning, CalendarPlus, Activity } from "lucide-react";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -92,7 +92,6 @@ export default function AdminStaffingConsolePage() {
     );
   }
 
-  const nonCompliant = snapshots.filter((r) => !r.isCompliant).length;
   const targetHPPD = 3.5;
   const actualHPPD = 3.2; // Example value
 

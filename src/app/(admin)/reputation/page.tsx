@@ -6,8 +6,6 @@ import { format } from "date-fns";
 import { Star } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -20,7 +18,6 @@ import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { MotionCard } from "@/components/ui/motion-card";
 
 type AccountRow = Database["public"]["Tables"]["reputation_accounts"]["Row"];
 type ReplyRow = Database["public"]["Tables"]["reputation_replies"]["Row"] & {
@@ -29,10 +26,6 @@ type ReplyRow = Database["public"]["Tables"]["reputation_replies"]["Row"] & {
 
 function formatPlatform(p: string) {
   return p.replace(/_/g, " ");
-}
-
-function formatStatus(s: string) {
-  return s.replace(/_/g, " ");
 }
 
 export default function AdminReputationHubPage() {

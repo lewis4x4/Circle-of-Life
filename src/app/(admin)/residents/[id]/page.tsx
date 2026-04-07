@@ -8,17 +8,11 @@ import {
   ArrowLeft,
   Brain,
   ClipboardList,
-  CreditCard,
   FileText,
-  HeartPulse,
   ListChecks,
   MapPin,
-  Phone,
-  Pill,
-  Shield,
   Stethoscope,
   User,
-  Utensils,
   CheckCircle2,
 } from "lucide-react";
 
@@ -784,17 +778,7 @@ function formatList(items: string[] | null): string {
   return items.filter(Boolean).join("; ");
 }
 
-function formatGender(value: string | null): string {
-  if (!value) return "—";
-  return value.replace(/_/g, " ");
-}
-
 function formatCodeStatus(value: string | null): string {
-  if (!value) return "—";
-  return value.replace(/_/g, " ");
-}
-
-function formatPayer(value: string | null): string {
   if (!value) return "—";
   return value.replace(/_/g, " ");
 }
@@ -844,15 +828,6 @@ const CONDITION_TYPE_LABELS: Record<string, string> = {
 
 function conditionChangeTypeLabel(value: string): string {
   return CONDITION_TYPE_LABELS[value] ?? value.replace(/_/g, " ");
-}
-
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-3">
-      <span className="min-w-[8rem] text-xs font-medium uppercase tracking-wide text-slate-400">{label}</span>
-      <span className="text-slate-800 dark:text-slate-200">{value}</span>
-    </div>
-  );
 }
 
 function AcuityBadge({ acuity }: { acuity: Acuity }) {

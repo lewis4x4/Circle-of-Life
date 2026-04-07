@@ -6,7 +6,6 @@ import { Umbrella } from "lucide-react";
 
 import { InsuranceHubNav } from "./insurance-hub-nav";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
 import { computeTotalCostOfRisk, type TcorSnapshot } from "@/lib/insurance/compute-tcor";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";

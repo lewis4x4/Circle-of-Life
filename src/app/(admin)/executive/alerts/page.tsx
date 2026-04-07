@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
-import { Bell, ShieldAlert, ArrowRight, Clock, MapPin, Search, CheckCircle2 } from "lucide-react";
+import { Clock, MapPin, CheckCircle2 } from "lucide-react";
 
 import { ExecutiveHubNav } from "../executive-hub-nav";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";

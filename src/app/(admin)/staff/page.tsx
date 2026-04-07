@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowUpDown, ChevronRight, UserCog, UserRoundCheck } from "lucide-react";
+import { ArrowUpDown, ChevronRight, UserRoundCheck } from "lucide-react";
 
 import {
   AdminEmptyState,
@@ -17,7 +17,6 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { KineticGrid } from "@/components/ui/kinetic-grid";

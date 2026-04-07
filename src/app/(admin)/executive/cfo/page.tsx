@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { DollarSign, AlertCircle, PieChart, TrendingDown } from "lucide-react";
 
 import { ExecutiveHubNav } from "../executive-hub-nav";
 import { V2Card } from "@/components/ui/moonshot/v2-card";

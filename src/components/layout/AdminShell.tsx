@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -21,7 +21,6 @@ import {
   UserCog,
   CreditCard,
   ClipboardCheck,
-  CalendarClock,
   Award,
   GraduationCap,
   Utensils,
@@ -135,7 +134,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const navGroups = [
+  const navGroups = useMemo(() => [
     {
       group: "Command & Triage",
       items: [
@@ -195,7 +194,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         { key: "notifications", href: "/admin/settings/notifications", label: "Settings", enabled: true, icon: Smartphone },
       ]
     }
-  ];
+  ], []);
 
   // Auto-expand the group that contains the active route
   useEffect(() => {
@@ -210,10 +209,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         }
       });
     });
-    if (activeGroup && !expandedGroups[activeGroup]) {
-      setExpandedGroups(prev => ({ ...prev, [activeGroup]: true }));
+    if (activeGroup) {
+      setExpandedGroups(prev => (prev[activeGroup] ? prev : { ...prev, [activeGroup]: true }));
     }
-  }, [pathname]);
+  }, [pathname, navGroups]);
 
   return (
     <div className="flex h-screen w-full bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-300">
