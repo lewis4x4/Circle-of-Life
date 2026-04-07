@@ -222,7 +222,7 @@ export default function AdminReputationHubPage() {
                         {row.reputation_accounts?.label ?? "Unknown Listing"}
                       </p>
                       <p className="text-sm text-slate-600 dark:text-slate-400 italic border-l-2 border-slate-200 dark:border-slate-700 pl-3 py-1">
-                        "{row.reply_body}"
+                        &ldquo;{row.reply_body}&rdquo;
                       </p>
                     </div>
                     <div className="flex justify-start">

@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { AlertCircle, Clock, ShieldAlert, Pill, FileWarning, Search, ChevronRight, CheckCircle2, UserCog, Activity } from "lucide-react";
+import { AlertCircle, Clock, ShieldAlert, Pill, FileWarning, Search, ChevronRight, CheckCircle2, UserCog, Activity, type LucideIcon } from "lucide-react";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminDashboardSnapshot, type AdminDashboardSnapshot } from "@/lib/admin-dashboard-snapshot";
 import { createClient } from "@/lib/supabase/client";
@@ -325,10 +325,10 @@ export default function AdminDashboardPage() {
   );
 }
 
-function TriageMetricCard({ 
-  title, value, icon: Icon, urgency, subLabel, href 
-}: { 
-  title: string; value: number; icon: any; urgency: "critical" | "high" | "medium" | "normal"; subLabel: string; href: string 
+function TriageMetricCard({
+  title, value, icon: Icon, urgency, subLabel, href
+}: {
+  title: string; value: number; icon: LucideIcon; urgency: "critical" | "high" | "medium" | "normal"; subLabel: string; href: string
 }) {
   const urgencyColors = {
     critical: "border-rose-200 bg-rose-50/50 dark:border-rose-900/50 dark:bg-rose-950/20 shadow-sm",

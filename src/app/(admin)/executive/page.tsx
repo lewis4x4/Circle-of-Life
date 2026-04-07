@@ -83,17 +83,39 @@ export default function ExecutiveOverviewPage() {
       if (alertErr) throw alertErr;
       
       if (!alertData || alertData.length === 0) {
-         setAlerts([
-           {
-             id: "mock-1",
-             severity: "critical",
-             category: "growth",
-             title: "Occupancy fell below Critical Threshold (85%)",
-             body: "Oakridge has dropped from 86.2% to 84.1% occupancy over the last 14 days following 3 discharges.",
-             why_it_matters: "Cash flow break-even relies on >88%. Continuing at this rate will bleed cash reserves by $45,000 this month.",
-             facilities: { name: "Oakridge ALF" }
-           } as any
-         ]);
+         const nowIso = new Date().toISOString();
+         const mockAlert: AlertWithFacility = {
+           id: "mock-1",
+           organization_id: "",
+           facility_id: null,
+           entity_id: null,
+           owner_user_id: null,
+           severity: "critical",
+           source_module: "system",
+           source_metric_code: null,
+           category: "growth",
+           status: "open",
+           title: "Occupancy fell below Critical Threshold (85%)",
+           body: "Oakridge has dropped from 86.2% to 84.1% occupancy over the last 14 days following 3 discharges.",
+           why_it_matters: "Cash flow break-even relies on >88%. Continuing at this rate will bleed cash reserves by $45,000 this month.",
+           score: null,
+           threshold_json: null,
+           current_value_json: null,
+           prior_value_json: null,
+           related_link_json: null,
+           deep_link_path: null,
+           first_triggered_at: nowIso,
+           last_evaluated_at: nowIso,
+           created_at: nowIso,
+           updated_at: nowIso,
+           acknowledged_at: null,
+           acknowledged_by: null,
+           resolved_at: null,
+           resolved_by: null,
+           deleted_at: null,
+           facilities: { name: "Oakridge ALF" },
+         };
+         setAlerts([mockAlert]);
       } else {
          setAlerts(alertData);
       }

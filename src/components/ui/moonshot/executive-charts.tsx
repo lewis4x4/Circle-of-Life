@@ -18,6 +18,16 @@ import {
   Line,
   Legend
 } from "recharts";
+import type { TooltipContentProps } from "recharts";
+
+type ChartDatum = Record<string, string | number>;
+
+// Recharts injects payload/active/label at runtime; mark as Partial so the
+// `<CustomTooltip prefix="$" />` JSX call sites compile without TS demanding them.
+type CustomTooltipProps = Partial<TooltipContentProps<number, string>> & {
+  prefix?: string;
+  suffix?: string;
+};
 
 const DARK_COLORS = {
   emerald: "#10b981",    // emerald-500
@@ -32,16 +42,16 @@ const DARK_COLORS = {
 };
 
 // --- CUSTOM TOOLTIPS ---
-const CustomTooltip = ({ active, payload, label, prefix = "", suffix = "" }: any) => {
+const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label, prefix = "", suffix = "" }) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-slate-900/90 backdrop-blur-md border border-slate-700/50 p-3 rounded-lg shadow-2xl">
         <p className="text-xs font-mono text-slate-400 mb-2 uppercase tracking-widest">{label}</p>
-        {payload.map((p: any, idx: number) => (
+        {payload.map((p, idx) => (
           <div key={idx} className="flex items-center gap-2 mb-1 last:mb-0">
             <div className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: p.color }} />
             <span className="text-sm font-semibold text-slate-100">
-              {p.name}: <span className="font-mono">{prefix}{p.value.toLocaleString()}{suffix}</span>
+              {p.name}: <span className="font-mono">{prefix}{Number(p.value ?? 0).toLocaleString()}{suffix}</span>
             </span>
           </div>
         ))}
@@ -53,7 +63,7 @@ const CustomTooltip = ({ active, payload, label, prefix = "", suffix = "" }: any
 
 // --- CEO CHARTS ---
 
-export function CeoGrowthChart({ data }: { data: any[] }) {
+export function CeoGrowthChart({ data }: { data: ChartDatum[] }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -79,7 +89,7 @@ export function CeoGrowthChart({ data }: { data: any[] }) {
   );
 }
 
-export function CeoRiskChart({ data }: { data: any[] }) {
+export function CeoRiskChart({ data }: { data: ChartDatum[] }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -97,7 +107,7 @@ export function CeoRiskChart({ data }: { data: any[] }) {
 
 // --- CFO CHARTS ---
 
-export function CfoLaborDonutChart({ data }: { data: any[] }) {
+export function CfoLaborDonutChart({ data }: { data: ChartDatum[] }) {
   const COLORS = [DARK_COLORS.emerald, DARK_COLORS.indigo, DARK_COLORS.amber];
   
   return (
@@ -124,7 +134,7 @@ export function CfoLaborDonutChart({ data }: { data: any[] }) {
   );
 }
 
-export function CfoRevenueMatrixChart({ data }: { data: any[] }) {
+export function CfoRevenueMatrixChart({ data }: { data: ChartDatum[] }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -143,7 +153,7 @@ export function CfoRevenueMatrixChart({ data }: { data: any[] }) {
 
 // --- COO CHARTS ---
 
-export function CooAgencyBurnChart({ data }: { data: any[] }) {
+export function CooAgencyBurnChart({ data }: { data: ChartDatum[] }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <ComposedChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -159,7 +169,7 @@ export function CooAgencyBurnChart({ data }: { data: any[] }) {
   );
 }
 
-export function CooIncidentDensityChart({ data }: { data: any[] }) {
+export function CooIncidentDensityChart({ data }: { data: ChartDatum[] }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>

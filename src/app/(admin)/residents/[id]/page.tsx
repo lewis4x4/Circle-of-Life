@@ -37,6 +37,29 @@ import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 type Acuity = 1 | 2 | 3;
 type ResidencyStatus = "active" | "hospital" | "loa";
 
+type ConditionEventContent = {
+  id: string;
+  typeLabel: string;
+  severity: string;
+  description: string;
+  loggedByLabel: string;
+  nurseNotified: boolean;
+};
+
+type BehaviorEventContent = {
+  id: string;
+  typeLabel: string;
+  behaviorText: string;
+  loggedByLabel: string;
+  injuryOccurred: boolean;
+};
+
+type ADLEventContent = {
+  id: string;
+  summary: string;
+  loggedByLabel: string;
+};
+
 type SupabaseResidentRow = {
   id: string;
   facility_id: string;
@@ -266,7 +289,7 @@ export default function AdminResidentDetailPage() {
                  ) : (
                     feedItems.map((item, idx) => {
                        if (item.type === 'condition') {
-                          const c = item.content as any;
+                          const c = item.content as ConditionEventContent;
                           return (
                              <div key={`cond-${c.id}-${idx}`} className="flex gap-4">
                                <div className="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-600 flex items-center justify-center shrink-0">
@@ -283,7 +306,7 @@ export default function AdminResidentDetailPage() {
                              </div>
                           )
                        } else if (item.type === 'behavior') {
-                          const b = item.content as any;
+                          const b = item.content as BehaviorEventContent;
                           return (
                              <div key={`beh-${b.id}-${idx}`} className="flex gap-4">
                                <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-600 flex items-center justify-center shrink-0">
@@ -300,7 +323,7 @@ export default function AdminResidentDetailPage() {
                              </div>
                           )
                        } else {
-                          const a = item.content as any;
+                          const a = item.content as ADLEventContent;
                           return (
                              <div key={`adl-${a.id}-${idx}`} className="flex gap-4">
                                <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0">

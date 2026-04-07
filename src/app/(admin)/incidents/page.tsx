@@ -39,6 +39,12 @@ export default function AdminIncidentsKanbanPage() {
   const [rows, setRows] = useState<IncidentRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [now, setNow] = useState<number>(() => Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const loadIncidents = useCallback(async () => {
     setIsLoading(true);
@@ -140,7 +146,7 @@ export default function AdminIncidentsKanbanPage() {
                    <MotionList className="flex flex-col gap-3">
                      {colRows.map(incident => (
                        <MotionItem key={incident.id}>
-                         <KanbanCard incident={incident} />
+                         <KanbanCard incident={incident} now={now} />
                        </MotionItem>
                      ))}
                    </MotionList>
@@ -154,9 +160,8 @@ export default function AdminIncidentsKanbanPage() {
   );
 }
 
-function KanbanCard({ incident }: { incident: IncidentRow }) {
-  // Compute DOH Countdown
-  const now = Date.now();
+function KanbanCard({ incident, now }: { incident: IncidentRow; now: number }) {
+  // Compute DOH Countdown using `now` lifted into parent state (updated every 60s)
   let countdownRibbon = null;
   
   if (incident.followupDueMs > 0 && incident.status !== "closed") {
@@ -262,6 +267,17 @@ type SupabaseFollowupMini = {
   due_at: string;
 };
 
+type SupabaseResidentMini = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+};
+
+type SupabaseProfileMini = {
+  id: string;
+  full_name: string | null;
+};
+
 async function fetchIncidentsFromSupabase(selectedFacilityId: string | null): Promise<IncidentRow[]> {
   const supabase = createClient();
   let incidentsQuery = supabase
@@ -297,8 +313,12 @@ async function fetchIncidentsFromSupabase(selectedFacilityId: string | null): Pr
     ? await supabase.from("incident_followups" as never).select("incident_id, due_at").in("incident_id", incidentIds).is("completed_at", null)
     : { data: [] };
 
-  const residentById = new Map((residentsResult.data as any[] ?? []).map((r) => [r.id, r]));
-  const reporterById = new Map((profilesResult.data as any[] ?? []).map((p) => [p.id, p]));
+  const residentById = new Map(
+    ((residentsResult.data ?? []) as SupabaseResidentMini[]).map((r) => [r.id, r] as const)
+  );
+  const reporterById = new Map(
+    ((profilesResult.data ?? []) as SupabaseProfileMini[]).map((p) => [p.id, p] as const)
+  );
 
   const nextDueByIncident = new Map<string, number>();
   for (const row of (followupsResult.data as SupabaseFollowupMini[] ?? [])) {
