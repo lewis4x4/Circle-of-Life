@@ -13,6 +13,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { MotionCard } from "@/components/ui/motion-card";
 
 // Types
 type AssessmentRow = {
@@ -180,105 +182,109 @@ export default function ClinicalDeskPage() {
       <div className="grid lg:grid-cols-12 gap-6 flex-1 min-h-0">
         {/* Left Drawer: Overdue Assessments */}
         <div className="lg:col-span-4 flex flex-col h-full overflow-hidden">
-          <Card className="flex flex-col h-full border-slate-200 shadow-sm dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
-            <CardHeader className="shrink-0 pb-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950">
-              <CardTitle className="text-sm font-semibold flex items-center justify-between text-slate-800 dark:text-slate-200">
-                Action Required: Assessments
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 p-0 min-h-0 bg-transparent">
-              <ScrollArea className="h-full">
-                {assessments.length === 0 ? (
-                  <div className="p-8 text-center text-slate-500">
-                    <ClipboardCheck className="w-8 h-8 text-emerald-400 opacity-50 mx-auto mb-3" />
-                    <p className="font-medium text-sm">All Clear</p>
-                    <p className="text-xs opacity-70 mt-1">No overdue assessments.</p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-slate-100 dark:divide-slate-800/60 p-2">
-                    {assessments.map((a) => (
-                      <div key={a.id} className="p-3 mb-2 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-950 hover:shadow-md transition-all shadow-sm">
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex items-center gap-2">
-                            <UserSquare2 className="w-4 h-4 text-slate-400" />
-                            <span className="font-semibold text-sm text-slate-900 dark:text-slate-100">{a.residentName}</span>
+          <MotionCard delay={0.1} className="flex flex-col h-full">
+            <Card className="flex flex-col h-full border-slate-200 shadow-sm dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
+              <CardHeader className="shrink-0 pb-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950">
+                <CardTitle className="text-sm font-semibold flex items-center justify-between text-slate-800 dark:text-slate-200">
+                  Action Required: Assessments
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 p-0 min-h-0 bg-transparent">
+                <ScrollArea className="h-full">
+                  {assessments.length === 0 ? (
+                    <div className="p-8 text-center text-slate-500">
+                      <ClipboardCheck className="w-8 h-8 text-emerald-400 opacity-50 mx-auto mb-3" />
+                      <p className="font-medium text-sm">All Clear</p>
+                      <p className="text-xs opacity-70 mt-1">No overdue assessments.</p>
+                    </div>
+                  ) : (
+                    <MotionList className="divide-y divide-slate-100 dark:divide-slate-800/60 p-2">
+                      {assessments.map((a) => (
+                        <MotionItem key={a.id} className="p-3 mb-2 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-950 hover:shadow-md transition-all shadow-sm">
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex items-center gap-2">
+                              <UserSquare2 className="w-4 h-4 text-slate-400" />
+                              <span className="font-semibold text-sm text-slate-900 dark:text-slate-100">{a.residentName}</span>
+                            </div>
+                            <Badge variant="destructive" className={cn(
+                              "h-5 px-1.5 text-[9px] font-bold rounded-sm border-0",
+                              a.daysOverdue > 7 ? "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300" : "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                            )}>
+                              {a.daysOverdue}D OVERDUE
+                            </Badge>
                           </div>
-                          <Badge variant="destructive" className={cn(
-                            "h-5 px-1.5 text-[9px] font-bold rounded-sm border-0",
-                            a.daysOverdue > 7 ? "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300" : "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
-                          )}>
-                            {a.daysOverdue}D OVERDUE
-                          </Badge>
-                        </div>
-                        <div className="flex flex-col gap-1.5 ml-6">
-                           <span className="text-xs font-medium text-slate-700 dark:text-slate-300 capitalize">{formatType(a.assessmentType)}</span>
-                           <span className="text-[10px] text-slate-500">Due: {a.nextDueDate}</span>
-                        </div>
-                        <div className="mt-3 flex justify-end">
-                           <Button size="sm" variant="outline" className="h-7 text-xs px-3 shadow-none">Chart Assessment</Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
+                          <div className="flex flex-col gap-1.5 ml-6">
+                             <span className="text-xs font-medium text-slate-700 dark:text-slate-300 capitalize">{formatType(a.assessmentType)}</span>
+                             <span className="text-[10px] text-slate-500">Due: {a.nextDueDate}</span>
+                          </div>
+                          <div className="mt-3 flex justify-end">
+                             <Button size="sm" variant="outline" className="h-7 text-xs px-3 shadow-none">Chart Assessment</Button>
+                          </div>
+                        </MotionItem>
+                      ))}
+                    </MotionList>
+                  )}
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </MotionCard>
         </div>
 
         {/* Right Pane: Care Plan Drafts */}
         <div className="lg:col-span-8 flex flex-col h-full overflow-hidden">
-           <Card className="flex flex-col h-full border-slate-200 shadow-sm dark:border-slate-800 bg-white dark:bg-slate-950">
-            <CardHeader className="shrink-0 pb-3 border-b border-slate-100 dark:border-slate-800 flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-sm font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-200">
-                  <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
-                  Generated Care Plan Drafts
-                </CardTitle>
-                <CardDescription className="text-xs mt-1">
-                  Drafts generated from recently signed assessments await nursing sign-off.
-                </CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent className="flex-1 p-0 min-h-0">
-              <ScrollArea className="h-full px-2 pt-2 pb-6">
-                {carePlans.length === 0 ? (
-                  <div className="p-16 text-center text-slate-500">
-                    <CalendarClock className="w-12 h-12 text-blue-400 opacity-50 mx-auto mb-3" />
-                    <p className="font-medium text-base">All Clear</p>
-                    <p className="text-sm opacity-70 mt-1">No drafts awaiting review.</p>
-                  </div>
-                ) : (
-                  <div className="grid gap-3 pt-2 px-2">
-                    {carePlans.map((p) => (
-                      <div key={p.id} className="relative flex items-start gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-800/50 transition-colors group bg-slate-50/30 dark:bg-slate-900/10">
-                        <div className="w-2 h-2 rounded-full mt-2 shrink-0 shadow-sm ring-4 ring-blue-500/20 bg-blue-500" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-semibold tracking-wider text-slate-800 dark:text-slate-200">
-                              {p.residentName}
-                            </span>
-                            <span className="text-xs font-medium text-slate-400">Due: {p.reviewDueDate}</span>
+          <MotionCard delay={0.2} className="flex flex-col h-full">
+             <Card className="flex flex-col h-full border-slate-200 shadow-sm dark:border-slate-800 bg-white dark:bg-slate-950">
+              <CardHeader className="shrink-0 pb-3 border-b border-slate-100 dark:border-slate-800 flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                    <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+                    Generated Care Plan Drafts
+                  </CardTitle>
+                  <CardDescription className="text-xs mt-1">
+                    Drafts generated from recently signed assessments await nursing sign-off.
+                  </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="flex-1 p-0 min-h-0">
+                <ScrollArea className="h-full px-2 pt-2 pb-6">
+                  {carePlans.length === 0 ? (
+                    <div className="p-16 text-center text-slate-500">
+                      <CalendarClock className="w-12 h-12 text-blue-400 opacity-50 mx-auto mb-3" />
+                      <p className="font-medium text-base">All Clear</p>
+                      <p className="text-sm opacity-70 mt-1">No drafts awaiting review.</p>
+                    </div>
+                  ) : (
+                    <MotionList className="grid gap-3 pt-2 px-2">
+                      {carePlans.map((p) => (
+                        <MotionItem key={p.id} className="relative flex items-start gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-800/50 transition-colors group bg-slate-50/30 dark:bg-slate-900/10">
+                          <div className="w-2 h-2 rounded-full mt-2 shrink-0 shadow-sm ring-4 ring-blue-500/20 bg-blue-500" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-semibold tracking-wider text-slate-800 dark:text-slate-200">
+                                {p.residentName}
+                              </span>
+                              <span className="text-xs font-medium text-slate-400">Due: {p.reviewDueDate}</span>
+                            </div>
+                            <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3">
+                              Care Plan v{p.version} Update (Triggered by 14-day MDS)
+                            </p>
+                            <div className="flex items-center gap-3">
+                              <Link href={`/admin/residents/${p.residentId}/care-plan`} className={cn(buttonVariants({ variant: "default", size: "sm" }), "h-8 text-[11px] font-medium px-4 bg-blue-600 hover:bg-blue-700 shadow-sm")}>
+                                Review & Sign
+                              </Link>
+                              <Button variant="outline" size="sm" className="h-8 text-[11px] font-medium text-slate-600">
+                                View Diff
+                              </Button>
+                            </div>
                           </div>
-                          <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3">
-                            Care Plan v{p.version} Update (Triggered by 14-day MDS)
-                          </p>
-                          <div className="flex items-center gap-3">
-                            <Link href={`/admin/residents/${p.residentId}/care-plan`} className={cn(buttonVariants({ variant: "default", size: "sm" }), "h-8 text-[11px] font-medium px-4 bg-blue-600 hover:bg-blue-700 shadow-sm")}>
-                              Review & Sign
-                            </Link>
-                            <Button variant="outline" size="sm" className="h-8 text-[11px] font-medium text-slate-600">
-                              View Diff
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
+                        </MotionItem>
+                      ))}
+                    </MotionList>
+                  )}
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </MotionCard>
         </div>
       </div>
     </div>

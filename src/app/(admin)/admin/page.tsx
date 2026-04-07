@@ -14,6 +14,9 @@ import { fetchAdminDashboardSnapshot, type AdminDashboardSnapshot } from "@/lib/
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { MotionCard } from "@/components/ui/motion-card";
+
 export default function AdminDashboardPage() {
   const router = useRouter();
   const { selectedFacilityId } = useFacilityStore();
@@ -101,7 +104,7 @@ export default function AdminDashboardPage() {
   const totalActionable = openIncidents + staffingGaps + medExceptions + complianceAlerts;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-12">
+    <div className="space-y-8 pb-12 overflow-x-hidden">
       {/* Page Header */}
       <div className="flex flex-col gap-2 md:flex-row md:items-center justify-between">
         <div className="space-y-1">
@@ -131,118 +134,128 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Triage Overview Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <TriageMetricCard 
-          title="Open Incidents" 
-          value={openIncidents} 
-          icon={ShieldAlert}
-          href="/admin/incidents"
-          urgency={openIncidents > 0 ? "critical" : "normal"} 
-          subLabel={openIncidents > 0 ? "Pending investigation" : "All clear"}
-        />
-        <TriageMetricCard 
-          title="Staffing Gaps" 
-          value={staffingGaps} 
-          icon={UserCog}
-          href="/admin/staffing"
-          urgency={staffingGaps > 0 ? "high" : "normal"} 
-          subLabel="Next 48 hours"
-        />
-        <TriageMetricCard 
-          title="Med Exceptions" 
-          value={medExceptions} 
-          icon={Pill}
-          href="/admin/medications"
-          urgency={medExceptions > 0 ? "medium" : "normal"} 
-          subLabel="Overdue passes"
-        />
-        <TriageMetricCard 
-          title="Compliance Risks" 
-          value={complianceAlerts} 
-          icon={FileWarning}
-          href="/admin/compliance"
-          urgency={complianceAlerts > 0 ? "high" : "normal"} 
-          subLabel="Expiring today"
-        />
-      </div>
+      <MotionList className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <MotionItem>
+          <TriageMetricCard 
+            title="Open Incidents" 
+            value={openIncidents} 
+            icon={ShieldAlert}
+            href="/admin/incidents"
+            urgency={openIncidents > 0 ? "critical" : "normal"} 
+            subLabel={openIncidents > 0 ? "Pending investigation" : "All clear"}
+          />
+        </MotionItem>
+        <MotionItem>
+          <TriageMetricCard 
+            title="Staffing Gaps" 
+            value={staffingGaps} 
+            icon={UserCog}
+            href="/admin/staffing"
+            urgency={staffingGaps > 0 ? "high" : "normal"} 
+            subLabel="Next 48 hours"
+          />
+        </MotionItem>
+        <MotionItem>
+          <TriageMetricCard 
+            title="Med Exceptions" 
+            value={medExceptions} 
+            icon={Pill}
+            href="/admin/medications"
+            urgency={medExceptions > 0 ? "medium" : "normal"} 
+            subLabel="Overdue passes"
+          />
+        </MotionItem>
+        <MotionItem>
+          <TriageMetricCard 
+            title="Compliance Risks" 
+            value={complianceAlerts} 
+            icon={FileWarning}
+            href="/admin/compliance"
+            urgency={complianceAlerts > 0 ? "high" : "normal"} 
+            subLabel="Expiring today"
+          />
+        </MotionItem>
+      </MotionList>
 
       {/* Main Inbox View */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Urgent Action Queue */}
-        <Card className="col-span-2 border-slate-200 shadow-sm dark:border-slate-800">
-          <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20 pb-4 flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-base font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-rose-500" />
-                Action Queue
-              </CardTitle>
-              <CardDescription>Escalated items requiring your immediate sign-off</CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {snapshot.activity.length === 0 && openIncidents === 0 ? (
-              <div className="p-12 text-center text-slate-500 flex flex-col items-center justify-center">
-                <CheckCircle2 className="w-12 h-12 text-emerald-400 mb-3 opacity-50" />
-                <p className="font-medium">Inbox Zero</p>
-                <p className="text-sm opacity-80">All operational exceptions resolved.</p>
+        <MotionCard delay={0.2} className="col-span-2">
+          <Card className="border-slate-200 shadow-sm dark:border-slate-800">
+            <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20 pb-4 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-500" />
+                  Action Queue
+                </CardTitle>
+                <CardDescription>Escalated items requiring your immediate sign-off</CardDescription>
               </div>
-            ) : (
-              <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {/* Always shove unresolved incidents to the top of the queue */}
-                {snapshot.activity.filter(a => a.tone === "critical" || a.tone === "warning").map(event => (
-                  <div key={event.id} className="flex items-start gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors group">
-                    <div className={cn(
-                      "w-2 h-2 rounded-full mt-2 shrink-0 shadow-sm ring-4",
-                      event.tone === "critical" ? "bg-rose-500 ring-rose-500/20" : "bg-amber-500 ring-amber-500/20"
-                    )} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                          {event.actor}
-                        </span>
-                        <span className="text-xs font-medium text-slate-400">{event.timeLabel}</span>
+            </CardHeader>
+            <CardContent className="p-0">
+              {snapshot.activity.length === 0 && openIncidents === 0 ? (
+                <div className="p-12 text-center text-slate-500 flex flex-col items-center justify-center">
+                  <CheckCircle2 className="w-12 h-12 text-emerald-400 mb-3 opacity-50" />
+                  <p className="font-medium">Inbox Zero</p>
+                  <p className="text-sm opacity-80">All operational exceptions resolved.</p>
+                </div>
+              ) : (
+                <MotionList className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {/* Always shove unresolved incidents to the top of the queue */}
+                  {snapshot.activity.filter(a => a.tone === "critical" || a.tone === "warning").map(event => (
+                    <MotionItem key={event.id} className="flex items-start gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors group">
+                      <div className={cn(
+                        "w-2 h-2 rounded-full mt-2 shrink-0 shadow-sm ring-4",
+                        event.tone === "critical" ? "bg-rose-500 ring-rose-500/20" : "bg-amber-500 ring-amber-500/20"
+                      )} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            {event.actor}
+                          </span>
+                          <span className="text-xs font-medium text-slate-400">{event.timeLabel}</span>
+                        </div>
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">
+                          {event.message}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Link href="/admin/incidents" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-7 text-[11px] font-medium px-3")}>
+                            Review Root Cause
+                          </Link>
+                          <Button variant="ghost" size="sm" className="h-7 text-[11px] font-medium text-slate-500 hover:text-slate-900">
+                            Transfer to Shift
+                          </Button>
+                        </div>
                       </div>
-                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">
-                        {event.message}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <Link href="/admin/incidents" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-7 text-[11px] font-medium px-3")}>
-                          Review Root Cause
-                        </Link>
-                        <Button variant="ghost" size="sm" className="h-7 text-[11px] font-medium text-slate-500 hover:text-slate-900">
-                          Transfer to Shift
-                        </Button>
+                    </MotionItem>
+                  ))}
+                  
+                  {/* Mocked Staffing Exception to show Triage pattern */}
+                  {staffingGaps > 0 && (
+                    <MotionItem className="flex items-start gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors group">
+                      <div className="w-2 h-2 rounded-full mt-2 shrink-0 shadow-sm ring-4 bg-amber-500 ring-amber-500/20" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            Staffing Hold
+                          </span>
+                          <span className="text-xs font-medium text-slate-400">Ends in 6 hrs</span>
+                        </div>
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">
+                          Night Shift CNA Call-out (West Wing) — Below Minimum HPPD
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Link href="/admin/staffing" className={cn(buttonVariants({ variant: "default", size: "sm" }), "h-7 text-[11px] font-medium px-3")}>
+                            Authorize Double Shift
+                          </Link>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
-                
-                {/* Mocked Staffing Exception to show Triage pattern */}
-                {staffingGaps > 0 && (
-                  <div className="flex items-start gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors group">
-                    <div className="w-2 h-2 rounded-full mt-2 shrink-0 shadow-sm ring-4 bg-amber-500 ring-amber-500/20" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                          Staffing Hold
-                        </span>
-                        <span className="text-xs font-medium text-slate-400">Ends in 6 hrs</span>
-                      </div>
-                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">
-                        Night Shift CNA Call-out (West Wing) — Below Minimum HPPD
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <Link href="/admin/staffing" className={cn(buttonVariants({ variant: "default", size: "sm" }), "h-7 text-[11px] font-medium px-3")}>
-                          Authorize Double Shift
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    </MotionItem>
+                  )}
+                </MotionList>
+              )}
+            </CardContent>
+          </Card>
+        </MotionCard>
 
         {/* Watchlist & Context (Right Sidebar) */}
         <div className="space-y-6">

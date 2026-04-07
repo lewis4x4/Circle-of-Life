@@ -14,6 +14,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { MotionCard } from "@/components/ui/motion-card";
 
 type IncidentSeverity = "level_1" | "level_2" | "level_3" | "level_4";
 type IncidentStatus = "new" | "investigating" | "regulatory_review" | "closed";
@@ -107,10 +109,10 @@ export default function AdminIncidentsKanbanPage() {
 
       {/* Kanban Board Container */}
       <div className="flex-1 min-h-0 flex gap-4 overflow-x-auto pb-4 px-1 scrollbar-hide">
-        {columns.map(col => {
+        {columns.map((col, idx) => {
           const colRows = rows.filter(r => r.status === col.id);
           return (
-            <div key={col.id} className="flex-1 min-w-[320px] flex flex-col bg-slate-100/50 dark:bg-slate-900/30 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 overflow-hidden">
+            <MotionCard key={col.id} delay={idx * 0.1} className="flex-1 min-w-[320px] flex flex-col bg-slate-100/50 dark:bg-slate-900/30 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 overflow-hidden">
                <div className="shrink-0 p-4 border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between bg-slate-100/80 dark:bg-slate-900/80">
                  <div className="flex items-center gap-2">
                    <div className={cn("w-2.5 h-2.5 rounded-full shadow-sm", col.dot)}></div>
@@ -126,12 +128,16 @@ export default function AdminIncidentsKanbanPage() {
                      <p className="text-xs font-medium">Queue Empty</p>
                    </div>
                  ) : (
-                   <div className="flex flex-col gap-3">
-                     {colRows.map(incident => <KanbanCard key={incident.id} incident={incident} />)}
-                   </div>
+                   <MotionList className="flex flex-col gap-3">
+                     {colRows.map(incident => (
+                       <MotionItem key={incident.id}>
+                         <KanbanCard incident={incident} />
+                       </MotionItem>
+                     ))}
+                   </MotionList>
                  )}
                </ScrollArea>
-            </div>
+            </MotionCard>
           );
         })}
       </div>
