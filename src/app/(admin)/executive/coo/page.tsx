@@ -8,6 +8,25 @@ import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { CooAgencyBurnChart, CooIncidentDensityChart } from "@/components/ui/moonshot/executive-charts";
+
+const MOCK_AGENCY_DATA = [
+  { month: "Sep", fteHours: 12400, agencyHours: 850 },
+  { month: "Oct", fteHours: 12500, agencyHours: 1100 },
+  { month: "Nov", fteHours: 12300, agencyHours: 2400 },
+  { month: "Dec", fteHours: 12200, agencyHours: 3100 },
+  { month: "Jan", fteHours: 12800, agencyHours: 1800 },
+  { month: "Feb", fteHours: 13000, agencyHours: 600 },
+];
+
+const MOCK_INCIDENT_DATA = [
+  { week: "W1", falls: 4, medErrors: 1, behavioral: 2 },
+  { week: "W2", falls: 6, medErrors: 0, behavioral: 3 },
+  { week: "W3", falls: 3, medErrors: 2, behavioral: 5 },
+  { week: "W4", falls: 5, medErrors: 0, behavioral: 2 },
+  { week: "W5", falls: 4, medErrors: 1, behavioral: 4 },
+  { week: "W6", falls: 2, medErrors: 0, behavioral: 1 },
+];
 
 export default function CooDashboardPage() {
   const metrics = useMemo(() => ({
@@ -86,18 +105,18 @@ export default function CooDashboardPage() {
         </KineticGrid>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="h-64 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur flex items-center justify-center p-6 text-center shadow-lg">
-             <div className="max-w-sm">
-                <Users className="h-8 w-8 text-amber-500 mx-auto mb-3 opacity-50" />
-                <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-2">Agency Burn & Churn</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Tracking external agency hours vs full-time equivalent capacity.</p>
+          <div className="h-80 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur flex flex-col p-6 shadow-lg">
+             <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Nursing Agency Burn & Churn</h4>
+             <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">FTE contracted hours vs variable emergency staffing density.</p>
+             <div className="flex-1 min-h-0">
+               <CooAgencyBurnChart data={MOCK_AGENCY_DATA} />
              </div>
           </div>
-          <div className="h-64 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur flex items-center justify-center p-6 text-center shadow-lg">
-             <div className="max-w-sm">
-                <PlusSquare className="h-8 w-8 text-blue-500 mx-auto mb-3 opacity-50" />
-                <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-2">Care Plan Delta Engine</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Cross-comparing incident acuity with documented care routines.</p>
+          <div className="h-80 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur flex flex-col p-6 shadow-lg">
+             <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Safety Risk Dispersion Matrix</h4>
+             <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Stacked incident volume broken down by acuity classifications.</p>
+             <div className="flex-1 min-h-0">
+               <CooIncidentDensityChart data={MOCK_INCIDENT_DATA} />
              </div>
           </div>
         </div>

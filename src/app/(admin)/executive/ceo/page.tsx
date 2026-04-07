@@ -8,6 +8,30 @@ import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { CeoGrowthChart, CeoRiskChart } from "@/components/ui/moonshot/executive-charts";
+
+const MOCK_GROWTH_DATA = [
+  { month: "Jan", tours: 12, moveIns: 4 },
+  { month: "Feb", tours: 18, moveIns: 6 },
+  { month: "Mar", tours: 24, moveIns: 10 },
+  { month: "Apr", tours: 20, moveIns: 8 },
+  { month: "May", tours: 32, moveIns: 15 },
+  { month: "Jun", tours: 40, moveIns: 22 },
+  { month: "Jul", tours: 38, moveIns: 20 },
+  { month: "Aug", tours: 45, moveIns: 26 },
+  { month: "Sep", tours: 52, moveIns: 30 },
+  { month: "Oct", tours: 48, moveIns: 33 },
+  { month: "Nov", tours: 60, moveIns: 42 },
+  { month: "Dec", tours: 65, moveIns: 48 },
+];
+
+const MOCK_RISK_DATA = [
+  { facility: "Grande Cypress", criticalIncidents: 1, reputationInverse: 48 },
+  { facility: "Homewood Lodge", criticalIncidents: 4, reputationInverse: 39 },
+  { facility: "Oakridge", criticalIncidents: 12, reputationInverse: 25 },
+  { facility: "Plantation", criticalIncidents: 0, reputationInverse: 49 },
+  { facility: "Rising Oaks", criticalIncidents: 2, reputationInverse: 45 },
+];
 
 export default function CeoDashboardPage() {
   // Static placeholders for V1 CEO Dashboard since data pipelines are still hydrating
@@ -87,18 +111,18 @@ export default function CeoDashboardPage() {
         </KineticGrid>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="h-64 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur flex items-center justify-center p-6 text-center shadow-lg">
-             <div className="max-w-sm">
-                <TrendingUp className="h-8 w-8 text-indigo-500 mx-auto mb-3 opacity-50" />
-                <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-2">Growth & Acumen Funnel</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Waiting on CRM integration initialization to generate conversion charts.</p>
+          <div className="h-80 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur flex flex-col p-6 shadow-lg">
+             <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Growth & Acumen Funnel</h4>
+             <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Tours vs Move-in conversion pipeline over trailing 12 months.</p>
+             <div className="flex-1 min-h-0">
+               <CeoGrowthChart data={MOCK_GROWTH_DATA} />
              </div>
           </div>
-          <div className="h-64 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur flex items-center justify-center p-6 text-center shadow-lg">
-             <div className="max-w-sm">
-                <Briefcase className="h-8 w-8 text-rose-500 mx-auto mb-3 opacity-50" />
-                <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-2">Legal & Reputation Risk Index</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Aggregates insurance claims density vs external platform review scores.</p>
+          <div className="h-80 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur flex flex-col p-6 shadow-lg">
+             <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Legal & Reputation Risk Index</h4>
+             <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Severe Incidents (L3/L4) relative to Public Reputation scoring.</p>
+             <div className="flex-1 min-h-0">
+               <CeoRiskChart data={MOCK_RISK_DATA} />
              </div>
           </div>
         </div>

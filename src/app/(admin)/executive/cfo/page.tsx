@@ -8,6 +8,22 @@ import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { CfoLaborDonutChart, CfoRevenueMatrixChart } from "@/components/ui/moonshot/executive-charts";
+
+const MOCK_LABOR_DATA = [
+  { name: "Direct Care Nursing", value: 2420000 },
+  { name: "Care Aides", value: 1310000 },
+  { name: "Operations & Admin", value: 1240000 },
+];
+
+const MOCK_REVENUE_DATA = [
+  { month: "Sep", collected: 6800000, ar30: 420000, ar60: 150000 },
+  { month: "Oct", collected: 7100000, ar30: 380000, ar60: 180000 },
+  { month: "Nov", collected: 7400000, ar30: 450000, ar60: 120000 },
+  { month: "Dec", collected: 7200000, ar30: 510000, ar60: 190000 },
+  { month: "Jan", collected: 8100000, ar30: 390000, ar60: 210000 },
+  { month: "Feb", collected: 8450000, ar30: 410000, ar60: 140000 },
+];
 
 export default function CfoDashboardPage() {
   const metrics = useMemo(() => ({
@@ -86,18 +102,18 @@ export default function CfoDashboardPage() {
         </KineticGrid>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="h-64 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur flex items-center justify-center p-6 text-center shadow-lg">
-             <div className="max-w-sm">
-                <PieChart className="h-8 w-8 text-amber-500 mx-auto mb-3 opacity-50" />
-                <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-2">Labor vs Non-Labor Expenditure</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Waiting on GL Chart of Accounts synchronization.</p>
+          <div className="h-80 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur flex flex-col p-6 shadow-lg">
+             <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Labor vs Non-Labor Expenditure</h4>
+             <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Year-to-date trailing payroll allocation.</p>
+             <div className="flex-1 min-h-0">
+               <CfoLaborDonutChart data={MOCK_LABOR_DATA} />
              </div>
           </div>
-          <div className="h-64 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur flex items-center justify-center p-6 text-center shadow-lg">
-             <div className="max-w-sm">
-                <AlertCircle className="h-8 w-8 text-rose-500 mx-auto mb-3 opacity-50" />
-                <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-2">Revenue Leakage Matrix</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Identifies unbilled incidentals and unaligned care tiering.</p>
+          <div className="h-80 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur flex flex-col p-6 shadow-lg">
+             <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Revenue Leakage Matrix</h4>
+             <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Collected revenue relative to outstanding aging balances.</p>
+             <div className="flex-1 min-h-0">
+               <CfoRevenueMatrixChart data={MOCK_REVENUE_DATA} />
              </div>
           </div>
         </div>
