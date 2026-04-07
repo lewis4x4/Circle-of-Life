@@ -62,7 +62,7 @@ export default function CfoDashboardPage() {
           </div>
           <div className="h-[120px]">
              <V2Card hoverColor="amber" className="border-amber-500/20 shadow-[inset_0_0_15px_rgba(245,158,11,0.05)]">
-               <Sparkline colorClass="text-amber-500" variant={3} invert />
+               <Sparkline colorClass="text-amber-500" variant={3} />
                <div className="relative z-10 flex flex-col h-full justify-between">
                  <h3 className="text-[10px] font-mono tracking-widest uppercase text-amber-600 dark:text-amber-500 flex items-center gap-2">
                    Total Labor Cost %
@@ -77,7 +77,7 @@ export default function CfoDashboardPage() {
              <V2Card hoverColor="rose" className="border-rose-500/20 shadow-[inset_0_0_15px_rgba(244,63,94,0.05)]">
                <div className="relative z-10 flex flex-col h-full justify-between">
                  <h3 className="text-[10px] font-mono tracking-widest uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2">
-                   Aging AR > 60 Days
+                   Aging AR &gt; 60 Days
                  </h3>
                  <p className="text-3xl font-mono tracking-tighter text-rose-600 dark:text-rose-400 pb-1">{metrics.aging_ar.value}</p>
                </div>

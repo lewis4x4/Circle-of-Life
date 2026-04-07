@@ -21,6 +21,12 @@ import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 
 import { ExecutiveHubNav } from "./executive-hub-nav";
 
+import type { ExecutiveAlertRow } from "@/lib/exec-alerts";
+
+interface AlertWithFacility extends ExecutiveAlertRow {
+  facilities?: { name: string } | null;
+}
+
 export default function ExecutiveOverviewPage() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
@@ -30,7 +36,7 @@ export default function ExecutiveOverviewPage() {
   const [metrics, setMetrics] = useState<Record<string, number>>({});
   
   // Watchlist alerts
-  const [alerts, setAlerts] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<AlertWithFacility[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);

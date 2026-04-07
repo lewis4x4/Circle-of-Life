@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { format } from "date-fns";
 import { Bell, ShieldAlert, ArrowRight, Clock, MapPin, Search, CheckCircle2 } from "lucide-react";
 
 import { ExecutiveHubNav } from "../executive-hub-nav";
@@ -16,6 +17,10 @@ import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+
+interface AlertWithFacility extends ExecutiveAlertRow {
+  facilities?: { name: string } | null;
+}
 
 export default function ExecutiveAlertsPage() {
   const supabase = createClient();
@@ -192,8 +197,8 @@ export default function ExecutiveAlertsPage() {
                              <div className="flex items-center justify-between mt-6">
                                 <div className="text-[10px] font-mono tracking-widest text-slate-500 uppercase flex items-center gap-4">
                                    <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {format(new Date(a.created_at), 'MMM d, h:mm a')}</span>
-                                   {(a as any).facilities?.name && (
-                                     <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {(a as any).facilities.name}</span>
+                                   {(a as AlertWithFacility).facilities?.name && (
+                                     <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {(a as AlertWithFacility).facilities!.name}</span>
                                    )}
                                 </div>
                                 

@@ -7,6 +7,7 @@ import {
   optionalEnv,
 } from "./_config.mjs";
 import { seedExecutiveIntelligence } from "./_seed-executive-intelligence.mjs";
+import { seedTransportation } from "./_seed-transportation.mjs";
 
 async function seedFoundation(supabase) {
   await assertNoError(
@@ -815,6 +816,7 @@ async function main() {
   await seedReputation(supabase, actorUserId);
   await seedTraining(supabase, actorUserId);
   await seedInsurance(supabase);
+  await seedTransportation(supabase, actorUserId);
 
   console.log("[demo:seed] done");
   
