@@ -66,7 +66,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const setAvailableFacilities = useFacilityStore((s) => s.setAvailableFacilities);
 
   const currentFacility = availableFacilities.find((f) => f.id === selectedFacilityId);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
+    "Command & Triage": true,
+    "Resident Pipeline": true,
+    "Clinical & Daily Ops": true,
+    "Quality & Risk": true,
+  });
+  
+  const toggleGroup = (groupName: string) => {
+    setExpandedGroups(prev => ({ ...prev, [groupName]: !prev[groupName] }));
+  };
+
   const [facilitiesLoading, setFacilitiesLoading] = useState(true);
   const [facilitiesLoadFailed, setFacilitiesLoadFailed] = useState(false);
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
@@ -124,119 +135,191 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const navItems: Array<{
-    key: string;
-    href: string;
-    label: string;
-    enabled: boolean;
-    icon: React.ComponentType<{ className?: string }>;
-  }> = [
-    { key: "dashboard", href: "/admin", label: "Dashboard", enabled: true, icon: LayoutDashboard },
-    { key: "executive", href: "/admin/executive", label: "Executive", enabled: true, icon: BarChart3 },
-    { key: "residents", href: "/admin/residents", label: "Residents", enabled: true, icon: Users },
-    { key: "referrals", href: "/admin/referrals", label: "Referrals", enabled: true, icon: UserPlus },
-    { key: "reputation", href: "/admin/reputation", label: "Reputation", enabled: true, icon: Star },
-    { key: "admissions", href: "/admin/admissions", label: "Admissions", enabled: true, icon: Home },
-    { key: "discharge", href: "/admin/discharge", label: "Discharge", enabled: true, icon: DoorOpen },
-    { key: "quality", href: "/admin/quality", label: "Quality", enabled: true, icon: LineChart },
-    { key: "assessments", href: "/admin/assessments/overdue", label: "Assessments", enabled: true, icon: ClipboardCheck },
-    { key: "plan-reviews", href: "/admin/care-plans/reviews-due", label: "Plan reviews", enabled: true, icon: CalendarClock },
-    { key: "medications", href: "/admin/medications", label: "Medications", enabled: true, icon: Pill },
-    { key: "infection", href: "/admin/infection-control", label: "Infection", enabled: true, icon: Biohazard },
-    { key: "compliance", href: "/admin/compliance", label: "Compliance", enabled: true, icon: Scale },
-    { key: "incidents", href: "/admin/incidents", label: "Incidents", enabled: true, icon: ShieldAlert },
-    { key: "staff", href: "/admin/staff", label: "Staff", enabled: true, icon: UserCog },
-    { key: "certifications", href: "/admin/certifications", label: "Certifications", enabled: true, icon: Award },
-    { key: "training", href: "/admin/training", label: "Training", enabled: true, icon: GraduationCap },
-    { key: "dietary", href: "/admin/dietary", label: "Dietary", enabled: true, icon: Utensils },
-    { key: "transportation", href: "/admin/transportation", label: "Transportation", enabled: true, icon: Bus },
-    { key: "schedules", href: "/admin/schedules", label: "Schedules", enabled: true, icon: CalendarDays },
-    { key: "time-records", href: "/admin/time-records", label: "Time records", enabled: true, icon: Clock },
-    { key: "payroll", href: "/admin/payroll", label: "Payroll", enabled: true, icon: Banknote },
-    { key: "staffing", href: "/admin/staffing", label: "Staffing", enabled: true, icon: Activity },
-    { key: "billing", href: "/admin/billing", label: "Billing", enabled: true, icon: CreditCard },
-    { key: "finance", href: "/admin/finance", label: "Finance", enabled: true, icon: Landmark },
-    { key: "insurance", href: "/admin/insurance", label: "Insurance", enabled: true, icon: Umbrella },
-    { key: "vendors", href: "/admin/vendors", label: "Vendors", enabled: true, icon: Truck },
-    { key: "family-portal", href: "/admin/family-portal", label: "Family portal", enabled: true, icon: Heart },
-    { key: "family-messages", href: "/admin/family-messages", label: "Family Messages", enabled: true, icon: MessageCircle },
-    { key: "notifications", href: "/admin/settings/notifications", label: "Notifications", enabled: true, icon: Smartphone },
+  const navGroups = [
+    {
+      group: "Command & Triage",
+      items: [
+        { key: "dashboard", href: "/admin", label: "Triage Inbox", enabled: true, icon: LayoutDashboard },
+        { key: "executive", href: "/admin/executive", label: "Executive", enabled: true, icon: BarChart3 },
+      ]
+    },
+    {
+      group: "Resident Pipeline",
+      items: [
+        { key: "referrals", href: "/admin/referrals", label: "Referrals", enabled: true, icon: UserPlus },
+        { key: "admissions", href: "/admin/admissions", label: "Admissions", enabled: true, icon: Home },
+        { key: "discharge", href: "/admin/discharge", label: "Discharge", enabled: true, icon: DoorOpen },
+        { key: "family-portal", href: "/admin/family-portal", label: "Family Portal", enabled: true, icon: Heart },
+        { key: "family-messages", href: "/admin/family-messages", label: "Family Messages", enabled: true, icon: MessageCircle },
+      ]
+    },
+    {
+      group: "Clinical & Daily Ops",
+      items: [
+        { key: "residents", href: "/admin/residents", label: "Roster", enabled: true, icon: Users },
+        { key: "assessments", href: "/admin/assessments/overdue", label: "Clinical Desk", enabled: true, icon: ClipboardCheck },
+        { key: "plan-reviews", href: "/admin/care-plans/reviews-due", label: "Plan Reviews", enabled: true, icon: CalendarClock },
+        { key: "medications", href: "/admin/medications", label: "Medications", enabled: true, icon: Pill },
+        { key: "dietary", href: "/admin/dietary", label: "Dietary", enabled: true, icon: Utensils },
+        { key: "transportation", href: "/admin/transportation", label: "Transportation", enabled: true, icon: Bus },
+      ]
+    },
+    {
+      group: "Quality & Risk",
+      items: [
+        { key: "incidents", href: "/admin/incidents", label: "Incidents", enabled: true, icon: ShieldAlert },
+        { key: "infection", href: "/admin/infection-control", label: "Infection Control", enabled: true, icon: Biohazard },
+        { key: "compliance", href: "/admin/compliance", label: "Compliance", enabled: true, icon: Scale },
+        { key: "quality", href: "/admin/quality", label: "Quality Metrics", enabled: true, icon: LineChart },
+        { key: "reputation", href: "/admin/reputation", label: "Reputation", enabled: true, icon: Star },
+      ]
+    },
+    {
+      group: "Workforce",
+      items: [
+        { key: "staff", href: "/admin/staff", label: "Staff Roster", enabled: true, icon: UserCog },
+        { key: "schedules", href: "/admin/schedules", label: "Schedules", enabled: true, icon: CalendarDays },
+        { key: "staffing", href: "/admin/staffing", label: "Staffing", enabled: true, icon: Activity },
+        { key: "certifications", href: "/admin/certifications", label: "Certifications", enabled: true, icon: Award },
+        { key: "training", href: "/admin/training", label: "Training", enabled: true, icon: GraduationCap },
+        { key: "time-records", href: "/admin/time-records", label: "Time records", enabled: true, icon: Clock },
+        { key: "payroll", href: "/admin/payroll", label: "Payroll", enabled: true, icon: Banknote },
+      ]
+    },
+    {
+      group: "Finance & Business",
+      items: [
+        { key: "billing", href: "/admin/billing", label: "Billing & AR", enabled: true, icon: CreditCard },
+        { key: "finance", href: "/admin/finance", label: "Finance Hub", enabled: true, icon: Landmark },
+        { key: "vendors", href: "/admin/vendors", label: "Vendors & AP", enabled: true, icon: Truck },
+        { key: "insurance", href: "/admin/insurance", label: "Insurance", enabled: true, icon: Umbrella },
+        { key: "notifications", href: "/admin/settings/notifications", label: "Settings", enabled: true, icon: Smartphone },
+      ]
+    }
   ];
+
+  // Auto-expand the group that contains the active route
+  useEffect(() => {
+    let activeGroup = "";
+    navGroups.forEach(g => {
+      g.items.forEach(item => {
+        if (pathname === item.href || pathname.startsWith(item.href + "/") && item.href !== "/admin") {
+          activeGroup = g.group;
+        }
+        if (item.href === "/admin" && pathname === "/admin") {
+          activeGroup = g.group;
+        }
+      });
+    });
+    if (activeGroup && !expandedGroups[activeGroup]) {
+      setExpandedGroups(prev => ({ ...prev, [activeGroup]: true }));
+    }
+  }, [pathname]);
 
   return (
     <div className="flex h-screen w-full bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-300">
       {/* Sidebar */}
       <aside 
         className={`border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-soft hidden lg:flex lg:flex-col transition-all duration-300 ease-in-out shrink-0 relative ${
-          isCollapsed ? "w-16" : "w-64"
+          isSidebarCollapsed ? "w-16" : "w-[260px]"
         }`}
       >
         <div className="h-16 flex items-center px-4 border-b border-slate-200 dark:border-slate-800 overflow-hidden shrink-0">
           <div className="flex justify-between items-center w-full">
-            <span className={`text-lg font-semibold font-display text-slate-900 dark:text-white tracking-tight whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? "opacity-0 invisible w-0" : "opacity-100 visible"}`}>
+            <span className={`text-lg font-semibold font-display text-slate-900 dark:text-white tracking-tight whitespace-nowrap transition-opacity duration-300 ${isSidebarCollapsed ? "opacity-0 invisible w-0" : "opacity-100 visible"}`}>
               Haven Admin
             </span>
             <button 
-              onClick={() => setIsCollapsed(!isCollapsed)}
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
               className="p-1.5 rounded-md text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
             >
-              {isCollapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5 flex-shrink-0" />}
+              {isSidebarCollapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5 flex-shrink-0" />}
             </button>
           </div>
         </div>
 
-        <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto overflow-x-hidden scrollbar-hide">
-          {navItems.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.key === "executive" && pathname.startsWith("/admin/executive")) ||
-              (item.key === "referrals" && pathname.startsWith("/admin/referrals")) ||
-              (item.key === "reputation" && pathname.startsWith("/admin/reputation")) ||
-              (item.key === "admissions" && pathname.startsWith("/admin/admissions")) ||
-              (item.key === "discharge" && pathname.startsWith("/admin/discharge")) ||
-              (item.key === "quality" && pathname.startsWith("/admin/quality")) ||
-              (item.key === "medications" && pathname.startsWith("/admin/medications")) ||
-              (item.key === "infection" && pathname.startsWith("/admin/infection-control")) ||
-              (item.key === "compliance" && pathname.startsWith("/admin/compliance")) ||
-              (item.key === "finance" && pathname.startsWith("/admin/finance")) ||
-              (item.key === "insurance" && pathname.startsWith("/admin/insurance")) ||
-              (item.key === "vendors" && pathname.startsWith("/admin/vendors")) ||
-              (item.key === "family-portal" && pathname.startsWith("/admin/family-portal")) ||
-              (item.key === "training" && pathname.startsWith("/admin/training")) ||
-              (item.key === "payroll" && pathname.startsWith("/admin/payroll")) ||
-              (item.key === "dietary" && pathname.startsWith("/admin/dietary")) ||
-              (item.key === "transportation" && pathname.startsWith("/admin/transportation")) ||
-              (item.key === "notifications" && pathname.startsWith("/admin/settings"));
-            const Icon = item.icon;
+        <nav className="flex-1 px-3 py-6 space-y-4 overflow-y-auto overflow-x-hidden scrollbar-hide">
+          {navGroups.map((group, gIdx) => {
+            const isExpanded = expandedGroups[group.group] || isSidebarCollapsed;
             
-            if (!item.enabled) {
-              return (
-                <div
-                  key={item.key}
-                  className="flex items-center gap-3 rounded-md px-3 py-2 cursor-not-allowed opacity-50"
-                  title={isCollapsed ? item.label : undefined}
-                >
-                  <Icon className="w-5 h-5 shrink-0 text-slate-400" />
-                  {!isCollapsed && <span className="text-sm font-medium text-slate-400 whitespace-nowrap">{item.label}</span>}
-                </div>
-              );
-            }
             return (
-              <Link
-                key={item.key}
-                href={item.href}
-                title={isCollapsed ? item.label : undefined}
-                className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium tap-responsive transition-colors ${
-                  isActive
-                    ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-white"
-                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/50 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                <Icon className={`w-5 h-5 shrink-0 ${isActive ? "text-slate-900 dark:text-white" : "text-slate-600 dark:text-slate-300"}`} />
-                <span className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? "opacity-0 invisible w-0" : "opacity-100 visible"}`}>
-                  {item.label}
-                </span>
-              </Link>
+              <div key={gIdx} className="flex flex-col">
+                {/* Group Header */}
+                {!isSidebarCollapsed && (
+                  <button 
+                    onClick={() => toggleGroup(group.group)}
+                    className="flex w-full items-center justify-between px-3 py-1.5 mb-1 group text-left outline-none"
+                  >
+                    <span className="text-[10px] font-mono tracking-widest text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 uppercase transition-colors">
+                      {group.group}
+                    </span>
+                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isExpanded ? "" : "-rotate-90"}`} />
+                  </button>
+                )}
+                
+                {isSidebarCollapsed && <div className="h-4" />}
+
+                {/* Group Items */}
+                {isExpanded && (
+                  <div className="space-y-1">
+                    {group.items.map((item) => {
+                      const isActive =
+                        pathname === item.href ||
+                        (item.key === "executive" && pathname.startsWith("/admin/executive")) ||
+                        (item.key === "referrals" && pathname.startsWith("/admin/referrals")) ||
+                        (item.key === "reputation" && pathname.startsWith("/admin/reputation")) ||
+                        (item.key === "admissions" && pathname.startsWith("/admin/admissions")) ||
+                        (item.key === "discharge" && pathname.startsWith("/admin/discharge")) ||
+                        (item.key === "quality" && pathname.startsWith("/admin/quality")) ||
+                        (item.key === "medications" && pathname.startsWith("/admin/medications")) ||
+                        (item.key === "infection" && pathname.startsWith("/admin/infection-control")) ||
+                        (item.key === "compliance" && pathname.startsWith("/admin/compliance")) ||
+                        (item.key === "finance" && pathname.startsWith("/admin/finance")) ||
+                        (item.key === "insurance" && pathname.startsWith("/admin/insurance")) ||
+                        (item.key === "vendors" && pathname.startsWith("/admin/vendors")) ||
+                        (item.key === "family-portal" && pathname.startsWith("/admin/family-portal")) ||
+                        (item.key === "training" && pathname.startsWith("/admin/training")) ||
+                        (item.key === "payroll" && pathname.startsWith("/admin/payroll")) ||
+                        (item.key === "dietary" && pathname.startsWith("/admin/dietary")) ||
+                        (item.key === "transportation" && pathname.startsWith("/admin/transportation")) ||
+                        (item.key === "notifications" && pathname.startsWith("/admin/settings"));
+                        
+                      const Icon = item.icon;
+                      
+                      if (!item.enabled) {
+                        return (
+                          <div
+                            key={item.key}
+                            className="flex items-center gap-3 rounded-md px-3 py-2 cursor-not-allowed opacity-50"
+                            title={isSidebarCollapsed ? item.label : undefined}
+                          >
+                            <Icon className="w-5 h-5 shrink-0 text-slate-400" />
+                            {!isSidebarCollapsed && <span className="text-sm font-medium text-slate-400 whitespace-nowrap">{item.label}</span>}
+                          </div>
+                        );
+                      }
+                      
+                      return (
+                        <Link
+                          key={item.key}
+                          href={item.href}
+                          title={isSidebarCollapsed ? item.label : undefined}
+                          className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium tap-responsive transition-colors ${
+                            isActive
+                              ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-white shadow-sm"
+                              : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/50 hover:text-slate-900 dark:hover:text-white"
+                          }`}
+                        >
+                          <Icon className={`w-[18px] h-[18px] shrink-0 ${isActive ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`} />
+                          <span className={`whitespace-nowrap transition-opacity duration-300 ${isSidebarCollapsed ? "opacity-0 invisible w-0" : "opacity-100 visible"}`}>
+                            {item.label}
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>
