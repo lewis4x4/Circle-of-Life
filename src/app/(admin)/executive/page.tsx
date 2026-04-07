@@ -54,11 +54,20 @@ export default function ExecutiveOverviewPage() {
         
       if (snapErr) throw snapErr;
       
-      // Reduce to latest by code
       const latestMap: Record<string, number> = {};
-      for (const row of (snapData || [])) {
-        if (!latestMap[row.metric_code]) {
-          latestMap[row.metric_code] = row.metric_value_numeric || 0;
+      
+      if (!snapData || snapData.length === 0) {
+        // DEMO HYDRATION: If database is unseeded, inject a perfect portfolio snapshot
+        latestMap['occ_pt'] = 0.861;
+        latestMap['rev_mtd'] = 84500000;
+        latestMap['labor_pct'] = 0.545;
+        latestMap['inc_rate'] = 3.5;
+        latestMap['survey_rd'] = 0.864;
+      } else {
+        for (const row of snapData) {
+          if (!latestMap[row.metric_code]) {
+            latestMap[row.metric_code] = row.metric_value_numeric || 0;
+          }
         }
       }
       setMetrics(latestMap);
@@ -72,7 +81,22 @@ export default function ExecutiveOverviewPage() {
         .limit(5);
 
       if (alertErr) throw alertErr;
-      setAlerts(alertData || []);
+      
+      if (!alertData || alertData.length === 0) {
+         setAlerts([
+           {
+             id: "mock-1",
+             severity: "critical",
+             category: "growth",
+             title: "Occupancy fell below Critical Threshold (85%)",
+             body: "Oakridge has dropped from 86.2% to 84.1% occupancy over the last 14 days following 3 discharges.",
+             why_it_matters: "Cash flow break-even relies on >88%. Continuing at this rate will bleed cash reserves by $45,000 this month.",
+             facilities: { name: "Oakridge ALF" }
+           } as any
+         ]);
+      } else {
+         setAlerts(alertData);
+      }
 
       // 3. Fetch Portfolio Facilities
       const { data: facData, error: facErr } = await supabase
@@ -81,8 +105,16 @@ export default function ExecutiveOverviewPage() {
         .is("deleted_at", null)
         .order("name", { ascending: true });
         
-      if (!facErr && facData) {
+      if (!facErr && facData && facData.length > 0) {
         setFacilities(facData);
+      } else {
+        setFacilities([
+          { id: "f1", name: "Grande Cypress ALF" },
+          { id: "f2", name: "Homewood Lodge ALF" },
+          { id: "f3", name: "Oakridge ALF" },
+          { id: "f4", name: "Plantation ALF" },
+          { id: "f5", name: "Rising Oaks ALF" },
+        ]);
       }
 
     } catch (e) {

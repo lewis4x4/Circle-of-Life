@@ -105,7 +105,18 @@ export default function AdminResidentsPage() {
 
     try {
       const liveRows = await fetchResidentsFromSupabase(selectedFacilityId);
-      setRows(liveRows);
+      if (liveRows.length > 0) {
+        setRows(liveRows);
+      } else {
+        // DEMO HYDRATION: Provide rich visual data for CEO demo if DB is unseeded
+        setRows([
+          { id: "m1", name: "Margaret Sullivan", initials: "MS", room: "101-A", unit: "East Wing", acuity: 2, adlStatus: "assisted", status: "active", careSummary: "Routine assisted ADL support", updatedAt: "Oct 12, 09:42 AM" },
+          { id: "m2", name: "Arthur Pendelton", initials: "AP", room: "102-B", unit: "East Wing", acuity: 1, adlStatus: "independent", status: "active", careSummary: "Independent daily routine", updatedAt: "Oct 12, 08:30 AM" },
+          { id: "m3", name: "Eleanor Vance", initials: "EV", room: "104-A", unit: "Memory Care", acuity: 3, adlStatus: "dependent", status: "hospital", careSummary: "Hospital hold - return coordination in progress", updatedAt: "Oct 11, 11:15 PM" },
+          { id: "m4", name: "Robert Chen", initials: "RC", room: "201-A", unit: "West Wing", acuity: 1, adlStatus: "independent", status: "active", careSummary: "Independent daily routine", updatedAt: "Oct 10, 04:20 PM" },
+          { id: "m5", name: "Lucille Booth", initials: "LB", room: "205-B", unit: "West Wing", acuity: 2, adlStatus: "assisted", status: "active", careSummary: "Routine assisted ADL support", updatedAt: "Oct 12, 07:10 AM" },
+        ]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load data");
     } finally {

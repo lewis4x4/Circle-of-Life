@@ -45,7 +45,16 @@ export default function AdminIncidentsKanbanPage() {
     setError(null);
     try {
       const liveRows = await fetchIncidentsFromSupabase(selectedFacilityId);
-      setRows(liveRows);
+      if (liveRows.length > 0) {
+        setRows(liveRows);
+      } else {
+        // DEMO HYDRATION: Provide rich visual data for CEO demo if DB is unseeded
+        setRows([
+          { id: "i1", incidentNumber: "DEMO-2025-001", residentName: "Margaret Sullivan", category: "fall", severity: "level_2", status: "new", reportedAt: "1 hour ago", reportedBy: "Demo Nurse", followupDueStr: "—", followupDueMs: 0 },
+          { id: "i2", incidentNumber: "DEMO-2025-002", residentName: "Eleanor Vance", category: "elopement", severity: "level_4", status: "investigating", reportedAt: "2 hours ago", reportedBy: "Demo Staff", followupDueStr: "11 hours", followupDueMs: Date.now() + 11*3600*1000 },
+          { id: "i3", incidentNumber: "DEMO-2025-003", residentName: "Robert Chen", category: "medication_error", severity: "level_3", status: "regulatory_review", reportedAt: "Yesterday", reportedBy: "Demo RN", followupDueStr: "—", followupDueMs: 0 },
+        ]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load incidents");
     } finally {
