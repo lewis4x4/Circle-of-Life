@@ -115,8 +115,24 @@ export default function ClinicalDeskPage() {
         fetchOverdueAssessments(selectedFacilityId),
         fetchReviewsDue(selectedFacilityId)
       ]);
-      setAssessments(liveAssessments);
-      setCarePlans(liveCarePlans);
+      
+      // DEMO HYDRATION: Ensure Triage Hub is heavily populated for CEO demo if DB is unseeded
+      if (liveAssessments.length === 0 && liveCarePlans.length === 0) {
+        setAssessments([
+          { id: "a1", residentId: "r1", residentName: "Eleanor Vance", assessmentType: "Fall Risk / 14-Day MDS", assessmentDate: "—", nextDueDate: "2 days ago", daysOverdue: 2, riskLevel: "High", totalScore: null },
+          { id: "a2", residentId: "r2", residentName: "Arthur Pendelton", assessmentType: "Elopement Risk", assessmentDate: "—", nextDueDate: "3 days ago", daysOverdue: 3, riskLevel: "Critical", totalScore: null },
+          { id: "a3", residentId: "r3", residentName: "Margaret Sullivan", assessmentType: "Quarterly MDS", assessmentDate: "—", nextDueDate: "Today", daysOverdue: 0, riskLevel: "Moderate", totalScore: null },
+          { id: "a4", residentId: "r4", residentName: "James Holden", assessmentType: "Skin Integrity (Braden)", assessmentDate: "—", nextDueDate: "Yesterday", daysOverdue: 1, riskLevel: "High", totalScore: null }
+        ]);
+        setCarePlans([
+          { id: "p1", residentId: "r3", residentName: "Margaret Sullivan", version: 2, status: "draft", effectiveDate: "—", reviewDueDate: "Today", daysOverdue: 0 },
+          { id: "p2", residentId: "r1", residentName: "Eleanor Vance", version: 4, status: "draft", effectiveDate: "—", reviewDueDate: "Yesterday", daysOverdue: 1 },
+          { id: "p3", residentId: "r5", residentName: "Martha Jones", version: 1, status: "draft", effectiveDate: "—", reviewDueDate: "Today", daysOverdue: 0 }
+        ]);
+      } else {
+        setAssessments(liveAssessments);
+        setCarePlans(liveCarePlans);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load Clinical Desk");
     } finally {
