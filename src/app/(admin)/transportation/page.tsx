@@ -17,6 +17,7 @@ import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 type FleetRow = Database["public"]["Tables"]["fleet_vehicles"]["Row"];
 type InspectionRow = Database["public"]["Tables"]["vehicle_inspection_logs"]["Row"] & {
@@ -177,7 +178,7 @@ export default function AdminTransportationHubPage() {
               </h3>
             </div>
             
-            <div className="space-y-3">
+            <MotionList className="space-y-3">
               {loading ? (
                 <p className="text-sm font-mono text-slate-500">Loading…</p>
               ) : drivers.length === 0 && fleet.length === 0 ? (
@@ -188,7 +189,7 @@ export default function AdminTransportationHubPage() {
               ) : (
                 <>
                   {/* MOCK Expiring Driver */}
-                  <div className="p-5 rounded-2xl border border-red-200 dark:border-red-900/30 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-red-300 dark:hover:border-red-800/50 transition-colors">
+                  <MotionItem className="p-5 rounded-2xl border border-red-200 dark:border-red-900/30 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-red-300 dark:hover:border-red-800/50 transition-colors">
                     <div className="absolute top-0 left-0 w-1 h-full bg-red-500" />
                     <div className="flex justify-between items-start mb-3">
                        <span className="text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 px-2 py-1 rounded-md uppercase tracking-wider">
@@ -212,13 +213,13 @@ export default function AdminTransportationHubPage() {
                           Message Staff Member
                         </Link>
                     </div>
-                  </div>
+                  </MotionItem>
                   
                   {/* Real drivers list - read only */}
-                  <div className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
+                  <MotionList className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
                      <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Active Drivers</h4>
                      {drivers.slice(0, 3).map(row => (
-                       <div key={row.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex gap-4 items-center">
+                       <MotionItem key={row.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex gap-4 items-center">
                          <div className="flex-1 min-w-0">
                            <p className="text-xs font-medium text-slate-900 dark:text-slate-300 truncate">
                              {row.staff ? `${row.staff.first_name} ${row.staff.last_name}` : "Unknown"}
@@ -228,12 +229,12 @@ export default function AdminTransportationHubPage() {
                          <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 text-right">
                            {formatEnum(row.status)}
                          </span>
-                       </div>
+                       </MotionItem>
                      ))}
-                  </div>
+                  </MotionList>
                 </>
               )}
-            </div>
+            </MotionList>
             
           </div>
 
@@ -245,9 +246,9 @@ export default function AdminTransportationHubPage() {
               </h3>
             </div>
             
-            <div className="space-y-3">
+            <MotionList className="space-y-3">
               {/* MOCK Overdue Inspection */}
-              <div className="p-5 rounded-2xl border border-amber-200 dark:border-amber-900/30 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-amber-300 dark:hover:border-amber-800/50 transition-colors">
+              <MotionItem className="p-5 rounded-2xl border border-amber-200 dark:border-amber-900/30 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-amber-300 dark:hover:border-amber-800/50 transition-colors">
                 <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
                 <div className="flex justify-between items-start mb-3">
                    <span className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-1 rounded-md uppercase tracking-wider">
@@ -271,13 +272,13 @@ export default function AdminTransportationHubPage() {
                       Log Inspection
                     </Link>
                 </div>
-              </div>
+              </MotionItem>
 
               {/* Real historical inspections */}
-              <div className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
+              <MotionList className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Recent Logs</h4>
                  {inspections.slice(0, 3).map(row => (
-                   <div key={row.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex gap-4 items-center">
+                   <MotionItem key={row.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex gap-4 items-center">
                      <div className="flex-1 min-w-0">
                        <p className="text-xs font-medium text-slate-900 dark:text-slate-300 truncate">
                          {row.fleet_vehicles?.name ?? "Unknown"}
@@ -287,13 +288,13 @@ export default function AdminTransportationHubPage() {
                      <span className="text-[10px] font-mono text-indigo-600 dark:text-indigo-400 text-right">
                        {format(new Date(row.inspected_at), "MMM d")}
                      </span>
-                   </div>
+                   </MotionItem>
                  ))}
                  {inspections.length === 0 && !loading && (
                    <p className="text-xs text-slate-500 italic">No historical inspections.</p>
                  )}
-              </div>
-            </div>
+              </MotionList>
+            </MotionList>
             
           </div>
 

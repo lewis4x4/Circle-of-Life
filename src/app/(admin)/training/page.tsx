@@ -19,6 +19,7 @@ import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 type DemoRow = Database["public"]["Tables"]["competency_demonstrations"]["Row"] & {
   staff: { first_name: string; last_name: string } | null;
@@ -134,13 +135,13 @@ export default function AdminTrainingHubPage() {
               </h3>
             </div>
             
-            <div className="space-y-3">
+            <MotionList className="space-y-3">
               {/* MOCKED OVERDUE EXCEPTIONS */}
               {loading ? (
                 <p className="text-sm font-mono text-slate-500">Loading…</p>
               ) : (
                 <>
-                  <div className="p-5 rounded-2xl border border-amber-200 dark:border-amber-900/30 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-amber-300 dark:hover:border-amber-800/50 transition-colors">
+                  <MotionItem className="p-5 rounded-2xl border border-amber-200 dark:border-amber-900/30 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-amber-300 dark:hover:border-amber-800/50 transition-colors">
                     <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
                     <div className="flex justify-between items-start mb-3">
                        <span className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-1 rounded-md uppercase tracking-wider">
@@ -164,7 +165,7 @@ export default function AdminTrainingHubPage() {
                           Begin Evaluation
                         </Link>
                     </div>
-                  </div>
+                  </MotionItem>
                   
                   {/* Historical feed below the active mock items */}
                   {rows.length === 0 ? (
@@ -172,10 +173,10 @@ export default function AdminTrainingHubPage() {
                        <p className="font-medium">No Recent Historical Data</p>
                     </div>
                   ) : (
-                    <div className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
+                    <MotionList className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
                        <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Recently Completed</h4>
                        {rows.slice(0, 3).map(row => (
-                         <div key={row.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex gap-4 items-center">
+                         <MotionItem key={row.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex gap-4 items-center">
                            <div className="flex-1 min-w-0">
                              <p className="text-xs font-medium text-slate-900 dark:text-slate-300 truncate">
                                {row.staff ? `${row.staff.first_name} ${row.staff.last_name}` : "Unknown"}
@@ -185,13 +186,13 @@ export default function AdminTrainingHubPage() {
                            <span className="text-[10px] font-mono text-indigo-600 dark:text-indigo-400 text-right">
                              {format(new Date(row.demonstrated_at), "MMM d")}
                            </span>
-                         </div>
+                         </MotionItem>
                        ))}
-                    </div>
+                    </MotionList>
                   )}
                 </>
               )}
-            </div>
+            </MotionList>
             
           </div>
 

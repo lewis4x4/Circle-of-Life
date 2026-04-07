@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -15,9 +15,10 @@ const listVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, scale: 0.95, y: 20 },
   visible: {
     opacity: 1,
+    scale: 1,
     y: 0,
     transition: {
       type: "spring" as const,
@@ -41,7 +42,9 @@ export function MotionList({
       animate="visible"
       className={cn(className)}
     >
-      {children}
+      <AnimatePresence mode="popLayout">
+        {children}
+      </AnimatePresence>
     </motion.div>
   );
 }
@@ -54,7 +57,14 @@ export function MotionItem({
   className?: string;
 }) {
   return (
-    <motion.div variants={itemVariants} className={cn(className)}>
+    <motion.div 
+      variants={itemVariants} 
+      initial="hidden"
+      animate="visible"
+      exit="hidden"
+      layout="position"
+      className={cn(className)}
+    >
       {children}
     </motion.div>
   );

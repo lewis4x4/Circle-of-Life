@@ -19,6 +19,8 @@ import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { MotionCard } from "@/components/ui/motion-card";
 
 type AccountRow = Database["public"]["Tables"]["reputation_accounts"]["Row"];
 type ReplyRow = Database["public"]["Tables"]["reputation_replies"]["Row"] & {
@@ -195,7 +197,7 @@ export default function AdminReputationHubPage() {
               </h3>
             </div>
             
-            <div className="space-y-3">
+            <MotionList className="space-y-3">
               {loading ? (
                 <p className="text-sm font-mono text-slate-500">Loading replies…</p>
               ) : replies.filter(r => r.status === 'draft').length === 0 ? (
@@ -205,7 +207,7 @@ export default function AdminReputationHubPage() {
                 </div>
               ) : (
                 replies.filter(r => r.status === 'draft').map((row) => (
-                  <div key={row.id} className="p-5 rounded-2xl border border-red-200 dark:border-red-900/30 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-red-300 dark:hover:border-red-800/50 transition-colors">
+                  <MotionItem key={row.id} className="p-5 rounded-2xl border border-red-200 dark:border-red-900/30 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-red-300 dark:hover:border-red-800/50 transition-colors">
                     <div className="absolute top-0 left-0 w-1 h-full bg-red-500" />
                     <div className="flex justify-between items-start mb-3">
                        <span className="text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 px-2 py-1 rounded-md uppercase tracking-wider">
@@ -233,17 +235,17 @@ export default function AdminReputationHubPage() {
                           {updatingId === row.id ? "Recording..." : "Publish & Record"}
                         </button>
                     </div>
-                  </div>
+                  </MotionItem>
                 ))
               )}
-            </div>
+            </MotionList>
             
             {/* Posted Feed */}
             {replies.filter(r => r.status === 'posted').length > 0 && (
-              <div className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
+              <MotionList className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Recently Posted</h4>
                  {replies.filter(r => r.status === 'posted').slice(0, 3).map(row => (
-                   <div key={row.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex gap-4 items-center">
+                   <MotionItem key={row.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex gap-4 items-center">
                      <div className="flex-1 min-w-0">
                        <p className="text-xs font-medium text-slate-900 dark:text-slate-300 truncate">{row.reputation_accounts?.label}</p>
                        <p className="text-[10px] text-slate-500 truncate">{row.reply_body}</p>
@@ -251,9 +253,9 @@ export default function AdminReputationHubPage() {
                      <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
                        {row.posted_to_platform_at ? format(new Date(row.posted_to_platform_at), "MMM d") : "Done"}
                      </span>
-                   </div>
+                   </MotionItem>
                  ))}
-              </div>
+              </MotionList>
             )}
             
           </div>

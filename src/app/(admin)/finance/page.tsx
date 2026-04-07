@@ -16,6 +16,7 @@ import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 export default function AdminFinanceHubPage() {
   const supabase = createClient();
@@ -167,7 +168,7 @@ export default function AdminFinanceHubPage() {
               </h3>
             </div>
             
-            <div className="space-y-3">
+            <MotionList className="space-y-3">
               {loading ? (
                 <p className="text-sm font-mono text-slate-500">Loading ledger…</p>
               ) : unpostedInvoices === 0 ? (
@@ -179,7 +180,7 @@ export default function AdminFinanceHubPage() {
                 <>
                   {/* MOCK Action Items based on fetched unposted invoices count */}
                   {unpostedInvoices != null && unpostedInvoices > 0 && Array.from({ length: Math.min(3, unpostedInvoices) }).map((_, i) => (
-                    <div key={i} className="p-5 rounded-2xl border border-amber-200 dark:border-amber-900/30 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-amber-300 dark:hover:border-amber-800/50 transition-colors">
+                    <MotionItem key={i} className="p-5 rounded-2xl border border-amber-200 dark:border-amber-900/30 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-amber-300 dark:hover:border-amber-800/50 transition-colors">
                       <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
                       <div className="flex justify-between items-start mb-3">
                          <span className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-1 rounded-md uppercase tracking-wider">
@@ -206,11 +207,11 @@ export default function AdminFinanceHubPage() {
                             Review & Post
                           </Link>
                       </div>
-                    </div>
+                    </MotionItem>
                   ))}
                 </>
               )}
-            </div>
+            </MotionList>
           </div>
 
           <div className="col-span-1 border-l border-slate-200 dark:border-slate-800 pl-0 lg:pl-6 pt-6 lg:pt-0">

@@ -19,6 +19,8 @@ import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { MotionCard } from "@/components/ui/motion-card";
 
 type DietRow = Database["public"]["Tables"]["diet_orders"]["Row"] & {
   residents: { first_name: string; last_name: string } | null;
@@ -134,7 +136,7 @@ export default function AdminDietaryHubPage() {
               </h3>
             </div>
             
-            <div className="space-y-3">
+            <MotionList className="space-y-3">
               {loading ? (
                 <p className="text-sm font-mono text-slate-500">Loading…</p>
               ) : rows.length === 0 ? (
@@ -145,7 +147,7 @@ export default function AdminDietaryHubPage() {
               ) : (
                 <>
                   {/* MOCK NPO Flag */}
-                  <div className="p-5 rounded-2xl border border-rose-200 dark:border-rose-900/30 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-rose-300 dark:hover:border-rose-800/50 transition-colors">
+                  <MotionItem className="p-5 rounded-2xl border border-rose-200 dark:border-rose-900/30 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-rose-300 dark:hover:border-rose-800/50 transition-colors">
                     <div className="absolute top-0 left-0 w-1 h-full bg-rose-500" />
                     <div className="flex justify-between items-start mb-3">
                        <span className="text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 px-2 py-1 rounded-md uppercase tracking-wider">
@@ -169,13 +171,13 @@ export default function AdminDietaryHubPage() {
                           Acknowledge Change
                         </Link>
                     </div>
-                  </div>
+                  </MotionItem>
 
                   {/* Real feed filtering for any non-regular IDDSI orders or generic list if all standard */}
-                  <div className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
+                  <MotionList className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
                      <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Active Diet Roster</h4>
                      {rows.slice(0, 4).map(row => (
-                       <div key={row.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex gap-4 items-center">
+                       <MotionItem key={row.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex gap-4 items-center">
                          <div className="flex-1 min-w-0">
                            <p className="text-xs font-medium text-slate-900 dark:text-slate-300 truncate">
                              {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Unknown"}
@@ -193,12 +195,12 @@ export default function AdminDietaryHubPage() {
                               Standard
                             </span>
                          )}
-                       </div>
+                       </MotionItem>
                      ))}
-                  </div>
+                  </MotionList>
                 </>
               )}
-            </div>
+            </MotionList>
             
           </div>
 
