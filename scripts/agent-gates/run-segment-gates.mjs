@@ -16,12 +16,103 @@
  *   SEGMENT_PREVIEW_PORT — port for auto-started preview server (default 4310)
  */
 
-import { spawn } from "node:child_process";
+import { execSync, spawn } from "node:child_process";
 import fs from "node:fs";
+import net from "node:net";
 import path from "node:path";
 import process from "node:process";
 
 const root = process.cwd();
+
+// Module-level reference so signal handlers can reach the preview child even
+// if the `if (args.ui)` try/finally block never runs (SIGINT, SIGTERM, crash).
+let activePreviewChild = null;
+
+function cleanupPreviewChild() {
+  if (activePreviewChild && !activePreviewChild.killed) {
+    try {
+      activePreviewChild.kill("SIGTERM");
+    } catch {
+      /* child already gone */
+    }
+    activePreviewChild = null;
+  }
+}
+
+process.on("SIGINT", () => {
+  cleanupPreviewChild();
+  process.exit(130);
+});
+process.on("SIGTERM", () => {
+  cleanupPreviewChild();
+  process.exit(143);
+});
+process.on("exit", cleanupPreviewChild);
+process.on("uncaughtException", (err) => {
+  cleanupPreviewChild();
+  console.error(err);
+  process.exit(1);
+});
+
+/** Returns true if something is currently LISTENing on 127.0.0.1:<port>. */
+function probePortInUse(port) {
+  return new Promise((resolve) => {
+    const sock = new net.Socket();
+    let settled = false;
+    const done = (val) => {
+      if (settled) return;
+      settled = true;
+      sock.destroy();
+      resolve(val);
+    };
+    sock.setTimeout(500);
+    sock.once("connect", () => done(true));
+    sock.once("error", () => done(false));
+    sock.once("timeout", () => done(false));
+    sock.connect(port, "127.0.0.1");
+  });
+}
+
+/** Returns true if <url> responds with a 2xx/3xx/4xx inside 3s (i.e., HTTP is alive). */
+async function isHttpAlive(url) {
+  try {
+    const res = await fetch(url, {
+      redirect: "manual",
+      signal: AbortSignal.timeout(3000),
+    });
+    return res.status >= 200 && res.status < 500;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Kills any process holding a LISTEN socket on <port>. Returns the count of
+ * pids signaled. Best-effort: swallows errors if lsof is missing or no holder.
+ */
+function killHolderOnPort(port) {
+  try {
+    const out = execSync(`lsof -ti :${port} -sTCP:LISTEN`, {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+    if (!out) return 0;
+    const pids = out
+      .split("\n")
+      .map((s) => Number(s))
+      .filter((n) => Number.isFinite(n));
+    for (const pid of pids) {
+      try {
+        process.kill(pid, "SIGTERM");
+      } catch {
+        /* already gone */
+      }
+    }
+    return pids.length;
+  } catch {
+    return 0;
+  }
+}
 
 function parseArgs(argv) {
   const out = {
@@ -289,14 +380,44 @@ async function main() {
     try {
       if (!useDevServer) {
         const previewPort = process.env.SEGMENT_PREVIEW_PORT ?? "4310";
-        const nextCli = path.join(root, "node_modules", "next", "dist", "bin", "next");
-        previewChild = spawn(process.execPath, [nextCli, "start", "-p", previewPort], {
-          cwd: root,
-          env: { ...process.env, PORT: previewPort },
-          stdio: "ignore",
-        });
-        await waitForHttpOk(`http://127.0.0.1:${previewPort}/`, 60_000);
-        process.env.BASE_URL = `http://127.0.0.1:${previewPort}`;
+        const previewPortNum = Number(previewPort);
+        const previewUrl = `http://127.0.0.1:${previewPort}/`;
+
+        // Port pre-flight: if something is already bound, probe its health.
+        // If it's responding, reuse it (don't spawn, don't kill). If it's a
+        // dead squatter (bound but no HTTP response), kill it and spawn fresh.
+        if (await probePortInUse(previewPortNum)) {
+          if (await isHttpAlive(previewUrl)) {
+            console.log(
+              `[segment:gates] reusing existing preview server on :${previewPort}`,
+            );
+            process.env.BASE_URL = `http://127.0.0.1:${previewPort}`;
+          } else {
+            const killed = killHolderOnPort(previewPortNum);
+            console.log(
+              `[segment:gates] port :${previewPort} was held by ${killed} orphan pid(s); signaled SIGTERM`,
+            );
+            // Give the OS a moment to release the socket before we bind.
+            await new Promise((r) => setTimeout(r, 1500));
+          }
+        }
+
+        // Spawn fresh only if we didn't successfully reuse an existing server.
+        if (process.env.BASE_URL !== `http://127.0.0.1:${previewPort}`) {
+          const nextCli = path.join(root, "node_modules", "next", "dist", "bin", "next");
+          previewChild = spawn(
+            process.execPath,
+            [nextCli, "start", "-p", previewPort],
+            {
+              cwd: root,
+              env: { ...process.env, PORT: previewPort },
+              stdio: "ignore",
+            },
+          );
+          activePreviewChild = previewChild;
+          await waitForHttpOk(previewUrl, 60_000);
+          process.env.BASE_URL = `http://127.0.0.1:${previewPort}`;
+        }
       }
 
       const design = await npmRun("design:review");
@@ -340,6 +461,7 @@ async function main() {
     } finally {
       if (previewChild) {
         previewChild.kill("SIGTERM");
+        activePreviewChild = null;
         await new Promise((r) => setTimeout(r, 400));
       }
     }
