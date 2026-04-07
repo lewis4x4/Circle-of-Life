@@ -30,22 +30,20 @@ export default function AdminDashboardPage() {
       
       // CHUNK B: Role Router Logic
       const role = sessionData.session?.user?.app_metadata?.role || "facility_admin";
-      // Temporarily commented out aggressive redirects until target pages exist in Chunk D+
-      /*
+      
+      // Post-login redirect logic to target workspaces
       if (role === 'owner' || role === 'org_admin') {
         router.replace('/admin/executive');
         return;
       }
       if (role === 'nurse' || role === 'caregiver') {
-        router.replace('/admin/desk');
+        router.replace('/admin/assessments/overdue'); // Clinical Desk
         return;
       }
       if (role === 'finance' || role === 'billing') {
         router.replace('/admin/finance');
         return;
       }
-      */
-
       const data = await fetchAdminDashboardSnapshot(selectedFacilityId);
       setSnapshot(data);
     } catch (e) {

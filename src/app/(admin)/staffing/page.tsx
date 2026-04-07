@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { UserCog, Users, AlertCircle, Clock, FileWarning, CalendarPlus } from "lucide-react";
+import { UserCog, Users, AlertCircle, Clock, FileWarning, CalendarPlus, Activity } from "lucide-react";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
