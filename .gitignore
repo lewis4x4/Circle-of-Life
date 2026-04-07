@@ -15,6 +15,12 @@
 
 # Agent gate assets (JSON reports may be committed for audit; ignore heavy binaries)
 test-results/design-review/screenshots/
+# The design-review report is a write-only, singular-filename artifact that
+# every local --ui gate run overwrites. It is not consumed programmatically
+# (only referenced as a path in agent-gates audit JSONs) and CI never commits
+# updates back, so tracking it only pollutes git status. Historical blobs
+# remain in git history; new runs stay untracked.
+test-results/design-review/report.json
 
 # next.js
 /.next/
