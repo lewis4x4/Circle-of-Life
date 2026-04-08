@@ -35,7 +35,7 @@
 | Status | Meaning |
 |--------|---------|
 | **Engineering readiness** | **PASS** — lint, build, migration replay, secrets scan, and route compilation support the Phase 1 milestone. |
-| **Full acceptance** | **NOT COMPLETE** — see [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md). Remaining blocker track is auth unblock + real-auth UAT + RLS execution + production ops confirmation. **Blockers:** pilot login failure escalated via [PHASE1-AUTH-DEBUG-HANDOFF.md](./PHASE1-AUTH-DEBUG-HANDOFF.md); checklist UAT A–E pending; RLS matrix not executed; dashboard Pro/BAA/PITR pending; `.env` host / seeded users owner checks. **Remote migrations:** **001–095** aligned 2026-04-06. |
+| **Full acceptance** | **NOT COMPLETE** — see [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md). **2026-04-09:** auth + RLS (owner sign-off, single-facility) recorded; **remaining:** §B–§E UAT depth, PH1-A04, Pro/BAA/PITR, waiver review. **Remote migrations:** repo **001–111**; owner keeps parity. |
 
 **Mission alignment (Phase 1 pending full UAT):** **risk** — platform scope is aligned with Haven’s mission; residual risk is unverified live RLS and pilot workflows until UAT completes.
 

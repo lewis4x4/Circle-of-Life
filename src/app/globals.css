@@ -184,10 +184,23 @@
   }
 }
 
-/* Caregiver Shell True Black override */
+/* Caregiver Shell Moonshot Gradient Override */
 .caregiver-shell {
-  --background: #000000;
-  --border: #18181b; /* zinc-900 */
+  --background: #060913;
+  --border: #1e293b; /* slate-800 */
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(253, 16%, 15%, 1) 0, transparent 50%), 
+    radial-gradient(at 100% 100%, hsla(225, 39%, 20%, 1) 0, transparent 50%);
+  background-attachment: fixed;
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-xl;
+  }
+  .glass-panel {
+    @apply bg-zinc-950/40 backdrop-blur-lg border border-zinc-800/50 shadow-2xl;
+  }
 }
 
 /* Family Shell Warm Background override */

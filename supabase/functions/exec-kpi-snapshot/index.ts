@@ -12,6 +12,7 @@ import {
   loadFacilitiesForOrganization,
 } from "../_shared/exec-kpi-metrics.ts";
 import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
+import { withTiming } from "../_shared/structured-log.ts";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -21,6 +22,8 @@ function utcTodayDate(): string {
 }
 
 Deno.serve(async (req) => {
+  const t = withTiming("exec-kpi-snapshot");
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -31,6 +34,7 @@ Deno.serve(async (req) => {
   const cronSecret = Deno.env.get("EXEC_KPI_SNAPSHOT_SECRET");
   const headerSecret = req.headers.get("x-cron-secret");
   if (!cronSecret || headerSecret !== cronSecret) {
+    t.log({ event: "auth_failed", outcome: "error", error_message: "secret mismatch" });
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
@@ -71,12 +75,14 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   if (orgErr) {
-    console.error("[exec-kpi-snapshot] org lookup", orgErr);
+    t.log({ event: "error", outcome: "error", error_message: "org lookup failed", error_code: orgErr.code });
     return jsonResponse({ error: "Database error" }, 500);
   }
   if (!orgRow) {
     return jsonResponse({ error: "Organization not found" }, 404);
   }
+
+  t.log({ event: "start", organization_id: organizationId, snapshot_date: snapshotDate });
 
   try {
     const { error: delErr } = await supabase
@@ -86,7 +92,7 @@ Deno.serve(async (req) => {
       .eq("snapshot_date", snapshotDate);
 
     if (delErr) {
-      console.error("[exec-kpi-snapshot] delete", delErr);
+      t.log({ event: "error", outcome: "error", error_message: "delete failed", error_code: delErr.code });
       return jsonResponse({ error: "Database error" }, 500);
     }
 
@@ -155,9 +161,11 @@ Deno.serve(async (req) => {
 
     const { error: insErr } = await supabase.from("exec_kpi_snapshots").insert(rows);
     if (insErr) {
-      console.error("[exec-kpi-snapshot] insert", insErr);
+      t.log({ event: "error", outcome: "error", error_message: "insert failed", error_code: insErr.code });
       return jsonResponse({ error: "Database error" }, 500);
     }
+
+    t.log({ event: "complete", outcome: "success", inserted: rows.length, entities: entities.length, facilities: allFacs.length });
 
     return jsonResponse({
       ok: true,
@@ -171,7 +179,7 @@ Deno.serve(async (req) => {
       },
     });
   } catch (e) {
-    console.error("[exec-kpi-snapshot]", e);
+    t.log({ event: "error", outcome: "error", error_message: e instanceof Error ? e.message : String(e) });
     return jsonResponse({ error: "Internal error" }, 500);
   }
 });

@@ -5,6 +5,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
+import { withTiming } from "../_shared/structured-log.ts";
 
 const MAX_BATCH = 100;
 
@@ -19,12 +20,17 @@ function nextRunFromRule(rule: string): Date {
 }
 
 Deno.serve(async (req) => {
+  const t = withTiming("report-scheduler");
+
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
 
   const secret = Deno.env.get("REPORT_SCHEDULER_SECRET");
   const headerSecret = req.headers.get("x-cron-secret");
-  if (!secret || headerSecret !== secret) return jsonResponse({ error: "Unauthorized" }, 401);
+  if (!secret || headerSecret !== secret) {
+    t.log({ event: "auth_failed", outcome: "error", error_message: "secret mismatch" });
+    return jsonResponse({ error: "Unauthorized" }, 401);
+  }
 
   const url = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -43,7 +49,7 @@ Deno.serve(async (req) => {
     .limit(MAX_BATCH);
 
   if (schedulesErr) {
-    console.error("[report-scheduler] schedule query", schedulesErr);
+    t.log({ event: "error", outcome: "error", error_message: "schedule query failed", error_code: schedulesErr.code });
     return jsonResponse({ error: "Database error" }, 500);
   }
 
@@ -64,7 +70,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (runErr || !run?.id) {
-      console.error("[report-scheduler] run insert", runErr);
+      t.log({ event: "run_insert_error", outcome: "error", schedule_id: schedule.id, error_message: runErr?.message ?? "run insert failed" });
       await supabase
         .from("report_schedules")
         .update({ status: "failed", last_error: runErr?.message ?? "run insert failed" })
@@ -80,7 +86,7 @@ Deno.serve(async (req) => {
       .update({ status: "completed", completed_at: completedAt })
       .eq("id", run.id);
     if (finishRunErr) {
-      console.error("[report-scheduler] run finish", finishRunErr);
+      t.log({ event: "run_finish_error", outcome: "error", schedule_id: schedule.id, error_message: finishRunErr.message });
     }
 
     const { error: scheduleUpdateErr } = await supabase
@@ -92,11 +98,13 @@ Deno.serve(async (req) => {
       })
       .eq("id", schedule.id);
     if (scheduleUpdateErr) {
-      console.error("[report-scheduler] schedule update", scheduleUpdateErr);
+      t.log({ event: "schedule_update_error", outcome: "error", schedule_id: schedule.id, error_message: scheduleUpdateErr.message });
     }
 
     processed += 1;
   }
+
+  t.log({ event: "complete", outcome: "success", processed });
 
   return jsonResponse({ ok: true, processed });
 });

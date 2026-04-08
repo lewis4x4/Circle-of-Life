@@ -6,6 +6,11 @@
 | `dispatch-push` | no | `POST { "user_id", "title", "body", "url"? }` — Web Push via `notification_subscriptions`. Auth: `Authorization: Bearer` (owner/org_admin, same org) **or** `x-dispatch-secret` matching `DISPATCH_PUSH_SECRET`. |
 | `generate-monthly-invoices` | no | Draft monthly invoices (same logic as admin **Billing → Generate**). Auth: **`x-cron-secret`** = `GENERATE_MONTHLY_INVOICES_SECRET`. Idempotent per facility + resident + `period_start` (migration `071`). |
 | `exec-kpi-snapshot` | no | `POST { "organization_id", "snapshot_date"? }` — writes **`exec_kpi_snapshots`** for org, each entity, and each facility (Module 24). Auth: **`x-cron-secret`** = `EXEC_KPI_SNAPSHOT_SECRET`. Deletes same-day rows for that org before insert (idempotent per day). |
+| `report-scheduler` | no | `POST` — processes due **`report_schedules`** into **`report_runs`**. Auth: **`x-cron-secret`** = `REPORT_SCHEDULER_SECRET`. |
+| `ar-aging-check` | no | `POST` — marks past-due `sent`/`partial` invoices as **`overdue`**. Auth: **`x-cron-secret`** = `AR_AGING_CHECK_SECRET`. |
+| `generate-emar-schedule` | no | `POST` — creates future **`emar_records`** for scheduled meds. Auth: **`x-cron-secret`** = `GENERATE_EMAR_SCHEDULE_SECRET`. |
+| `emar-missed-dose-check` | no | `POST` — opens **`exec_alerts`** for overdue scheduled eMAR rows. Auth: **`x-cron-secret`** = `EMAR_MISSED_DOSE_SECRET`. |
+| `exec-alert-evaluator` | no | `POST { "organization_id" }` — inserts **`exec_alerts`** from live KPI thresholds. Auth: **`x-cron-secret`** = `EXEC_ALERT_EVALUATOR_SECRET`. |
 
 ## `generate-monthly-invoices` — request body
 
@@ -55,6 +60,11 @@ Do **not** send `facility_id` and `organization_id` together.
 - `DISPATCH_PUSH_SECRET` — optional but recommended for server/cron callers (header `x-dispatch-secret`).
 - `GENERATE_MONTHLY_INVOICES_SECRET` — required for `generate-monthly-invoices` (header `x-cron-secret`). Rotate if leaked.
 - `EXEC_KPI_SNAPSHOT_SECRET` — required for `exec-kpi-snapshot` (header `x-cron-secret`). Rotate if leaked.
+- `REPORT_SCHEDULER_SECRET` — required for `report-scheduler`.
+- `AR_AGING_CHECK_SECRET` — required for `ar-aging-check`.
+- `GENERATE_EMAR_SCHEDULE_SECRET` — required for `generate-emar-schedule`.
+- `EMAR_MISSED_DOSE_SECRET` — required for `emar-missed-dose-check`.
+- `EXEC_ALERT_EVALUATOR_SECRET` — required for `exec-alert-evaluator`.
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically.
 
@@ -117,4 +127,9 @@ supabase functions deploy export-audit-log --project-ref manfqmasfqppukpobpld
 supabase functions deploy dispatch-push --project-ref manfqmasfqppukpobpld
 supabase functions deploy generate-monthly-invoices --project-ref manfqmasfqppukpobpld
 supabase functions deploy exec-kpi-snapshot --project-ref manfqmasfqppukpobpld
+supabase functions deploy report-scheduler --project-ref manfqmasfqppukpobpld
+supabase functions deploy ar-aging-check --project-ref manfqmasfqppukpobpld
+supabase functions deploy generate-emar-schedule --project-ref manfqmasfqppukpobpld
+supabase functions deploy emar-missed-dose-check --project-ref manfqmasfqppukpobpld
+supabase functions deploy exec-alert-evaluator --project-ref manfqmasfqppukpobpld
 ```

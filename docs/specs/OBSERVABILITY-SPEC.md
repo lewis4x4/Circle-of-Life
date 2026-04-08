@@ -70,7 +70,7 @@ When writing or updating Edge Functions, use this JSON shape for `console.log` /
 | `elapsed_ms` | recommended | Execution time for the unit of work |
 | error fields | on `error` events | `error_message`, `error_code` if available |
 
-Existing functions (`export-audit-log`, `dispatch-push`, `generate-monthly-invoices`, `exec-kpi-snapshot`) should adopt this shape incrementally — do not block deployment on log format.
+Existing functions (`export-audit-log`, `dispatch-push`, `generate-monthly-invoices`, `exec-kpi-snapshot`, `report-scheduler`, Track C: `ar-aging-check`, `generate-emar-schedule`, `emar-missed-dose-check`, `exec-alert-evaluator`) should adopt this shape incrementally — do not block deployment on log format.
 
 ### Alerting (minimum)
 
@@ -84,13 +84,20 @@ Existing functions (`export-audit-log`, `dispatch-push`, `generate-monthly-invoi
 | Job | How to verify last success | Where |
 |-----|---------------------------|-------|
 | `generate-monthly-invoices` | Query `invoices` for latest `period_start` matching expected month | SQL Editor or admin UI `/admin/billing/invoices` |
+| `ar-aging-check` | Invoices with past `due_date` move to `overdue` where applicable | SQL Editor (`invoices.status`) or function logs |
 | `exec-kpi-snapshot` | Query `exec_kpi_snapshots` for latest `snapshot_date` | SQL Editor or `/admin/executive` KPI tiles show delta vs last snapshot |
+| `exec-alert-evaluator` | New rows in `exec_alerts` when thresholds hit (incidents, AR, infection) | SQL Editor or `/admin/executive` alerts |
+| `generate-emar-schedule` | Future-dated `emar_records` exist for active scheduled meds | SQL Editor |
+| `emar-missed-dose-check` | `exec_alerts` with category `medications` for overdue doses | SQL Editor or executive alerts |
 | `dispatch-push` | Check `notification_subscriptions` + Supabase function logs | Dashboard logs |
 
 ### Monthly review checklist
 
 - [ ] Invoice generation ran for the expected month (check `invoices` table or admin UI).
+- [ ] AR aging ran (overdue statuses updated) if scheduled.
 - [ ] KPI snapshot has rows for yesterday (check `exec_kpi_snapshots` or executive dashboard).
+- [ ] Exec alert evaluator ran (or merged into snapshot cadence) — check `exec_alerts`.
+- [ ] eMAR schedule + missed-dose jobs ran if scheduled — spot-check `emar_records` / medication alerts.
 - [ ] No `error` outcomes in Edge Function logs for the past 30 days.
 - [ ] Error tracking dashboard (Sentry or equivalent) has no unresolved P0/P1 issues.
 
@@ -124,9 +131,9 @@ These are **Track B2 Enhanced** or **post-pilot** scope.
 
 | Item | Status |
 |------|--------|
-| Error tracking SDK integrated | **DONE (code)** — `@sentry/nextjs`, root config files, CSP host allowlist, and error boundary capture are wired; real DSN/env verification still pending |
-| Edge Function log shape adopted | ☐ Not started (existing functions work without it) |
-| Cron monthly review checklist | ☐ Ready to use (manual) |
+| Error tracking SDK integrated | **DONE (code)** — `@sentry/nextjs`, root config files (`sentry.server.config.ts`, `sentry.edge.config.ts`, `instrumentation-client.ts`), CSP allowlist, PHI stripping (`beforeSend`, `sendDefaultPii: false`); real DSN/env verification still pending |
+| Edge Function structured log shape | **DONE** — shared `supabase/functions/_shared/structured-log.ts` (`slog`, `withTiming`); adopted in core functions including `generate-monthly-invoices`, `exec-kpi-snapshot`, `export-audit-log`, `dispatch-push`, `report-scheduler`, Track C functions (`ar-aging-check`, `generate-emar-schedule`, `emar-missed-dose-check`, `exec-alert-evaluator`) |
+| Cron monthly review checklist | **DONE** — defined in §3; ready to use (manual) |
 | Application health scripts | **DONE** — `web-health`, `auth-smoke`, `auth-check`, `ops-status`, `pilot-readiness` |
 
 ## Manual completion steps (owner / ops)
@@ -134,3 +141,4 @@ These are **Track B2 Enhanced** or **post-pilot** scope.
 - Set `NEXT_PUBLIC_SENTRY_DSN` and `SENTRY_DSN` in Netlify for the app.
 - Set `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` only if source map upload is desired.
 - Trigger one deliberate client error and one server/API error, then confirm both appear in Sentry without PHI fields.
+- Redeploy Edge Functions after structured logging update: `supabase functions deploy <name> --project-ref manfqmasfqppukpobpld` for each function listed in [PHASE1-OPS-VERIFICATION-RUNBOOK.md](./PHASE1-OPS-VERIFICATION-RUNBOOK.md) (deploy block).

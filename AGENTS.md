@@ -106,17 +106,18 @@ Phases 1, 2, and 3 core modules are shipped. You are NOT at the start of a new f
 Read `docs/specs/TRACK-A-CLOSEOUT-ROADMAP.md` in full before doing anything. This is the single execution roadmap for closing Phase 1.
 
 Blockers requiring owner action (not agent action):
-- **A1 Auth unblock:** Supabase hosted Auth `Database error querying schema` must be fixed at the project level (migrations 093–095 already ran; this is a project-level Auth defect, not missing SQL).
+- ~~**A1 Auth unblock**~~ — **Cleared (2026-04-09)** for pilot JWTs + migrations `110`–`111`; see `docs/specs/PHASE1-AUTH-DEBUG-HANDOFF.md` if Auth regresses.
+- ~~**A2 RLS matrix**~~ — **PASS** (owner sign-off, single-facility pilot); re-run **RLS-02** when a second facility exists — `docs/specs/PHASE1-RLS-VALIDATION-RECORD.md`.
 - **A5 Pro/BAA/PITR:** Owner must confirm Pro plan, signed BAA, and Point-in-Time Recovery are active before any PHI enters production.
-- **A3 Live UAT:** Owner or delegated tester must run real-JWT sessions against the RLS matrix.
+- **A3 Live UAT (depth):** Owner or delegated tester must complete `PHASE1-ACCEPTANCE-CHECKLIST.md` §B–§E rows in `PHASE1-EXECUTION-LOG.md` (§A + RLS owner-verified 2026-04-09).
 
 Agent-executable steps: migration parity checks, script generation, gate recording, doc updates.
 
-### Step 2 — Platform Hardening
-After Track A closes: automated regression coverage, observability (see `docs/specs/OBSERVABILITY-SPEC.md`), CI hardening (see `docs/specs/CI-HARDENING-SPEC.md`), runbooks for cron/secrets/replay.
+### Step 2 — Platform Hardening ✅ (2026-04-09)
+Automated regression (`ci-gates.yml` auth-smoke, nightly `ci-nightly.yml`), observability (Sentry SDK + structured Edge Function logs per `docs/specs/OBSERVABILITY-SPEC.md`), CI hardening (bundle-size budget per `docs/specs/CI-HARDENING-SPEC.md`), ops runbook updated (`docs/specs/PHASE1-OPS-VERIFICATION-RUNBOOK.md`).
 
-### Step 3 — Workflow Hardening
-Billing, eMAR, referral/admission/discharge, family/audit, executive operations — ensure end-to-end workflows are complete, not just schemas.
+### Step 3 — Workflow Hardening ✅ (2026-04-09)
+Track C implemented per `docs/specs/TRACK-C-WORKFLOW-HARDENING.md` (Edge: `ar-aging-check`, `generate-emar-schedule`, `emar-missed-dose-check`, `exec-alert-evaluator`; runbooks for lifecycle). Owner deploys functions + crons; depth UAT still in `PHASE1-EXECUTION-LOG.md`.
 
 ### Step 4 — Phase 6 Completion Pass
 Modules 12 (Training), 14 (Dietary), 15 (Transportation), 22 (Referral CRM), 23 (Reputation) — their COL Alignment Notes sections identify what is needed before build begins.

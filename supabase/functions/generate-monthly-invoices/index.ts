@@ -17,6 +17,7 @@ import {
   persistMonthlyInvoicesFromPreview,
 } from "../_shared/billing/generate-monthly-invoices.ts";
 import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
+import { withTiming } from "../_shared/structured-log.ts";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -44,6 +45,8 @@ function resolveBillingPeriod(body: {
 }
 
 Deno.serve(async (req) => {
+  const t = withTiming("generate-monthly-invoices");
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -54,6 +57,7 @@ Deno.serve(async (req) => {
   const cronSecret = Deno.env.get("GENERATE_MONTHLY_INVOICES_SECRET");
   const headerSecret = req.headers.get("x-cron-secret");
   if (!cronSecret || headerSecret !== cronSecret) {
+    t.log({ event: "auth_failed", outcome: "error", error_message: "secret mismatch" });
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
@@ -120,11 +124,13 @@ Deno.serve(async (req) => {
     maxCap,
   );
 
+  t.log({ event: "start", organization_id: organizationId, billing_year: billingYear, billing_month: billingMonth });
+
   let facilities: { id: string; name: string }[];
   try {
     facilities = await listActiveFacilitiesForOrganization(admin, organizationId!);
   } catch (e) {
-    console.error("[generate-monthly-invoices] listActiveFacilities", e);
+    t.log({ event: "error", outcome: "error", error_message: "Could not list facilities" });
     return jsonResponse({ error: "Could not list facilities" }, 500);
   }
 
@@ -194,7 +200,7 @@ Deno.serve(async (req) => {
         warning: previewResult.error,
       });
     } catch (e) {
-      console.error(`[generate-monthly-invoices] facility=${f.id}`, e);
+      t.log({ event: "facility_error", outcome: "error", facility_id: f.id, error_message: e instanceof Error ? e.message : String(e) });
       rows.push({
         facility_id: f.id,
         facility_name: f.name,
@@ -211,6 +217,16 @@ Deno.serve(async (req) => {
 
   const errors = rows.filter((r) => r.outcome === "error").length;
   const blocked = rows.filter((r) => r.outcome === "blocked").length;
+
+  t.log({
+    event: "org_complete",
+    outcome: errors === 0 ? "success" : "error",
+    organization_id: organizationId,
+    invoices_created: totalCreated,
+    facilities_processed: rows.length,
+    outcomes_error: errors,
+    outcomes_blocked: blocked,
+  });
 
   return jsonResponse({
     ok: errors === 0,

@@ -4,11 +4,28 @@
 
 **Rule:** A repo/agent cannot set PASS without owner (or delegated tester) execution on that environment.
 
-**Legend:** `PENDING` = not yet executed. See [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) (2026-04-06: remote migrations **001–095** PASS).
+**Legend:** `PENDING` = not yet executed. See [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
 
 ---
 
-## Live execution attempt — 2026-04-06
+## Owner verification — pilot shells (2026-04-09)
+
+**Tester:** Brian Lewis (owner). **Environment:** production app + Supabase project `manfqmasfqppukpobpld` (after hosted Auth fix, migrations **`110`–`111`** for JWT `app_metadata.app_role` + `user_profiles.updated_by`, and family shell sign-out).
+
+**Verified:** Email/password sign-in and post-login routing for Oakridge demo identities:
+
+| Role | Email (seed) | Expected shell | Result |
+|------|----------------|------------------|--------|
+| `owner` | `milton@circleoflifealf.com` | `/admin` | **PASS** |
+| `facility_admin` | `jessica@circleoflifealf.com` | `/admin` | **PASS** |
+| `caregiver` | `maria.garcia@circleoflifealf.com` | `/caregiver` | **PASS** |
+| `family` | `robert.sullivan@circleoflifealf.com` | `/family` | **PASS** |
+
+This satisfies [PHASE1-ACCEPTANCE-CHECKLIST.md](./PHASE1-ACCEPTANCE-CHECKLIST.md) **§A** row “valid credentials → correct shell” for all four pilot roles. **Not** a full §B–§E UAT pass. **RLS** matrix: **PASS** (owner sign-off, 2026-04-09) — [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md).
+
+---
+
+## Live execution attempt — 2026-04-06 (superseded for auth by 2026-04-09 verification above)
 
 Real-auth UAT started on the target project using `.env.local`, local app runtime at `http://localhost:3000`, and migration `033` demo credentials.
 
@@ -52,9 +69,9 @@ Use `Tester` to record the human who ran the step. Use `Notes` to capture:
 | ID | Item | Result | Tester | Date | Notes |
 |----|------|--------|--------|------|-------|
 | PH1-P01 | `.env.local` → correct Supabase project | **PASS** | owner | 2026-04-06 | Brian Lewis confirmed active project **`manfqmasfqppukpobpld`** (Supabase Authentication UI, PRODUCTION). Repo canonical URL: `https://manfqmasfqppukpobpld.supabase.co` ([README.md](./README.md)). Owner still responsible to keep local `.env.local` host aligned (never commit secrets). |
-| PH1-P02 | Migrations applied / list aligned remote | **PASS** | agent | 2026-04-06 | `supabase migration list` shows Local/Remote **001–095** after remote apply of `093`, `094`, and `095` |
-| PH1-P03 | Seeded users + roles + facility access | **FAIL** | agent | 2026-04-06 | Live sign-in still fails for `facility_admin`, `caregiver`, and `family` pilot users even after remote auth remediations `093` and `094`: `unexpected_failure` / `Database error querying schema`; facility access not verifiable without session |
-| PH1-P04 | Facility context in admin shell | PENDING | | | Owner UAT; single-facility pilot is acceptable if all executed rows name the same facility |
+| PH1-P02 | Migrations applied / list aligned remote | **VERIFY** | owner | 2026-04-09 | Repo includes **001–111**; owner keeps `supabase migration list` Local/Remote aligned on target (includes **`110`–`111`** for JWT `app_role` + `user_profiles.updated_by`) |
+| PH1-P03 | Seeded users + roles + facility access | **PASS** | owner | 2026-04-09 | Pilot users sign in; JWT includes `app_metadata.app_role` after **`110`**; `user_profiles` aligned per **`111`**. Confirmed live for owner, facility_admin, caregiver, family — see **Owner verification — 2026-04-09** above. |
+| PH1-P04 | Facility context in admin shell | PENDING | | | Spot-check facility selector on `/admin` when completing §B UAT; single-facility pilot still acceptable |
 | PH1-P05 | Storage buckets (if/when uploads added) | **N/A** | | | No Storage in Phase 1 UI per checklist |
 | PH1-P06 | Pro plan, BAA before PHI, PITR (production) | PENDING | | | Dashboard only — not inferable from repo |
 
@@ -64,10 +81,32 @@ Use `Tester` to record the human who ran the step. Use `Notes` to capture:
 
 | ID | Item | Result | Tester | Date | Notes |
 |----|------|--------|--------|------|-------|
-| PH1-A01 | `/login` — admin / caregiver / family → correct shell | **FAIL** | agent | 2026-04-06 | Valid pilot-role login could not complete. Supabase Auth failed before route resolution first for `.demo` addresses, then again for `jessica@circleoflifealf.com`, `maria.garcia@circleoflifealf.com`, and `robert.sullivan@circleoflifealf.com` even after remote apply of `093`, `094`, and `095`, all with `Database error querying schema`. Automated re-verification after A1 fix: `npm run demo:auth-smoke:real` |
+| PH1-A01 | `/login` — admin / caregiver / family → correct shell | **PASS** | owner | 2026-04-09 | All four pilot roles land in correct shell (owner + facility_admin → `/admin`, caregiver → `/caregiver`, family → `/family`). Prior **FAIL** (2026-04-06) superseded after hosted Auth fix + migrations **`110`–`111`** + family **Sign out** in `FamilyShell`. Optional: `npm run demo:auth-check`, `demo:auth-smoke:real` |
 | PH1-A02 | Invalid credentials — clear error | **PASS** | agent | 2026-04-06 | Playwright UI run on `/login` with `nobody@example.com` + wrong password showed visible error: `Invalid login credentials`; future local reruns use `npm run demo:auth-smoke` |
 | PH1-A03 | Deep link logged out → login | **PASS** | agent | 2026-04-06 | `GET /admin/residents` redirected to `/login?next=%2Fadmin%2Fresidents`; Playwright and `curl -I` matched; future local reruns use `npm run demo:auth-smoke` |
-| PH1-A04 | Wrong role cannot open other shell routes | PENDING | | | Blocked by PH1-A01 auth failure; no valid non-admin session available for route guard verification |
+| PH1-A04 | Wrong role cannot open other shell routes | PENDING | | | Auth unblocked (2026-04-09). Exercise: caregiver/family attempt `/admin` (or admin-only) routes; expect redirect/deny. Record PASS with role + URL evidence. |
+
+---
+
+## Backend — RLS matrix (Track A A2)
+
+| ID | Item | Result | Tester | Date | Notes |
+|----|------|--------|--------|------|-------|
+| PH1-RLS | RLS-01,03–07 on target; RLS-02 deferred (single facility) | **PASS** | Brian Lewis (owner) | 2026-04-09 | [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) — owner attestation; re-run **RLS-02** when second facility on target |
+
+---
+
+## Track C — workflow hardening (repo + Edge Functions, 2026-04-09)
+
+**Engineering record:** [TRACK-C-WORKFLOW-HARDENING.md](./TRACK-C-WORKFLOW-HARDENING.md). **Lifecycle runbook:** [TRACK-C-LIFECYCLE-RUNBOOK.md](./TRACK-C-LIFECYCLE-RUNBOOK.md).
+
+| ID | Item | Result | Tester | Date | Notes |
+|----|------|--------|--------|------|-------|
+| PH1-TC1 | C1 billing — `ar-aging-check` + finance paths documented | **PASS (repo)** | agent | 2026-04-09 | Edge function added; owner deploy + cron; manual invoice↔GL reconciliation still ops-owned |
+| PH1-TC2 | C2 eMAR — schedule + missed-dose Edge functions | **PASS (repo)** | agent | 2026-04-09 | `generate-emar-schedule`, `emar-missed-dose-check`; PRN/CS workflows = checklist UAT |
+| PH1-TC3 | C3 lifecycle runbook | **PASS (repo)** | agent | 2026-04-09 | Owner executes happy path on target per runbook |
+| PH1-TC4 | C4 family + audit baseline | **PASS (repo)** | agent | 2026-04-09 | Existing export + family shell; §D UAT remains owner |
+| PH1-TC5 | C5 executive — `exec-alert-evaluator` | **PASS (repo)** | agent | 2026-04-09 | Deploy + schedule after `exec-kpi-snapshot` or daily |
 
 ---
 

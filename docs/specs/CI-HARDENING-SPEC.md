@@ -151,8 +151,9 @@ After the build step, record `.next/` artifact sizes and compare against a commi
 |------|--------|
 | Base CI gate pipeline (ci-gates.yml) | **DONE** — runs on push/PR |
 | Route-probe gate in CI (4a) | **DONE** — `ci-gates.yml` starts `next start` on `127.0.0.1:4310` and runs `demo:web-health` |
-| Selective `--ui` on PR (4b) | **DONE (initial)** — conditional on `src/app/` changes; installs Playwright Chromium; runs `segment:gates --ui --design-advisory --no-chaos` |
-| Nightly stress + extended (4c) | ☐ Not implemented |
-| Bundle size budget (4d) | ☐ Not implemented |
+| Auth smoke in CI | **DONE** — `ci-gates.yml` runs `demo:auth-smoke` after web-health (login UI + redirect checks) |
+| Selective `--ui` on PR (4b) | **DONE** — conditional on `src/app/` changes; installs Playwright Chromium; runs `segment:gates --ui --design-advisory --no-chaos` |
+| Nightly stress + extended (4c) | **DONE** — `.github/workflows/ci-nightly.yml` (05:00 UTC daily + manual dispatch); full gates with `--ui`, `web-health`, `auth-smoke`, artifact upload |
+| Bundle size budget (4d) | **DONE** — `scripts/bundle-size-check.mjs` records/enforces `bundle-size-budget.json` with 10% tolerance; runs in `ci-gates.yml` |
 | Gate matrix documented | **DONE** — this file |
 | `--ui` decision criteria documented | **DONE** — this file §2 |

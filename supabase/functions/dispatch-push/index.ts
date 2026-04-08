@@ -10,8 +10,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import webpush from "npm:web-push@3.6.7";
 import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
+import { withTiming } from "../_shared/structured-log.ts";
 
 Deno.serve(async (req) => {
+  const t = withTiming("dispatch-push");
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -129,7 +132,7 @@ Deno.serve(async (req) => {
     .is("deleted_at", null);
 
   if (sErr) {
-    console.error("[dispatch-push] subscriptions", sErr);
+    t.log({ event: "error", outcome: "error", error_message: "Could not load subscriptions", error_code: sErr.code });
     return jsonResponse({ error: "Could not load subscriptions" }, 500);
   }
 
@@ -165,14 +168,14 @@ Deno.serve(async (req) => {
         .eq("id", sub.id);
       results.push({ id: sub.id, ok: true });
     } catch (e) {
-      console.error(`[dispatch-push] sub=${sub.id}`, e);
+      t.log({ event: "send_failed", outcome: "error", subscription_id: sub.id, error_message: e instanceof Error ? e.message : String(e) });
       results.push({ id: sub.id, ok: false, error: "send_failed" });
     }
   }
 
-  return jsonResponse({
-    sent: results.filter((r) => r.ok).length,
-    failed: results.filter((r) => !r.ok).length,
-    results,
-  });
+  const sent = results.filter((r) => r.ok).length;
+  const failedCount = results.filter((r) => !r.ok).length;
+  t.log({ event: "complete", outcome: failedCount === 0 ? "success" : "error", sent, failed: failedCount, user_id: targetUserId });
+
+  return jsonResponse({ sent, failed: failedCount, results });
 });

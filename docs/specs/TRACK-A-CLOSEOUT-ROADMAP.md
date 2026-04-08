@@ -2,7 +2,7 @@
 
 **Purpose:** One place to **finish** Track A without hunting across a dozen files. This is the execution order and evidence map. Authoritative verdicts still live in [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md).
 
-**Last updated:** 2026-04-06
+**Last updated:** 2026-04-09
 
 ---
 
@@ -12,8 +12,8 @@ Track A is **not** only engineering work. It requires:
 
 | Who | What |
 |-----|------|
-| **Supabase / project owner** | Fix **hosted Auth** when token issuance fails with `Database error querying schema` (dashboard logs, support ticket, or project repair). Repo migrations `093`–`095` already ran; the remaining defect is **project-level Auth**, not missing SQL in this repo. |
-| **Owner or delegated tester** | Live **JWT** sessions, **RLS** matrix execution, **UAT** rows, **Pro / BAA / PITR** attestation. Agents cannot sign your BAA or tick dashboard boxes. |
+| **Supabase / project owner** | **A1 (2026-04-09):** Pilot JWT issuance and §A shell routing are **owner-verified** after hosted Auth fix + repo migrations **`110`–`111`** (`app_metadata.app_role`, `user_profiles.updated_by`). If Auth regresses, use [PHASE1-AUTH-DEBUG-HANDOFF.md](./PHASE1-AUTH-DEBUG-HANDOFF.md). |
+| **Owner or delegated tester** | **A2–A3:** Live **RLS** matrix, **§B–§E UAT**, **Pro / BAA / PITR** attestation. Agents cannot sign your BAA or tick dashboard boxes. |
 | **Repo / agent** | Scripts, docs, migration parity checks, and recording **PASS/FAIL** in the execution logs once you paste evidence. |
 
 **Closing Track A** means: every row in the table below has a **done** condition and a **named artifact** (file path, screenshot reference, or gate JSON).
@@ -30,7 +30,7 @@ Track A is **closed** when **all** are true:
 4. [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) — target project, migrations, and owner confirmations are current.
 5. [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) — active waivers reviewed and still acceptable.
 
-Until **A1 (auth)** is fixed on the target project, **A2–A3** cannot honestly complete.
+**A1** and **A2** are cleared for the single-facility pilot (2026-04-09). **A3** (depth UAT) and **A5** remain open until recorded.
 
 ---
 
@@ -60,13 +60,13 @@ flowchart LR
 
 | Field | Content |
 |-------|---------|
-| **Blocks** | A2, A3 (no JWT → no RLS proof, no real-auth UAT) |
+| **Blocks** | ~~A2, A3~~ — was blocked until JWTs; **cleared 2026-04-09** for pilot users |
 | **Owner** | Project owner + Supabase (dashboard/support as needed) |
-| **Canonical handoff** | [PHASE1-AUTH-DEBUG-HANDOFF.md](./PHASE1-AUTH-DEBUG-HANDOFF.md) |
-| **Repo proof commands** | `npm run demo:auth-check` → expect `pilot_login_ok: true` for at least one pilot email after fix |
-| **Done when** | Pilot users (e.g. `jessica@…`, `maria.garcia@…`, `robert.sullivan@…` per your seed) can **sign in** in the app or via Auth API; [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) **PH1-A01** can move toward **PASS** |
+| **Canonical handoff** | [PHASE1-AUTH-DEBUG-HANDOFF.md](./PHASE1-AUTH-DEBUG-HANDOFF.md) — **resolved** for current target; retain for regression |
+| **Repo proof commands** | `npm run demo:auth-check` → expect `pilot_login_ok: true`; migrations **`110`–`111`** on target |
+| **Done when** | **MET (2026-04-09)** — Pilot users sign in; [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) **PH1-A01** **PASS** |
 
-**If Auth still returns `Database error querying schema`:** stop here; do not pretend RLS or UAT are complete.
+**If Auth returns `Database error querying schema` again:** treat as regression; stop depth UAT until restored.
 
 ---
 
@@ -74,10 +74,10 @@ flowchart LR
 
 | Field | Content |
 |-------|---------|
-| **Prerequisite** | A1 complete (real sessions for admin / caregiver / family as required) |
+| **Prerequisite** | A1 complete — **met 2026-04-09** |
 | **Procedure** | [PHASE1-RLS-MANUAL-PROCEDURE.md](./PHASE1-RLS-MANUAL-PROCEDURE.md) |
 | **Record results in** | [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) |
-| **Done when** | Overall RLS verdict **PASS** with evidence per scenario (or documented **N/A** for single-facility deferrals only where allowed) |
+| **Done when** | **MET (2026-04-09)** — [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) **PASS** (owner sign-off; **RLS-02** N/A until second facility) |
 
 ---
 
@@ -131,15 +131,15 @@ flowchart LR
 
 | Step | Artifact to update | Owner | Status |
 |------|-------------------|-------|--------|
-| A1 | Auth handoff + `demo:auth-check` + execution log PH1-A01 | Owner + Supabase | ☐ |
-| A2 | `PHASE1-RLS-VALIDATION-RECORD.md` | Tester | ☐ |
+| A1 | Auth handoff + `demo:auth-check` + execution log PH1-A01 | Owner + Supabase | **Done (2026-04-09)** |
+| A2 | `PHASE1-RLS-VALIDATION-RECORD.md` | Tester | **Done (2026-04-09)** — owner sign-off |
 | A3 | `PHASE1-EXECUTION-LOG.md` | Tester | ☐ |
 | A4 | `PHASE1-ENV-CONFIRMATION.md` + PH1-P03–P04 | Owner | ☐ |
 | A5 | Dashboard attestation in env/closure | Owner | ☐ |
 | A6 | `PHASE1-WAIVER-LOG.md` review | Owner | ☐ |
 | **Final** | `PHASE1-CLOSURE-RECORD.md` — set overall acceptance | Owner | ☐ |
 
-**Progress (2026-04-06):** Owner confirmed active project `manfqmasfqppukpobpld` and completed [PHASE1-AUTH-DEBUG-HANDOFF.md](./PHASE1-AUTH-DEBUG-HANDOFF.md) dashboard checklist items **1–2** (project ref + Authentication → Users). **PH1-P01** recorded **PASS** in [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md). Track A remains blocked on **A1** until hosted Auth issues pilot JWTs (`demo:auth-check`).
+**Progress (2026-04-09):** **A1** + **A2** owner-verified: pilot JWTs, shells, and **RLS matrix** ([PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md), [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md)). **Next:** **A3** §B–§E UAT + **PH1-A04**, **A4** env/facility as needed, **A5** Pro/BAA/PITR, **A6** waivers.
 
 ---
 
@@ -159,7 +159,7 @@ flowchart LR
 
 ## Mission alignment
 
-Track A closes when **secure, role-governed access** and **live validation evidence** match the mission in [docs/mission-statement.md](../mission-statement.md). Until A1 succeeds, mission alignment for full Phase 1 acceptance remains **fail** or **risk** per [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md).
+Track A closes when **secure, role-governed access** and **live validation evidence** match the mission in [docs/mission-statement.md](../mission-statement.md). **A1** clears the prior auth blocker; full acceptance remains **risk** until **A2** and depth **A3** close per [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md).
 
 ---
 

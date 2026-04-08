@@ -1,10 +1,10 @@
 # Phase 1 — Supabase Auth debug handoff
 
-**Purpose:** Package the current Track A auth blocker into a repeatable dashboard/support handoff so Phase 1 acceptance can resume once live JWT issuance works again.
+**Purpose:** Historical dashboard/support handoff for the Track A auth incident; **retain** if Auth regresses. Phase 1 acceptance **resumed** after 2026-04-09.
 
 **Canonical repro:** `npm run demo:auth-check`
 
-**Status (2026-04-06):** **OPEN BLOCKER** — pilot users still cannot obtain email/password sessions on `manfqmasfqppukpobpld`; Supabase Auth returns `500 unexpected_failure` with message `Database error querying schema`.
+**Status (2026-04-09):** **RESOLVED for target** — hosted Auth issues pilot JWTs again; repo migrations **`110`** (JWT `raw_app_meta_data.app_role` / `app_metadata.app_role`) and **`111`** (`user_profiles.updated_by` + email sync) applied; owner verified sign-in and shells for owner, facility_admin, caregiver, family ([PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md)). Reopen this doc if `Database error querying schema` returns.
 
 ---
 
@@ -15,8 +15,8 @@
 | Supabase project ref | `manfqmasfqppukpobpld` |
 | Supabase URL | `https://manfqmasfqppukpobpld.supabase.co` |
 | Phase / track | `Track A` — Phase 1 acceptance closeout |
-| Current blocker | Valid pilot-role login fails before shell routing |
-| What is blocked | Real-auth UAT, RLS JWT matrix, seeded-user verification |
+| ~~Current blocker~~ | ~~Valid pilot-role login fails before shell routing~~ — **cleared 2026-04-09** |
+| What was blocked | Real-auth UAT — **unblocked**; **RLS** — **PASS** (owner sign-off 2026-04-09) per [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) |
 
 ---
 
@@ -147,12 +147,14 @@ Attach:
 
 ## Exit criteria to resume Track A
 
-Do not resume RLS or UAT until all of these are true:
+**Met (2026-04-09):**
 
-1. `npm run demo:auth-check` shows at least one successful pilot login.
-2. `/login` succeeds for `facility_admin`, `caregiver`, and `family`.
-3. `PHASE1-EXECUTION-LOG.md` preconditions `PH1-P03` and `PH1-A01` can be rerun.
-4. `PHASE1-RLS-VALIDATION-RECORD.md` can move from auth-blocked execution to live JWT testing.
+1. `npm run demo:auth-check` — pilot login succeeds (owner-verified).
+2. `/login` — owner, facility_admin, caregiver, family reach correct shells.
+3. `PHASE1-EXECUTION-LOG.md` — **PH1-P03** and **PH1-A01** **PASS**.
+4. `PHASE1-RLS-VALIDATION-RECORD.md` — **PASS** for single-facility pilot (2026-04-09); re-run **RLS-02** when multi-facility.
+
+If Auth breaks again, require items **1–4** before treating RLS/UAT as valid.
 
 ---
 

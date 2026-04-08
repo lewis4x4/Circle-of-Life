@@ -1,0 +1,76 @@
+name: CI — nightly extended
+
+on:
+  schedule:
+    - cron: '0 5 * * *' # 05:00 UTC daily
+  workflow_dispatch:
+
+jobs:
+  extended:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Full gate suite with UI + stress
+        run: npm run segment:gates -- --segment "nightly-${{ github.run_id }}" --ui
+        env:
+          CI: true
+          REQUIRE_PG_VERIFY: "1"
+
+      - name: Start production server
+        run: |
+          npm run start -- --hostname 127.0.0.1 --port 4310 > /tmp/haven-next-start.log 2>&1 &
+          server_pid=$!
+          echo "SERVER_PID=${server_pid}" >> "$GITHUB_ENV"
+
+          ready=0
+          for i in {1..60}; do
+            if curl -sSf -o /dev/null http://127.0.0.1:4310/login; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "${ready}" -ne 1 ]; then
+            cat /tmp/haven-next-start.log
+            exit 1
+          fi
+        env:
+          CI: true
+
+      - name: Route probe (web-health)
+        run: BASE_URL=http://127.0.0.1:4310 npm run demo:web-health
+        env:
+          CI: true
+
+      - name: Auth smoke (login UI)
+        run: BASE_URL=http://127.0.0.1:4310 npm run demo:auth-smoke
+        env:
+          CI: true
+
+      - name: Stop server
+        if: always()
+        run: kill "${SERVER_PID}" 2>/dev/null || true
+
+      - name: Upload gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-gate-results
+          path: test-results/agent-gates/
+          retention-days: 30

@@ -53,6 +53,11 @@ jobs:
         env:
           CI: true
 
+      - name: Auth smoke (login UI)
+        run: BASE_URL=http://127.0.0.1:4310 npm run demo:auth-smoke
+        env:
+          CI: true
+
       - name: Detect UI changes
         id: ui_changes
         run: |
@@ -79,3 +84,8 @@ jobs:
         env:
           CI: true
           REQUIRE_PG_VERIFY: "0"
+
+      - name: Bundle size snapshot
+        run: node scripts/bundle-size-check.mjs
+        env:
+          CI: true

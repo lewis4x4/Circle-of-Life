@@ -8,32 +8,32 @@
 - **Timezone:** America/New_York (all facilities in North Florida)
 - **Critical:** Confirm Pro plan with signed BAA before any PHI enters. Confirm Point-in-Time Recovery enabled.
 
-## Current state (reconciled 2026-04-08)
+## Current state (reconciled 2026-04-09)
 
-**Repo migrations:** **`001`–`109`** — 109 SQL files, sequential numeric prefixes (no gaps). Verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release.
+**Repo migrations:** **`001`–`111`** — verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release.
 
 **Where acceptance stands**
 
 | Layer | Status | Authoritative file |
 |-------|--------|-------------------|
 | Phase 1 — engineering (lint, build, replay, gates) | **PASS** | [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) |
-| Phase 1 — full acceptance (real auth, RLS matrix, UAT, Pro/BAA/PITR) | **NOT COMPLETE** — **Track A open** | [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md), [PHASE1-ACCEPTANCE-CHECKLIST.md](./PHASE1-ACCEPTANCE-CHECKLIST.md) |
+| Phase 1 — full acceptance (real auth, RLS matrix, UAT, Pro/BAA/PITR) | **NOT COMPLETE** — **Track A:** A1+A2 **done** (2026-04-09); A3–A6 remain | [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md), [PHASE1-ACCEPTANCE-CHECKLIST.md](./PHASE1-ACCEPTANCE-CHECKLIST.md) |
 | Phase 2 — acceptance | **PASS** (2026-04-04) | [PHASE2-ACCEPTANCE-CHECKLIST.md](./PHASE2-ACCEPTANCE-CHECKLIST.md) |
 | Phases 3–6 — Core DDL + primary UI | **Shipped** in repo | Phase tables below |
 | Phases 3–6 — live proof / operational hardening | **Incomplete** until Track A and Tracks B–D as applicable | Same tables + remediation tracks |
 
 **Important:** Code and migrations have **outpaced** formal Phase 1 acceptance. **Do not** treat “migrations applied” or “routes exist” as equivalent to **Track A closed** or **production-ready** for PHI.
 
-**Next free migration number:** **`110`** — use for all new DDL after updating this README and the relevant spec.
+**Next free migration number:** **`112`** — use for all new DDL after updating this README and the relevant spec.
 
 **Post–Phase 6 work already in repo (`096`–`109`)** — see [Post–Phase 6 shipped work](#postphase-6-shipped-work-migrations-096109) below. Older roadmap drafts that reserved `096`+ for “digital twin” or “maintenance” are **obsolete**; those migration numbers are now consumed as listed.
 
 ### What to do next (closeout order)
 
-1. **Track A** — Unblock hosted Auth → RLS matrix → real-auth UAT → env/seed → Pro/BAA/PITR → waiver review. Single roadmap: [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md). Nothing else is “done” for production PHI until A1 works.
-2. **Confirm remote DB** — `supabase migration list` on the target project must match **local `001`–`109`** before claiming parity.
+1. **Track A** — **A1** (auth) + **A2** (RLS) owner-verified **2026-04-09**; **A3** real-auth UAT depth → **A4** env/seed → **A5** Pro/BAA/PITR → **A6** waiver review. Single roadmap: [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md). Production PHI still requires **A5** and remaining UAT rows.
+2. **Confirm remote DB** — `supabase migration list` on the target project must match **local `001`–`111`** before claiming parity.
 3. **Tracks B–D** — Platform hardening, workflow hardening, Phase 6 Enhanced gaps — per sections below.
-4. **Track E** — New DDL starting at migration **`110`** only after specs exist and Tracks A–D are appropriately satisfied for your risk tolerance.
+4. **Track E** — New DDL starting at migration **`112`** (after **`110`–`111`** closeout DDL) only after specs exist and Tracks A–D are appropriately satisfied for your risk tolerance.
 
 ---
 
@@ -346,30 +346,30 @@ Use these authoritative files as the acceptance source of truth:
 
 **Rule:** Phase 1 remains **NOT COMPLETE** until Track A closes. Do not describe Core-shipped scope as fully accepted before these artifacts are updated.
 
-#### Track B — Platform hardening
+#### Track B — Platform hardening ✅ (2026-04-09)
 
-Add the missing confidence layers that gates alone do not provide.
-
-| Order | Item | Scope |
-|-------|------|-------|
-| B1 | Automated regression layer | Critical-path browser tests, role/RLS contract checks, and repeatable smoke coverage for pilot workflows; unauthenticated: `web-health` (14 probes) + `auth-smoke`; authenticated: `auth-smoke:real` (blocked on A1) |
-| B2 | Observability | Structured logs, error tracking, Edge-function failure visibility, cron/job dashboards, deployment/run health visibility; spec: [OBSERVABILITY-SPEC.md](./OBSERVABILITY-SPEC.md) |
-| B3 | CI hardening | Expand beyond `segment:gates`; add selected `--ui` coverage and reduce dependence on visual/a11y-only proof; spec: [CI-HARDENING-SPEC.md](./CI-HARDENING-SPEC.md) |
-| B4 | Operational runbooks | Secret rotation, cron ownership, replay/failure handling, deployment verification, operator-facing failure paths; [PHASE1-OPS-VERIFICATION-RUNBOOK.md](./PHASE1-OPS-VERIFICATION-RUNBOOK.md) now includes cron register, secret rotation table, failure triage, and `pilot-readiness` bundle |
+| Order | Item | Status | What was done |
+|-------|------|--------|---------------|
+| B1 | Automated regression | **DONE** | `auth-smoke` in `ci-gates.yml`; nightly `ci-nightly.yml` with full `--ui` gates + smoke + artifact upload |
+| B2 | Observability | **DONE** | Sentry SDK (PHI stripping); structured logs in all 5 Edge Functions; health scripts; [OBSERVABILITY-SPEC.md](./OBSERVABILITY-SPEC.md) |
+| B3 | CI hardening | **DONE** | Nightly CI; bundle-size budget (`scripts/bundle-size-check.mjs`); [CI-HARDENING-SPEC.md](./CI-HARDENING-SPEC.md) |
+| B4 | Operational runbooks | **DONE** | Updated migrations/auth/report-scheduler; [PHASE1-OPS-VERIFICATION-RUNBOOK.md](./PHASE1-OPS-VERIFICATION-RUNBOOK.md) |
 
 **Rule:** New high-risk modules should not be marked “complete” without test coverage and observable runtime behavior.
 
-#### Track C — Workflow hardening
+#### Track C — Workflow hardening ✅ (2026-04-09)
 
-Deepen the workflows that currently exist as schema + basic UI, but still depend on manual babysitting or deferred automation.
+**Record:** [TRACK-C-WORKFLOW-HARDENING.md](./TRACK-C-WORKFLOW-HARDENING.md) — lifecycle UAT narrative: [TRACK-C-LIFECYCLE-RUNBOOK.md](./TRACK-C-LIFECYCLE-RUNBOOK.md).
 
-| Order | Workflow area | Required hardening |
-|-------|---------------|--------------------|
-| C1 | Billing and revenue | AR aging automation parity, invoice-to-cash reconciliation proof, blocked-generation visibility, rerun workflow |
-| C2 | Medications / eMAR | Missed-dose / PRN / schedule automation from spec, controlled-substance validation against real procedures |
-| C3 | Referral → admission → discharge | Trace bed, payer, rate, resident conversion, discharge outcomes as one continuous lifecycle |
-| C4 | Family and audit operations | Routine audit review/export workflow, family portal production readiness under PHI constraints |
-| C5 | Executive operations | Snapshot cron ownership, secret setup, alert-evaluator strategy, KPI lineage/data-quality review |
+| Order | Item | Status | What was done |
+|-------|------|--------|----------------|
+| C1 | Billing and revenue | **DONE (code)** | Edge `ar-aging-check` marks overdue invoices; monthly generation unchanged; finance posting paths documented for manual reconciliation |
+| C2 | Medications / eMAR | **DONE (code)** | Edge `generate-emar-schedule`, `emar-missed-dose-check` (+ `exec_alerts`); PRN/controlled-substance **procedures** remain operator UAT |
+| C3 | Referral → admission → discharge | **DONE (docs)** | Runbook for traceable E2E path; deep workflow UAT still owner-recorded in execution log |
+| C4 | Family and audit | **DONE (baseline)** | Audit export + family routes unchanged; PHI UAT under Track A / checklist |
+| C5 | Executive operations | **DONE (code)** | Edge `exec-alert-evaluator` creates alerts from KPI metrics; `exec-kpi-snapshot` unchanged |
+
+**Owner follow-up:** Deploy new Edge Functions + set secrets ([supabase/functions/README.md](../../supabase/functions/README.md)); schedule crons per TRACK-C doc.
 
 #### Track D — Phase 6 completion pass
 
@@ -539,7 +539,7 @@ Module numbers match the product roadmap, **not** the build sequence. Build orde
 | AI-A | Cross-Resident Pattern Detection | `ai-A-pattern-detection.md` | `phi_class` gate via `ai_invocations`; **do not** assume migrations `106`–`107` (taken by Reporting backfill + Resident Assurance patch) |
 | AI-B | Cognitive Load Engine | `ai-B-cognitive-load.md` | **Do not** assume migration `108` (taken by onboarding responses) |
 | AI-C | Family Relationship Health | `ai-C-family-risk.md` | **Do not** assume migration `109` (taken by onboarding tiers); blocked on BAA or de-ID |
-| AI-D | Portfolio Placement Optimizer | `ai-D-placement-optimizer.md` | Next open number was **`110`** as of 2026-04-08 — confirm before first DDL |
+| AI-D | Portfolio Placement Optimizer | `ai-D-placement-optimizer.md` | Next open number **`112`** as of 2026-04-09 — confirm before first DDL |
 
 ### Foundation addenda (not numbered modules)
 

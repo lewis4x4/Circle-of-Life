@@ -7,6 +7,7 @@
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
+import { withTiming } from "../_shared/structured-log.ts";
 
 function escapeCsvCell(value: unknown): string {
   if (value === null || value === undefined) return "";
@@ -16,6 +17,8 @@ function escapeCsvCell(value: unknown): string {
 }
 
 Deno.serve(async (req) => {
+  const t = withTiming("export-audit-log");
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -25,6 +28,7 @@ Deno.serve(async (req) => {
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
+    t.log({ event: "auth_failed", outcome: "error", error_message: "missing bearer" });
     return jsonResponse({ error: "Missing Authorization bearer token" }, 401);
   }
 
@@ -159,6 +163,8 @@ Deno.serve(async (req) => {
 
     if (upErr) throw new Error(upErr.message);
 
+    t.log({ event: "complete", outcome: "success", job_id: jobId, row_count: list.length });
+
     return new Response(csv, {
       status: 200,
       headers: {
@@ -169,7 +175,7 @@ Deno.serve(async (req) => {
       },
     });
   } catch (e) {
-    console.error("[export-audit-log]", e);
+    t.log({ event: "error", outcome: "error", job_id: jobId, error_message: e instanceof Error ? e.message : String(e) });
     const internalMsg = e instanceof Error ? e.message : String(e);
     await admin
       .from("audit_log_export_jobs")

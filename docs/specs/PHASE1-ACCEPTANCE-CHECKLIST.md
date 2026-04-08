@@ -11,9 +11,12 @@ Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs 
 | Layer | Status |
 |-------|--------|
 | **Engineering baseline** | **PASS** — lint, build, migration replay, secrets, audit, segment gates; see §G and [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) |
+| **Track C — workflow hardening (repo)** | **PASS** — Edge automation + runbooks: [TRACK-C-WORKFLOW-HARDENING.md](./TRACK-C-WORKFLOW-HARDENING.md); evidence rows **PH1-TC1–TC5** in [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md); **§B–§E checklist rows** still owner UAT on target |
 | **Known gap waivers (§F)** | **PARTIALLY REMEDIATED** — W-RCA-01 / W-COLL-01 / W-BILL-EF-01 closed in repo; **W-ADMIN-01** remains — [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) |
-| **Environment / remote migrations** | **VERIFY** — Repo has **001–109** (2026-04-08); owner must confirm **remote** matches local on target project; see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
-| **Full product acceptance** (remaining preconditions, A–D UAT, RLS, Pro/BAA/PITR) | **NOT COMPLETE** — [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md), [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) |
+| **Environment / remote migrations** | **VERIFY** — Repo **001–111** (2026-04-09); owner keeps **remote** aligned; see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
+| **§A — login → correct shell (pilot roles)** | **PASS (owner, 2026-04-09)** — owner, facility_admin, caregiver, family; see [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) **PH1-A01** |
+| **RLS matrix (target)** | **PASS (owner, 2026-04-09)** — single-facility pilot; [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) |
+| **Full product acceptance** (§B–§E depth, PH1-A04 guards, Pro/BAA/PITR) | **NOT COMPLETE** — [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) |
 
 **Closure record:** [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) — **NOT COMPLETE** until blockers in that file are cleared.
 
@@ -69,7 +72,7 @@ For local repeatability, `npm run demo:auth-smoke` can be used to re-check `PH1-
 7. Update [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) row by row
 8. Run or reference [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) before any final sign-off
 
-If valid pilot-role login still fails before shell routing, stop UAT and attach [PHASE1-AUTH-DEBUG-HANDOFF.md](./PHASE1-AUTH-DEBUG-HANDOFF.md) with the latest `npm run demo:auth-check` output.
+If valid pilot-role login fails before shell routing, stop UAT and attach [PHASE1-AUTH-DEBUG-HANDOFF.md](./PHASE1-AUTH-DEBUG-HANDOFF.md) with the latest `npm run demo:auth-check` output. **As of 2026-04-09**, pilot JWTs and §A shell routing are owner-verified; proceed with §B–§E and RLS.
 
 ### Single-facility pilot note
 
@@ -94,10 +97,12 @@ The current remediation track is using a **single-facility pilot**. That is acce
 
 ## A. Authentication and routing
 
-- [ ] `/login` — valid admin / caregiver / family credentials each land in the correct shell.
-- [ ] Invalid credentials show a clear error (no silent failure).
-- [ ] Deep link while logged out redirects through login appropriately.
-- [ ] Wrong role cannot open another shell’s routes (middleware / shell guards).
+**Owner spot-check (2026-04-09):** Oakridge demo `owner`, `facility_admin`, `caregiver`, and `family` each reach `/admin`, `/admin`, `/caregiver`, and `/family` respectively ([PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) **PH1-A01**).
+
+- [x] `/login` — valid admin / caregiver / family credentials each land in the correct shell.
+- [x] Invalid credentials show a clear error (no silent failure). — **PH1-A02** PASS in execution log
+- [x] Deep link while logged out redirects through login appropriately. — **PH1-A03** PASS in execution log
+- [ ] Wrong role cannot open another shell’s routes (middleware / shell guards). — **PH1-A04** still **PENDING** in execution log
 
 ---
 
@@ -246,7 +251,7 @@ Before closing Phase 1, record **mission alignment** `pass` | `risk` | `fail` wi
 | `npm audit` | 0 vulnerabilities |
 | Milestone routes compile (admin / caregiver / family) | PASS — see `next build` route list |
 
-**Verdict:** **Phase 1 engineering readiness: PASS.** **§F gap waivers:** approved 2026-04-06. Full acceptance remains **NOT COMPLETE** — see [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) (RLS, UAT, `.env` host + seeds, dashboard Pro/BAA/PITR). **Mission alignment:** `risk` until blockers close.
+**Verdict:** **Phase 1 engineering readiness: PASS.** **§F gap waivers:** approved 2026-04-06. Full acceptance remains **NOT COMPLETE** — see [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) (§B–§E UAT, PH1-A04, dashboard Pro/BAA/PITR). **RLS:** PASS owner 2026-04-09. **Mission alignment:** `risk` until remaining blockers close.
 
 ---
 
@@ -279,5 +284,5 @@ Before closing Phase 1, record **mission alignment** `pass` | `risk` | `fail` wi
 
 ## I. RLS validation (owner)
 
-- [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) — **PENDING** until executed on target project.
+- [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) — **PASS (2026-04-09)** — owner sign-off, single-facility pilot; **RLS-02** when second facility exists.
 - Procedure: [PHASE1-RLS-MANUAL-PROCEDURE.md](./PHASE1-RLS-MANUAL-PROCEDURE.md)

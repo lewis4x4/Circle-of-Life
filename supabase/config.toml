@@ -385,6 +385,21 @@ verify_jwt = false
 [functions."exec-kpi-snapshot"]
 verify_jwt = false
 
+[functions."report-scheduler"]
+verify_jwt = false
+
+[functions."ar-aging-check"]
+verify_jwt = false
+
+[functions."generate-emar-schedule"]
+verify_jwt = false
+
+[functions."emar-missed-dose-check"]
+verify_jwt = false
+
+[functions."exec-alert-evaluator"]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

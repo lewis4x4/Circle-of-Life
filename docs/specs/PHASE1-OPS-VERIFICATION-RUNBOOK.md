@@ -53,7 +53,7 @@ npm run audit:ci
 
 Expected:
 
-- `build` passes with migrations `001`–`095`
+- `build` passes with migrations `001`–`111`
 - migration replay passes locally
 - no high-severity audit or tracked-secret failures
 
@@ -69,7 +69,7 @@ supabase migration list
 Expected:
 
 - target project is `manfqmasfqppukpobpld`
-- Local / Remote are aligned through `001`–`095`
+- Local / Remote are aligned through `001`–`111`
 
 Record:
 
@@ -90,6 +90,11 @@ supabase functions deploy export-audit-log --project-ref manfqmasfqppukpobpld
 supabase functions deploy dispatch-push --project-ref manfqmasfqppukpobpld
 supabase functions deploy generate-monthly-invoices --project-ref manfqmasfqppukpobpld
 supabase functions deploy exec-kpi-snapshot --project-ref manfqmasfqppukpobpld
+supabase functions deploy report-scheduler --project-ref manfqmasfqppukpobpld
+supabase functions deploy ar-aging-check --project-ref manfqmasfqppukpobpld
+supabase functions deploy generate-emar-schedule --project-ref manfqmasfqppukpobpld
+supabase functions deploy emar-missed-dose-check --project-ref manfqmasfqppukpobpld
+supabase functions deploy exec-alert-evaluator --project-ref manfqmasfqppukpobpld
 ```
 
 Verify:
@@ -100,10 +105,12 @@ supabase functions list --project-ref manfqmasfqppukpobpld
 
 Expected:
 
-- all four functions appear in the list
+- all nine functions appear in the list
 - deploy output is either success or `No change found`
 
-`demo:ops-status` checks the current `functions list` inventory for those four required slugs and `ACTIVE` status.
+`demo:ops-status` checks the current `functions list` inventory for required slugs and `ACTIVE` status.
+
+All five functions now emit **structured JSON logs** per `OBSERVABILITY-SPEC.md` §2 via `_shared/structured-log.ts` (`fn`, `event`, `outcome`, `elapsed_ms`).
 
 ---
 
@@ -120,6 +127,7 @@ Required names:
 - `VAPID_PUBLIC_KEY`
 - `VAPID_PRIVATE_KEY`
 - `VAPID_SUBJECT`
+- `REPORT_SCHEDULER_SECRET`
 - `DISPATCH_PUSH_SECRET` if server or cron callers use secret-based dispatch
 
 ### Cron ownership register
@@ -128,6 +136,7 @@ Required names:
 |-----|----------|----------|-----------|-------|------------------|
 | Monthly invoices | `generate-monthly-invoices` | 1st of month, ~02:00 UTC (per org) | Supabase Edge Cron / GitHub Actions / external | ☐ (record name) | Re-POST with same `organization_id` + explicit `billing_year`/`billing_month`; idempotent via unique index (migration `071`) |
 | Daily KPI snapshot | `exec-kpi-snapshot` | Daily ~03:00 UTC (per org) | Supabase Edge Cron / GitHub Actions / external | ☐ (record name) | Re-POST with same `organization_id` + `snapshot_date`; deletes same-day rows before insert |
+| Report scheduler | `report-scheduler` | Periodic (daily or custom) | Supabase Edge Cron / GitHub Actions / external | ☐ (record name) | Re-POST; picks up schedules whose `next_run_at` is overdue; safe to rerun |
 | Push dispatch | `dispatch-push` | Event-driven (not cron) | Application triggers | N/A | Retry the POST; no state mutation on failure |
 | Audit export | `export-audit-log` | On-demand (user-initiated) | Admin UI | N/A | Re-POST with same `job_id`; job row tracks state |
 
@@ -139,6 +148,7 @@ Fill in **Owner** and **Scheduler** columns when crons are configured in the das
 |--------|---------|-----------------|----------------|---------------|
 | `GENERATE_MONTHLY_INVOICES_SECRET` | `generate-monthly-invoices` | Quarterly or on leak | ☐ | `supabase secrets set GENERATE_MONTHLY_INVOICES_SECRET=<new>` then update scheduler header |
 | `EXEC_KPI_SNAPSHOT_SECRET` | `exec-kpi-snapshot` | Quarterly or on leak | ☐ | `supabase secrets set EXEC_KPI_SNAPSHOT_SECRET=<new>` then update scheduler header |
+| `REPORT_SCHEDULER_SECRET` | `report-scheduler` | Quarterly or on leak | ☐ | `supabase secrets set REPORT_SCHEDULER_SECRET=<new>` then update scheduler header |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | `dispatch-push` | Rarely (key pair) | ☐ | Regenerate VAPID pair, `supabase secrets set` both, re-subscribe clients |
 | `VAPID_SUBJECT` | `dispatch-push` | On domain change | ☐ | `supabase secrets set VAPID_SUBJECT=mailto:<new>` |
 | `DISPATCH_PUSH_SECRET` | `dispatch-push` (server callers) | Quarterly or on leak | ☐ | `supabase secrets set DISPATCH_PUSH_SECRET=<new>` then update callers |
@@ -173,12 +183,12 @@ Confirm in dashboard / billing / legal workflow:
 npm run demo:auth-check
 ```
 
-Expected today:
+Expected (as of 2026-04-09):
 
 - settings endpoint returns `200`
-- pilot users still fail with `Database error querying schema` until the project-level auth issue is fixed
+- pilot users sign in successfully (auth resolved; migrations `110`–`111`)
 
-If pilot login still fails, attach:
+If pilot login fails again (regression), attach:
 
 - `docs/specs/PHASE1-AUTH-DEBUG-HANDOFF.md`
 - latest `demo:auth-check` output
