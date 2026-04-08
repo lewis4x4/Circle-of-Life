@@ -179,6 +179,13 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 - `/family/invoices`
 - `/family/payments`
 
+### Onboarding portal routes
+
+- `/onboarding` (separate onboarding command center portal; not mounted inside Admin shell)
+- `/onboarding/departments`
+- `/onboarding/questions`
+- `/onboarding/questions-import.template.json` (static JSON template for optional question-pack imports)
+
 Phase 1 does not include online payment entry for family users.
 
 ---

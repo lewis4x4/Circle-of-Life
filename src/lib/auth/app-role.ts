@@ -27,3 +27,7 @@ export function getAppRoleFromClaims(user: {
 export function isAdminEligibleAppRole(role: string): boolean {
   return role !== "" && ADMIN_ELIGIBLE_APP_ROLES.has(role);
 }
+
+export function isOnboardingAppRole(role: string): boolean {
+  return role === "onboarding";
+}

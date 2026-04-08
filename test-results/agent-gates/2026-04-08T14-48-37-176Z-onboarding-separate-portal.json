@@ -1,0 +1,134 @@
+{
+  "segment": "onboarding-separate-portal",
+  "timestamp": "2026-04-08T14:48:37.176Z",
+  "verdict": "FAIL",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-env-example.mjs",
+      "duration_ms": 26,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "duration_ms": 88,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "status": "passed",
+      "command": "npm run audit:ci",
+      "duration_ms": 848,
+      "stdout": "# npm audit report\n\n@hono/node-server  <1.19.13\nSeverity: moderate\n@hono/node-server: Middleware bypass via repeated slashes in serveStatic - https://github.com/advisories/GHSA-92pp-h63x-v22m\nfix available via `npm audit fix`\nnode_modules/@hono/node-server\n\nhono  <=4.12.11\nSeverity: moderate\nHono: Non-breaking space prefix bypass in cookie name handling in getCookie() - https://github.com/advisories/GHSA-r5rp-j6wh-rvv4\nHono has incorrect IP matching in ipRestriction() for IPv4-mapped IPv6 addresses - https://github.com/advisories/GHSA-xpcf-pg52-r92g\nHono missing validation of cookie name on write path in setCookie() - https://github.com/advisories/GHSA-26pp-8wgv-hjvm\nHono: Path traversal in toSSG() allows writing files outside the output directory - https://github.com/advisories/GHSA-xf4j-xp2r-rqqx\nHono: Middleware bypass via repeated slashes in serveStatic - https://github.com/advisories/GHSA-wmmm-f939-6g9c\nfix available via `npm audit fix`\nnode_modules/hono\n\n2 moderate severity vulnerabilities\n\nTo address all issues, run:\n  npm audit fix\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "status": "passed",
+      "command": "npm run secrets:gitleaks",
+      "duration_ms": 3743,
+      "stdout": "[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n\u001b[90m2:48PM\u001b[0m \u001b[32mINF\u001b[0m 224 commits scanned.\n\u001b[90m2:48PM\u001b[0m \u001b[32mINF\u001b[0m scan completed in 2.7s\n\u001b[90m2:48PM\u001b[0m \u001b[32mINF\u001b[0m no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "status": "passed",
+      "command": "npm run lint",
+      "duration_ms": 14756,
+      "stdout": "\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/admin/rounding/live/page.tsx\n  95:10  warning  'loading' is assigned a value but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/admin/rounding/page.tsx\n  51:10  warning  'loading' is assigned a value but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/admin/rounding/reports/page.tsx\n  81:10  warning  'loading' is assigned a value but never used  @typescript-eslint/no-unused-vars\n\n✖ 3 problems (0 errors, 3 warnings)\n\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "status": "passed",
+      "command": "npm run migrations:check",
+      "duration_ms": 212,
+      "stdout": "[migrations:check] PASS: 107 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..107\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": false,
+      "status": "passed",
+      "command": "npm run migrations:verify:pg",
+      "duration_ms": 68677,
+      "stdout": "[migrations:verify:pg] PASS (107 migration file(s))\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "status": "failed",
+      "command": "npm run build",
+      "duration_ms": 33887,
+      "stdout": "[migrations:check] PASS: 107 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..107\n[check:admin-shell] PASS: all 21 top-level (admin) route prefix(es) are gated\n▲ Next.js 16.2.1 (Turbopack)\n- Environments: .env.local\n- Experiments (use with caution):\n  · clientTraceMetadata\n\n  Creating an optimized production build ...\n✓ Compiled successfully in 10.3s\n  Running next.config.js provided runAfterProductionCompile ...\n✓ Completed runAfterProductionCompile in 483ms\n  Running TypeScript ...\n",
+      "stderr": "Failed to type check.\n\n./src/app/(onboarding)/onboarding/page.tsx:56:21\nType error: Type '{ children: Element; asChild: true; variant: \"outline\"; className: string; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & VariantProps<(props?: (ConfigVariants<{ variant: { default: string; outline: string; secondary: string; ghost: string; destructive: string; link: string; }; size: { ...; }; }> & ClassProp) | undefined) => string>'.\n  Property 'asChild' does not exist on type 'IntrinsicAttributes & ButtonProps & VariantProps<(props?: (ConfigVariants<{ variant: { default: string; outline: string; secondary: string; ghost: string; destructive: string; link: string; }; size: { ...; }; }> & ClassProp) | undefined) => string>'.\n\n  \u001b[90m54 |\u001b[0m               </\u001b[33mCardDescription\u001b[0m>\n  \u001b[90m55 |\u001b[0m             </div>\n\u001b[31m\u001b[1m>\u001b[0m \u001b[90m56 |\u001b[0m             <\u001b[33mButton\u001b[0m asChild variant=\u001b[32m\"outline\"\u001b[0m className=\u001b[32m\"border-white/20 bg-transparent te...\u001b[0m\n  \u001b[90m   |\u001b[0m                     \u001b[31m\u001b[1m^\u001b[0m\n  \u001b[90m57 |\u001b[0m               <\u001b[33mLink\u001b[0m href=\u001b[32m\"/onboarding/departments\"\u001b[0m>\n  \u001b[90m58 |\u001b[0m                 \u001b[33mOpen\u001b[0m lanes\n  \u001b[90m59 |\u001b[0m                 <\u001b[33mArrowRight\u001b[0m className=\u001b[32m\"ml-1.5 h-4 w-4\"\u001b[0m />\nNext.js build worker exited with code: 1 and signal: null\n"
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": true,
+      "status": "passed",
+      "command": "npm run stress:test",
+      "duration_ms": 418,
+      "stdout": "PASS\tstress: suite loaded\nPASS\tstress: Number.parseInt rejects garbage\nPASS\tstress: parallel microtasks both ran\nADVISORY\tstress: add ALF/home-care workflow simulations when resident and census models exist\n",
+      "stderr": ""
+    },
+    {
+      "id": "cdo.design-review",
+      "required": true,
+      "status": "passed",
+      "command": "npm run design:review",
+      "duration_ms": 9777,
+      "stdout": "[design:review] PASS: 4 screenshot(s) -> /Users/brianlewis/Circle of Life/Circle-of-Life/test-results/design-review/report.json\n",
+      "stderr": "",
+      "artifacts": [
+        "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/design-review/report.json"
+      ]
+    },
+    {
+      "id": "cdo.a11y-axe",
+      "required": true,
+      "status": "passed",
+      "command": "npm run a11y:routes",
+      "duration_ms": 10461,
+      "stdout": "[a11y:routes] PASS (1 route(s))\n",
+      "stderr": ""
+    }
+  ],
+  "summary": {
+    "passed": 11,
+    "failed": 1,
+    "skipped": 1,
+    "blocking_failures": [
+      "qa.root-build"
+    ]
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/agent-gates/2026-04-08T14-48-37-176Z-onboarding-separate-portal.json"
+  ]
+}

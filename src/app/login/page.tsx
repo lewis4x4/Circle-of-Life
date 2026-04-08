@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Loader2, ArrowRight } from "lucide-react";
 
-import { isAdminEligibleAppRole, getAppRoleFromClaims } from "@/lib/auth/app-role";
+import { getAppRoleFromClaims, isAdminEligibleAppRole, isOnboardingAppRole } from "@/lib/auth/app-role";
 import { loginSchema, type LoginFormData } from "@/lib/validation/auth";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 
@@ -77,6 +77,7 @@ export default function LoginPage() {
 
     const role = getAppRoleFromClaims(user);
 
+    if (isOnboardingAppRole(role)) return "/onboarding";
     if (role === "caregiver") return "/caregiver";
     if (role === "family") return "/family";
     if (isAdminEligibleAppRole(role)) return "/admin";

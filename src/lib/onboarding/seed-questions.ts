@@ -1,0 +1,68 @@
+import type { OnboardingQuestion } from "@/lib/onboarding/types";
+
+/** Starter library; users can extend via JSON import (same `id` updates text, keeps answers). */
+export const DEFAULT_ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
+  {
+    id: "core.governance.decision-rights",
+    prompt: "Who holds final authority for product/build decisions, pilot scope approval, and resolving disagreements?",
+    department: "Executive / Ownership",
+    category: "governance",
+    importance: "critical",
+    answerType: "long_text",
+    required: true,
+  },
+  {
+    id: "core.pilot.scope",
+    prompt: "What is explicitly in scope for the pilot, and what is explicitly out of scope?",
+    department: "Executive / Ownership",
+    category: "pilot",
+    importance: "critical",
+    answerType: "long_text",
+    required: true,
+  },
+  {
+    id: "core.systems.shadow",
+    prompt: "What spreadsheets, binders, side systems, or informal workflows actually run the operation today?",
+    department: "Operations",
+    category: "systems",
+    importance: "high",
+    answerType: "long_text",
+    required: true,
+  },
+  {
+    id: "core.workflows.cannot-fail",
+    prompt: "Which workflows must not break on day one, and what paper or offline fallback exists?",
+    department: "Clinical / Resident Care",
+    category: "workflows",
+    importance: "critical",
+    answerType: "long_text",
+    required: true,
+  },
+  {
+    id: "core.devices.connectivity",
+    prompt: "Summarize device, WiFi, and connectivity constraints by facility (or enterprise-wide if uniform).",
+    department: "IT / Devices",
+    category: "infrastructure",
+    importance: "high",
+    answerType: "long_text",
+    required: true,
+  },
+  {
+    id: "core.compliance.flags",
+    prompt: "What licensure, regulatory, or survey flags should implementation know about?",
+    department: "Compliance",
+    category: "compliance",
+    importance: "critical",
+    answerType: "long_text",
+    required: true,
+  },
+  {
+    id: "core.reporting.expectations",
+    prompt: "What does leadership need to see weekly vs daily vs monthly across entities and facilities?",
+    department: "Finance",
+    category: "reporting",
+    importance: "high",
+    answerType: "long_text",
+    required: true,
+  },
+];

@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "questions": [
+    {
+      "id": "example.vendor.pharmacy",
+      "prompt": "Who is the primary pharmacy partner, and how are orders and refills communicated today?",
+      "department": "Medication / Pharmacy",
+      "category": "vendors",
+      "importance": "high",
+      "answerType": "long_text",
+      "required": true
+    },
+    {
+      "id": "example.select.pilot-facility",
+      "prompt": "Which facility is the pilot site?",
+      "department": "Executive / Ownership",
+      "category": "pilot",
+      "importance": "critical",
+      "answerType": "single_select",
+      "required": true,
+      "options": ["Oakridge", "Second facility", "Undecided"]
+    }
+  ]
+}
