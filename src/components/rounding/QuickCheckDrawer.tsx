@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   CheckCircle2,
   ChevronRight,
@@ -107,6 +108,16 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
     return () => window.removeEventListener("keydown", handleEscape);
   }, [open, onClose]);
 
+  /** Portal + scroll lock: fixed inside admin `main` can pick up the wrong containing block and clip content. */
+  useLayoutEffect(() => {
+    if (!open || typeof document === "undefined") return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open]);
+
   async function submitCheck() {
     if (!task) return;
     setSubmitting(true);
@@ -154,10 +165,12 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
 
   if (!open) return null;
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  const portal = (
     <>
       <div
-        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
         aria-hidden
       />
@@ -169,9 +182,9 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
         aria-modal="true"
         aria-labelledby={titleId}
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 max-h-[92vh] w-full max-w-[100vw] min-w-0 overflow-y-auto overflow-x-hidden rounded-t-2xl border-t border-slate-700/50",
+          "fixed bottom-0 left-0 right-0 z-[110] box-border max-h-[92vh] w-full min-w-0 overflow-y-auto overflow-x-hidden rounded-t-2xl border-t border-slate-700/50",
           "bg-gradient-to-b from-slate-900 to-slate-950 shadow-2xl shadow-black/50",
-          "animate-in slide-in-from-bottom-8 duration-300",
+          "pb-[env(safe-area-inset-bottom,0px)] animate-in slide-in-from-bottom-8 duration-300",
         )}
       >
         {/* Header */}
@@ -240,7 +253,7 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
               <div
                 role="radiogroup"
                 aria-label="Quick status"
-                className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-4"
+                className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-4 [&>*]:min-w-0"
               >
                 {QUICK_STATUSES.map((opt) => (
                   <button
@@ -396,6 +409,8 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
       </div>
     </>
   );
+
+  return createPortal(portal, document.body);
 }
 
 function InterventionToggle({
