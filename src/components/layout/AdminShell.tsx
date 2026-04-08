@@ -55,6 +55,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -446,37 +447,39 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 <UserCircle2 className="h-7 w-7 text-slate-600 dark:text-slate-300" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 dark:border-slate-800 dark:bg-slate-950">
-                {sessionEmail ? (
-                  <DropdownMenuLabel className="truncate font-normal text-slate-600 dark:text-slate-400">
-                    {sessionEmail}
-                  </DropdownMenuLabel>
-                ) : null}
-                <DropdownMenuItem
-                  className="cursor-pointer dark:focus:bg-slate-800"
-                  onClick={() => router.push("/admin/settings/notifications")}
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  variant="destructive"
-                  className="cursor-pointer dark:focus:bg-slate-800"
-                  disabled={signingOut}
-                  onClick={() => void handleSignOut()}
-                >
-                  {signingOut ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Signing out…
-                    </>
-                  ) : (
-                    <>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sign out
-                    </>
-                  )}
-                </DropdownMenuItem>
+                <DropdownMenuGroup>
+                  {sessionEmail ? (
+                    <DropdownMenuLabel className="truncate font-normal text-slate-600 dark:text-slate-400">
+                      {sessionEmail}
+                    </DropdownMenuLabel>
+                  ) : null}
+                  <DropdownMenuItem
+                    className="cursor-pointer dark:focus:bg-slate-800"
+                    onClick={() => router.push("/admin/settings/notifications")}
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    variant="destructive"
+                    className="cursor-pointer dark:focus:bg-slate-800"
+                    disabled={signingOut}
+                    onClick={() => void handleSignOut()}
+                  >
+                    {signingOut ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Signing out…
+                      </>
+                    ) : (
+                      <>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Sign out
+                      </>
+                    )}
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
