@@ -1,6 +1,6 @@
 /**
- * Client-side onboarding Q&A model (localStorage via Zustand).
- * Designed so imports merge by stable `id` and answers survive question updates.
+ * Onboarding Q&A model — persisted in Supabase (`onboarding_questions`, `onboarding_responses`).
+ * Imports merge by stable `id`; answers are keyed by `question_id` per organization.
  */
 
 export const ANSWER_TYPES = [
@@ -24,6 +24,10 @@ export type ConfidenceLevel = (typeof CONFIDENCE_LEVELS)[number];
 export interface OnboardingQuestion {
   id: string;
   prompt: string;
+  /** Plain-English explanation of what the question asks and why it matters */
+  helpText?: string;
+  /** e.g. CEO, CFO, COO, or "All leadership" */
+  assignedTo?: string;
   department: string;
   category?: string;
   importance: ImportanceLevel;
@@ -31,6 +35,8 @@ export interface OnboardingQuestion {
   required?: boolean;
   /** Required when answerType is single_select */
   options?: string[];
+  /** Display order (lower first); falls back to department + id when absent */
+  sortOrder?: number;
 }
 
 export interface OnboardingResponse {
@@ -38,6 +44,7 @@ export interface OnboardingResponse {
   confidence: ConfidenceLevel;
   enteredByName: string;
   updatedAt: string;
+  enteredByUserId?: string | null;
 }
 
 export interface OnboardingImportFileV1 {

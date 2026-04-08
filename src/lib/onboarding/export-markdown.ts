@@ -13,6 +13,9 @@ export interface OnboardingExportInput {
 export function buildOnboardingMarkdownExport(input: OnboardingExportInput): string {
   const { organizationLabel, questions, responses, exportedAtIso } = input;
   const sorted = [...questions].sort((a, b) => {
+    const sa = a.sortOrder ?? 999999;
+    const sb = b.sortOrder ?? 999999;
+    if (sa !== sb) return sa - sb;
     const dept = a.department.localeCompare(b.department);
     if (dept !== 0) return dept;
     return a.id.localeCompare(b.id);
@@ -50,6 +53,12 @@ export function buildOnboardingMarkdownExport(input: OnboardingExportInput): str
     const r = responses[q.id];
     lines.push(`### ${q.id}`, ``);
     lines.push(`- **Prompt:** ${q.prompt}`);
+    if (q.helpText?.trim()) {
+      lines.push(`- **Why this matters:** ${q.helpText.trim()}`);
+    }
+    if (q.assignedTo?.trim()) {
+      lines.push(`- **Assigned to:** ${q.assignedTo.trim()}`);
+    }
     lines.push(`- **Category:** ${q.category ?? "(none)"}`);
     lines.push(`- **Importance:** ${q.importance}`);
     lines.push(`- **Answer type:** ${q.answerType}`);

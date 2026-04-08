@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import { ClipboardList, Gauge, LayoutGrid, LogOut, ShieldCheck } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { useOnboardingStore } from "@/hooks/useOnboardingStore";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -16,6 +18,11 @@ const NAV_ITEMS = [
 
 export function OnboardingShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const hydrate = useOnboardingStore((s) => s.hydrate);
+
+  useEffect(() => {
+    void hydrate();
+  }, [hydrate]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">

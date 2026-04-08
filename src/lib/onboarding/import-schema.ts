@@ -10,12 +10,15 @@ const questionSchema = z
       .max(200)
       .regex(/^[a-z0-9][a-z0-9._-]*$/i, "Use letters, numbers, dots, underscores, or hyphens (e.g. finance.ar.model)"),
     prompt: z.string().min(1).max(20000),
+    helpText: z.string().max(20000).optional(),
+    assignedTo: z.string().max(200).optional(),
     department: z.string().min(1).max(200),
     category: z.string().max(200).optional(),
     importance: z.enum(IMPORTANCE_LEVELS),
     answerType: z.enum(ANSWER_TYPES),
     required: z.boolean().optional(),
     options: z.array(z.string().min(1)).optional(),
+    sortOrder: z.number().int().optional(),
   })
   .superRefine((q, ctx) => {
     if (q.answerType === "single_select" && (!q.options || q.options.length === 0)) {

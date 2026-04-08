@@ -2,23 +2,16 @@
   "version": 1,
   "questions": [
     {
-      "id": "example.vendor.pharmacy",
-      "prompt": "Who is the primary pharmacy partner, and how are orders and refills communicated today?",
-      "department": "Medication / Pharmacy",
-      "category": "vendors",
-      "importance": "high",
-      "answerType": "long_text",
-      "required": true
-    },
-    {
-      "id": "example.select.pilot-facility",
-      "prompt": "Which facility is the pilot site?",
+      "id": "gov.decision-rights",
+      "prompt": "Who makes final product and build decisions?",
+      "helpText": "We need to know who has authority to approve scope changes, resolve disagreements, and sign off on the pilot so we build from confirmed decisions instead of assumptions.",
+      "assignedTo": "CEO",
       "department": "Executive / Ownership",
-      "category": "pilot",
+      "category": "governance",
       "importance": "critical",
-      "answerType": "single_select",
+      "answerType": "long_text",
       "required": true,
-      "options": ["Oakridge", "Second facility", "Undecided"]
+      "sortOrder": 1
     }
   ]
 }

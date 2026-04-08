@@ -7542,6 +7542,102 @@ export type Database = {
           },
         ]
       }
+      onboarding_questions: {
+        Row: {
+          answer_type: string
+          assigned_to: string | null
+          category: string | null
+          created_at: string
+          department: string
+          help_text: string | null
+          id: string
+          importance: string
+          options: Json | null
+          prompt: string
+          required: boolean
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          answer_type: string
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string
+          department: string
+          help_text?: string | null
+          id: string
+          importance: string
+          options?: Json | null
+          prompt: string
+          required?: boolean
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          answer_type?: string
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string
+          department?: string
+          help_text?: string | null
+          id?: string
+          importance?: string
+          options?: Json | null
+          prompt?: string
+          required?: boolean
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      onboarding_responses: {
+        Row: {
+          confidence: string
+          entered_by_name: string
+          entered_by_user_id: string | null
+          id: string
+          organization_id: string
+          question_id: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          confidence?: string
+          entered_by_name?: string
+          entered_by_user_id?: string | null
+          id?: string
+          organization_id: string
+          question_id: string
+          updated_at?: string
+          value?: string
+        }
+        Update: {
+          confidence?: string
+          entered_by_name?: string
+          entered_by_user_id?: string | null
+          id?: string
+          organization_id?: string
+          question_id?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_responses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           address_line_1: string | null

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { AlertTriangle, ArrowRight, CircleCheckBig, FileText, LayoutGrid } from "lucide-react";
+import { AlertTriangle, ArrowRight, CircleCheckBig, FileText, LayoutGrid, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 import { ExportMarkdownButton } from "@/components/onboarding/export-markdown-button";
@@ -11,36 +11,80 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useOnboardingStore } from "@/hooks/useOnboardingStore";
 import { cn } from "@/lib/utils";
 
-const DEPARTMENT_SUMMARY = [
-  { name: "Executive / Ownership", completion: "40%", status: "In progress", blockers: 1 },
-  { name: "Operations", completion: "25%", status: "Waiting on client", blockers: 2 },
-  { name: "Finance", completion: "10%", status: "Not started", blockers: 0 },
-  { name: "Clinical / Resident Care", completion: "15%", status: "In progress", blockers: 1 },
-] as const;
-
 export default function OnboardingDashboardPage() {
+  const hydration = useOnboardingStore((s) => s.hydration);
+  const loadError = useOnboardingStore((s) => s.loadError);
+  const isOrgAdmin = useOnboardingStore((s) => s.isOrgAdmin);
   const questionsById = useOnboardingStore((s) => s.questionsById);
   const responsesByQuestionId = useOnboardingStore((s) => s.responsesByQuestionId);
 
-  const { completionPct, readinessLabel, lastUpdatedLabel } = useMemo(() => {
-    const questions = Object.values(questionsById);
-    const required = questions.filter((q) => q.required !== false);
-    const answered = required.filter((q) => {
-      const v = responsesByQuestionId[q.id]?.value?.trim() ?? "";
-      return v.length > 0;
-    }).length;
-    const pct = required.length === 0 ? 0 : Math.round((answered / required.length) * 100);
-    const times = Object.values(responsesByQuestionId)
-      .map((r) => r.updatedAt)
-      .filter(Boolean)
-      .sort();
-    const last = times[times.length - 1];
-    const lastUpdatedLabel = last
-      ? new Date(last).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
-      : "No answers yet";
-    const readinessLabel = pct >= 100 ? "Required complete" : "In progress";
-    return { completionPct: pct, readinessLabel, lastUpdatedLabel };
-  }, [questionsById, responsesByQuestionId]);
+  const { completionPct, readinessLabel, lastUpdatedLabel, answeredCount, totalQuestions, departmentRows } =
+    useMemo(() => {
+      const questions = Object.values(questionsById);
+      const totalQuestions = questions.length;
+      const answeredCount = questions.filter((q) => {
+        const v = responsesByQuestionId[q.id]?.value?.trim() ?? "";
+        return v.length > 0;
+      }).length;
+      const pct = totalQuestions === 0 ? 0 : Math.round((answeredCount / totalQuestions) * 100);
+      const times = Object.values(responsesByQuestionId)
+        .map((r) => r.updatedAt)
+        .filter(Boolean)
+        .sort();
+      const last = times[times.length - 1];
+      const lastUpdatedLabel = last
+        ? new Date(last).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
+        : "No answers yet";
+      const readinessLabel = pct >= 100 ? "All questions touched" : "In progress";
+
+      const deptMap = new Map<string, { total: number; answered: number }>();
+      for (const q of questions) {
+        const dep = q.department;
+        if (!deptMap.has(dep)) deptMap.set(dep, { total: 0, answered: 0 });
+        const row = deptMap.get(dep)!;
+        row.total += 1;
+        if (responsesByQuestionId[q.id]?.value?.trim()) row.answered += 1;
+      }
+      const departmentRows = Array.from(deptMap.entries())
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([name, { total, answered }]) => {
+          const pctDept = total === 0 ? 0 : Math.round((answered / total) * 100);
+          let status: string;
+          if (answered === 0) status = "Not started";
+          else if (answered === total) status = "Complete";
+          else status = "In progress";
+          return { name, total, answered, pctDept, status };
+        });
+
+      return {
+        completionPct: pct,
+        readinessLabel,
+        lastUpdatedLabel,
+        answeredCount,
+        totalQuestions,
+        departmentRows,
+      };
+    }, [questionsById, responsesByQuestionId]);
+
+  if (hydration === "loading" || hydration === "idle") {
+    return (
+      <div className="flex items-center gap-2 text-slate-300">
+        <Loader2 className="h-5 w-5 animate-spin text-teal-400" aria-hidden />
+        <span>Loading overview…</span>
+      </div>
+    );
+  }
+
+  if (hydration === "error") {
+    return (
+      <div className="rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100" role="alert">
+        {loadError ?? "Could not load onboarding data."}
+      </div>
+    );
+  }
+
+  const remaining = Math.max(0, totalQuestions - answeredCount);
+  const uniqueDepartments = departmentRows.length;
 
   return (
     <div className="space-y-6 pb-8">
@@ -54,12 +98,18 @@ export default function OnboardingDashboardPage() {
                   Guided onboarding record for pilot scope, decisions, and build readiness.
                 </CardDescription>
               </div>
-              <ExportMarkdownButton variant="outline" className="shrink-0" />
+              {isOrgAdmin ? <ExportMarkdownButton variant="outline" className="shrink-0" /> : null}
             </div>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-slate-300">
             <div className="flex items-center justify-between rounded-lg border border-white/10 bg-black/20 px-3 py-2">
-              <span>Required questions answered</span>
+              <span>Questions answered</span>
+              <Badge className="border-0 bg-teal-500/20 text-teal-100">
+                {answeredCount} / {totalQuestions}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+              <span>Progress</span>
               <Badge className="border-0 bg-teal-500/20 text-teal-100">{completionPct}%</Badge>
             </div>
             <div className="flex items-center justify-between rounded-lg border border-white/10 bg-black/20 px-3 py-2">
@@ -73,9 +123,24 @@ export default function OnboardingDashboardPage() {
           </CardContent>
         </Card>
 
-        <MetricCard label="Unresolved blockers" value="4" icon={AlertTriangle} accent="text-rose-300" />
-        <MetricCard label="Pending documents" value="12" icon={FileText} accent="text-amber-200" />
-        <MetricCard label="Decisions confirmed" value="3" icon={CircleCheckBig} accent="text-teal-200" />
+        <MetricCard
+          label="Unanswered questions"
+          value={String(remaining)}
+          icon={AlertTriangle}
+          accent="text-rose-300"
+        />
+        <MetricCard
+          label="Question library"
+          value={String(totalQuestions)}
+          icon={FileText}
+          accent="text-amber-200"
+        />
+        <MetricCard
+          label="Leadership lanes"
+          value={String(uniqueDepartments)}
+          icon={CircleCheckBig}
+          accent="text-teal-200"
+        />
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
@@ -84,7 +149,7 @@ export default function OnboardingDashboardPage() {
             <div>
               <CardTitle className="text-white">Departments</CardTitle>
               <CardDescription className="text-slate-400">
-                Completion and blocker visibility by operating lane.
+                Live completion by department (from the shared question library).
               </CardDescription>
             </div>
             <Link
@@ -99,17 +164,23 @@ export default function OnboardingDashboardPage() {
             </Link>
           </CardHeader>
           <CardContent className="space-y-3">
-            {DEPARTMENT_SUMMARY.map((department) => (
-              <div
-                key={department.name}
-                className="grid gap-2 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm md:grid-cols-[minmax(0,1fr)_auto_auto_auto]"
-              >
-                <p className="font-medium text-slate-100">{department.name}</p>
-                <p className="text-slate-400">Completion: {department.completion}</p>
-                <p className="text-slate-400">Status: {department.status}</p>
-                <p className="text-slate-400">Blockers: {department.blockers}</p>
-              </div>
-            ))}
+            {departmentRows.length === 0 ? (
+              <p className="text-sm text-slate-500">No questions loaded yet.</p>
+            ) : (
+              departmentRows.map((department) => (
+                <div
+                  key={department.name}
+                  className="grid gap-2 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm md:grid-cols-[minmax(0,1fr)_auto_auto_auto]"
+                >
+                  <p className="font-medium text-slate-100">{department.name}</p>
+                  <p className="text-slate-400">
+                    Answered: {department.answered}/{department.total}
+                  </p>
+                  <p className="text-slate-400">Progress: {department.pctDept}%</p>
+                  <p className="text-slate-400">Status: {department.status}</p>
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
 

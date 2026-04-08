@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { FileUp, Info } from "lucide-react";
+import { FileUp, Loader2 } from "lucide-react";
 
 import { ExportMarkdownButton } from "@/components/onboarding/export-markdown-button";
 import { OnboardingQuestionField } from "@/components/onboarding/onboarding-question-field";
@@ -18,6 +18,12 @@ export default function OnboardingQuestionsPage() {
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
 
+  const hydration = useOnboardingStore((s) => s.hydration);
+  const loadError = useOnboardingStore((s) => s.loadError);
+  const saveStatus = useOnboardingStore((s) => s.saveStatus);
+  const saveError = useOnboardingStore((s) => s.saveError);
+  const isOrgAdmin = useOnboardingStore((s) => s.isOrgAdmin);
+
   const questionsById = useOnboardingStore((s) => s.questionsById);
   const responsesByQuestionId = useOnboardingStore((s) => s.responsesByQuestionId);
   const organizationLabel = useOnboardingStore((s) => s.organizationLabel);
@@ -29,27 +35,26 @@ export default function OnboardingQuestionsPage() {
   const setEnteredByForQuestion = useOnboardingStore((s) => s.setEnteredByForQuestion);
   const importQuestionFileJson = useOnboardingStore((s) => s.importQuestionFileJson);
 
-  const sortedQuestions = useMemo(
-    () =>
-      Object.values(questionsById).sort((a, b) => {
-        const d = a.department.localeCompare(b.department);
-        if (d !== 0) return d;
-        return a.id.localeCompare(b.id);
-      }),
-    [questionsById],
-  );
+  const sortedQuestions = useMemo(() => {
+    const list = Object.values(questionsById);
+    return list.sort((a, b) => {
+      const sa = a.sortOrder ?? 999999;
+      const sb = b.sortOrder ?? 999999;
+      if (sa !== sb) return sa - sb;
+      const d = a.department.localeCompare(b.department);
+      if (d !== 0) return d;
+      return a.id.localeCompare(b.id);
+    });
+  }, [questionsById]);
 
   const stats = useMemo(() => {
-    const required = sortedQuestions.filter((q) => q.required !== false);
-    const answeredRequired = required.filter((q) => {
+    const answered = sortedQuestions.filter((q) => {
       const v = responsesByQuestionId[q.id]?.value?.trim() ?? "";
       return v.length > 0;
     }).length;
     return {
       total: sortedQuestions.length,
-      requiredTotal: required.length,
-      answeredRequired,
-      pct: required.length === 0 ? 100 : Math.round((answeredRequired / required.length) * 100),
+      answered,
     };
   }, [sortedQuestions, responsesByQuestionId]);
 
@@ -61,7 +66,7 @@ export default function OnboardingQuestionsPage() {
       setImportMessage(null);
       setImportError(null);
       const text = await file.text();
-      const result = importQuestionFileJson(text);
+      const result = await importQuestionFileJson(text);
       if (result.ok) {
         setImportMessage(`Imported successfully: ${result.added} new, ${result.updated} updated (by id).`);
       } else {
@@ -71,44 +76,65 @@ export default function OnboardingQuestionsPage() {
     [importQuestionFileJson],
   );
 
+  if (hydration === "loading" || hydration === "idle") {
+    return (
+      <div className="flex items-center gap-2 text-slate-300">
+        <Loader2 className="h-5 w-5 animate-spin text-teal-400" aria-hidden />
+        <span>Loading onboarding questions…</span>
+      </div>
+    );
+  }
+
+  if (hydration === "error") {
+    return (
+      <div className="rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100" role="alert">
+        {loadError ?? "Could not load onboarding data."}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 pb-10">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h2 className="font-display text-2xl font-semibold text-white">Questions &amp; answers</h2>
+          <h2 className="font-display text-2xl font-semibold text-white">Onboarding Questions</h2>
           <p className="mt-1 max-w-2xl text-sm text-slate-400">
-            Answers stay in this browser (local storage) until you export—treat exports as sensitive if they may contain
-            PHI. Import JSON packs to add or update questions: matching <code className="text-slate-300">id</code>{" "}
-            updates wording and keeps existing answers.
+            Answer the questions you can. Your answers save automatically and are visible to the rest of the leadership
+            team.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <ExportMarkdownButton />
-          <Link
-            href="/onboarding/questions-import.template.json"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(
-              buttonVariants({ variant: "outline" }),
-              "border-white/20 bg-transparent text-slate-100 hover:bg-white/10",
-            )}
-          >
-            Download JSON template
-          </Link>
-        </div>
-      </div>
-
-      <div
-        className="flex gap-3 rounded-xl border border-teal-500/30 bg-teal-500/10 px-4 py-3 text-sm text-teal-50"
-        role="note"
-      >
-        <Info className="mt-0.5 h-4 w-4 shrink-0 text-teal-300" />
-        <div>
-          <p className="font-medium text-teal-100">LLM export</p>
-          <p className="mt-1 text-teal-100/90">
-            Use <strong>Export answers (Markdown)</strong> anytime for a single file with stable question ids, fenced
-            answers, confidence, and attribution—optimized for downstream prompts and tools.
-          </p>
+        <div className="flex flex-wrap items-center gap-2">
+          {saveStatus === "saving" ? (
+            <span className="flex items-center gap-1.5 text-xs text-slate-400">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+              Saving…
+            </span>
+          ) : saveStatus === "saved" ? (
+            <span className="text-xs text-teal-300/90" role="status">
+              Saved
+            </span>
+          ) : null}
+          {saveError ? (
+            <span className="text-xs text-rose-300" role="alert">
+              {saveError}
+            </span>
+          ) : null}
+          {isOrgAdmin ? (
+            <>
+              <ExportMarkdownButton />
+              <Link
+                href="/onboarding/questions-import.template.json"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  buttonVariants({ variant: "outline" }),
+                  "border-white/20 bg-transparent text-slate-100 hover:bg-white/10",
+                )}
+              >
+                Download JSON template
+              </Link>
+            </>
+          ) : null}
         </div>
       </div>
 
@@ -116,12 +142,12 @@ export default function OnboardingQuestionsPage() {
         <CardHeader>
           <CardTitle className="text-white">Workspace</CardTitle>
           <CardDescription className="text-slate-400">
-            Defaults apply to new edits; override per question when a shared login is used.
+            Defaults apply to new answers; you can override per question when a shared login is used.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           <label className="block text-sm text-slate-300">
-            Organization label (in export)
+            Organization label (for export)
             <Input
               value={organizationLabel}
               onChange={(e) => setOrganizationLabel(e.target.value)}
@@ -130,12 +156,12 @@ export default function OnboardingQuestionsPage() {
             />
           </label>
           <label className="block text-sm text-slate-300">
-            Default &quot;entered by&quot; name
+            Default &quot;Your name&quot; for new answers
             <Input
               value={defaultEnteredByName}
               onChange={(e) => setDefaultEnteredByName(e.target.value)}
               className="mt-1 border-white/15 bg-black/30 text-slate-100"
-              placeholder="Shared activation user or your name"
+              placeholder="Your name or role"
             />
           </label>
         </CardContent>
@@ -143,23 +169,24 @@ export default function OnboardingQuestionsPage() {
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-slate-300">
         <span>
-          Progress: <strong className="text-white">{stats.answeredRequired}</strong> / {stats.requiredTotal} required
-          answered ({stats.pct}%) · {stats.total} questions loaded
+          <strong className="text-white">{stats.answered}</strong> / {stats.total} answered
         </span>
-        <div className="flex flex-wrap items-center gap-2">
-          <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={onFile} />
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className={cn(
-              buttonVariants({ variant: "outline", size: "sm" }),
-              "border-white/20 bg-transparent text-slate-100 hover:bg-white/10",
-            )}
-          >
-            <FileUp className="mr-1.5 h-4 w-4" />
-            Upload question pack (JSON)
-          </button>
-        </div>
+        {isOrgAdmin ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={onFile} />
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "border-white/20 bg-transparent text-slate-100 hover:bg-white/10",
+              )}
+            >
+              <FileUp className="mr-1.5 h-4 w-4" />
+              Upload question pack (JSON)
+            </button>
+          </div>
+        ) : null}
       </div>
 
       {importMessage ? (
@@ -186,6 +213,8 @@ export default function OnboardingQuestionsPage() {
               value={value}
               confidence={confidence}
               enteredByName={enteredBy}
+              showAdminMeta={isOrgAdmin}
+              showConfidence={isOrgAdmin}
               onValueChange={(v) => setResponseValue(q.id, v)}
               onConfidenceChange={(c) => setResponseConfidence(q.id, c)}
               onEnteredByChange={(name) => setEnteredByForQuestion(q.id, name)}

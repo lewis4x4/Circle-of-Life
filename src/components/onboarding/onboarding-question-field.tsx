@@ -12,6 +12,9 @@ interface Props {
   value: string;
   confidence: ConfidenceLevel;
   enteredByName: string;
+  /** Show internal ids / answer types (owner / org_admin only). */
+  showAdminMeta?: boolean;
+  showConfidence?: boolean;
   onValueChange: (v: string) => void;
   onConfidenceChange: (c: ConfidenceLevel) => void;
   onEnteredByChange: (v: string) => void;
@@ -28,6 +31,8 @@ export function OnboardingQuestionField({
   value,
   confidence,
   enteredByName,
+  showAdminMeta = false,
+  showConfidence = false,
   onValueChange,
   onConfidenceChange,
   onEnteredByChange,
@@ -140,35 +145,51 @@ export function OnboardingQuestionField({
   return (
     <div className="space-y-4 rounded-xl border border-white/10 bg-white/[0.02] p-4">
       <div>
-        <p id={labelId} className="text-base font-medium text-slate-100">
-          {question.prompt}
-          {question.required !== false ? <span className="text-rose-400/90"> *</span> : null}
-        </p>
-        <p className="mt-1 text-xs text-slate-500">
-          id: <code className="text-slate-400">{question.id}</code> · {question.answerType}
-          {question.category ? ` · ${question.category}` : ""}
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <p id={labelId} className="text-base font-semibold text-slate-100">
+            {question.prompt}
+          </p>
+          {question.assignedTo ? (
+            <span className="shrink-0 rounded-md border border-white/20 bg-white/5 px-2 py-0.5 text-xs font-medium text-slate-200">
+              Assigned: {question.assignedTo}
+            </span>
+          ) : null}
+        </div>
+        {question.helpText ? (
+          <p className="mt-2 text-sm leading-relaxed text-slate-400">
+            <span className="font-medium text-slate-300">Why this matters: </span>
+            {question.helpText}
+          </p>
+        ) : null}
+        {showAdminMeta ? (
+          <p className="mt-2 text-xs text-slate-500">
+            id: <code className="text-slate-400">{question.id}</code> · {question.answerType}
+            {question.category ? ` · ${question.category}` : ""}
+          </p>
+        ) : null}
       </div>
 
       {control}
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className={cn("grid gap-3", showConfidence ? "sm:grid-cols-2" : "sm:grid-cols-1")}>
+        {showConfidence ? (
+          <label className="block text-xs font-medium text-slate-400">
+            Confidence
+            <select
+              value={confidence}
+              onChange={(e) => onConfidenceChange(e.target.value as ConfidenceLevel)}
+              className="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-sm text-slate-100"
+            >
+              {CONFIDENCE.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
         <label className="block text-xs font-medium text-slate-400">
-          Confidence
-          <select
-            value={confidence}
-            onChange={(e) => onConfidenceChange(e.target.value as ConfidenceLevel)}
-            className="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-sm text-slate-100"
-          >
-            {CONFIDENCE.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="block text-xs font-medium text-slate-400">
-          Entered by (this answer)
+          Your name (for this answer)
           <Input
             value={enteredByName}
             onChange={(e) => onEnteredByChange(e.target.value)}

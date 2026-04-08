@@ -31,3 +31,8 @@ export function isAdminEligibleAppRole(role: string): boolean {
 export function isOnboardingAppRole(role: string): boolean {
   return role === "onboarding";
 }
+
+/** Owner / org admin — onboarding JSON import, question pack upload, markdown export. */
+export function isOrgAdminAppRole(role: string): boolean {
+  return role === "owner" || role === "org_admin";
+}
