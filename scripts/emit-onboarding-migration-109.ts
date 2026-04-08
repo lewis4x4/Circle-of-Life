@@ -64,6 +64,25 @@ ALTER TABLE public.onboarding_questions
 ALTER TABLE public.onboarding_questions
   ADD CONSTRAINT onboarding_questions_tier_check CHECK (tier IN ('core', 'extended'));
 
+-- 006's haven_set_updated_at() assigns NEW.updated_by; onboarding_questions has no updated_by (108).
+CREATE OR REPLACE FUNCTION public.haven_set_updated_at_onboarding_questions ()
+  RETURNS TRIGGER
+  LANGUAGE plpgsql
+  SECURITY DEFINER
+  SET search_path = public
+  AS $func$
+BEGIN
+  NEW.updated_at := now();
+  RETURN NEW;
+END;
+$func$;
+
+DROP TRIGGER IF EXISTS tr_onboarding_questions_set_updated_at ON public.onboarding_questions;
+CREATE TRIGGER tr_onboarding_questions_set_updated_at
+  BEFORE UPDATE ON public.onboarding_questions
+  FOR EACH ROW
+  EXECUTE PROCEDURE public.haven_set_updated_at_onboarding_questions ();
+
 -- Rename former core questions to extended.* (insert → re-point responses → delete old id)
 `);
 
