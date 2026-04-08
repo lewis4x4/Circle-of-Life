@@ -215,7 +215,7 @@ export default function AdminRoundingLivePage() {
           </div>
         </header>
 
-        <KineticGrid className="grid-cols-2 md:grid-cols-4 gap-4" staggerMs={50}>
+        <KineticGrid className="grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" staggerMs={50}>
           <QuickStat label="Critical" value={String(criticalCount)} color={hasCriticals ? "rose" : "emerald"} pulse={hasCriticals} />
           <QuickStat label="Overdue" value={String(overdueCount)} color={overdueCount > 0 ? "amber" : "emerald"} pulse={overdueCount > 0} />
           <QuickStat label="Pending" value={String(pendingCount)} color="cyan" />

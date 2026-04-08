@@ -69,7 +69,7 @@ export default function AdminStaffingConsolePage() {
     return (
       <div className="space-y-6 pt-2">
         <Skeleton className="h-10 w-64 mb-6" />
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Skeleton className="h-[140px] rounded-2xl" />
           <Skeleton className="h-[140px] rounded-2xl" />
           <Skeleton className="h-[140px] rounded-2xl" />

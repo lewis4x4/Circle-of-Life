@@ -75,11 +75,11 @@ export default function AdminIncidentsKanbanPage() {
     return (
       <div className="space-y-6 pt-2 h-[calc(100vh-6rem)]">
         <Skeleton className="h-10 w-64 mb-6" />
-        <div className="grid grid-cols-4 gap-4 h-full">
-          <Skeleton className="h-full rounded-2xl" />
-          <Skeleton className="h-full rounded-2xl" />
-          <Skeleton className="h-full rounded-2xl" />
-          <Skeleton className="h-full rounded-2xl" />
+        <div className="grid min-h-[12rem] grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:h-full">
+          <Skeleton className="min-h-[10rem] rounded-2xl sm:min-h-0 sm:h-full" />
+          <Skeleton className="min-h-[10rem] rounded-2xl sm:min-h-0 sm:h-full" />
+          <Skeleton className="min-h-[10rem] rounded-2xl sm:min-h-0 sm:h-full" />
+          <Skeleton className="min-h-[10rem] rounded-2xl sm:min-h-0 sm:h-full" />
         </div>
       </div>
     );

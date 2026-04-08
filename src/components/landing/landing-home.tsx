@@ -340,7 +340,7 @@ export default function LandingHome() {
                     <div className="h-7 w-44 rounded-md bg-white/10" />
                     <Badge className="border-0 bg-teal-500/20 text-teal-100">North Florida</Badge>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
                     {Array.from({ length: 3 }).map((_, i) => (
                       <motion.div
                         key={i}

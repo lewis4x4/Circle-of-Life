@@ -178,7 +178,7 @@ export default function AdminRoundingHubPage() {
           </div>
         </Link>
 
-        <KineticGrid className="grid-cols-2 md:grid-cols-4 gap-4" staggerMs={50}>
+        <KineticGrid className="grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" staggerMs={50}>
           <MetricV2
             label="Active Plans"
             value={String(summary.plans)}

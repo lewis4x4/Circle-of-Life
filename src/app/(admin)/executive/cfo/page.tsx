@@ -52,7 +52,7 @@ export default function CfoDashboardPage() {
           </div>
         </header>
 
-        <KineticGrid className="grid-cols-2 md:grid-cols-4 gap-4 mb-6" staggerMs={50}>
+        <KineticGrid className="grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6" staggerMs={50}>
           <div className="h-[120px]">
              <V2Card hoverColor="indigo" className="border-indigo-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
                <Sparkline colorClass="text-indigo-500" variant={1} />

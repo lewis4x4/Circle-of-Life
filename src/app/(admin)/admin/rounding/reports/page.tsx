@@ -230,7 +230,7 @@ export default function AdminRoundingReportsPage() {
           </div>
         </div>
 
-        <KineticGrid className="grid-cols-2 md:grid-cols-4 gap-4" staggerMs={50}>
+        <KineticGrid className="grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" staggerMs={50}>
           <ReportMetric
             label="Completion Rate"
             value={`${Math.round(summary.completionRate * 100)}%`}

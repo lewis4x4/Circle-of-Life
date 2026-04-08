@@ -16,11 +16,11 @@ export function KineticGrid({
   const arrayChildren = React.Children.toArray(children);
   
   return (
-    <div className={cn("grid", className)} {...props}>
+    <div className={cn("grid min-w-0", className)} {...props}>
       {arrayChildren.map((child, i) => (
         <div 
           key={i} 
-          className="h-full w-full animate-in fade-in slide-in-from-bottom-4"
+          className="h-full min-w-0 w-full animate-in fade-in slide-in-from-bottom-4"
           style={{ 
             animationDelay: `${baseDelayMs + (i * staggerMs)}ms`, 
             animationDuration: '600ms',

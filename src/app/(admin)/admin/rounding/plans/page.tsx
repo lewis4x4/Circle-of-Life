@@ -143,7 +143,7 @@ export default function AdminRoundingPlansPage() {
           </div>
         </header>
 
-        <KineticGrid className="grid-cols-3 gap-4" staggerMs={50}>
+        <KineticGrid className="grid-cols-1 gap-4 sm:grid-cols-3" staggerMs={50}>
           <div className="h-[90px]">
             <V2Card hoverColor="indigo" className="border-indigo-500/20">
               <div className="relative z-10 flex flex-col h-full justify-between">

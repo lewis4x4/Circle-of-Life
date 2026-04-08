@@ -136,10 +136,10 @@ export default function FamilyBillingSummaryPage() {
                   <p className="text-sm font-semibold">{invoice.invoiceNumber}</p>
                   <Badge className={invoiceStatusBadgeClass(invoice.status)}>{invoice.statusLabel}</Badge>
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-xs text-stone-600">
-                  <p>{invoice.periodLabel}</p>
+                <div className="grid min-w-0 grid-cols-1 gap-1 text-xs text-stone-600 sm:grid-cols-3 sm:gap-2">
+                  <p className="min-w-0 break-words">{invoice.periodLabel}</p>
                   <p>{formatUsd(invoice.total)}</p>
-                  <p>
+                  <p className="min-w-0 break-words">
                     {invoice.status === "paid"
                       ? "Paid"
                       : `Due ${formatDue(invoice.dueDate)}`}
