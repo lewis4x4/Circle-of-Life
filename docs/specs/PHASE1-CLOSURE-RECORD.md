@@ -6,7 +6,7 @@
 
 **Do not overstate:** This document must distinguish **automated/repo verification** from **live UAT + RLS + production compliance**.
 
-**Last updated:** 2026-04-06 — engineering baseline + UI gates remain PASS; **remote migrations 001–095** and Edge Functions deploy verified via Supabase CLI. Phase 1 acceptance blockers remain open; remediation sequence now mirrors [README.md](./README.md).
+**Last updated:** 2026-04-08 — engineering baseline + UI gates remain PASS; **repo migrations 001–109** (see [README.md](./README.md) migration map). **Remote** project must match `supabase migration list` for acceptance; Phase 1 acceptance blockers remain open; remediation sequence mirrors [README.md](./README.md).
 
 ---
 
@@ -16,7 +16,7 @@
 |-----------|---------------------|
 | **Engineering baseline** (lint, build, migration replay, secrets, audit, segment gates) | **PASS** — see § Gate evidence |
 | **Target `.env` / Supabase project alignment** | **PASS (owner)** — 2026-04-06: Brian Lewis confirmed active project **`manfqmasfqppukpobpld`** in Supabase (PRODUCTION). Owner still keeps `.env.local` aligned with [README.md](./README.md); see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) and [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) **PH1-P01**. |
-| **Remote migrations aligned** | **PASS** — `supabase migration list` now shows Local/Remote **001–095** (2026-04-06) |
+| **Remote migrations aligned** | **VERIFY** — Repo has **001–109** (2026-04-08); owner must confirm **remote** matches local for target project (`supabase migration list`) |
 | **Seeded users (admin / caregiver / family) + facility context** | **FAIL** — live sign-in attempts still return `Database error querying schema` after remote auth remediations `093`, `094`, and `095`; see [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) |
 | **Checklist §A–F (real auth)** | **FAIL / BLOCKED** — logged-out redirect and invalid-credential handling passed, but valid role login still fails before shell routing; see [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) |
 | **RLS matrix** | **FAIL** — required JWT sessions still cannot be established for admin/caregiver/family pilot users after auth seed repair; see [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md); procedure [PHASE1-RLS-MANUAL-PROCEDURE.md](./PHASE1-RLS-MANUAL-PROCEDURE.md) |
@@ -60,7 +60,7 @@ This closure record remains the authoritative verdict source for Phase 1 accepta
 | Command | Result |
 |---------|--------|
 | `npm run lint` | PASS (via `segment:gates`) |
-| `npm run build` | PASS (includes `migrations:check`; **95** migrations **001–095** in repo) |
+| `npm run build` | PASS (includes `migrations:check`; **109** migrations **001–109** in repo) |
 | `npm run migrations:verify:pg` | PASS (via `segment:gates`) |
 | `npm run check:secrets` / `audit:ci` / `secrets:gitleaks` | PASS (via `segment:gates`) |
 | `npm run segment:gates -- --segment "phase1-closeout-2026-04-05" --ui --no-chaos` | PASS |
@@ -88,7 +88,7 @@ For repeatable ops checks before those owner-only steps, use [PHASE1-OPS-VERIFIC
 | **risk** | Accepted gaps waived with owner/expiry/remediation; or minor follow-ups documented; or **blockers remain** for full acceptance. |
 | **fail** | Block release: critical RLS or auth issue unfixed. |
 
-**Current (2026-04-06):** **fail** — Engineering baseline and migration parity are now restored through `095`, but live validation still finds a blocking auth defect on the target project: pilot admin/caregiver/family users cannot sign in because Supabase Auth returns `Database error querying schema`.
+**Current (2026-04-08):** **fail** — Engineering baseline and repo migration parity extend through **`109`**, but live validation still finds a blocking auth defect on the target project until resolved: pilot admin/caregiver/family users cannot sign in because Supabase Auth returns `Database error querying schema` (auth remediations `093`–`095` applied; defect may be project-level Auth).
 
 **Sentence:** Shipped scope supports Haven’s north star, but the target environment currently fails the mission’s secure, role-governed access requirement because pilot users still cannot obtain live sessions for validation even with the full migration set applied.
 

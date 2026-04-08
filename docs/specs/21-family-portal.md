@@ -55,3 +55,15 @@ See migrations **`083`** / **`084`**.
 ## Definition of done (Core segment)
 
 - Migrations apply; types updated; `npm run segment:gates -- --segment "<id>" --ui` **PASS** when admin UI ships.
+
+## COL Alignment Notes
+
+**Family handbook and welcome packet not collected:** COL's family handbook and welcome packet content are not documented in the wiki. The Family Portal's onboarding flow and information library must reflect COL's actual family-facing content. Before the Family Portal launches, collect: (1) current family handbook, (2) welcome packet, (3) facility-specific visitor policies (`Visitor Notice.pdf` exists in HR-Forms).
+
+**Resident rights documentation required:** FL §429.28 mandates that resident rights be provided in writing at admission and posted in the facility. The Family Portal should display resident rights as a persistent, accessible section. The actual FL §429.28 rights text should be seeded as content — COL must confirm they have no facility-specific addenda to the standard rights.
+
+**Grievance procedure in the portal:** COL uses a formal `Grievance Form.pdf` and `Grievance Reports Log.pdf`. The Family Portal's message triage feature should support formal grievance submission with a dedicated `message_type = 'grievance'` that triggers the Module 07 grievance workflow (10-day acknowledgment, 21-day resolution timeline per FL §429.28(3)).
+
+**HIPAA consent before portal access:** COL's existing admission consent process includes HIPAA authorization. The `family_consent_records` table in Module 21 must align with COL's existing HIPAA consent forms used at admission — don't require a second HIPAA consent if one was already obtained at admission. The admission consent should be linkable to the family portal consent record.
+
+**Care conference scheduling:** COL uses a `Care Plan Meeting Summary.pdf` for ISP meetings. The Module 21 care conference scheduling feature should produce a summary document compatible with COL's existing form format so administrators don't need to re-document meetings in a separate system.

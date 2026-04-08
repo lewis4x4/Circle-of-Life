@@ -434,3 +434,13 @@ Every top-level metric should support drill-down to resident task and log timeli
 ## Mission alignment
 
 **pass** — this module directly strengthens resident safety, regulatory readiness, staff clarity, and owner visibility while keeping AI subordinate to human judgment and auditability.
+
+## COL Alignment Notes
+
+**Observation Log exists:** COL uses an `Observation Log.pdf` and `Alert Charting Log.docx` for clinical observation and alert tracking. Module 25's `resident_observation_logs` table digitalizes this workflow. The observation categories and alert types in the spec should match COL's existing charting taxonomy. Collect the Observation Log form and Alert Charting Log from COL to validate field mapping.
+
+**24-Hour Communication Sheet:** COL uses a `24-Hour Communication Sheet.xlsx` for daily care coordination — a shift-to-shift summary of resident status. Module 25's supervisor board and shift completion reporting should replace this form. At pilot, run both in parallel (Haven digital + paper 24-hour sheet) for 30 days to build staff confidence before going Haven-only.
+
+**Rounding frequency expectations:** COL's actual rounding frequency expectations (every 30 min? every 2 hours? by care level?) are not documented. The `resident_observation_plan_rules` table's `frequency_minutes` field must be set correctly per COL's standard of care. Collect this from COL's P&P manual or nursing director before activating the rounding engine.
+
+**Pilot at Oakridge ALF:** Module 25 should launch first at Oakridge ALF (52 beds, pilot facility). Oakridge-specific staffing patterns (shift times, supervisor roles, unit structure) should be used to configure the first observation plans. The supervisor board at Oakridge will be the primary validation environment for the rounding workflow.

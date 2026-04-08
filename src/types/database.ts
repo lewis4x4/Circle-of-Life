@@ -11690,6 +11690,7 @@ export type Database = {
           phone: string | null
           settings: Json
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           app_role: Database["public"]["Enums"]["app_role"]
@@ -11707,6 +11708,7 @@ export type Database = {
           phone?: string | null
           settings?: Json
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           app_role?: Database["public"]["Enums"]["app_role"]
@@ -11724,6 +11726,7 @@ export type Database = {
           phone?: string | null
           settings?: Json
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {

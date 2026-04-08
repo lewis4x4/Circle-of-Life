@@ -708,3 +708,15 @@ New migration file: `039_compliance_engine.sql` (after `038_infection_control.sq
 8. Create RLS policies (15 total: 3 deficiencies, 2 POC, 2 policy_documents, 3 policy_acknowledgments, 3 survey_visit_sessions, 2 survey_visit_log_entries)
 9. Create audit triggers using `public.haven_capture_audit_log()` on all 6 tables (see `006_audit_triggers.sql`)
 10. Create `public.haven_set_updated_at()` triggers on `survey_deficiencies`, `plans_of_correction`, `policy_documents`
+
+---
+
+## COL Alignment Notes
+
+**AHCA license seeding required at launch:** COL has 5 facilities, each with an AHCA Assisted Living Facility license. These license numbers, expiration dates, and facility-specific license categories (standard, limited nursing, extended congregate care) must be seeded into the compliance engine's facility configuration at Oakridge ALF pilot launch. License documents are NOT yet in the wiki — they must be collected from COL before this module can be initialized correctly.
+
+**Survey history gap:** COL's most recent AHCA survey reports (Statement of Deficiencies) and any open Plans of Correction are not in the wiki. The compliance engine's baseline score cannot be set without this historical deficiency data. Before the pilot, request: (1) last 3 years of SOD reports for Oakridge ALF, (2) any currently open POC for any facility.
+
+**Florida AHCA tag set:** The spec already seeds Florida AHCA survey tags. Verify the tag set matches the current AHCA ALF survey protocol (AHCA Form 3020) — the applicable regulatory chapter is FL §429 and FAC 59A-36. The compliance engine tag library should be reviewed against COL's most recent survey findings to ensure the tags they've historically been cited under are present.
+
+**Master Quality Assurance Tool:** COL uses a `Master Quality Assurance Tool.xlsx` for internal QA audits across all 5 facilities. The compliance engine's mock survey feature should be able to export results in a format compatible with COL's existing QA review process. Consider adding a QA export that maps Haven compliance scores to COL's existing audit categories.

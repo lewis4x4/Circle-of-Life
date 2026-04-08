@@ -1,15 +1,50 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Bell, CalendarDays, CalendarHeart, CreditCard, MessageSquare, UserCircle2 } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  Bell,
+  CalendarDays,
+  CalendarHeart,
+  CreditCard,
+  Loader2,
+  LogOut,
+  MessageSquare,
+  UserCircle2,
+} from "lucide-react";
 import { useTheme } from "next-themes";
+
+import { createClient } from "@/lib/supabase/client";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function FamilyShell({ children }: { children: React.ReactNode }) {
   const { setTheme } = useTheme();
   const pathname = usePathname();
+  const router = useRouter();
   const themeSet = useRef(false);
+  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
+
+  const handleSignOut = useCallback(async () => {
+    setSigningOut(true);
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      router.replace("/login");
+      router.refresh();
+    } finally {
+      setSigningOut(false);
+    }
+  }, [router]);
 
   useEffect(() => {
     if (!themeSet.current) {
@@ -18,18 +53,43 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
     }
   }, [setTheme]);
 
+  useEffect(() => {
+    const supabase = createClient();
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!cancelled) setSessionEmail(data.session?.user?.email ?? null);
+      } catch {
+        if (!cancelled) setSessionEmail(null);
+      }
+    })();
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!cancelled) setSessionEmail(session?.user?.email ?? null);
+    });
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
   return (
     <div className="family-shell min-h-screen bg-stone-50 text-stone-900 flex flex-col font-sans">
       {/* Hospitality Header */}
       <header className="bg-white border-b border-stone-200 sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-xl font-serif font-medium text-stone-800 tracking-tight">Haven</span>
-            <span className="w-1 h-1 rounded-full bg-stone-300"></span>
-            <span className="text-stone-600 font-medium">Sarah Davis</span>
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="text-xl font-serif font-medium text-stone-800 tracking-tight shrink-0">Haven</span>
+            <span className="w-1 h-1 rounded-full bg-stone-300 shrink-0"></span>
+            <span
+              className="text-stone-600 font-medium truncate text-sm sm:text-base"
+              title={sessionEmail ?? undefined}
+            >
+              {sessionEmail ?? "Family portal"}
+            </span>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <Link
               href="/family/messages"
               className="text-stone-400 hover:text-stone-600 tap-responsive"
@@ -37,12 +97,47 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
             >
               <MessageSquare className="w-5 h-5" />
             </Link>
-            <button className="relative text-stone-400 hover:text-stone-600 tap-responsive" aria-label="Notifications">
+            <button type="button" className="relative text-stone-400 hover:text-stone-600 tap-responsive" aria-label="Notifications">
               <Bell className="w-5 h-5" />
             </button>
-            <button className="text-stone-300 hover:text-stone-500 tap-responsive" aria-label="Profile">
-              <UserCircle2 className="w-6 h-6" />
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="rounded-full p-1 tap-responsive outline-none text-stone-400 hover:text-stone-600 hover:bg-stone-100 focus-visible:ring-2 focus-visible:ring-orange-500/40"
+                aria-label="Account menu"
+              >
+                <UserCircle2 className="w-6 h-6" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuGroup>
+                  {sessionEmail ? (
+                    <>
+                      <DropdownMenuLabel className="truncate font-normal text-stone-500">
+                        {sessionEmail}
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                    </>
+                  ) : null}
+                  <DropdownMenuItem
+                    variant="destructive"
+                    className="cursor-pointer"
+                    disabled={signingOut}
+                    onClick={() => void handleSignOut()}
+                  >
+                    {signingOut ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Signing out…
+                      </>
+                    ) : (
+                      <>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Sign out
+                      </>
+                    )}
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
         

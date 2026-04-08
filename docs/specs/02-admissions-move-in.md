@@ -89,3 +89,17 @@ See migrations **`077`** (DDL) and **`078`** (RLS, audit, `updated_at` on `admis
 - Types updated in `src/types/database.ts`.
 - Admin routes listed in `FRONTEND-CONTRACT.md`; `npm run check:admin-shell` passes.
 - `npm run segment:gates -- --segment "<id>" --ui` **PASS** when routes ship.
+
+## COL Alignment Notes
+
+**Form 1823 is a first-class regulatory object:** Florida ALF regulations (FL §429.26) require a completed AHCA Form 1823 (Physician's Report) from the resident's physician before or at admission. COL tracks this with a dedicated audit form (`Form 1823 Audit Form.xlsx`) and has facility-specific Form 1823 templates (`1823-OR.docx`, `1823-RO.docx`, `1823-HW.docx`, `1823-PT.docx`, `1823-GC.docx`). The admission workflow must include a Form 1823 document checklist item with completion tracking. A resident should not be marked `admission_complete` without a received Form 1823.
+
+**Facility-specific admission agreements:** COL has different admission agreements for each facility (OR, RO, HW, GC variants confirmed in HR-Forms/New Hire & New Admission). The `admission_cases` model must support facility-specific agreement templates. A single generic agreement is not sufficient.
+
+**Representative Payee / SSA-787:** COL manages Social Security Representative Payee arrangements for residents who cannot manage their own benefits (SSA Form 787 confirmed in Plantation admissions folder). Add `representative_payee_name`, `representative_payee_relationship`, `ssa_rep_payee_active` boolean, and `ssa_787_on_file` boolean to the resident financial profile (either in `admission_cases` or `residents` table). This is a legal/financial custodianship relationship that must be tracked.
+
+**DCF coordination at admission:** For Medicaid residents, COL coordinates with the Department of Children and Families (DCF) for eligibility verification. Add a `medicaid_application_status` field and `dcf_eligibility_verified_at` timestamp to the admission workflow. The `DCF Eligibility Review.pdf` form documents this step.
+
+**Pre-Admission Questionnaire:** COL uses a `Pre-Admission Questionnaire.pdf` for initial screening before formal admission. This form's data points (medical history, care needs, payer source, family contact) should map to the Module 01 lead profile and carry forward into the admission case on conversion.
+
+**Advance Directives tracking:** COL provides `Advance Direct. & DNRO info. for Resid_Family.pdf` at admission. The admission checklist must include: advance directive on file (yes/no), DNRO (Do Not Resuscitate Order) status (yes/no/not applicable), healthcare proxy designation. These must be surfaced prominently in the eMAR and incident reporting workflows.

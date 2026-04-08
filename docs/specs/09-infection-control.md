@@ -798,3 +798,15 @@ Use **`haven_capture_audit_log()`** and **`haven_set_updated_at()`** (not the il
 9. Create RLS policies (17 total: 2 infection_surveillance, 2 infection_outbreaks, 3 outbreak_actions, 2 vital_sign_alert_thresholds, 3 vital_sign_alerts, 5 staff_illness_records)
 10. Create audit triggers on all 6 tables (except `vital_sign_alert_thresholds` — config, not clinical data)
 11. Create `haven_set_updated_at` triggers on tables with `updated_at` (+ `updated_by` where applicable)
+
+---
+
+## COL Alignment Notes
+
+**Infection control plan missing:** COL does not have a documented Infection Control Plan in the wiki. FL §429.41 requires a written infection control plan for each facility. The Module 09 outbreak thresholds, case definitions, and response procedures must align with the plan when it is collected. Before pilot: request COL's current written infection control plan from each facility administrator.
+
+**COVID P&P is outdated:** COL's documented COVID-19 procedures are from July 2021 (COVID - P&P Updated July 2021.docx). The infection control module's policy library will surface this document; it should be flagged as requiring review/update before being made active in Haven.
+
+**Staff illness tracking:** COL has a `Staff Illness Log` pattern reflected in their HR forms. The Module 09 `staff_illness_logs` table aligns with this — verify the illness category taxonomy (respiratory, GI, skin/wound, conjunctivitis) matches COL's existing tracking categories.
+
+**Facilities COVID vaccination tracking:** COL tracked COVID vaccination and supply information via `Circle of Life Vaccination & Supply Information.xlsx`. The immunization tracking component of Module 09 should support both resident and staff immunization records (flu, COVID, pneumococcal) consistent with COL's existing tracking structure.

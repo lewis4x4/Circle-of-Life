@@ -398,3 +398,13 @@ Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
 | Complete follow-up task | Yes (queued) | Submit on reconnect |
 | View incident list | Yes (cached) | Background refresh |
 | Upload photos | Yes (stored locally) | Upload on reconnect |
+
+---
+
+## COL Alignment Notes
+
+**Grievance form integration:** COL uses a separate `Grievance Form.pdf` and `Grievance Reports Log.pdf` for resident/family formal complaints. The incident reporting module should distinguish between clinical incidents (falls, medication errors, elopement, injuries) and grievances (service complaints, rights violations). Grievances follow a different regulatory timeline: FL §429.28 requires 10-day acknowledgment and 21-day resolution. Add `incident_type` enum value `grievance` and corresponding notification/timeline logic.
+
+**Elopement-specific form:** COL has a dedicated `Elopement Incident Form.pdf`. The incident spec's severity and type classification should ensure elopement is a named type with: immediate notification to administrator and family, AHCA reportability check within 2 hours, and door-check protocol documentation.
+
+**Medication incident distinction:** COL uses a separate `Medication Incident Report.pdf` for medication errors. Medication incidents link to Module 06 and have a different root-cause taxonomy from fall incidents. The `incident_type` enum already supports this — verify the UI incident form shows medication-specific fields (5-Rights, prescriber notification, pharmacy notification) when type = `medication_error`.

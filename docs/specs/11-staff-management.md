@@ -422,3 +422,15 @@ Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
 | My Schedule | `/caregiver/me/schedule` | Week view of my shifts across all facilities. Tap shift for details. |
 | Clock In/Out | `/caregiver/me/clock` | Large clock-in button. Shows GPS status. Current shift info. Clock-out button. |
 | Swap Board | `/caregiver/me/swaps` | Open swap requests at my facility. My pending requests. Claim button. |
+
+---
+
+## COL Alignment Notes
+
+**Baya medication training credential:** COL uses Baya as an external medication management training partner (active contract). All medication-administering staff hold Baya-issued competency certificates. The `staff_certifications` table must support `certification_type = 'baya_medication'` with `issuing_body = 'Baya'` and certificate number tracking. The Module 12 training spec handles the full Baya workflow — but Module 11 staffing ratio snapshots should flag any staff member whose Baya certificate is expired when assessing medication-administration staffing ratios.
+
+**5-facility ratio compliance:** COL operates in 3 Florida counties (Lafayette, Suwannee, Columbia). All 5 facilities are ALF standard category (not Extended Congregate Care or Limited Nursing Services). Florida staffing ratio minimum: 1 staff per 6 residents awake hours, 1 per 15 overnight. These ratios are the same across all 5 facilities. The `staffing_ratio_snapshots` table should seed these thresholds at org initialization.
+
+**Employee file audit integration:** COL uses `Employee File Checklist.xlsx` and `Employee File Audit.docx` to audit staff file completeness across all facilities. The Module 11 staff profile completeness model should align with COL's required employee file checklist: background check, CPR/First Aid cert, TB test, Baya medication cert, I-9, W-4, direct deposit form, orientation sign-off.
+
+**Shift swap request form:** COL has an `Employee Request to Switch Shifts.pdf` form. The Module 11 `shift_swap_requests` table covers this workflow — confirm the UI swap request flow captures: requester, proposed swap partner, shift details, reason, and manager approval. Both staff must confirm before manager approves.

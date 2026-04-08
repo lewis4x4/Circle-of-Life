@@ -72,40 +72,73 @@ Multi-entity architecture, insurance + clinical loop, AI-native workflows, **Flo
 
 ## Implementation status in this repo (not the external roadmap file)
 
-*Last refreshed: 2026-04-06.*
+*Last refreshed: 2026-04-08.*
 
-| Area | Status |
-|------|--------|
-| **Phase 1 core specs (00, 03, 04, 07, 11, 16)** | Implemented with migrations, RLS, and admin/caregiver/family routes per `docs/specs/README.md`. |
-| **Phase 1 full acceptance** | **NOT COMPLETE** — engineering baseline is strong, but `docs/specs/PHASE1-CLOSURE-RECORD.md` still requires live RLS validation, real-auth UAT, env/seed proof, and Pro/BAA/PITR attestation. |
-| **RCA persistence** | `incident_rca` (migration `070`); RCA UI reads/writes Postgres — closes waiver **W-RCA-01** (see `docs/specs/PHASE1-WAIVER-LOG.md`). |
-| **Collections** | `collection_activities` admin list + log flow — closes **W-COLL-01**. |
-| **Billing automation** | Shared `src/lib/billing/generate-monthly-invoices.ts`, unique index `071`, Edge Function `generate-monthly-invoices` + cron docs — **W-BILL-EF-01** addressed for monthly generation; AR aging automation remains a follow-up where the spec calls for it. |
-| **Phase 3 Module 24 (Executive)** | Core command-center UI is live under `/admin/executive/*`; see `docs/specs/README.md` Phase 3 table for Enhanced backlog. |
-| **Admin create flows (W-ADMIN-01)** | **`/admin/residents/new`**, **`/admin/staff/new`**, **`/admin/schedules/new`**, **`/admin/certifications/new`**, **`/admin/staffing/new`**, **`/admin/time-records/new`**, **`/admin/billing/rates/new`**; other admin modules may still be list-first where waived. |
+| Module | Spec File | Spec Status | Build Status |
+|--------|-----------|-------------|--------------|
+| 00 — Foundation | `00-foundation.md` | FULL | Core shipped |
+| 00 — Foundation Regulatory | `00-foundation-regulatory.md` | PARTIAL | Core shipped |
+| 01 — Referral & Inquiry | `01-referral-inquiry.md` | PARTIAL + COL notes | Queued |
+| 02 — Admissions | `02-admissions-move-in.md` | PARTIAL + COL notes | Queued / partial UI |
+| 03 — Resident Profile | `03-resident-profile.md` | FULL | Core shipped |
+| 03 — Resident Profile Advanced | `03-resident-profile-advanced.md` | PARTIAL | Core shipped |
+| 04 — Daily Operations | `04-daily-operations.md` | FULL | Core shipped |
+| 04 — Daily Operations Offline | `04-daily-operations-offline.md` | STUB | Pending |
+| 05 — Discharge & Transition | `05-discharge-transition.md` | PARTIAL + COL notes | Queued |
+| 06 — Medication Management | `06-medication-management.md` | FULL | Core shipped |
+| 07 — Incident Reporting | `07-incident-reporting.md` | FULL + COL notes | Core shipped |
+| 08 — Compliance Engine | `08-compliance-engine.md` | FULL + COL notes | Core shipped |
+| 09 — Infection Control | `09-infection-control.md` | FULL + COL notes | Core shipped |
+| 10 — Quality Metrics | `10-quality-metrics.md` | PARTIAL + COL notes | In progress |
+| 11 — Staff Management | `11-staff-management.md` | FULL + COL notes | Core shipped |
+| 12 — Training & Competency | `12-training-competency.md` | PARTIAL (promoted from STUB) | Pending |
+| 13 — Payroll Integration | `13-payroll-integration.md` | STUB | Blocked — COL payroll vendor unknown |
+| 14 — Dietary & Nutrition | `14-dietary-nutrition.md` | PARTIAL (promoted from STUB) | Pending |
+| 15 — Transportation | `15-transportation.md` | PARTIAL (promoted from STUB) | Pending |
+| 16 — Billing & Collections | `16-billing.md` | FULL + COL notes | Core shipped |
+| 17 — Entity Finance | `17-entity-facility-finance.md` | PARTIAL + COL notes | Core shipped |
+| 18 — Insurance & Risk | `18-insurance-risk-finance.md` | PARTIAL + COL notes | Core shipped |
+| 19 — Vendor Management | `19-vendor-contract-management.md` | PARTIAL + COL notes | In progress |
+| 21 — Family Portal | `21-family-portal.md` | PARTIAL + COL notes | Queued |
+| 22 — Referral CRM | `22-referral-crm.md` | STUB | Pending |
+| 23 — Reputation | `23-reputation.md` | STUB | Pending |
+| 24 — Executive Intelligence | `24-executive-intelligence.md` | FULL + COL notes | Core shipped |
+| 24 — Executive Intelligence v2 | `24-executive-v2.md` | STUB | Pending |
+| 25 — Resident Assurance Engine | `25-resident-assurance-engine.md` | PARTIAL + COL notes | In progress |
+| 26 — Reporting Module | `26-reporting-module.md` | STUB | Pending |
 
-For migration counts and environment alignment, use `PHASE1-ENV-CONFIRMATION.md` and Supabase CLI on the target project.
+**Spec status key:**
+- `FULL` — Complete: DDL, RLS, API contracts, UI screens, business rules, edge functions
+- `PARTIAL` — Incomplete: core schema present, some sections missing
+- `STUB` — Skeleton only: table definitions but minimal workflow or UI design
+- `+ COL notes` — COL-specific alignment notes appended (April 8, 2026 pass)
+- `(promoted from STUB)` — Enriched with COL wiki operational context on April 8, 2026
 
-### Completion-first sequencing before future roadmap expansion
+**Build status key:**
+- `Core shipped` — Migration applied, primary UI live, gates passed
+- `In progress` — Active build or hardening
+- `Queued / partial UI` — Spec complete enough to start; build not yet begun
+- `Pending` — Spec needs more work or COL data before build starts
+- `Blocked` — Cannot proceed without specific external input (noted in cell)
 
-Treat the current repo state as **Core shipped across many modules**, not as universal operational completion. Migrations `093`–`095` are now reserved for Phase 1 auth remediation, so before resuming future roadmap work at `096+`, execute the remediation sequence now captured in `docs/specs/README.md`:
+**COL Wiki & Roadmap Gap Analysis** (`docs/haven-gap-analysis.docx`) — produced April 8, 2026. Contains:
+- Full spec status audit across all 30 modules
+- Wiki domain coverage assessment (8 domains)
+- 21 prioritized items to collect from COL (5 CRITICAL, 9 HIGH, 7 MEDIUM)
+- 10 spec misalignments to correct before Oakridge pilot
 
-**Track A single roadmap:** `docs/specs/TRACK-A-CLOSEOUT-ROADMAP.md` — ordered steps, owners, and evidence for closing Phase 1 acceptance.
+### Completion-first sequencing
 
-1. **Phase 1 acceptance closeout** — RLS JWT matrix, real-auth UAT, env/seed verification, Pro/BAA/PITR attestation, active waiver review.
-2. **Platform hardening** — automated regression coverage, observability, CI hardening, runbooks for cron/secrets/replay.
+Current position: **closeout + hardening before expanding scope.** Do not start new modules until:
+
+1. **Phase 1 acceptance closeout** — RLS JWT matrix, real-auth UAT, env/seed verification, Pro/BAA/PITR attestation, active waiver review. See `TRACK-A-CLOSEOUT-ROADMAP.md`.
+2. **Platform hardening** — automated regression coverage, observability, CI hardening, runbooks.
 3. **Workflow hardening** — billing, eMAR, referral/admission/discharge, family/audit, executive operations.
-4. **Phase 6 completion pass** — deepen training, dietary, transportation, referral CRM, and reputation beyond manual Core flows.
-5. **Only then** resume remaining future modules starting with **Resident Assurance Engine** (`098`–`101`) and then the remaining strategic / moonshot roadmap.
+4. **COL document collection** — 21 items identified in `docs/haven-gap-analysis.docx`. CRITICAL items must be collected before compliance engine and admission modules can be fully activated.
+5. **Phase 6 completion pass** — deepen training (12), dietary (14), transportation (15), referral CRM (22), reputation (23) beyond manual Core flows.
+6. **Then** resume: Resident Assurance Engine (25), then remaining strategic/moonshot modules.
 
-Use these delivery states consistently:
-
-- **Spec written**
-- **Core shipped**
-- **Operationally hardened**
-- **Acceptance complete**
-
-This repo should not describe a module as “complete” when the evidence only supports “Core shipped.”
+Use these delivery states consistently: **Spec written → Core shipped → Operationally hardened → Acceptance complete.**
 
 ---
 

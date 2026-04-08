@@ -51,3 +51,11 @@ Add **jurisdiction-aware** facility attributes and **staffing ratio rule** linka
 ## Non-goals (this placeholder)
 
 - Full AHCA rule engine — Compliance Module 08 owns deficiency taxonomy; this addendum only stores **facility identity** and **ratio set** hooks.
+
+## COL Alignment Notes
+
+**Florida ALF as the primary jurisdiction:** All 5 COL facilities are Florida-licensed Assisted Living Facilities under FL Chapter 429 and FAC 59A-36. The regulatory framework seed data must be Florida-specific. Do not seed other state regulatory frameworks until COL expands beyond Florida.
+
+**Facility license categories:** All 5 COL facilities are standard ALF category (not Extended Congregate Care or Limited Nursing Services). If COL's licenses are ever upgraded to ECC or LNS (which allows higher acuity residents), the regulatory spec must have a migration path to add those license-specific requirements. Design the jurisdiction_attributes table to support future license category expansion.
+
+**County health departments:** COL facilities span 3 counties (Lafayette, Suwannee, Columbia). Some local health department reporting requirements may differ by county. The regulatory configuration should support county-level attribute overrides on top of the state-level base.

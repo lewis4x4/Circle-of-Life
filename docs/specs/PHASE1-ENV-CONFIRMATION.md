@@ -2,9 +2,9 @@
 
 **Purpose:** Record **repo and CLI** checks for target Supabase alignment. **Dashboard-only** items (Pro, BAA, PITR) remain **owner-confirmed**.
 
-**Last run (repo/CLI):** 2026-04-06 — `npm run build` / `migrations:check`: **95** migration files **001–095** in [`supabase/migrations/`](../../supabase/migrations/).
+**Last run (repo/CLI):** 2026-04-08 — `npm run build` / `migrations:check`: **109** migration files **001–109** in [`supabase/migrations/`](../../supabase/migrations/) — see [README.md migration map](./README.md#migration-map-summary-repo-as-of-2026-04-08).
 
-**Last run (remote):** 2026-04-06 — `supabase db push` successfully applied **093**, **094**, and **095** to project `manfqmasfqppukpobpld`. `supabase migration list` now shows **Local | Remote** aligned **001 through 095**.
+**Last run (remote):** 2026-04-06 — `supabase db push` applied **093**, **094**, and **095** to project `manfqmasfqppukpobpld`. **Owner must re-run** `supabase migration list` after pulling latest repo — remote should align through **`109`** for full parity; document result below when confirmed.
 
 **Edge Functions (same session):** `export-audit-log`, `dispatch-push`, `generate-monthly-invoices`, and `exec-kpi-snapshot` deployed (`supabase functions deploy … --project-ref manfqmasfqppukpobpld`); bundles matched existing deployed versions (**No change found**).
 
@@ -28,9 +28,9 @@ Command: `supabase migration list`
 
 **Canonical ops flow:** [PHASE1-OPS-VERIFICATION-RUNBOOK.md](./PHASE1-OPS-VERIFICATION-RUNBOOK.md)
 
-**Local repo (file count / sequence):** **PASS** — `migrations:check` reports **001–095** (2026-04-06).
+**Local repo (file count / sequence):** **PASS** — `migrations:check` reports **001–109** (2026-04-08).
 
-**Remote (target Supabase project):** **PASS** (2026-04-06) — `migration list` Local/Remote **001–095**; `db push` up to date.
+**Remote (target Supabase project):** **VERIFY** — Re-run `supabase migration list` and `supabase db push` until Local/Remote show **001–109** (owner action; was **001–095** as of 2026-04-06).
 
 ---
 
@@ -60,7 +60,7 @@ Command: `supabase migration list`
 | ID | Repo/CLI result | Owner still required |
 |----|-----------------|----------------------|
 | PH1-P01 | **PASS** — owner confirmed project ref | Brian Lewis — 2026-04-06: active project `manfqmasfqppukpobpld`; confirm `.env.local` `NEXT_PUBLIC_SUPABASE_URL` still matches (not committed) |
-| PH1-P02 | **PASS** | `supabase migration list` now shows Local/Remote **001–095** (2026-04-06) |
+| PH1-P02 | **VERIFY** | `supabase migration list` — target **001–109** local/remote parity (update row when owner confirms) |
 | PH1-P03–P04 | — | Seed + facility selector UAT; current remediation scope is single-facility pilot |
 | PH1-P05 | N/A until Storage uploads | — |
 | PH1-P06 | — | Dashboard: Pro / BAA / PITR |

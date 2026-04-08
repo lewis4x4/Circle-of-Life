@@ -616,3 +616,22 @@ New migration file: `037_medication_management_advanced.sql` (repo uses `036` fo
 7. Create `updated_at` triggers on `verbal_orders` and `medication_errors` via Haven helpers; add `updated_by` columns where `haven_set_updated_at` applies
 
 No changes to existing `resident_medications` or `emar_records` tables — the Phase 1 schema already has all needed fields.
+
+## COL Alignment Notes
+
+**Baya partnership — critical integration point:** COL uses Baya as an external medication management oversight and training partner (active contract confirmed). The medication management spec models an in-house medication program. Key points for COL alignment:
+- Baya may review medication orders or provide oversight — clarify whether Baya has any role in the Haven medication workflow (order review, MAR audit) or is purely a training vendor.
+- If Baya has an API or data export, Module 06 should accept Baya training completion data to update staff medication competency status in Module 12.
+- Collect the full Baya contract scope of services before finalizing the medication oversight workflow.
+
+**COL medication forms mapped to spec:**
+- `Medication Order Form.pdf` → physician_orders table
+- `Medication Order Form Cover Sheet.pdf` → order transmittal tracking
+- `Back of MOR.pdf` → MAR reverse-side documentation (notes, refusals, initials)
+- `Narcotic Count Log.pdf` → controlled_substance_counts table
+- `Disposal Log.Pharmacy.pdf` → medication_destructions (pharmacy return)
+- `Disposal Log.Onsite.pdf` → medication_destructions (on-site disposal)
+
+All six forms should be fully digitalized by Module 06. Staff should not need to maintain paper versions after Haven deployment.
+
+**Medication audit tool:** COL uses a `Medication Audit.xlsx` for periodic compliance auditing of medication management. Module 06's compliance reporting should produce an equivalent digital audit view so administrators can run medication audits from Haven without maintaining a separate spreadsheet.

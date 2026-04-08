@@ -567,3 +567,27 @@ CREATE TABLE vendor_po_sequences (
 ## Spec summary (for handoff)
 
 **Vendor & Contract Management** delivers **vendor master**, **contracts**, **alerts**, **POs**, **vendor invoices**, **payments** with application lines, **vendor insurance** compliance, and **scorecards**, with **GL-ready** vendor payment hooks to Module 17.
+
+## COL Alignment Notes
+
+**COL's active vendor ecosystem (seed data):** COL has 50+ active vendor contracts across 5 facilities. The `vendors` table should be seeded at launch with COL's confirmed vendor list. Key vendors from `Management/Agreements/`:
+- **Baya** — Medication management training/oversight (critical: links to Module 12)
+- **Cheney Bros** — HVAC/mechanical (multiple facilities)
+- **FloridaLab** — Laboratory services (all 5 facilities)
+- **Caring.com** — Referral directory (links to Module 22)
+- **Green Star** — Landscaping/grounds
+- **Cintas** — Uniform/linen rental (multiple facilities)
+- **Zultys** — Telecommunications/phone system
+- **Ascentium** — Technology/equipment financing
+- **BioCycle** — Waste management/recycling
+- **GW Hunter** — Pest control/maintenance
+- **AT&T** — Telecom (Grande Cypress)
+- **Ring Power** — Equipment/utility
+- **Waste Pro** — Waste management (Grande Cypress)
+- **Number One Vending Services** — Vending
+- **FL Environmental Consultants** — Environmental compliance
+- **Generator Agreement vendor (GC)** — Emergency power (Grande Cypress)
+
+**Insurance compliance per vendor:** Some vendors (like FloridaLab, Cheney Bros) carry their own liability insurance. Module 19's vendor insurance compliance tracking should verify COI (Certificate of Insurance) is current for each vendor. COL's Agreements folder suggests they already collect COIs.
+
+**Medicaid contracts are a special vendor category:** COL's Medicaid MCO contracts (FCC, Sunshine, Humana, WellCare, UHC) per facility represent a distinct vendor relationship type — they are payer agreements, not service vendors. These should be tagged `vendor_type = 'medicaid_payer'` in the vendors table and linked to Module 16 (Billing) payer configuration.

@@ -751,3 +751,25 @@ CREATE POLICY "Users see census for accessible facilities"
 CREATE UNIQUE INDEX idx_census_daily_facility_date ON census_daily_log(facility_id, log_date);
 CREATE INDEX idx_census_daily_org_date ON census_daily_log(organization_id, log_date DESC);
 ```
+
+## COL Alignment Notes
+
+**COL organization seed data:** At org initialization, seed the following facilities (confirmed from wiki):
+- Oakridge ALF — Lafayette County, FL — pilot facility (~52 beds)
+- Rising Oaks ALF — Suwannee County, FL (~52 beds)
+- Homewood Lodge ALF — Lafayette County, FL (~36 beds)
+- Plantation ALF — Columbia County, FL (~64 beds)
+- Grande Cypress ALF — Columbia County, FL (~54 beds)
+
+All 5 facilities are under one organization (Circle of Life) with separate legal entities per facility. All are in the America/New_York timezone.
+
+**RBAC role seeding for COL:** COL's operational roles map to Haven app_role enum as follows:
+- Owner/executive → `owner`
+- Administrator (per facility) → `facility_admin`
+- Nurses / LPNs → `nurse`
+- Caregivers / CNAs → `caregiver`
+- Dietary staff → `dietary`
+- Maintenance → `maintenance_role`
+- Family members → `family`
+
+**Audit log immutability:** COL's compliance history and the requirement to produce audit trails for AHCA surveyors makes audit_log immutability non-negotiable. Never add UPDATE or DELETE policies to audit_log under any circumstances.

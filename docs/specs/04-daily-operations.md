@@ -540,3 +540,15 @@ Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
 | Log behavioral event | Yes (queued) | Submit on reconnect |
 | Report condition change | Yes (queued) | Submit on reconnect. Severity-based notifications fire on sync, not on local save. Display "pending sync" badge. |
 | View/acknowledge handoff | No (requires current data) | Show offline indicator |
+
+## COL Alignment Notes
+
+**Activity log alignment:** COL uses an `Activity Log.pdf` to track resident activity participation. The `activity_sessions` and `activity_attendance` tables cover this workflow. The activity category taxonomy in Haven should match COL's existing activity types (social, recreational, therapeutic, religious, educational, etc.) as documented in their activity logs.
+
+**Night shift procedure docs:** COL has separate `Night Shift Employee 1.pdf` and `Night Shift Employee 2.pdf` procedure documents — these are large (indicating extensive content) and likely define the overnight care tasks that should appear in the daily_logs checklist for night shift staff. Before finalizing the daily log task checklist, review COL's night shift procedure documents to ensure Haven captures all required overnight care tasks.
+
+**24-Hour Communication Sheet:** COL uses a `24-Hour Communication Sheet.xlsx` as the primary shift-to-shift handoff tool. The `shift_handoffs` table in Module 04 digitalizes this. At Oakridge pilot launch, run parallel (paper + Haven) for 30 days before retiring the paper form.
+
+**Housekeeping & laundry checklist:** COL has a `Day Shift Housekeeping & Laundry.pdf` checklist. Consider adding a `housekeeping_logs` table or integrating housekeeping tasks into the daily_logs framework so environmental services compliance (room cleanliness, linen change frequency) is tracked alongside care tasks.
+
+**Physician visit documentation:** COL uses a `Physician Visits Form.pdf` to document doctor visits and resulting orders. This maps to the condition_changes and physician_orders workflows. Ensure the daily operations UI includes a "Physician Visit" log entry type that captures: physician name, visit date/time, reason, verbal/written orders resulting, follow-up required.

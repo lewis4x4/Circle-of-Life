@@ -12,7 +12,7 @@ Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs 
 |-------|--------|
 | **Engineering baseline** | **PASS** — lint, build, migration replay, secrets, audit, segment gates; see §G and [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) |
 | **Known gap waivers (§F)** | **PARTIALLY REMEDIATED** — W-RCA-01 / W-COLL-01 / W-BILL-EF-01 closed in repo; **W-ADMIN-01** remains — [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) |
-| **Environment / remote migrations** | **PASS** — Repo and remote migrations aligned **001–095** (2026-04-06); see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
+| **Environment / remote migrations** | **VERIFY** — Repo has **001–109** (2026-04-08); owner must confirm **remote** matches local on target project; see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
 | **Full product acceptance** (remaining preconditions, A–D UAT, RLS, Pro/BAA/PITR) | **NOT COMPLETE** — [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md), [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) |
 
 **Closure record:** [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) — **NOT COMPLETE** until blockers in that file are cleared.
@@ -255,7 +255,7 @@ Before closing Phase 1, record **mission alignment** `pass` | `risk` | `fail` wi
 | Command / gate | Result |
 |----------------|--------|
 | `npm run lint` | PASS |
-| `npm run build` | PASS (95 migrations 001–095) |
+| `npm run build` | PASS (109 migrations 001–109) |
 | `npm run migrations:verify:pg` | PASS |
 | `npm run check:secrets` | PASS |
 | `npm audit` | 0 vulnerabilities |

@@ -61,3 +61,13 @@ See migrations **`081`** (DDL + view) and **`082`** (RLS + triggers).
 ## Definition of done (Core segment)
 
 - Migrations apply; types updated; routes listed; `npm run segment:gates -- --segment "<id>" --ui` **PASS** when UI ships.
+
+## COL Alignment Notes
+
+**Master Quality Assurance Tool integration:** COL uses a `Master Quality Assurance Tool.xlsx` for internal QA across all 5 facilities. This tool tracks compliance metrics and audit findings. Module 10's quality metric definitions should map to and eventually replace this spreadsheet. At pilot launch, the QA tool's categories should be reviewed and aligned with Haven's `quality_metric_definitions` seed data.
+
+**MCO-specific reporting:** COL has contracts with 5–6 Medicaid MCOs per facility (FCC, Sunshine, Humana, WellCare, UHC). Each MCO may have different quality reporting requirements and value-based payment metrics. Module 10's insurance carrier report generation feature must support per-MCO metric sets. Collect each MCO's quality reporting requirements from the Medicaid contracts in `Management/Medicaid Contracts/`.
+
+**Payroll-Based Journal (PBJ):** Module 10 tracks PBJ data for CMS staffing transparency reporting. COL's actual staffing hours by role must be collected from payroll records to validate PBJ baseline numbers at pilot launch. Connect with Module 13 (Payroll) — when COL's payroll vendor is identified, PBJ data should flow from payroll records automatically.
+
+**Facility-level quality baselines unknown:** COL's current quality metric baselines (fall rates, hospitalization rates, medication error rates, survey deficiency rates) are not documented in the wiki. Request COL's internal QA reports from the past 12 months to establish baselines before activating quality scoring.

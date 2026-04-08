@@ -363,3 +363,20 @@ WHERE
 ## Spec summary (for handoff)
 
 **Executive Intelligence v1** adds **configuration**, **KPI snapshots**, **prioritized alerts**, and **saved reports** — **aggregating** existing Haven data for **owner visibility** without duplicating PHI. **NLQ, scenarios, and AI insights** are **out of scope** for Core v1 (Phase 5).
+
+---
+
+## COL Alignment Notes
+
+**COL facility roster (seed data):** The Executive Intelligence KPI command center must be seeded with COL's 5 facilities:
+- Oakridge ALF — Lafayette County, FL (~52 beds, pilot facility)
+- Rising Oaks ALF — Suwannee County, FL (~52 beds)
+- Homewood Lodge ALF — Lafayette County, FL (~36 beds)
+- Plantation ALF — Columbia County, FL (~64 beds, highest occupancy)
+- Grande Cypress ALF — Columbia County, FL (~54 beds, growth opportunity)
+
+**2026 Standup Call Log:** COL tracks management standup calls in `2026 Standup Call Log.xlsx`. This is the current analog for executive-level cross-facility coordination. The Executive Intelligence dashboard should replace/digitalize this workflow — the standup call log's typical agenda items (census, incidents, staffing, billing) map directly to the KPI domains in Module 24.
+
+**Benchmarking privacy floor:** The executive benchmarking feature must ensure that cross-facility comparisons don't expose individual resident data. COL operates all 5 facilities within one org — benchmarking is intra-org. The privacy floor for intra-org benchmarking can be set lower than the cross-org floor, allowing facility-to-facility comparison of census, staffing ratios, and compliance scores for the owner.
+
+**Facilities Information document:** COL maintains a `Facilities Information.docx` (143KB, Aug 2025) with comprehensive per-facility data. This document should be ingested and its structured data used to validate the executive dashboard's facility profile data at pilot launch.

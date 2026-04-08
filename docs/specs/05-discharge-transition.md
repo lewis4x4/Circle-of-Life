@@ -76,3 +76,13 @@ CREATE TYPE discharge_med_reconciliation_status AS ENUM (
 ## Definition of done (Core segment)
 
 - Migrations apply; types updated; routes in `FRONTEND-CONTRACT.md`; `npm run segment:gates -- --segment "<id>" --ui` **PASS** when UI ships.
+
+## COL Alignment Notes
+
+**DCF discharge notice required for Medicaid residents:** COL uses `DCF Form 2506` (Medicaid Beneficiary Discharge Notice) when discharging Medicaid residents. This is a regulatory requirement — the notice must be provided to the resident, family/representative, and DCF within specified timeframes. The discharge workflow must include a DCF 2506 generation step that is triggered when `payer_source = Medicaid`.
+
+**Admit & Discharge Log:** COL tracks all admissions and discharges in `Admit & Discharge Log.xlsx`. The discharge module should generate entries compatible with this log format and provide an export for census continuity during the transition from paper to Haven.
+
+**Discharge planning procedures not fully documented:** COL's formal discharge planning process (who initiates, what forms, family notification timeline, physician involvement) is not fully documented in the wiki. Before finalizing Module 05 UI, collect COL's discharge planning SOP from the administrator.
+
+**Resident rights notification at discharge:** FL §429.28 requires specific notification of resident rights at discharge. The discharge checklist must include: resident notified of rights, 30-day notice provided (except emergency discharge), grievance procedure explained. The discharge workflow should not allow `discharge_complete` status without these checklist items confirmed.

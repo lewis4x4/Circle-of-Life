@@ -743,3 +743,13 @@ Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
 | Create assessment | Yes (queued) | Submit on reconnect, timestamp preserved from entry time |
 | Take photo | Yes (stored locally) | Upload on reconnect |
 | View overdue assessments | No (requires server query) | Show "offline" indicator |
+
+## COL Alignment Notes
+
+**Resident file audit alignment:** COL uses a `Resident File Checklist.xlsx` and `Resident File Audit.docx` to audit resident care file completeness across all facilities. The resident profile completeness model should align with COL's required resident file checklist items: Form 1823, admission agreement, advance directives/DNRO status, emergency contact, photo ID, insurance cards, physician contact.
+
+**Resident File Checklist as completeness gate:** Consider surfacing a "file completeness score" on the resident profile — the percentage of required documents on file. This maps directly to COL's existing audit tool and would give administrators immediate visibility into compliance gaps before a surveyor arrives.
+
+**Assessment templates — COL validation needed:** The spec seeds Katz ADL, Morse Fall, Braden, and PHQ-9 assessment templates. Confirm with COL's nursing director that these are the assessment tools they currently use. Some ALFs use different fall risk scales (STRATIFY vs. Morse). Do not ship assessment templates without COL clinical staff validation.
+
+**Resident photo policy:** COL's brand guide specifies photography standards (residents centered, authentic moments, dignity preserved). The resident photo upload flow in the profile must enforce these standards via guidance text in the UI — not just store whatever is uploaded.

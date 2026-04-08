@@ -436,3 +436,22 @@ Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
 | My Invoices | `/family/invoices` | List of invoices for linked resident. View detail. |
 | Billing Summary | `/family/billing` | Read-only billing summary and current balance for linked resident. |
 | Payment History | `/family/payments` | List of posted payments and receipts. |
+
+---
+
+## COL Alignment Notes
+
+**Medicaid MCO names for all 5 facilities:** COL has active Medicaid managed care contracts with the following payers at each facility:
+- Oakridge ALF: FCC, Sunshine Health, Humana, WellCare, UHC
+- Rising Oaks ALF: FCC, Sunshine Health, Humana, WellCare, UHC
+- Homewood Lodge ALF: FCC, Sunshine Health, Humana, WellCare (x2), UHC
+
+These MCOs must be seeded as `payer_source` records at org initialization. Payment terms, authorization requirements, and billing codes differ per MCO. Collect current fee schedules and authorization procedures from each MCO contract before enabling Medicaid billing in the platform.
+
+**A/R history available:** COL has 5+ years of monthly A/R reconciliation data by facility (2019–2026). This data can be used to: (1) validate invoice generation logic against historical billing patterns, (2) seed the AR aging baseline for the pilot facility, (3) inform collection_activities default timelines based on how COL has historically managed collections.
+
+**DCF billing for Medicaid residents:** COL uses DCF eligibility review forms for Medicaid resident benefit verification. When a resident's payer is Medicaid, the billing workflow should surface a DCF eligibility verification step at admission (Module 02 integration) and trigger re-verification annually. DCF Form 2506 (discharge notice) must be generated when a Medicaid resident is discharged.
+
+**Statement of Accounts format:** COL maintains a consolidated `Statement of Accounts.xlsx` across facilities. The Module 16 AR aging export should be compatible with COL's existing statement format so administrators can reconcile Haven-generated statements with their historical records during the transition period.
+
+**Private-pay rates unknown:** COL's current private-pay rate schedules (by care level — standard ALF, Level II care, etc. — by facility) are not in the wiki. These must be collected from COL before the billing module can generate accurate invoices. Rate schedules differ by facility. This is a HIGH priority item.

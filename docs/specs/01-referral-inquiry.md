@@ -204,3 +204,11 @@ Table **`integration_inbound_queue`** (already exists) columns include `source_s
 ## Cross-reference: README migration alignment
 
 The Phase 4 row in [`README.md`](README.md) must list **`075`–`076`** (not `070`–`071`) until historical renumbering is done — see table update in the same PR as this spec.
+
+## COL Alignment Notes
+
+**Caring.com is an active referral source:** COL has an active contract with Caring.com (a paid senior living directory) in `Management/Agreements/Caring.com Contract.pdf`. Module 22 (Referral CRM) handles Caring.com's lead attribution in detail, but Module 01's `referral_sources` table must include Caring.com as a seeded source at org initialization with `source_type = 'paid_directory'` and `monthly_cost` populated from the contract.
+
+**Tour tracking:** COL uses `Tour Satisfactory Forms` to document prospect facility tours. The referral inquiry module should model a `tour_scheduled` → `tour_completed` → `tour_follow_up` workflow as part of the lead pipeline. Tour satisfaction ratings feed into Module 23 (Reputation) metrics.
+
+**Inquiry intake process not documented:** COL's formal inquiry intake process (how initial phone inquiries are handled, what information is collected, who handles them) is not documented in the wiki. Before building the Module 01 UI, collect COL's current inquiry intake workflow to ensure the form fields match what their staff currently capture.

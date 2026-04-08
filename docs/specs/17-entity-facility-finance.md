@@ -272,3 +272,15 @@ Canonical routes (add to [FRONTEND-CONTRACT.md](FRONTEND-CONTRACT.md) when imple
 **Exact Core scope:** `gl_accounts`, `journal_entries`, `journal_entry_lines`; RLS; triggers; admin routes in § Admin UI; no budgets; no invoice/payment posting.
 
 **Recommended first implementation slice:** migration `040` + COA + journal CRUD + read-only ledger + facility_admin read-only; integration points documented in § Module 16 relationship.
+
+## COL Alignment Notes
+
+**5-entity structure:** COL operates 5 facilities, each under a separate legal LLC entity. The GL must be configured with one chart of accounts per entity. Confirm with COL whether all entities use the same COA structure or whether individual facilities have entity-specific accounts (e.g., Plantation LLC has different loan obligations than Oakridge LLC).
+
+**Budget data not in wiki:** COL's annual budgets by facility are not documented in the wiki. Module 17's budget-to-actual variance reporting cannot be activated until budget data is loaded. Request current-year budgets (or prior-year actuals as a proxy) from COL's owner/controller.
+
+**Statement of Accounts:** COL maintains a `Statement of Accounts.xlsx` consolidated across facilities. The Module 17 entity finance reporting should produce a Haven-generated equivalent so COL can transition from the spreadsheet during the pilot period.
+
+**Vendor contract financial obligations:** COL has 50+ active vendor contracts (Cintas, FloridaLab, Cheney Bros, Green Star, Zultys, AT&T, etc.). The GL's recurring payable entries should reflect these contract obligations. Module 19 (Vendor Management) handles contract tracking — Module 17 handles the GL postings. Ensure the vendor payment workflow in Module 19 triggers journal entry creation in Module 17.
+
+**Mileage reimbursement as a GL line item:** COL tracks employee mileage reimbursement (confirmed: `Darren - Mileage Report 2025.xlsx`). Module 15 (Transportation) tracks mileage logs; Module 17 must receive the approved mileage reimbursement totals as payroll-adjacent GL entries. Map `mileage_logs.reimbursement_amount_cents` → Module 17 GL account for employee expense reimbursement.

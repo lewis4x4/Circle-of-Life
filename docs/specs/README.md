@@ -8,6 +8,35 @@
 - **Timezone:** America/New_York (all facilities in North Florida)
 - **Critical:** Confirm Pro plan with signed BAA before any PHI enters. Confirm Point-in-Time Recovery enabled.
 
+## Current state (reconciled 2026-04-08)
+
+**Repo migrations:** **`001`–`109`** — 109 SQL files, sequential numeric prefixes (no gaps). Verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release.
+
+**Where acceptance stands**
+
+| Layer | Status | Authoritative file |
+|-------|--------|-------------------|
+| Phase 1 — engineering (lint, build, replay, gates) | **PASS** | [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) |
+| Phase 1 — full acceptance (real auth, RLS matrix, UAT, Pro/BAA/PITR) | **NOT COMPLETE** — **Track A open** | [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md), [PHASE1-ACCEPTANCE-CHECKLIST.md](./PHASE1-ACCEPTANCE-CHECKLIST.md) |
+| Phase 2 — acceptance | **PASS** (2026-04-04) | [PHASE2-ACCEPTANCE-CHECKLIST.md](./PHASE2-ACCEPTANCE-CHECKLIST.md) |
+| Phases 3–6 — Core DDL + primary UI | **Shipped** in repo | Phase tables below |
+| Phases 3–6 — live proof / operational hardening | **Incomplete** until Track A and Tracks B–D as applicable | Same tables + remediation tracks |
+
+**Important:** Code and migrations have **outpaced** formal Phase 1 acceptance. **Do not** treat “migrations applied” or “routes exist” as equivalent to **Track A closed** or **production-ready** for PHI.
+
+**Next free migration number:** **`110`** — use for all new DDL after updating this README and the relevant spec.
+
+**Post–Phase 6 work already in repo (`096`–`109`)** — see [Post–Phase 6 shipped work](#postphase-6-shipped-work-migrations-096109) below. Older roadmap drafts that reserved `096`+ for “digital twin” or “maintenance” are **obsolete**; those migration numbers are now consumed as listed.
+
+### What to do next (closeout order)
+
+1. **Track A** — Unblock hosted Auth → RLS matrix → real-auth UAT → env/seed → Pro/BAA/PITR → waiver review. Single roadmap: [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md). Nothing else is “done” for production PHI until A1 works.
+2. **Confirm remote DB** — `supabase migration list` on the target project must match **local `001`–`109`** before claiming parity.
+3. **Tracks B–D** — Platform hardening, workflow hardening, Phase 6 Enhanced gaps — per sections below.
+4. **Track E** — New DDL starting at migration **`110`** only after specs exist and Tracks A–D are appropriately satisfied for your risk tolerance.
+
+---
+
 ## Build Execution Order
 
 Claude Code executes migrations and builds features in this exact sequence. Do not skip ahead. Each spec contains: database schemas (complete CREATE TABLE statements), RLS policies, business rules, API endpoints, Edge Functions, UI screens, and offline behavior.
@@ -261,14 +290,37 @@ Implement after predecessor migrations and specs exist.
 | 26 | `15-transportation.md` | Transportation | `090` | ✅ **Spec written.** `fleet_vehicles`, `vehicle_inspection_logs`, `driver_credentials`; trip scheduling/reminders remain follow-up depth. |
 | 27 | `22-referral-crm.md` | Referral Source CRM | `091` | ✅ **Spec written.** `referral_hl7_inbound` queue; HL7 listener = Enhanced. |
 | 28 | `23-reputation.md` | Reputation Management | `092` | ✅ **Spec written.** `reputation_accounts`, `reputation_replies` (`posted_by_user_id`); API sync = Enhanced. |
-| 29 | `26-digital-twin.md` | Facility Digital Twin | `096` | `twin_scenario_runs` + deterministic seed; **~6 months live data** prerequisite. |
-| 30 | `13-maintenance.md` | Facility Maintenance | `097` | Shares `vendors.id` (Module 19); work orders, PM schedules, building inventory. |
+
+**Deferred (not yet in repo — migration numbers TBD, start at `110`+ when specced):**
+
+| Spec file | Module | Notes |
+|-----------|--------|-------|
+| `26-digital-twin.md` / `27-digital-twin.md` | Facility Digital Twin | Spec exists in roadmap; **not** implemented — do **not** assume migration `096` (that number is [Executive Intelligence v3](#postphase-6-shipped-work-migrations-096109)). |
+| `13-maintenance.md` | Facility Maintenance | Not yet written; shares `vendors` (Module 19). |
 
 ---
 
-### Completion remediation tracks (execute before future roadmap migrations `096+`, and before calling earlier phases “complete”)
+### Post–Phase 6 shipped work (migrations `096`–`109`)
 
-The repo now contains broad **Core-shipped** surface area across Phases 1–6. That is **not** the same as operational readiness or acceptance. Migrations `093`–`095` are now consumed by Phase 1 auth remediation, so before resuming future roadmap work at **`096`** and beyond, execute the remediation tracks below in order.
+These landed **after** Phase 6 (`086`–`092`) and Phase 1 auth remediation (`093`–`095`). They extend Executive Intelligence, add Resident Assurance and Reporting, and introduce onboarding — **in addition to** the phase tables above.
+
+| Range | Spec / theme | What it does (summary) |
+|-------|----------------|------------------------|
+| `096`–`097` | `24-executive-intelligence.md` (v3 patch) | Executive Intelligence v3 + audit fix (`096_executive_intelligence_v3.sql`, `097_fix_exec_intelligence_audit.sql`). Admin: extended `/admin/executive/*` and `/admin/reports/*` surfaces as implemented in repo. |
+| `098`–`101` | `25-resident-assurance-engine.md` | Resident Assurance schema, RLS, audit, seed (`098`–`101`). |
+| `102`–`106` | `26-reporting-module.md` | Reporting module schema, RLS, audit, seed, saved-views backfill. |
+| `107` | `25-resident-assurance-engine.md` (patch) | Resident Assurance indexes + RLS patch. |
+| `108`–`109` | Onboarding (spec TBD / align with FRONTEND-CONTRACT) | `108_onboarding_responses.sql`, `109_onboarding_question_tiers.sql` — wire to product docs when promoting onboarding to FULL. |
+
+**UI pointers (non-exhaustive):** `/admin/rounding/*`, `/caregiver/rounds/*`, `/admin/reports/*`, onboarding routes as present under `src/app/`. Edge Functions and API routes: see `supabase/functions/` and `src/app/api/`.
+
+---
+
+### Completion remediation tracks (closeout + hardening — still required)
+
+The repo contains broad **Core-shipped** surface through migration **`109`**. That is **not** the same as operational readiness, acceptance, or PHI-safe production. Migrations **`093`–`095`** addressed **Phase 1 auth remediation** in SQL; **hosted Auth** may still block pilot JWTs — see Track A.
+
+Execute the remediation tracks below **in order** for **evidence and hardening**, not as a claim that `096`+ is “future work only.”
 
 #### Track A — Phase 1 acceptance closeout (blocking)
 
@@ -329,35 +381,41 @@ Before treating Phase 6 as “done,” revisit the recently shipped Core modules
 - Referral CRM: HL7 listener / parser beyond manual queue ingest
 - Reputation: platform sync / publishing APIs beyond manual tracking
 
-#### Track E — Resume future roadmap modules
+#### Track E — Next roadmap DDL (after Tracks A–D and spec approval)
 
-Only after Tracks A–D should roadmap execution resume with:
+**Resident Assurance, Reporting, Exec v3, and onboarding migrations `096`–`109` are already in the repo** — see [Post–Phase 6 shipped work](#postphase-6-shipped-work-migrations-096109). Track E is for **what comes next**, using migration numbers **`110`** and above (assign per spec when promoted).
 
-1. Phase 7 foundation for Resident Assurance (`098`–`101`)
-2. Remaining strategic modules (`102`–`105`)
-3. Phase 8 moonshot AI / ambient tracks (`106`–`111`)
-
----
-
-### Phase 7: Strategic
-
-| Order | Spec file | Module | Migration range | Audit / build notes |
-|-------|-----------|--------|-----------------|---------------------|
-| 31 | `25-resident-assurance-engine.md` | Resident Assurance Engine | `098`–`101` | Resident observation plans, task generation, caregiver rounding workflow, supervisor live board, and completion reports. |
-| 32 | `20-expansion-acquisition.md` | Expansion Planning | `102` | `expansion_scenarios` + immutable assumption hash; cap table modeling. |
-| 33 | `27-regulatory-intelligence.md` | Regulatory Intelligence | `103`–`104` | `regulatory_sources` (url, etag, sha256); diff pipeline; routed through `ai_invocations` with `phi_class = 'none'`. |
+| Priority | Spec / theme | Notes |
+|----------|--------------|--------|
+| 1 | `20-expansion-acquisition.md` (planned) | Expansion planning — **spec not yet in `docs/specs/`**; not migrated. |
+| 2 | `28-regulatory-intelligence.md` (planned) | Regulatory intelligence — **spec file not yet in `docs/specs/`**; add before migration. |
+| 3 | `13-maintenance.md` | Facility maintenance — spec not yet written. |
+| 4 | Digital twin | **No spec file in `docs/specs/`** as of 2026-04-08; **no** migration until spec exists + ~6 months live data prerequisite per original roadmap. |
+| 5 | Phase 8 AI / ambient subsystems | See [Phase 8 (planned)](#phase-8-planned--migration-numbers-tbd); **do not** reuse numbers `106`–`109` — those are **taken** by Reporting patch, Resident Assurance patch, and Onboarding. |
 
 ---
 
-### Phase 8: Moonshot AI and Ambient Intelligence
+### Phase 7: Strategic — build status vs repo (2026-04-08)
 
-| Order | Spec file | Module / subsystem | Migration range | Description |
-|-------|-----------|---------------------|-----------------|-------------|
-| 34 | `ai-A-pattern-detection.md` | Cross-Resident Pattern Detection | `106`–`107` | `pattern_detection_jobs`, `pattern_detection_findings`; Edge Function; `phi_class` gate. |
-| 35 | `ai-B-cognitive-load.md` | Cognitive Load Engine | `108` | `caregiver_load_samples`, `caregiver_load_rules`; deterministic scoring v1. |
-| 36 | `ai-C-family-risk.md` | Family Relationship Health | `109` | `family_engagement_signals`, `family_risk_scores` — **blocked on BAA or de-ID pipeline**. |
-| 37 | `ai-D-placement-optimizer.md` | Portfolio Placement Optimizer | `110` | `placement_constraints`, `placement_recommendations`; OR solver over census + staffing + payer mix. |
-| 38 | `26-ambient-intelligence.md` | Ambient Environment Intelligence | `111` | `ambient_consent_policies`, `resident_sensor_opt_in`; BLE/MQTT gateway; retention TTL; redaction Edge Function. |
+| Order | Spec file | Module | Migration range (planned) | Repo status (2026-04-08) |
+|-------|-----------|--------|---------------------------|-------------------------|
+| 31 | `25-resident-assurance-engine.md` | Resident Assurance Engine | `098`–`101`, patch `107` | ✅ **Shipped** — schema, RLS, audit, seed, indexes patch; admin `/admin/rounding/*`, caregiver `/caregiver/rounds/*`, API under `src/app/api/rounding/`. Hardening / acceptance: Tracks B–D as applicable. |
+| 32 | `20-expansion-acquisition.md` | Expansion Planning | TBD (`110`+) | 🔲 Not migrated |
+| 33 | `28-regulatory-intelligence.md` (planned) | Regulatory Intelligence | TBD (`110`+) | 🔲 Spec not yet in `docs/specs/`; not migrated |
+
+---
+
+### Phase 8 (planned) — migration numbers TBD
+
+**Warning:** Older drafts assigned moonshot DDL to migrations `106`–`111`. In **this** repo, **`106`** is `reporting_saved_views_backfill`, **`107`** is Resident Assurance patch, **`108`–`109`** are onboarding. **Phase 8 specs below have no reserved migration numbers until renumbered starting at `110+`.**
+
+| Order | Spec file | Module / subsystem | Planned content (assign migrations when specced) |
+|-------|-----------|---------------------|--------------------------------------------------|
+| 34 | `ai-A-pattern-detection.md` | Cross-Resident Pattern Detection | `pattern_detection_jobs`, `pattern_detection_findings`; Edge Function; `phi_class` gate. |
+| 35 | `ai-B-cognitive-load.md` | Cognitive Load Engine | `caregiver_load_samples`, `caregiver_load_rules`; deterministic scoring v1. |
+| 36 | `ai-C-family-risk.md` | Family Relationship Health | `family_engagement_signals`, `family_risk_scores` — **blocked on BAA or de-ID pipeline**. |
+| 37 | `ai-D-placement-optimizer.md` | Portfolio Placement Optimizer | `placement_constraints`, `placement_recommendations`; OR solver over census + staffing + payer mix. |
+| 38 | `26-ambient-intelligence.md` | Ambient Environment Intelligence | `ambient_consent_policies`, `resident_sensor_opt_in`; BLE/MQTT gateway; retention TTL; redaction Edge Function. |
 
 ---
 
@@ -408,19 +466,26 @@ Per-org provider routing is stored in **`ai_invocation_policies`**.
 
 ---
 
-### Segment count summary (post Phase 3 queue)
+### Migration map summary (repo as of 2026-04-08)
 
-| Phase | Segments / modules | Migration range |
-|-------|-------------------|-----------------|
-| Phase 3 remaining | 3 (24, 17-enh, 18-enh) | `047`–`049` |
-| Phase 3.5 | 19 segments + audit `069` | `050`–`069` |
-| Phase 4 | 3 modules | `075`–`080` (after repo `070`–`074`) |
-| Phase 5 | 3 modules | `081`–`085` |
-| Phase 6 | 8 modules | `086`–`092`, `096`–`097` (`093`–`095` reserved for auth remediation) |
-| Phase 7 | 3 modules | `098`–`104` |
-| Phase 8 | 5 modules / subsystems | `106`–`111` |
+| Range | What it covers |
+|-------|----------------|
+| `001`–`034` | Phase 1 Core + family calendar/messages + seeds + RLS tighten |
+| `035`–`039` | Phase 2 clinical depth |
+| `040`–`049` | Phase 3 finance, insurance, vendors, executive + Enhanced |
+| `050`–`069` | Phase 3.5 platform + patches + AI invocation framework + shift-swap RLS |
+| `070`–`074` | Incident RCA, billing uniqueness, staffing, time records |
+| `075`–`080` | Phase 4 referral, admissions, discharge |
+| `081`–`085` | Phase 5 quality, family portal, executive v2 |
+| `086`–`092` | Phase 6 training, payroll, dietary, transport, referral CRM, reputation |
+| `093`–`095` | Phase 1 auth remediation (SQL + seed repair — **hosted Auth** may still need project-level fix; Track A) |
+| `096`–`097` | Executive Intelligence v3 + audit fix |
+| `098`–`101`, `107` | Resident Assurance Engine (schema, RLS, audit, seed, patch) |
+| `102`–`106` | Reporting module (`26-reporting-module.md`) |
+| `108`–`109` | Onboarding (responses + question tiers) |
+| **`110`+** | **Next** — expansion, regulatory intel, maintenance, digital twin, Phase 8 AI/ambient (renumber specs before DDL) |
 
-**~43** discrete segments/modules beyond the current Phase 3 queue (see tables above for authoritative ordering).
+Phase 3 Core (`047`–`049`) is **shipped**; the “Phase 3 remaining” wording is obsolete for execution — use the closeout tracks for acceptance and hardening.
 
 ---
 
@@ -444,31 +509,37 @@ Module numbers match the product roadmap, **not** the build sequence. Build orde
 | 10 | Quality Metrics & Outcomes | 5 | `10-quality-metrics.md` — ✅ Core (`081`–`082`) |
 | 11 | Staff Management & Scheduling | 1 + 3.5 patch | `11-staff-management.md` — ✅; Phase 3.5 `059` |
 | 12 | Training & Competency Management | 6 | `12-training-competency.md` — ✅ Core (`086`–`087`); operational depth in Completion Track D |
-| 13 | Facility Maintenance & Environment | 6 | `13-maintenance.md` — not yet written (`097`) |
+| 13 | Facility Maintenance & Environment | 6 | `13-maintenance.md` — not yet written; migration **TBD** (`110`+) — **`097` in repo is Exec Intelligence audit fix, not maintenance** |
 | 14 | Dietary & Nutrition Management | 6 | `14-dietary-nutrition.md` — ✅ Core (`089`); workflow depth in Completion Track D |
 | 15 | Transportation & Appointments | 6 | `15-transportation.md` — ✅ Core (`090`); workflow depth in Completion Track D |
 | 16 | Resident Billing & Collections | 1 + 3.5 patch | `16-billing.md` — ✅; Phase 3.5 `060` |
 | 17 | Entity & Facility Finance | 3 + 3.5 patch | `17-entity-facility-finance.md` — ✅ Core; Enhanced `048` + `065` |
 | 18 | Insurance & Risk Finance | 3 + 3.5 patch | `18-insurance-risk-finance.md` — ✅ Core; Enhanced `049` + `066` |
 | 19 | Vendor & Contract Management | 3 + 3.5 patch | `19-vendor-contract-management.md` — ✅; Phase 3.5 `067` |
-| 20 | Expansion & Acquisition Planning | 7 | `20-expansion-acquisition.md` — not yet written (`102`) |
+| 20 | Expansion & Acquisition Planning | 7 | `20-expansion-acquisition.md` — **spec not yet in `docs/specs/`**; migration TBD (`110`+) — **`102` in repo is reporting schema, not expansion** |
 | 21 | Family Portal | 5 | `21-family-portal.md` — ✅ Core (`083`–`084`); PHI / production readiness remains in Completion Track C |
 | 22 | Referral Source CRM | 6 | `22-referral-crm.md` — ✅ Core (`091`); HL7 automation remains in Completion Track D |
 | 23 | Reputation & Online Presence | 6 | `23-reputation.md` — ✅ Core (`092`); API sync remains in Completion Track D |
-| 24 | Executive Intelligence Layer | 3 (v1) + 5 (v2) | `24-executive-intelligence.md` — 🟩 Core UI (`047`); v2: `24-executive-v2.md` — ✅ Core schema + admin (`085`); operational hardening remains in Completion Track C |
-| 25 | Resident Assurance Engine | 7 | `25-resident-assurance-engine.md` — spec written (`098`–`101`) |
-| 26 | Ambient Environment Intelligence | 8 | `26-ambient-intelligence.md` — not yet written (`111`) |
-| 27 | Facility Digital Twin | 6 | `27-digital-twin.md` — not yet written (`105`) |
-| 28 | Regulatory Intelligence & Arbitrage | 7 | `28-regulatory-intelligence.md` — not yet written (`103`–`104`) |
+| 24 | Executive Intelligence Layer | 3 (v1) + 5 (v2) + v3 patch | `24-executive-intelligence.md` — ✅ Core (`047`); v2: `24-executive-v2.md` — ✅ (`085`); **v3:** `096`–`097`; operational hardening remains in Completion Track C |
+| 25 | Resident Assurance Engine | 7 | `25-resident-assurance-engine.md` — ✅ Core DDL + patches (`098`–`101`, `107`); UI/API shipped — acceptance follows Track A + B–D |
+| 26 | Ambient Environment Intelligence (roadmap module 26) | 8 | `26-ambient-intelligence.md` — **not yet in repo**; migration TBD (`110`+) — **do not confuse with `26-reporting-module.md` below** |
+| 27 | Facility Digital Twin | 6 | `27-digital-twin.md` — **not yet in `docs/specs/`**; migration TBD — **`105` in repo is reporting seed, not digital twin** |
+| 28 | Regulatory Intelligence & Arbitrage | 7 | `28-regulatory-intelligence.md` — **not yet in `docs/specs/`**; migration TBD — **`103`–`104` in repo are reporting RLS/audit, not this module** |
 
-### Cross-cutting AI subsystems (Phase 8)
+### Supplemental product specs (filename `26-*` — Reporting)
 
-| ID | Name | Spec file | Migration | Notes |
-|----|------|-----------|-----------|-------|
-| AI-A | Cross-Resident Pattern Detection | `ai-A-pattern-detection.md` | `106`–`107` | `phi_class` gate via `ai_invocations` |
-| AI-B | Cognitive Load Engine | `ai-B-cognitive-load.md` | `108` | Reads Module 11 + 04 signals |
-| AI-C | Family Relationship Health | `ai-C-family-risk.md` | `109` | Blocked on BAA or de-ID |
-| AI-D | Portfolio Placement Optimizer | `ai-D-placement-optimizer.md` | `110` | OR over census + staffing |
+| Name | Spec file | Migration | Status |
+|------|-----------|-----------|--------|
+| Reporting Module | `26-reporting-module.md` | `102`–`106` | ✅ **Shipped** — schema, RLS, audit, seed, saved-views backfill; admin `/admin/reports/*`. Distinct from roadmap “Module 26 Ambient” row above. |
+
+### Cross-cutting AI subsystems (Phase 8 — migrations **TBD**, start `110`+)
+
+| ID | Name | Spec file | Notes |
+|----|------|-----------|-------|
+| AI-A | Cross-Resident Pattern Detection | `ai-A-pattern-detection.md` | `phi_class` gate via `ai_invocations`; **do not** assume migrations `106`–`107` (taken by Reporting backfill + Resident Assurance patch) |
+| AI-B | Cognitive Load Engine | `ai-B-cognitive-load.md` | **Do not** assume migration `108` (taken by onboarding responses) |
+| AI-C | Family Relationship Health | `ai-C-family-risk.md` | **Do not** assume migration `109` (taken by onboarding tiers); blocked on BAA or de-ID |
+| AI-D | Portfolio Placement Optimizer | `ai-D-placement-optimizer.md` | Next open number was **`110`** as of 2026-04-08 — confirm before first DDL |
 
 ### Foundation addenda (not numbered modules)
 

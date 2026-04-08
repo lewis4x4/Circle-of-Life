@@ -479,3 +479,13 @@ Add to [FRONTEND-CONTRACT.md](FRONTEND-CONTRACT.md) when implementing:
 **Insurance & Risk Finance** adds **entity-level corporate insurance** inventory, **renewal workflow**, **claims** (optionally tied to incidents), **premium allocation**, **COI tracking**, and **workers’ comp headers**, with **GL integration points** to Module 17 and **RLS** aligned to the org/facility hierarchy.
 
 **Exact Core scope:** tables in § DATABASE SCHEMA; admin routes in § Admin UI; no carrier APIs in Core.
+
+## COL Alignment Notes
+
+**COL carrier data gap — CRITICAL:** COL's commercial insurance carriers (general liability, professional liability, workers' compensation, property) are not documented anywhere in the wiki. Module 18 cannot be seeded with actual policy data until this is collected. This is a HIGH priority item — request from COL's owner or CFO: carrier names, policy numbers, coverage amounts, annual premiums, and renewal dates for all active policies across all 5 facilities.
+
+**Workers' comp claim linkage:** COL's `Management/Investigation Forms/` folder suggests active investigation of work-related incidents. Module 18's workers' comp claims table should link to Module 07 (Incident Reporting) — when a staff injury incident is filed, the UI should prompt: "File a workers' comp claim for this incident?" and pre-populate claim details from the incident record.
+
+**Medicaid contracts as a financial risk factor:** COL has Medicaid managed care contracts with 5–6 payers per facility. Authorization denials and retroactive rate adjustments are a real financial risk. Module 18's risk finance model should include a `medicaid_denial_tracking` category so COL can monitor and trend MCO authorization denial rates, which directly affect revenue.
+
+**NFP Contract:** COL has an active `NFP Contract.pdf` in Management/Agreements. NFP is a risk management/insurance advisory firm. Confirm whether NFP manages COL's insurance portfolio — if so, NFP may be the source of truth for carrier data and should be contacted to provide the policy inventory needed to seed Module 18.

@@ -534,3 +534,13 @@ New migration file: `035_care_planning_advanced.sql`
 7. Create `set_updated_at` trigger on `care_plan_tasks`
 
 **Changes to existing tables:** One new index on `care_plans` (one-active-per-resident constraint). No column changes. The `residents.acuity_score` and `residents.acuity_level` fields already exist and will be updated by application logic after assessment saves.
+
+## COL Alignment Notes
+
+**ISP (Individual Service Plan) template validation:** COL uses an `Individual Service Plan` template (confirmed in HR-Forms/Communication Binder). The advanced care planning module's care plan structure must match COL's ISP format. Before finalizing the care plan UI, collect COL's current ISP template to ensure the section structure (goals, interventions, responsible party, review date) maps correctly to `care_plan_items`.
+
+**Care Plan Meeting Summary:** COL uses a `Care Plan Meeting Summary.pdf` to document ISP review meetings. Module 03-Advanced's care_plan_reviews workflow should produce a digital equivalent of this summary that can be shared with family (via Module 21 Family Portal) and printed for the resident file.
+
+**Quarterly review cadence:** Florida ALF regulations require ISP review within 30 days of admission and at least quarterly thereafter. The assessment_schedules automation in this module must enforce the FL regulatory cadence (not just a generic schedule). Seed the default assessment schedule with: initial within 30 days, then every 90 days.
+
+**Decline trajectory detection — COL clinical input needed:** The 7 decline detection algorithms in this module must be validated with COL's nursing director before activation. What constitutes a "significant change" in COL's clinical judgment may differ from the algorithmic threshold. Plan a clinical validation session with COL's lead nurse before enabling automated decline alerts.
