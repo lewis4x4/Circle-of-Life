@@ -9,7 +9,36 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useOnboardingStore } from "@/hooks/useOnboardingStore";
+import type { OnboardingQuestion, OnboardingResponse } from "@/lib/onboarding/types";
 import { cn } from "@/lib/utils";
+
+function questionTier(q: Pick<OnboardingQuestion, "tier">): "core" | "extended" {
+  return q.tier === "extended" ? "extended" : "core";
+}
+
+function buildDepartmentRows(
+  questions: OnboardingQuestion[],
+  responsesByQuestionId: Record<string, OnboardingResponse>,
+) {
+  const deptMap = new Map<string, { total: number; answered: number }>();
+  for (const q of questions) {
+    const dep = q.department;
+    if (!deptMap.has(dep)) deptMap.set(dep, { total: 0, answered: 0 });
+    const row = deptMap.get(dep)!;
+    row.total += 1;
+    if (responsesByQuestionId[q.id]?.value?.trim()) row.answered += 1;
+  }
+  return Array.from(deptMap.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([name, { total, answered }]) => {
+      const pctDept = total === 0 ? 0 : Math.round((answered / total) * 100);
+      let status: string;
+      if (answered === 0) status = "Not started";
+      else if (answered === total) status = "Complete";
+      else status = "In progress";
+      return { name, total, answered, pctDept, status };
+    });
+}
 
 export default function OnboardingDashboardPage() {
   const hydration = useOnboardingStore((s) => s.hydration);
@@ -18,53 +47,81 @@ export default function OnboardingDashboardPage() {
   const questionsById = useOnboardingStore((s) => s.questionsById);
   const responsesByQuestionId = useOnboardingStore((s) => s.responsesByQuestionId);
 
-  const { completionPct, readinessLabel, lastUpdatedLabel, answeredCount, totalQuestions, departmentRows } =
-    useMemo(() => {
-      const questions = Object.values(questionsById);
-      const totalQuestions = questions.length;
-      const answeredCount = questions.filter((q) => {
+  const {
+    completionPct,
+    completionPctCore,
+    completionPctExtended,
+    readinessLabel,
+    lastUpdatedLabel,
+    answeredCount,
+    totalQuestions,
+    coreAnswered,
+    coreTotal,
+    extendedAnswered,
+    extendedTotal,
+    uniqueDepartments,
+    departmentRowsCore,
+    departmentRowsExtended,
+  } = useMemo(() => {
+    const questions = Object.values(questionsById) as OnboardingQuestion[];
+    const coreQs = questions.filter((q) => questionTier(q) === "core");
+    const extQs = questions.filter((q) => questionTier(q) === "extended");
+
+    const answeredFor = (qs: OnboardingQuestion[]) =>
+      qs.filter((q) => {
         const v = responsesByQuestionId[q.id]?.value?.trim() ?? "";
         return v.length > 0;
       }).length;
-      const pct = totalQuestions === 0 ? 0 : Math.round((answeredCount / totalQuestions) * 100);
-      const times = Object.values(responsesByQuestionId)
-        .map((r) => r.updatedAt)
-        .filter(Boolean)
-        .sort();
-      const last = times[times.length - 1];
-      const lastUpdatedLabel = last
-        ? new Date(last).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
-        : "No answers yet";
-      const readinessLabel = pct >= 100 ? "All questions touched" : "In progress";
 
-      const deptMap = new Map<string, { total: number; answered: number }>();
-      for (const q of questions) {
-        const dep = q.department;
-        if (!deptMap.has(dep)) deptMap.set(dep, { total: 0, answered: 0 });
-        const row = deptMap.get(dep)!;
-        row.total += 1;
-        if (responsesByQuestionId[q.id]?.value?.trim()) row.answered += 1;
-      }
-      const departmentRows = Array.from(deptMap.entries())
-        .sort((a, b) => a[0].localeCompare(b[0]))
-        .map(([name, { total, answered }]) => {
-          const pctDept = total === 0 ? 0 : Math.round((answered / total) * 100);
-          let status: string;
-          if (answered === 0) status = "Not started";
-          else if (answered === total) status = "Complete";
-          else status = "In progress";
-          return { name, total, answered, pctDept, status };
-        });
+    const totalQuestions = questions.length;
+    const answeredCount = answeredFor(questions);
+    const coreAnswered = answeredFor(coreQs);
+    const coreTotal = coreQs.length;
+    const extendedAnswered = answeredFor(extQs);
+    const extendedTotal = extQs.length;
 
-      return {
-        completionPct: pct,
-        readinessLabel,
-        lastUpdatedLabel,
-        answeredCount,
-        totalQuestions,
-        departmentRows,
-      };
-    }, [questionsById, responsesByQuestionId]);
+    const pct = totalQuestions === 0 ? 0 : Math.round((answeredCount / totalQuestions) * 100);
+    const completionPctCore = coreTotal === 0 ? 0 : Math.round((coreAnswered / coreTotal) * 100);
+    const completionPctExtended = extendedTotal === 0 ? 0 : Math.round((extendedAnswered / extendedTotal) * 100);
+
+    const times = Object.values(responsesByQuestionId)
+      .map((r) => r.updatedAt)
+      .filter(Boolean)
+      .sort();
+    const last = times[times.length - 1];
+    const lastUpdatedLabel = last
+      ? new Date(last).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
+      : "No answers yet";
+
+    const readinessLabel =
+      coreTotal === 0
+        ? "No Core library"
+        : coreAnswered >= coreTotal
+          ? "Core complete"
+          : "Core in progress";
+
+    const uniqueDepartments = new Set(questions.map((q) => q.department)).size;
+
+    const departmentRowsCore = buildDepartmentRows(coreQs, responsesByQuestionId);
+    const departmentRowsExtended = buildDepartmentRows(extQs, responsesByQuestionId);
+
+    return {
+      completionPct: pct,
+      completionPctCore,
+      completionPctExtended,
+      readinessLabel,
+      lastUpdatedLabel,
+      answeredCount,
+      totalQuestions,
+      coreAnswered,
+      coreTotal,
+      extendedAnswered,
+      extendedTotal,
+      uniqueDepartments,
+      departmentRowsCore,
+      departmentRowsExtended,
+    };
+  }, [questionsById, responsesByQuestionId]);
 
   if (hydration === "loading" || hydration === "idle") {
     return (
@@ -84,7 +141,6 @@ export default function OnboardingDashboardPage() {
   }
 
   const remaining = Math.max(0, totalQuestions - answeredCount);
-  const uniqueDepartments = departmentRows.length;
 
   return (
     <div className="space-y-6 pb-8">
@@ -102,14 +158,35 @@ export default function OnboardingDashboardPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-slate-300">
+            <div className="space-y-2 rounded-lg border border-teal-500/30 bg-teal-500/5 px-3 py-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-teal-100">Core (pilot readiness)</span>
+                <Badge className="border-0 bg-teal-500/25 text-teal-50">
+                  {coreAnswered} / {coreTotal}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between text-xs text-slate-400">
+                <span>Progress</span>
+                <span className="text-teal-200/90">{completionPctCore}%</span>
+              </div>
+            </div>
             <div className="flex items-center justify-between rounded-lg border border-white/10 bg-black/20 px-3 py-2">
-              <span>Questions answered</span>
+              <span>Extended discovery</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500">{completionPctExtended}%</span>
+                <Badge className="border-0 bg-slate-500/20 text-slate-200">
+                  {extendedAnswered} / {extendedTotal}
+                </Badge>
+              </div>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+              <span>All questions answered</span>
               <Badge className="border-0 bg-teal-500/20 text-teal-100">
                 {answeredCount} / {totalQuestions}
               </Badge>
             </div>
             <div className="flex items-center justify-between rounded-lg border border-white/10 bg-black/20 px-3 py-2">
-              <span>Progress</span>
+              <span>Overall progress</span>
               <Badge className="border-0 bg-teal-500/20 text-teal-100">{completionPct}%</Badge>
             </div>
             <div className="flex items-center justify-between rounded-lg border border-white/10 bg-black/20 px-3 py-2">
@@ -149,7 +226,7 @@ export default function OnboardingDashboardPage() {
             <div>
               <CardTitle className="text-white">Departments</CardTitle>
               <CardDescription className="text-slate-400">
-                Live completion by department (from the shared question library).
+                Completion by department, split by Core (readiness) vs Extended discovery.
               </CardDescription>
             </div>
             <Link
@@ -163,23 +240,52 @@ export default function OnboardingDashboardPage() {
               <ArrowRight className="ml-1.5 h-4 w-4" />
             </Link>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {departmentRows.length === 0 ? (
+          <CardContent className="space-y-6">
+            {totalQuestions === 0 ? (
               <p className="text-sm text-slate-500">No questions loaded yet.</p>
             ) : (
-              departmentRows.map((department) => (
-                <div
-                  key={department.name}
-                  className="grid gap-2 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm md:grid-cols-[minmax(0,1fr)_auto_auto_auto]"
-                >
-                  <p className="font-medium text-slate-100">{department.name}</p>
-                  <p className="text-slate-400">
-                    Answered: {department.answered}/{department.total}
-                  </p>
-                  <p className="text-slate-400">Progress: {department.pctDept}%</p>
-                  <p className="text-slate-400">Status: {department.status}</p>
+              <>
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-teal-200/90">Core lanes</p>
+                  {departmentRowsCore.length === 0 ? (
+                    <p className="text-sm text-slate-500">No Core questions in library.</p>
+                  ) : (
+                    departmentRowsCore.map((department) => (
+                      <div
+                        key={`core-${department.name}`}
+                        className="grid gap-2 rounded-xl border border-teal-500/15 bg-black/20 px-4 py-3 text-sm md:grid-cols-[minmax(0,1fr)_auto_auto_auto]"
+                      >
+                        <p className="font-medium text-slate-100">{department.name}</p>
+                        <p className="text-slate-400">
+                          Answered: {department.answered}/{department.total}
+                        </p>
+                        <p className="text-slate-400">Progress: {department.pctDept}%</p>
+                        <p className="text-slate-400">Status: {department.status}</p>
+                      </div>
+                    ))
+                  )}
                 </div>
-              ))
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Extended lanes</p>
+                  {departmentRowsExtended.length === 0 ? (
+                    <p className="text-sm text-slate-500">No Extended questions in library.</p>
+                  ) : (
+                    departmentRowsExtended.map((department) => (
+                      <div
+                        key={`ext-${department.name}`}
+                        className="grid gap-2 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm md:grid-cols-[minmax(0,1fr)_auto_auto_auto]"
+                      >
+                        <p className="font-medium text-slate-100">{department.name}</p>
+                        <p className="text-slate-400">
+                          Answered: {department.answered}/{department.total}
+                        </p>
+                        <p className="text-slate-400">Progress: {department.pctDept}%</p>
+                        <p className="text-slate-400">Status: {department.status}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
             )}
           </CardContent>
         </Card>

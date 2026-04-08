@@ -7556,6 +7556,7 @@ export type Database = {
           prompt: string
           required: boolean
           sort_order: number | null
+          tier: string
           updated_at: string
         }
         Insert: {
@@ -7571,6 +7572,7 @@ export type Database = {
           prompt: string
           required?: boolean
           sort_order?: number | null
+          tier?: string
           updated_at?: string
         }
         Update: {
@@ -7586,6 +7588,7 @@ export type Database = {
           prompt?: string
           required?: boolean
           sort_order?: number | null
+          tier?: string
           updated_at?: string
         }
         Relationships: []

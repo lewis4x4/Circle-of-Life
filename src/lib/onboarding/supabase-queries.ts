@@ -7,6 +7,7 @@ import type {
   ConfidenceLevel,
   ImportanceLevel,
   OnboardingQuestion,
+  OnboardingQuestionTier,
   OnboardingResponse,
 } from "@/lib/onboarding/types";
 
@@ -26,6 +27,7 @@ function parseOptions(json: Json | null): string[] | undefined {
 export function mapQuestionRow(row: QuestionRow): OnboardingQuestion {
   return {
     id: row.id,
+    tier: (row.tier === "extended" ? "extended" : "core") as OnboardingQuestionTier,
     prompt: row.prompt,
     helpText: row.help_text ?? undefined,
     assignedTo: row.assigned_to ?? undefined,
@@ -55,6 +57,9 @@ export async function fetchQuestions(supabase: SupabaseClient<Database>): Promis
   if (error) throw error;
   const mapped = (data ?? []).map(mapQuestionRow);
   mapped.sort((a, b) => {
+    const ta = a.tier === "extended" ? 1 : 0;
+    const tb = b.tier === "extended" ? 1 : 0;
+    if (ta !== tb) return ta - tb;
     const sa = a.sortOrder ?? 999999;
     const sb = b.sortOrder ?? 999999;
     if (sa !== sb) return sa - sb;
@@ -122,6 +127,7 @@ export async function importQuestions(
     required: q.required !== false,
     options: q.options && q.options.length > 0 ? (q.options as unknown as Json) : null,
     sort_order: q.sortOrder ?? null,
+    tier: q.tier ?? "core",
   }));
 
   const { error } = await supabase.from("onboarding_questions").upsert(rows, { onConflict: "id" });

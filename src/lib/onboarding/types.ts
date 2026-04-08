@@ -21,8 +21,12 @@ export type ImportanceLevel = (typeof IMPORTANCE_LEVELS)[number];
 export const CONFIDENCE_LEVELS = ["confirmed", "best_known", "needs_review"] as const;
 export type ConfidenceLevel = (typeof CONFIDENCE_LEVELS)[number];
 
+export type OnboardingQuestionTier = "core" | "extended";
+
 export interface OnboardingQuestion {
   id: string;
+  /** Core = first-wave pilot shaping; Extended = deeper discovery (second wave). */
+  tier?: OnboardingQuestionTier;
   prompt: string;
   /** Plain-English explanation of what the question asks and why it matters */
   helpText?: string;

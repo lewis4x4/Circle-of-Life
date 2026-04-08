@@ -10,13 +10,18 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useOnboardingStore } from "@/hooks/useOnboardingStore";
-import type { ConfidenceLevel } from "@/lib/onboarding/types";
+import type { ConfidenceLevel, OnboardingQuestionTier } from "@/lib/onboarding/types";
 import { cn } from "@/lib/utils";
+
+function questionTier(q: { tier?: string | null }): OnboardingQuestionTier {
+  return q.tier === "extended" ? "extended" : "core";
+}
 
 export default function OnboardingQuestionsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [activeTier, setActiveTier] = useState<OnboardingQuestionTier>("core");
 
   const hydration = useOnboardingStore((s) => s.hydration);
   const loadError = useOnboardingStore((s) => s.loadError);
@@ -38,6 +43,9 @@ export default function OnboardingQuestionsPage() {
   const sortedQuestions = useMemo(() => {
     const list = Object.values(questionsById);
     return list.sort((a, b) => {
+      const ta = questionTier(a) === "extended" ? 1 : 0;
+      const tb = questionTier(b) === "extended" ? 1 : 0;
+      if (ta !== tb) return ta - tb;
       const sa = a.sortOrder ?? 999999;
       const sb = b.sortOrder ?? 999999;
       if (sa !== sb) return sa - sb;
@@ -47,16 +55,26 @@ export default function OnboardingQuestionsPage() {
     });
   }, [questionsById]);
 
-  const stats = useMemo(() => {
-    const answered = sortedQuestions.filter((q) => {
-      const v = responsesByQuestionId[q.id]?.value?.trim() ?? "";
-      return v.length > 0;
-    }).length;
+  const tierStats = useMemo(() => {
+    const answeredFor = (qs: typeof sortedQuestions) =>
+      qs.filter((q) => {
+        const v = responsesByQuestionId[q.id]?.value?.trim() ?? "";
+        return v.length > 0;
+      }).length;
+    const coreQs = sortedQuestions.filter((q) => questionTier(q) === "core");
+    const extQs = sortedQuestions.filter((q) => questionTier(q) === "extended");
     return {
-      total: sortedQuestions.length,
-      answered,
+      core: { total: coreQs.length, answered: answeredFor(coreQs) },
+      extended: { total: extQs.length, answered: answeredFor(extQs) },
     };
   }, [sortedQuestions, responsesByQuestionId]);
+
+  const visibleQuestions = useMemo(
+    () => sortedQuestions.filter((q) => questionTier(q) === activeTier),
+    [sortedQuestions, activeTier],
+  );
+
+  const tierProgress = activeTier === "core" ? tierStats.core : tierStats.extended;
 
   const onFile = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,7 +118,7 @@ export default function OnboardingQuestionsPage() {
           <h2 className="font-display text-2xl font-semibold text-white">Onboarding Questions</h2>
           <p className="mt-1 max-w-2xl text-sm text-slate-400">
             Answer the questions you can. Your answers save automatically and are visible to the rest of the leadership
-            team.
+            team. Use <strong className="text-slate-200">Core</strong> first, then Extended Discovery when ready.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -167,10 +185,61 @@ export default function OnboardingQuestionsPage() {
         </CardContent>
       </Card>
 
+      <div className="space-y-3">
+        <div
+          className="flex flex-wrap gap-2 rounded-xl border border-white/10 bg-black/30 p-1"
+          role="tablist"
+          aria-label="Question tier"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTier === "core"}
+            className={cn(
+              "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
+              activeTier === "core"
+                ? "bg-teal-500/20 text-teal-100 ring-1 ring-teal-500/40"
+                : "text-slate-400 hover:bg-white/5 hover:text-slate-200",
+            )}
+            onClick={() => setActiveTier("core")}
+          >
+            Core Questions
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTier === "extended"}
+            className={cn(
+              "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
+              activeTier === "extended"
+                ? "bg-teal-500/20 text-teal-100 ring-1 ring-teal-500/40"
+                : "text-slate-400 hover:bg-white/5 hover:text-slate-200",
+            )}
+            onClick={() => setActiveTier("extended")}
+          >
+            Extended Discovery
+          </button>
+        </div>
+        <p className="text-sm text-slate-400">
+          {activeTier === "core"
+            ? "These questions shape the pilot build. Answer them first."
+            : "Deeper discovery for long-term product, integrations, and rollout planning."}
+        </p>
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-slate-300">
-        <span>
-          <strong className="text-white">{stats.answered}</strong> / {stats.total} answered
-        </span>
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4">
+          <span>
+            <strong className="text-white">{tierProgress.answered}</strong> / {tierProgress.total} answered
+            <span className="ml-2 text-slate-500">
+              ({activeTier === "core" ? "Core" : "Extended"})
+            </span>
+          </span>
+          <span className="text-xs text-slate-500">
+            All tiers: Core {tierStats.core.answered}/{tierStats.core.total} · Extended{" "}
+            {tierStats.extended.answered}/{tierStats.extended.total}
+          </span>
+        </div>
         {isOrgAdmin ? (
           <div className="flex flex-wrap items-center gap-2">
             <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={onFile} />
@@ -201,7 +270,7 @@ export default function OnboardingQuestionsPage() {
       ) : null}
 
       <div className="space-y-6">
-        {sortedQuestions.map((q) => {
+        {visibleQuestions.map((q) => {
           const r = responsesByQuestionId[q.id];
           const value = r?.value ?? "";
           const confidence: ConfidenceLevel = r?.confidence ?? "best_known";

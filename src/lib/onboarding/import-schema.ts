@@ -19,6 +19,7 @@ const questionSchema = z
     required: z.boolean().optional(),
     options: z.array(z.string().min(1)).optional(),
     sortOrder: z.number().int().optional(),
+    tier: z.enum(["core", "extended"]).optional(),
   })
   .superRefine((q, ctx) => {
     if (q.answerType === "single_select" && (!q.options || q.options.length === 0)) {

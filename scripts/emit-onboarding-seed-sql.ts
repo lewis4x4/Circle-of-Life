@@ -16,11 +16,12 @@ const rows = DEFAULT_ONBOARDING_QUESTIONS.map((q) => {
   const cat = q.category != null ? `'${esc(q.category)}'` : "NULL";
   const sort = q.sortOrder != null ? String(q.sortOrder) : "NULL";
   const req = q.required === false ? "false" : "true";
-  return `('${esc(q.id)}', '${esc(q.prompt)}', ${help}, ${assigned}, '${esc(q.department)}', ${cat}, '${q.importance}', '${q.answerType}', ${req}, ${options}, ${sort})`;
+  const tier = q.tier === "extended" ? "extended" : "core";
+  return `('${esc(q.id)}', '${esc(q.prompt)}', ${help}, ${assigned}, '${esc(q.department)}', ${cat}, '${q.importance}', '${q.answerType}', ${req}, ${options}, ${sort}, '${tier}')`;
 });
 
 console.log(`INSERT INTO public.onboarding_questions (
-  id, prompt, help_text, assigned_to, department, category, importance, answer_type, required, options, sort_order
+  id, prompt, help_text, assigned_to, department, category, importance, answer_type, required, options, sort_order, tier
 ) VALUES
 ${rows.join(",\n")}
 ON CONFLICT (id) DO NOTHING;`);
