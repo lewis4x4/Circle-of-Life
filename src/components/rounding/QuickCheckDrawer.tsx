@@ -16,6 +16,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import type { CompletionPayload, ObservationQuickStatus, ObservationExceptionType } from "@/lib/rounding/types";
+import { isRoundingLiveDemoTaskId } from "@/lib/rounding/demo-live-tasks";
 
 export type QuickCheckTask = {
   id: string;
@@ -32,6 +33,8 @@ type QuickCheckDrawerProps = {
   onCompleted: (taskId: string) => void;
   queuePosition?: { current: number; total: number } | null;
   onNextTask?: () => void;
+  /** When false, completion is simulated locally (for dry runs). @default true */
+  persistCompletion?: boolean;
 };
 
 const QUICK_STATUSES: { value: ObservationQuickStatus; label: string; emoji: string; color: string }[] = [
@@ -62,7 +65,15 @@ function isAbnormal(status: ObservationQuickStatus) {
   return status === "agitated" || status === "confused" || status === "distressed" || status === "not_found" || status === "refused";
 }
 
-export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePosition, onNextTask }: QuickCheckDrawerProps) {
+export function QuickCheckDrawer({
+  task,
+  open,
+  onClose,
+  onCompleted,
+  queuePosition,
+  onNextTask,
+  persistCompletion = true,
+}: QuickCheckDrawerProps) {
   const [quickStatus, setQuickStatus] = useState<ObservationQuickStatus>("awake");
   const [location, setLocation] = useState<string>("in room");
   const [position, setPosition] = useState<string>("in bed");
@@ -137,7 +148,22 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
       note: note.trim() || null,
     };
 
+    const completeLocally =
+      isRoundingLiveDemoTaskId(task.id) || !persistCompletion;
+
     try {
+      if (completeLocally) {
+        setJustCompleted(true);
+        onCompleted(task.id);
+
+        if (onNextTask && queuePosition && queuePosition.current < queuePosition.total) {
+          setTimeout(() => {
+            onNextTask();
+          }, 800);
+        }
+        return;
+      }
+
       const res = await fetch(`/api/rounding/tasks/${task.id}/complete`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -217,6 +243,12 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        {task && isRoundingLiveDemoTaskId(task.id) && !justCompleted && (
+          <div className="border-b border-cyan-500/20 bg-cyan-950/25 px-3 py-2 text-center text-[11px] text-cyan-200/90 sm:px-5">
+            Preview mode — this board is showing demo tasks; checks are not saved to the database.
+          </div>
+        )}
 
         {justCompleted ? (
           <div className="flex flex-col items-center justify-center gap-4 px-4 py-16 sm:px-6">
