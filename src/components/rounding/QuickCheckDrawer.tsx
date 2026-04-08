@@ -169,14 +169,14 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
         aria-modal="true"
         aria-labelledby={titleId}
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 max-h-[92vh] overflow-y-auto rounded-t-2xl border-t border-slate-700/50",
+          "fixed inset-x-0 bottom-0 z-50 max-h-[92vh] w-full max-w-[100vw] min-w-0 overflow-y-auto overflow-x-hidden rounded-t-2xl border-t border-slate-700/50",
           "bg-gradient-to-b from-slate-900 to-slate-950 shadow-2xl shadow-black/50",
           "animate-in slide-in-from-bottom-8 duration-300",
         )}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/5 bg-slate-900/95 backdrop-blur-md px-5 py-4">
-          <div className="min-w-0">
+        <div className="sticky top-0 z-10 flex min-w-0 items-center justify-between gap-3 border-b border-white/5 bg-slate-900/95 backdrop-blur-md px-3 py-4 sm:px-5">
+          <div className="min-w-0 flex-1">
             {task && (
               <>
                 <div className="flex items-center gap-2">
@@ -206,7 +206,7 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
         </div>
 
         {justCompleted ? (
-          <div className="flex flex-col items-center justify-center gap-4 py-16 px-6">
+          <div className="flex flex-col items-center justify-center gap-4 px-4 py-16 sm:px-6">
             <div className="rounded-full bg-emerald-500/20 p-4">
               <CheckCircle2 className="h-12 w-12 text-emerald-400" />
             </div>
@@ -226,7 +226,7 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
             )}
           </div>
         ) : (
-          <div className="px-5 py-4 space-y-5">
+          <div className="min-w-0 space-y-5 px-3 py-4 sm:px-5">
             {error && (
               <div role="alert" className="flex items-center gap-2 rounded-lg border border-rose-700/50 bg-rose-950/30 px-3 py-2 text-sm text-rose-200">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
@@ -235,9 +235,13 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
             )}
 
             {/* Step 1: Quick Status — the most important tap */}
-            <div>
-              <label className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-2 block">Status</label>
-              <div role="radiogroup" aria-label="Quick status" className="grid grid-cols-4 gap-2">
+            <div className="min-w-0">
+              <label className="mb-2 block text-[10px] font-mono uppercase tracking-widest text-slate-500">Status</label>
+              <div
+                role="radiogroup"
+                aria-label="Quick status"
+                className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-4"
+              >
                 {QUICK_STATUSES.map((opt) => (
                   <button
                     key={opt.value}
@@ -246,31 +250,31 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
                     aria-checked={quickStatus === opt.value}
                     onClick={() => setQuickStatus(opt.value)}
                     className={cn(
-                      "flex flex-col items-center gap-1 rounded-xl border px-2 py-3 text-xs font-medium transition-all duration-150",
+                      "flex min-w-0 flex-col items-center gap-1 rounded-xl border px-1.5 py-2.5 text-[11px] font-medium transition-all duration-150 sm:px-2 sm:py-3 sm:text-xs",
                       quickStatus === opt.value
                         ? opt.color
                         : "border-slate-700/50 bg-slate-900/50 text-slate-400 hover:bg-slate-800/50 hover:text-slate-200",
                     )}
                   >
                     <span className="text-base leading-none">{opt.emoji}</span>
-                    <span>{opt.label}</span>
+                    <span className="text-center leading-tight break-words">{opt.label}</span>
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Step 2: Location + Position — two taps */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-2 block">Location</label>
-                <div className="flex flex-wrap gap-1.5">
+            <div className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-3">
+              <div className="min-w-0">
+                <label className="mb-2 block text-[10px] font-mono uppercase tracking-widest text-slate-500">Location</label>
+                <div className="flex min-w-0 flex-wrap gap-1.5">
                   {LOCATIONS.map((loc) => (
                     <button
                       key={loc}
                       type="button"
                       onClick={() => setLocation(loc)}
                       className={cn(
-                        "rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all",
+                        "max-w-full shrink-0 rounded-lg border px-2 py-1.5 text-left text-xs font-medium transition-all sm:px-2.5",
                         location === loc
                           ? "border-cyan-500 bg-cyan-950/50 text-cyan-200"
                           : "border-slate-700/50 bg-slate-900/50 text-slate-400 hover:text-slate-200",
@@ -281,16 +285,16 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
                   ))}
                 </div>
               </div>
-              <div>
-                <label className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-2 block">Position</label>
-                <div className="flex flex-wrap gap-1.5">
+              <div className="min-w-0">
+                <label className="mb-2 block text-[10px] font-mono uppercase tracking-widest text-slate-500">Position</label>
+                <div className="flex min-w-0 flex-wrap gap-1.5">
                   {POSITIONS.map((pos) => (
                     <button
                       key={pos}
                       type="button"
                       onClick={() => setPosition(pos)}
                       className={cn(
-                        "rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all",
+                        "max-w-full shrink-0 rounded-lg border px-2 py-1.5 text-left text-xs font-medium transition-all sm:px-2.5",
                         position === pos
                           ? "border-cyan-500 bg-cyan-950/50 text-cyan-200"
                           : "border-slate-700/50 bg-slate-900/50 text-slate-400 hover:text-slate-200",
@@ -304,9 +308,9 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
             </div>
 
             {/* Quick intervention toggles — always visible */}
-            <div>
-              <label className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-2 block">Interventions</label>
-              <div className="grid grid-cols-2 gap-2">
+            <div className="min-w-0">
+              <label className="mb-2 block text-[10px] font-mono uppercase tracking-widest text-slate-500">Interventions</label>
+              <div className="grid min-w-0 grid-cols-1 gap-2 min-[400px]:grid-cols-2">
                 <InterventionToggle icon={<Droplets className="h-3.5 w-3.5" />} label="Hydration offered" checked={hydration} onChange={setHydration} />
                 <InterventionToggle icon={<Bath className="h-3.5 w-3.5" />} label="Toileting assisted" checked={toileting} onChange={setToileting} />
                 <InterventionToggle icon={<RotateCw className="h-3.5 w-3.5" />} label="Repositioned" checked={repositioned} onChange={setRepositioned} />
@@ -316,7 +320,7 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
 
             {/* Expanded detail section — only when abnormal */}
             {showDetails && (
-              <div className="space-y-3 rounded-xl border border-amber-700/30 bg-amber-950/10 p-4">
+              <div className="min-w-0 space-y-3 rounded-xl border border-amber-700/30 bg-amber-950/10 p-3 sm:p-4">
                 <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-amber-400">
                   <AlertTriangle className="h-3.5 w-3.5" />
                   Requires detail
@@ -324,14 +328,14 @@ export function QuickCheckDrawer({ task, open, onClose, onCompleted, queuePositi
 
                 <div>
                   <label className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-1.5 block">Exception type</label>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex min-w-0 flex-wrap gap-1.5">
                     {EXCEPTION_OPTIONS.map((opt) => (
                       <button
                         key={opt.value}
                         type="button"
                         onClick={() => setExceptionType(exceptionType === opt.value ? "" : opt.value)}
                         className={cn(
-                          "rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all",
+                          "max-w-full rounded-lg border px-2 py-1.5 text-left text-xs font-medium transition-all sm:px-2.5",
                           exceptionType === opt.value
                             ? "border-amber-500 bg-amber-950/50 text-amber-200"
                             : "border-slate-700/50 bg-slate-900/50 text-slate-400 hover:text-slate-200",
@@ -419,7 +423,7 @@ function InterventionToggle({
       aria-label={label}
       onClick={() => onChange(!checked)}
       className={cn(
-        "flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-medium transition-all",
+        "flex min-h-[2.75rem] min-w-0 items-center gap-2 rounded-xl border px-2.5 py-2.5 text-left text-xs font-medium transition-all sm:px-3",
         checked ? activeClass : "border-slate-700/50 bg-slate-900/50 text-slate-400 hover:text-slate-200",
       )}
     >
