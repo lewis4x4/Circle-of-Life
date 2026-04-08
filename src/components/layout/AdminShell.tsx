@@ -2,12 +2,15 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { 
-  Bell, 
-  Search, 
-  UserCircle2, 
+  Bell,
+  Loader2,
+  LogOut,
+  Search,
+  Settings,
+  UserCircle2,
   ChevronDown, 
   Check,
   PanelLeftClose,
@@ -53,12 +56,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SurveyVisitModeBar } from "@/components/compliance/SurveyVisitModeBar";
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { setTheme, theme } = useTheme();
   const selectedFacilityId = useFacilityStore((s) => s.selectedFacilityId);
   const availableFacilities = useFacilityStore((s) => s.availableFacilities);
@@ -81,6 +87,19 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [facilitiesLoading, setFacilitiesLoading] = useState(true);
   const [facilitiesLoadFailed, setFacilitiesLoadFailed] = useState(false);
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
+
+  const handleSignOut = useCallback(async () => {
+    setSigningOut(true);
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      router.replace("/login");
+      router.refresh();
+    } finally {
+      setSigningOut(false);
+    }
+  }, [router]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -419,9 +438,47 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <button className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 tap-responsive ml-1" aria-label="Profile">
-              <UserCircle2 className="w-7 h-7 text-slate-600 dark:text-slate-300" />
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="ml-1 rounded-full p-1 tap-responsive outline-none hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-ring dark:hover:bg-slate-800"
+                aria-label="Account menu"
+              >
+                <UserCircle2 className="h-7 w-7 text-slate-600 dark:text-slate-300" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 dark:border-slate-800 dark:bg-slate-950">
+                {sessionEmail ? (
+                  <DropdownMenuLabel className="truncate font-normal text-slate-600 dark:text-slate-400">
+                    {sessionEmail}
+                  </DropdownMenuLabel>
+                ) : null}
+                <DropdownMenuItem
+                  className="cursor-pointer dark:focus:bg-slate-800"
+                  onClick={() => router.push("/admin/settings/notifications")}
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  variant="destructive"
+                  className="cursor-pointer dark:focus:bg-slate-800"
+                  disabled={signingOut}
+                  onClick={() => void handleSignOut()}
+                >
+                  {signingOut ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Signing out…
+                    </>
+                  ) : (
+                    <>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign out
+                    </>
+                  )}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
