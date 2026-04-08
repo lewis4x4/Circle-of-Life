@@ -19,6 +19,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 const DEBOUNCE_MS = 500;
 const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
+function clearAllOnboardingDebounceTimers() {
+  for (const id of debounceTimers.values()) {
+    clearTimeout(id);
+  }
+  debounceTimers.clear();
+}
+
 function indexQuestions(list: OnboardingQuestion[]): Record<string, OnboardingQuestion> {
   const out: Record<string, OnboardingQuestion> = {};
   for (const q of list) {
@@ -67,6 +74,8 @@ interface OnboardingState {
     jsonText: string,
   ) => Promise<{ ok: true; added: number; updated: number } | { ok: false; error: string }>;
   resetWorkspace: () => Promise<void>;
+  /** Clears client state after `supabase.auth.signOut()` so no stale answers stay in memory. */
+  clearAfterSignOut: () => void;
   exportMarkdown: () => string;
   exportMarkdownFromDb: () => Promise<string>;
 }
@@ -305,6 +314,24 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
 
     resetWorkspace: async () => {
       await get().hydrate();
+    },
+
+    clearAfterSignOut: () => {
+      clearAllOnboardingDebounceTimers();
+      set({
+        hydration: "idle",
+        saveStatus: "idle",
+        saveError: null,
+        loadError: null,
+        organizationId: null,
+        userId: null,
+        appRole: "",
+        isOrgAdmin: false,
+        questionsById: {},
+        responsesByQuestionId: {},
+        organizationLabel: "",
+        defaultEnteredByName: "",
+      });
     },
 
     exportMarkdown: () => {

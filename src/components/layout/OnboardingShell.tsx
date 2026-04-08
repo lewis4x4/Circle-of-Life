@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect } from "react";
-import { ClipboardList, Gauge, LayoutGrid, LogOut, ShieldCheck } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { ClipboardList, Gauge, LayoutGrid, Loader2, LogOut, ShieldCheck } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { useOnboardingStore } from "@/hooks/useOnboardingStore";
+import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -18,11 +19,32 @@ const NAV_ITEMS = [
 
 export function OnboardingShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const supabase = useMemo(() => createClient(), []);
+  const [exiting, setExiting] = useState(false);
   const hydrate = useOnboardingStore((s) => s.hydrate);
+  const clearAfterSignOut = useOnboardingStore((s) => s.clearAfterSignOut);
 
   useEffect(() => {
     void hydrate();
   }, [hydrate]);
+
+  async function handleExit() {
+    if (!isBrowserSupabaseConfigured()) {
+      router.replace("/login");
+      router.refresh();
+      return;
+    }
+    setExiting(true);
+    try {
+      await supabase.auth.signOut();
+      clearAfterSignOut();
+      router.replace("/login");
+      router.refresh();
+    } finally {
+      setExiting(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -42,16 +64,22 @@ export function OnboardingShell({ children }: { children: React.ReactNode }) {
             </div>
             <div className="flex items-center gap-2">
               <Badge className="border-0 bg-amber-500/20 text-amber-100">Shared access (temporary)</Badge>
-              <Link
-                href="/login"
+              <button
+                type="button"
+                disabled={exiting}
+                onClick={() => void handleExit()}
                 className={cn(
                   buttonVariants({ variant: "outline", size: "sm" }),
                   "border-white/20 bg-transparent text-slate-100 hover:bg-white/10",
                 )}
               >
-                <LogOut className="mr-1.5 h-4 w-4" />
-                Exit
-              </Link>
+                {exiting ? (
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <LogOut className="mr-1.5 h-4 w-4" aria-hidden />
+                )}
+                Sign out
+              </button>
             </div>
           </div>
 
