@@ -28,6 +28,18 @@ CREATE OR REPLACE FUNCTION auth.uid ()
     NULL::uuid
 $f$;
 
+-- Supabase exposes auth.jwt(); return configured claims or empty payload
+-- so migrations that read app_metadata can compile in vanilla Postgres replay.
+CREATE OR REPLACE FUNCTION auth.jwt ()
+  RETURNS jsonb
+  LANGUAGE sql
+  STABLE
+  SET search_path = public
+  AS $f$
+  SELECT
+    COALESCE(NULLIF(current_setting('request.jwt.claims', true), '')::jsonb, '{}'::jsonb)
+$f$;
+
 -- Match columns used by 033_seed_oakridge_demo_data.sql (Supabase GoTrue shape) for Docker replay.
 CREATE TABLE auth.users (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
