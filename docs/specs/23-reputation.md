@@ -18,7 +18,7 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 - **`reputation_accounts`:** Facility-scoped connectors for external review surfaces (platform label, optional external place/listing id, notes).
 - **`reputation_replies`:** Draft or posted reply text, optional excerpt of the review being addressed, **`posted_by_user_id`** for auditability, and workflow status.
 
-**Non-goals (Core):** Yelp **OAuth**, posting replies via platform APIs, or AI-generated reply text — **D44–D47** add Google OAuth, manual/cron Google import, and **Yelp Fusion** excerpt import (API key, not OAuth); full automation remains follow-up.
+**Non-goals (Core):** Yelp **OAuth**, AI-generated reply text — **D44–D48** add Google OAuth, import paths, Yelp Fusion excerpts, and **Google** `updateReply` posting from drafts; Yelp/Yelp posting automation remains follow-up.
 
 **Shipped (Track D19):** **`/admin/reputation`** — **Download replies CSV** (client-side export, up to **500** rows per facility with listing label and platform); does **not** call external review APIs.
 
@@ -57,6 +57,15 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 - **API:** **`POST /api/reputation/sync/yelp`** — owner only; optional **`facilityId`**. **`reputation_accounts.external_place_id`** = Yelp **business id**.
 - **UI:** **`/admin/reputation/integrations`** — **Import Yelp reviews now** when key is configured; status includes **`yelpFusionConfigured`**.
 - **Deferred:** Yelp posting API, per-org Yelp keys in DDL.
+
+### Track D — D48 Post reply to Google (Business Profile) (2026-04-10)
+
+**Purpose:** From a **draft** `reputation_replies` row tied to **`platform = google_business`**, call Google **v4 `updateReply`** with the draft text, then set **`posted`** + timestamps.
+
+- **API:** **`POST /api/reputation/replies/{id}/post-google`** — authenticated user with RLS access; requires Google OAuth credentials, resolvable location, **`external_review_id`**, and reply body **not** equal to the import placeholder.
+- **UI:** **`/admin/reputation`** — draft cards use a **textarea** (save on blur) plus **Post reply to Google** (when listing is Google + review id present) and **Record posted (manual)** for other workflows.
+- **Helpers:** **`buildGoogleReviewResourceName`**, **`putGoogleReviewReply`** in **`google-business-reviews.ts`**.
+- **Deferred:** Yelp posting, bulk post from cron.
 
 ---
 

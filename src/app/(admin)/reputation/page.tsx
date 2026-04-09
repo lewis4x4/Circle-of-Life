@@ -8,6 +8,7 @@ import { Star } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
+import { GOOGLE_IMPORTED_REPLY_PLACEHOLDER } from "@/lib/reputation/google-business-reviews";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -101,6 +102,7 @@ export default function AdminReputationHubPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [postingGoogleId, setPostingGoogleId] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
   const [exportingAccountsCsv, setExportingAccountsCsv] = useState(false);
 
@@ -193,6 +195,42 @@ export default function AdminReputationHubPage() {
       setError(e instanceof Error ? e.message : "CSV export failed.");
     } finally {
       setExportingAccountsCsv(false);
+    }
+  }
+
+  async function saveDraftReplyBody(id: string, reply_body: string) {
+    setError(null);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Sign in required.");
+      const { error: uErr } = await supabase
+        .from("reputation_replies")
+        .update({ reply_body, updated_by: user.id })
+        .eq("id", id)
+        .eq("status", "draft");
+      if (uErr) throw uErr;
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not save draft.");
+    }
+  }
+
+  async function postReplyToGoogle(id: string) {
+    setPostingGoogleId(id);
+    setError(null);
+    try {
+      const res = await fetch(`/api/reputation/replies/${id}/post-google`, { method: "POST" });
+      const j = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        throw new Error(j.error ?? "Could not post to Google");
+      }
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Google post failed.");
+    } finally {
+      setPostingGoogleId(null);
     }
   }
 
@@ -373,18 +411,50 @@ export default function AdminReputationHubPage() {
                       <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
                         {row.reputation_accounts?.label ?? "Unknown Listing"}
                       </p>
-                      <p className="text-sm text-slate-600 dark:text-slate-400 italic border-l-2 border-slate-200 dark:border-slate-700 pl-3 py-1">
-                        &ldquo;{row.reply_body}&rdquo;
-                      </p>
+                      <label className="sr-only" htmlFor={`draft-reply-${row.id}`}>
+                        Reply draft
+                      </label>
+                      <textarea
+                        id={`draft-reply-${row.id}`}
+                        className="w-full min-h-[88px] rounded-lg border border-slate-200 bg-white/80 px-3 py-2 text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950/50 dark:text-slate-100"
+                        defaultValue={row.reply_body}
+                        disabled={postingGoogleId === row.id || updatingId === row.id}
+                        onBlur={(e) => {
+                          const v = e.target.value;
+                          if (v !== row.reply_body) void saveDraftReplyBody(row.id, v);
+                        }}
+                      />
                     </div>
-                    <div className="flex justify-start">
+                    <div className="flex flex-wrap justify-start gap-2">
+                        {row.reputation_accounts?.platform === "google_business" && row.external_review_id ? (
+                          <button
+                            type="button"
+                            className={cn(
+                              buttonVariants({ variant: "default", size: "sm" }),
+                              "bg-indigo-600 hover:bg-indigo-700 text-white font-mono uppercase tracking-widest text-[10px]",
+                            )}
+                            disabled={
+                              postingGoogleId === row.id ||
+                              row.reply_body.trim() === GOOGLE_IMPORTED_REPLY_PLACEHOLDER ||
+                              !row.reply_body.trim()
+                            }
+                            title={
+                              row.reply_body.trim() === GOOGLE_IMPORTED_REPLY_PLACEHOLDER
+                                ? "Replace the imported placeholder text before posting to Google."
+                                : undefined
+                            }
+                            onClick={() => void postReplyToGoogle(row.id)}
+                          >
+                            {postingGoogleId === row.id ? "Posting…" : "Post reply to Google"}
+                          </button>
+                        ) : null}
                         <button
                           type="button"
                           className={cn(buttonVariants({ variant: "default", size: "sm" }), "bg-red-600 hover:bg-red-700 text-white font-mono uppercase tracking-widest text-[10px]")}
                           disabled={updatingId === row.id}
                           onClick={() => void markPosted(row.id)}
                         >
-                          {updatingId === row.id ? "Recording..." : "Publish & Record"}
+                          {updatingId === row.id ? "Recording..." : "Record posted (manual)"}
                         </button>
                     </div>
                   </MotionItem>

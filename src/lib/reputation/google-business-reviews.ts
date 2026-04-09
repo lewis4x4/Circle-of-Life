@@ -167,3 +167,53 @@ export function reviewExcerptForRow(review: GoogleReview): string {
   const base = who ? `(No comment from ${who})${stars}` : `(No comment)${stars}`;
   return base.slice(0, 8000);
 }
+
+/**
+ * Full review resource name for v4 `.../reviews/{id}/reply` — `accounts/.../locations/.../reviews/...`.
+ */
+export function buildGoogleReviewResourceName(locationParent: string, externalReviewId: string): string {
+  const id = externalReviewId.trim();
+  if (!id) {
+    throw new Error("Missing Google review id");
+  }
+  if (id.includes("/reviews/")) {
+    return id.replace(/\/reply$/i, "").replace(/^\/+/, "");
+  }
+  return `${locationParent}/reviews/${id}`;
+}
+
+/** Create or update the public reply on a Google review (`updateReply`). */
+export async function putGoogleReviewReply(
+  accessToken: string,
+  reviewResourceName: string,
+  comment: string,
+): Promise<void> {
+  const trimmed = comment.trim();
+  if (!trimmed) {
+    throw new Error("Reply text is empty");
+  }
+  const encoded = reviewResourceName
+    .split("/")
+    .filter((s) => s.length > 0)
+    .map((seg) => encodeURIComponent(seg))
+    .join("/");
+  const url = `${MYBUSINESS_V4}/${encoded}/reply`;
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ comment: trimmed }),
+  });
+  if (!res.ok) {
+    let msg = `HTTP ${res.status}`;
+    try {
+      const json = (await res.json()) as { error?: { message?: string } };
+      msg = json.error?.message ?? msg;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(msg);
+  }
+}
