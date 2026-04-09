@@ -150,7 +150,7 @@ export default function FamilyHomePage() {
              <div className="flex flex-wrap justify-center gap-2 max-w-lg mx-auto w-full">
                <StatChip label="Connected" value={snapshot.stats.linkedResidents} />
                <StatChip label="Recent Clinical" value={snapshot.stats.clinicalWeek} />
-               {snapshot.stats.billingOpen > 0 && (
+               {Number(snapshot.stats.billingOpen) > 0 && (
                   <StatChip label="Open Invoices" value={snapshot.stats.billingOpen} />
                )}
              </div>
