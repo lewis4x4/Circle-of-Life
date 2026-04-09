@@ -2,7 +2,8 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Award, ChevronRight } from "lucide-react";
+import { format } from "date-fns";
+import { Award, ChevronRight, Download } from "lucide-react";
 
 import {
   AdminEmptyState,
@@ -11,12 +12,13 @@ import {
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import type { Database } from "@/types/database";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
@@ -62,13 +64,84 @@ type SupabaseStaffMini = {
 type QueryError = { message: string };
 type QueryResult<T> = { data: T[] | null; error: QueryError | null };
 
+type StaffCertExportRow = Database["public"]["Tables"]["staff_certifications"]["Row"] & {
+  staff_display_name: string;
+};
+
+function csvEscapeCell(value: string): string {
+  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+  return value;
+}
+
+function buildCertificationsCsv(rows: StaffCertExportRow[]): string {
+  const header = [
+    "id",
+    "organization_id",
+    "facility_id",
+    "staff_id",
+    "staff_display_name",
+    "certification_type",
+    "certification_name",
+    "certificate_number",
+    "issuing_authority",
+    "issue_date",
+    "expiration_date",
+    "status",
+    "notes",
+    "document_id",
+    "storage_path",
+    "created_at",
+    "updated_at",
+    "created_by",
+    "updated_by",
+    "deleted_at",
+  ].join(",");
+  const body = rows.map((row) =>
+    [
+      csvEscapeCell(row.id),
+      csvEscapeCell(row.organization_id),
+      csvEscapeCell(row.facility_id),
+      csvEscapeCell(row.staff_id),
+      csvEscapeCell(row.staff_display_name),
+      csvEscapeCell(row.certification_type),
+      csvEscapeCell(row.certification_name),
+      csvEscapeCell(row.certificate_number ?? ""),
+      csvEscapeCell(row.issuing_authority ?? ""),
+      csvEscapeCell(row.issue_date),
+      csvEscapeCell(row.expiration_date ?? ""),
+      csvEscapeCell(row.status),
+      csvEscapeCell(row.notes ?? ""),
+      csvEscapeCell(row.document_id ?? ""),
+      csvEscapeCell(row.storage_path ?? ""),
+      csvEscapeCell(row.created_at),
+      csvEscapeCell(row.updated_at),
+      csvEscapeCell(row.created_by ?? ""),
+      csvEscapeCell(row.updated_by ?? ""),
+      csvEscapeCell(row.deleted_at ?? ""),
+    ].join(","),
+  );
+  return [header, ...body].join("\r\n");
+}
+
+function triggerCsvDownload(filename: string, text: string) {
+  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 const DEFAULT_FILTERS = { search: "", timeline: "all", dbStatus: "all" };
 
 export default function AdminCertificationsPage() {
+  const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<CertRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exportingCsv, setExportingCsv] = useState(false);
   const [search, setSearch] = useState(DEFAULT_FILTERS.search);
   const [timeline, setTimeline] = useState(DEFAULT_FILTERS.timeline);
   const [dbStatus, setDbStatus] = useState(DEFAULT_FILTERS.dbStatus);
@@ -89,6 +162,59 @@ export default function AdminCertificationsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const exportCertificationsCsv = useCallback(async () => {
+    setExportingCsv(true);
+    setError(null);
+    try {
+      let q = supabase
+        .from("staff_certifications" as never)
+        .select("*")
+        .is("deleted_at", null)
+        .order("expiration_date", { ascending: true })
+        .limit(500);
+
+      if (isValidFacilityIdForQuery(selectedFacilityId)) {
+        q = q.eq("facility_id", selectedFacilityId);
+      }
+
+      const certRes = (await q) as unknown as QueryResult<Database["public"]["Tables"]["staff_certifications"]["Row"]>;
+      if (certRes.error) throw certRes.error;
+      const certs = certRes.data ?? [];
+      if (certs.length === 0) {
+        const csv = buildCertificationsCsv([]);
+        triggerCsvDownload(`staff-certifications-${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
+        return;
+      }
+
+      const staffIds = [...new Set(certs.map((c) => c.staff_id))];
+      const staffRes = (await supabase
+        .from("staff" as never)
+        .select("id, first_name, last_name, deleted_at")
+        .in("id", staffIds)
+        .is("deleted_at", null)) as unknown as QueryResult<SupabaseStaffMini>;
+      if (staffRes.error) throw staffRes.error;
+
+      const nameById = new Map<string, string>();
+      for (const s of staffRes.data ?? []) {
+        const first = s.first_name?.trim() ?? "";
+        const last = s.last_name?.trim() ?? "";
+        nameById.set(s.id, `${first} ${last}`.trim() || "Staff member");
+      }
+
+      const exportRows: StaffCertExportRow[] = certs.map((c) => ({
+        ...c,
+        staff_display_name: nameById.get(c.staff_id) ?? "Unknown staff",
+      }));
+
+      const csv = buildCertificationsCsv(exportRows);
+      triggerCsvDownload(`staff-certifications-${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to export certifications.");
+    } finally {
+      setExportingCsv(false);
+    }
+  }, [supabase, selectedFacilityId]);
 
   const filteredRows = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -225,9 +351,25 @@ export default function AdminCertificationsPage() {
       ) : null}
       {!isLoading && filteredRows.length > 0 ? (
         <div className="relative overflow-visible z-10 w-full mt-4">
-          <div className="relative z-10 p-4 sm:p-6 mb-4 glass-panel rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-2xl">
-            <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Certifications Matrix</h3>
-            <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">Track state-mandated training, background checks, and clinical licenses.</p>
+          <div className="relative z-10 p-4 sm:p-6 mb-4 glass-panel rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Certifications Matrix</h3>
+              <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
+                Track state-mandated training, background checks, and clinical licenses.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shrink-0 font-mono text-[10px] uppercase tracking-widest"
+              disabled={exportingCsv}
+              aria-busy={exportingCsv}
+              onClick={() => void exportCertificationsCsv()}
+            >
+              <Download className="mr-2 h-3.5 w-3.5" aria-hidden />
+              {exportingCsv ? "Exporting…" : "Download certifications CSV"}
+            </Button>
           </div>
           
           <MotionList className="space-y-3">
