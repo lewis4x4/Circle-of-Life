@@ -41,9 +41,17 @@ export function liquidFormVsThickenedFluidsHint(
   return { show: matches.length > 0, matches };
 }
 
-/** Pureed / liquidized food levels — swallowing whole solid doses may be inappropriate without pharmacy review. */
-export function isPureedOrLiquidizedFoodDiet(food: FoodLevel): boolean {
-  return food === "level_3_liquidized" || food === "level_4_pureed";
+/**
+ * IDDSI food levels where whole solid oral unit doses often need pharmacy review (pureed / liquidized
+ * through minced moist and soft bite–sized). Excludes regular / easy chew and not assessed.
+ */
+export function isTextureModifiedFoodForSolidOralHint(food: FoodLevel): boolean {
+  return (
+    food === "level_3_liquidized" ||
+    food === "level_4_pureed" ||
+    food === "level_5_minced_moist" ||
+    food === "level_6_soft_bite_sized"
+  );
 }
 
 const SOLID_ORAL_FORM_RE =
@@ -58,14 +66,14 @@ export function medicationFormLooksSolidOral(form: string | null | undefined): b
 }
 
 /**
- * Advisory when diet is pureed/liquidized and an active med’s **form** looks like a solid oral unit.
- * Crushing/altering products may be contraindicated — pharmacy / prescriber must confirm.
+ * Advisory when diet is texture-modified (IDDSI food levels 3–6) and an active med’s **form** looks
+ * like a solid oral unit. Crushing/altering products may be contraindicated — pharmacy / prescriber must confirm.
  */
-export function solidOralFormVsPureedFoodHint(
+export function solidOralFormVsTextureModifiedFoodHint(
   iddsi_food_level: FoodLevel,
   medications: ResidentMedForHint[],
 ): { show: boolean; matches: { id: string; medication_name: string; form: string | null }[] } {
-  if (!isPureedOrLiquidizedFoodDiet(iddsi_food_level)) {
+  if (!isTextureModifiedFoodForSolidOralHint(iddsi_food_level)) {
     return { show: false, matches: [] };
   }
   const matches = medications

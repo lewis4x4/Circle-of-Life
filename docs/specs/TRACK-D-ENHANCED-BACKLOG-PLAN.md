@@ -28,7 +28,7 @@
 | **23** | ~~**Post reply to Google** (`updateReply` from draft)~~ | — | — | — | **Shipped D48** — `POST /api/reputation/replies/[id]/post-google` + hub. |
 | **23** | ~~**Post reply to Yelp** (Partner public comment)~~ | — | — | — | **Shipped D49** — `POST /api/reputation/replies/[id]/post-yelp` + hub; **`yelp-partner-reviews.ts`**. |
 | **12** | ~~**Certificate PDF upload**~~ (`staff_training_completions` + `competency-demonstrations` paths) | — | — | — | **D40** — `117` + log form + hub; **D11** — demonstrations. |
-| **14** | **Automated med–texture cross-check** (e.g. Edge job flagging solid vs thickened fluid) | Medium–high | **High (clinical)** | Med orders, pharmacist rules | **Partial:** **D50**–**D51** read-only hints on **`/admin/dietary/clinical-review`** (`med-fluid-diet-hints.ts`: liquid vs thickened fluid; solid oral vs pureed/liquidized food). **Full Edge automation** still needs **clinical / pharmacy** sign-off. |
+| **14** | **Automated med–texture cross-check** (e.g. Edge job flagging solid vs thickened fluid) | Medium–high | **High (clinical)** | Med orders, pharmacist rules | **Partial:** **D50**–**D52** read-only hints on **`/admin/dietary/clinical-review`** (`med-fluid-diet-hints.ts`: liquid vs thickened fluid; solid oral vs texture-modified food IDDSI 3–6). **Full Edge automation** still needs **clinical / pharmacy** sign-off. |
 | **14** | ~~**Read-only “review” panel** (diet + resident meds)~~ | — | — | — | **Shipped D13** — `/admin/dietary/clinical-review`. |
 
 ---
@@ -111,7 +111,9 @@
 
 **~~Recommended next segment — D51~~** **DONE (2026-04-10)** — Module **14:** **Solid oral form vs pureed/liquidized diet** hint — same hub + `med-fluid-diet-hints.ts` — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D52+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
+**~~Recommended next segment — D52~~** **DONE (2026-04-10)** — Module **14:** **Expand solid-oral hint** to minced moist + soft bite–sized — **`solidOralFormVsTextureModifiedFoodHint`** — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D53+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
 
 ---
 

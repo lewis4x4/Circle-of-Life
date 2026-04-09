@@ -12,7 +12,7 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
-import { liquidFormVsThickenedFluidsHint, solidOralFormVsPureedFoodHint } from "@/lib/dietary/med-fluid-diet-hints";
+import { liquidFormVsThickenedFluidsHint, solidOralFormVsTextureModifiedFoodHint } from "@/lib/dietary/med-fluid-diet-hints";
 
 type DietRow = Database["public"]["Tables"]["diet_orders"]["Row"] & {
   residents: { first_name: string; last_name: string; id: string } | null;
@@ -106,11 +106,11 @@ export default function DietaryClinicalReviewPage() {
     return liquidFormVsThickenedFluidsHint(primaryOrder.iddsi_fluid_level, meds);
   }, [primaryOrder, meds]);
 
-  const solidOralPureeHint = useMemo(() => {
+  const solidOralTextureHint = useMemo(() => {
     if (!primaryOrder) {
       return { show: false as const, matches: [] as { id: string; medication_name: string; form: string | null }[] };
     }
-    return solidOralFormVsPureedFoodHint(primaryOrder.iddsi_food_level, meds);
+    return solidOralFormVsTextureModifiedFoodHint(primaryOrder.iddsi_food_level, meds);
   }, [primaryOrder, meds]);
 
   useEffect(() => {
@@ -169,7 +169,7 @@ export default function DietaryClinicalReviewPage() {
             </h1>
             <p className="mt-1 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl text-sm">
               Read-only side-by-side view for nursing and kitchen alignment. Automated hints flag only obvious
-              data-pattern cases (liquid vs thickened fluids; solid unit doses vs pureed/liquidized diets);
+              data-pattern cases (liquid vs thickened fluids; solid unit doses vs texture-modified diets IDDSI 3–6);
               pharmacy and prescriber confirmation still required.
             </p>
           </div>
@@ -249,19 +249,19 @@ export default function DietaryClinicalReviewPage() {
               </div>
             )}
 
-            {selectedResidentId && solidOralPureeHint.show && (
+            {selectedResidentId && solidOralTextureHint.show && (
               <div
                 className="rounded-[1.5rem] border border-violet-300/80 bg-violet-50/90 dark:border-violet-800/60 dark:bg-violet-950/35 px-5 py-4 text-sm text-violet-950 dark:text-violet-100"
                 role="status"
               >
-                <p className="font-semibold text-violet-950 dark:text-violet-50">Review: solid oral forms vs pureed/liquidized diet</p>
+                <p className="font-semibold text-violet-950 dark:text-violet-50">Review: solid oral forms vs texture-modified diet</p>
                 <p className="mt-1 text-violet-900/90 dark:text-violet-200/95">
-                  Diet lists pureed or liquidized foods, but these active medications have a solid oral dosage form
-                  string (e.g. tablet, capsule). Confirm crushing, compounding, or alternatives with pharmacy — some
-                  products must not be altered; advisory only.
+                  Diet lists IDDSI texture-modified foods (liquidized through soft bite–sized), but these active
+                  medications have a solid oral dosage form string (e.g. tablet, capsule). Confirm crushing,
+                  compounding, or alternatives with pharmacy — some products must not be altered; advisory only.
                 </p>
                 <ul className="mt-2 list-disc pl-5 space-y-0.5 text-violet-950/90 dark:text-violet-100/95">
-                  {solidOralPureeHint.matches.map((m) => (
+                  {solidOralTextureHint.matches.map((m) => (
                     <li key={m.id}>
                       <span className="font-medium">{m.medication_name}</span>
                       {m.form?.trim() ? <span className="text-violet-800/95 dark:text-violet-200/90"> — {m.form}</span> : null}

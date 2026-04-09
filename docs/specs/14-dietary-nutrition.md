@@ -58,7 +58,9 @@ Dietary is also a linchpin for clinical risk: IDDSI texture levels must align wi
 
 **Shipped (Track D50):** Same route — **advisory hint** when IDDSI fluid is **not** thin (`level_0_thin`) / not unassessed and an **active** medication’s free-text **`form`** matches liquid-like keywords (e.g. solution, suspension). Implementation: **`src/lib/dietary/med-fluid-diet-hints.ts`**. **Not** a clinical determination; pharmacy/prescriber must confirm. **Deferred:** Edge/cron automation and expanded rule sets (require explicit **clinical / pharmacy** sign-off in spec).
 
-**Shipped (Track D51):** Same route — second **advisory hint** when IDDSI food is **`level_3_liquidized`** or **`level_4_pureed`** and an **active** medication’s **`form`** matches solid oral patterns (tablet, capsule, ODT, etc.), excluding liquid-like forms. Same helper module; **not** a clinical determination.
+**Shipped (Track D51):** Same route — **advisory hint** when IDDSI food is **`level_3_liquidized`** or **`level_4_pureed`** and an **active** medication’s **`form`** matches solid oral patterns (tablet, capsule, ODT, etc.), excluding liquid-like forms. Same helper module; **not** a clinical determination.
+
+**Shipped (Track D52):** Expands the same solid-oral hint to **`level_5_minced_moist`** and **`level_6_soft_bite_sized`** — function **`solidOralFormVsTextureModifiedFoodHint`** / **`isTextureModifiedFoodForSolidOralHint`** in **`med-fluid-diet-hints.ts`** (replaces pureed-only predicate). **No** Edge job; **not** a clinical determination.
 
 - Edge Function: flag solid-dose medications vs. fluid viscosity level (cross-check with `resident_medications`) — **full automation** still deferred pending rules sign-off (see D50 advisory above).
 - Tray ticket generation with resident name, diet order, room/bed.
