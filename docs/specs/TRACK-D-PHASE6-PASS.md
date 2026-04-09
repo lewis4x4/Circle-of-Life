@@ -103,3 +103,23 @@
 **Mission alignment:** **pass** — operators see draft vs posted throughput without API integrations.
 
 **Gate artifact:** `test-results/agent-gates/2026-04-09T01-50-54-231Z-track-d-phase6-d9-reputation-posted-metric.json` (`npm run segment:gates -- --segment "track-d-phase6-d9-reputation-posted-metric" --ui --no-chaos`).
+
+---
+
+## Track D — plan (remaining)
+
+**Segments D1–D9:** Closed in repo with gate artifacts above. This completes the **Phase 6 Core visibility / workflow** slices we prioritized for COL (transport, training, dietary, referrals, reputation).
+
+**Not in scope for D1–D9 (deferrals + Enhanced — pick with owner priority):**
+
+| Module | Backlog |
+|--------|---------|
+| **12** | Storage certificate uploads, Baya/API, automated assignment, org-wide `training_compliance_snapshots` usage |
+| **14** | Automated med–texture cross-check vs medications; meal production; vendor API; full menu cycle |
+| **15** | Payroll mileage approval workflow, org-level mileage rate, month/week calendar, external calendar sync |
+| **22** | HL7 processor automation beyond queue ingest |
+| **23** | External review platform OAuth/sync APIs |
+
+**Authoritative README narrative:** [README.md](./README.md) — section **Track D — Phase 6 completion pass**.
+
+**Next segment:** Record as **D10+** in this file when a new bounded slice ships; use migration **`114+`** only when DDL is required ([README.md](./README.md) next free migration).

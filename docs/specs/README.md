@@ -20,7 +20,7 @@
 | Phase 1 — full acceptance (real auth, RLS matrix, UAT, Pro/BAA/PITR) | **NOT COMPLETE** — **Track A:** A1+A2 **done** (2026-04-09); A3–A6 remain | [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md), [PHASE1-ACCEPTANCE-CHECKLIST.md](./PHASE1-ACCEPTANCE-CHECKLIST.md) |
 | Phase 2 — acceptance | **PASS** (2026-04-04) | [PHASE2-ACCEPTANCE-CHECKLIST.md](./PHASE2-ACCEPTANCE-CHECKLIST.md) |
 | Phases 3–6 — Core DDL + primary UI | **Shipped** in repo | Phase tables below |
-| Phases 3–6 — live proof / operational hardening | **Incomplete** until Track A and Tracks B–D as applicable | Same tables + remediation tracks |
+| Phases 3–6 — live proof / operational hardening | **Incomplete** until Track A closes; Tracks B–C done; **Track D** Core slices **D1–D9 done** — Enhanced backlog remains | Same tables + [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md) |
 
 **Important:** Code and migrations have **outpaced** formal Phase 1 acceptance. **Do not** treat “migrations applied” or “routes exist” as equivalent to **Track A closed** or **production-ready** for PHI.
 
@@ -32,8 +32,9 @@
 
 1. **Track A** — **A1** (auth) + **A2** (RLS) owner-verified **2026-04-09**; **A3** real-auth UAT depth → **A4** env/seed → **A5** Pro/BAA/PITR → **A6** waiver review. Single roadmap: [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md). Production PHI still requires **A5** and remaining UAT rows.
 2. **Confirm remote DB** — `supabase migration list` on the target project must match **local `001`–`113`** before claiming parity.
-3. **Tracks B–D** — Platform hardening, workflow hardening, Phase 6 Enhanced gaps — per sections below.
-4. **Track E** — New DDL starting at migration **`114`** (after **`113`** mileage logs + fleet wheelchair flag) only after specs exist and Tracks A–D are appropriately satisfied for your risk tolerance.
+3. **Tracks B–C** — **Done (code)** per sections below; owner deploy/cron/UAT follow-up where noted.
+4. **Track D** — **Segments D1–D9 shipped** (2026-04-09); Core operational visibility for Phase 6 modules 12, 14, 15, 22, 23 is in repo. **Enhanced backlog** remains (HL7 automation, review APIs, training uploads, dietary automation, transport calendar, etc.) — see [Track D](#track-d--phase-6-completion-pass) and [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md). Pick the next slice by owner priority + spec readiness; run `segment:gates` per segment.
+5. **Track E** — New DDL starting at migration **`114`** only after specs exist and Tracks A–D are appropriately satisfied for your risk tolerance.
 
 ---
 
@@ -373,15 +374,46 @@ Use these authoritative files as the acceptance source of truth:
 
 #### Track D — Phase 6 completion pass
 
-**Execution log (segment picks + rationale):** [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+**Execution log (segment picks, gate artifacts, deferrals):** [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-Before treating Phase 6 as “done,” revisit the recently shipped Core modules and close the major Enhanced gaps that matter operationally:
+**Plan — what “Track D” means here**
 
-- Training: attachment / evidence workflow depth (**D2 started:** real demonstration queue + counts on `/admin/training` — see TRACK-D)
-- Dietary: medication / texture cross-check automation
-- Transportation: trip scheduling / compliance reminders where required (**D1 started:** data-driven fleet/driver expiry cards on `/admin/transportation` — see TRACK-D)
-- Referral CRM: HL7 listener / parser beyond manual queue ingest
-- Reputation: platform sync / publishing APIs beyond manual tracking
+- **Goal:** Close **operationally meaningful** gaps in Phase 6 modules (**12, 14, 15, 22, 23**) using existing Core schema first; **Enhanced** integrations (external APIs, heavy automation) ship as **separate bounded segments** with specs + gates — not as one big bang.
+- **Definition of “Track D code pass” (engineering):** Segments **D1–D9** delivered with PASS gate artifacts — see table below. This does **not** replace **Track A** UAT, owner attestation, or Enhanced backlog work.
+
+**Shipped segments (summary)**
+
+| Seg | Module(s) | What shipped |
+|-----|-------------|----------------|
+| **D1** | 15 Transport | RLS-backed fleet/driver **expiry** cards on `/admin/transportation` |
+| **D2** | 12 Training | `/admin/training` **competency_demonstrations** queue + batch counts (not org-wide snapshots) |
+| **D3** | 14 Dietary | `/admin/dietary` **diet_orders** attention queue + roster + batch stats |
+| **D4** | 22 + 23 | Referrals: **HL7 inbound** pending/failed counts; Reputation: **Module 23** SYS label + list hygiene |
+| **D5** | 15 | Migration **`112`**, `resident_transport_requests` + **upcoming** list on hub |
+| **D6** | 15 | Migration **`113`**, `mileage_logs`, **request CRUD** + mileage link |
+| **D7** | 15 | **Day-grouped** upcoming transport list |
+| **D8** | 14 | **`medication_texture_review_notes`** in attention queue + batch % |
+| **D9** | 23 | **Posted replies** metric pillar on `/admin/reputation` |
+
+**Remaining items (Enhanced / not yet picked as a segment)**
+
+Priority is **owner-led** (COL ops + compliance). Typical order of attack:
+
+| Area | Backlog (from specs + TRACK-D deferrals) | Notes |
+|------|--------------------------------------------|--------|
+| **Track A** | A3–A6 UAT, env, Pro/BAA/PITR, waivers | **Blocks “production-ready for PHI”** — see [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md) |
+| **12 Training** | Certificate / sign-in **storage** uploads, Baya/API hooks, **automated assignment**, org-wide compliance snapshots | D2 used **metadata-only** demonstrations |
+| **14 Dietary** | **Automated** med–texture cross-check vs `resident_medications`, meal production sheets, vendor/menu integrations | D8 = **human-entered** notes visibility |
+| **15 Transport** | Org-level **mileage rate**, payroll export **approval**, **month/week calendar**, external calendar sync | D1+D5–D7 cover compliance cards + requests + grouping |
+| **22 Referral CRM** | **HL7 listener/parser** beyond manual queue ingest; deeper CRM workflows | D4 = **counts** + link to queue |
+| **23 Reputation** | **OAuth / platform APIs** for fetch + publish; optional AI reply (spec Enhanced) | D9 = **posted count** + existing draft/posted workflow |
+| **Deploy / ops** | Track C Edge functions + crons on target project | [supabase/functions/README.md](../../supabase/functions/README.md), [TRACK-C-WORKFLOW-HARDENING.md](./TRACK-C-WORKFLOW-HARDENING.md) |
+
+**Next engineering steps (when resuming Track D–style work)**
+
+1. Confirm **remote migration parity** (`001`–`113`) and **owner priority** for the next Enhanced slice.
+2. Promote or extend the relevant **module spec** (COL Alignment Notes) so the slice is **bounded** (schema, RLS, acceptance).
+3. Implement **one segment**; run `npm run segment:gates -- --segment "<id>" --ui` when UI/routes change; record in [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md) as **D10+** or a named track.
 
 #### Track E — Next roadmap DDL (after Tracks A–D and spec approval)
 
