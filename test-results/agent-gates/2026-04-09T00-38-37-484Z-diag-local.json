@@ -1,0 +1,123 @@
+{
+  "segment": "diag-local",
+  "timestamp": "2026-04-09T00:38:37.484Z",
+  "verdict": "PASS",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-env-example.mjs",
+      "duration_ms": 22,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "duration_ms": 166,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "status": "passed",
+      "command": "npm run audit:ci",
+      "duration_ms": 784,
+      "stdout": "# npm audit report\n\n@hono/node-server  <1.19.13\nSeverity: moderate\n@hono/node-server: Middleware bypass via repeated slashes in serveStatic - https://github.com/advisories/GHSA-92pp-h63x-v22m\nfix available via `npm audit fix`\nnode_modules/@hono/node-server\n\nhono  <=4.12.11\nSeverity: moderate\nHono missing validation of cookie name on write path in setCookie() - https://github.com/advisories/GHSA-26pp-8wgv-hjvm\nHono: Non-breaking space prefix bypass in cookie name handling in getCookie() - https://github.com/advisories/GHSA-r5rp-j6wh-rvv4\nHono has incorrect IP matching in ipRestriction() for IPv4-mapped IPv6 addresses - https://github.com/advisories/GHSA-xpcf-pg52-r92g\nHono: Path traversal in toSSG() allows writing files outside the output directory - https://github.com/advisories/GHSA-xf4j-xp2r-rqqx\nHono: Middleware bypass via repeated slashes in serveStatic - https://github.com/advisories/GHSA-wmmm-f939-6g9c\nfix available via `npm audit fix`\nnode_modules/hono\n\n2 moderate severity vulnerabilities\n\nTo address all issues, run:\n  npm audit fix\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "status": "passed",
+      "command": "npm run secrets:gitleaks",
+      "duration_ms": 3196,
+      "stdout": "[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n\u001b[90m12:38AM\u001b[0m \u001b[32mINF\u001b[0m 247 commits scanned.\n\u001b[90m12:38AM\u001b[0m \u001b[32mINF\u001b[0m scan completed in 2.21s\n\u001b[90m12:38AM\u001b[0m \u001b[32mINF\u001b[0m no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "status": "passed",
+      "command": "npm run lint",
+      "duration_ms": 7233,
+      "stdout": "\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/admin/rounding/live/page.tsx\n  95:10  warning  'loading' is assigned a value but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/admin/rounding/page.tsx\n  51:10  warning  'loading' is assigned a value but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/admin/rounding/reports/page.tsx\n  81:10  warning  'loading' is assigned a value but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(caregiver)/caregiver/page.tsx\n  33:10  warning  'facilityName' is assigned a value but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(family)/family/page.tsx\n  98:10  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element\n\n✖ 5 problems (0 errors, 5 warnings)\n\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "status": "passed",
+      "command": "npm run migrations:check",
+      "duration_ms": 96,
+      "stdout": "[migrations:check] PASS: 111 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..111\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": false,
+      "status": "failed",
+      "command": "npm run migrations:verify:pg",
+      "duration_ms": 9469,
+      "stdout": "",
+      "stderr": "[migrations:verify:pg] FAIL at 108_onboarding_responses.sql\n ERROR:  function auth.jwt() does not exist\nLINE 9:     COALESCE(NULLIF(trim((auth.jwt () -> 'app_metadata' ->> ...\n                                  ^\nHINT:  No function matches the given name and argument types. You might need to add explicit type casts.\n\n[migrations:verify:pg] container logs:\n The files belonging to this database system will be owned by user \"postgres\".\nThis user must also own the server process.\n\nThe database cluster will be initialized with locale \"en_US.utf8\".\nThe default database encoding has accordingly been set to \"UTF8\".\nThe default text search configuration will be set to \"english\".\n\nData page checksums are disabled.\n\nfixing permissions on existing directory /var/lib/postgresql/data ... ok\ncreating subdirectories ... ok\nselecting dynamic shared memory implementation ... posix\nselecting default max_connections ... 100\nselecting default shared_buffers ... 128MB\nselecting default time zone ... UTC\ncreating configuration files ... ok\nrunning bootstrap script ... ok\nperforming post-bootstrap initialization ... ok\nsyncing data to disk ... ok\n\n\nSuccess. You can now start the database server using:\n\n    pg_ctl -D /var/lib/postgresql/data -l logfile start\n\nwaiting for server to start....2026-04-09 00:38:49.739 UTC [48] LOG:  starting PostgreSQL 16.13 on aarch64-unknown-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit\n2026-04-09 00:38:49.740 UTC [48] LOG:  listening on Unix socket \"/var/run/postgresql/.s.PGSQL.5432\"\n2026-04-09 00:38:49.741 UTC [51] LOG:  database system was shut down at 2026-04-09 00:38:49 UTC\n2026-04-09 00:38:49.743 UTC [48] LOG:  database system is ready to accept connections\n done\nserver started\n\n/usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*\n\nwaiting for server to shut down....2026-04-09 00:38:49.838 UTC [48] LOG:  received fast shutdown request\n2026-04-09 00:38:49.839 UTC [48] LOG:  aborting any active transactions\n2026-04-09 00:38:49.841 UTC [48] LOG:  background worker \"logical replication launcher\" (PID 54) exited with exit code 1\n2026-04-09 00:38:49.841 UTC [49] LOG:  shutting down\n2026-04-09 00:38:49.841 UTC [49] LOG:  checkpoint starting: shutdown immediate\n2026-04-09 00:38:49.844 UTC [49] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.004 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB; lsn=0/14F2588, redo lsn=0/14F2588\n2026-04-09 00:38:49.846 UTC [48] LOG:  database system is shut down\n done\nserver stopped\n\nPostgreSQL init process complete; ready for start up.\n\n\n"
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "status": "passed",
+      "command": "npm run build",
+      "duration_ms": 22897,
+      "stdout": "[migrations:check] PASS: 111 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..111\n[check:admin-shell] PASS: all 21 top-level (admin) route prefix(es) are gated\n▲ Next.js 16.2.1 (Turbopack)\n- Environments: .env.local\n- Experiments (use with caution):\n  · clientTraceMetadata\n\n  Creating an optimized production build ...\n✓ Compiled successfully in 8.4s\n  Running next.config.js provided runAfterProductionCompile ...\n✓ Completed runAfterProductionCompile in 341ms\n  Running TypeScript ...\n  Finished TypeScript in 11.0s ...\n  Collecting page data using 15 workers ...\n  Generating static pages using 15 workers (0/253) ...\n  Generating static pages using 15 workers (63/253) \r\n  Generating static pages using 15 workers (126/253) \r\n  Generating static pages using 15 workers (189/253) \r\n✓ Generating static pages using 15 workers (253/253) in 853ms\n  Finalizing page optimization ...\n\nRoute (app)\n┌ ○ /\n├ ○ /_not-found\n├ ○ /admin\n├ ○ /admin/admissions\n├ ƒ /admin/admissions/[id]\n├ ○ /admin/admissions/new\n├ ○ /admin/assessments/overdue\n├ ○ /admin/billing\n├ ○ /admin/billing/ar-aging\n├ ○ /admin/billing/collections\n├ ○ /admin/billing/collections/new\n├ ○ /admin/billing/invoices\n├ ƒ /admin/billing/invoices/[id]\n├ ○ /admin/billing/invoices/generate\n├ ○ /admin/billing/org-ar-aging\n├ ○ /admin/billing/payments/new\n├ ○ /admin/billing/rates\n├ ○ /admin/billing/rates/new\n├ ○ /admin/billing/revenue\n├ ○ /admin/certifications\n├ ○ /admin/certifications/new\n├ ○ /admin/compliance\n├ ○ /admin/compliance/audit-export\n├ ƒ /admin/compliance/deficiencies/[id]\n├ ○ /admin/compliance/deficiencies/new\n├ ○ /admin/compliance/policies\n├ ƒ /admin/compliance/policies/[id]/edit\n├ ○ /admin/compliance/policies/new\n├ ○ /admin/dietary\n├ ○ /admin/dietary/new\n├ ○ /admin/discharge\n├ ƒ /admin/discharge/[id]\n├ ○ /admin/discharge/new\n├ ○ /admin/executive\n├ ○ /admin/executive/alerts\n├ ○ /admin/executive/benchmarks\n├ ○ /admin/executive/ceo\n├ ○ /admin/executive/cfo\n├ ○ /admin/executive/coo\n├ ○ /admin/executive/entity\n├ ƒ /admin/executive/entity/[id]\n├ ƒ /admin/executive/facility/[id]\n├ ○ /admin/executive/nlq\n├ ○ /admin/executive/reports\n├ ○ /admin/executive/scenarios\n├ ○ /admin/executive/settings\n├ ○ /admin/family-messages\n├ ○ /admin/family-portal\n├ ○ /admin/finance\n├ ○ /admin/finance/budget\n├ ○ /admin/finance/chart-of-accounts\n├ ○ /admin/finance/gl-settings\n├ ○ /admin/finance/journal-entries\n├ ƒ /admin/finance/journal-entries/[id]\n├ ○ /admin/finance/journal-entries/new\n├ ○ /admin/finance/ledger\n├ ○ /admin/finance/period-close\n├ ○ /admin/finance/posting-rules\n├ ○ /admin/finance/trial-balance\n├ ○ /admin/incidents\n├ ƒ /admin/incidents/[id]\n├ ƒ /admin/incidents/[id]/rca\n├ ○ /admin/incidents/trends\n├ ○ /admin/infection-control\n├ ƒ /admin/infection-control/[id]\n├ ○ /admin/infection-control/new\n├ ƒ /admin/infection-control/outbreaks/[id]\n├ ○ /admin/infection-control/staff-illness\n├ ○ /admin/insurance\n├ ○ /admin/insurance/claims\n├ ƒ /admin/insurance/claims/[id]\n├ ○ /admin/insurance/coi\n├ ○ /admin/insurance/loss-runs\n├ ○ /admin/insurance/policies\n├ ƒ /admin/insurance/policies/[id]\n├ ○ /admin/insurance/policies/new\n├ ○ /admin/insurance/renewal-packages\n├ ƒ /admin/insurance/renewal-packages/[id]\n├ ○ /admin/insurance/renewals\n├ ○ /admin/insurance/workers-comp\n├ ○ /admin/medications\n├ ○ /admin/medications/controlled\n├ ○ /admin/medications/errors\n├ ○ /admin/medications/errors/new\n├ ○ /admin/medications/verbal-orders\n├ ○ /admin/medications/verbal-orders/new\n├ ○ /admin/payroll\n├ ○ /admin/payroll/new\n├ ○ /admin/quality\n├ ○ /admin/quality/measures/new\n├ ○ /admin/referrals\n├ ƒ /admin/referrals/[id]\n├ ○ /admin/referrals/hl7-inbound\n├ ○ /admin/referrals/hl7-inbound/new\n├ ○ /admin/referrals/new\n├ ○ /admin/referrals/sources\n├ ○ /admin/reports\n├ ○ /admin/reports/admin\n├ ○ /admin/reports/benchmarks\n├ ○ /admin/reports/history\n├ ○ /admin/reports/nlq\n├ ○ /admin/reports/packs\n├ ƒ /admin/reports/run/[sourceType]/[id]\n├ ○ /admin/reports/saved\n├ ○ /admin/reports/scheduled\n├ ○ /admin/reports/templates\n├ ƒ /admin/reports/templates/[slug]\n├ ○ /admin/reputation\n├ ○ /admin/reputation/accounts/new\n├ ○ /admin/reputation/replies/new\n├ ○ /admin/residents\n├ ƒ /admin/residents/[id]\n├ ƒ /admin/residents/[id]/assessments\n├ ƒ /admin/residents/[id]/assessments/new\n├ ƒ /admin/residents/[id]/billing\n├ ƒ /admin/residents/[id]/care-plan\n├ ƒ /admin/residents/[id]/medications\n├ ƒ /admin/residents/[id]/vitals\n├ ƒ /admin/residents/[id]/vitals/thresholds\n├ ○ /admin/residents/new\n├ ○ /admin/rounding\n├ ○ /admin/rounding/live\n├ ○ /admin/rounding/plans\n├ ƒ /admin/rounding/plans/[id]\n├ ○ /admin/rounding/plans/new\n├ ○ /admin/rounding/reports\n├ ○ /admin/schedules\n├ ○ /admin/schedules/new\n├ ○ /admin/search\n├ ○ /admin/settings/notifications\n├ ○ /admin/staff\n├ ƒ /admin/staff/[id]\n├ ○ /admin/staff/new\n├ ○ /admin/staffing\n├ ○ /admin/staffing/new\n├ ○ /admin/time-records\n├ ○ /admin/time-records/new\n├ ○ /admin/training\n├ ○ /admin/training/new\n├ ○ /admin/transportation\n├ ○ /admin/transportation/drivers/new\n├ ○ /admin/transportation/inspections/new\n├ ○ /admin/transportation/vehicles/new\n├ ○ /admin/vendors\n├ ƒ /admin/vendors/[id]\n├ ○ /admin/vendors/contracts\n├ ƒ /admin/vendors/contracts/[id]\n├ ○ /admin/vendors/directory\n├ ○ /admin/vendors/invoices\n├ ƒ /admin/vendors/invoices/[id]\n├ ○ /admin/vendors/payments\n├ ○ /admin/vendors/purchase-orders\n├ ƒ /admin/vendors/purchase-orders/[id]\n├ ○ /admin/vendors/purchase-orders/new\n├ ○ /admin/vendors/spend\n├ ƒ /api/controlled-substance/verify-co-sign\n├ ƒ /api/infection-control/evaluate-outbreak\n├ ƒ /api/infection-control/evaluate-vitals\n├ ƒ /api/insurance/renewal-narrative\n├ ƒ /api/rounding/generate-tasks\n├ ƒ /api/rounding/plans\n├ ƒ /api/rounding/reports/completion\n├ ƒ /api/rounding/tasks\n├ ƒ /api/rounding/tasks/[id]/complete\n├ ƒ /api/rounding/tasks/[id]/excuse\n├ ƒ /api/rounding/tasks/[id]/reassign\n├ ○ /assessments/overdue\n├ ○ /billing\n├ ○ /billing/ar-aging\n├ ○ /billing/collections\n├ ○ /billing/collections/new\n├ ○ /billing/invoices\n├ ƒ /billing/invoices/[id]\n├ ○ /billing/invoices/generate\n├ ○ /billing/org-ar-aging\n├ ○ /billing/payments/new\n├ ○ /billing/rates\n├ ○ /billing/rates/new\n├ ○ /billing/revenue\n├ ○ /caregiver\n├ ○ /caregiver/clock\n├ ○ /caregiver/controlled-count\n├ ○ /caregiver/followups\n├ ○ /caregiver/handoff\n├ ○ /caregiver/incident-draft\n├ ○ /caregiver/me\n├ ○ /caregiver/meds\n├ ○ /caregiver/policies\n├ ƒ /caregiver/policies/[id]\n├ ○ /caregiver/prn-followup\n├ ƒ /caregiver/resident/[id]\n├ ƒ /caregiver/resident/[id]/adl\n├ ƒ /caregiver/resident/[id]/behavior\n├ ƒ /caregiver/resident/[id]/condition-change\n├ ƒ /caregiver/resident/[id]/log\n├ ○ /caregiver/rounds\n├ ƒ /caregiver/rounds/[residentId]\n├ ○ /caregiver/schedules\n├ ○ /caregiver/tasks\n├ ○ /certifications\n├ ○ /certifications/new\n├ ○ /clock\n├ ○ /dietary\n├ ○ /dietary/new\n├ ○ /executive\n├ ○ /executive/alerts\n├ ○ /executive/benchmarks\n├ ○ /executive/ceo\n├ ○ /executive/cfo\n├ ○ /executive/coo\n├ ƒ /executive/facility/[id]\n├ ○ /executive/nlq\n├ ○ /executive/reports\n├ ○ /executive/scenarios\n├ ○ /executive/settings\n├ ○ /family\n├ ○ /family/billing\n├ ○ /family/calendar\n├ ○ /family/care-plan\n├ ○ /family/invoices\n├ ○ /family/messages\n├ ○ /family/payments\n├ ○ /finance\n├ ○ /finance/budget\n├ ○ /finance/chart-of-accounts\n├ ○ /finance/gl-settings\n├ ○ /finance/journal-entries\n├ ƒ /finance/journal-entries/[id]\n├ ○ /finance/journal-entries/new\n├ ○ /finance/ledger\n├ ○ /finance/period-close\n├ ○ /finance/posting-rules\n├ ○ /finance/trial-balance\n├ ○ /followups\n├ ○ /handoff\n├ ○ /incident-draft\n├ ○ /incidents\n├ ƒ /incidents/[id]\n├ ƒ /incidents/[id]/rca\n├ ○ /incidents/trends\n├ ○ /insurance\n├ ○ /insurance/claims\n├ ƒ /insurance/claims/[id]\n├ ○ /insurance/coi\n├ ○ /insurance/loss-runs\n├ ○ /insurance/policies\n├ ƒ /insurance/policies/[id]\n├ ○ /insurance/policies/new\n├ ○ /insurance/renewal-packages\n├ ƒ /insurance/renewal-packages/[id]\n├ ○ /insurance/renewals\n├ ○ /insurance/workers-comp\n├ ○ /login\n├ ○ /manifest.webmanifest\n├ ○ /me\n├ ○ /meds\n├ ○ /onboarding\n├ ○ /onboarding/departments\n├ ○ /onboarding/questions\n├ ○ /payroll\n├ ○ /payroll/new\n├ ○ /prn-followup\n├ ○ /reports\n├ ○ /reports/admin\n├ ○ /reports/benchmarks\n├ ○ /reports/history\n├ ○ /reports/nlq\n├ ○ /reports/packs\n├ ƒ /reports/run/[sourceType]/[id]\n├ ○ /reports/saved\n├ ○ /reports/scheduled\n├ ○ /reports/templates\n├ ƒ /reports/templates/[slug]\n├ ○ /reputation\n├ ○ /reputation/accounts/new\n├ ○ /reputation/replies/new\n├ ƒ /resident/[id]\n├ ƒ /resident/[id]/adl\n├ ƒ /resident/[id]/behavior\n├ ƒ /resident/[id]/condition-change\n├ ƒ /resident/[id]/log\n├ ○ /residents\n├ ƒ /residents/[id]\n├ ƒ /residents/[id]/assessments\n├ ƒ /residents/[id]/assessments/new\n├ ƒ /residents/[id]/billing\n├ ƒ /residents/[id]/care-plan\n├ ƒ /residents/[id]/medications\n├ ○ /residents/new\n├ ○ /robots.txt\n├ ○ /schedules\n├ ○ /schedules/new\n├ ○ /search\n├ ○ /staff\n├ ƒ /staff/[id]\n├ ○ /staff/new\n├ ○ /staffing\n├ ○ /staffing/new\n├ ○ /tasks\n├ ○ /time-records\n├ ○ /time-records/new\n├ ○ /training\n├ ○ /training/new\n├ ○ /transportation\n├ ○ /transportation/drivers/new\n├ ○ /transportation/inspections/new\n├ ○ /transportation/vehicles/new\n├ ○ /vendors\n├ ƒ /vendors/[id]\n├ ○ /vendors/contracts\n├ ƒ /vendors/contracts/[id]\n├ ○ /vendors/directory\n├ ○ /vendors/invoices\n├ ƒ /vendors/invoices/[id]\n├ ○ /vendors/payments\n├ ○ /vendors/purchase-orders\n├ ƒ /vendors/purchase-orders/[id]\n├ ○ /vendors/purchase-orders/new\n└ ○ /vendors/spend\n\n\nƒ Proxy (Middleware)\n\n○  (Static)   prerendered as static content\nƒ  (Dynamic)  server-rendered on demand\n\n",
+      "stderr": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.\nThe width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.\nThe width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.\nThe width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.\nThe width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.\nThe width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.\nThe width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.\nThe width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.\nThe width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.\nThe width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.\nThe width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.\nThe width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.\n"
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run stress:test",
+      "stdout": "skipped (--no-chaos)"
+    },
+    {
+      "id": "cdo.design-review",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run design:review",
+      "stdout": "skipped (pass --ui to enable)"
+    },
+    {
+      "id": "cdo.a11y-axe",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run a11y:routes",
+      "stdout": "skipped (pass --ui to enable; omit --no-a11y)"
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 1,
+    "skipped": 4,
+    "blocking_failures": []
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/agent-gates/2026-04-09T00-38-37-484Z-diag-local.json"
+  ]
+}
