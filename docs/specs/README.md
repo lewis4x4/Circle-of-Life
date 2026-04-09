@@ -8,9 +8,11 @@
 - **Timezone:** America/New_York (all facilities in North Florida)
 - **Critical:** Confirm Pro plan with signed BAA before any PHI enters. Confirm Point-in-Time Recovery enabled.
 
-## Current state (reconciled 2026-04-09)
+## Current state (reconciled 2026-04-10)
 
 **Repo migrations:** **`001`–`115`** — verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release.
+
+**Remote migration parity:** **PASS** (2026-04-10) — `supabase migration list` on project **`manfqmasfqppukpobpld`** shows **Local** and **Remote** aligned for **001–115** (no missing or extra versions on either side). Authoritative record: [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
 
 **Where acceptance stands**
 
@@ -20,7 +22,7 @@
 | Phase 1 — full acceptance (real auth, RLS matrix, UAT, Pro/BAA/PITR) | **NOT COMPLETE** — **Track A:** A1+A2 **done** (2026-04-09); A3–A6 remain | [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md), [PHASE1-ACCEPTANCE-CHECKLIST.md](./PHASE1-ACCEPTANCE-CHECKLIST.md) |
 | Phase 2 — acceptance | **PASS** (2026-04-04) | [PHASE2-ACCEPTANCE-CHECKLIST.md](./PHASE2-ACCEPTANCE-CHECKLIST.md) |
 | Phases 3–6 — Core DDL + primary UI | **Shipped** in repo | Phase tables below |
-| Phases 3–6 — live proof / operational hardening | **Incomplete** until Track A closes; Tracks B–C done; **Track D** Core **D1–D10** + Enhanced **D12–D28** shipped (see [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md)) — further Enhanced backlog per plan | Same tables + [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md) |
+| Phases 3–6 — live proof / operational hardening | **Incomplete** until Track A closes; **Tracks B–C engineering complete** (see sections below); **Track D** Core **D1–D10** + Enhanced **D12–D37** shipped (see [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md)) — further Enhanced backlog per plan | Same tables + [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md) |
 
 **Important:** Code and migrations have **outpaced** formal Phase 1 acceptance. **Do not** treat “migrations applied” or “routes exist” as equivalent to **Track A closed** or **production-ready** for PHI.
 
@@ -31,8 +33,8 @@
 ### What to do next (closeout order)
 
 1. **Track A** — **A1** (auth) + **A2** (RLS) owner-verified **2026-04-09**; **A3** real-auth UAT depth → **A4** env/seed → **A5** Pro/BAA/PITR → **A6** waiver review. Single roadmap: [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md). Production PHI still requires **A5** and remaining UAT rows.
-2. **Confirm remote DB** — `supabase migration list` on the target project must match **local `001`–`115`** before claiming parity.
-3. **Tracks B–C** — **Done (code)** per sections below; owner deploy/cron/UAT follow-up where noted.
+2. **Remote DB migration parity** — **PASS (2026-04-10)** for **`001`–`115`** on **`manfqmasfqppukpobpld`** per [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md). Re-run `supabase migration list` after any migration-adding PR.
+3. **Tracks B–C** — **Engineering complete (closed in repo)** per sections below. Remaining items are **operations** (deploy Edge functions, schedule crons, production monitoring) and **Track A UAT** — not open B/C code issues.
 4. **Track D** — **Segments D1–D10** (2026-04-09) + Enhanced **D12–D37** (incl. Module 11 hubs **D29–D33** + **D35–D37**, **D34** shared CSV helpers, payroll **D17–D18** + **D26**, reputation **D19** + **D28**, training **D20–D21**, referrals **D22** + **D27**, dietary **D23**, transportation **D24–D25**) **shipped** (2026-04-09). Core operational visibility for Phase 6 modules 11, 12, 14, 15, 22, 23 is in repo. **Enhanced backlog (D38+):** [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md). Shipped history: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md). Run `segment:gates` per segment.
 5. **Track E** — New DDL starting at migration **`116`** only after specs exist and Tracks A–D are appropriately satisfied for your risk tolerance.
 
@@ -317,11 +319,13 @@ These landed **after** Phase 6 (`086`–`092`) and Phase 1 auth remediation (`09
 
 ---
 
-### Completion remediation tracks (closeout + hardening — still required)
+### Completion remediation tracks (closeout + hardening)
 
 The repo contains broad **Core-shipped** surface through migration **`109`**. That is **not** the same as operational readiness, acceptance, or PHI-safe production. Migrations **`093`–`095`** addressed **Phase 1 auth remediation** in SQL; **hosted Auth** may still block pilot JWTs — see Track A.
 
-Execute the remediation tracks below **in order** for **evidence and hardening**, not as a claim that `096`+ is “future work only.”
+**Tracks B and C** are **engineering-complete** (see below). What remains for production readiness is **Track A**, **per-environment ops** (deploy, crons, monitoring), and **Track D/E** as prioritized.
+
+Use the sections below for **evidence and context**, not as a claim that `096`+ is “future work only.”
 
 #### Track A — Phase 1 acceptance closeout (blocking)
 
@@ -347,30 +351,34 @@ Use these authoritative files as the acceptance source of truth:
 
 **Rule:** Phase 1 remains **NOT COMPLETE** until Track A closes. Do not describe Core-shipped scope as fully accepted before these artifacts are updated.
 
-#### Track B — Platform hardening ✅ (2026-04-09)
+#### Track B — Platform hardening ✅ **CLOSED (engineering)** — 2026-04-09
 
 | Order | Item | Status | What was done |
 |-------|------|--------|---------------|
 | B1 | Automated regression | **DONE** | `auth-smoke` in `ci-gates.yml`; nightly `ci-nightly.yml` with full `--ui` gates + smoke + artifact upload |
-| B2 | Observability | **DONE** | Sentry SDK (PHI stripping); structured logs in all 5 Edge Functions; health scripts; [OBSERVABILITY-SPEC.md](./OBSERVABILITY-SPEC.md) |
+| B2 | Observability | **DONE** | Sentry SDK (PHI stripping); structured logs in Edge Functions per [OBSERVABILITY-SPEC.md](./OBSERVABILITY-SPEC.md); health / demo scripts |
 | B3 | CI hardening | **DONE** | Nightly CI; bundle-size budget (`scripts/bundle-size-check.mjs`); [CI-HARDENING-SPEC.md](./CI-HARDENING-SPEC.md) |
 | B4 | Operational runbooks | **DONE** | Updated migrations/auth/report-scheduler; [PHASE1-OPS-VERIFICATION-RUNBOOK.md](./PHASE1-OPS-VERIFICATION-RUNBOOK.md) |
 
+**Closure:** All **B1–B4** scope is shipped in repo. There are **no open Track B implementation issues** — ongoing work is **operational** (CI stays green, Sentry monitored in production), not backlog under “Track B.”
+
 **Rule:** New high-risk modules should not be marked “complete” without test coverage and observable runtime behavior.
 
-#### Track C — Workflow hardening ✅ (2026-04-09)
+#### Track C — Workflow hardening ✅ **CLOSED (engineering)** — 2026-04-09
 
 **Record:** [TRACK-C-WORKFLOW-HARDENING.md](./TRACK-C-WORKFLOW-HARDENING.md) — lifecycle UAT narrative: [TRACK-C-LIFECYCLE-RUNBOOK.md](./TRACK-C-LIFECYCLE-RUNBOOK.md).
 
 | Order | Item | Status | What was done |
 |-------|------|--------|----------------|
-| C1 | Billing and revenue | **DONE (code)** | Edge `ar-aging-check` marks overdue invoices; monthly generation unchanged; finance posting paths documented for manual reconciliation |
-| C2 | Medications / eMAR | **DONE (code)** | Edge `generate-emar-schedule`, `emar-missed-dose-check` (+ `exec_alerts`); PRN/controlled-substance **procedures** remain operator UAT |
-| C3 | Referral → admission → discharge | **DONE (docs)** | Runbook for traceable E2E path; deep workflow UAT still owner-recorded in execution log |
-| C4 | Family and audit | **DONE (baseline)** | Audit export + family routes unchanged; PHI UAT under Track A / checklist |
-| C5 | Executive operations | **DONE (code)** | Edge `exec-alert-evaluator` creates alerts from KPI metrics; `exec-kpi-snapshot` unchanged |
+| C1 | Billing and revenue | **DONE** | Edge `ar-aging-check` marks overdue invoices; monthly generation unchanged; finance posting paths documented for manual reconciliation |
+| C2 | Medications / eMAR | **DONE** | Edge `generate-emar-schedule`, `emar-missed-dose-check` (+ `exec_alerts`); PRN/controlled-substance **procedures** remain operator UAT under Track A |
+| C3 | Referral → admission → discharge | **DONE** | Runbook for traceable E2E path; deep workflow UAT recorded under Track A execution log |
+| C4 | Family and audit | **DONE** | Audit export + family routes unchanged; PHI UAT under Track A / checklist |
+| C5 | Executive operations | **DONE** | Edge `exec-alert-evaluator` creates alerts from KPI metrics; `exec-kpi-snapshot` unchanged |
 
-**Owner follow-up:** Deploy new Edge Functions + set secrets ([supabase/functions/README.md](../../supabase/functions/README.md)); schedule crons per TRACK-C doc.
+**Closure:** **C1–C5** deliverables are **complete in repo** (Edge functions, docs, gate artifact). There are **no open Track C implementation issues.**
+
+**Operations (not Track C backlog):** On each production Supabase project, **deploy** the functions and **set secrets** ([`supabase/functions/README.md`](../../supabase/functions/README.md)); **register crons** per [TRACK-C-WORKFLOW-HARDENING.md](./TRACK-C-WORKFLOW-HARDENING.md). That is **deployment hygiene**, not unfinished C-scope code.
 
 #### Track D — Phase 6 completion pass
 
@@ -410,7 +418,7 @@ Priority is **owner-led** (COL ops + compliance). Typical order of attack:
 | **15 Transport** | Payroll export **approval**, **month/week calendar**, external calendar sync | **D10** = org **mileage rate**; D1+D5–D7 cover compliance cards + requests + grouping |
 | **22 Referral CRM** | **HL7 listener/parser** beyond manual queue ingest; deeper CRM workflows | D4 = **counts** + link to queue |
 | **23 Reputation** | **OAuth / platform APIs** for fetch + publish; optional AI reply (spec Enhanced) | D9 = **posted count** + existing draft/posted workflow |
-| **Deploy / ops** | Track C Edge functions + crons on target project | [supabase/functions/README.md](../../supabase/functions/README.md), [TRACK-C-WORKFLOW-HARDENING.md](./TRACK-C-WORKFLOW-HARDENING.md) |
+| **Deploy / ops** | Edge functions + crons on **each** production project (Track C **engineering closed**; ops checklist above) | [supabase/functions/README.md](../../supabase/functions/README.md), [TRACK-C-WORKFLOW-HARDENING.md](./TRACK-C-WORKFLOW-HARDENING.md) |
 
 **Next engineering steps (when resuming Track D–style work)**
 

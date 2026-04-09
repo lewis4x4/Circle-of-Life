@@ -2,11 +2,11 @@
 
 **Purpose:** Record **repo and CLI** checks for target Supabase alignment. **Dashboard-only** items (Pro, BAA, PITR) remain **owner-confirmed**.
 
-**Last run (repo/CLI):** 2026-04-09 — `npm run migrations:check`: **113** migration files **001–113** in [`supabase/migrations/`](../../supabase/migrations/) — see [README.md](./README.md) (next migration **114**).
+**Last run (repo/CLI):** 2026-04-10 — `npm run migrations:check`: **115** migration files **001–115** in [`supabase/migrations/`](../../supabase/migrations/) — see [README.md](./README.md) (next migration **116**).
 
-**Last run (remote):** **VERIFY** — Owner keeps `supabase migration list` Local/Remote aligned through **`114`** on project `manfqmasfqppukpobpld` after each pull (`supabase db push` as needed). Historic note: **093–095** auth remediation and later migrations (through **114** org transport settings) land per ops runs.
+**Last run (remote):** **PASS (2026-04-10)** — `supabase migration list` on linked project **`manfqmasfqppukpobpld`** shows **Local** and **Remote** columns identical for **001** through **115** (no drift rows). Re-run after each migration-adding PR before release.
 
-**Edge Functions:** Inventory and secrets: [`supabase/functions/README.md`](../../supabase/functions/README.md). **`npm run demo:ops-status`** checks that all nine deployed function slugs exist and are **ACTIVE** on the linked project (`ar-aging-check`, `dispatch-push`, `emar-missed-dose-check`, `exec-alert-evaluator`, `exec-kpi-snapshot`, `export-audit-log`, `generate-emar-schedule`, `generate-monthly-invoices`, `report-scheduler`).
+**Edge Functions:** Inventory and secrets: [`supabase/functions/README.md`](../../supabase/functions/README.md) (**10** function folders). **`npm run demo:ops-status`** checks a **core** set of deployed slugs are **ACTIVE** on the linked project; confirm **`process-referral-hl7-inbound`** separately if you rely on Module 22 HL7 processing.
 
 ---
 
@@ -28,9 +28,9 @@ Command: `supabase migration list`
 
 **Canonical ops flow:** [PHASE1-OPS-VERIFICATION-RUNBOOK.md](./PHASE1-OPS-VERIFICATION-RUNBOOK.md)
 
-**Local repo (file count / sequence):** **PASS** — `migrations:check` reports **001–113** (2026-04-09).
+**Local repo (file count / sequence):** **PASS** — `migrations:check` reports **001–115** (2026-04-10).
 
-**Remote (target Supabase project):** **VERIFY** — Re-run `supabase migration list` and `supabase db push` until Local/Remote show **001–113** (owner action when repo advances).
+**Remote (target Supabase project):** **PASS** — `supabase migration list` Local/Remote aligned **001–115** on **2026-04-10** (project `manfqmasfqppukpobpld`). If a pull adds `116+`, run `supabase db push` (or CI) until this command shows parity again.
 
 ---
 
@@ -60,7 +60,7 @@ Command: `supabase migration list`
 | ID | Repo/CLI result | Owner still required |
 |----|-----------------|----------------------|
 | PH1-P01 | **PASS** — owner confirmed project ref | Brian Lewis — 2026-04-06: active project `manfqmasfqppukpobpld`; confirm `.env.local` `NEXT_PUBLIC_SUPABASE_URL` still matches (not committed) |
-| PH1-P02 | **VERIFY** | `supabase migration list` — target **001–113** local/remote parity (update [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) when owner confirms) |
+| PH1-P02 | **PASS (2026-04-10)** | `supabase migration list` — **001–115** local/remote parity on `manfqmasfqppukpobpld` (agent-verified); re-verify after future migration PRs |
 | PH1-P03–P04 | — | Seed + facility selector UAT; current remediation scope is single-facility pilot |
 | PH1-P05 | N/A until Storage uploads | — |
 | PH1-P06 | — | Dashboard: Pro / BAA / PITR |

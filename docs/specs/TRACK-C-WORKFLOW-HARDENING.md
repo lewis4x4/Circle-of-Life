@@ -2,7 +2,7 @@
 
 **Purpose:** Record what was implemented to move from “schema + basic UI” toward **repeatable, operator-grade workflows** with **Edge automation** and **documented run paths**.
 
-**Status:** **COMPLETE (2026-04-09)** — code + docs; **owner** must still deploy Edge Functions to the target project and set secrets.
+**Status:** **CLOSED — engineering complete (2026-04-09)** — code + docs + gate artifact. **Not an open backlog:** deploying Edge Functions, secrets, and crons on a given Supabase project is **operations** ([Deploy checklist](#deploy-checklist-owner) below), not unfinished Track C scope.
 
 **Gate artifact:** `test-results/agent-gates/2026-04-08T23-50-35-228Z-track-c-workflow-hardening.json` (`npm run segment:gates -- --segment "track-c-workflow-hardening" --no-chaos`).
 
@@ -74,4 +74,4 @@ No new DDL in this track segment.
 
 ## Mission alignment
 
-**pass** — Hardening improves **auditability**, **timely clinical follow-up**, and **operator visibility** without bypassing RLS; **risk** until functions are deployed and UAT rows in [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) are exercised on the target environment.
+**pass** — Hardening improves **auditability**, **timely clinical follow-up**, and **operator visibility** without bypassing RLS. **Residual risk** is **operational** (functions not deployed or crons not scheduled on a given project) and **Track A** UAT depth — not missing Track C code.
