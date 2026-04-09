@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Bus, CheckCircle2, CircleDollarSign, Undo2 } from "lucide-react";
+import { ArrowLeft, Bus, CheckCircle2, CircleDollarSign, Download, Undo2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -18,6 +18,88 @@ type MileageRow = Database["public"]["Tables"]["mileage_logs"]["Row"] & {
   staff: { first_name: string; last_name: string } | null;
   residents: { first_name: string; last_name: string } | null;
 };
+
+type MileageExportRow = Database["public"]["Tables"]["mileage_logs"]["Row"] & {
+  staff: { first_name: string; last_name: string } | null;
+  residents: { first_name: string; last_name: string } | null;
+};
+
+function csvEscapeCell(value: string): string {
+  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+  return value;
+}
+
+function buildMileageLogsCsv(rows: MileageExportRow[]): string {
+  const header = [
+    "id",
+    "organization_id",
+    "facility_id",
+    "staff_id",
+    "staff_first_name",
+    "staff_last_name",
+    "resident_id",
+    "resident_first_name",
+    "resident_last_name",
+    "trip_date",
+    "purpose",
+    "origin",
+    "destination",
+    "miles",
+    "round_trip",
+    "reimbursement_amount_cents",
+    "reimbursement_rate_cents",
+    "approved_at",
+    "approved_by",
+    "payroll_export_id",
+    "transport_request_id",
+    "notes",
+    "created_at",
+    "updated_at",
+    "created_by",
+    "updated_by",
+  ].join(",");
+  const body = rows.map((row) =>
+    [
+      csvEscapeCell(row.id),
+      csvEscapeCell(row.organization_id),
+      csvEscapeCell(row.facility_id),
+      csvEscapeCell(row.staff_id),
+      csvEscapeCell(row.staff?.first_name ?? ""),
+      csvEscapeCell(row.staff?.last_name ?? ""),
+      csvEscapeCell(row.resident_id ?? ""),
+      csvEscapeCell(row.residents?.first_name ?? ""),
+      csvEscapeCell(row.residents?.last_name ?? ""),
+      csvEscapeCell(row.trip_date),
+      csvEscapeCell(row.purpose),
+      csvEscapeCell(row.origin),
+      csvEscapeCell(row.destination),
+      csvEscapeCell(String(row.miles)),
+      csvEscapeCell(String(row.round_trip)),
+      csvEscapeCell(String(row.reimbursement_amount_cents)),
+      csvEscapeCell(String(row.reimbursement_rate_cents)),
+      csvEscapeCell(row.approved_at ?? ""),
+      csvEscapeCell(row.approved_by ?? ""),
+      csvEscapeCell(row.payroll_export_id ?? ""),
+      csvEscapeCell(row.transport_request_id ?? ""),
+      csvEscapeCell(row.notes ?? ""),
+      csvEscapeCell(row.created_at),
+      csvEscapeCell(row.updated_at),
+      csvEscapeCell(row.created_by ?? ""),
+      csvEscapeCell(row.updated_by ?? ""),
+    ].join(","),
+  );
+  return [header, ...body].join("\r\n");
+}
+
+function triggerCsvDownload(filename: string, text: string) {
+  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 const APPROVER_ROLES = new Set(["owner", "org_admin", "facility_admin", "nurse"]);
 
@@ -35,6 +117,7 @@ export default function MileageApprovalsPage() {
   const [tab, setTab] = useState<"pending" | "approved">("pending");
   const [actorRole, setActorRole] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [exportingCsv, setExportingCsv] = useState(false);
 
   const canApprove = actorRole !== null && APPROVER_ROLES.has(actorRole);
 
@@ -97,6 +180,31 @@ export default function MileageApprovalsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const exportMileageLogsCsv = useCallback(async () => {
+    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) return;
+    setExportingCsv(true);
+    setError(null);
+    try {
+      const { data, error: qErr } = await supabase
+        .from("mileage_logs")
+        .select("*, staff(first_name, last_name), residents(first_name, last_name)")
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .order("trip_date", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (qErr) throw qErr;
+      const rows = (data ?? []) as MileageExportRow[];
+      const csv = buildMileageLogsCsv(rows);
+      const stamp = format(new Date(), "yyyy-MM-dd");
+      triggerCsvDownload(`mileage-logs-${stamp}.csv`, csv);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to export mileage logs.");
+    } finally {
+      setExportingCsv(false);
+    }
+  }, [supabase, selectedFacilityId]);
 
   const pendingCount = pending.length;
 
@@ -180,16 +288,28 @@ export default function MileageApprovalsPage() {
               logged.
             </p>
           </div>
-          <Link
-            href="/admin/transportation"
-            className={cn(
-              buttonVariants({ variant: "outline", size: "default" }),
-              "h-11 rounded-full gap-2 text-[10px] font-bold uppercase tracking-widest",
-            )}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Hub
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!facilityReady || exportingCsv}
+              className="h-11 gap-2 rounded-full text-[10px] font-bold uppercase tracking-widest"
+              onClick={() => void exportMileageLogsCsv()}
+            >
+              <Download className="h-4 w-4" aria-hidden />
+              {exportingCsv ? "Preparing…" : "Download mileage CSV"}
+            </Button>
+            <Link
+              href="/admin/transportation"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "default" }),
+                "h-11 rounded-full gap-2 text-[10px] font-bold uppercase tracking-widest",
+              )}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Hub
+            </Link>
+          </div>
         </div>
 
         {!facilityReady && (

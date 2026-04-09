@@ -55,6 +55,8 @@ Transportation involves two distinct workflows at COL:
 
 **Shipped (Track D24):** **`/admin/transportation`** — **Download transport CSV** queries up to **500** **`resident_transport_requests`** rows for the **selected facility** (**`residents(first_name, last_name)`** join), RFC-style CSV of scheduling fields and staff/vehicle UUIDs. **No** new DDL.
 
+**Shipped (Track D25):** **`/admin/transportation/mileage-approvals`** — **Download mileage CSV** queries up to **500** **`mileage_logs`** rows for the **selected facility** (**`staff`**, **`residents`** joins), RFC-style CSV (amounts in cents, approval and payroll-export IDs). **No** new DDL.
+
 - MVR (motor vehicle record) annual pull workflow with automated reminder.
 - DVIR mobile capture (pre/post trip inspection form on mobile).
 - Mileage reimbursement auto-calculation from IRS rate or custom org rate.
