@@ -194,6 +194,16 @@
 
 ---
 
+**D22 (2026-04-09):** **Module 22 — Referral CRM** ([22-referral-crm.md](./22-referral-crm.md)) — **HL7 inbound queue CSV export**.
+
+**Slice:** **`/admin/referrals/hl7-inbound`** — **Download queue CSV** queries up to **500** **`referral_hl7_inbound`** rows for the **selected facility** (metadata + **`raw_message`**). **No** MLLP, **no** new DDL.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-09T16-30-21-849Z-track-d-d22-hl7-inbound-csv.json` (`npm run segment:gates -- --segment "track-d-d22-hl7-inbound-csv" --ui --no-chaos`).
+
+**Mission alignment:** **pass** — operators can hand off queue contents to hospitals or archives without automated ingestion.
+
+---
+
 ## Track D — plan (remaining)
 
 **Segments D1–D10:** Closed in repo with gate artifacts above. This completes the **Phase 6 Core visibility / workflow** slices we prioritized for COL (transport, training, dietary, referrals, reputation), plus **D10** org mileage rate.
@@ -206,7 +216,7 @@
 | **13** | ~~Mileage → `payroll_export_lines`~~ (D17); ~~generic **CSV** download on batch~~ (D18); vendor-specific serializers, time-record worker |
 | **14** | ~~Read-only diet + med panel~~ (D13); automated med–texture cross-check vs medications; meal production; vendor API; full menu cycle |
 | **15** | ~~Week calendar + mileage approval queue~~ (D14, D15); full month grid, external calendar sync |
-| **22** | ~~Minimal **MSH** queue processor~~ (D12); ~~manual **Draft lead** from HL7~~ (D16); MLLP, full ADT parse, auto-**`referral_leads`** |
+| **22** | ~~Minimal **MSH** queue processor~~ (D12); ~~manual **Draft lead** from HL7~~ (D16); ~~**HL7 queue CSV**~~ (D22); MLLP, full ADT parse, auto-**`referral_leads`** |
 | **23** | ~~**Replies CSV** export on hub~~ (D19); external review platform OAuth/sync APIs |
 
 **Authoritative README narrative:** [README.md](./README.md) — section **Track D — Phase 6 completion pass**.

@@ -35,6 +35,8 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 
 **Shipped (Track D16):** **`/admin/referrals/hl7-inbound`** — **Draft lead** on **`processed`** rows without **`linked_referral_lead_id`**: inserts **`referral_leads`** with **`external_reference`** = `hl7:{inbound_row_id}`, optional **PID-5** name via `tryParsePid5Name`, sets **`linked_referral_lead_id`**. Manual only (not triggered by the Edge Function).
 
+**Shipped (Track D22):** **`/admin/referrals/hl7-inbound`** — **Download queue CSV** (up to **500** rows for the selected facility), including **`raw_message`** for partner or archive handoff. **No** MLLP, **no** auto-leads.
+
 ---
 
 ## RLS (normative)

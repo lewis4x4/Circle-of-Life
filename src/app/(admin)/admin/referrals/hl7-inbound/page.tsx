@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { Activity, Ban, Check, Radio, Server, UserPlus, X } from "lucide-react";
 
 import { ReferralsHubNav } from "../referrals-hub-nav";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
@@ -29,6 +29,53 @@ function formatStatus(s: string) {
   return s.replace(/_/g, " ");
 }
 
+function csvEscapeCell(value: string): string {
+  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+  return value;
+}
+
+function buildHl7InboundCsv(rows: Row[]): string {
+  const header = [
+    "id",
+    "organization_id",
+    "facility_id",
+    "status",
+    "created_at",
+    "updated_at",
+    "message_control_id",
+    "trigger_event",
+    "parse_error",
+    "linked_referral_lead_id",
+    "raw_message",
+  ].join(",");
+  const body = rows.map((row) =>
+    [
+      csvEscapeCell(row.id),
+      csvEscapeCell(row.organization_id),
+      csvEscapeCell(row.facility_id),
+      csvEscapeCell(row.status),
+      csvEscapeCell(row.created_at),
+      csvEscapeCell(row.updated_at),
+      csvEscapeCell(row.message_control_id ?? ""),
+      csvEscapeCell(row.trigger_event ?? ""),
+      csvEscapeCell(row.parse_error ?? ""),
+      csvEscapeCell(row.linked_referral_lead_id ?? ""),
+      csvEscapeCell(row.raw_message ?? ""),
+    ].join(","),
+  );
+  return [header, ...body].join("\r\n");
+}
+
+function triggerCsvDownload(filename: string, text: string) {
+  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function AdminReferralsHl7InboundPage() {
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
@@ -37,6 +84,7 @@ export default function AdminReferralsHl7InboundPage() {
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [creatingLeadId, setCreatingLeadId] = useState<string | null>(null);
+  const [exportingCsv, setExportingCsv] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -67,6 +115,29 @@ export default function AdminReferralsHl7InboundPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const exportQueueCsv = useCallback(async () => {
+    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) return;
+    setExportingCsv(true);
+    setError(null);
+    try {
+      const { data, error: qErr } = await supabase
+        .from("referral_hl7_inbound")
+        .select("*")
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (qErr) throw qErr;
+      const exportRows = (data ?? []) as Row[];
+      const csv = buildHl7InboundCsv(exportRows);
+      triggerCsvDownload(`hl7-inbound-queue_${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "CSV export failed.");
+    } finally {
+      setExportingCsv(false);
+    }
+  }, [selectedFacilityId, supabase]);
 
   async function createDraftLead(row: Row) {
     if (row.status !== "processed" || row.linked_referral_lead_id) return;
@@ -166,7 +237,16 @@ export default function AdminReferralsHl7InboundPage() {
                manually — no automatic lead creation.
             </p>
           </div>
-          <div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={noFacility || exportingCsv}
+              className="h-14 rounded-full px-6 font-bold uppercase tracking-widest text-xs"
+              onClick={() => void exportQueueCsv()}
+            >
+              {exportingCsv ? "Preparing…" : "Download queue CSV"}
+            </Button>
             <Link
               href="/admin/referrals/hl7-inbound/new"
               className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-widest text-xs tap-responsive bg-slate-900 hover:bg-slate-800 text-white shadow-lg flex items-center gap-2 dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900")}
