@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
- * Authenticated smoke test harness.
+ * Authenticated smoke test harness (Track A — supports PH1-A01 + PH1-A04).
  *
- * Blocked until Track A (A1) resolves the Supabase Auth blocker.
- * Once pilot users can sign in, this script logs in as each role
- * and verifies the expected shell routes load without redirect.
+ * Logs in as each pilot role, verifies the probe route loads, then checks
+ * cross-shell denial: wrong roles cannot stay on another shell's routes
+ * (see admin-shell / caregiver-shell / family-shell).
  *
  * Usage:
  *   BASE_URL=http://127.0.0.1:3000 npm run demo:auth-smoke:real
  *
  * Environment:
- *   BASE_URL           — app origin (default http://127.0.0.1:3000)
+ *   BASE_URL               — app origin (default http://127.0.0.1:3000)
  *   PHASE1_DEMO_PASSWORD — pilot user password (default HavenDemo2026!)
  */
 import process from "node:process";
@@ -25,20 +25,37 @@ const PILOT_USERS = [
     role: "facility_admin",
     shell: "/admin",
     probe: "/admin/residents",
+    /** After login, hitting this path must redirect away from caregiver shell. */
+    crossShellDenial: [{ from: "/caregiver", expectPathPrefix: "/admin" }],
   },
   {
     email: "maria.garcia@circleoflifealf.com",
     role: "caregiver",
     shell: "/caregiver",
     probe: "/caregiver",
+    crossShellDenial: [{ from: "/admin/residents", expectPathPrefix: "/caregiver" }],
   },
   {
     email: "robert.sullivan@circleoflifealf.com",
     role: "family",
     shell: "/family",
     probe: "/family",
+    crossShellDenial: [
+      { from: "/admin/residents", expectPathPrefix: "/family" },
+      { from: "/caregiver", expectPathPrefix: "/family" },
+    ],
   },
 ];
+
+/**
+ * @param {{ from: string, expectPathPrefix: string }} probe
+ */
+function pathMatchesExpectation(pathname, probe) {
+  return (
+    pathname === probe.expectPathPrefix ||
+    pathname.startsWith(`${probe.expectPathPrefix}/`)
+  );
+}
 
 async function testUser(browser, user) {
   const context = await browser.newContext();
@@ -48,6 +65,8 @@ async function testUser(browser, user) {
     role: user.role,
     login_ok: false,
     shell_route_ok: false,
+    cross_shell_ok: null,
+    cross_shell_probes: [],
     shell_url: null,
     error: null,
   };
@@ -73,6 +92,30 @@ async function testUser(browser, user) {
     );
 
     result.shell_route_ok = page.url().includes(user.probe) || page.url().includes(user.shell);
+
+    const probes = user.crossShellDenial ?? [];
+    if (probes.length === 0) {
+      result.cross_shell_ok = true;
+    } else {
+      const probeResults = [];
+      for (const probe of probes) {
+        await page.goto(`${baseUrl}${probe.from}`, { waitUntil: "domcontentloaded" });
+        await page.waitForURL(
+          (url) => pathMatchesExpectation(url.pathname, probe),
+          { timeout: 15000 },
+        );
+        const pathname = new URL(page.url()).pathname;
+        const ok = pathMatchesExpectation(pathname, probe);
+        probeResults.push({
+          from: probe.from,
+          final_pathname: pathname,
+          expectPathPrefix: probe.expectPathPrefix,
+          ok,
+        });
+      }
+      result.cross_shell_probes = probeResults;
+      result.cross_shell_ok = probeResults.every((p) => p.ok);
+    }
   } catch (err) {
     result.error = err instanceof Error ? err.message : String(err);
   } finally {
@@ -99,7 +142,10 @@ async function run() {
     verdict: {
       all_login_ok: results.every((r) => r.login_ok),
       all_shell_ok: results.every((r) => r.shell_route_ok),
-      pass: results.every((r) => r.login_ok && r.shell_route_ok),
+      all_cross_shell_ok: results.every((r) => r.cross_shell_ok !== false),
+      pass: results.every(
+        (r) => r.login_ok && r.shell_route_ok && r.cross_shell_ok !== false,
+      ),
     },
   };
 

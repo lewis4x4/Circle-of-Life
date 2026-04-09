@@ -69,7 +69,7 @@ Use `Tester` to record the human who ran the step. Use `Notes` to capture:
 | ID | Item | Result | Tester | Date | Notes |
 |----|------|--------|--------|------|-------|
 | PH1-P01 | `.env.local` → correct Supabase project | **PASS** | owner | 2026-04-06 | Brian Lewis confirmed active project **`manfqmasfqppukpobpld`** (Supabase Authentication UI, PRODUCTION). Repo canonical URL: `https://manfqmasfqppukpobpld.supabase.co` ([README.md](./README.md)). Owner still responsible to keep local `.env.local` host aligned (never commit secrets). |
-| PH1-P02 | Migrations applied / list aligned remote | **VERIFY** | owner | 2026-04-09 | Repo includes **001–111**; owner keeps `supabase migration list` Local/Remote aligned on target (includes **`110`–`111`** for JWT `app_role` + `user_profiles.updated_by`) |
+| PH1-P02 | Migrations applied / list aligned remote | **VERIFY** | owner | 2026-04-09 | Repo includes **001–113**; owner keeps `supabase migration list` Local/Remote aligned on target (includes **`110`–`111`** for JWT `app_role` + `user_profiles.updated_by`, and **`112`–`113`** transport/mileage as applicable) |
 | PH1-P03 | Seeded users + roles + facility access | **PASS** | owner | 2026-04-09 | Pilot users sign in; JWT includes `app_metadata.app_role` after **`110`**; `user_profiles` aligned per **`111`**. Confirmed live for owner, facility_admin, caregiver, family — see **Owner verification — 2026-04-09** above. |
 | PH1-P04 | Facility context in admin shell | PENDING | | | Spot-check facility selector on `/admin` when completing §B UAT; single-facility pilot still acceptable |
 | PH1-P05 | Storage buckets (if/when uploads added) | **N/A** | | | No Storage in Phase 1 UI per checklist |
@@ -84,7 +84,7 @@ Use `Tester` to record the human who ran the step. Use `Notes` to capture:
 | PH1-A01 | `/login` — admin / caregiver / family → correct shell | **PASS** | owner | 2026-04-09 | All four pilot roles land in correct shell (owner + facility_admin → `/admin`, caregiver → `/caregiver`, family → `/family`). Prior **FAIL** (2026-04-06) superseded after hosted Auth fix + migrations **`110`–`111`** + family **Sign out** in `FamilyShell`. Optional: `npm run demo:auth-check`, `demo:auth-smoke:real` |
 | PH1-A02 | Invalid credentials — clear error | **PASS** | agent | 2026-04-06 | Playwright UI run on `/login` with `nobody@example.com` + wrong password showed visible error: `Invalid login credentials`; future local reruns use `npm run demo:auth-smoke` |
 | PH1-A03 | Deep link logged out → login | **PASS** | agent | 2026-04-06 | `GET /admin/residents` redirected to `/login?next=%2Fadmin%2Fresidents`; Playwright and `curl -I` matched; future local reruns use `npm run demo:auth-smoke` |
-| PH1-A04 | Wrong role cannot open other shell routes | PENDING | | | Auth unblocked (2026-04-09). Exercise: caregiver/family attempt `/admin` (or admin-only) routes; expect redirect/deny. Record PASS with role + URL evidence. |
+| PH1-A04 | Wrong role cannot open other shell routes | PENDING | | | Auth unblocked (2026-04-09). Exercise: caregiver/family attempt `/admin` (or admin-only) routes; expect redirect/deny. **Repo helper:** `BASE_URL=… npm run demo:auth-smoke:real` asserts cross-shell redirects for pilot users (see `scripts/demo/authenticated-smoke.mjs`). Record **PASS** after owner/delegate confirms on target (paste JSON or note date). |
 
 ---
 
