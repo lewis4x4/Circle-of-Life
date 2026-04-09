@@ -6233,6 +6233,121 @@ export type Database = {
           },
         ]
       }
+      inservice_log_attendees: {
+        Row: {
+          id: string
+          notes: string | null
+          session_id: string
+          signed_in: boolean
+          staff_id: string
+        }
+        Insert: {
+          id?: string
+          notes?: string | null
+          session_id: string
+          signed_in?: boolean
+          staff_id: string
+        }
+        Update: {
+          id?: string
+          notes?: string | null
+          session_id?: string
+          signed_in?: boolean
+          staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inservice_log_attendees_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "inservice_log_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inservice_log_attendees_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inservice_log_sessions: {
+        Row: {
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          facility_id: string
+          hours: number
+          id: string
+          location: string | null
+          notes: string | null
+          organization_id: string
+          session_date: string
+          topic: string
+          trainer_name: string
+          trainer_user_id: string | null
+          training_program_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          deleted_at?: string | null
+          facility_id: string
+          hours: number
+          id?: string
+          location?: string | null
+          notes?: string | null
+          organization_id: string
+          session_date: string
+          topic: string
+          trainer_name: string
+          trainer_user_id?: string | null
+          training_program_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          facility_id?: string
+          hours?: number
+          id?: string
+          location?: string | null
+          notes?: string | null
+          organization_id?: string
+          session_date?: string
+          topic?: string
+          trainer_name?: string
+          trainer_user_id?: string | null
+          training_program_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inservice_log_sessions_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inservice_log_sessions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inservice_log_sessions_training_program_id_fkey"
+            columns: ["training_program_id"]
+            isOneToOne: false
+            referencedRelation: "training_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insurance_claims: {
         Row: {
           adjuster_name: string | null

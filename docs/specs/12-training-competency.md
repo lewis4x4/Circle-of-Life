@@ -2,7 +2,7 @@
 
 **Module:** Skills demonstrations, evaluator sign-off, structured skills JSON, mandatory FL training tracking, external program integration (Baya), in-service sign-in logging  
 **Dependencies:** [`11-staff-management.md`](11-staff-management.md) (`staff`, `staff_certifications` patterns)  
-**Migrations:** `086`–`087`, `115` (competency-certificates bucket), `116` (`training_programs` / `staff_training_completions`), `117` (storage read RLS for completion PDFs under `…/tc/…`) — spec also references future `086b`/`086c`-style inservice DDL — not yet split in repo  
+**Migrations:** `086`–`087`, `115` (competency-certificates bucket), `116` (`training_programs` / `staff_training_completions`), `117` (storage read RLS for completion PDFs under `…/tc/…`), `118` (`inservice_log_sessions` / `inservice_log_attendees`)  
 **Canonical routes:** [`FRONTEND-CONTRACT.md`](FRONTEND-CONTRACT.md) — `/admin/training`
 
 ---
@@ -18,6 +18,10 @@ Migrations use **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 Circle of Life operates five ALF facilities (Oakridge, Rising Oaks, Homewood Lodge, Plantation, Grande Cypress) across three Florida counties. COL uses **Baya** as an external medication management training partner — Baya conducts medication safety training, issues competency certifications, and maintains sign-off records for CNAs and caregivers who administer medications. Haven must model Baya as a named external program with certificate ingestion, not assume all training is delivered in-house.
 
 Florida ALF regulations (FAC 59A-36.011 and FAC 59A-36.022) mandate specific training categories for all staff at hire and annually. These must be tracked per-staff-member with completion dates, hours, and verifying signatures. COL currently tracks this via paper sign-in sheets (`Orientation & Training Sign-In.pdf`, in-service training sign-in logs) and Baya-issued competency certificates.
+
+### Track D — D41 inservice DDL (2026-04-10)
+
+Migration **`118`** ships **`inservice_log_sessions`** and **`inservice_log_attendees`** per schema §Core (RLS, audit, indexes). **Deferred:** Tab 3 **In-service log** UI, attendee → `staff_training_completions` trigger/Edge (spec business rule 5).
 
 ### Track D — D20 org-wide hub (2026-04-09)
 

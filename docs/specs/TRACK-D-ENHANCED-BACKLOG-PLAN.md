@@ -6,7 +6,7 @@
 
 - No multi-module megabranches; each segment has one **primary module** and explicit **out-of-scope** bullets.
 - **Spec first:** Add or extend a short **COL Alignment / Enhanced slice** subsection in the relevant `docs/specs/*.md` before coding when behavior is new.
-- **DDL:** Use migration **`118+`** only when a column/table is required; otherwise prefer existing columns (`organizations.settings` JSON, existing queue tables).
+- **DDL:** Use migration **`119+`** only when a column/table is required; otherwise prefer existing columns (`organizations.settings` JSON, existing queue tables).
 - **Verify:** `npm run segment:gates -- --segment "<id>" --ui` when routes/UI change.
 
 ---
@@ -84,7 +84,9 @@
 
 **~~D40 (2026-04-09)~~** **DONE — Module 12:** **`117`** storage RLS + optional completion **PDF** on log form + hub column. Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D41+ (owner priority):** remaining §1 rows (e.g. **23** OAuth/sync, **14** automation after clinical sign-off, **12** inservice session DDL) — one bounded slice at a time.
+**~~D41 (2026-04-10)~~** **DONE — Module 12:** Migration **`118`** — **`inservice_log_sessions`** + **`inservice_log_attendees`** (RLS, audit). Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D42+ (owner priority):** remaining §1 rows (e.g. **23** OAuth/sync, **14** automation after clinical sign-off, **12** inservice **hub** UI / attendee→completion automation) — one bounded slice at a time.
 
 ---
 
@@ -128,7 +130,7 @@ Defer **23 OAuth**, **22 MLLP**, **14 full rule engine** until product/security 
 
 - **Track A** can remain skipped for **engineering** progress; PHI production still needs owner attestation separately.
 - **COL clinical sign-off** required before **automated** dietary or HL7 **lead creation**.
-- **Next migration number** in README: **`118`** — use for the next DDL (D40 shipped **`117`**).
+- **Next migration number** in README: **`119`** — use for the next DDL (D41 shipped **`118`**).
 
 ---
 
