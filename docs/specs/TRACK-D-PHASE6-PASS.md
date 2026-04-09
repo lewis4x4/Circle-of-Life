@@ -93,3 +93,13 @@
 **Mission alignment:** **pass** — human-entered pharmacy–texture review notes surface for kitchen and nursing alignment.
 
 **Gate artifact:** `test-results/agent-gates/2026-04-09T01-45-04-373Z-track-d-phase6-d8-dietary-med-texture-review.json` (`npm run segment:gates -- --segment "track-d-phase6-d8-dietary-med-texture-review" --ui --no-chaos`).
+
+---
+
+**D9 (2026-04-09):** **Module 23 — Reputation** — **posted reply volume on hub**.
+
+**Slice:** On `/admin/reputation`, add a fourth metric pillar **Posted Replies** (RLS-backed count from loaded `reputation_replies` with `status === "posted"`), alongside listings, drafts, and connect-listing CTA. No new DDL; external platform sync remains Enhanced/deferred.
+
+**Mission alignment:** **pass** — operators see draft vs posted throughput without API integrations.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-09T01-50-54-231Z-track-d-phase6-d9-reputation-posted-metric.json` (`npm run segment:gates -- --segment "track-d-phase6-d9-reputation-posted-metric" --ui --no-chaos`).

@@ -128,7 +128,7 @@ export default function AdminReputationHubPage() {
           </div>
         </header>
 
-        <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
+        <KineticGrid className="grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px]">
             <V2Card hoverColor="indigo" className="border-indigo-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
               <Sparkline colorClass="text-indigo-500" variant={3} />
@@ -156,11 +156,23 @@ export default function AdminReputationHubPage() {
               </div>
             </V2Card>
           </div>
-          <div className="col-span-1 md:col-span-2 h-[160px]">
-            <V2Card hoverColor="blue" className="flex flex-col justify-center items-start lg:items-end">
-              <div className="relative z-10 text-left lg:text-right w-full">
-                 <p className="hidden lg:block text-xs font-mono text-slate-500 mb-4">Connected listings and reply workflow for the selected facility.</p>
-                 <div className="flex gap-2 justify-start lg:justify-end">
+          <div className="h-[160px]">
+            <V2Card hoverColor="emerald" className="border-emerald-500/20 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]">
+              <Sparkline colorClass="text-emerald-500" variant={1} />
+              <MonolithicWatermark value={postedReplies.length} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                <h3 className="text-[10px] font-mono tracking-widest uppercase text-emerald-600 dark:text-emerald-400">
+                  Posted Replies
+                </h3>
+                <p className="text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1">{postedReplies.length}</p>
+              </div>
+            </V2Card>
+          </div>
+          <div className="h-[160px]">
+            <V2Card hoverColor="blue" className="flex flex-col justify-center items-start sm:items-end h-full">
+              <div className="relative z-10 text-left sm:text-right w-full">
+                 <p className="hidden sm:block text-xs font-mono text-slate-500 mb-4">Connected listings and reply workflow for the selected facility.</p>
+                 <div className="flex gap-2 justify-start sm:justify-end">
                    <Link href="/admin/reputation/accounts/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none")} >
                      + Connect Listing
                    </Link>
