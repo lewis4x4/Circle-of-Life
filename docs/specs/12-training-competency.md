@@ -2,7 +2,7 @@
 
 **Module:** Skills demonstrations, evaluator sign-off, structured skills JSON, mandatory FL training tracking, external program integration (Baya), in-service sign-in logging  
 **Dependencies:** [`11-staff-management.md`](11-staff-management.md) (`staff`, `staff_certifications` patterns)  
-**Migrations:** `086_competency_demonstrations_schema.sql`, `087_competency_demonstrations_rls_audit.sql`, `115_competency_certificate_storage.sql`, `116_training_programs_staff_completions.sql` (spec also references future `086b`/`086c`-style inservice DDL — not yet split in repo)  
+**Migrations:** `086`–`087`, `115` (competency-certificates bucket), `116` (`training_programs` / `staff_training_completions`), `117` (storage read RLS for completion PDFs under `…/tc/…`) — spec also references future `086b`/`086c`-style inservice DDL — not yet split in repo  
 **Canonical routes:** [`FRONTEND-CONTRACT.md`](FRONTEND-CONTRACT.md) — `/admin/training`
 
 ---
@@ -33,7 +33,11 @@ Migration **`116`** adds **`training_programs`** (enums `training_delivery_metho
 
 ### Track D — D39 log training completion (2026-04-09)
 
-**`/admin/training/completions/new`** — facility-scoped form (single facility in header, not All facilities) to insert **`staff_training_completions`**: staff, catalog program, completed date, optional expiry/hours, delivery method, optional external provider / certificate number / notes; **`evaluator_user_id`** set to the signed-in user. **`/admin/training`** includes **+ Log completion** next to the completions CSV control. **No** attachment upload in this slice (metadata only; bucket flows remain Enhanced).
+**`/admin/training/completions/new`** — facility-scoped form (single facility in header, not All facilities) to insert **`staff_training_completions`**: staff, catalog program, completed date, optional expiry/hours, delivery method, optional external provider / certificate number / notes; **`evaluator_user_id`** set to the signed-in user. **`/admin/training`** includes **+ Log completion** next to the completions CSV control.
+
+### Track D — D40 completion certificate PDF (2026-04-09)
+
+Optional **PDF** on **`/admin/training/completions/new`**: after insert, upload to existing **`competency-certificates`** bucket at **`{organization_id}/{facility_id}/tc/{completion_id}/{file}.pdf`**; **`attachment_path`** updated on the row. Migration **`117`** extends **storage.objects** **SELECT** so **staff** can open their own completion PDFs (admins/nurses unchanged). Hub completions table adds a **PDF** column with signed-URL open. Roll back row + object on upload failure (same pattern as new demonstration).
 
 ---
 

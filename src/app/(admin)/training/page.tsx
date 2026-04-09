@@ -453,7 +453,7 @@ export default function AdminTrainingHubPage() {
               </div>
             ) : (
               <div className="overflow-x-auto rounded-xl border border-white/20 bg-white/40 dark:border-white/5 dark:bg-slate-900/40">
-                <table className="w-full min-w-[720px] text-left text-xs">
+                <table className="w-full min-w-[820px] text-left text-xs">
                   <thead>
                     <tr className="border-b border-white/20 font-mono uppercase tracking-wider text-slate-500 dark:border-white/10">
                       <th className="px-3 py-2">Facility</th>
@@ -463,6 +463,7 @@ export default function AdminTrainingHubPage() {
                       <th className="px-3 py-2">Expires</th>
                       <th className="px-3 py-2">Hours</th>
                       <th className="px-3 py-2">Delivery</th>
+                      <th className="px-3 py-2">PDF</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -500,6 +501,17 @@ export default function AdminTrainingHubPage() {
                         <td className="px-3 py-2 font-mono">{formatHours(row.hours_completed)}</td>
                         <td className="px-3 py-2 capitalize text-slate-600 dark:text-slate-400">
                           {formatStatus(row.delivery_method)}
+                        </td>
+                        <td className="px-3 py-2">
+                          {row.attachment_path ? (
+                            <CompetencyCertificateOpenButton
+                              storagePath={row.attachment_path}
+                              label="Open PDF"
+                              className="h-7 text-[9px] px-2"
+                            />
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
                         </td>
                       </tr>
                     ))}

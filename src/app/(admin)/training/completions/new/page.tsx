@@ -19,7 +19,13 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
+import {
+  COMPETENCY_CERTIFICATE_BUCKET,
+  trainingCompletionCertificatePath,
+} from "@/lib/training/competency-storage";
 import { cn } from "@/lib/utils";
+
+const MAX_CERT_PDF_BYTES = 15 * 1024 * 1024;
 
 type StaffOption = { id: string; name: string };
 type ProgramOption = {
@@ -61,6 +67,7 @@ export default function AdminNewTrainingCompletionPage() {
   const [externalProvider, setExternalProvider] = useState("");
   const [certificateNumber, setCertificateNumber] = useState("");
   const [notes, setNotes] = useState("");
+  const [certificatePdf, setCertificatePdf] = useState<File | null>(null);
 
   const loadFacilityOrg = useCallback(async () => {
     if (!isValidFacilityIdForQuery(selectedFacilityId)) return null;
@@ -155,6 +162,16 @@ export default function AdminNewTrainingCompletionPage() {
       setError("Completion date is required.");
       return;
     }
+    if (certificatePdf) {
+      if (certificatePdf.size > MAX_CERT_PDF_BYTES) {
+        setError("Certificate PDF must be 15 MB or smaller.");
+        return;
+      }
+      if (certificatePdf.type !== "application/pdf") {
+        setError("Certificate must be a PDF file.");
+        return;
+      }
+    }
 
     setSubmitting(true);
     setError(null);
@@ -204,7 +221,11 @@ export default function AdminNewTrainingCompletionPage() {
       if (nt) payload.notes = nt;
       payload.evaluator_user_id = user.id;
 
-      const { error: insErr } = await supabase.from("staff_training_completions").insert(payload);
+      const { data: inserted, error: insErr } = await supabase
+        .from("staff_training_completions")
+        .insert(payload)
+        .select("id")
+        .single();
 
       if (insErr) {
         const msg = insErr.message ?? "";
@@ -215,6 +236,40 @@ export default function AdminNewTrainingCompletionPage() {
           return;
         }
         throw new Error(insErr.message);
+      }
+      if (!inserted?.id) throw new Error("Could not create completion row.");
+
+      const completionId = inserted.id;
+
+      if (certificatePdf) {
+        const objectPath = trainingCompletionCertificatePath(
+          orgId,
+          selectedFacilityId,
+          completionId,
+          certificatePdf.name,
+        );
+        const { error: upErr } = await supabase.storage
+          .from(COMPETENCY_CERTIFICATE_BUCKET)
+          .upload(objectPath, certificatePdf, { contentType: "application/pdf", upsert: false });
+        if (upErr) {
+          await supabase
+            .from("staff_training_completions")
+            .update({ deleted_at: new Date().toISOString() })
+            .eq("id", completionId);
+          throw upErr;
+        }
+        const { error: pathErr } = await supabase
+          .from("staff_training_completions")
+          .update({ attachment_path: objectPath })
+          .eq("id", completionId);
+        if (pathErr) {
+          await supabase.storage.from(COMPETENCY_CERTIFICATE_BUCKET).remove([objectPath]);
+          await supabase
+            .from("staff_training_completions")
+            .update({ deleted_at: new Date().toISOString() })
+            .eq("id", completionId);
+          throw pathErr;
+        }
       }
 
       router.push("/admin/training");
@@ -396,6 +451,18 @@ export default function AdminNewTrainingCompletionPage() {
                 onChange={(e) => setNotes(e.target.value)}
                 disabled={!facilityReady || loading}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cert-pdf">Certificate PDF (optional)</Label>
+              <Input
+                id="cert-pdf"
+                type="file"
+                accept="application/pdf"
+                disabled={!facilityReady || loading}
+                onChange={(e) => setCertificatePdf(e.target.files?.[0] ?? null)}
+              />
+              <p className="text-[10px] text-slate-500">Max 15 MB. Stored in the competency-certificates bucket.</p>
             </div>
 
             <div className="flex gap-2 pt-2">

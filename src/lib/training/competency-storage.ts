@@ -20,6 +20,19 @@ export function competencyCertificateObjectPath(
   return `${organizationId}/${facilityId}/${demonstrationId}/${withPdf}`;
 }
 
+/** Build Storage path for `staff_training_completions.attachment_path` (migration `117` RLS uses `tc` segment). */
+export function trainingCompletionCertificatePath(
+  organizationId: string,
+  facilityId: string,
+  completionId: string,
+  originalFileName: string,
+): string {
+  const base = originalFileName.trim() || "certificate.pdf";
+  const safe = base.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 120);
+  const withPdf = safe.toLowerCase().endsWith(".pdf") ? safe : `${safe}.pdf`;
+  return `${organizationId}/${facilityId}/tc/${completionId}/${withPdf}`;
+}
+
 export function parseCompetencyAttachments(raw: Json | null): CompetencyAttachment[] {
   if (raw == null || !Array.isArray(raw)) return [];
   const out: CompetencyAttachment[] = [];

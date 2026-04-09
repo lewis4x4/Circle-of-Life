@@ -374,6 +374,16 @@
 
 ---
 
+**D40 (2026-04-09):** **Module 12 — Training & Competency** ([12-training-competency.md](./12-training-competency.md)) — **optional PDF on `staff_training_completions` + storage RLS**.
+
+**Slice:** Migration **`117`** — extend **`competency-certificates`** read policy for paths **`…/tc/{completion_id}/…`**. **`/admin/training/completions/new`** optional PDF upload; hub **PDF** column. **`trainingCompletionCertificatePath`** in `competency-storage.ts`.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-09T18-48-12-134Z-track-d-d40-training-completion-pdf.json` (`npm run segment:gates -- --segment "track-d-d40-training-completion-pdf" --ui --no-chaos`)
+
+**Mission alignment:** **pass** — Baya/external certificate PDFs can be stored and audited without OAuth or new buckets.
+
+---
+
 ## Track D — plan (remaining)
 
 **Segments D1–D10:** Closed in repo with gate artifacts above. This completes the **Phase 6 Core visibility / workflow** slices we prioritized for COL (transport, training, dietary, referrals, reputation), plus **D10** org mileage rate.
@@ -382,7 +392,7 @@
 
 | Module | Backlog |
 |--------|---------|
-| **12** | ~~Storage certificate PDF uploads~~ (migration `115` + training hub); ~~org-wide hub list~~ (D20); ~~demonstrations **CSV**~~ (D21); ~~`training_programs` + `staff_training_completions` hub + CSV~~ (D38); ~~**log completion** form~~ (D39); Baya/API, automated assignment, scheduled `training_compliance_snapshots`, inservice session DDL |
+| **12** | ~~Storage certificate PDF uploads~~ (migration `115` + training hub); ~~org-wide hub list~~ (D20); ~~demonstrations **CSV**~~ (D21); ~~`training_programs` + `staff_training_completions` hub + CSV~~ (D38); ~~**log completion** form~~ (D39); ~~completion **PDF** + `117` storage RLS~~ (D40); Baya/API, automated assignment, scheduled `training_compliance_snapshots`, inservice session DDL |
 | **13** | ~~Mileage → `payroll_export_lines`~~ (D17); ~~generic **CSV** download on batch~~ (D18); ~~**batches list CSV** on hub~~ (D26); vendor-specific serializers, time-record worker |
 | **14** | ~~Read-only diet + med panel~~ (D13); ~~**diet orders CSV** on hub~~ (D23); automated med–texture cross-check vs medications; meal production; vendor API; full menu cycle |
 | **15** | ~~Week calendar + mileage approval queue~~ (D14, D15); ~~**transport requests CSV** on hub~~ (D24); ~~**mileage logs CSV** on approvals~~ (D25); full month grid, external calendar sync |
@@ -392,6 +402,6 @@
 
 **Authoritative README narrative:** [README.md](./README.md) — section **Track D — Phase 6 completion pass**.
 
-**Next segment:** Record as **D40+** in this file when a new bounded slice ships; use migration **`117+`** only when DDL is required ([README.md](./README.md) next free migration).
+**Next segment:** Record as **D41+** in this file when a new bounded slice ships; use migration **`118+`** only when DDL is required ([README.md](./README.md) next free migration).
 
 **Prioritized Enhanced plan (D11+ options, order, checklists):** [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md).
