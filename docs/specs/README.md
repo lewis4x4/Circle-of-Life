@@ -10,7 +10,7 @@
 
 ## Current state (reconciled 2026-04-09)
 
-**Repo migrations:** **`001`–`114`** — verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release.
+**Repo migrations:** **`001`–`115`** — verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release.
 
 **Where acceptance stands**
 
@@ -24,17 +24,17 @@
 
 **Important:** Code and migrations have **outpaced** formal Phase 1 acceptance. **Do not** treat “migrations applied” or “routes exist” as equivalent to **Track A closed** or **production-ready** for PHI.
 
-**Next free migration number:** **`115`** — use for all new DDL after updating this README and the relevant spec.
+**Next free migration number:** **`116`** — use for all new DDL after updating this README and the relevant spec.
 
 **Post–Phase 6 work already in repo (`096`–`109`)** — see [Post–Phase 6 shipped work](#postphase-6-shipped-work-migrations-096109) below. Older roadmap drafts that reserved `096`+ for “digital twin” or “maintenance” are **obsolete**; those migration numbers are now consumed as listed.
 
 ### What to do next (closeout order)
 
 1. **Track A** — **A1** (auth) + **A2** (RLS) owner-verified **2026-04-09**; **A3** real-auth UAT depth → **A4** env/seed → **A5** Pro/BAA/PITR → **A6** waiver review. Single roadmap: [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md). Production PHI still requires **A5** and remaining UAT rows.
-2. **Confirm remote DB** — `supabase migration list` on the target project must match **local `001`–`114`** before claiming parity.
+2. **Confirm remote DB** — `supabase migration list` on the target project must match **local `001`–`115`** before claiming parity.
 3. **Tracks B–C** — **Done (code)** per sections below; owner deploy/cron/UAT follow-up where noted.
 4. **Track D** — **Segments D1–D10** (2026-04-09) + Enhanced **D12–D20** (incl. payroll **D17–D18**, reputation **D19**, training **D20**) **shipped** (2026-04-09). Core operational visibility for Phase 6 modules 12, 14, 15, 22, 23 is in repo. **Enhanced backlog (D21+):** [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md). Shipped history: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md). Run `segment:gates` per segment.
-5. **Track E** — New DDL starting at migration **`115`** only after specs exist and Tracks A–D are appropriately satisfied for your risk tolerance.
+5. **Track E** — New DDL starting at migration **`116`** only after specs exist and Tracks A–D are appropriately satisfied for your risk tolerance.
 
 ---
 
@@ -414,7 +414,7 @@ Priority is **owner-led** (COL ops + compliance). Typical order of attack:
 
 **Next engineering steps (when resuming Track D–style work)**
 
-1. Confirm **remote migration parity** (`001`–`114`) and **owner priority** for the next Enhanced slice.
+1. Confirm **remote migration parity** (`001`–`115`) and **owner priority** for the next Enhanced slice.
 2. Promote or extend the relevant **module spec** (COL Alignment Notes) so the slice is **bounded** (schema, RLS, acceptance).
 3. Implement **one segment**; run `npm run segment:gates -- --segment "<id>" --ui` when UI/routes change; record in [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md) as **D11+** or a named track.
 
