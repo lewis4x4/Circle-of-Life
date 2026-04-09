@@ -26,6 +26,10 @@ Florida requires each ALF to maintain a food handler certification for dietary s
 
 Dietary is also a linchpin for clinical risk: IDDSI texture levels must align with physician orders and medication administration (e.g., a resident on thickened fluids cannot receive pills that must be swallowed whole). This cross-check is Enhanced but the data model must support it from Core.
 
+### Track D — D23 diet orders CSV (2026-04-09)
+
+**`/admin/dietary`** — **Download diet orders CSV** exports up to **500** **`diet_orders`** rows for the **selected facility** (with resident name join), RFC-style CSV. **No** automated med–texture cross-check, **no** new DDL.
+
 ---
 
 ## Purpose (Core)

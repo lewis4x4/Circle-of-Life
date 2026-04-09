@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { format } from "date-fns";
 import { Utensils } from "lucide-react";
 
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -84,12 +85,76 @@ function formatRelativeShort(iso: string): string {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(iso));
 }
 
+function csvEscapeCell(value: string): string {
+  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+  return value;
+}
+
+function buildDietOrdersCsv(rows: DietRow[]): string {
+  const header = [
+    "id",
+    "organization_id",
+    "facility_id",
+    "resident_id",
+    "resident_first_name",
+    "resident_last_name",
+    "status",
+    "iddsi_food_level",
+    "iddsi_fluid_level",
+    "requires_swallow_eval",
+    "allergy_constraints",
+    "texture_constraints",
+    "aspiration_notes",
+    "medication_texture_review_notes",
+    "effective_from",
+    "effective_to",
+    "created_at",
+    "updated_at",
+  ].join(",");
+  const body = rows.map((row) => {
+    const allergy = row.allergy_constraints?.join(" | ") ?? "";
+    const texture = row.texture_constraints?.join(" | ") ?? "";
+    return [
+      csvEscapeCell(row.id),
+      csvEscapeCell(row.organization_id),
+      csvEscapeCell(row.facility_id),
+      csvEscapeCell(row.resident_id),
+      csvEscapeCell(row.residents?.first_name ?? ""),
+      csvEscapeCell(row.residents?.last_name ?? ""),
+      csvEscapeCell(row.status),
+      csvEscapeCell(row.iddsi_food_level),
+      csvEscapeCell(row.iddsi_fluid_level),
+      csvEscapeCell(String(row.requires_swallow_eval)),
+      csvEscapeCell(allergy),
+      csvEscapeCell(texture),
+      csvEscapeCell(row.aspiration_notes ?? ""),
+      csvEscapeCell(row.medication_texture_review_notes ?? ""),
+      csvEscapeCell(row.effective_from ?? ""),
+      csvEscapeCell(row.effective_to ?? ""),
+      csvEscapeCell(row.created_at),
+      csvEscapeCell(row.updated_at),
+    ].join(",");
+  });
+  return [header, ...body].join("\r\n");
+}
+
+function triggerCsvDownload(filename: string, text: string) {
+  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function AdminDietaryHubPage() {
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<DietRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exportingCsv, setExportingCsv] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -120,6 +185,29 @@ export default function AdminDietaryHubPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const exportDietOrdersCsv = useCallback(async () => {
+    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) return;
+    setExportingCsv(true);
+    setError(null);
+    try {
+      const { data, error: qErr } = await supabase
+        .from("diet_orders")
+        .select("*, residents(first_name, last_name)")
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .order("updated_at", { ascending: false })
+        .limit(500);
+      if (qErr) throw qErr;
+      const exportRows = (data ?? []) as DietRow[];
+      const csv = buildDietOrdersCsv(exportRows);
+      triggerCsvDownload(`diet-orders_${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "CSV export failed.");
+    } finally {
+      setExportingCsv(false);
+    }
+  }, [selectedFacilityId, supabase]);
 
   const attentionRows = useMemo(
     () =>
@@ -178,6 +266,15 @@ export default function AdminDietaryHubPage() {
              </p>
            </div>
            <div className="flex flex-wrap items-center gap-3 justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!facilityReady || exportingCsv}
+                className="h-12 rounded-full px-6 font-bold uppercase tracking-widest text-[10px] border-slate-200 dark:border-white/10"
+                onClick={() => void exportDietOrdersCsv()}
+              >
+                {exportingCsv ? "Preparing…" : "Download diet orders CSV"}
+              </Button>
               <Link
                 href="/admin/dietary/clinical-review"
                 className={cn(

@@ -204,6 +204,16 @@
 
 ---
 
+**D23 (2026-04-09):** **Module 14 — Dietary & Nutrition** ([14-dietary-nutrition.md](./14-dietary-nutrition.md)) — **diet orders CSV export**.
+
+**Slice:** **`/admin/dietary`** — **Download diet orders CSV** queries up to **500** **`diet_orders`** rows for the **selected facility** (**`residents(first_name, last_name)`** join), RFC-style CSV. **No** automated cross-check, **no** new DDL.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-09T16-33-20-426Z-track-d-d23-diet-orders-csv.json` (`npm run segment:gates -- --segment "track-d-d23-diet-orders-csv" --ui --no-chaos`).
+
+**Mission alignment:** **pass** — kitchen and clinical staff can archive IDDSI and constraint data for handoffs without vendor integrations.
+
+---
+
 ## Track D — plan (remaining)
 
 **Segments D1–D10:** Closed in repo with gate artifacts above. This completes the **Phase 6 Core visibility / workflow** slices we prioritized for COL (transport, training, dietary, referrals, reputation), plus **D10** org mileage rate.
@@ -214,7 +224,7 @@
 |--------|---------|
 | **12** | ~~Storage certificate PDF uploads~~ (migration `115` + training hub); ~~org-wide hub list~~ (D20); ~~demonstrations **CSV**~~ (D21); Baya/API, automated assignment, scheduled `training_compliance_snapshots` |
 | **13** | ~~Mileage → `payroll_export_lines`~~ (D17); ~~generic **CSV** download on batch~~ (D18); vendor-specific serializers, time-record worker |
-| **14** | ~~Read-only diet + med panel~~ (D13); automated med–texture cross-check vs medications; meal production; vendor API; full menu cycle |
+| **14** | ~~Read-only diet + med panel~~ (D13); ~~**diet orders CSV** on hub~~ (D23); automated med–texture cross-check vs medications; meal production; vendor API; full menu cycle |
 | **15** | ~~Week calendar + mileage approval queue~~ (D14, D15); full month grid, external calendar sync |
 | **22** | ~~Minimal **MSH** queue processor~~ (D12); ~~manual **Draft lead** from HL7~~ (D16); ~~**HL7 queue CSV**~~ (D22); MLLP, full ADT parse, auto-**`referral_leads`** |
 | **23** | ~~**Replies CSV** export on hub~~ (D19); external review platform OAuth/sync APIs |
