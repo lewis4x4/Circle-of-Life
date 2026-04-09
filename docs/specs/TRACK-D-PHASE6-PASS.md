@@ -123,3 +123,5 @@
 **Authoritative README narrative:** [README.md](./README.md) — section **Track D — Phase 6 completion pass**.
 
 **Next segment:** Record as **D10+** in this file when a new bounded slice ships; use migration **`114+`** only when DDL is required ([README.md](./README.md) next free migration).
+
+**Prioritized Enhanced plan (D10+ options, order, checklists):** [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md).
