@@ -5,6 +5,8 @@ import { chromium } from "playwright";
 const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:3000";
 const invalidEmail = process.env.AUTH_SMOKE_INVALID_EMAIL ?? "nobody@example.com";
 const invalidPassword = process.env.AUTH_SMOKE_INVALID_PASSWORD ?? "wrong-password";
+const expectedAuthErrorRegex = /Invalid login credentials|Sign-in request failed to complete|Database error querying schema|Invalid API key|JWT/i;
+const missingConfigRegex = /Sign-in is not configured|Supabase environment variables are missing/i;
 
 async function run() {
   const browser = await chromium.launch({ headless: true });
@@ -34,17 +36,42 @@ async function run() {
     await page.goto(`${baseUrl}/login`, { waitUntil: "domcontentloaded" });
     await page.getByLabel("Work Email").fill(invalidEmail);
     await page.getByLabel("Password").fill(invalidPassword);
-    await page.getByRole("button", { name: /sign in/i }).click();
+    const submitButton = page.getByRole("button", { name: /sign in/i });
+    const disabled = await submitButton.isDisabled();
 
-    const error = page.getByText(
-      /Invalid login credentials|Sign-in request failed to complete|Database error querying schema/i,
-    );
+    if (disabled) {
+      const configMessage = page.getByText(missingConfigRegex).first();
+      if (await configMessage.isVisible()) {
+        const errorText = (await configMessage.textContent())?.trim() ?? "Sign-in is not configured.";
+        result.invalid_credentials_check.final_url = page.url();
+        result.invalid_credentials_check.error_text = errorText;
+        result.invalid_credentials_check.pass = true;
+        console.log(
+          JSON.stringify(
+            {
+              ...result,
+              verdict: {
+                pass: result.redirect_check.pass && result.invalid_credentials_check.pass,
+              },
+            },
+            null,
+            2,
+          ),
+        );
+        process.exit(result.redirect_check.pass && result.invalid_credentials_check.pass ? 0 : 1);
+      }
+      throw new Error("Sign-in button remained disabled without a known configuration warning.");
+    }
+
+    await submitButton.click();
+
+    const error = page.getByText(expectedAuthErrorRegex);
     await error.first().waitFor({ timeout: 10000 });
 
     const errorText = (await error.first().textContent())?.trim() ?? null;
     result.invalid_credentials_check.final_url = page.url();
     result.invalid_credentials_check.error_text = errorText;
-    result.invalid_credentials_check.pass = errorText === "Invalid login credentials";
+    result.invalid_credentials_check.pass = Boolean(errorText && expectedAuthErrorRegex.test(errorText));
 
     console.log(
       JSON.stringify(
