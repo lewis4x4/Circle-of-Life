@@ -27,6 +27,7 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 ### Core
 
 - Two tables + batch status enum; RLS for owner / org_admin / facility_admin; admin list + create draft batch.
+- Batch detail route: import approved `mileage_logs` (trip date within batch period, `approved_at` set, `payroll_export_id` null) into `payroll_export_lines` with `line_kind` = `mileage_reimbursement`, global idempotency key `mileage:{mileage_log_id}`; sets `mileage_logs.payroll_export_id` to the batch id.
 
 ### Enhanced (defer)
 

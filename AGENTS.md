@@ -119,8 +119,8 @@ Automated regression (`ci-gates.yml` auth-smoke, nightly `ci-nightly.yml`), obse
 ### Step 3 — Workflow Hardening ✅ (2026-04-09)
 Track C implemented per `docs/specs/TRACK-C-WORKFLOW-HARDENING.md` (Edge: `ar-aging-check`, `generate-emar-schedule`, `emar-missed-dose-check`, `exec-alert-evaluator`; runbooks for lifecycle). Owner deploys functions + crons; depth UAT still in `PHASE1-EXECUTION-LOG.md`.
 
-### Step 4 — Phase 6 Completion Pass ✅ (segments D1–D9, 2026-04-09)
-Modules 12 (Training), 14 (Dietary), 15 (Transportation), 22 (Referral CRM), 23 (Reputation) — COL Alignment Notes still govern **Enhanced** backlog. **Track D** execution log: `docs/specs/TRACK-D-PHASE6-PASS.md` (gate artifacts per segment). **Shipped:** D1–D7 Module 15 transport (expiry → `112`/`113` requests + mileage → day-grouped list); **D10** migration `114` org mileage rate + `/admin/transportation/settings`; D2/D3/D8 training + dietary hubs; D4 referrals HL7 counts + reputation SYS label; D9 reputation posted-reply metric. **Plan + remaining Enhanced items (D11+):** `docs/specs/TRACK-D-ENHANCED-BACKLOG-PLAN.md`; README **Track D** section; execution log `docs/specs/TRACK-D-PHASE6-PASS.md`.
+### Step 4 — Phase 6 Completion Pass ✅ (segments D1–D10 + D17, 2026-04-09)
+Modules 12 (Training), 13 (Payroll), 14 (Dietary), 15 (Transportation), 22 (Referral CRM), 23 (Reputation) — COL Alignment Notes still govern **Enhanced** backlog. **Track D** execution log: `docs/specs/TRACK-D-PHASE6-PASS.md` (gate artifacts per segment). **Shipped:** D1–D7 Module 15 transport (expiry → `112`/`113` requests + mileage → day-grouped list); **D10** migration `114` org mileage rate + `/admin/transportation/settings`; D2/D3/D8 training + dietary hubs; D4 referrals HL7 counts + reputation SYS label; D9 reputation posted-reply metric; **D17** `/admin/payroll/[id]` import approved mileage → `payroll_export_lines`. **Plan + remaining Enhanced items (D11+):** `docs/specs/TRACK-D-ENHANCED-BACKLOG-PLAN.md`; README **Track D** section; execution log `docs/specs/TRACK-D-PHASE6-PASS.md`.
 
 ### Step 5 — Module 25: Resident Assurance Engine
 Then remaining strategic modules in order per owner direction.

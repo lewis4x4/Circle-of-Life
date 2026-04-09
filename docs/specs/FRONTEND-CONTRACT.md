@@ -79,7 +79,10 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 - `/admin/training/new`
 - `/admin/dietary` (Phase 6 Module 14 — `14-dietary-nutrition.md`)
 - `/admin/dietary/new`
+- `/admin/dietary/clinical-review` (read-only diet order + resident medications — Track D13)
 - `/admin/transportation` (Phase 6 Module 15 — `15-transportation.md`)
+- `/admin/transportation/calendar` (week strip + daily agenda for `resident_transport_requests` — Track D14)
+- `/admin/transportation/mileage-approvals` (`mileage_logs` approval queue — Track D15)
 - `/admin/transportation/settings` (org mileage reimbursement rate — `owner` / `org_admin`)
 - `/admin/transportation/requests/new`
 - `/admin/transportation/requests/[id]`
@@ -91,6 +94,7 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 - `/admin/time-records`
 - `/admin/payroll` (Phase 6 — `13-payroll-integration.md`)
 - `/admin/payroll/new`
+- `/admin/payroll/[id]`
 - `/admin/staffing`
 - `/admin/billing/rates`
 - `/admin/residents/[id]/billing`

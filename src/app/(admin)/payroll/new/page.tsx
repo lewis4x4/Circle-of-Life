@@ -82,7 +82,7 @@ export default function AdminPayrollNewBatchPage() {
         <CardHeader>
           <CardTitle className="text-lg">Draft export batch</CardTitle>
           <CardDescription>
-            Owner, org admin, or facility admin only. Populate lines from approved time in Enhanced.
+            Owner, org admin, or facility admin only. Add mileage lines from approved trips on the batch detail page; time-record lines remain Enhanced.
           </CardDescription>
         </CardHeader>
         <CardContent>

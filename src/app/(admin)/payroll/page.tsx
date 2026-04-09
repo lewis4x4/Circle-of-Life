@@ -73,7 +73,7 @@ export default function AdminPayrollHubPage() {
       <div className="relative z-10 space-y-6">
         <header className="mb-8">
           <div>
-            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 22 / Payroll</p>
+            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 13 / Payroll</p>
             <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
               Payroll Export
             </h2>
@@ -135,7 +135,10 @@ export default function AdminPayrollHubPage() {
           <MotionList className="space-y-3">
              {rows.map((row) => (
                <MotionItem key={row.id}>
-                 <div className="p-4 sm:p-5 rounded-2xl glass-panel group transition-all duration-300 hover:scale-[1.01] hover:border-emerald-500/30 hover:bg-white/70 dark:hover:bg-emerald-900/10 border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 w-full flex flex-col md:flex-row md:items-center justify-between gap-4">
+                 <Link
+                   href={`/admin/payroll/${row.id}`}
+                   className="block p-4 sm:p-5 rounded-2xl glass-panel group transition-all duration-300 hover:scale-[1.01] hover:border-emerald-500/30 hover:bg-white/70 dark:hover:bg-emerald-900/10 border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 w-full flex flex-col md:flex-row md:items-center justify-between gap-4"
+                 >
                     
                     <div className="flex flex-col min-w-[200px] gap-1">
                        <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Period</span>
@@ -163,7 +166,7 @@ export default function AdminPayrollHubPage() {
                        </div>
                     </div>
                     
-                 </div>
+                 </Link>
                </MotionItem>
              ))}
           </MotionList>

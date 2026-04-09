@@ -6,7 +6,7 @@
 
 - No multi-module megabranches; each segment has one **primary module** and explicit **out-of-scope** bullets.
 - **Spec first:** Add or extend a short **COL Alignment / Enhanced slice** subsection in the relevant `docs/specs/*.md` before coding when behavior is new.
-- **DDL:** Use migration **`115+`** only when a column/table is required; otherwise prefer existing columns (`organizations.settings` JSON, existing queue tables).
+- **DDL:** Use migration **`116+`** only when a column/table is required; otherwise prefer existing columns (`organizations.settings` JSON, existing queue tables).
 - **Verify:** `npm run segment:gates -- --segment "<id>" --ui` when routes/UI change.
 
 ---
@@ -16,6 +16,7 @@
 | Module | Backlog item | Effort | Risk | Dependencies | Notes |
 |--------|----------------|--------|------|--------------|--------|
 | **15** | ~~**Org-level mileage reimbursement rate**~~ | — | — | — | **Shipped D10** — table `organization_transport_settings` (`114`), `/admin/transportation/settings`, `getOrganizationMileageRateCents`; fallback in `mileage-defaults.ts`. |
+| **13** | ~~**Payroll batch mileage lines**~~ (`payroll_export_lines` from approved `mileage_logs`) | — | — | — | **Shipped D17** — `/admin/payroll/[id]` import; idempotency `mileage:{log_id}`. |
 | **15** | Payroll mileage **approval** UX (`mileage_logs.approved_at` flow) | Medium | Med | Module 13 payroll export may be STUB | Touches finance export boundaries. |
 | **15** | **Calendar** view for transport requests | Medium–high | Med | UX + date math | Large surface area; better as its own segment after rate. |
 | **22** | **HL7 processor** (parse `referral_hl7_inbound.raw_message`, set status, optional fields) | Medium | Med–high | Edge deploy + secret | Core queue exists; spec non-goal was *full* parser — a **minimal ADT subset** + structured `parse_error` is a valid D10 if scoped. |
@@ -31,6 +32,8 @@
 
 **Module 15 — Transportation** — **organization mileage reimbursement rate** shipped as migration **`114`** (`organization_transport_settings`), admin route **`/admin/transportation/settings`**, integration on transport request completion. Gate: `test-results/agent-gates/2026-04-09T02-13-30-573Z-track-d-phase6-d10-org-mileage-rate.json`.
 
+**~~D17 (2026-04-09)~~** **DONE — Module 13:** **`/admin/payroll/[id]`** imports approved mileage into **`payroll_export_lines`**. Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
 **Recommended next segment — D11 (default):** Module **12** — certificate PDF upload (see §3).
 
 ---
@@ -43,6 +46,7 @@
 | 3 | **D12** | **22** | Edge Function **`process-referral-hl7-inbound`**: cron or manual POST; for `pending` rows, parse MSH/PID minimally, set `processed`/`failed`, fill `parse_error`; **no** auto-create `referral_leads` until D13. |
 | 4 | **D13** | **14** | **Read-only** clinical panel: diet order + resident med list side-by-side **or** narrow automation after rules are written. |
 | 5 | **D14** | **15** | Week strip or agenda **calendar** for `resident_transport_requests` (existing table). |
+| 6 | **D17** | **13** | ~~**Mileage → payroll lines** on draft batch~~ **DONE** — `/admin/payroll/[id]`. |
 
 Defer **23 OAuth**, **22 MLLP**, **14 full rule engine** until product/security review.
 
@@ -52,7 +56,7 @@ Defer **23 OAuth**, **22 MLLP**, **14 full rule engine** until product/security 
 
 - **Track A** can remain skipped for **engineering** progress; PHI production still needs owner attestation separately.
 - **COL clinical sign-off** required before **automated** dietary or HL7 **lead creation**.
-- **Next migration number** in README: **`115`** — use for the next DDL after D10.
+- **Next migration number** in README: **`116`** — use for the next DDL after D11.
 
 ---
 

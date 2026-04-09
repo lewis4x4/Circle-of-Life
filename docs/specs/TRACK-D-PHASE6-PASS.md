@@ -118,6 +118,16 @@
 
 ---
 
+**D17 (2026-04-09):** **Module 13 — Payroll Integration** ([13-payroll-integration.md](./13-payroll-integration.md)) — **approved mileage → export lines**.
+
+**Slice:** **`/admin/payroll/[id]`** — draft batches show **Import mileage into batch**: loads **`mileage_logs`** with **`approved_at` set**, **`payroll_export_id` IS NULL**, **`trip_date`** within batch period; inserts **`payroll_export_lines`** (`line_kind` = `mileage_reimbursement`, idempotency `mileage:{log_id}`) and sets **`mileage_logs.payroll_export_id`**. Hub batches link to detail; payroll hub SYS label corrected to **Module 13**. **No** new DDL.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-09T15-01-34-839Z-track-d-d17-payroll-mileage-lines.json` (`npm run segment:gates -- --segment "track-d-d17-payroll-mileage-lines" --ui --no-chaos`).
+
+**Mission alignment:** **pass** — reimbursement stays tied to approved trips and an explicit batch before external payroll handoff.
+
+---
+
 ## Track D — plan (remaining)
 
 **Segments D1–D10:** Closed in repo with gate artifacts above. This completes the **Phase 6 Core visibility / workflow** slices we prioritized for COL (transport, training, dietary, referrals, reputation), plus **D10** org mileage rate.
@@ -127,6 +137,7 @@
 | Module | Backlog |
 |--------|---------|
 | **12** | Storage certificate uploads, Baya/API, automated assignment, org-wide `training_compliance_snapshots` usage |
+| **13** | ~~Mileage → `payroll_export_lines` on draft batch~~ (D17); CSV/vendor serializers, time-record worker |
 | **14** | Automated med–texture cross-check vs medications; meal production; vendor API; full menu cycle |
 | **15** | Payroll mileage approval workflow, month/week calendar, external calendar sync |
 | **22** | HL7 processor automation beyond queue ingest |
@@ -134,6 +145,6 @@
 
 **Authoritative README narrative:** [README.md](./README.md) — section **Track D — Phase 6 completion pass**.
 
-**Next segment:** Record as **D11+** in this file when a new bounded slice ships; use migration **`115+`** only when DDL is required ([README.md](./README.md) next free migration).
+**Next segment:** Record as **D11+** in this file when a new bounded slice ships; use migration **`116+`** only when DDL is required ([README.md](./README.md) next free migration).
 
 **Prioritized Enhanced plan (D11+ options, order, checklists):** [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md).
