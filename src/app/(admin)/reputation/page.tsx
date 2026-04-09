@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Star } from "lucide-react";
 
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -28,6 +28,51 @@ function formatPlatform(p: string) {
   return p.replace(/_/g, " ");
 }
 
+function csvEscapeCell(value: string): string {
+  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+  return value;
+}
+
+function buildReputationRepliesCsv(rows: ReplyRow[]): string {
+  const header = [
+    "id",
+    "status",
+    "listing_label",
+    "platform",
+    "review_excerpt",
+    "reply_body",
+    "created_at",
+    "posted_to_platform_at",
+    "external_review_id",
+  ].join(",");
+  const body = rows.map((row) => {
+    const label = row.reputation_accounts?.label ?? "";
+    const platform = row.reputation_accounts?.platform ?? "";
+    return [
+      csvEscapeCell(row.id),
+      csvEscapeCell(row.status),
+      csvEscapeCell(label),
+      csvEscapeCell(String(platform)),
+      csvEscapeCell(row.review_excerpt ?? ""),
+      csvEscapeCell(row.reply_body ?? ""),
+      csvEscapeCell(row.created_at),
+      csvEscapeCell(row.posted_to_platform_at ?? ""),
+      csvEscapeCell(row.external_review_id ?? ""),
+    ].join(",");
+  });
+  return [header, ...body].join("\r\n");
+}
+
+function triggerCsvDownload(filename: string, text: string) {
+  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function AdminReputationHubPage() {
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
@@ -36,6 +81,7 @@ export default function AdminReputationHubPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [exportingCsv, setExportingCsv] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -83,6 +129,29 @@ export default function AdminReputationHubPage() {
   const draftReplies = useMemo(() => replies.filter((r) => r.status === "draft"), [replies]);
   const postedReplies = useMemo(() => replies.filter((r) => r.status === "posted"), [replies]);
 
+  async function exportRepliesCsv() {
+    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) return;
+    setExportingCsv(true);
+    setError(null);
+    try {
+      const { data, error: qErr } = await supabase
+        .from("reputation_replies")
+        .select("*, reputation_accounts(label, platform)")
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (qErr) throw qErr;
+      const rows = (data ?? []) as ReplyRow[];
+      const csv = buildReputationRepliesCsv(rows);
+      triggerCsvDownload(`reputation-replies_${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "CSV export failed.");
+    } finally {
+      setExportingCsv(false);
+    }
+  }
+
   async function markPosted(id: string) {
     setUpdatingId(id);
     setError(null);
@@ -119,13 +188,24 @@ export default function AdminReputationHubPage() {
       />
       
       <div className="relative z-10 space-y-6">
-        <header className="mb-8">
+        <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 23 / Reputation & Online Presence</p>
             <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
               Reputation Control
             </h2>
           </div>
+          {facilityReady && (
+            <Button
+              type="button"
+              variant="outline"
+              className="shrink-0 self-start"
+              disabled={exportingCsv}
+              onClick={() => void exportRepliesCsv()}
+            >
+              {exportingCsv ? "Preparing…" : "Download replies CSV"}
+            </Button>
+          )}
         </header>
 
         <KineticGrid className="grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6" staggerMs={75}>

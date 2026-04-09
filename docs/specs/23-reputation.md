@@ -20,6 +20,8 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 
 **Non-goals (Core):** OAuth to Google/Yelp APIs, automated review fetch, or AI-generated reply text (Enhanced / integration).
 
+**Shipped (Track D19):** **`/admin/reputation`** — **Download replies CSV** (client-side export, up to **500** rows per facility with listing label and platform); does **not** call external review APIs.
+
 ---
 
 ## RLS (normative)

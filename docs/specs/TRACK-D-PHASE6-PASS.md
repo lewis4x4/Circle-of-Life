@@ -164,6 +164,16 @@
 
 ---
 
+**D19 (2026-04-09):** **Module 23 — Reputation** ([23-reputation.md](./23-reputation.md)) — **replies CSV export**.
+
+**Slice:** **`/admin/reputation`** — **Download replies CSV** queries up to **500** **`reputation_replies`** rows for the facility (with **`reputation_accounts`** label + platform), RFC-style CSV. **No** OAuth, **no** new DDL.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-09T16-05-57-682Z-track-d-d19-reputation-replies-csv.json` (`npm run segment:gates -- --segment "track-d-d19-reputation-replies-csv" --ui --no-chaos`).
+
+**Mission alignment:** **pass** — operators can archive and hand off reply workflow data without automated platform sync.
+
+---
+
 ## Track D — plan (remaining)
 
 **Segments D1–D10:** Closed in repo with gate artifacts above. This completes the **Phase 6 Core visibility / workflow** slices we prioritized for COL (transport, training, dietary, referrals, reputation), plus **D10** org mileage rate.
@@ -177,7 +187,7 @@
 | **14** | ~~Read-only diet + med panel~~ (D13); automated med–texture cross-check vs medications; meal production; vendor API; full menu cycle |
 | **15** | ~~Week calendar + mileage approval queue~~ (D14, D15); full month grid, external calendar sync |
 | **22** | ~~Minimal **MSH** queue processor~~ (D12); ~~manual **Draft lead** from HL7~~ (D16); MLLP, full ADT parse, auto-**`referral_leads`** |
-| **23** | External review platform OAuth/sync APIs |
+| **23** | ~~**Replies CSV** export on hub~~ (D19); external review platform OAuth/sync APIs |
 
 **Authoritative README narrative:** [README.md](./README.md) — section **Track D — Phase 6 completion pass**.
 
