@@ -14,6 +14,8 @@ import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { ArrowRight } from "lucide-react";
 
 export default function AdminVendorsHubPage() {
   const supabase = createClient();
@@ -90,15 +92,20 @@ export default function AdminVendorsHubPage() {
       
       <div className="relative z-10 space-y-6">
         <VendorHubNav />
-        <div className="flex items-center gap-3">
-          <Truck className="h-8 w-8 text-slate-600 dark:text-slate-300" aria-hidden />
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Vendors & contracts</h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              Vendor master, contracts, POs, invoices, and spend (Module 19).
+        
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4 relative z-10 transition-all hover:bg-white/50 dark:hover:bg-black/30">
+          <div className="space-y-3">
+             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
+                 <Truck className="h-3.5 w-3.5" aria-hidden /> SYS: Module 19
+             </div>
+             <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+              Vendors & Contracts
+             </h1>
+            <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
+              Manage the vendor master, execute contracts, handle POs, and analyze real-time spend records.
             </p>
           </div>
-        </div>
+        </header>
 
         {loadError && (
           <p className="text-sm text-red-600 dark:text-red-400" role="alert">
@@ -148,28 +155,40 @@ export default function AdminVendorsHubPage() {
           </div>
         </KineticGrid>
 
-      <div className="relative overflow-visible z-10 w-full mt-4">
-        <div className="glass-panel p-4 sm:p-6 mb-4 rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-xl">
-          <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Quick links</h3>
-          <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">Procurement and AP workflows.</p>
+      <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-visible z-10 w-full transition-all mt-8">
+        <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4">
+          <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white">Quick Links</h3>
+          <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400 mt-1">Jump to procurement and AP workflows.</p>
         </div>
-        <div className="glass-panel p-6 rounded-2xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 flex flex-col gap-3 text-sm backdrop-blur-2xl shadow-sm">
-          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-widest hover:text-indigo-500 transition-colors" href="/admin/vendors/directory">
-            Vendor directory
-          </Link>
-          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-widest hover:text-indigo-500 transition-colors" href="/admin/vendors/contracts">
-            Contracts
-          </Link>
-          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-widest hover:text-indigo-500 transition-colors" href="/admin/vendors/purchase-orders">
-            Purchase orders
-          </Link>
-          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-widest hover:text-indigo-500 transition-colors" href="/admin/vendors/invoices">
-            Vendor invoices
-          </Link>
-          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-widest hover:text-indigo-500 transition-colors" href="/admin/vendors/spend">
-            Spend analytics
-          </Link>
-        </div>
+        
+        <MotionList className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+           {[
+             { title: "Vendor directory", href: "/admin/vendors/directory", desc: "View and manage active vendors" },
+             { title: "Contracts", href: "/admin/vendors/contracts", desc: "Manage SLAs and master agreements" },
+             { title: "Purchase orders", href: "/admin/vendors/purchase-orders", desc: "Track organizational POs" },
+             { title: "Vendor invoices", href: "/admin/vendors/invoices", desc: "Reconcile vendor AP" },
+             { title: "Spend analytics", href: "/admin/vendors/spend", desc: "Review MTD and historic expenditures" },
+           ].map((link) => (
+             <MotionItem key={link.href}>
+                 <Link href={link.href} className="p-6 rounded-[1.5rem] glass-panel group transition-all duration-300 hover:scale-[1.01] cursor-pointer border border-slate-200 dark:border-white/5 bg-white/80 dark:bg-white/[0.03] w-full flex flex-col justify-between gap-4 backdrop-blur-xl shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-500/30 h-[140px] relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/0 via-transparent to-indigo-500/0 group-hover:from-indigo-50/50 group-hover:to-transparent dark:group-hover:from-indigo-500/5 transition-colors" />
+                    <div className="relative z-10 flex flex-col gap-1">
+                       <span className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest text-xs group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                          {link.title}
+                       </span>
+                       <span className="text-[10px] font-mono tracking-widest uppercase text-slate-500 dark:text-slate-400 pr-4 mt-2 leading-relaxed">
+                          {link.desc}
+                       </span>
+                    </div>
+                    <div className="relative z-10 flex justify-end">
+                        <div className="h-8 w-8 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center group-hover:border-indigo-200 dark:group-hover:border-indigo-500/20 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-500/10 transition-colors">
+                            <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" />
+                        </div>
+                    </div>
+                 </Link>
+             </MotionItem>
+           ))}
+        </MotionList>
       </div>
       </div>
     </div>

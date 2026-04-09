@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Timer } from "lucide-react";
+import { ArrowRight, FileClock, Timer, UserCircle } from "lucide-react";
 
 import {
   AdminEmptyState,
@@ -10,12 +10,17 @@ import {
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { KineticGrid } from "@/components/ui/kinetic-grid";
+import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { Sparkline } from "@/components/ui/moonshot/sparkline";
+import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
+import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 
 import { BillingHubNav } from "../billing-hub-nav";
 import { billingCurrency } from "../billing-invoice-ledger";
@@ -146,103 +151,152 @@ export default function AdminArAgingPage() {
   }, [rows]);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <BillingHubNav />
-      <header className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-            AR aging
-          </h2>
-          <p className="mt-1 text-slate-500 dark:text-slate-400">
-            Open balances bucketed by days past due date (per invoice, rolled up by resident).
-          </p>
-        </div>
-      </header>
+    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+      <AmbientMatrix />
+      
+      <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <BillingHubNav />
+        
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-emerald-50/20 dark:bg-black/20 p-8 rounded-[2.5rem] border border-emerald-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+          <div className="space-y-3">
+             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
+                 <FileClock className="h-3.5 w-3.5" aria-hidden /> SYS: Module 16
+             </div>
+             <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+               AR Aging
+               {totals.b91 > 0 && <PulseDot colorClass="bg-rose-500" />}
+             </h1>
+            <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
+               Open balances bucketed by days past due date (per invoice, rolled up by resident).
+            </p>
+          </div>
+        </header>
 
-      {error ? <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} /> : null}
+        {error ? <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} /> : null}
 
-      {!isLoading && rows.length > 0 ? (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          {(
-            [
-              ["Total AR", totals.total, true],
-              ["0–30 days", totals.b0_30, false],
-              ["31–60 days", totals.b31_60, false],
-              ["61–90 days", totals.b61_90, false],
-              ["91+ days", totals.b91, false],
-            ] as const
-          ).map(([label, cents, showIcon]) => (
-            <Card key={label}>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-1 text-sm font-medium text-slate-500 dark:text-slate-400">
-                  {showIcon ? <Timer className="h-4 w-4" /> : null}
-                  {label}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-lg font-semibold tabular-nums text-slate-900 dark:text-slate-100">
-                {billingCurrency.format(cents / 100)}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : null}
+        {!isLoading && rows.length > 0 ? (
+          <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6" staggerMs={75}>
+             <div className="col-span-1 md:col-span-2 h-[160px]">
+               <V2Card hoverColor="emerald" className="border-emerald-500/20 dark:border-emerald-500/20 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]">
+                 <Sparkline colorClass="text-emerald-500" variant={2} />
+                 <MonolithicWatermark value={Math.round((totals.total / 100) / 1000) + 'k'} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
+                 <div className="relative z-10 flex flex-col h-full justify-between p-2">
+                   <h3 className="text-[11px] font-bold tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+                     <Timer className="h-4 w-4" /> Total Open AR
+                   </h3>
+                   <div>
+                     <p className="text-4xl lg:text-5xl font-display font-medium tracking-tight tabular-nums text-emerald-600 dark:text-emerald-400 pb-1 flex flex-col">
+                       {billingCurrency.format(totals.total / 100)}
+                     </p>
+                   </div>
+                 </div>
+               </V2Card>
+             </div>
 
-      {isLoading ? <AdminTableLoadingState /> : null}
-      {!isLoading && rows.length === 0 && !error ? (
-        <AdminEmptyState title="No open AR" description="Paid, void, and zero-balance invoices are excluded." />
-      ) : null}
-      {!isLoading && rows.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">By resident</CardTitle>
-            <CardDescription>Highest balance first.</CardDescription>
-          </CardHeader>
-          <CardContent className="p-0 sm:p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Resident</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead className="hidden text-right md:table-cell">0–30</TableHead>
-                  <TableHead className="hidden text-right md:table-cell">31–60</TableHead>
-                  <TableHead className="hidden text-right lg:table-cell">61–90</TableHead>
-                  <TableHead className="hidden text-right lg:table-cell">91+</TableHead>
-                  <TableHead className="w-10 pr-4 text-right"> </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((r) => (
-                  <TableRow key={r.residentId}>
-                    <TableCell className="font-medium">{r.residentName}</TableCell>
-                    <TableCell className="text-right tabular-nums">{billingCurrency.format(r.totalCents / 100)}</TableCell>
-                    <TableCell className="hidden text-right tabular-nums md:table-cell">
-                      {billingCurrency.format(r.b0_30 / 100)}
-                    </TableCell>
-                    <TableCell className="hidden text-right tabular-nums md:table-cell">
-                      {billingCurrency.format(r.b31_60 / 100)}
-                    </TableCell>
-                    <TableCell className="hidden text-right tabular-nums lg:table-cell">
-                      {billingCurrency.format(r.b61_90 / 100)}
-                    </TableCell>
-                    <TableCell className="hidden text-right tabular-nums lg:table-cell">
-                      {billingCurrency.format(r.b91 / 100)}
-                    </TableCell>
-                    <TableCell className="pr-4 text-right">
+            {(
+              [
+                ["0–30 days", totals.b0_30, "slate"],
+                ["31–60 days", totals.b31_60, "amber"],
+                ["61–90 days", totals.b61_90, "orange"],
+              ] as const
+            ).map(([label, cents, color]) => (
+              <div key={label} className="h-[160px]">
+                 <V2Card hoverColor={color} className={`border-${color}-500/20 dark:border-${color}-500/20`}>
+                   <MonolithicWatermark value={Math.round((cents / 100) / 100)} className={`text-${color}-600/5 dark:text-${color}-400/5 opacity-50`} />
+                   <div className="relative z-10 flex flex-col h-full justify-between p-2">
+                     <h3 className={`text-[10px] font-bold tracking-widest uppercase text-${color}-600 dark:text-${color}-400`}>
+                       {label}
+                     </h3>
+                     <p className={`text-2xl font-mono font-medium tracking-tight tabular-nums text-${color}-600 dark:text-${color}-400 pb-1`}>
+                       {billingCurrency.format(cents / 100)}
+                     </p>
+                   </div>
+                 </V2Card>
+              </div>
+            ))}
+          </KineticGrid>
+        ) : null}
+
+        {isLoading ? <AdminTableLoadingState /> : null}
+        {!isLoading && rows.length === 0 && !error ? (
+          <AdminEmptyState title="No open AR" description="Paid, void, and zero-balance invoices are excluded." />
+        ) : null}
+        
+        {!isLoading && rows.length > 0 ? (
+          <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all">
+            <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
+              <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1">Outstanding by Resident</h3>
+              <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-1 uppercase">
+                 Sorted descending
+              </p>
+            </div>
+            
+            <div className="relative z-10">
+               <MotionList className="space-y-3">
+                  {rows.map((r) => (
+                    <MotionItem key={r.residentId}>
                       <Link
                         href={`/admin/residents/${r.residentId}/billing`}
-                        className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
-                        aria-label={`Open billing for ${r.residentName}`}
+                        className="group flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between p-5 rounded-[1.5rem] border border-slate-200/90 bg-white dark:border-white/5 dark:bg-white/[0.03] shadow-sm transform-gpu transition-all hover:border-emerald-300 dark:hover:border-emerald-500/40 hover:shadow-md outline-none"
                       >
-                        →
+                         <div className="min-w-0 flex items-center gap-4">
+                           <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-500/10 group-hover:border-emerald-200 dark:group-hover:border-emerald-500/20 transition-colors">
+                              <UserCircle className="w-5 h-5 text-slate-400 group-hover:text-emerald-500 transition-colors" />
+                           </div>
+                           <div>
+                              <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
+                                 {r.residentName}
+                              </p>
+                           </div>
+                         </div>
+                         
+                         <div className="flex flex-wrap items-center gap-4 lg:gap-8 lg:mr-4">
+                            <div className="flex flex-col">
+                               <span className="font-bold uppercase tracking-widest text-[10px] text-slate-400 mb-1">Total Outstanding</span>
+                               <span className="text-lg font-display font-medium text-slate-900 dark:text-slate-100 tabular-nums">
+                                  {billingCurrency.format(r.totalCents / 100)}
+                               </span>
+                            </div>
+                            
+                            <div className="h-10 w-px bg-slate-200 dark:bg-white/10 hidden md:block mx-2"></div>
+                            
+                            <div className="flex flex-col hidden md:flex text-right">
+                               <span className="font-bold uppercase tracking-widest text-[9px] text-slate-400 mb-1 leading-none">0–30</span>
+                               <span className="text-xs font-mono font-medium text-slate-600 dark:text-slate-400 tabular-nums leading-none">
+                                  {billingCurrency.format(r.b0_30 / 100)}
+                               </span>
+                            </div>
+                            <div className="flex flex-col hidden md:flex text-right">
+                               <span className="font-bold uppercase tracking-widest text-[9px] text-slate-400 mb-1 leading-none">31–60</span>
+                               <span className="text-xs font-mono font-medium text-slate-600 dark:text-slate-400 tabular-nums leading-none">
+                                  {billingCurrency.format(r.b31_60 / 100)}
+                               </span>
+                            </div>
+                            <div className="flex flex-col hidden lg:flex text-right">
+                               <span className="font-bold uppercase tracking-widest text-[9px] text-slate-400 mb-1 leading-none">61–90</span>
+                               <span className="text-xs font-mono font-medium text-slate-600 dark:text-slate-400 tabular-nums leading-none">
+                                  {billingCurrency.format(r.b61_90 / 100)}
+                               </span>
+                            </div>
+                            <div className="flex flex-col hidden lg:flex text-right">
+                               <span className="font-bold uppercase tracking-widest text-[9px] text-slate-400 mb-1 leading-none">91+</span>
+                               <span className={cn("text-xs font-mono font-medium tabular-nums leading-none", r.b91 > 0 ? "text-rose-600 dark:text-rose-400 font-bold" : "text-slate-600 dark:text-slate-400")}>
+                                  {billingCurrency.format(r.b91 / 100)}
+                               </span>
+                            </div>
+                            
+                            <div className="h-8 w-8 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center group-hover:border-emerald-200 dark:group-hover:border-emerald-500/20 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-500/10 transition-colors shrink-0 ml-2">
+                               <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors" />
+                            </div>
+                         </div>
                       </Link>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      ) : null}
+                    </MotionItem>
+                  ))}
+               </MotionList>
+            </div>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

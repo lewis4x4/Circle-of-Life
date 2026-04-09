@@ -1,18 +1,22 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { TrendingUp } from "lucide-react";
+import { CalendarDays, TrendingUp } from "lucide-react";
 
 import {
   AdminEmptyState,
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { KineticGrid } from "@/components/ui/kinetic-grid";
+import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { Sparkline } from "@/components/ui/moonshot/sparkline";
+import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 
 import { BillingHubNav } from "../billing-hub-nav";
 import { billingCurrency } from "../billing-invoice-ledger";
@@ -90,66 +94,100 @@ export default function AdminRevenuePage() {
   const grand = useMemo(() => byMonth.reduce((acc, r) => acc + r.cents, 0), [byMonth]);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <BillingHubNav />
-      <header className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-            Revenue
-          </h2>
-          <p className="mt-1 text-slate-500 dark:text-slate-400">
-            Cash collected from payments (refunds excluded), grouped by calendar month.
-          </p>
-        </div>
-      </header>
+    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+      <AmbientMatrix />
+      <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <BillingHubNav />
+        
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-emerald-50/20 dark:bg-black/20 p-8 rounded-[2.5rem] border border-emerald-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+          <div className="space-y-3">
+             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
+                 <TrendingUp className="h-3.5 w-3.5" aria-hidden /> SYS: Module 16
+             </div>
+             <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+               Received Revenue
+             </h1>
+            <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
+               Cash collected from payments (refunds excluded), grouped by calendar month.
+            </p>
+          </div>
+        </header>
 
-      {error ? <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} /> : null}
+        {error ? <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} /> : null}
 
-      {!isLoading && byMonth.length > 0 ? (
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-2 pb-2">
-            <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-            <div>
-              <CardTitle className="text-base">Trailing window</CardTitle>
-              <CardDescription>{billingCurrency.format(grand / 100)} over {byMonth.length} month(s)</CardDescription>
+        {!isLoading && byMonth.length > 0 ? (
+           <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6" staggerMs={75}>
+             <div className="col-span-1 md:col-span-2 lg:col-span-3 h-[180px]">
+               <V2Card hoverColor="emerald" className="border-emerald-500/20 dark:border-emerald-500/20 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]">
+                 <Sparkline colorClass="text-emerald-500" variant={3} />
+                 <MonolithicWatermark value={Math.round((grand / 100) / 1000) + 'k'} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
+                 <div className="relative z-10 flex flex-col h-full justify-between p-2">
+                   <h3 className="text-[11px] font-bold tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+                     <TrendingUp className="h-4 w-4" /> Trailing 14 Months Window
+                   </h3>
+                   <div>
+                     <p className="text-5xl lg:text-7xl font-display font-medium tracking-tight tabular-nums text-emerald-600 dark:text-emerald-400 pb-1 flex flex-col">
+                       {billingCurrency.format(grand / 100)}
+                     </p>
+                     <p className="font-mono text-sm tracking-widest uppercase text-emerald-600/60 dark:text-emerald-400/60 mt-1">Across {byMonth.length} active months</p>
+                   </div>
+                 </div>
+               </V2Card>
+             </div>
+           </KineticGrid>
+        ) : null}
+
+        {isLoading ? <AdminTableLoadingState /> : null}
+        {!isLoading && byMonth.length === 0 && !error ? (
+          <AdminEmptyState title="No payments in range" description="Try another facility or extend the data window." />
+        ) : null}
+        
+        {!isLoading && byMonth.length > 0 ? (
+          <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all">
+            <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
+              <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1">Monthly Breakdown</h3>
+              <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-1 uppercase">
+                 Monthly Periods
+              </p>
             </div>
-          </CardHeader>
-        </Card>
-      ) : null}
-
-      {isLoading ? <AdminTableLoadingState /> : null}
-      {!isLoading && byMonth.length === 0 && !error ? (
-        <AdminEmptyState title="No payments in range" description="Try another facility or extend the data window." />
-      ) : null}
-      {!isLoading && byMonth.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">By month</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 sm:p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Month</TableHead>
-                  <TableHead className="text-right">Payments</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {byMonth.map((r) => (
-                  <TableRow key={r.key}>
-                    <TableCell className="font-medium">{monthLabel(r.key)}</TableCell>
-                    <TableCell className="text-right tabular-nums text-slate-600 dark:text-slate-400">{r.count}</TableCell>
-                    <TableCell className="text-right tabular-nums font-medium">
-                      {billingCurrency.format(r.cents / 100)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      ) : null}
+            
+            <div className="relative z-10">
+               <MotionList className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {byMonth.map((r) => (
+                    <MotionItem key={r.key}>
+                      <div className="group flex flex-col justify-between p-6 h-full rounded-[1.5rem] border border-slate-200/90 bg-white dark:border-white/5 dark:bg-white/[0.03] shadow-sm transition-all hover:shadow-md hover:border-emerald-300 dark:hover:border-emerald-500/40">
+                         <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-500/10 group-hover:border-emerald-200 dark:group-hover:border-emerald-500/20 transition-colors">
+                               <CalendarDays className="w-5 h-5 text-slate-400 group-hover:text-emerald-500 transition-colors" />
+                            </div>
+                            <div>
+                               <span className="font-semibold text-slate-900 dark:text-slate-100 tracking-tight text-xl">
+                                  {monthLabel(r.key)}
+                               </span>
+                            </div>
+                         </div>
+                         <div className="flex items-end justify-between w-full mt-auto">
+                            <div className="flex flex-col">
+                               <span className="font-bold uppercase tracking-widest text-[10px] text-slate-400 mb-1">Volume</span>
+                               <span className="text-lg font-mono font-medium text-slate-600 dark:text-slate-300 tabular-nums">
+                                  {r.count} <span className="text-sm">Txns</span>
+                               </span>
+                            </div>
+                            <div className="flex flex-col items-end">
+                               <span className="font-bold uppercase tracking-widest text-[10px] text-slate-400 mb-1">Received</span>
+                               <span className="text-2xl font-display font-medium text-emerald-600 dark:text-emerald-400 tabular-nums">
+                                  {billingCurrency.format(r.cents / 100)}
+                               </span>
+                            </div>
+                         </div>
+                      </div>
+                    </MotionItem>
+                  ))}
+               </MotionList>
+            </div>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

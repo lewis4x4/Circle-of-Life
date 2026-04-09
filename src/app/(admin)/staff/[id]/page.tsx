@@ -13,8 +13,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -252,223 +252,233 @@ export default function AdminStaffDetailPage() {
   const addrRest = [cityState, staff.zip].filter(Boolean).join(" ");
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex flex-col gap-3">
-          <Link
-            href="/admin/staff"
-            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex w-fit gap-1 px-0 sm:px-3")}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Roster
-          </Link>
-          <div className="flex flex-wrap items-center gap-4">
-            {staff.photo_url ? (
-              <Avatar className="h-16 w-16 ring-2 ring-slate-200 dark:ring-slate-700">
-                <AvatarImage src={staff.photo_url} alt={fullName} />
-                <AvatarFallback className="bg-brand-100 text-lg font-medium text-brand-900 dark:bg-brand-900 dark:text-brand-100">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-            ) : (
-              <div
-                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-slate-200 text-lg font-medium text-slate-600 ring-2 ring-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:ring-slate-700"
-                aria-hidden
-              >
-                {fullName.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <div>
-              <h1 className="font-display text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-                {fullName}
-              </h1>
-              {staff.preferred_name ? (
-                <p className="text-slate-500 dark:text-slate-400">&ldquo;{staff.preferred_name}&rdquo;</p>
-              ) : null}
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                {formatSnake(staff.staff_role)} · Updated {formatTs(staff.updated_at)}
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <RoleBadge role={roleUi} />
-                <StatusBadge status={statusUi} />
-                <CertificationBadge certifications={certAgg} />
-                {staff.is_float_pool ? (
-                  <Badge variant="outline" className="border-slate-300 dark:border-slate-600">
-                    Float pool
-                  </Badge>
+    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+      <AmbientMatrix hasCriticals={certAgg === "expired"} />
+
+      <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm overflow-hidden relative">
+          <div className="flex flex-col gap-5 relative z-10">
+            <Link
+              href="/admin/staff"
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex w-fit gap-2 -ml-2 text-slate-500 dark:text-slate-400 font-mono tracking-widest uppercase text-[10px] items-center hover:bg-slate-200/50 dark:hover:bg-white/5 rounded-full px-4")}
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Roster
+            </Link>
+            <div className="flex flex-wrap items-center gap-6">
+              {staff.photo_url ? (
+                <Avatar className="h-20 w-20 ring-4 ring-white/50 dark:ring-white/10 shadow-lg rounded-[1.2rem]">
+                  <AvatarImage src={staff.photo_url} alt={fullName} className="object-cover rounded-[1.2rem]"/>
+                  <AvatarFallback className="bg-gradient-to-br from-indigo-100 to-slate-200 text-xl font-display font-medium text-indigo-900 dark:from-indigo-900 dark:to-slate-800 dark:text-indigo-100 rounded-[1.2rem]">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <div
+                  className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.2rem] bg-gradient-to-br from-slate-200 to-slate-300 text-xl font-display font-medium text-slate-600 ring-4 ring-white/50 dark:from-slate-800 dark:to-slate-900 dark:text-slate-300 dark:ring-white/10 shadow-lg"
+                  aria-hidden
+                >
+                  {fullName.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="flex flex-col">
+                 <h1 className="font-display text-4xl lg:text-5xl font-light tracking-tight text-slate-900 dark:text-white">
+                  {fullName}
+                 </h1>
+                {staff.preferred_name ? (
+                  <p className="text-slate-500 dark:text-slate-400 font-medium">
+                    &ldquo;{staff.preferred_name}&rdquo;
+                  </p>
                 ) : null}
+                <p className="mt-2 text-xs font-mono uppercase tracking-widest text-slate-500 dark:text-slate-400 flex flex-wrap gap-2 items-center">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">{formatSnake(staff.staff_role)}</span>
+                  <span className="opacity-50">·</span>
+                  <span>Updated {formatTs(staff.updated_at)}</span>
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <StatusBadge status={statusUi} />
+                  <RoleBadge role={roleUi} />
+                  <CertificationBadge certifications={certAgg} />
+                  {staff.is_float_pool ? (
+                    <Badge variant="outline" className="border-slate-300 dark:border-slate-600 uppercase tracking-widest font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full">
+                      Float pool
+                    </Badge>
+                  ) : null}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-display text-lg">
-              <Phone className="h-4 w-4 text-brand-600" />
-              Contact
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <DetailRow label="Phone" value={staff.phone ?? "—"} />
-            <DetailRow label="Alt phone" value={staff.phone_alt ?? "—"} />
-            <DetailRow
-              label="Email"
-              value={
-                staff.email ? (
-                  <a
-                    href={`mailto:${staff.email}`}
-                    className="inline-flex items-center gap-1 text-brand-700 hover:underline dark:text-teal-400"
-                  >
-                    <Mail className="h-3.5 w-3.5" />
-                    {staff.email}
-                  </a>
-                ) : (
-                  "—"
-                )
-              }
-            />
-          </CardContent>
-        </Card>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all">
+            <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center gap-3">
+               <div className="w-10 h-10 flex shrink-0 items-center justify-center rounded-full border border-indigo-200 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-500/10">
+                   <Phone className="h-4 w-4 text-indigo-500" />
+               </div>
+               <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white capitalize tracking-tight">Contact</h3>
+            </div>
+            <div className="space-y-4 text-sm relative z-10">
+              <DetailRow label="Phone" value={staff.phone ?? "—"} />
+              <DetailRow label="Alt phone" value={staff.phone_alt ?? "—"} />
+              <DetailRow
+                label="Email"
+                value={
+                  staff.email ? (
+                    <a
+                      href={`mailto:${staff.email}`}
+                      className="inline-flex items-center gap-1.5 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 underline underline-offset-4 decoration-indigo-200 dark:decoration-indigo-500/30 font-medium transition-colors"
+                    >
+                      <Mail className="h-3.5 w-3.5" />
+                      {staff.email}
+                    </a>
+                  ) : (
+                    "—"
+                  )
+                }
+              />
+            </div>
+          </div>
 
-        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-display text-lg">
-              <User className="h-4 w-4 text-brand-600" />
-              Emergency
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <DetailRow label="Name" value={staff.emergency_contact_name ?? "—"} />
-            <DetailRow label="Relationship" value={staff.emergency_contact_relationship ?? "—"} />
-            <DetailRow label="Phone" value={staff.emergency_contact_phone ?? "—"} />
-          </CardContent>
-        </Card>
+          <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all">
+            <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center gap-3">
+               <div className="w-10 h-10 flex shrink-0 items-center justify-center rounded-full border border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10">
+                   <User className="h-4 w-4 text-rose-500" />
+               </div>
+               <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white capitalize tracking-tight">Emergency</h3>
+            </div>
+            <div className="space-y-4 text-sm relative z-10">
+              <DetailRow label="Name" value={staff.emergency_contact_name ?? "—"} />
+              <DetailRow label="Relationship" value={staff.emergency_contact_relationship ?? "—"} />
+              <DetailRow label="Phone" value={staff.emergency_contact_phone ?? "—"} />
+            </div>
+          </div>
 
-        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800 lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="font-display text-lg">Address</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-slate-700 dark:text-slate-300">
-            {!addressLine && !addrRest ? (
-              <p className="text-slate-500 dark:text-slate-400">No address on file.</p>
-            ) : (
-              <p className="whitespace-pre-line">
-                {[addressLine, addrRest].filter(Boolean).join("\n")}
-              </p>
-            )}
-          </CardContent>
-        </Card>
+          <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all lg:col-span-2">
+            <div className="mb-4 pb-2">
+               <h3 className="text-[10px] font-mono tracking-widest uppercase text-slate-400">Address Info</h3>
+            </div>
+            <div className="text-sm font-semibold text-slate-800 dark:text-slate-200 relative z-10 text-lg">
+              {!addressLine && !addrRest ? (
+                <p className="text-slate-500 dark:text-slate-500 italic font-normal text-sm">No address on file.</p>
+              ) : (
+                <p className="whitespace-pre-line leading-relaxed">
+                  {[addressLine, addrRest].filter(Boolean).join("\n")}
+                </p>
+              )}
+            </div>
+          </div>
 
-        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-display text-lg">
-              <Briefcase className="h-4 w-4 text-brand-600" />
-              Employment
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <DetailRow label="Hire date" value={formatDateOnly(staff.hire_date)} />
-            <DetailRow label="Status" value={formatSnake(staff.employment_status)} />
-            {staff.termination_date ? (
-              <DetailRow label="Termination" value={formatDateOnly(staff.termination_date)} />
-            ) : null}
-            {staff.termination_reason ? (
-              <DetailRow label="Termination reason" value={staff.termination_reason} />
-            ) : null}
-            <DetailRow label="Schedule" value={staff.is_full_time ? "Full time" : "Part time"} />
-            <DetailRow
-              label="Max hrs / week"
-              value={staff.max_hours_per_week != null ? String(staff.max_hours_per_week) : "—"}
-            />
-          </CardContent>
-        </Card>
+          <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all">
+            <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center gap-3">
+               <div className="w-10 h-10 flex shrink-0 items-center justify-center rounded-full border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10">
+                   <Briefcase className="h-4 w-4 text-emerald-500" />
+               </div>
+               <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white capitalize tracking-tight">Employment</h3>
+            </div>
+            <div className="space-y-4 text-sm relative z-10">
+              <DetailRow label="Hire date" value={formatDateOnly(staff.hire_date)} />
+              <DetailRow label="Status" value={formatSnake(staff.employment_status)} />
+              {staff.termination_date ? (
+                <DetailRow label="Termination" value={formatDateOnly(staff.termination_date)} />
+              ) : null}
+              {staff.termination_reason ? (
+                <DetailRow label="Termination reason" value={staff.termination_reason} />
+              ) : null}
+              <DetailRow label="Schedule" value={staff.is_full_time ? "Full time" : "Part time"} />
+              <DetailRow
+                label="Max hrs / week"
+                value={staff.max_hours_per_week != null ? String(staff.max_hours_per_week) : "—"}
+              />
+            </div>
+          </div>
 
-        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800">
-          <CardHeader>
-            <CardTitle className="font-display text-lg">Compensation</CardTitle>
-            <CardDescription>Rates stored in cents (internal)</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <DetailRow label="Base hourly" value={formatCents(staff.hourly_rate)} />
-            <DetailRow label="Overtime" value={formatCents(staff.overtime_rate)} />
-          </CardContent>
-        </Card>
+          <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all">
+             <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4">
+                 <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1">Compensation</h3>
+                <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-1 uppercase">Rates stored in cents (internal)</p>
+             </div>
+            <div className="space-y-4 text-sm relative z-10">
+              <DetailRow label="Base hourly" value={<span className="font-mono text-lg">{formatCents(staff.hourly_rate)}</span>} />
+              <DetailRow label="Overtime" value={<span className="font-mono text-lg">{formatCents(staff.overtime_rate)}</span>} />
+            </div>
+          </div>
 
-        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800 lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="font-display text-lg">Certifications</CardTitle>
-            <CardDescription>Active directory credentials</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {certs.length === 0 ? (
-              <p className="text-sm text-slate-500 dark:text-slate-400">No certification rows on file.</p>
-            ) : (
-              <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-                {certs.map((c) => (
-                  <li key={c.id} className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="font-medium text-slate-900 dark:text-slate-100">{c.certification_name}</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {c.certification_type}
-                        {c.issuing_authority ? ` · ${c.issuing_authority}` : ""}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                      <span>Issued {formatDateOnly(c.issue_date)}</span>
-                      {c.expiration_date ? <span>Exp {formatDateOnly(c.expiration_date)}</span> : null}
-                      <Badge variant="outline" className="font-normal capitalize">
-                        {c.status.replace(/_/g, " ")}
-                      </Badge>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+          <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all lg:col-span-2">
+            <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4">
+                 <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1">Certifications</h3>
+                <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-1 uppercase">Active directory credentials</p>
+             </div>
+            <div className="relative z-10">
+              {certs.length === 0 ? (
+                <p className="text-sm font-mono text-slate-500 dark:text-slate-400 italic">No certification rows on file.</p>
+              ) : (
+                <ul className="divide-y divide-slate-200/50 dark:divide-slate-800/50">
+                  {certs.map((c) => (
+                    <li key={c.id} className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between group">
+                      <div>
+                        <p className="font-semibold text-slate-900 dark:text-slate-100">{c.certification_name}</p>
+                        <p className="text-xs uppercase font-mono tracking-widest text-slate-500 dark:text-slate-400 mt-1">
+                          {c.certification_type}
+                          {c.issuing_authority ? ` · ${c.issuing_authority}` : ""}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono tracking-widest uppercase">
+                        <span>Issued: {formatDateOnly(c.issue_date)}</span>
+                        {c.expiration_date ? <span>Exp: {formatDateOnly(c.expiration_date)}</span> : null}
+                        <Badge className="bg-slate-100 text-slate-700 border border-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 font-bold px-2 py-0.5 rounded-full shadow-sm text-[9px]">
+                          {c.status.replace(/_/g, " ")}
+                        </Badge>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
 
-        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800 lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-display text-lg">
-              <Calendar className="h-4 w-4 text-brand-600" />
-              Upcoming shifts
-            </CardTitle>
-            <CardDescription>Next assigned blocks (confirmed / assigned)</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {shifts.length === 0 ? (
-              <p className="text-sm text-slate-500 dark:text-slate-400">No upcoming shifts in range.</p>
-            ) : (
-              <ul className="flex flex-wrap gap-2">
-                {shifts.map((s, i) => (
-                  <li
-                    key={`${s.shift_date}-${s.shift_type}-${i}`}
-                    className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-900/40"
-                  >
-                    <span className="font-medium text-slate-800 dark:text-slate-200">
-                      {formatShiftLabel(s.shift_date, s.shift_type)}
-                    </span>
-                    <span className="ml-2 text-xs text-slate-500">{s.status}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+          <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all lg:col-span-2">
+            <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center gap-3">
+               <div className="w-10 h-10 flex shrink-0 items-center justify-center rounded-full border border-cyan-200 dark:border-cyan-500/20 bg-cyan-50 dark:bg-cyan-500/10">
+                   <Calendar className="h-4 w-4 text-cyan-500" />
+               </div>
+               <div>
+                  <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white capitalize tracking-tight">Upcoming Shifts</h3>
+                  <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-0.5 uppercase">Next assigned blocks</p>
+               </div>
+            </div>
+            <div className="relative z-10">
+              {shifts.length === 0 ? (
+                <p className="text-sm font-mono text-slate-500 dark:text-slate-400 italic">No upcoming shifts in range.</p>
+              ) : (
+                <ul className="flex flex-wrap gap-3">
+                  {shifts.map((s, i) => (
+                    <li
+                      key={`${s.shift_date}-${s.shift_type}-${i}`}
+                      className="rounded-2xl border border-slate-200/60 bg-white/60 px-4 py-2.5 text-sm dark:border-white/5 dark:bg-white/5 backdrop-blur-md shadow-sm transition-transform hover:-translate-y-0.5"
+                    >
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        {formatShiftLabel(s.shift_date, s.shift_type)}
+                      </span>
+                      <span className="ml-3 text-[10px] font-mono uppercase tracking-widest font-bold text-slate-500">{s.status}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
 
-        {staff.notes ? (
-          <Card className="border-slate-200/70 shadow-soft dark:border-slate-800 lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="font-display text-lg">Notes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300">{staff.notes}</p>
-            </CardContent>
-          </Card>
-        ) : null}
+          {staff.notes ? (
+            <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all lg:col-span-2">
+              <div className="mb-4 pb-2">
+                  <h3 className="text-[10px] font-mono tracking-widest uppercase text-slate-400">Notes</h3>
+              </div>
+              <div className="relative z-10">
+                <p className="whitespace-pre-wrap text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300 bg-white/40 dark:bg-black/20 p-6 rounded-2xl border border-slate-200/40 dark:border-white/5">{staff.notes}</p>
+              </div>
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -571,40 +581,40 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 
 function RoleBadge({ role }: { role: StaffRoleUi }) {
   const map: Record<StaffRoleUi, { label: string; className: string }> = {
-    nurse: { label: "Nurse", className: "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300" },
+    nurse: { label: "Nurse", className: "bg-blue-50 text-blue-700 border-blue-200 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400" },
     caregiver: {
       label: "Caregiver",
-      className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+      className: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400",
     },
     med_tech: {
       label: "Med Tech",
-      className: "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300",
+      className: "bg-violet-50 text-violet-700 border-violet-200 dark:border-violet-500/20 dark:bg-violet-500/10 dark:text-violet-400",
     },
-    admin: { label: "Admin", className: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300" },
+    admin: { label: "Admin", className: "bg-slate-100 text-slate-700 border-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-300" },
   };
-  return <Badge className={map[role].className}>{map[role].label}</Badge>;
+  return <Badge className={cn("uppercase tracking-widest font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full border", map[role].className)}>{map[role].label}</Badge>;
 }
 
 function StatusBadge({ status }: { status: StaffStatusUi }) {
   const map: Record<StaffStatusUi, { label: string; className: string }> = {
-    active: { label: "Active", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" },
+    active: { label: "Active", className: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400" },
     off_shift: {
       label: "Off roster",
-      className: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+      className: "bg-slate-100 text-slate-700 border-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-300",
     },
-    on_leave: { label: "On Leave", className: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" },
+    on_leave: { label: "On Leave", className: "bg-amber-50 text-amber-700 border-amber-200 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-400" },
   };
-  return <Badge className={map[status].className}>{map[status].label}</Badge>;
+  return <Badge className={cn("uppercase tracking-widest font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full border", map[status].className)}>{map[status].label}</Badge>;
 }
 
 function CertificationBadge({ certifications }: { certifications: CertificationStatus }) {
   const map: Record<CertificationStatus, { label: string; className: string }> = {
-    current: { label: "Certs OK", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" },
+    current: { label: "Certs OK", className: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400" },
     expiring_soon: {
       label: "Expiring soon",
-      className: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+      className: "bg-amber-50 text-amber-700 border-amber-200 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-400",
     },
-    expired: { label: "Cert issue", className: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300" },
+    expired: { label: "Cert issue", className: "bg-red-50 text-red-700 border-red-200 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-400" },
   };
-  return <Badge className={map[certifications].className}>{map[certifications].label}</Badge>;
+  return <Badge className={cn("uppercase tracking-widest font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full border", map[certifications].className)}>{map[certifications].label}</Badge>;
 }

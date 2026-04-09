@@ -3,17 +3,18 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { ArrowLeft, CalendarDays, FileText, Loader2, UserPlus } from "lucide-react";
 
 import { AdmissionsHubNav } from "../admissions-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { Badge } from "@/components/ui/badge";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
-import { cn } from "@/lib/utils";
 
 type CaseDetail = Database["public"]["Tables"]["admission_cases"]["Row"] & {
   residents: { first_name: string; last_name: string } | null;
@@ -87,156 +88,163 @@ export default function AdminAdmissionCaseDetailPage() {
     row.facility_id !== selectedFacilityId;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-slate-300">
-            <Link href="/admin/admissions" className="hover:text-brand-600 dark:hover:text-brand-400">
-              Admissions
-            </Link>{" "}
-            / Case
-          </p>
-          <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-            Admission case
-          </h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-            Read-only view; status transitions and rate quotes can ship in a follow-up.
-          </p>
-        </div>
-        <Link href="/admin/admissions" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-          Back to pipeline
-        </Link>
-      </div>
-
-      <AdmissionsHubNav />
-
-      {loading ? (
-        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          Loading…
-        </div>
-      ) : error ? (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-          {error}
-        </p>
-      ) : !row ? (
-        <Card className="border-slate-200/80 shadow-soft dark:border-slate-800">
-          <CardContent className="py-10 text-center text-sm text-slate-600 dark:text-slate-300">
-            No case found for this id, or you do not have access.
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          {wrongFacility ? (
-            <p className="rounded-lg border border-amber-200/80 bg-amber-50/50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
-              This case belongs to another facility. Switch the facility in the header to match.
+    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+      <AmbientMatrix />
+      
+      <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <AdmissionsHubNav />
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+          <div className="space-y-3">
+             <Link
+               href="/admin/admissions"
+               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+             >
+                 <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> BACK TO ADMISSIONS
+             </Link>
+             <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+               Admission Case
+             </h1>
+            <p className="mt-2 text-sm font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
+               Read-only view; status transitions and rate quotes can ship in a follow-up.
             </p>
-          ) : null}
-
-          <Card className="border-slate-200/80 shadow-soft dark:border-slate-800">
-            <CardHeader>
-              <CardTitle className="font-display text-lg">
-                {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Resident"}
-              </CardTitle>
-              <p className="font-mono text-xs break-all text-slate-600 dark:text-slate-300">{row.id}</p>
-            </CardHeader>
-            <CardContent className="space-y-6 text-sm">
-              <dl className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Status</dt>
-                  <dd className="mt-0.5 capitalize text-slate-900 dark:text-slate-100">{formatStatus(row.status)}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Target move-in</dt>
-                  <dd className="mt-0.5 text-slate-900 dark:text-slate-100">{row.target_move_in_date ?? "—"}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Referral lead</dt>
-                  <dd className="mt-0.5 text-slate-900 dark:text-slate-100">
-                    {row.referral_leads
-                      ? `${row.referral_leads.first_name} ${row.referral_leads.last_name}`
-                      : "—"}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Bed</dt>
-                  <dd className="mt-0.5 text-slate-900 dark:text-slate-100">{row.beds?.bed_label ?? "—"}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Financial clearance</dt>
-                  <dd className="mt-0.5 text-slate-900 dark:text-slate-100">{formatTs(row.financial_clearance_at)}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Physician orders</dt>
-                  <dd className="mt-0.5 text-slate-900 dark:text-slate-100">{formatTs(row.physician_orders_received_at)}</dd>
-                </div>
-                <div className="sm:col-span-2">
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Physician orders summary</dt>
-                  <dd className="mt-0.5 whitespace-pre-wrap text-slate-900 dark:text-slate-100">
-                    {row.physician_orders_summary ?? "—"}
-                  </dd>
-                </div>
-                <div className="sm:col-span-2">
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Notes</dt>
-                  <dd className="mt-0.5 whitespace-pre-wrap text-slate-900 dark:text-slate-100">{row.notes ?? "—"}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Updated</dt>
-                  <dd className="mt-0.5 text-slate-900 dark:text-slate-100">{formatTs(row.updated_at)}</dd>
-                </div>
-              </dl>
-            </CardContent>
-          </Card>
-
-          <Card className="border-slate-200/80 shadow-soft dark:border-slate-800">
-            <CardHeader>
-              <CardTitle className="font-display text-lg">Quoted rate terms</CardTitle>
-              <p className="text-sm text-slate-600 dark:text-slate-300">
-                Rows in <code className="text-xs">admission_case_rate_terms</code> (add UI in a follow-up).
-              </p>
-            </CardHeader>
-            <CardContent>
-              {rateTerms.length === 0 ? (
-                <p className="text-sm text-slate-600 dark:text-slate-300">No rate quotes recorded.</p>
-              ) : (
-                <div className="overflow-hidden rounded-lg border border-slate-200/80 dark:border-slate-800">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="hover:bg-transparent">
-                        <TableHead>Accommodation</TableHead>
-                        <TableHead className="text-right">Base (¢)</TableHead>
-                        <TableHead className="text-right">Care (¢)</TableHead>
-                        <TableHead>Effective</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {rateTerms.map((t) => (
-                        <TableRow key={t.id} className="hover:bg-transparent">
-                          <TableCell className="capitalize">{t.accommodation_type.replace("_", " ")}</TableCell>
-                          <TableCell className="text-right tabular-nums">{t.quoted_base_rate_cents}</TableCell>
-                          <TableCell className="text-right tabular-nums">{t.quoted_care_surcharge_cents}</TableCell>
-                          <TableCell>{t.effective_date ?? "—"}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {row.resident_id ? (
-            <p className="text-sm text-slate-600 dark:text-slate-300">
+          </div>
+          <div>
+            {row?.resident_id && (
               <Link
                 href={`/admin/residents/${row.resident_id}`}
-                className="font-medium text-brand-700 underline-offset-2 hover:underline dark:text-brand-300"
+                className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-widest text-xs tap-responsive bg-brand-600 hover:bg-brand-700 text-white shadow-lg flex items-center gap-2")}
               >
-                Open resident profile
+                Resident Profile
               </Link>
-            </p>
-          ) : null}
-        </>
-      )}
+            )}
+          </div>
+        </header>
+
+        {loading ? (
+          <div className="flex items-center justify-center p-12 text-sm text-slate-500 font-medium bg-white/50 dark:bg-white/5 rounded-[2.5rem] border border-slate-200/50 dark:border-white/10 backdrop-blur-3xl">
+             <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading Case...
+          </div>
+        ) : error ? (
+           <div className="p-6 rounded-[2.5rem] bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 font-medium">
+              {error}
+           </div>
+        ) : !row ? (
+          <div className="flex items-center justify-center p-12 text-center text-sm text-slate-500 bg-white/50 dark:bg-white/5 rounded-[2.5rem] border border-slate-200/50 dark:border-white/10 backdrop-blur-3xl">
+            No case found for this id, or you do not have access.
+          </div>
+        ) : (
+          <>
+            {wrongFacility && (
+              <div className="p-6 rounded-[2.5rem] bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-500/20 text-amber-700 dark:text-amber-400 font-medium text-sm">
+                This case belongs to another facility. Switch the facility in the header to match.
+              </div>
+            )}
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all h-fit">
+                <div className="mb-8 border-b border-slate-200 dark:border-white/5 pb-4 flex flex-col gap-2">
+                   <h3 className="text-2xl font-display font-semibold text-slate-900 dark:text-white flex items-center gap-3">
+                     <UserPlus className="h-6 w-6 text-brand-500" />
+                     {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Resident"}
+                   </h3>
+                   <p className="font-mono text-xs break-all text-slate-500 dark:text-slate-400">{row.id}</p>
+                </div>
+                
+                <dl className="grid gap-4 sm:grid-cols-2">
+                  <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
+                    <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Status</dt>
+                    <dd className="text-base font-semibold text-slate-900 dark:text-slate-100 capitalize">{formatStatus(row.status)}</dd>
+                  </div>
+                  <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
+                    <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Target Move-In</dt>
+                    <dd className="text-base font-semibold text-slate-900 dark:text-slate-100">{row.target_move_in_date ?? "—"}</dd>
+                  </div>
+                  <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
+                    <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Referral Lead</dt>
+                    <dd className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                      {row.referral_leads ? `${row.referral_leads.first_name} ${row.referral_leads.last_name}` : "—"}
+                    </dd>
+                  </div>
+                  <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
+                    <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Bed</dt>
+                    <dd className="text-sm font-medium text-slate-900 dark:text-slate-100">{row.beds?.bed_label ?? "—"}</dd>
+                  </div>
+                  <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
+                    <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Financial Clearance</dt>
+                    <dd className="text-sm font-mono text-slate-900 dark:text-slate-300">{formatTs(row.financial_clearance_at)}</dd>
+                  </div>
+                  <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
+                    <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Physician Orders</dt>
+                    <dd className="text-sm font-mono text-slate-900 dark:text-slate-300">{formatTs(row.physician_orders_received_at)}</dd>
+                  </div>
+                  <div className="sm:col-span-2 bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
+                    <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Physician Orders Summary</dt>
+                    <dd className="text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{row.physician_orders_summary ?? "—"}</dd>
+                  </div>
+                  <div className="sm:col-span-2 bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
+                    <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Notes</dt>
+                    <dd className="text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{row.notes ?? "—"}</dd>
+                  </div>
+                  <div className="sm:col-span-2 flex items-center justify-end text-[10px] text-slate-400 uppercase tracking-widest font-mono mt-2">
+                    Updated: {formatTs(row.updated_at)}
+                  </div>
+                </dl>
+              </div>
+
+              <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-2xl backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative h-fit">
+                <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
+                  <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1 flex items-center gap-2">
+                     <FileText className="h-5 w-5 text-indigo-500" /> Quoted Rate Terms
+                  </h3>
+                  <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-1 uppercase">Saved in admission_case_rate_terms</p>
+                </div>
+
+                <div className="relative z-10 w-full overflow-hidden">
+                   {rateTerms.length === 0 ? (
+                     <p className="text-sm text-slate-500 dark:text-slate-400 py-4 font-medium px-2">No rate quotes recorded.</p>
+                   ) : (
+                     <>
+                        <div className="hidden sm:grid grid-cols-[2fr_1fr_1fr_1.5fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10 text-left">
+                           <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Accommodation</div>
+                           <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Base (¢)</div>
+                           <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Care (¢)</div>
+                           <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Effective</div>
+                        </div>
+
+                        <div className="space-y-3 mt-6 relative z-10">
+                           <MotionList className="space-y-3">
+                              {rateTerms.map((t) => (
+                                 <MotionItem key={t.id}>
+                                    <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_1.5fr] gap-4 sm:items-center p-5 rounded-2xl bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg transition-all duration-300 w-full outline-none">
+                                      <div className="flex flex-col">
+                                         <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Accommodation</span>
+                                         <span className="font-semibold text-base text-slate-900 dark:text-slate-100 tracking-tight leading-tight capitalize">{t.accommodation_type.replace("_", " ")}</span>
+                                      </div>
+                                      <div className="flex flex-col sm:items-end">
+                                         <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Base (¢)</span>
+                                         <span className="text-sm font-mono text-slate-700 dark:text-slate-300">{t.quoted_base_rate_cents}</span>
+                                      </div>
+                                      <div className="flex flex-col sm:items-end">
+                                         <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Care (¢)</span>
+                                         <span className="text-sm font-mono text-slate-700 dark:text-slate-300">{t.quoted_care_surcharge_cents}</span>
+                                      </div>
+                                      <div className="flex flex-col">
+                                         <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Effective</span>
+                                         <span className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2"><CalendarDays className="h-3.5 w-3.5 text-slate-400" /> {t.effective_date ?? "—"}</span>
+                                      </div>
+                                    </div>
+                                 </MotionItem>
+                              ))}
+                           </MotionList>
+                        </div>
+                     </>
+                   )}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -14,6 +14,8 @@ import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { isBrowserSupabaseConfigured } from "@/lib/supabase/client";
@@ -173,59 +175,59 @@ export default function AdminRoundingReportsPage() {
       <AmbientMatrix primaryClass="bg-emerald-700/10" secondaryClass="bg-cyan-900/10" />
 
       <div className="relative z-10 space-y-6">
-        <header className="mb-6 mt-2">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6 mb-4">
-            <div>
-              <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Analytics</p>
-              <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-                Completion Reports
-              </h2>
-              <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">
-                Expected, completed, on-time, late, and missed checks for the selected window
-              </p>
+        <header className="mb-6 flex flex-col md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
+               SYS: Analytics
             </div>
-            <div className="hidden md:block">
-              <RoundingHubNav />
-            </div>
+            <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+              Completion Reports
+            </h1>
+            <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
+              Expected, completed, on-time, late, and missed checks for the selected window
+            </p>
+          </div>
+          <div className="hidden md:block">
+            <RoundingHubNav />
           </div>
         </header>
 
-        <div className="flex flex-wrap items-end gap-4 rounded-[14px] border border-slate-800/50 bg-slate-900/30 backdrop-blur-md p-4">
+        <div className="flex flex-wrap items-end gap-6 glass-panel rounded-[2rem] border border-slate-200 dark:border-white/5 bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl p-6 shadow-sm">
           <label className="space-y-1 text-sm flex-1 min-w-[200px]">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500">From</span>
+            <span className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500 dark:text-slate-400">From Window</span>
             <input
               type="datetime-local"
               value={from}
               onChange={(event) => setFrom(event.target.value)}
-              className="h-10 w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 text-sm text-slate-200 focus:border-emerald-500/50 focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
+              className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-black/30 px-4 text-sm font-mono tracking-widest text-slate-700 dark:text-slate-200 focus:border-indigo-500/50 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 transition-all shadow-inner uppercase font-semibold"
             />
           </label>
           <label className="space-y-1 text-sm flex-1 min-w-[200px]">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500">To</span>
+             <span className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500 dark:text-slate-400">To Window</span>
             <input
               type="datetime-local"
               value={to}
               onChange={(event) => setTo(event.target.value)}
-              className="h-10 w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 text-sm text-slate-200 focus:border-emerald-500/50 focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
+               className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-black/30 px-4 text-sm font-mono tracking-widest text-slate-700 dark:text-slate-200 focus:border-indigo-500/50 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 transition-all shadow-inner uppercase font-semibold"
             />
           </label>
           <div className="flex items-center gap-3">
             <Button
               onClick={() => void load()}
               variant="outline"
-              className="border-slate-700 bg-slate-900/40 text-slate-200 hover:bg-slate-800"
+              className="h-12 rounded-full border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-6 font-bold uppercase tracking-widest text-[10px] shadow-sm hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors"
             >
-              <RefreshCw className="mr-2 h-4 w-4" />
+              <RefreshCw className="mr-2 h-4 w-4 text-slate-400" />
               Refresh
             </Button>
             <Button
               variant="outline"
               onClick={exportCsv}
               disabled={csvRows.length <= 1}
-              className="border-emerald-700/50 bg-emerald-950/30 text-emerald-200 hover:bg-emerald-900/40"
+               className="h-12 rounded-full border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-6 font-bold uppercase tracking-widest text-[10px] shadow-sm hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 transition-colors"
             >
-              <Download className="mr-2 h-4 w-4" />
-              Export CSV
+              <Download className="mr-2 h-4 w-4 opacity-70" />
+              Export
             </Button>
           </div>
         </div>
@@ -322,55 +324,80 @@ function BreakdownSection({
   color: string;
 }) {
   const headerColor = {
-    cyan: "text-cyan-400",
-    indigo: "text-indigo-400",
-    emerald: "text-emerald-400",
-  }[color] ?? "text-slate-400";
+    cyan: "text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 border-cyan-200 dark:border-cyan-500/20",
+    indigo: "text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/20",
+    emerald: "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20",
+  }[color] ?? "text-slate-700 dark:text-slate-400 bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10";
+  
+  const iconColor = {
+    cyan: "text-cyan-500",
+    indigo: "text-indigo-500",
+    emerald: "text-emerald-500",
+  }[color] ?? "text-slate-500";
 
   return (
-    <div className="rounded-[14px] border border-slate-800/50 bg-slate-900/20 backdrop-blur-md overflow-hidden">
-      <div className="flex items-center gap-2 px-5 py-3 border-b border-white/5">
-        <span className={headerColor}>{icon}</span>
-        <h3 className={cn("text-[10px] font-mono tracking-widest uppercase", headerColor)}>{title}</h3>
+    <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm overflow-hidden overflow-x-auto relative">
+      <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center gap-3">
+         <div className={cn("w-10 h-10 flex shrink-0 items-center justify-center rounded-full border", headerColor)}>
+            <span className={iconColor}>{icon}</span>
+         </div>
+        <div>
+          <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white capitalize tracking-tight">{title}</h3>
+          <p className="text-[10px] mt-0.5 font-bold font-mono tracking-widest text-slate-500 dark:text-slate-400 uppercase">{rows.length} Records</p>
+        </div>
       </div>
 
       {rows.length === 0 ? (
-        <div className="px-5 py-8 text-center">
-          <p className="text-sm text-slate-500">No data for this window.</p>
+        <div className="px-5 py-12 text-center bg-white/50 dark:bg-white/[0.015] rounded-[2rem] border border-dashed border-slate-200 dark:border-white/10">
+          <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Data Present</p>
+          <p className="text-sm opacity-80 mt-1 font-mono tracking-wide">Select a broader window.</p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/5 text-[10px] font-mono uppercase tracking-widest text-slate-500">
-                <th className="px-5 py-3 text-left font-medium">Label</th>
-                <th className="px-3 py-3 text-right font-medium">Expected</th>
-                <th className="px-3 py-3 text-right font-medium">Completed</th>
-                <th className="px-3 py-3 text-right font-medium">On Time</th>
-                <th className="px-3 py-3 text-right font-medium">Late</th>
-                <th className="px-3 py-3 text-right font-medium">Missed</th>
-                <th className="px-5 py-3 text-right font-medium">Rate</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => {
-                const rate = row.expected > 0 ? Math.round((row.completed / row.expected) * 100) : 0;
-                const rateColor = rate >= 95 ? "text-emerald-400" : rate >= 80 ? "text-amber-400" : "text-rose-400";
-                return (
-                  <tr key={row.label} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                    <td className="px-5 py-3 font-medium text-slate-200">{row.label}</td>
-                    <td className="px-3 py-3 text-right tabular-nums text-slate-400">{row.expected}</td>
-                    <td className="px-3 py-3 text-right tabular-nums text-slate-300">{row.completed}</td>
-                    <td className="px-3 py-3 text-right tabular-nums text-emerald-400">{row.onTime}</td>
-                    <td className="px-3 py-3 text-right tabular-nums text-amber-400">{row.late}</td>
-                    <td className="px-3 py-3 text-right tabular-nums text-rose-400">{row.missed}</td>
-                    <td className={cn("px-5 py-3 text-right font-mono tabular-nums", rateColor)}>{rate}%</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <MotionList className="space-y-3 min-w-[700px]">
+            {rows.map((row) => {
+              const rate = row.expected > 0 ? Math.round((row.completed / row.expected) * 100) : 0;
+              const rateColor = rate >= 95 ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20" : rate >= 80 ? "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20" : "text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20";
+              
+              return (
+                <MotionItem key={row.label}>
+                    <div className="p-5 rounded-[1.5rem] glass-panel group transition-all duration-300 hover:scale-[1.01] cursor-default border border-slate-200 dark:border-white/5 bg-white/80 dark:bg-white/[0.03] w-full flex items-center justify-between gap-6 backdrop-blur-xl shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20">
+                         <div className="flex flex-col min-w-[200px] gap-1 shrink-0">
+                           <span className="font-bold text-slate-900 dark:text-slate-100 uppercase text-[11px] tracking-widest truncate">
+                              {row.label}
+                           </span>
+                        </div>
+                        <div className="grid grid-cols-6 gap-2 w-full text-center">
+                             <div className="flex flex-col gap-1.5 justify-center">
+                                <span className="text-[8px] font-bold uppercase font-mono tracking-widest text-slate-400">Total</span>
+                                <span className="font-mono text-sm tracking-tighter font-semibold text-slate-600 dark:text-zinc-300">{row.expected}</span>
+                             </div>
+                             <div className="flex flex-col gap-1.5 justify-center">
+                                <span className="text-[8px] font-bold uppercase font-mono tracking-widest text-slate-400">Done</span>
+                                <span className="font-mono text-sm tracking-tighter font-semibold text-slate-600 dark:text-zinc-300">{row.completed}</span>
+                             </div>
+                             <div className="flex flex-col gap-1.5 justify-center">
+                                <span className="text-[8px] font-bold uppercase font-mono tracking-widest text-emerald-500">On Time</span>
+                                <span className="font-mono text-sm tracking-tighter font-semibold text-emerald-700 dark:text-emerald-400">{row.onTime}</span>
+                             </div>
+                            <div className="flex flex-col gap-1.5 justify-center">
+                                <span className="text-[8px] font-bold uppercase font-mono tracking-widest text-amber-500">Late</span>
+                                <span className="font-mono text-sm tracking-tighter font-semibold text-amber-700 dark:text-amber-400">{row.late}</span>
+                             </div>
+                             <div className="flex flex-col gap-1.5 justify-center">
+                                <span className="text-[8px] font-bold uppercase font-mono tracking-widest text-rose-500">Missed</span>
+                                <span className="font-mono text-sm tracking-tighter font-semibold text-rose-700 dark:text-rose-400">{row.missed}</span>
+                             </div>
+                             <div className="flex flex-col items-end justify-center pr-2">
+                                <Badge className={cn("uppercase tracking-widest font-mono text-[10px] font-bold shadow-sm px-2.5 py-1 rounded-full border", rateColor)}>
+                                   {rate}% rate
+                                </Badge>
+                             </div>
+                        </div>
+                    </div>
+                </MotionItem>
+              );
+            })}
+        </MotionList>
       )}
     </div>
   );
