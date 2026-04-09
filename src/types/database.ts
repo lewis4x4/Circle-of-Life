@@ -9961,6 +9961,143 @@ export type Database = {
           },
         ]
       }
+      resident_transport_requests: {
+        Row: {
+          appointment_date: string
+          appointment_time: string | null
+          cancellation_reason: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          destination_address: string | null
+          destination_name: string
+          driver_staff_id: string | null
+          escort_required: boolean
+          escort_staff_id: string | null
+          facility_id: string
+          id: string
+          notes: string | null
+          organization_id: string
+          pickup_time: string | null
+          purpose: string
+          requested_by: string
+          resident_id: string
+          return_time: string | null
+          status: Database["public"]["Enums"]["transport_request_status"]
+          transport_type: Database["public"]["Enums"]["transport_type"]
+          updated_at: string
+          updated_by: string | null
+          vehicle_id: string | null
+          wheelchair_required: boolean
+        }
+        Insert: {
+          appointment_date: string
+          appointment_time?: string | null
+          cancellation_reason?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          destination_address?: string | null
+          destination_name: string
+          driver_staff_id?: string | null
+          escort_required?: boolean
+          escort_staff_id?: string | null
+          facility_id: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          pickup_time?: string | null
+          purpose: string
+          requested_by: string
+          resident_id: string
+          return_time?: string | null
+          status?: Database["public"]["Enums"]["transport_request_status"]
+          transport_type?: Database["public"]["Enums"]["transport_type"]
+          updated_at?: string
+          updated_by?: string | null
+          vehicle_id?: string | null
+          wheelchair_required?: boolean
+        }
+        Update: {
+          appointment_date?: string
+          appointment_time?: string | null
+          cancellation_reason?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          destination_address?: string | null
+          destination_name?: string
+          driver_staff_id?: string | null
+          escort_required?: boolean
+          escort_staff_id?: string | null
+          facility_id?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          pickup_time?: string | null
+          purpose?: string
+          requested_by?: string
+          resident_id?: string
+          return_time?: string | null
+          status?: Database["public"]["Enums"]["transport_request_status"]
+          transport_type?: Database["public"]["Enums"]["transport_type"]
+          updated_at?: string
+          updated_by?: string | null
+          vehicle_id?: string | null
+          wheelchair_required?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resident_transport_requests_driver_staff_id_fkey"
+            columns: ["driver_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_transport_requests_escort_staff_id_fkey"
+            columns: ["escort_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_transport_requests_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_transport_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_transport_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_transport_requests_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_transport_requests_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       residents: {
         Row: {
           activity_preferences: string | null
@@ -14555,6 +14692,13 @@ export type Database = {
         | "matched"
         | "paid"
         | "voided"
+      transport_request_status:
+        | "requested"
+        | "scheduled"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
+      transport_type: "facility_vehicle" | "staff_personal_vehicle" | "third_party"
       vendor_status: "draft" | "active" | "inactive" | "blocked"
     }
     CompositeTypes: {
@@ -15136,6 +15280,14 @@ export const Constants = {
         "driver",
         "other",
       ],
+      transport_request_status: [
+        "requested",
+        "scheduled",
+        "in_progress",
+        "completed",
+        "cancelled",
+      ],
+      transport_type: ["facility_vehicle", "staff_personal_vehicle", "third_party"],
       vehicle_inspection_result: ["pass", "fail", "conditional"],
       vendor_category: [
         "maintenance",

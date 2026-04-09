@@ -26,8 +26,21 @@ type DriverRow = Database["public"]["Tables"]["driver_credentials"]["Row"] & {
   staff: { first_name: string; last_name: string } | null;
 };
 
+type TransportRequestRow = Database["public"]["Tables"]["resident_transport_requests"]["Row"] & {
+  residents: { first_name: string; last_name: string } | null;
+};
+
 function formatEnum(s: string) {
   return s.replace(/_/g, " ");
+}
+
+function formatAppointmentTime(t: string | null): string {
+  if (!t) return "—";
+  try {
+    return format(parseISO(`2000-01-01T${t.slice(0, 8)}`), "h:mm a");
+  } catch {
+    return t;
+  }
 }
 
 /** Calendar days from today for a YYYY-MM-DD (or timestamptz) string; null if missing/invalid. */
@@ -75,6 +88,7 @@ export default function AdminTransportationHubPage() {
   const [fleet, setFleet] = useState<FleetRow[]>([]);
   const [inspections, setInspections] = useState<InspectionRow[]>([]);
   const [drivers, setDrivers] = useState<DriverRow[]>([]);
+  const [transportRequests, setTransportRequests] = useState<TransportRequestRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -85,11 +99,13 @@ export default function AdminTransportationHubPage() {
       setFleet([]);
       setInspections([]);
       setDrivers([]);
+      setTransportRequests([]);
       setLoading(false);
       return;
     }
     try {
-      const [fRes, iRes, dRes] = await Promise.all([
+      const today = format(startOfDay(new Date()), "yyyy-MM-dd");
+      const [fRes, iRes, dRes, tRes] = await Promise.all([
         supabase
           .from("fleet_vehicles")
           .select("*")
@@ -111,18 +127,30 @@ export default function AdminTransportationHubPage() {
           .is("deleted_at", null)
           .order("updated_at", { ascending: false })
           .limit(40),
+        supabase
+          .from("resident_transport_requests")
+          .select("id, appointment_date, appointment_time, destination_name, purpose, status, residents(first_name, last_name)")
+          .eq("facility_id", selectedFacilityId)
+          .is("deleted_at", null)
+          .gte("appointment_date", today)
+          .order("appointment_date", { ascending: true })
+          .order("appointment_time", { ascending: true })
+          .limit(25),
       ]);
       if (fRes.error) throw fRes.error;
       if (iRes.error) throw iRes.error;
       if (dRes.error) throw dRes.error;
+      if (tRes.error) throw tRes.error;
       setFleet(fRes.data ?? []);
       setInspections((iRes.data ?? []) as InspectionRow[]);
       setDrivers((dRes.data ?? []) as DriverRow[]);
+      setTransportRequests((tRes.data ?? []) as TransportRequestRow[]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load transportation data.");
       setFleet([]);
       setInspections([]);
       setDrivers([]);
+      setTransportRequests([]);
     } finally {
       setLoading(false);
     }
@@ -249,6 +277,55 @@ export default function AdminTransportationHubPage() {
             </V2Card>
           </div>
         </KineticGrid>
+
+      {facilityReady && (
+        <div className="rounded-2xl border border-slate-200/80 bg-white/50 px-4 py-4 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-950/40">
+          <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+              Upcoming resident transport
+            </h3>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Requests with appointment on or after today (RLS-scoped). New request UI can follow in a later slice.
+            </p>
+          </div>
+          {loading ? (
+            <p className="text-sm font-mono text-slate-500">Loading requests…</p>
+          ) : transportRequests.length === 0 ? (
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              No upcoming transport requests on file for this facility.
+            </p>
+          ) : (
+            <MotionList className="space-y-2">
+              {transportRequests.map((row) => {
+                const name = row.residents
+                  ? `${row.residents.first_name} ${row.residents.last_name}`
+                  : "Resident";
+                const apptDate = parseISO(`${row.appointment_date}T12:00:00.000Z`);
+                return (
+                  <MotionItem
+                    key={row.id}
+                    className="flex flex-col gap-1 rounded-xl border border-slate-200/90 bg-white/80 px-3 py-2.5 dark:border-slate-800 dark:bg-slate-900/50 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{name}</p>
+                      <p className="truncate text-xs text-slate-600 dark:text-slate-400">
+                        {row.destination_name}
+                        {row.purpose ? ` · ${row.purpose}` : ""}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 flex-wrap items-center gap-2 text-xs">
+                      <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        {format(apptDate, "EEE MMM d")} · {formatAppointmentTime(row.appointment_time)}
+                      </span>
+                      <span className="capitalize text-slate-600 dark:text-slate-300">{formatEnum(row.status)}</span>
+                    </div>
+                  </MotionItem>
+                );
+              })}
+            </MotionList>
+          )}
+        </div>
+      )}
 
       {!facilityReady && (
         <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">

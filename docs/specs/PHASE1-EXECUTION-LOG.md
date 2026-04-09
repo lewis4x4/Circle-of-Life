@@ -136,6 +136,7 @@ Use `Tester` to record the human who ran the step. Use `Notes` to capture:
 | PH1-TD2 | D2 Module 12 — `/admin/training` competency queue + status counts (no mock personas) | **PASS (repo)** | agent | 2026-04-09 | Gate: `test-results/agent-gates/2026-04-09T00-31-54-429Z-track-d-phase6-d2-training.json` |
 | PH1-TD3 | D3 Module 14 — `/admin/dietary` attention queue + batch stats from `diet_orders` (no mock NPO card) | **PASS (repo)** | agent | 2026-04-09 | Gate: `test-results/agent-gates/2026-04-09T00-35-52-241Z-track-d-phase6-d3-dietary.json` |
 | PH1-TD4 | D4 Module 22+23 — `/admin/referrals` HL7 pending/failed counts + SYS label; `/admin/reputation` SYS Module 23 + memoized reply lists | **PASS (repo)** | agent | 2026-04-09 | Gate: `test-results/agent-gates/2026-04-09T00-41-37-766Z-track-d-phase6-d4-referral-crm-reputation.json` |
+| PH1-TD5 | D5 Module 15 — migration `112` `resident_transport_requests` + `/admin/transportation` upcoming request list | **PASS (repo)** | agent | 2026-04-09 | Gate: `test-results/agent-gates/2026-04-09T00-47-20-706Z-track-d-phase6-d5-resident-transport-requests.json` |
 
 ---
 

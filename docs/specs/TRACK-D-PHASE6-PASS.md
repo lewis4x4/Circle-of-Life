@@ -45,3 +45,15 @@
 **Mission alignment:** **pass** — surfaces real HL7 queue depth already governed by RLS; corrects module identity for operator trust.
 
 **Deferred:** Full HL7 processor automation, external review API sync (spec Enhanced).
+
+---
+
+**D5 (2026-04-09):** **Module 15 — Transportation** ([15-transportation.md](./15-transportation.md)) — **resident transport requests DDL + read-only hub list**.
+
+**Slice:** Ship migration **`112`** — `resident_transport_requests` + enums `transport_type`, `transport_request_status`, RLS, audit. On `/admin/transportation`, load **upcoming** requests (appointment date ≥ today) with resident name join for visibility. No new create/edit form in this slice.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-09T00-47-20-706Z-track-d-phase6-d5-resident-transport-requests.json` (`npm run segment:gates -- --segment "track-d-phase6-d5-resident-transport-requests" --ui --no-chaos`).
+
+**Mission alignment:** **pass** — closes a documented Track D gap (scheduling side) with governed clinical/ops data.
+
+**Deferred:** Mileage link, driver–vehicle validation rules, full request CRUD UX.
