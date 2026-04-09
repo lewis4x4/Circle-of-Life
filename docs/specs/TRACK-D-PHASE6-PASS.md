@@ -184,6 +184,16 @@
 
 ---
 
+**D21 (2026-04-09):** **Module 12 — Training & Competency** ([12-training-competency.md](./12-training-competency.md)) — **competency demonstrations CSV export**.
+
+**Slice:** **`/admin/training`** — **Download demonstrations CSV** queries up to **500** **`competency_demonstrations`** rows ( **`staff`**, **`facilities(name)`** joins), RFC-style CSV including **attachment storage paths**; respects **single facility** or **All facilities** (RLS). **No** new DDL.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-09T16-27-19-086Z-track-d-d21-training-demos-csv.json` (`npm run segment:gates -- --segment "track-d-d21-training-demos-csv" --ui --no-chaos`).
+
+**Mission alignment:** **pass** — staff can archive demonstration records for surveys or handoffs without Baya API integration.
+
+---
+
 ## Track D — plan (remaining)
 
 **Segments D1–D10:** Closed in repo with gate artifacts above. This completes the **Phase 6 Core visibility / workflow** slices we prioritized for COL (transport, training, dietary, referrals, reputation), plus **D10** org mileage rate.
@@ -192,7 +202,7 @@
 
 | Module | Backlog |
 |--------|---------|
-| **12** | ~~Storage certificate PDF uploads~~ (migration `115` + training hub); ~~org-wide hub list~~ (D20); Baya/API, automated assignment, scheduled `training_compliance_snapshots` |
+| **12** | ~~Storage certificate PDF uploads~~ (migration `115` + training hub); ~~org-wide hub list~~ (D20); ~~demonstrations **CSV**~~ (D21); Baya/API, automated assignment, scheduled `training_compliance_snapshots` |
 | **13** | ~~Mileage → `payroll_export_lines`~~ (D17); ~~generic **CSV** download on batch~~ (D18); vendor-specific serializers, time-record worker |
 | **14** | ~~Read-only diet + med panel~~ (D13); automated med–texture cross-check vs medications; meal production; vendor API; full menu cycle |
 | **15** | ~~Week calendar + mileage approval queue~~ (D14, D15); full month grid, external calendar sync |

@@ -23,6 +23,10 @@ Florida ALF regulations (FAC 59A-36.011 and FAC 59A-36.022) mandate specific tra
 
 When the admin shell facility control is **All facilities**, `/admin/training` lists the **latest 50** `competency_demonstrations` rows scoped by **RLS** (`haven.accessible_facility_ids()`), with **facility name** on each row. **New demonstration** still requires a **single** facility selected (existing `/admin/training/new` behavior). This is **not** the scheduled `training_compliance_snapshots` Enhanced feature.
 
+### Track D — D21 demonstrations CSV (2026-04-09)
+
+**Download demonstrations CSV** on `/admin/training` exports up to **500** rows (same RLS scope as the hub: single facility or **All facilities**), with facility name, staff name, status, dates, notes, and pipe-separated certificate **storage paths** from `attachments` JSON. **No** new DDL.
+
 ---
 
 ## Florida Mandatory Training Requirements (Seed Data)

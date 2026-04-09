@@ -40,12 +40,61 @@ function attentionLabel(status: DemoRow["status"]): { title: string; tone: "ambe
   return { title: "Draft — complete evaluation", tone: "slate" };
 }
 
+function csvEscapeCell(value: string): string {
+  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+  return value;
+}
+
+function buildCompetencyDemonstrationsCsv(rows: DemoRow[]): string {
+  const header = [
+    "id",
+    "organization_id",
+    "facility_id",
+    "facility_name",
+    "staff_first_name",
+    "staff_last_name",
+    "status",
+    "demonstrated_at",
+    "notes",
+    "attachment_storage_paths",
+  ].join(",");
+  const body = rows.map((row) => {
+    const paths = parseCompetencyAttachments(row.attachments)
+      .map((a) => a.storage_path)
+      .join(" | ");
+    return [
+      csvEscapeCell(row.id),
+      csvEscapeCell(row.organization_id),
+      csvEscapeCell(row.facility_id),
+      csvEscapeCell(row.facilities?.name ?? ""),
+      csvEscapeCell(row.staff?.first_name ?? ""),
+      csvEscapeCell(row.staff?.last_name ?? ""),
+      csvEscapeCell(row.status),
+      csvEscapeCell(row.demonstrated_at),
+      csvEscapeCell(row.notes ?? ""),
+      csvEscapeCell(paths),
+    ].join(",");
+  });
+  return [header, ...body].join("\r\n");
+}
+
+function triggerCsvDownload(filename: string, text: string) {
+  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function AdminTrainingHubPage() {
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<DemoRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exportingCsv, setExportingCsv] = useState(false);
 
   /** `null` = All facilities (RLS scopes rows to accessible facilities). */
   const orgWideMode = selectedFacilityId === null;
@@ -121,6 +170,42 @@ export default function AdminTrainingHubPage() {
     [rows],
   );
 
+  const exportDemonstrationsCsv = useCallback(async () => {
+    if (!facilityReady) return;
+    setExportingCsv(true);
+    setError(null);
+    try {
+      let q = supabase
+        .from("competency_demonstrations")
+        .select("*, staff(first_name, last_name), facilities(name)")
+        .is("deleted_at", null)
+        .order("demonstrated_at", { ascending: false })
+        .limit(500);
+      if (singleFacilityMode && selectedFacilityId) {
+        q = q.eq("facility_id", selectedFacilityId);
+      }
+      const { data, error: qErr } = await q;
+      if (qErr) throw qErr;
+      const exportRows = (data ?? []) as DemoRow[];
+      const csv = buildCompetencyDemonstrationsCsv(exportRows);
+      const scope = orgWideMode ? "all-facilities" : selectedFacilityId ?? "facility";
+      triggerCsvDownload(
+        `competency-demonstrations_${scope}_${format(new Date(), "yyyy-MM-dd")}.csv`,
+        csv,
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "CSV export failed.");
+    } finally {
+      setExportingCsv(false);
+    }
+  }, [
+    facilityReady,
+    orgWideMode,
+    selectedFacilityId,
+    singleFacilityMode,
+    supabase,
+  ]);
+
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <AmbientMatrix hasCriticals={false} 
@@ -161,7 +246,16 @@ export default function AdminTrainingHubPage() {
                      ? "Last 50 competency demonstrations across your accessible facilities (ordered by date). RLS enforces scope."
                      : "Documented skills demonstrations for the selected facility."}
                  </p>
-                 <div className="flex flex-col items-start gap-2 lg:items-end">
+                 <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:justify-end lg:items-end">
+                   <Button
+                     type="button"
+                     variant="outline"
+                     disabled={!facilityReady || exportingCsv}
+                     className="font-mono uppercase tracking-widest text-[10px]"
+                     onClick={() => void exportDemonstrationsCsv()}
+                   >
+                     {exportingCsv ? "Preparing…" : "Download demonstrations CSV"}
+                   </Button>
                    {orgWideMode ? (
                      <Button
                        type="button"
