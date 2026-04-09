@@ -6,7 +6,7 @@
 
 - No multi-module megabranches; each segment has one **primary module** and explicit **out-of-scope** bullets.
 - **Spec first:** Add or extend a short **COL Alignment / Enhanced slice** subsection in the relevant `docs/specs/*.md` before coding when behavior is new.
-- **DDL:** Use migration **`116+`** only when a column/table is required; otherwise prefer existing columns (`organizations.settings` JSON, existing queue tables).
+- **DDL:** Use migration **`117+`** only when a column/table is required; otherwise prefer existing columns (`organizations.settings` JSON, existing queue tables).
 - **Verify:** `npm run segment:gates -- --segment "<id>" --ui` when routes/UI change.
 
 ---
@@ -77,6 +77,8 @@
 **~~D36 (2026-04-09)~~** **DONE — Module 11:** **`/admin/shift-swaps`** read-only **`shift_swap_requests`** + CSV. Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
 **~~D37 (2026-04-09)~~** **DONE — Module 11:** **`/admin/shift-swaps`** **approve/deny** (pending). Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**~~D38 (2026-04-09)~~** **DONE — Module 12:** Migration **`116`** — **`training_programs`** + **`staff_training_completions`**; **`/admin/training`** completions list + CSV. Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
 **Recommended next segment — D38+ (owner priority):** remaining §1 rows (e.g. **23** OAuth/sync, **14** automation after clinical sign-off, **12** certificate storage depth beyond D11) — one bounded slice at a time.
 

@@ -2,7 +2,7 @@
 
 **Module:** Skills demonstrations, evaluator sign-off, structured skills JSON, mandatory FL training tracking, external program integration (Baya), in-service sign-in logging  
 **Dependencies:** [`11-staff-management.md`](11-staff-management.md) (`staff`, `staff_certifications` patterns)  
-**Migrations:** `086_competency_demonstrations_schema.sql`, `087_competency_demonstrations_rls_audit.sql`, `086b_training_programs.sql`, `086c_inservice_logs.sql`  
+**Migrations:** `086_competency_demonstrations_schema.sql`, `087_competency_demonstrations_rls_audit.sql`, `115_competency_certificate_storage.sql`, `116_training_programs_staff_completions.sql` (spec also references future `086b`/`086c`-style inservice DDL — not yet split in repo)  
 **Canonical routes:** [`FRONTEND-CONTRACT.md`](FRONTEND-CONTRACT.md) — `/admin/training`
 
 ---
@@ -26,6 +26,10 @@ When the admin shell facility control is **All facilities**, `/admin/training` l
 ### Track D — D21 demonstrations CSV (2026-04-09)
 
 **Download demonstrations CSV** on `/admin/training` exports up to **500** rows (same RLS scope as the hub: single facility or **All facilities**), with facility name, staff name, status, dates, notes, and pipe-separated certificate **storage paths** from `attachments` JSON. **No** new DDL.
+
+### Track D — D38 staff training completions hub (2026-04-09)
+
+Migration **`116`** adds **`training_programs`** (enums `training_delivery_method`, `training_frequency`), **`staff_training_completions`**, RLS (aligned with `staff_certifications` / competency patterns), audit triggers, and **Florida mandatory program seed rows** for the COL organization. **`/admin/training`** lists the latest **50** `staff_training_completions` rows (staff, facility, program joins) with **Download completions CSV** (up to **500** rows, same facility / All-facilities scope as D20/D21). Read-only in this slice — no completion create/edit UI.
 
 ---
 

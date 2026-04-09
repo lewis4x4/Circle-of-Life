@@ -74,13 +74,72 @@ function buildCompetencyDemonstrationsCsv(rows: DemoRow[]): string {
   return [header, ...body].join("\r\n");
 }
 
+type CompletionRow = Database["public"]["Tables"]["staff_training_completions"]["Row"] & {
+  staff: { first_name: string; last_name: string } | null;
+  facilities: { name: string } | null;
+  training_programs: { code: string; name: string } | null;
+};
+
+function formatHours(h: number | null | undefined): string {
+  if (h == null) return "—";
+  const n = typeof h === "number" ? h : Number(h);
+  if (Number.isNaN(n)) return "—";
+  return n.toFixed(2);
+}
+
+function buildStaffTrainingCompletionsCsv(rows: CompletionRow[]): string {
+  const header = [
+    "id",
+    "organization_id",
+    "facility_id",
+    "facility_name",
+    "staff_first_name",
+    "staff_last_name",
+    "training_program_code",
+    "training_program_name",
+    "completed_at",
+    "expires_at",
+    "hours_completed",
+    "delivery_method",
+    "external_provider",
+    "certificate_number",
+    "notes",
+    "attachment_path",
+  ].join(",");
+  const body = rows.map((row) =>
+    [
+      csvEscapeCell(row.id),
+      csvEscapeCell(row.organization_id),
+      csvEscapeCell(row.facility_id),
+      csvEscapeCell(row.facilities?.name ?? ""),
+      csvEscapeCell(row.staff?.first_name ?? ""),
+      csvEscapeCell(row.staff?.last_name ?? ""),
+      csvEscapeCell(row.training_programs?.code ?? ""),
+      csvEscapeCell(row.training_programs?.name ?? ""),
+      csvEscapeCell(row.completed_at),
+      csvEscapeCell(row.expires_at ?? ""),
+      csvEscapeCell(row.hours_completed != null ? String(row.hours_completed) : ""),
+      csvEscapeCell(row.delivery_method),
+      csvEscapeCell(row.external_provider ?? ""),
+      csvEscapeCell(row.certificate_number ?? ""),
+      csvEscapeCell(row.notes ?? ""),
+      csvEscapeCell(row.attachment_path ?? ""),
+    ].join(","),
+  );
+  return [header, ...body].join("\r\n");
+}
+
 export default function AdminTrainingHubPage() {
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<DemoRow[]>([]);
+  const [completionRows, setCompletionRows] = useState<CompletionRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingCompletions, setLoadingCompletions] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [completionError, setCompletionError] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
+  const [exportingCompletionsCsv, setExportingCompletionsCsv] = useState(false);
 
   /** `null` = All facilities (RLS scopes rows to accessible facilities). */
   const orgWideMode = selectedFacilityId === null;
@@ -90,10 +149,14 @@ export default function AdminTrainingHubPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadingCompletions(true);
     setError(null);
+    setCompletionError(null);
     if (!facilityReady) {
       setRows([]);
+      setCompletionRows([]);
       setLoading(false);
+      setLoadingCompletions(false);
       return;
     }
     try {
@@ -114,6 +177,29 @@ export default function AdminTrainingHubPage() {
       setRows([]);
     } finally {
       setLoading(false);
+    }
+    try {
+      let cq = supabase
+        .from("staff_training_completions")
+        .select(
+          "*, staff(first_name, last_name), facilities(name), training_programs(code, name)",
+        )
+        .is("deleted_at", null)
+        .order("completed_at", { ascending: false })
+        .limit(50);
+      if (singleFacilityMode && selectedFacilityId) {
+        cq = cq.eq("facility_id", selectedFacilityId);
+      }
+      const { data: cData, error: cErr } = await cq;
+      if (cErr) throw cErr;
+      setCompletionRows((cData ?? []) as CompletionRow[]);
+    } catch (e) {
+      setCompletionError(
+        e instanceof Error ? e.message : "Failed to load staff training completions.",
+      );
+      setCompletionRows([]);
+    } finally {
+      setLoadingCompletions(false);
     }
   }, [supabase, selectedFacilityId, facilityReady, singleFacilityMode]);
 
@@ -183,6 +269,44 @@ export default function AdminTrainingHubPage() {
       setError(e instanceof Error ? e.message : "CSV export failed.");
     } finally {
       setExportingCsv(false);
+    }
+  }, [
+    facilityReady,
+    orgWideMode,
+    selectedFacilityId,
+    singleFacilityMode,
+    supabase,
+  ]);
+
+  const exportCompletionsCsv = useCallback(async () => {
+    if (!facilityReady) return;
+    setExportingCompletionsCsv(true);
+    setCompletionError(null);
+    try {
+      let q = supabase
+        .from("staff_training_completions")
+        .select(
+          "*, staff(first_name, last_name), facilities(name), training_programs(code, name)",
+        )
+        .is("deleted_at", null)
+        .order("completed_at", { ascending: false })
+        .limit(500);
+      if (singleFacilityMode && selectedFacilityId) {
+        q = q.eq("facility_id", selectedFacilityId);
+      }
+      const { data, error: qErr } = await q;
+      if (qErr) throw qErr;
+      const exportRows = (data ?? []) as CompletionRow[];
+      const csv = buildStaffTrainingCompletionsCsv(exportRows);
+      const scope = orgWideMode ? "all-facilities" : selectedFacilityId ?? "facility";
+      triggerCsvDownload(
+        `staff-training-completions_${scope}_${format(new Date(), "yyyy-MM-dd")}.csv`,
+        csv,
+      );
+    } catch (e) {
+      setCompletionError(e instanceof Error ? e.message : "CSV export failed.");
+    } finally {
+      setExportingCompletionsCsv(false);
     }
   }, [
     facilityReady,
@@ -267,6 +391,102 @@ export default function AdminTrainingHubPage() {
             </V2Card>
           </div>
         </KineticGrid>
+
+        {facilityReady && (
+          <div className="space-y-4 border-t border-white/10 pt-8 dark:border-white/5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                  Staff training completions
+                </h3>
+                <p className="mt-1 text-[10px] text-slate-500">
+                  Last 50 completion records per facility scope (RLS). Manual entry UI is deferred;
+                  export supports audits.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!facilityReady || exportingCompletionsCsv}
+                className="shrink-0 font-mono uppercase tracking-widest text-[10px]"
+                onClick={() => void exportCompletionsCsv()}
+              >
+                {exportingCompletionsCsv ? "Preparing…" : "Download completions CSV"}
+              </Button>
+            </div>
+            {completionError && (
+              <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
+                {completionError}
+              </p>
+            )}
+            {loadingCompletions ? (
+              <p className="text-sm font-mono text-slate-500">Loading completions…</p>
+            ) : completionRows.length === 0 ? (
+              <div className="rounded-2xl border border-white/20 bg-white/30 p-8 text-center text-slate-500 dark:border-white/5 dark:bg-slate-900/30">
+                <p className="font-medium text-slate-700 dark:text-slate-300">No completion rows yet</p>
+                <p className="mt-1 text-sm opacity-80">
+                  Florida catalog programs are seeded; add completion records via admin tooling in a
+                  later slice.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-white/20 bg-white/40 dark:border-white/5 dark:bg-slate-900/40">
+                <table className="w-full min-w-[720px] text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-white/20 font-mono uppercase tracking-wider text-slate-500 dark:border-white/10">
+                      <th className="px-3 py-2">Facility</th>
+                      <th className="px-3 py-2">Staff</th>
+                      <th className="px-3 py-2">Program</th>
+                      <th className="px-3 py-2">Completed</th>
+                      <th className="px-3 py-2">Expires</th>
+                      <th className="px-3 py-2">Hours</th>
+                      <th className="px-3 py-2">Delivery</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {completionRows.map((row) => (
+                      <tr
+                        key={row.id}
+                        className="border-b border-white/10 text-slate-800 last:border-0 dark:border-white/5 dark:text-slate-200"
+                      >
+                        <td className="px-3 py-2 font-mono text-[10px] text-indigo-600 dark:text-indigo-400">
+                          {row.facilities?.name ?? "—"}
+                        </td>
+                        <td className="px-3 py-2">
+                          {row.staff
+                            ? `${row.staff.first_name} ${row.staff.last_name}`
+                            : "—"}
+                        </td>
+                        <td className="px-3 py-2">
+                          <span className="font-medium">{row.training_programs?.name ?? "—"}</span>
+                          {row.training_programs?.code ? (
+                            <span className="ml-1 text-[10px] text-slate-500">
+                              ({row.training_programs.code})
+                            </span>
+                          ) : null}
+                        </td>
+                        <td className="px-3 py-2 font-mono text-[10px]">
+                          {row.completed_at
+                            ? format(new Date(`${row.completed_at}T12:00:00`), "MMM d, yyyy")
+                            : "—"}
+                        </td>
+                        <td className="px-3 py-2 font-mono text-[10px]">
+                          {row.expires_at
+                            ? format(new Date(`${row.expires_at}T12:00:00`), "MMM d, yyyy")
+                            : "—"}
+                        </td>
+                        <td className="px-3 py-2 font-mono">{formatHours(row.hours_completed)}</td>
+                        <td className="px-3 py-2 capitalize text-slate-600 dark:text-slate-400">
+                          {formatStatus(row.delivery_method)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
 
       {!facilityReady && (
         <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">

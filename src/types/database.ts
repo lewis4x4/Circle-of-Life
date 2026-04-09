@@ -11390,6 +11390,98 @@ export type Database = {
           },
         ]
       }
+      staff_training_completions: {
+        Row: {
+          attachment_path: string | null
+          certificate_number: string | null
+          completed_at: string
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          delivery_method: Database["public"]["Enums"]["training_delivery_method"]
+          evaluator_user_id: string | null
+          expires_at: string | null
+          external_provider: string | null
+          facility_id: string
+          hours_completed: number | null
+          id: string
+          notes: string | null
+          organization_id: string
+          staff_id: string
+          training_program_id: string
+          updated_at: string
+        }
+        Insert: {
+          attachment_path?: string | null
+          certificate_number?: string | null
+          completed_at: string
+          created_at?: string
+          created_by: string
+          deleted_at?: string | null
+          delivery_method: Database["public"]["Enums"]["training_delivery_method"]
+          evaluator_user_id?: string | null
+          expires_at?: string | null
+          external_provider?: string | null
+          facility_id: string
+          hours_completed?: number | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          staff_id: string
+          training_program_id: string
+          updated_at?: string
+        }
+        Update: {
+          attachment_path?: string | null
+          certificate_number?: string | null
+          completed_at?: string
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          delivery_method?: Database["public"]["Enums"]["training_delivery_method"]
+          evaluator_user_id?: string | null
+          expires_at?: string | null
+          external_provider?: string | null
+          facility_id?: string
+          hours_completed?: number | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          staff_id?: string
+          training_program_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_training_completions_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_training_completions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_training_completions_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_training_completions_training_program_id_fkey"
+            columns: ["training_program_id"]
+            isOneToOne: false
+            referencedRelation: "training_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staffing_ratio_snapshots: {
         Row: {
           created_at: string
@@ -11777,6 +11869,74 @@ export type Database = {
             columns: ["staff_id"]
             isOneToOne: false
             referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_programs: {
+        Row: {
+          active: boolean
+          applies_to_roles: string[]
+          code: string
+          created_at: string
+          deleted_at: string | null
+          delivery_method: Database["public"]["Enums"]["training_delivery_method"]
+          description: string | null
+          external_provider: string | null
+          frequency: Database["public"]["Enums"]["training_frequency"]
+          id: string
+          is_fl_required: boolean
+          is_mandatory: boolean
+          name: string
+          organization_id: string
+          regulatory_cite: string | null
+          required_hours: number | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          applies_to_roles?: string[]
+          code: string
+          created_at?: string
+          deleted_at?: string | null
+          delivery_method?: Database["public"]["Enums"]["training_delivery_method"]
+          description?: string | null
+          external_provider?: string | null
+          frequency: Database["public"]["Enums"]["training_frequency"]
+          id?: string
+          is_fl_required?: boolean
+          is_mandatory?: boolean
+          name: string
+          organization_id: string
+          regulatory_cite?: string | null
+          required_hours?: number | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          applies_to_roles?: string[]
+          code?: string
+          created_at?: string
+          deleted_at?: string | null
+          delivery_method?: Database["public"]["Enums"]["training_delivery_method"]
+          description?: string | null
+          external_provider?: string | null
+          frequency?: Database["public"]["Enums"]["training_frequency"]
+          id?: string
+          is_fl_required?: boolean
+          is_mandatory?: boolean
+          name?: string
+          organization_id?: string
+          regulatory_cite?: string | null
+          required_hours?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_programs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -14844,6 +15004,8 @@ export type Database = {
         | "matched"
         | "paid"
         | "voided"
+      training_delivery_method: "in_person" | "external" | "online" | "hybrid"
+      training_frequency: "at_hire" | "annual" | "biennial" | "as_needed" | "one_time"
       transport_request_status:
         | "requested"
         | "scheduled"
@@ -15432,6 +15594,8 @@ export const Constants = {
         "driver",
         "other",
       ],
+      training_delivery_method: ["in_person", "external", "online", "hybrid"],
+      training_frequency: ["at_hire", "annual", "biennial", "as_needed", "one_time"],
       transport_request_status: [
         "requested",
         "scheduled",
