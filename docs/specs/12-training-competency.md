@@ -31,6 +31,10 @@ When the admin shell facility control is **All facilities**, `/admin/training` l
 
 Migration **`116`** adds **`training_programs`** (enums `training_delivery_method`, `training_frequency`), **`staff_training_completions`**, RLS (aligned with `staff_certifications` / competency patterns), audit triggers, and **Florida mandatory program seed rows** for the COL organization. **`/admin/training`** lists the latest **50** `staff_training_completions` rows (staff, facility, program joins) with **Download completions CSV** (up to **500** rows, same facility / All-facilities scope as D20/D21). Read-only in this slice — no completion create/edit UI.
 
+### Track D — D39 log training completion (2026-04-09)
+
+**`/admin/training/completions/new`** — facility-scoped form (single facility in header, not All facilities) to insert **`staff_training_completions`**: staff, catalog program, completed date, optional expiry/hours, delivery method, optional external provider / certificate number / notes; **`evaluator_user_id`** set to the signed-in user. **`/admin/training`** includes **+ Log completion** next to the completions CSV control. **No** attachment upload in this slice (metadata only; bucket flows remain Enhanced).
+
 ---
 
 ## Florida Mandatory Training Requirements (Seed Data)

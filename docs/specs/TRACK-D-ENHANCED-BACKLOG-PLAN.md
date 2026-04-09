@@ -80,7 +80,9 @@
 
 **~~D38 (2026-04-09)~~** **DONE — Module 12:** Migration **`116`** — **`training_programs`** + **`staff_training_completions`**; **`/admin/training`** completions list + CSV. Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D38+ (owner priority):** remaining §1 rows (e.g. **23** OAuth/sync, **14** automation after clinical sign-off, **12** certificate storage depth beyond D11) — one bounded slice at a time.
+**~~D39 (2026-04-09)~~** **DONE — Module 12:** **`/admin/training/completions/new`** — log **`staff_training_completions`**. Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D40+ (owner priority):** remaining §1 rows (e.g. **23** OAuth/sync, **14** automation after clinical sign-off, **12** certificate PDF depth beyond D11/D39 metadata) — one bounded slice at a time.
 
 ---
 

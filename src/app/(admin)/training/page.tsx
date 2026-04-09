@@ -400,19 +400,41 @@ export default function AdminTrainingHubPage() {
                   Staff training completions
                 </h3>
                 <p className="mt-1 text-[10px] text-slate-500">
-                  Last 50 completion records per facility scope (RLS). Manual entry UI is deferred;
-                  export supports audits.
+                  Last 50 completion records per facility scope (RLS). Log new completions for a single
+                  facility; export supports audits.
                 </p>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={!facilityReady || exportingCompletionsCsv}
-                className="shrink-0 font-mono uppercase tracking-widest text-[10px]"
-                onClick={() => void exportCompletionsCsv()}
-              >
-                {exportingCompletionsCsv ? "Preparing…" : "Download completions CSV"}
-              </Button>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                {orgWideMode ? (
+                  <Button
+                    type="button"
+                    disabled
+                    className="shrink-0 font-mono uppercase tracking-widest text-[10px] opacity-70"
+                    title="Select a single facility in the header to log a completion."
+                  >
+                    + Log completion
+                  </Button>
+                ) : (
+                  <Link
+                    href="/admin/training/completions/new"
+                    className={cn(
+                      buttonVariants({ size: "default" }),
+                      "shrink-0 font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none",
+                    )}
+                  >
+                    + Log completion
+                  </Link>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!facilityReady || exportingCompletionsCsv}
+                  className="shrink-0 font-mono uppercase tracking-widest text-[10px]"
+                  onClick={() => void exportCompletionsCsv()}
+                >
+                  {exportingCompletionsCsv ? "Preparing…" : "Download completions CSV"}
+                </Button>
+              </div>
             </div>
             {completionError && (
               <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
@@ -425,8 +447,8 @@ export default function AdminTrainingHubPage() {
               <div className="rounded-2xl border border-white/20 bg-white/30 p-8 text-center text-slate-500 dark:border-white/5 dark:bg-slate-900/30">
                 <p className="font-medium text-slate-700 dark:text-slate-300">No completion rows yet</p>
                 <p className="mt-1 text-sm opacity-80">
-                  Florida catalog programs are seeded; add completion records via admin tooling in a
-                  later slice.
+                  Florida catalog programs are seeded. Select a facility and use{" "}
+                  <span className="font-mono">+ Log completion</span> to add a row.
                 </p>
               </div>
             ) : (

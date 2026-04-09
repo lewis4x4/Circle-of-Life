@@ -22,7 +22,7 @@
 | Phase 1 — full acceptance (real auth, RLS matrix, UAT, Pro/BAA/PITR) | **NOT COMPLETE** — **Track A:** A1+A2 **done** (2026-04-09); A3–A6 remain | [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md), [PHASE1-ACCEPTANCE-CHECKLIST.md](./PHASE1-ACCEPTANCE-CHECKLIST.md) |
 | Phase 2 — acceptance | **PASS** (2026-04-04) | [PHASE2-ACCEPTANCE-CHECKLIST.md](./PHASE2-ACCEPTANCE-CHECKLIST.md) |
 | Phases 3–6 — Core DDL + primary UI | **Shipped** in repo | Phase tables below |
-| Phases 3–6 — live proof / operational hardening | **Incomplete** until Track A closes; **Tracks B–C engineering complete** (see sections below); **Track D** Core **D1–D10** + Enhanced **D12–D38** shipped (see [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md)) — further Enhanced backlog per plan | Same tables + [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md) |
+| Phases 3–6 — live proof / operational hardening | **Incomplete** until Track A closes; **Tracks B–C engineering complete** (see sections below); **Track D** Core **D1–D10** + Enhanced **D12–D39** shipped (see [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md)) — further Enhanced backlog per plan | Same tables + [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md) |
 
 **Important:** Code and migrations have **outpaced** formal Phase 1 acceptance. **Do not** treat “migrations applied” or “routes exist” as equivalent to **Track A closed** or **production-ready** for PHI.
 
@@ -35,7 +35,7 @@
 1. **Track A** — **A1** (auth) + **A2** (RLS) owner-verified **2026-04-09**; **A3** real-auth UAT depth → **A4** env/seed → **A5** Pro/BAA/PITR → **A6** waiver review. Single roadmap: [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md). Production PHI still requires **A5** and remaining UAT rows.
 2. **Remote DB migration parity** — **PASS (2026-04-10)** for **`001`–`115`** on **`manfqmasfqppukpobpld`** per [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md). Re-run `supabase migration list` after any migration-adding PR.
 3. **Tracks B–C** — **Engineering complete (closed in repo)** per sections below. Remaining items are **operations** (deploy Edge functions, schedule crons, production monitoring) and **Track A UAT** — not open B/C code issues.
-4. **Track D** — **Segments D1–D10** (2026-04-09) + Enhanced **D12–D38** (incl. Module 11 hubs **D29–D33** + **D35–D37**, **D34** shared CSV helpers, payroll **D17–D18** + **D26**, reputation **D19** + **D28**, training **D20–D21** + **D38** `training_programs` / `staff_training_completions`, referrals **D22** + **D27**, dietary **D23**, transportation **D24–D25**) **shipped** (2026-04-09). Core operational visibility for Phase 6 modules 11, 12, 14, 15, 22, 23 is in repo. **Enhanced backlog (D39+):** [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md). Shipped history: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md). Run `segment:gates` per segment.
+4. **Track D** — **Segments D1–D10** (2026-04-09) + Enhanced **D12–D39** (incl. Module 11 hubs **D29–D33** + **D35–D37**, **D34** shared CSV helpers, payroll **D17–D18** + **D26**, reputation **D19** + **D28**, training **D20–D21** + **D38–D39** `training_programs` / `staff_training_completions`, referrals **D22** + **D27**, dietary **D23**, transportation **D24–D25**) **shipped** (2026-04-09). Core operational visibility for Phase 6 modules 11, 12, 14, 15, 22, 23 is in repo. **Enhanced backlog (D40+):** [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md). Shipped history: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md). Run `segment:gates` per segment.
 5. **Track E** — New DDL starting at migration **`117`** only after specs exist and Tracks A–D are appropriately satisfied for your risk tolerance.
 
 ---
@@ -384,7 +384,7 @@ Use these authoritative files as the acceptance source of truth:
 
 **Execution log (segment picks, gate artifacts, deferrals):** [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Enhanced backlog (D39+):** [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md) — option comparison (**D12–D38** shipped 2026-04-09 per [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md)).
+**Enhanced backlog (D40+):** [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md) — option comparison (**D12–D39** shipped 2026-04-09 per [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md)).
 
 **Plan — what “Track D” means here**
 
