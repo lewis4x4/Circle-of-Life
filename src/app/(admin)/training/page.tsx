@@ -129,17 +129,64 @@ function buildStaffTrainingCompletionsCsv(rows: CompletionRow[]): string {
   return [header, ...body].join("\r\n");
 }
 
+type InserviceRow = Database["public"]["Tables"]["inservice_log_sessions"]["Row"] & {
+  facilities: { name: string } | null;
+  training_programs: { code: string; name: string } | null;
+  inservice_log_attendees: { id: string }[] | null;
+};
+
+function buildInserviceSessionsCsv(rows: InserviceRow[]): string {
+  const header = [
+    "id",
+    "organization_id",
+    "facility_id",
+    "facility_name",
+    "session_date",
+    "topic",
+    "trainer_name",
+    "hours",
+    "training_program_code",
+    "training_program_name",
+    "attendee_count",
+    "location",
+    "notes",
+  ].join(",");
+  const body = rows.map((row) => {
+    const n = (row.inservice_log_attendees ?? []).length;
+    return [
+      csvEscapeCell(row.id),
+      csvEscapeCell(row.organization_id),
+      csvEscapeCell(row.facility_id),
+      csvEscapeCell(row.facilities?.name ?? ""),
+      csvEscapeCell(row.session_date),
+      csvEscapeCell(row.topic),
+      csvEscapeCell(row.trainer_name),
+      csvEscapeCell(String(row.hours)),
+      csvEscapeCell(row.training_programs?.code ?? ""),
+      csvEscapeCell(row.training_programs?.name ?? ""),
+      csvEscapeCell(String(n)),
+      csvEscapeCell(row.location ?? ""),
+      csvEscapeCell(row.notes ?? ""),
+    ].join(",");
+  });
+  return [header, ...body].join("\r\n");
+}
+
 export default function AdminTrainingHubPage() {
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<DemoRow[]>([]);
   const [completionRows, setCompletionRows] = useState<CompletionRow[]>([]);
+  const [inserviceRows, setInserviceRows] = useState<InserviceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingCompletions, setLoadingCompletions] = useState(true);
+  const [loadingInservice, setLoadingInservice] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [completionError, setCompletionError] = useState<string | null>(null);
+  const [inserviceError, setInserviceError] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
   const [exportingCompletionsCsv, setExportingCompletionsCsv] = useState(false);
+  const [exportingInserviceCsv, setExportingInserviceCsv] = useState(false);
 
   /** `null` = All facilities (RLS scopes rows to accessible facilities). */
   const orgWideMode = selectedFacilityId === null;
@@ -150,13 +197,17 @@ export default function AdminTrainingHubPage() {
   const load = useCallback(async () => {
     setLoading(true);
     setLoadingCompletions(true);
+    setLoadingInservice(true);
     setError(null);
     setCompletionError(null);
+    setInserviceError(null);
     if (!facilityReady) {
       setRows([]);
       setCompletionRows([]);
+      setInserviceRows([]);
       setLoading(false);
       setLoadingCompletions(false);
+      setLoadingInservice(false);
       return;
     }
     try {
@@ -200,6 +251,29 @@ export default function AdminTrainingHubPage() {
       setCompletionRows([]);
     } finally {
       setLoadingCompletions(false);
+    }
+    try {
+      let iq = supabase
+        .from("inservice_log_sessions")
+        .select(
+          "*, facilities(name), training_programs(code, name), inservice_log_attendees(id)",
+        )
+        .is("deleted_at", null)
+        .order("session_date", { ascending: false })
+        .limit(50);
+      if (singleFacilityMode && selectedFacilityId) {
+        iq = iq.eq("facility_id", selectedFacilityId);
+      }
+      const { data: iData, error: iErr } = await iq;
+      if (iErr) throw iErr;
+      setInserviceRows((iData ?? []) as InserviceRow[]);
+    } catch (e) {
+      setInserviceError(
+        e instanceof Error ? e.message : "Failed to load in-service sessions.",
+      );
+      setInserviceRows([]);
+    } finally {
+      setLoadingInservice(false);
     }
   }, [supabase, selectedFacilityId, facilityReady, singleFacilityMode]);
 
@@ -316,6 +390,44 @@ export default function AdminTrainingHubPage() {
     supabase,
   ]);
 
+  const exportInserviceCsv = useCallback(async () => {
+    if (!facilityReady) return;
+    setExportingInserviceCsv(true);
+    setInserviceError(null);
+    try {
+      let q = supabase
+        .from("inservice_log_sessions")
+        .select(
+          "*, facilities(name), training_programs(code, name), inservice_log_attendees(id)",
+        )
+        .is("deleted_at", null)
+        .order("session_date", { ascending: false })
+        .limit(500);
+      if (singleFacilityMode && selectedFacilityId) {
+        q = q.eq("facility_id", selectedFacilityId);
+      }
+      const { data, error: qErr } = await q;
+      if (qErr) throw qErr;
+      const exportRows = (data ?? []) as InserviceRow[];
+      const csv = buildInserviceSessionsCsv(exportRows);
+      const scope = orgWideMode ? "all-facilities" : selectedFacilityId ?? "facility";
+      triggerCsvDownload(
+        `inservice-sessions_${scope}_${format(new Date(), "yyyy-MM-dd")}.csv`,
+        csv,
+      );
+    } catch (e) {
+      setInserviceError(e instanceof Error ? e.message : "CSV export failed.");
+    } finally {
+      setExportingInserviceCsv(false);
+    }
+  }, [
+    facilityReady,
+    orgWideMode,
+    selectedFacilityId,
+    singleFacilityMode,
+    supabase,
+  ]);
+
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <AmbientMatrix hasCriticals={false} 
@@ -393,6 +505,7 @@ export default function AdminTrainingHubPage() {
         </KineticGrid>
 
         {facilityReady && (
+          <>
           <div className="space-y-4 border-t border-white/10 pt-8 dark:border-white/5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -520,6 +633,116 @@ export default function AdminTrainingHubPage() {
               </div>
             )}
           </div>
+
+          <div className="space-y-4 border-t border-white/10 pt-8 dark:border-white/5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                  In-service sessions
+                </h3>
+                <p className="mt-1 text-[10px] text-slate-500">
+                  Last 50 in-service events (RLS). Create a session for one facility at a time; export for
+                  audits.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                {orgWideMode ? (
+                  <Button
+                    type="button"
+                    disabled
+                    className="shrink-0 font-mono uppercase tracking-widest text-[10px] opacity-70"
+                    title="Select a single facility in the header to record a new in-service session."
+                  >
+                    + New in-service session
+                  </Button>
+                ) : (
+                  <Link
+                    href="/admin/training/inservice/new"
+                    className={cn(
+                      buttonVariants({ size: "default" }),
+                      "shrink-0 font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none",
+                    )}
+                  >
+                    + New in-service session
+                  </Link>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!facilityReady || exportingInserviceCsv}
+                  className="shrink-0 font-mono uppercase tracking-widest text-[10px]"
+                  onClick={() => void exportInserviceCsv()}
+                >
+                  {exportingInserviceCsv ? "Preparing…" : "Download in-service CSV"}
+                </Button>
+              </div>
+            </div>
+            {inserviceError && (
+              <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
+                {inserviceError}
+              </p>
+            )}
+            {loadingInservice ? (
+              <p className="text-sm font-mono text-slate-500">Loading in-service sessions…</p>
+            ) : inserviceRows.length === 0 ? (
+              <div className="rounded-2xl border border-white/20 bg-white/30 p-8 text-center text-slate-500 dark:border-white/5 dark:bg-slate-900/30">
+                <p className="font-medium text-slate-700 dark:text-slate-300">No in-service sessions yet</p>
+                <p className="mt-1 text-sm opacity-80">
+                  Select a facility and use <span className="font-mono">+ New in-service session</span> to log
+                  attendance.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-white/20 bg-white/40 dark:border-white/5 dark:bg-slate-900/40">
+                <table className="w-full min-w-[760px] text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-white/20 font-mono uppercase tracking-wider text-slate-500 dark:border-white/10">
+                      <th className="px-3 py-2">Facility</th>
+                      <th className="px-3 py-2">Date</th>
+                      <th className="px-3 py-2">Topic</th>
+                      <th className="px-3 py-2">Trainer</th>
+                      <th className="px-3 py-2">Hours</th>
+                      <th className="px-3 py-2">Program</th>
+                      <th className="px-3 py-2">Attendees</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {inserviceRows.map((row) => (
+                      <tr
+                        key={row.id}
+                        className="border-b border-white/10 text-slate-800 last:border-0 dark:border-white/5 dark:text-slate-200"
+                      >
+                        <td className="px-3 py-2 font-mono text-[10px] text-indigo-600 dark:text-indigo-400">
+                          {row.facilities?.name ?? "—"}
+                        </td>
+                        <td className="px-3 py-2 font-mono text-[10px]">
+                          {row.session_date
+                            ? format(new Date(`${row.session_date}T12:00:00`), "MMM d, yyyy")
+                            : "—"}
+                        </td>
+                        <td className="px-3 py-2 max-w-[200px] truncate" title={row.topic}>
+                          {row.topic}
+                        </td>
+                        <td className="px-3 py-2">{row.trainer_name}</td>
+                        <td className="px-3 py-2 font-mono">{formatHours(Number(row.hours))}</td>
+                        <td className="px-3 py-2">
+                          {row.training_programs?.name ? (
+                            <span className="font-medium">{row.training_programs.name}</span>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 font-mono">
+                          {(row.inservice_log_attendees ?? []).length}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+          </>
         )}
 
       {!facilityReady && (

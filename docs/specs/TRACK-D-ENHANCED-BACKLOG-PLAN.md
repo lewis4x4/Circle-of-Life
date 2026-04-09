@@ -86,7 +86,9 @@
 
 **~~D41 (2026-04-10)~~** **DONE — Module 12:** Migration **`118`** — **`inservice_log_sessions`** + **`inservice_log_attendees`** (RLS, audit). Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D42+ (owner priority):** remaining §1 rows (e.g. **23** OAuth/sync, **14** automation after clinical sign-off, **12** inservice **hub** UI / attendee→completion automation) — one bounded slice at a time.
+**~~D42 (2026-04-10)~~** **DONE — Module 12:** **`/admin/training`** in-service list + CSV; **`/admin/training/inservice/new`**. Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D43+ (owner priority):** remaining §1 rows (e.g. **23** OAuth/sync, **14** automation after clinical sign-off, **12** attendee→**`staff_training_completions`** automation) — one bounded slice at a time.
 
 ---
 

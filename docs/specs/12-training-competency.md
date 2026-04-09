@@ -19,9 +19,13 @@ Circle of Life operates five ALF facilities (Oakridge, Rising Oaks, Homewood Lod
 
 Florida ALF regulations (FAC 59A-36.011 and FAC 59A-36.022) mandate specific training categories for all staff at hire and annually. These must be tracked per-staff-member with completion dates, hours, and verifying signatures. COL currently tracks this via paper sign-in sheets (`Orientation & Training Sign-In.pdf`, in-service training sign-in logs) and Baya-issued competency certificates.
 
+### Track D — D42 in-service hub UI (2026-04-10)
+
+**`/admin/training`** lists the last **50** in-service **sessions** (RLS-scoped; optional facility filter). **Download in-service CSV** + **+ New in-service session** (single-facility header only) → **`/admin/training/inservice/new`** creates a session and **attendee** rows (no auto-**`staff_training_completions`** yet — spec business rule 5 deferred).
+
 ### Track D — D41 inservice DDL (2026-04-10)
 
-Migration **`118`** ships **`inservice_log_sessions`** and **`inservice_log_attendees`** per schema §Core (RLS, audit, indexes). **Deferred:** Tab 3 **In-service log** UI, attendee → `staff_training_completions` trigger/Edge (spec business rule 5).
+Migration **`118`** ships **`inservice_log_sessions`** and **`inservice_log_attendees`** per schema §Core (RLS, audit, indexes). **Deferred:** attendee → `staff_training_completions` trigger/Edge (spec business rule 5).
 
 ### Track D — D20 org-wide hub (2026-04-09)
 
