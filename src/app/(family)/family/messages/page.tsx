@@ -12,9 +12,6 @@ import {
 } from "@/lib/family/family-messages-data";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 
-import { Button } from "@/components/ui/button";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export default function FamilyMessagesPage() {
@@ -116,168 +113,180 @@ export default function FamilyMessagesPage() {
   }, [selectedResidentId, draft, sending, supabase, loadMessages]);
 
   if (configError) {
-    return (
-      <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{configError}</div>
+     return (
+      <div className="rounded-xl border border-rose-200 bg-white/60 backdrop-blur-md px-6 py-4 text-sm text-rose-800 shadow-sm max-w-lg mx-auto mt-20">{configError}</div>
     );
   }
 
   if (loadingResidents) {
     return (
-      <div className="flex items-center justify-center py-16 text-stone-500">
-        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-        Loading messages…
+      <div className="flex flex-col items-center justify-center py-48 text-stone-500 gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-sky-500" />
+        <p className="text-sm font-medium tracking-wide">Securing connection…</p>
       </div>
     );
   }
 
   if (loadError && residents.length === 0) {
     return (
-      <div className="space-y-3 pb-16 md:pb-0">
-        <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">{loadError}</div>
+     <div className="space-y-4 pb-16 md:pb-0 max-w-md mx-auto text-center mt-20">
+        <div className="rounded-2xl border border-rose-200 bg-white/70 backdrop-blur-xl px-4 py-6 text-sm text-rose-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <MessageSquare className="w-8 h-8 text-rose-400 mx-auto mb-3" />
+          <p>{loadError}</p>
+        </div>
         <button
           type="button"
-          className={cn(buttonVariants({ variant: "outline" }), "border-stone-300")}
+          className="w-full h-12 rounded-full bg-white text-stone-700 font-medium border border-stone-200 shadow-sm hover:bg-stone-50 transition-colors cursor-pointer tap-responsive"
           onClick={() => void loadResidents()}
         >
-          Retry
+          Retry Connection
         </button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 pb-16 md:pb-0">
-      <Card className="border-stone-200 bg-white text-stone-900">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xl font-display">Secure Messages</CardTitle>
-          <CardDescription>
-            Direct communication with your care team about a linked resident (Phase 1 — family can send; staff reply in
-            admin workflows when enabled).
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <p className="inline-flex items-center gap-1 text-sm text-stone-700">
-            <ShieldCheck className="h-4 w-4 text-emerald-600" />
-            Messages are stored with audit logging for authorized roles.
-          </p>
-        </CardContent>
-      </Card>
-
-      {residents.length === 0 ? (
-        <p className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-6 text-center text-sm text-stone-600">
-          No linked residents on your account, so messaging is not available yet.
+    <div className="pb-8 flex flex-col items-center max-w-3xl mx-auto w-full px-4 pt-12 md:pt-20">
+      
+      {/* HEADER */}
+      <div className="text-center mb-12">
+        <div className="w-16 h-16 mx-auto bg-stone-100 rounded-full flex items-center justify-center mb-6 shadow-inner ring-4 ring-white">
+           <MessageSquare className="w-8 h-8 text-stone-700" />
+        </div>
+        <h1 className="text-4xl md:text-5xl font-serif text-stone-800 tracking-tight mb-3">Messages</h1>
+        <p className="text-stone-500 max-w-lg mx-auto text-base">
+          Direct communication with your care team. (Phase 1 — family can send; staff reply in admin workflows).
         </p>
-      ) : (
-        <>
-          {residents.length > 1 ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-medium uppercase tracking-wide text-stone-500">Conversation for</span>
-              <select
-                className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
-                value={selectedResidentId ?? ""}
-                onChange={(e) => setSelectedResidentId(e.target.value || null)}
-                aria-label="Select resident for messages"
-              >
-                {residents.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.displayName}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : null}
+      </div>
 
-          {loadError ? (
-            <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">{loadError}</div>
-          ) : null}
+      <div className="w-full space-y-6">
+         {/* VISIBILITY SCOPE */}
+         <div className="glass-card-light rounded-[2rem] p-6 bg-white/60 text-center">
+            <p className="inline-flex items-center justify-center gap-2 text-sm text-stone-600 font-medium w-full">
+               <ShieldCheck className="h-5 w-5 text-emerald-500" />
+               Messages are securely encrypted with audit logging.
+            </p>
+         </div>
 
-          <Card className="border-stone-200 bg-white text-stone-900">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Conversation</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {loadingMessages ? (
-                <div className="flex justify-center py-8 text-stone-500">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                </div>
-              ) : messages.length === 0 ? (
-                <p className="py-4 text-center text-sm text-stone-600">No messages yet. Say hello to the care team below.</p>
-              ) : (
-                messages.map((item) => {
-                  const isSelfFamily =
-                    item.authorKind === "family" && currentUserId != null && item.authorUserId === currentUserId;
-                  const isRight = isSelfFamily;
-                  const authorLabel =
-                    item.authorKind === "staff"
-                      ? "Care team"
-                      : isSelfFamily
-                        ? "You"
-                        : "Family";
-                  const roleLabel = item.authorKind === "staff" ? "Care team" : "Family";
-                  return (
-                    <div key={item.id} className={`flex ${isRight ? "justify-end" : "justify-start"}`}>
-                      <div
-                        className={`max-w-[85%] rounded-2xl border px-3 py-2 text-sm ${
-                          isRight
-                            ? "border-orange-200 bg-orange-50 text-stone-900"
-                            : "border-stone-200 bg-stone-50 text-stone-900"
-                        }`}
-                      >
-                        <p className="mb-1 text-xs font-semibold text-stone-600">
-                          {authorLabel} · {roleLabel}
-                        </p>
-                        <p className="whitespace-pre-wrap">{item.body}</p>
-                        <p className="mt-1 text-[11px] text-stone-500">{item.timeLabel}</p>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="border-stone-200 bg-white text-stone-900">
-            <CardContent className="space-y-2 p-3">
-              <label className="sr-only" htmlFor="family-message-input">
-                Message to care team
-              </label>
-              <textarea
-                id="family-message-input"
-                rows={3}
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                placeholder="Type your message for the care team…"
-                className="w-full resize-y rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40"
-                disabled={!selectedResidentId || sending}
-              />
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <Button
-                  type="button"
-                  className="inline-flex items-center bg-orange-600 text-white hover:bg-orange-500"
-                  disabled={!selectedResidentId || sending || !draft.trim()}
-                  onClick={() => void send()}
-                >
-                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  <span className="ml-2">{sending ? "Sending…" : "Send"}</span>
-                </Button>
-                {loadError && residents.length > 0 ? (
+         {residents.length === 0 ? (
+           <div className="glass-card-light rounded-[2rem] p-10 text-center border-dashed border-2 border-stone-200/50">
+             <p className="text-stone-600 font-serif text-xl italic mb-2">No linked residents.</p>
+             <p className="text-sm text-stone-500 max-w-md mx-auto">
+               Messaging is not available until your account is linked to a resident.
+             </p>
+           </div>
+         ) : (
+           <div className="glass-card-light rounded-[2.5rem] bg-white/80 overflow-hidden shadow-sm border-white">
+             {/* Conversation Header & Target Selector */}
+             <div className="px-6 py-4 border-b border-stone-100 bg-stone-50/50 flex flex-wrap items-center justify-between gap-4">
+               {residents.length > 1 ? (
+                 <div className="flex items-center gap-3">
+                   <span className="text-xs font-bold uppercase tracking-widest text-stone-400">Target</span>
+                   <select
+                     className="bg-transparent font-serif text-lg text-stone-800 cursor-pointer focus:outline-none"
+                     value={selectedResidentId ?? ""}
+                     onChange={(e) => setSelectedResidentId(e.target.value || null)}
+                   >
+                     {residents.map((r) => (
+                       <option key={r.id} value={r.id}>{r.displayName}</option>
+                     ))}
+                   </select>
+                 </div>
+               ) : (
+                 <div className="flex items-center gap-3">
+                   <span className="text-xs font-bold uppercase tracking-widest text-stone-400">Target</span>
+                   <span className="font-serif text-lg text-stone-800">{residents[0]?.displayName}</span>
+                 </div>
+               )}
+               
+               {loadError && (
+                  <span className="text-xs text-rose-500 font-medium bg-rose-50 px-2 py-1 rounded-md">{loadError}</span>
+               )}
+               {loadError && residents.length > 0 ? (
                   <button
                     type="button"
-                    className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-stone-600")}
+                    className="text-stone-500 hover:text-stone-800 text-xs uppercase tracking-widest font-bold tap-responsive"
                     onClick={() => selectedResidentId && void loadMessages(selectedResidentId)}
                   >
-                    Refresh thread
+                    Refresh
                   </button>
-                ) : null}
-              </div>
-              <p className="inline-flex items-center gap-1 text-xs text-stone-500">
-                <MessageSquare className="h-3.5 w-3.5" />
-                Up to 8,000 characters. Staff may reply from internal tools as this product surface expands.
-              </p>
-            </CardContent>
-          </Card>
-        </>
-      )}
+               ) : null}
+             </div>
+
+             {/* Message View Area (Scrollable conceptually, though we can let it grow inline for now) */}
+             <div className="p-6 min-h-[300px] flex flex-col space-y-6">
+                 {loadingMessages ? (
+                    <div className="flex-1 flex justify-center items-center py-12 text-stone-400">
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    </div>
+                 ) : messages.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center py-12 text-center h-full">
+                       <MessageSquare className="w-12 h-12 text-stone-200 mb-4" />
+                       <p className="text-stone-500 font-medium">It&apos;s quiet here.</p>
+                       <p className="text-stone-400 text-sm mt-1">Send a message to the care team to start a thread.</p>
+                    </div>
+                 ) : (
+                    messages.map((item) => {
+                       const isSelfFamily = item.authorKind === "family" && currentUserId != null && item.authorUserId === currentUserId;
+                       const isRight = isSelfFamily;
+                       
+                       // Moonshot bubble styling
+                       const bubbleStyle = isRight
+                         ? "bg-stone-800 text-white rounded-2xl rounded-tr-sm ml-auto"
+                         : "bg-stone-100 text-stone-900 rounded-2xl rounded-tl-sm mr-auto";
+                         
+                       const authorLabel = item.authorKind === "staff" ? "Care Team" : isSelfFamily ? "You" : "Family";
+
+                       return (
+                         <div key={item.id} className={`flex w-full flex-col`}>
+                           <div className={`max-w-[85%] sm:max-w-[70%] px-5 py-4 ${bubbleStyle} shadow-sm`}>
+                             <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{item.body}</p>
+                           </div>
+                           {/* Meta info underneath bubble */}
+                           <div className={`text-[11px] font-medium text-stone-400 mt-1.5 px-2 flex gap-2 ${isRight ? "justify-end" : "justify-start"}`}>
+                             <span>{authorLabel}</span>
+                             <span>&middot;</span>
+                             <span>{item.timeLabel}</span>
+                           </div>
+                         </div>
+                       );
+                    })
+                 )}
+             </div>
+
+             {/* Input Area */}
+             <div className="p-4 sm:p-6 bg-white border-t border-stone-100">
+               <div className="flex gap-3 items-end">
+                   <div className="flex-1 relative">
+                       <textarea
+                         id="family-message-input"
+                         rows={2}
+                         value={draft}
+                         onChange={(e) => setDraft(e.target.value)}
+                         placeholder="Type a secure message…"
+                         className="w-full resize-none rounded-[1.5rem] border border-stone-200 bg-stone-50/50 px-5 pt-3.5 pb-3 text-[15px] text-stone-900 placeholder:text-stone-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:bg-white transition-all shadow-inner"
+                         disabled={!selectedResidentId || sending}
+                       />
+                   </div>
+                   <button
+                     type="button"
+                     className={cn(
+                        "w-12 h-12 shrink-0 rounded-full flex items-center justify-center transition-all tap-responsive mb-0.5 shadow-sm",
+                        draft.trim().length > 0 && !sending ? "bg-stone-800 text-white hover:bg-stone-900" : "bg-stone-100 text-stone-300"
+                     )}
+                     disabled={!selectedResidentId || sending || !draft.trim()}
+                     onClick={() => void send()}
+                   >
+                     {sending ? <Loader2 className="h-5 w-5 animate-spin text-stone-500" /> : <Send className="h-5 w-5 ml-0.5" />}
+                   </button>
+               </div>
+               <p className="mt-3 text-[10px] uppercase font-bold tracking-widest text-stone-400 text-center">
+                 Max 8,000 characters
+               </p>
+             </div>
+           </div>
+         )}
+      </div>
     </div>
   );
 }

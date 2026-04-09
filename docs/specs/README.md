@@ -377,7 +377,7 @@ Use these authoritative files as the acceptance source of truth:
 
 Before treating Phase 6 as “done,” revisit the recently shipped Core modules and close the major Enhanced gaps that matter operationally:
 
-- Training: attachment / evidence workflow depth
+- Training: attachment / evidence workflow depth (**D2 started:** real demonstration queue + counts on `/admin/training` — see TRACK-D)
 - Dietary: medication / texture cross-check automation
 - Transportation: trip scheduling / compliance reminders where required (**D1 started:** data-driven fleet/driver expiry cards on `/admin/transportation` — see TRACK-D)
 - Referral CRM: HL7 listener / parser beyond manual queue ingest

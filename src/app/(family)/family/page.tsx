@@ -2,17 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { 
-  Banknote, 
-  CalendarClock, 
-  ClipboardList, 
-  FileText, 
-  Loader2, 
-  Shield,
-  Activity,
-  Heart,
-  ChevronRight
-} from "lucide-react";
+import { Banknote, FileText, Loader2, Shield, Heart, ChevronRight } from "lucide-react";
 
 import {
   fetchFamilyHomeSnapshot,
@@ -20,8 +10,6 @@ import {
   type FamilyHomeSnapshot,
 } from "@/lib/family/family-feed";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
-
-import { cn } from "@/lib/utils";
 
 export default function FamilyHomePage() {
   const supabase = useMemo(() => createClient(), []);
@@ -162,7 +150,7 @@ export default function FamilyHomePage() {
            <div className="flex items-center justify-center mb-10">
              <div className="h-px bg-stone-200 flex-1"></div>
              <h2 className="text-2xl md:text-3xl font-serif text-stone-800 tracking-tight px-6 text-center">
-               {firstName}'s Updates
+               {firstName}&apos;s Updates
              </h2>
              <div className="h-px bg-stone-200 flex-1"></div>
            </div>

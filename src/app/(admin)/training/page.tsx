@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { GraduationCap } from "lucide-react";
 
@@ -24,6 +24,17 @@ type DemoRow = Database["public"]["Tables"]["competency_demonstrations"]["Row"] 
 
 function formatStatus(s: string) {
   return s.replace(/_/g, " ");
+}
+
+/** Demonstrations that still need staff or evaluator action (Core workflow). */
+function needsAttentionStatus(status: DemoRow["status"]): boolean {
+  return status === "draft" || status === "submitted" || status === "failed";
+}
+
+function attentionLabel(status: DemoRow["status"]): { title: string; tone: "amber" | "rose" | "slate" } {
+  if (status === "failed") return { title: "Failed — follow-up required", tone: "rose" };
+  if (status === "submitted") return { title: "Awaiting evaluator sign-off", tone: "amber" };
+  return { title: "Draft — complete evaluation", tone: "slate" };
 }
 
 export default function AdminTrainingHubPage() {
@@ -63,6 +74,41 @@ export default function AdminTrainingHubPage() {
     void load();
   }, [load]);
 
+  const attentionRows = useMemo(
+    () =>
+      rows
+        .filter((r) => needsAttentionStatus(r.status))
+        .sort(
+          (a, b) =>
+            new Date(a.demonstrated_at).getTime() - new Date(b.demonstrated_at).getTime(),
+        ),
+    [rows],
+  );
+
+  const statusCounts = useMemo(() => {
+    let passed = 0;
+    let pending = 0;
+    let failed = 0;
+    for (const r of rows) {
+      if (r.status === "passed") passed++;
+      else if (r.status === "failed") failed++;
+      else if (r.status === "submitted" || r.status === "draft") pending++;
+    }
+    return { passed, pending, failed, total: rows.length };
+  }, [rows]);
+
+  const recentPassedRows = useMemo(
+    () =>
+      rows
+        .filter((r) => r.status === "passed")
+        .sort(
+          (a, b) =>
+            new Date(b.demonstrated_at).getTime() - new Date(a.demonstrated_at).getTime(),
+        )
+        .slice(0, 5),
+    [rows],
+  );
+
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
 
   return (
@@ -75,7 +121,9 @@ export default function AdminTrainingHubPage() {
       <div className="relative z-10 space-y-6">
         <header className="mb-8">
           <div>
-            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 05 / Academy</p>
+            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">
+              SYS: Module 12 / Training and Competency
+            </p>
             <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
               Training & Competency
             </h2>
@@ -133,58 +181,119 @@ export default function AdminTrainingHubPage() {
             </div>
             
             <MotionList className="space-y-3">
-              {/* MOCKED OVERDUE EXCEPTIONS */}
               {loading ? (
                 <p className="text-sm font-mono text-slate-500">Loading…</p>
               ) : (
                 <>
-                  <MotionItem className="p-5 rounded-2xl border border-amber-200 dark:border-amber-900/30 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-amber-300 dark:hover:border-amber-800/50 transition-colors">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
-                    <div className="flex justify-between items-start mb-3">
-                       <span className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-1 rounded-md uppercase tracking-wider">
-                         Needs Evaluator
-                       </span>
-                       <span className="text-xs text-amber-600 font-mono font-medium">Overdue by 3 days</span>
-                    </div>
-                    <div className="mb-4">
-                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
-                        John Doe (CNA) — Med Pass Demonstration
-                      </p>
-                      <p className="text-xs text-slate-600 dark:text-slate-400">
-                        Requested by shift supervisor on {format(new Date(), "MMM d")}. Evaluator sign-off pending.
-                      </p>
-                    </div>
-                    <div className="flex justify-start">
-                        <Link
-                          href="/admin/training/new"
-                          className={cn(buttonVariants({ variant: "default", size: "sm" }), "bg-amber-600 hover:bg-amber-700 text-white font-mono uppercase tracking-widest text-[10px]")}
-                        >
-                          Begin Evaluation
-                        </Link>
-                    </div>
-                  </MotionItem>
-                  
-                  {/* Historical feed below the active mock items */}
-                  {rows.length === 0 ? (
+                  {attentionRows.length === 0 ? (
                     <div className="p-8 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md">
-                       <p className="font-medium">No Recent Historical Data</p>
+                      <p className="font-medium">No open demonstrations</p>
+                      <p className="text-sm opacity-80 mt-1">
+                        Nothing in draft, submitted, or failed status for this facility (last 50 records).
+                      </p>
                     </div>
                   ) : (
+                    attentionRows.map((row) => {
+                    const { title, tone } = attentionLabel(row.status);
+                    const bar =
+                      tone === "rose"
+                        ? "bg-rose-500"
+                        : tone === "amber"
+                          ? "bg-amber-500"
+                          : "bg-slate-400";
+                    const border =
+                      tone === "rose"
+                        ? "border-rose-200 dark:border-rose-900/30 hover:border-rose-300 dark:hover:border-rose-800/50"
+                        : tone === "amber"
+                          ? "border-amber-200 dark:border-amber-900/30 hover:border-amber-300 dark:hover:border-amber-800/50"
+                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300";
+                    const badge =
+                      tone === "rose"
+                        ? "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50"
+                        : tone === "amber"
+                          ? "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50"
+                          : "text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/50";
+                    const btn =
+                      tone === "rose"
+                        ? "bg-rose-600 hover:bg-rose-700"
+                        : tone === "amber"
+                          ? "bg-amber-600 hover:bg-amber-700"
+                          : "bg-slate-600 hover:bg-slate-700";
+                    return (
+                      <MotionItem
+                        key={row.id}
+                        className={cn(
+                          "p-5 rounded-2xl border bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group transition-colors",
+                          border,
+                        )}
+                      >
+                        <div className={cn("absolute top-0 left-0 w-1 h-full", bar)} />
+                        <div className="flex justify-between items-start mb-3">
+                          <span
+                            className={cn(
+                              "text-xs font-bold px-2 py-1 rounded-md uppercase tracking-wider",
+                              badge,
+                            )}
+                          >
+                            {title}
+                          </span>
+                          <span className="text-xs text-slate-500 font-mono font-medium">
+                            Session {format(new Date(row.demonstrated_at), "MMM d, yyyy")}
+                          </span>
+                        </div>
+                        <div className="mb-4">
+                          <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
+                            {row.staff ? `${row.staff.first_name} ${row.staff.last_name}` : "Staff"} —{" "}
+                            {formatStatus(row.status)}
+                          </p>
+                          {row.notes ? (
+                            <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3">{row.notes}</p>
+                          ) : (
+                            <p className="text-xs text-slate-600 dark:text-slate-400">
+                              Demonstration record — open or complete evaluation.
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex justify-start">
+                          <Link
+                            href="/admin/training/new"
+                            className={cn(
+                              buttonVariants({ variant: "default", size: "sm" }),
+                              "text-white font-mono uppercase tracking-widest text-[10px]",
+                              btn,
+                            )}
+                          >
+                            Open workflow
+                          </Link>
+                        </div>
+                      </MotionItem>
+                    );
+                  })
+                  )}
+
+                  {recentPassedRows.length > 0 && (
                     <MotionList className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
-                       <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Recently Completed</h4>
-                       {rows.slice(0, 3).map(row => (
-                         <MotionItem key={row.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex gap-4 items-center">
-                           <div className="flex-1 min-w-0">
-                             <p className="text-xs font-medium text-slate-900 dark:text-slate-300 truncate">
-                               {row.staff ? `${row.staff.first_name} ${row.staff.last_name}` : "Unknown"}
-                             </p>
-                             <p className="text-[10px] text-slate-500 truncate capitalize">Status: {formatStatus(row.status)}</p>
-                           </div>
-                           <span className="text-[10px] font-mono text-indigo-600 dark:text-indigo-400 text-right">
-                             {format(new Date(row.demonstrated_at), "MMM d")}
-                           </span>
-                         </MotionItem>
-                       ))}
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                        Recently passed
+                      </h4>
+                      {recentPassedRows.map((row) => (
+                        <MotionItem
+                          key={row.id}
+                          className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex gap-4 items-center"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-slate-900 dark:text-slate-300 truncate">
+                              {row.staff ? `${row.staff.first_name} ${row.staff.last_name}` : "Unknown"}
+                            </p>
+                            <p className="text-[10px] text-slate-500 truncate capitalize">
+                              Status: {formatStatus(row.status)}
+                            </p>
+                          </div>
+                          <span className="text-[10px] font-mono text-indigo-600 dark:text-indigo-400 text-right">
+                            {format(new Date(row.demonstrated_at), "MMM d")}
+                          </span>
+                        </MotionItem>
+                      ))}
                     </MotionList>
                   )}
                 </>
@@ -202,32 +311,27 @@ export default function AdminTrainingHubPage() {
             </div>
             
             <div className="space-y-4">
+              <p className="text-[10px] text-slate-500 leading-relaxed">
+                Counts below are from the last 50 competency demonstrations loaded for this facility (not org-wide
+                compliance snapshots).
+              </p>
               <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex flex-col gap-2">
-                 <div className="flex justify-between items-center">
-                   <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Annual Core Certs</p>
-                   <span className="text-xs font-bold text-emerald-600">92%</span>
-                 </div>
-                 <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
-                   <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: '92%' }}></div>
-                 </div>
+                <div className="flex justify-between items-center">
+                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Passed</p>
+                  <span className="text-xs font-bold text-emerald-600">{statusCounts.passed}</span>
+                </div>
               </div>
               <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex flex-col gap-2">
-                 <div className="flex justify-between items-center">
-                   <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Dementia Tier 1</p>
-                   <span className="text-xs font-bold text-amber-500">68%</span>
-                 </div>
-                 <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
-                   <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: '68%' }}></div>
-                 </div>
+                <div className="flex justify-between items-center">
+                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Draft / submitted</p>
+                  <span className="text-xs font-bold text-amber-500">{statusCounts.pending}</span>
+                </div>
               </div>
               <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex flex-col gap-2">
-                 <div className="flex justify-between items-center">
-                   <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Infection Control</p>
-                   <span className="text-xs font-bold text-rose-500">42%</span>
-                 </div>
-                 <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
-                   <div className="bg-rose-500 h-1.5 rounded-full" style={{ width: '42%' }}></div>
-                 </div>
+                <div className="flex justify-between items-center">
+                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Failed</p>
+                  <span className="text-xs font-bold text-rose-500">{statusCounts.failed}</span>
+                </div>
               </div>
             </div>
             
