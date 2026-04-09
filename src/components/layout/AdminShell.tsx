@@ -13,8 +13,6 @@ import {
   UserCircle2,
   ChevronDown, 
   Check,
-  PanelLeftClose,
-  PanelLeftOpen,
   LayoutDashboard,
   Users,
   UserPlus,
@@ -48,6 +46,12 @@ import {
   FileText,
   Smartphone,
   Star,
+  ActivitySquare,
+  BriefcaseMedical,
+  Stethoscope,
+  Building2,
+  ShieldCheck,
+  Zap
 } from "lucide-react";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
@@ -57,7 +61,6 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -73,17 +76,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const setAvailableFacilities = useFacilityStore((s) => s.setAvailableFacilities);
 
   const currentFacility = availableFacilities.find((f) => f.id === selectedFacilityId);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
-    "Command & Triage": true,
-    "Resident Pipeline": true,
-    "Clinical & Daily Ops": true,
-    "Quality & Risk": true,
-  });
-  
-  const toggleGroup = (groupName: string) => {
-    setExpandedGroups(prev => ({ ...prev, [groupName]: !prev[groupName] }));
-  };
 
   const [facilitiesLoading, setFacilitiesLoading] = useState(true);
   const [facilitiesLoadFailed, setFacilitiesLoadFailed] = useState(false);
@@ -157,58 +149,64 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   const navGroups = useMemo(() => [
     {
-      group: "Command & Triage",
+      group: "Command",
+      icon: Zap,
       items: [
         { key: "dashboard", href: "/admin", label: "Triage Inbox", enabled: true, icon: LayoutDashboard },
-        { key: "executive", href: "/admin/executive", label: "Executive", enabled: true, icon: BarChart3 },
-        { key: "reports", href: "/admin/reports", label: "Reports", enabled: true, icon: FileText },
+        { key: "executive", href: "/admin/executive", label: "Executive summary", enabled: true, icon: BarChart3 },
+        { key: "reports", href: "/admin/reports", label: "Reports hub", enabled: true, icon: FileText },
       ]
     },
     {
-      group: "Resident Pipeline",
+      group: "Pipeline",
+      icon: ActivitySquare,
       items: [
-        { key: "referrals", href: "/admin/referrals", label: "Referrals", enabled: true, icon: UserPlus },
-        { key: "admissions", href: "/admin/admissions", label: "Admissions", enabled: true, icon: Home },
-        { key: "discharge", href: "/admin/discharge", label: "Discharge", enabled: true, icon: DoorOpen },
-        { key: "family-portal", href: "/admin/family-portal", label: "Family Portal", enabled: true, icon: Heart },
-        { key: "family-messages", href: "/admin/family-messages", label: "Family Messages", enabled: true, icon: MessageCircle },
+        { key: "referrals", href: "/admin/referrals", label: "Referrals CRM", enabled: true, icon: UserPlus },
+        { key: "admissions", href: "/admin/admissions", label: "Recent admissions", enabled: true, icon: Home },
+        { key: "discharge", href: "/admin/discharge", label: "Discharge management", enabled: true, icon: DoorOpen },
+        { key: "family-portal", href: "/admin/family-portal", label: "Family Portal connections", enabled: true, icon: Heart },
+        { key: "family-messages", href: "/admin/family-messages", label: "Family Messages triage", enabled: true, icon: MessageCircle },
       ]
     },
     {
-      group: "Clinical & Daily Ops",
+      group: "Clinical Ops",
+      icon: Stethoscope,
       items: [
-        { key: "residents", href: "/admin/residents", label: "Roster", enabled: true, icon: Users },
-        { key: "assessments", href: "/admin/assessments/overdue", label: "Clinical Desk", enabled: true, icon: ClipboardCheck },
-        { key: "rounding", href: "/admin/rounding", label: "Rounding", enabled: true, icon: Clock },
-        { key: "medications", href: "/admin/medications", label: "Medications", enabled: true, icon: Pill },
-        { key: "dietary", href: "/admin/dietary", label: "Dietary", enabled: true, icon: Utensils },
-        { key: "transportation", href: "/admin/transportation", label: "Transportation", enabled: true, icon: Bus },
+        { key: "residents", href: "/admin/residents", label: "Resident roster", enabled: true, icon: Users },
+        { key: "assessments", href: "/admin/assessments/overdue", label: "Clinical Desk (Assessments)", enabled: true, icon: ClipboardCheck },
+        { key: "rounding", href: "/admin/rounding", label: "Smart Rounding", enabled: true, icon: Clock },
+        { key: "medications", href: "/admin/medications", label: "Medication management", enabled: true, icon: Pill },
+        { key: "dietary", href: "/admin/dietary", label: "Dietary & Nutrition", enabled: true, icon: Utensils },
+        { key: "transportation", href: "/admin/transportation", label: "Transportation log", enabled: true, icon: Bus },
       ]
     },
     {
       group: "Quality & Risk",
+      icon: ShieldCheck,
       items: [
-        { key: "incidents", href: "/admin/incidents", label: "Incidents", enabled: true, icon: ShieldAlert },
+        { key: "incidents", href: "/admin/incidents", label: "Incident queue", enabled: true, icon: ShieldAlert },
         { key: "infection", href: "/admin/infection-control", label: "Infection Control", enabled: true, icon: Biohazard },
-        { key: "compliance", href: "/admin/compliance", label: "Compliance", enabled: true, icon: Scale },
+        { key: "compliance", href: "/admin/compliance", label: "Compliance & Safety", enabled: true, icon: Scale },
         { key: "quality", href: "/admin/quality", label: "Quality Metrics", enabled: true, icon: LineChart },
-        { key: "reputation", href: "/admin/reputation", label: "Reputation", enabled: true, icon: Star },
+        { key: "reputation", href: "/admin/reputation", label: "Reputation tracker", enabled: true, icon: Star },
       ]
     },
     {
       group: "Workforce",
+      icon: BriefcaseMedical,
       items: [
         { key: "staff", href: "/admin/staff", label: "Staff Roster", enabled: true, icon: UserCog },
         { key: "schedules", href: "/admin/schedules", label: "Schedules", enabled: true, icon: CalendarDays },
-        { key: "staffing", href: "/admin/staffing", label: "Staffing", enabled: true, icon: Activity },
-        { key: "certifications", href: "/admin/certifications", label: "Certifications", enabled: true, icon: Award },
-        { key: "training", href: "/admin/training", label: "Training", enabled: true, icon: GraduationCap },
+        { key: "staffing", href: "/admin/staffing", label: "Staffing alerts", enabled: true, icon: Activity },
+        { key: "certifications", href: "/admin/certifications", label: "Certifications tracker", enabled: true, icon: Award },
+        { key: "training", href: "/admin/training", label: "Training hub", enabled: true, icon: GraduationCap },
         { key: "time-records", href: "/admin/time-records", label: "Time records", enabled: true, icon: Clock },
-        { key: "payroll", href: "/admin/payroll", label: "Payroll", enabled: true, icon: Banknote },
+        { key: "payroll", href: "/admin/payroll", label: "Payroll integrations", enabled: true, icon: Banknote },
       ]
     },
     {
-      group: "Finance & Business",
+      group: "Finance",
+      icon: Building2,
       items: [
         { key: "billing", href: "/admin/billing", label: "Billing & AR", enabled: true, icon: CreditCard },
         { key: "finance", href: "/admin/finance", label: "Finance Hub", enabled: true, icon: Landmark },
@@ -219,284 +217,237 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     }
   ], []);
 
-  // Auto-expand the group that contains the active route
-  useEffect(() => {
-    let activeGroup = "";
+  // Determine active group for styling the top-nav pill
+  const activeGroup = useMemo(() => {
+    let active = "";
     navGroups.forEach(g => {
       g.items.forEach(item => {
         if (pathname === item.href || pathname.startsWith(item.href + "/") && item.href !== "/admin") {
-          activeGroup = g.group;
+          active = g.group;
         }
         if (item.href === "/admin" && pathname === "/admin") {
-          activeGroup = g.group;
+          active = g.group;
         }
       });
     });
-    if (activeGroup) {
-      setExpandedGroups(prev => (prev[activeGroup] ? prev : { ...prev, [activeGroup]: true }));
-    }
+    return active;
   }, [pathname, navGroups]);
 
   return (
-    <div className="flex h-screen w-full bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-300">
-      {/* Sidebar */}
-      <aside 
-        className={`border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-soft hidden lg:flex lg:flex-col transition-all duration-300 ease-in-out shrink-0 relative ${
-          isSidebarCollapsed ? "w-16" : "w-[260px]"
-        }`}
-      >
-        <div className="h-16 flex items-center px-4 border-b border-slate-200 dark:border-slate-800 overflow-hidden shrink-0">
-          <div className="flex justify-between items-center w-full">
-            <span className={`text-lg font-semibold font-display text-slate-900 dark:text-white tracking-tight whitespace-nowrap transition-opacity duration-300 ${isSidebarCollapsed ? "opacity-0 invisible w-0" : "opacity-100 visible"}`}>
-              Haven Admin
-            </span>
-            <button 
-              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="p-1.5 rounded-md text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
-            >
-              {isSidebarCollapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5 flex-shrink-0" />}
-            </button>
-          </div>
-        </div>
-
-        <nav className="flex-1 px-3 py-6 space-y-4 overflow-y-auto overflow-x-hidden scrollbar-hide">
-          {navGroups.map((group, gIdx) => {
-            const isExpanded = expandedGroups[group.group] || isSidebarCollapsed;
-            
-            return (
-              <div key={gIdx} className="flex flex-col">
-                {/* Group Header */}
-                {!isSidebarCollapsed && (
-                  <button 
-                    onClick={() => toggleGroup(group.group)}
-                    className="flex w-full items-center justify-between px-3 py-1.5 mb-1 group text-left outline-none"
-                  >
-                    <span className="text-[10px] font-mono tracking-widest text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 uppercase transition-colors">
-                      {group.group}
-                    </span>
-                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isExpanded ? "" : "-rotate-90"}`} />
-                  </button>
-                )}
-                
-                {isSidebarCollapsed && <div className="h-4" />}
-
-                {/* Group Items */}
-                {isExpanded && (
-                  <div className="space-y-1">
-                    {group.items.map((item) => {
-                      const isActive =
-                        pathname === item.href ||
-                        (item.key === "executive" && pathname.startsWith("/admin/executive")) ||
-                        (item.key === "reports" && pathname.startsWith("/admin/reports")) ||
-                        (item.key === "referrals" && pathname.startsWith("/admin/referrals")) ||
-                        (item.key === "reputation" && pathname.startsWith("/admin/reputation")) ||
-                        (item.key === "admissions" && pathname.startsWith("/admin/admissions")) ||
-                        (item.key === "discharge" && pathname.startsWith("/admin/discharge")) ||
-                        (item.key === "quality" && pathname.startsWith("/admin/quality")) ||
-                        (item.key === "medications" && pathname.startsWith("/admin/medications")) ||
-                        (item.key === "infection" && pathname.startsWith("/admin/infection-control")) ||
-                        (item.key === "compliance" && pathname.startsWith("/admin/compliance")) ||
-                        (item.key === "finance" && pathname.startsWith("/admin/finance")) ||
-                        (item.key === "insurance" && pathname.startsWith("/admin/insurance")) ||
-                        (item.key === "vendors" && pathname.startsWith("/admin/vendors")) ||
-                        (item.key === "family-portal" && pathname.startsWith("/admin/family-portal")) ||
-                        (item.key === "training" && pathname.startsWith("/admin/training")) ||
-                        (item.key === "payroll" && pathname.startsWith("/admin/payroll")) ||
-                        (item.key === "dietary" && pathname.startsWith("/admin/dietary")) ||
-                        (item.key === "transportation" && pathname.startsWith("/admin/transportation")) ||
-                        (item.key === "notifications" && pathname.startsWith("/admin/settings"));
-                        
-                      const Icon = item.icon;
-                      
-                      if (!item.enabled) {
-                        return (
-                          <div
-                            key={item.key}
-                            className="flex items-center gap-3 rounded-md px-3 py-2 cursor-not-allowed opacity-50"
-                            title={isSidebarCollapsed ? item.label : undefined}
-                          >
-                            <Icon className="w-5 h-5 shrink-0 text-slate-400" />
-                            {!isSidebarCollapsed && <span className="text-sm font-medium text-slate-400 whitespace-nowrap">{item.label}</span>}
-                          </div>
-                        );
-                      }
-                      
-                      return (
-                        <Link
-                          key={item.key}
-                          href={item.href}
-                          title={isSidebarCollapsed ? item.label : undefined}
-                          className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium tap-responsive transition-colors ${
-                            isActive
-                              ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-white shadow-sm"
-                              : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/50 hover:text-slate-900 dark:hover:text-white"
-                          }`}
-                        >
-                          <Icon className={`w-[18px] h-[18px] shrink-0 ${isActive ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`} />
-                          <span className={`whitespace-nowrap transition-opacity duration-300 ${isSidebarCollapsed ? "opacity-0 invisible w-0" : "opacity-100 visible"}`}>
-                            {item.label}
-                          </span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </nav>
-      </aside>
+    <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-[#050505] font-sans transition-colors duration-300">
       
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Header */}
-        <header className="h-16 flex items-center justify-between px-6 lg:px-8 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 transition-colors duration-300">
-          <div className="flex items-center gap-4">
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/50 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 tap-responsive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                <span className="text-sm font-medium text-slate-900 dark:text-slate-200 truncate max-w-[200px]">
-                  {facilityTriggerLabel}
-                </span>
-                <ChevronDown className="h-4 w-4 text-slate-600 dark:text-slate-300" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[220px] dark:bg-slate-950 dark:border-slate-800">
-                <DropdownMenuItem
-                  onClick={() => setSelectedFacility(null)}
-                  className="flex cursor-pointer items-center justify-between font-medium dark:focus:bg-slate-800"
-                >
-                  All facilities
-                  {selectedFacilityId === null && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
-                </DropdownMenuItem>
+      {/* ─── MOONSHOT UNIFIED TOP NAVIGATION ───────────────────────────────────── */}
+      <header className="h-16 flex items-center justify-between px-4 lg:px-8 border-b border-slate-200 dark:border-white/5 bg-white/70 dark:bg-black/40 backdrop-blur-xl z-50 sticky top-0 shrink-0">
+        
+        <div className="flex items-center gap-6">
+          {/* Logo / Brand */}
+          <Link href="/admin" className="flex items-center gap-2 tap-responsive">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.4)]">
+              <span className="text-white font-display font-bold text-lg leading-none mt-0.5">H</span>
+            </div>
+            <span className="text-xl font-semibold font-display text-slate-900 dark:text-white tracking-tight hidden md:block">
+              Haven
+            </span>
+          </Link>
 
-                {facilitiesLoadFailed ? (
-                  <div className="px-2 py-1.5 text-xs text-amber-700 dark:text-amber-300">
-                    Could not load facilities. Check login and Supabase access.
-                  </div>
-                ) : null}
+          {/* Module Switcher (The Mega Menu) */}
+          <nav className="hidden xl:flex items-center gap-1 bg-slate-100/50 dark:bg-white/[0.03] p-1 rounded-2xl border border-slate-200/50 dark:border-white/5">
+             {navGroups.map((group) => {
+               const isActive = activeGroup === group.group;
+               const GroupIcon = group.icon;
 
-                {facilitiesLoadFailed ? (
-                  <DropdownMenuItem
-                    onClick={() => void refreshFacilities()}
-                    className="cursor-pointer dark:focus:bg-slate-800"
-                  >
-                    Retry loading facilities
-                  </DropdownMenuItem>
-                ) : null}
+               return (
+                 <DropdownMenu key={group.group}>
+                   <DropdownMenuTrigger className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all outline-none tap-responsive ${
+                     isActive 
+                       ? "bg-white dark:bg-white/10 text-indigo-600 dark:text-white shadow-sm border border-slate-200 dark:border-white/10" 
+                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-white/5"
+                   }`}>
+                     <GroupIcon className={`w-4 h-4 ${isActive ? 'text-indigo-500 dark:text-indigo-400' : ''}`} />
+                     {group.group}
+                     <ChevronDown className="w-3.5 h-3.5 opacity-50 ml-1" />
+                   </DropdownMenuTrigger>
+                   <DropdownMenuContent align="start" sideOffset={12} className="w-[320px] rounded-[1.5rem] p-3 dark:bg-zinc-950/95 dark:backdrop-blur-3xl dark:border-white/10 shadow-2xl">
+                      <div className="mb-2 px-3 pt-2">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-zinc-500">{group.group} Hub</span>
+                      </div>
+                      <div className="grid grid-cols-1 gap-1">
+                        {group.items.map((item) => {
+                           const ItemIcon = item.icon;
+                           const isItemActive = pathname === item.href || (pathname.startsWith(item.href + "/") && item.href !== "/admin") || (item.href === "/admin" && pathname === "/admin");
+                           
+                           if (!item.enabled) return null;
 
-                {availableFacilities.map((facility) => (
-                  <DropdownMenuItem 
-                    key={facility.id}
-                    onClick={() => setSelectedFacility(facility.id)}
-                    className="flex justify-between items-center cursor-pointer dark:focus:bg-slate-800"
-                  >
-                    {facility.name}
-                    {selectedFacilityId === facility.id && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+                           return (
+                             <DropdownMenuItem
+                               key={item.key}
+                               className="p-0"
+                               nativeButton={false}
+                               render={
+                                 <Link
+                                   href={item.href}
+                                   className={`flex items-center gap-3 rounded-xl px-3 py-3 w-full cursor-pointer transition-all outline-none ${
+                                     isItemActive
+                                       ? "bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white"
+                                       : "text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-white/5"
+                                   }`}
+                                 >
+                                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isItemActive ? "bg-indigo-100 dark:bg-white/10" : "bg-slate-100 dark:bg-white/5"}`}>
+                                     <ItemIcon className={`w-4 h-4 ${isItemActive ? "text-indigo-600 dark:text-indigo-300" : "text-slate-500 dark:text-zinc-400"}`} />
+                                   </div>
+                                   <span className="text-sm font-medium tracking-wide">{item.label}</span>
+                                 </Link>
+                               }
+                             />
+                           );
+                        })}
+                      </div>
+                   </DropdownMenuContent>
+                 </DropdownMenu>
+               );
+             })}
+          </nav>
+        </div>
+        
+        {/* Right Nav Utilities */}
+        <div className="flex items-center gap-3">
           
-          <div className="flex items-center gap-3">
-            <Link
-              href="/admin/search"
-              className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 tap-responsive"
-              aria-label="Search"
-            >
-              <Search className="w-5 h-5" />
-            </Link>
-            <button className="relative p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 tap-responsive" aria-label="Notifications">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-600 border-2 border-white dark:border-slate-950"></span>
-            </button>
-            
-            <div className="mx-1 h-6 w-px bg-slate-200 dark:bg-slate-800" />
-
-            {sessionEmail ? (
-              <span
-                className="hidden max-w-[168px] truncate text-xs text-slate-600 dark:text-slate-300 md:inline"
-                title={sessionEmail}
-              >
-                {sessionEmail}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 tap-responsive focus-visible:outline-none transition-all">
+              <Building2 className="w-4 h-4 text-slate-500 dark:text-zinc-400" />
+              <span className="text-sm font-medium text-slate-900 dark:text-slate-200 truncate max-w-[140px] md:max-w-[200px]">
+                {facilityTriggerLabel}
               </span>
-            ) : null}
-
-            {/* Global Theme Toggle */}
-            <DropdownMenu>
-              <DropdownMenuTrigger className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 tap-responsive outline-none">
-                {mounted && theme === "dark" ? <Moon className="w-5 h-5" /> : mounted && theme === "light" ? <Sun className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-36 dark:bg-slate-950 dark:border-slate-800">
-                <DropdownMenuItem onClick={() => setTheme("light")} className="cursor-pointer dark:focus:bg-slate-800">
-                  <Sun className="mr-2 h-4 w-4" /> Light
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("dark")} className="cursor-pointer dark:focus:bg-slate-800">
-                  <Moon className="mr-2 h-4 w-4" /> Dark
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("system")} className="cursor-pointer dark:focus:bg-slate-800">
-                  <Monitor className="mr-2 h-4 w-4" /> System
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className="ml-1 rounded-full p-1 tap-responsive outline-none hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-ring dark:hover:bg-slate-800"
-                aria-label="Account menu"
+              <ChevronDown className="h-4 w-4 text-slate-400 dark:text-zinc-500 ml-1" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[260px] rounded-[1.2rem] p-2 dark:bg-zinc-950/95 dark:backdrop-blur-xl dark:border-white/10">
+              <DropdownMenuItem
+                onClick={() => setSelectedFacility(null)}
+                className="flex cursor-pointer items-center justify-between font-medium rounded-lg p-3 dark:focus:bg-white/5"
               >
-                <UserCircle2 className="h-7 w-7 text-slate-600 dark:text-slate-300" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 dark:border-slate-800 dark:bg-slate-950">
-                <DropdownMenuGroup>
-                  {sessionEmail ? (
-                    <DropdownMenuLabel className="truncate font-normal text-slate-600 dark:text-slate-400">
-                      {sessionEmail}
-                    </DropdownMenuLabel>
-                  ) : null}
-                  <DropdownMenuItem
-                    className="cursor-pointer dark:focus:bg-slate-800"
-                    onClick={() => router.push("/admin/settings/notifications")}
-                  >
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    variant="destructive"
-                    className="cursor-pointer dark:focus:bg-slate-800"
-                    disabled={signingOut}
-                    onClick={() => void handleSignOut()}
-                  >
-                    {signingOut ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Signing out…
-                      </>
-                    ) : (
-                      <>
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Sign out
-                      </>
-                    )}
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </header>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded bg-slate-100 dark:bg-white/10 flex items-center justify-center"><Building2 className="w-3 h-3" /></div>
+                  All facilities
+                </div>
+                {selectedFacilityId === null && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
+              </DropdownMenuItem>
 
-        <SurveyVisitModeBar />
+              <DropdownMenuSeparator className="dark:bg-white/10 my-1" />
 
-        {/* Dynamic Page Content with Global Ambient Matrix */}
-        <main className="flex-1 overflow-auto p-6 lg:p-8 relative dark:bg-[#020202]">
-          <div className="fixed top-0 right-0 h-[800px] w-[800px] rounded-full blur-[150px] bg-indigo-500/5 dark:bg-indigo-600/10 pointer-events-none transition-colors duration-[3000ms] z-0 mix-blend-screen" />
-          <div className="fixed bottom-0 left-0 h-[600px] w-[600px] rounded-full blur-[120px] bg-emerald-500/5 dark:bg-emerald-900/10 pointer-events-none transition-colors duration-[3000ms] z-0 mix-blend-screen" />
+              {facilitiesLoadFailed && (
+                <div className="px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+                  Could not load facilities. Check login and Supabase access.
+                  <button onClick={() => void refreshFacilities()} className="mt-2 text-indigo-400 underline">Retry</button>
+                </div>
+              )}
+
+              {availableFacilities.map((facility) => (
+                <DropdownMenuItem 
+                  key={facility.id}
+                  onClick={() => setSelectedFacility(facility.id)}
+                  className="flex justify-between items-center cursor-pointer rounded-lg p-3 dark:focus:bg-white/5"
+                >
+                  <span className="truncate pr-2">{facility.name}</span>
+                  {selectedFacilityId === facility.id && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <div className="h-8 w-px bg-slate-200 dark:bg-white/10 mx-1 hidden md:block" />
+
+          <Link
+            href="/admin/search"
+            className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-zinc-300 tap-responsive transition-colors"
+            aria-label="Search"
+          >
+            <Search className="w-5 h-5" />
+          </Link>
           
-          <div className="relative z-10 w-full h-full">
-            {children}
-          </div>
-        </main>
-      </div>
+          <button className="relative p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-zinc-300 tap-responsive transition-colors" aria-label="Notifications">
+            <Bell className="w-5 h-5" />
+            <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-rose-500 border-2 border-white dark:border-[#050505]"></span>
+          </button>
+          
+          {/* Global Theme Toggle */}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-zinc-300 tap-responsive outline-none transition-colors">
+              {mounted && theme === "dark" ? <Moon className="w-5 h-5" /> : mounted && theme === "light" ? <Sun className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-36 rounded-xl dark:bg-zinc-950 dark:border-white/10">
+              <DropdownMenuItem onClick={() => setTheme("light")} className="cursor-pointer rounded-lg dark:focus:bg-white/5">
+                <Sun className="mr-2 h-4 w-4" /> Light
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("dark")} className="cursor-pointer rounded-lg dark:focus:bg-white/5">
+                <Moon className="mr-2 h-4 w-4" /> Dark
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("system")} className="cursor-pointer rounded-lg dark:focus:bg-white/5">
+                <Monitor className="mr-2 h-4 w-4" /> System
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="ml-2 rounded-full p-1 tap-responsive outline-none border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/40 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+              aria-label="Account menu"
+            >
+              <UserCircle2 className="h-7 w-7 text-slate-600 dark:text-zinc-300" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64 rounded-xl dark:border-white/10 dark:bg-zinc-950 p-2">
+              <DropdownMenuGroup>
+                {sessionEmail && (
+                  <div className="px-3 py-2 mb-2 flex flex-col gap-1 border-b border-slate-100 dark:border-white/10">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Signed In</span>
+                    <span className="truncate font-medium text-sm text-slate-900 dark:text-zinc-200">
+                      {sessionEmail}
+                    </span>
+                  </div>
+                )}
+                <DropdownMenuItem
+                  className="cursor-pointer rounded-lg dark:focus:bg-white/5 py-2.5"
+                  onClick={() => router.push("/admin/settings/notifications")}
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  Account Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  variant="destructive"
+                  className="cursor-pointer rounded-lg dark:focus:bg-white/5 py-2.5 mt-1"
+                  disabled={signingOut}
+                  onClick={() => void handleSignOut()}
+                >
+                  {signingOut ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin text-rose-500" />
+                      <span className="text-rose-500 font-medium">Signing out…</span>
+                    </>
+                  ) : (
+                    <>
+                      <LogOut className="mr-2 h-4 w-4 text-rose-500" />
+                      <span className="text-rose-500 font-medium">Sign out securely</span>
+                    </>
+                  )}
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
+      
+      {/* Mobile Nav Warning / Trigger could go here in future */}
+      <SurveyVisitModeBar />
+
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-auto relative">
+        <div className="fixed top-[-20%] right-[-10%] h-[1000px] w-[1000px] rounded-full blur-[180px] bg-indigo-500/10 dark:bg-indigo-600-[0.03] pointer-events-none z-0 mix-blend-screen" />
+        <div className="fixed bottom-[-10%] left-[-10%] h-[800px] w-[800px] rounded-full blur-[150px] bg-emerald-500/10 dark:bg-emerald-900/[0.04] pointer-events-none z-0 mix-blend-screen" />
+        
+        <div className="relative z-10 w-full h-full p-6 lg:p-10 max-w-[1600px] mx-auto">
+          {children}
+        </div>
+      </main>
+
     </div>
   );
 }
