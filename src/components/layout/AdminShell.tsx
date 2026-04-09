@@ -27,6 +27,7 @@ import {
   Utensils,
   Bus,
   CalendarDays,
+  ArrowLeftRight,
   Clock,
   Banknote,
   Activity,
@@ -197,6 +198,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       items: [
         { key: "staff", href: "/admin/staff", label: "Staff Roster", enabled: true, icon: UserCog },
         { key: "schedules", href: "/admin/schedules", label: "Schedules", enabled: true, icon: CalendarDays },
+        { key: "shift-swaps", href: "/admin/shift-swaps", label: "Shift swaps", enabled: true, icon: ArrowLeftRight },
         { key: "staffing", href: "/admin/staffing", label: "Staffing alerts", enabled: true, icon: Activity },
         { key: "certifications", href: "/admin/certifications", label: "Certifications tracker", enabled: true, icon: Award },
         { key: "training", href: "/admin/training", label: "Training hub", enabled: true, icon: GraduationCap },

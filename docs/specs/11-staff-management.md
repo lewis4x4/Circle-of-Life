@@ -413,6 +413,7 @@ Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
 | Certification Dashboard | `/admin/certifications` | Grid: staff names × certification types. Green (current), Yellow (expiring in 90 days), Red (expired or missing). Drill down to renew. **Certifications CSV download** (Track D30): up to 500 `staff_certifications` rows with **`staff_display_name`**, facility-scoped when a facility is selected. |
 | Schedule Builder | `/admin/schedules` | Hub lists schedule **week** rows (`schedules`). **Schedule weeks CSV** (Track D33): up to 500 `schedules` rows, facility-scoped when a facility is selected. **Week detail** (Track D35): `/admin/schedules/:id` read-only **`shift_assignments`** list + CSV (up to 500); full 7-day grid and drag-drop remain future work. |
 | Time Records | `/admin/time-records` | Table: staff, date, clock in, clock out, hours, overtime, approved. Bulk approve button. **Time records CSV** (Track D31): up to 500 `time_records` rows with **`staff_display_name`**, facility-scoped when a facility is selected. |
+| Shift swap queue | `/admin/shift-swaps` | Read-only list of **`shift_swap_requests`** for scheduling oversight (requesting → covering staff labels). **CSV** (Track D36): up to 500 rows with display names, facility-scoped when a facility is selected. Approve/deny UI deferred. |
 | Staffing Dashboard | `/admin/staffing` | Real-time ratio display per shift, historical ratio chart, alert log. **Ratio snapshots CSV** (Track D32): up to 500 `staffing_ratio_snapshots` rows, facility-scoped when a facility is selected (`staff_detail` as JSON in column `staff_detail_json`). |
 
 ### Mobile (Staff)
@@ -446,6 +447,10 @@ Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
 ### Track D — schedule week detail + shift assignments CSV (shipped)
 
 **D35:** **`/admin/schedules/[id]`** — Loads one **`schedules`** row; lists **`shift_assignments`** for that **`schedule_id`** (up to **500**) with **`staff_display_name`** (joined from **`staff`**); **Download assignments CSV** uses the same scope. When a facility is selected in the header, shows a warning if the schedule’s **`facility_id`** does not match. **No** new DDL. Creating a new week redirects to this detail route.
+
+### Track D — shift swap requests hub + CSV (shipped)
+
+**D36:** **`/admin/shift-swaps`** — Read-only list of **`shift_swap_requests`** (up to **500**), **`staff`** names for requesting and covering staff; **Download CSV** includes **`requesting_staff_display_name`** and **`covering_staff_display_name`**. Scope matches facility filter when valid. **No** approve/deny actions in this slice. **No** new DDL.
 
 ---
 
