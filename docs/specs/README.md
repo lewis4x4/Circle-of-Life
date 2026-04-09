@@ -10,7 +10,7 @@
 
 ## Current state (reconciled 2026-04-09)
 
-**Repo migrations:** **`001`–`111`** — verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release.
+**Repo migrations:** **`001`–`112`** — verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release.
 
 **Where acceptance stands**
 
@@ -31,9 +31,9 @@
 ### What to do next (closeout order)
 
 1. **Track A** — **A1** (auth) + **A2** (RLS) owner-verified **2026-04-09**; **A3** real-auth UAT depth → **A4** env/seed → **A5** Pro/BAA/PITR → **A6** waiver review. Single roadmap: [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md). Production PHI still requires **A5** and remaining UAT rows.
-2. **Confirm remote DB** — `supabase migration list` on the target project must match **local `001`–`111`** before claiming parity.
+2. **Confirm remote DB** — `supabase migration list` on the target project must match **local `001`–`112`** before claiming parity.
 3. **Tracks B–D** — Platform hardening, workflow hardening, Phase 6 Enhanced gaps — per sections below.
-4. **Track E** — New DDL starting at migration **`112`** (after **`110`–`111`** closeout DDL) only after specs exist and Tracks A–D are appropriately satisfied for your risk tolerance.
+4. **Track E** — New DDL starting at migration **`113`** (after **`112`** resident transport requests) only after specs exist and Tracks A–D are appropriately satisfied for your risk tolerance.
 
 ---
 
