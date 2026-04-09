@@ -67,3 +67,32 @@ CREATE TABLE auth.identities (
   updated_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (provider, provider_id)
 );
+
+-- Minimal Storage API stubs (Supabase). Lets migrations create buckets + storage.objects policies.
+CREATE SCHEMA IF NOT EXISTS storage;
+
+CREATE TABLE IF NOT EXISTS storage.buckets (
+  id text PRIMARY KEY,
+  name text NOT NULL,
+  owner uuid,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  public boolean DEFAULT false,
+  avif_autodetection boolean DEFAULT false,
+  file_size_limit bigint,
+  allowed_mime_types text[]
+);
+
+CREATE TABLE IF NOT EXISTS storage.objects (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
+  bucket_id text NOT NULL REFERENCES storage.buckets (id) ON DELETE CASCADE,
+  name text NOT NULL,
+  owner uuid,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  last_accessed_at timestamptz DEFAULT now(),
+  metadata jsonb DEFAULT '{}'::jsonb,
+  UNIQUE (bucket_id, name)
+);
+
+ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;

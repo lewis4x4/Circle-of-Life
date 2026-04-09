@@ -12,7 +12,13 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import {
+  COMPETENCY_CERTIFICATE_BUCKET,
+  competencyCertificateObjectPath,
+} from "@/lib/training/competency-storage";
 import { cn } from "@/lib/utils";
+
+const MAX_CERT_PDF_BYTES = 15 * 1024 * 1024;
 
 type StaffOption = { id: string; name: string };
 
@@ -26,6 +32,7 @@ export default function AdminTrainingNewDemonstrationPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [certificatePdf, setCertificatePdf] = useState<File | null>(null);
 
   const loadStaff = useCallback(async () => {
     setLoading(true);
@@ -74,18 +81,76 @@ export default function AdminTrainingNewDemonstrationPage() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Sign in required.");
-      const { error: insErr } = await supabase.from("competency_demonstrations").insert({
-        organization_id: ctx.ctx.organizationId,
-        facility_id: selectedFacilityId,
-        staff_id: staffId,
-        evaluator_user_id: user.id,
-        created_by: user.id,
-        status: "draft",
-        skills_json: [],
-        attachments: [],
-        notes: notes.trim() || null,
-      });
+
+      if (certificatePdf) {
+        if (certificatePdf.size > MAX_CERT_PDF_BYTES) {
+          throw new Error("Certificate PDF must be 15 MB or smaller.");
+        }
+        if (certificatePdf.type !== "application/pdf") {
+          throw new Error("Certificate must be a PDF file.");
+        }
+      }
+
+      const { data: inserted, error: insErr } = await supabase
+        .from("competency_demonstrations")
+        .insert({
+          organization_id: ctx.ctx.organizationId,
+          facility_id: selectedFacilityId,
+          staff_id: staffId,
+          evaluator_user_id: user.id,
+          created_by: user.id,
+          status: "draft",
+          skills_json: [],
+          attachments: [],
+          notes: notes.trim() || null,
+        })
+        .select("id")
+        .single();
+
       if (insErr) throw insErr;
+      if (!inserted?.id) throw new Error("Could not create demonstration.");
+
+      const demoId = inserted.id;
+
+      if (certificatePdf) {
+        const objectPath = competencyCertificateObjectPath(
+          ctx.ctx.organizationId,
+          selectedFacilityId,
+          demoId,
+          certificatePdf.name,
+        );
+        const { error: upErr } = await supabase.storage
+          .from(COMPETENCY_CERTIFICATE_BUCKET)
+          .upload(objectPath, certificatePdf, { contentType: "application/pdf", upsert: false });
+        if (upErr) {
+          await supabase
+            .from("competency_demonstrations")
+            .update({ deleted_at: new Date().toISOString(), updated_by: user.id })
+            .eq("id", demoId);
+          throw upErr;
+        }
+        const { error: attErr } = await supabase
+          .from("competency_demonstrations")
+          .update({
+            attachments: [
+              {
+                storage_path: objectPath,
+                label: "Competency certificate (PDF)",
+              },
+            ],
+            updated_by: user.id,
+          })
+          .eq("id", demoId);
+        if (attErr) {
+          await supabase.storage.from(COMPETENCY_CERTIFICATE_BUCKET).remove([objectPath]);
+          await supabase
+            .from("competency_demonstrations")
+            .update({ deleted_at: new Date().toISOString(), updated_by: user.id })
+            .eq("id", demoId);
+          throw attErr;
+        }
+      }
+
       router.push("/admin/training");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save.");
@@ -160,6 +225,20 @@ export default function AdminTrainingNewDemonstrationPage() {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Context for auditors"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cert">Certificate PDF (optional)</Label>
+              <Input
+                id="cert"
+                type="file"
+                accept="application/pdf,.pdf"
+                disabled={!facilityReady}
+                className="text-sm file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-2 file:py-1 dark:file:bg-slate-800"
+                onChange={(e) => setCertificatePdf(e.target.files?.[0] ?? null)}
+              />
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Baya or other competency certificate. Stored in org-scoped private Storage (PDF only, max 15 MB).
+              </p>
             </div>
             <Button type="submit" disabled={saving || !facilityReady || !staffId}>
               {saving ? "Saving…" : "Save draft"}

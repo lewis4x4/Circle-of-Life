@@ -11,6 +11,8 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
+import { parseCompetencyAttachments } from "@/lib/training/competency-storage";
+import { CompetencyCertificateOpenButton } from "@/components/training/competency-certificate-open-button";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
@@ -194,6 +196,7 @@ export default function AdminTrainingHubPage() {
                     </div>
                   ) : (
                     attentionRows.map((row) => {
+                    const attachmentItems = parseCompetencyAttachments(row.attachments);
                     const { title, tone } = attentionLabel(row.status);
                     const bar =
                       tone === "rose"
@@ -253,6 +256,18 @@ export default function AdminTrainingHubPage() {
                               Demonstration record — open or complete evaluation.
                             </p>
                           )}
+                          {attachmentItems.length > 0 ? (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {attachmentItems.map((a) => (
+                                <CompetencyCertificateOpenButton
+                                  key={a.storage_path}
+                                  storagePath={a.storage_path}
+                                  label={a.label}
+                                  className="h-8 text-[10px] font-mono uppercase tracking-widest"
+                                />
+                              ))}
+                            </div>
+                          ) : null}
                         </div>
                         <div className="flex justify-start">
                           <Link
@@ -276,7 +291,9 @@ export default function AdminTrainingHubPage() {
                       <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
                         Recently passed
                       </h4>
-                      {recentPassedRows.map((row) => (
+                      {recentPassedRows.map((row) => {
+                        const passedAttachments = parseCompetencyAttachments(row.attachments);
+                        return (
                         <MotionItem
                           key={row.id}
                           className="glass-panel p-3 rounded-xl border border-white/20 dark:border-white/5 bg-white/30 dark:bg-slate-900/30 flex gap-4 items-center"
@@ -288,12 +305,25 @@ export default function AdminTrainingHubPage() {
                             <p className="text-[10px] text-slate-500 truncate capitalize">
                               Status: {formatStatus(row.status)}
                             </p>
+                            {passedAttachments.length > 0 ? (
+                              <div className="flex flex-wrap gap-1.5 mt-2">
+                                {passedAttachments.map((a) => (
+                                  <CompetencyCertificateOpenButton
+                                    key={a.storage_path}
+                                    storagePath={a.storage_path}
+                                    label={a.label}
+                                    className="h-7 text-[9px] px-2"
+                                  />
+                                ))}
+                              </div>
+                            ) : null}
                           </div>
                           <span className="text-[10px] font-mono text-indigo-600 dark:text-indigo-400 text-right">
                             {format(new Date(row.demonstrated_at), "MMM d")}
                           </span>
                         </MotionItem>
-                      ))}
+                      );
+                      })}
                     </MotionList>
                   )}
                 </>
