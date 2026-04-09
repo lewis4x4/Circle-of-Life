@@ -373,11 +373,13 @@ Use these authoritative files as the acceptance source of truth:
 
 #### Track D — Phase 6 completion pass
 
+**Execution log (segment picks + rationale):** [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
 Before treating Phase 6 as “done,” revisit the recently shipped Core modules and close the major Enhanced gaps that matter operationally:
 
 - Training: attachment / evidence workflow depth
 - Dietary: medication / texture cross-check automation
-- Transportation: trip scheduling / compliance reminders where required
+- Transportation: trip scheduling / compliance reminders where required (**D1 started:** data-driven fleet/driver expiry cards on `/admin/transportation` — see TRACK-D)
 - Referral CRM: HL7 listener / parser beyond manual queue ingest
 - Reputation: platform sync / publishing APIs beyond manual tracking
 

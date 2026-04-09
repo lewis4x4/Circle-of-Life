@@ -110,6 +110,32 @@ Use `Tester` to record the human who ran the step. Use `Notes` to capture:
 
 ---
 
+## Track A — owner parallel closeout (A3, A4, A5, A6, ops)
+
+**Purpose:** Single table for items that **only the owner (or delegated tester)** can complete on the **target** environment. Agents update this file when evidence is supplied; do not mark **PASS** without named tester + date.
+
+| ID | Item | Result | Tester | Date | Notes |
+|----|------|--------|--------|------|-------|
+| PH1-OA01 | **§B–§E** depth UAT — all rows in sections **B–E** below | PENDING | | | Checklist: [PHASE1-ACCEPTANCE-CHECKLIST.md](./PHASE1-ACCEPTANCE-CHECKLIST.md) §B–§E; record each row **PASS** in place |
+| PH1-OA02 | **PH1-A04** — wrong role cannot open other-shell routes | PENDING | | | Caregiver/family attempt `/admin/*`; expect deny/redirect — see §A table **PH1-A04** |
+| PH1-OA03 | **PH1-P04** — facility context / switcher spot-check | PENDING | | | Single-facility pilot acceptable; note facility used |
+| PH1-OA04 | **PH1-P06** — Pro plan, **BAA** before PHI, **PITR** enabled | PENDING | | | Supabase Dashboard → Organization / Billing / Database settings |
+| PH1-OA05 | **Edge Function secrets** (cron + VAPID + dispatch) on target | PENDING | | | Names in [supabase/functions/README.md](../../supabase/functions/README.md) § Secrets |
+| PH1-OA06 | **Scheduled invocations** (crons) for Edge functions | PENDING | | | [TRACK-C-WORKFLOW-HARDENING.md](./TRACK-C-WORKFLOW-HARDENING.md) deploy checklist + billing/KPI/report jobs |
+| PH1-OA07 | **A6** — active waivers reviewed | PENDING | | | [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) |
+
+---
+
+## Track D — Phase 6 completion pass (repo segments)
+
+**Plan:** [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+| ID | Item | Result | Tester | Date | Notes |
+|----|------|--------|--------|------|-------|
+| PH1-TD1 | D1 Module 15 — `/admin/transportation` compliance cards from `driver_credentials` + `fleet_vehicles` dates | **PASS (repo)** | agent | 2026-04-09 | Replaces placeholder cards; 60-day window; gate: `test-results/agent-gates/2026-04-09T00-02-57-723Z-track-d-phase6-d1-transportation.json` |
+
+---
+
 ## B. Admin shell
 
 ### B1. `/admin`

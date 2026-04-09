@@ -120,7 +120,7 @@ Automated regression (`ci-gates.yml` auth-smoke, nightly `ci-nightly.yml`), obse
 Track C implemented per `docs/specs/TRACK-C-WORKFLOW-HARDENING.md` (Edge: `ar-aging-check`, `generate-emar-schedule`, `emar-missed-dose-check`, `exec-alert-evaluator`; runbooks for lifecycle). Owner deploys functions + crons; depth UAT still in `PHASE1-EXECUTION-LOG.md`.
 
 ### Step 4 — Phase 6 Completion Pass
-Modules 12 (Training), 14 (Dietary), 15 (Transportation), 22 (Referral CRM), 23 (Reputation) — their COL Alignment Notes sections identify what is needed before build begins.
+Modules 12 (Training), 14 (Dietary), 15 (Transportation), 22 (Referral CRM), 23 (Reputation) — their COL Alignment Notes sections identify what is needed before build begins. **Track D D1 (2026-04-09):** Module 15 transportation hub — data-driven driver/fleet expiry cards (`docs/specs/TRACK-D-PHASE6-PASS.md`).
 
 ### Step 5 — Module 25: Resident Assurance Engine
 Then remaining strategic modules in order per owner direction.

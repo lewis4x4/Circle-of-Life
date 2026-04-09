@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
-import { format } from "date-fns";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { differenceInCalendarDays, format, parseISO, startOfDay } from "date-fns";
 import { Bus } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
@@ -28,6 +28,45 @@ type DriverRow = Database["public"]["Tables"]["driver_credentials"]["Row"] & {
 
 function formatEnum(s: string) {
   return s.replace(/_/g, " ");
+}
+
+/** Calendar days from today for a YYYY-MM-DD (or timestamptz) string; null if missing/invalid. */
+function daysUntilCalendar(dateStr: string | null): number | null {
+  if (!dateStr) return null;
+  try {
+    const d = startOfDay(parseISO(dateStr.length <= 10 ? `${dateStr}T12:00:00.000Z` : dateStr));
+    return differenceInCalendarDays(d, startOfDay(new Date()));
+  } catch {
+    return null;
+  }
+}
+
+const COMPLIANCE_WINDOW_DAYS = 60;
+
+type DriverAlert = {
+  key: string;
+  title: string;
+  staffName: string;
+  staffId: string;
+  expiresOn: string;
+  daysUntil: number;
+};
+
+type VehicleAlert = {
+  key: string;
+  title: string;
+  vehicleName: string;
+  expiresOn: string;
+  daysUntil: number;
+};
+
+function formatAlertDeadline(daysUntil: number) {
+  if (daysUntil < 0) {
+    const n = Math.abs(daysUntil);
+    return `Expired ${n} day${n === 1 ? "" : "s"} ago`;
+  }
+  if (daysUntil === 0) return "Expires today";
+  return `Expires in ${daysUntil} day${daysUntil === 1 ? "" : "s"}`;
 }
 
 export default function AdminTransportationHubPage() {
@@ -93,6 +132,63 @@ export default function AdminTransportationHubPage() {
     void load();
   }, [load]);
 
+  const driverAlerts = useMemo((): DriverAlert[] => {
+    const out: DriverAlert[] = [];
+    for (const row of drivers) {
+      const staffName = row.staff ? `${row.staff.first_name} ${row.staff.last_name}` : "Unknown staff";
+      const lic = daysUntilCalendar(row.license_expires_on);
+      if (lic !== null && lic <= COMPLIANCE_WINDOW_DAYS) {
+        out.push({
+          key: `${row.id}-license`,
+          title: "Driver license",
+          staffName,
+          staffId: row.staff_id,
+          expiresOn: row.license_expires_on!,
+          daysUntil: lic,
+        });
+      }
+      const med = daysUntilCalendar(row.medical_card_expires_on);
+      if (med !== null && med <= COMPLIANCE_WINDOW_DAYS) {
+        out.push({
+          key: `${row.id}-medical`,
+          title: "DOT medical card",
+          staffName,
+          staffId: row.staff_id,
+          expiresOn: row.medical_card_expires_on!,
+          daysUntil: med,
+        });
+      }
+    }
+    return out.sort((a, b) => a.daysUntil - b.daysUntil);
+  }, [drivers]);
+
+  const vehicleAlerts = useMemo((): VehicleAlert[] => {
+    const out: VehicleAlert[] = [];
+    for (const row of fleet) {
+      const ins = daysUntilCalendar(row.insurance_expires_on);
+      if (ins !== null && ins <= COMPLIANCE_WINDOW_DAYS) {
+        out.push({
+          key: `${row.id}-ins`,
+          title: "Vehicle insurance",
+          vehicleName: row.name,
+          expiresOn: row.insurance_expires_on!,
+          daysUntil: ins,
+        });
+      }
+      const reg = daysUntilCalendar(row.registration_expires_on);
+      if (reg !== null && reg <= COMPLIANCE_WINDOW_DAYS) {
+        out.push({
+          key: `${row.id}-reg`,
+          title: "Vehicle registration",
+          vehicleName: row.name,
+          expiresOn: row.registration_expires_on!,
+          daysUntil: reg,
+        });
+      }
+    }
+    return out.sort((a, b) => a.daysUntil - b.daysUntil);
+  }, [fleet]);
+
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
 
   return (
@@ -105,7 +201,7 @@ export default function AdminTransportationHubPage() {
       <div className="relative z-10 space-y-6">
         <header className="mb-8">
           <div>
-            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 19 / Site Logistics</p>
+            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 15 / Transportation</p>
             <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
               Fleet Operations
             </h2>
@@ -180,58 +276,74 @@ export default function AdminTransportationHubPage() {
             <MotionList className="space-y-3">
               {loading ? (
                 <p className="text-sm font-mono text-slate-500">Loading…</p>
-              ) : drivers.length === 0 && fleet.length === 0 ? (
+              ) : driverAlerts.length === 0 ? (
                 <div className="p-8 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md">
-                   <p className="font-medium">Inbox Zero</p>
-                   <p className="text-sm opacity-80">All drivers and fleet vehicles compliant.</p>
+                  <p className="font-medium">
+                    {drivers.length === 0 && fleet.length === 0 ? "Inbox Zero" : "No driver alerts"}
+                  </p>
+                  <p className="text-sm opacity-80">
+                    {drivers.length === 0 && fleet.length === 0
+                      ? "Add fleet vehicles and driver credentials to track compliance."
+                      : `No license or medical card expiring within ${COMPLIANCE_WINDOW_DAYS} days (Track D data-driven reminders).`}
+                  </p>
                 </div>
               ) : (
-                <>
-                  {/* MOCK Expiring Driver */}
-                  <MotionItem className="p-5 rounded-2xl border border-red-200 dark:border-red-900/30 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-red-300 dark:hover:border-red-800/50 transition-colors">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-red-500" />
-                    <div className="flex justify-between items-start mb-3">
-                       <span className="text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 px-2 py-1 rounded-md uppercase tracking-wider">
-                         Grounded
-                       </span>
-                       <span className="text-xs text-slate-500 font-mono font-medium">Expired 2 days ago</span>
-                    </div>
-                    <div className="mb-4">
-                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
-                        Driver: Marcus Johnson
-                      </p>
-                      <p className="text-xs text-slate-600 dark:text-slate-400">
-                        DOT Medical Card expired on {format(new Date(), "MMM d")}. Driver cannot be scheduled for transport shifts.
-                      </p>
-                    </div>
-                    <div className="flex justify-start">
-                        <Link
-                          href="/admin/staff"
-                          className={cn(buttonVariants({ variant: "default", size: "sm" }), "bg-red-600 hover:bg-red-700 text-white font-mono uppercase tracking-widest text-[10px]")}
+                driverAlerts.map((a) => {
+                  const critical = a.daysUntil < 0 || a.daysUntil <= 14;
+                  return (
+                    <MotionItem
+                      key={a.key}
+                      className={cn(
+                        "p-5 rounded-2xl border shadow-sm backdrop-blur-xl relative overflow-hidden group transition-colors",
+                        critical
+                          ? "border-red-200 dark:border-red-900/30 bg-white/60 dark:bg-slate-900/60 hover:border-red-300 dark:hover:border-red-800/50"
+                          : "border-amber-200 dark:border-amber-900/30 bg-white/60 dark:bg-slate-900/60 hover:border-amber-300 dark:hover:border-amber-800/50",
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "absolute top-0 left-0 w-1 h-full",
+                          critical ? "bg-red-500" : "bg-amber-500",
+                        )}
+                      />
+                      <div className="flex justify-between items-start mb-3">
+                        <span
+                          className={cn(
+                            "text-xs font-bold px-2 py-1 rounded-md uppercase tracking-wider",
+                            critical
+                              ? "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50"
+                              : "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50",
+                          )}
                         >
-                          Message Staff Member
+                          {a.daysUntil < 0 ? "Expired" : a.daysUntil <= 14 ? "Action needed" : "Upcoming"}
+                        </span>
+                        <span className="text-xs text-slate-500 font-mono font-medium">
+                          {formatAlertDeadline(a.daysUntil)}
+                        </span>
+                      </div>
+                      <div className="mb-4">
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
+                          {a.title} — {a.staffName}
+                        </p>
+                        <p className="text-xs text-slate-600 dark:text-slate-400">
+                          On file until {format(parseISO(a.expiresOn.length <= 10 ? `${a.expiresOn}T12:00:00.000Z` : a.expiresOn), "MMM d, yyyy")}.
+                        </p>
+                      </div>
+                      <div className="flex justify-start">
+                        <Link
+                          href={`/admin/staff/${a.staffId}`}
+                          className={cn(
+                            buttonVariants({ variant: "default", size: "sm" }),
+                            "font-mono uppercase tracking-widest text-[10px]",
+                            critical ? "bg-red-600 hover:bg-red-700 text-white" : "bg-amber-600 hover:bg-amber-700 text-white",
+                          )}
+                        >
+                          Open staff record
                         </Link>
-                    </div>
-                  </MotionItem>
-                  
-                  {/* Real drivers list - read only */}
-                  <MotionList className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
-                     <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Active Drivers</h4>
-                     {drivers.slice(0, 3).map(row => (
-                       <MotionItem key={row.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex gap-4 items-center">
-                         <div className="flex-1 min-w-0">
-                           <p className="text-xs font-medium text-slate-900 dark:text-slate-300 truncate">
-                             {row.staff ? `${row.staff.first_name} ${row.staff.last_name}` : "Unknown"}
-                           </p>
-                           <p className="text-[10px] text-slate-500 truncate capitalize">License: {row.license_expires_on ? format(new Date(row.license_expires_on), 'MMM yyyy') : 'No data'}</p>
-                         </div>
-                         <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 text-right">
-                           {formatEnum(row.status)}
-                         </span>
-                       </MotionItem>
-                     ))}
-                  </MotionList>
-                </>
+                      </div>
+                    </MotionItem>
+                  );
+                })
               )}
             </MotionList>
             
@@ -246,32 +358,75 @@ export default function AdminTransportationHubPage() {
             </div>
             
             <MotionList className="space-y-3">
-              {/* MOCK Overdue Inspection */}
-              <MotionItem className="p-5 rounded-2xl border border-amber-200 dark:border-amber-900/30 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-amber-300 dark:hover:border-amber-800/50 transition-colors">
-                <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
-                <div className="flex justify-between items-start mb-3">
-                   <span className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-1 rounded-md uppercase tracking-wider">
-                     Inspection Overdue
-                   </span>
-                   <span className="text-xs text-amber-600 font-mono font-medium">Overdue by 72h</span>
-                </div>
-                <div className="mb-4">
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
-                     Shuttle Bus (V-02)
+              {loading ? (
+                <p className="text-sm font-mono text-slate-500">Loading…</p>
+              ) : vehicleAlerts.length === 0 ? (
+                <div className="p-8 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md">
+                  <p className="font-medium">
+                    {fleet.length === 0 ? "No fleet units" : "No vehicle policy alerts"}
                   </p>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">
-                    Weekly walk-around and fluids check was due on Monday.
+                  <p className="text-sm opacity-80">
+                    {fleet.length === 0
+                      ? "Register a vehicle to track insurance and registration expirations."
+                      : `No insurance or registration expiring within ${COMPLIANCE_WINDOW_DAYS} days.`}
                   </p>
                 </div>
-                <div className="flex justify-start">
-                    <Link
-                      href="/admin/transportation/inspections/new"
-                      className={cn(buttonVariants({ variant: "default", size: "sm" }), "bg-amber-600 hover:bg-amber-700 text-white font-mono uppercase tracking-widest text-[10px]")}
+              ) : (
+                vehicleAlerts.map((a) => {
+                  const critical = a.daysUntil < 0 || a.daysUntil <= 14;
+                  return (
+                    <MotionItem
+                      key={a.key}
+                      className={cn(
+                        "p-5 rounded-2xl border shadow-sm backdrop-blur-xl relative overflow-hidden group transition-colors",
+                        critical
+                          ? "border-red-200 dark:border-red-900/30 bg-white/60 dark:bg-slate-900/60 hover:border-red-300 dark:hover:border-red-800/50"
+                          : "border-amber-200 dark:border-amber-900/30 bg-white/60 dark:bg-slate-900/60 hover:border-amber-300 dark:hover:border-amber-800/50",
+                      )}
                     >
-                      Log Inspection
-                    </Link>
-                </div>
-              </MotionItem>
+                      <div
+                        className={cn(
+                          "absolute top-0 left-0 w-1 h-full",
+                          critical ? "bg-red-500" : "bg-amber-500",
+                        )}
+                      />
+                      <div className="flex justify-between items-start mb-3">
+                        <span
+                          className={cn(
+                            "text-xs font-bold px-2 py-1 rounded-md uppercase tracking-wider",
+                            critical
+                              ? "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50"
+                              : "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50",
+                          )}
+                        >
+                          {a.title}
+                        </span>
+                        <span className="text-xs text-slate-500 font-mono font-medium">
+                          {formatAlertDeadline(a.daysUntil)}
+                        </span>
+                      </div>
+                      <div className="mb-4">
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">{a.vehicleName}</p>
+                        <p className="text-xs text-slate-600 dark:text-slate-400">
+                          Renewal date {format(parseISO(a.expiresOn.length <= 10 ? `${a.expiresOn}T12:00:00.000Z` : a.expiresOn), "MMM d, yyyy")}.
+                        </p>
+                      </div>
+                      <div className="flex justify-start">
+                        <Link
+                          href="/admin/transportation/inspections/new"
+                          className={cn(
+                            buttonVariants({ variant: "default", size: "sm" }),
+                            "font-mono uppercase tracking-widest text-[10px]",
+                            critical ? "bg-red-600 hover:bg-red-700 text-white" : "bg-amber-600 hover:bg-amber-700 text-white",
+                          )}
+                        >
+                          Log inspection / follow-up
+                        </Link>
+                      </div>
+                    </MotionItem>
+                  );
+                })
+              )}
 
               {/* Real historical inspections */}
               <MotionList className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
