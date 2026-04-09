@@ -20,7 +20,7 @@
 | Phase 1 — full acceptance (real auth, RLS matrix, UAT, Pro/BAA/PITR) | **NOT COMPLETE** — **Track A:** A1+A2 **done** (2026-04-09); A3–A6 remain | [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md), [PHASE1-ACCEPTANCE-CHECKLIST.md](./PHASE1-ACCEPTANCE-CHECKLIST.md) |
 | Phase 2 — acceptance | **PASS** (2026-04-04) | [PHASE2-ACCEPTANCE-CHECKLIST.md](./PHASE2-ACCEPTANCE-CHECKLIST.md) |
 | Phases 3–6 — Core DDL + primary UI | **Shipped** in repo | Phase tables below |
-| Phases 3–6 — live proof / operational hardening | **Incomplete** until Track A closes; Tracks B–C done; **Track D** Core slices **D1–D10 done**; **D17** (Module 13 payroll mileage → export lines) **shipped** — Enhanced backlog remains | Same tables + [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md) |
+| Phases 3–6 — live proof / operational hardening | **Incomplete** until Track A closes; Tracks B–C done; **Track D** Core slices **D1–D10 done**; **D12** (Module 22 HL7 MSH processor) + **D17** (Module 13 payroll mileage → export lines) **shipped** — Enhanced backlog remains | Same tables + [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md) |
 
 **Important:** Code and migrations have **outpaced** formal Phase 1 acceptance. **Do not** treat “migrations applied” or “routes exist” as equivalent to **Track A closed** or **production-ready** for PHI.
 
@@ -33,7 +33,7 @@
 1. **Track A** — **A1** (auth) + **A2** (RLS) owner-verified **2026-04-09**; **A3** real-auth UAT depth → **A4** env/seed → **A5** Pro/BAA/PITR → **A6** waiver review. Single roadmap: [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md). Production PHI still requires **A5** and remaining UAT rows.
 2. **Confirm remote DB** — `supabase migration list` on the target project must match **local `001`–`114`** before claiming parity.
 3. **Tracks B–C** — **Done (code)** per sections below; owner deploy/cron/UAT follow-up where noted.
-4. **Track D** — **Segments D1–D10 shipped** (2026-04-09); **D17** Module **13** payroll mileage import **shipped** (2026-04-09). Core operational visibility for Phase 6 modules 12, 14, 15, 22, 23 is in repo. **Enhanced backlog (D11+):** prioritized plan and segment boundaries — [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md). Shipped history: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md). Run `segment:gates` per segment.
+4. **Track D** — **Segments D1–D10 shipped** (2026-04-09); **D12** Module **22** HL7 queue Edge + **D17** Module **13** payroll mileage import **shipped** (2026-04-09). Core operational visibility for Phase 6 modules 12, 14, 15, 22, 23 is in repo. **Enhanced backlog (D11+):** prioritized plan and segment boundaries — [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md). Shipped history: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md). Run `segment:gates` per segment.
 5. **Track E** — New DDL starting at migration **`115`** only after specs exist and Tracks A–D are appropriately satisfied for your risk tolerance.
 
 ---

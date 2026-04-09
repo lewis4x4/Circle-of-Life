@@ -19,7 +19,7 @@
 | **13** | ~~**Payroll batch mileage lines**~~ (`payroll_export_lines` from approved `mileage_logs`) | — | — | — | **Shipped D17** — `/admin/payroll/[id]` import; idempotency `mileage:{log_id}`. |
 | **15** | Payroll mileage **approval** UX (`mileage_logs.approved_at` flow) | Medium | Med | Module 13 payroll export may be STUB | Touches finance export boundaries. |
 | **15** | **Calendar** view for transport requests | Medium–high | Med | UX + date math | Large surface area; better as its own segment after rate. |
-| **22** | **HL7 processor** (parse `referral_hl7_inbound.raw_message`, set status, optional fields) | Medium | Med–high | Edge deploy + secret | Core queue exists; spec non-goal was *full* parser — a **minimal ADT subset** + structured `parse_error` is a valid D10 if scoped. |
+| **22** | ~~**HL7 processor** (minimal **MSH** parse → **`processed`** / **`failed`**)~~ | — | — | — | **Shipped D12** — Edge **`process-referral-hl7-inbound`**; no auto-**`referral_leads`**. |
 | **22** | MLLP listener / hospital feed | High | High | Infra, VPN, partners | Not a single segment; defer. |
 | **23** | **OAuth / platform APIs** (Google, Yelp) | High | High | Developer accounts, ToS | Defer until product owner approves vendors and keys. |
 | **12** | **Certificate PDF upload** to Supabase Storage + path on `staff_training_completions` / demonstrations | Medium | Med | Storage bucket RLS, upload UI | Strong COL value (Baya PDFs); no Baya API in first slice. |
@@ -34,7 +34,9 @@
 
 **~~D17 (2026-04-09)~~** **DONE — Module 13:** **`/admin/payroll/[id]`** imports approved mileage into **`payroll_export_lines`**. Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D11 (default):** Module **12** — certificate PDF upload (see §3).
+**~~D12 (2026-04-09)~~** **DONE — Module 22:** Edge **`process-referral-hl7-inbound`** (minimal MSH parse for **`referral_hl7_inbound`**). Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D11 (default):** Module **12** — certificate PDF upload (migration **`115`** bucket + hub; see §3) if not already deployed; else **D13** / **D14** / **D15** per owner priority.
 
 ---
 
@@ -43,7 +45,7 @@
 | Order | Id | Module | Slice (bounded) |
 |-------|-----|--------|------------------|
 | 2 | **D11** | **12** | Storage upload for one certificate type (Baya PDF) + `attachment_path` / `attachment_paths` metadata; bucket RLS; no external API. |
-| 3 | **D12** | **22** | Edge Function **`process-referral-hl7-inbound`**: cron or manual POST; for `pending` rows, parse MSH/PID minimally, set `processed`/`failed`, fill `parse_error`; **no** auto-create `referral_leads` until D13. |
+| 3 | **D12** | **22** | ~~Edge Function **`process-referral-hl7-inbound`** (MSH minimal; no auto-leads)~~ **DONE** — see [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md). |
 | 4 | **D13** | **14** | **Read-only** clinical panel: diet order + resident med list side-by-side **or** narrow automation after rules are written. |
 | 5 | **D14** | **15** | Week strip or agenda **calendar** for `resident_transport_requests` (existing table). |
 | 6 | **D17** | **13** | ~~**Mileage → payroll lines** on draft batch~~ **DONE** — `/admin/payroll/[id]`. |

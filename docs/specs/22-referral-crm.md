@@ -31,6 +31,8 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 
 - Edge ingress (MLLP/HTTPS), ADT segment parsing, auto-draft leads, idempotent replay.
 
+**Shipped (Track D12):** Edge Function **`process-referral-hl7-inbound`** — for **`pending`** queue rows, minimal **MSH** parse (message type + control id + trigger from `MSH-9`); updates status to **`processed`** / **`failed`** and **`parse_error`** codes; does **not** auto-create **`referral_leads`**.
+
 ---
 
 ## RLS (normative)

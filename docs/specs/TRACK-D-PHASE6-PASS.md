@@ -118,6 +118,16 @@
 
 ---
 
+**D12 (2026-04-09):** **Module 22 — Referral CRM** ([22-referral-crm.md](./22-referral-crm.md)) — **HL7 inbound queue processor (minimal MSH)**.
+
+**Slice:** Edge Function **`process-referral-hl7-inbound`** — `POST` with optional **`organization_id`** and **`limit`**; auth **`x-cron-secret`** = **`PROCESS_REFERRAL_HL7_INBOUND_SECRET`**. Selects **`referral_hl7_inbound`** rows with **`status = pending`**, parses **MSH** (field separator at MSH[3]; **`MSH-9`** message type / trigger, **`MSH-10`** control id), updates to **`processed`** with **`message_control_id`** / **`trigger_event`** or **`failed`** with structured **`parse_error`** (e.g. `no_msh_segment`, **`duplicate_message_control_id`** on unique conflict). **No** **`referral_leads`** creation.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-09T15-14-29-975Z-track-d-d12-process-referral-hl7-inbound.json` (`npm run segment:gates -- --segment "track-d-d12-process-referral-hl7-inbound" --no-chaos`).
+
+**Mission alignment:** **pass** — advances referral pipeline hygiene with governed queue data; parsing stays subordinate to explicit reconciliation rules.
+
+---
+
 **D17 (2026-04-09):** **Module 13 — Payroll Integration** ([13-payroll-integration.md](./13-payroll-integration.md)) — **approved mileage → export lines**.
 
 **Slice:** **`/admin/payroll/[id]`** — draft batches show **Import mileage into batch**: loads **`mileage_logs`** with **`approved_at` set**, **`payroll_export_id` IS NULL**, **`trip_date`** within batch period; inserts **`payroll_export_lines`** (`line_kind` = `mileage_reimbursement`, idempotency `mileage:{log_id}`) and sets **`mileage_logs.payroll_export_id`**. Hub batches link to detail; payroll hub SYS label corrected to **Module 13**. **No** new DDL.
@@ -140,7 +150,7 @@
 | **13** | ~~Mileage → `payroll_export_lines` on draft batch~~ (D17); CSV/vendor serializers, time-record worker |
 | **14** | Automated med–texture cross-check vs medications; meal production; vendor API; full menu cycle |
 | **15** | Payroll mileage approval workflow, month/week calendar, external calendar sync |
-| **22** | HL7 processor automation beyond queue ingest |
+| **22** | ~~Minimal **MSH** queue processor~~ (D12); MLLP, full ADT parse, auto-**`referral_leads`** |
 | **23** | External review platform OAuth/sync APIs |
 
 **Authoritative README narrative:** [README.md](./README.md) — section **Track D — Phase 6 completion pass**.
