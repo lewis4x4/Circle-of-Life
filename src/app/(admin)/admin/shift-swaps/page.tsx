@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { ArrowLeftRight, Download } from "lucide-react";
+import { ArrowLeftRight, Download, Loader2 } from "lucide-react";
 
 import {
   AdminEmptyState,
@@ -17,6 +17,7 @@ import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
@@ -114,19 +115,24 @@ export default function AdminShiftSwapsPage() {
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<SwapUiRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
   const [search, setSearch] = useState(DEFAULT_FILTERS.search);
   const [status, setStatus] = useState(DEFAULT_FILTERS.status);
+  const [actionId, setActionId] = useState<string | null>(null);
+  const [denyTargetId, setDenyTargetId] = useState<string | null>(null);
+  const [denyReason, setDenyReason] = useState("");
 
   const load = useCallback(async () => {
     setIsLoading(true);
-    setError(null);
+    setLoadError(null);
+    setNotice(null);
     try {
       const ui = await fetchShiftSwapsFromSupabase(supabase, selectedFacilityId);
       setRows(ui);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load shift swap requests");
+      setLoadError(err instanceof Error ? err.message : "Failed to load shift swap requests");
       setRows([]);
     } finally {
       setIsLoading(false);
@@ -175,9 +181,80 @@ export default function AdminShiftSwapsPage() {
     [rows.length],
   );
 
+  const approveSwap = useCallback(
+    async (id: string) => {
+      setActionId(id);
+      setNotice(null);
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user?.id) {
+          setNotice("You must be signed in to approve.");
+          return;
+        }
+        const res = (await supabase
+          .from("shift_swap_requests" as never)
+          .update({
+            status: "approved",
+            approved_at: new Date().toISOString(),
+            approved_by: user.id,
+            denied_reason: null,
+          } as never)
+          .eq("id", id)
+          .is("deleted_at", null)) as { error: QueryError | null };
+        if (res.error) throw res.error;
+        await load();
+      } catch (e) {
+        setNotice(e instanceof Error ? e.message : "Could not approve request.");
+      } finally {
+        setActionId(null);
+      }
+    },
+    [supabase, load],
+  );
+
+  const submitDeny = useCallback(async () => {
+    if (!denyTargetId) return;
+    const reason = denyReason.trim();
+    if (!reason) {
+      setNotice("Enter a short reason for denial.");
+      return;
+    }
+    setActionId(denyTargetId);
+    setNotice(null);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user?.id) {
+        setNotice("You must be signed in to deny.");
+        return;
+      }
+      const res = (await supabase
+        .from("shift_swap_requests" as never)
+        .update({
+          status: "denied",
+          denied_reason: reason,
+          approved_at: null,
+          approved_by: null,
+        } as never)
+        .eq("id", denyTargetId)
+        .is("deleted_at", null)) as { error: QueryError | null };
+      if (res.error) throw res.error;
+      setDenyTargetId(null);
+      setDenyReason("");
+      await load();
+    } catch (e) {
+      setNotice(e instanceof Error ? e.message : "Could not deny request.");
+    } finally {
+      setActionId(null);
+    }
+  }, [denyTargetId, denyReason, supabase, load]);
+
   const exportShiftSwapsCsv = useCallback(async () => {
     setExportingCsv(true);
-    setError(null);
+    setNotice(null);
     try {
       let q = supabase
         .from("shift_swap_requests" as never)
@@ -227,7 +304,7 @@ export default function AdminShiftSwapsPage() {
       const csv = buildShiftSwapsCsv(exportRows);
       triggerCsvDownload(`shift-swap-requests-${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Export failed.");
+      setNotice(e instanceof Error ? e.message : "Export failed.");
     } finally {
       setExportingCsv(false);
     }
@@ -246,8 +323,8 @@ export default function AdminShiftSwapsPage() {
             Shift swaps {pendingCount > 0 ? <PulseDot colorClass="bg-amber-500" /> : null}
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-2xl">
-            Read-only queue for COL’s shift swap workflow. Approve/deny flows can extend here later; export supports
-            audits.
+            Oversight queue for COL’s shift swap workflow. Pending requests can be approved or denied when your role
+            allows (facility admin or nurse per RLS). Export supports audits.
           </p>
         </header>
 
@@ -295,14 +372,23 @@ export default function AdminShiftSwapsPage() {
           }}
         />
 
-        {isLoading ? <AdminTableLoadingState /> : null}
-        {!isLoading && error ? (
-          <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} />
+        {notice ? (
+          <div
+            className="rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-2 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100"
+            role="status"
+          >
+            {notice}
+          </div>
         ) : null}
-        {!isLoading && !error && filteredRows.length === 0 ? (
+
+        {isLoading ? <AdminTableLoadingState /> : null}
+        {!isLoading && loadError ? (
+          <AdminLiveDataFallbackNotice message={loadError} onRetry={() => void load()} />
+        ) : null}
+        {!isLoading && !loadError && filteredRows.length === 0 ? (
           <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />
         ) : null}
-        {!isLoading && !error && filteredRows.length > 0 ? (
+        {!isLoading && !loadError && filteredRows.length > 0 ? (
           <div className="relative z-10 p-4 sm:p-6 mb-4 glass-panel rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h3 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">Requests</h3>
@@ -323,12 +409,12 @@ export default function AdminShiftSwapsPage() {
           </div>
         ) : null}
 
-        {!isLoading && !error && filteredRows.length > 0 ? (
+        {!isLoading && !loadError && filteredRows.length > 0 ? (
           <MotionList className="space-y-3">
             {filteredRows.map((row) => (
               <MotionItem key={row.id}>
-                <div className="p-4 sm:p-5 rounded-2xl glass-panel border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 w-full flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex flex-col gap-1 min-w-0">
+                <div className="p-4 sm:p-5 rounded-2xl glass-panel border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 w-full flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex flex-col gap-1 min-w-0 flex-1">
                     <span className="font-semibold text-slate-900 dark:text-slate-100 truncate">
                       {row.requestingName}
                       <span className="text-slate-500 font-normal"> → </span>
@@ -341,11 +427,99 @@ export default function AdminShiftSwapsPage() {
                       <span className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">{row.reason}</span>
                     ) : null}
                   </div>
-                  <SwapStatusBadge status={row.status} />
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    {row.status.toLowerCase() === "pending" ? (
+                      <>
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="font-mono text-[10px] uppercase tracking-widest"
+                          disabled={actionId !== null}
+                          onClick={() => void approveSwap(row.id)}
+                        >
+                          {actionId === row.id ? (
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" aria-hidden />
+                          ) : null}
+                          Approve
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="font-mono text-[10px] uppercase tracking-widest"
+                          disabled={actionId !== null}
+                          onClick={() => {
+                            setDenyTargetId(row.id);
+                            setDenyReason("");
+                            setNotice(null);
+                          }}
+                        >
+                          Deny
+                        </Button>
+                      </>
+                    ) : null}
+                    <SwapStatusBadge status={row.status} />
+                  </div>
                 </div>
               </MotionItem>
             ))}
           </MotionList>
+        ) : null}
+
+        {denyTargetId ? (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="deny-swap-title"
+          >
+            <div className="w-full max-w-md rounded-2xl border border-white/20 bg-white p-5 shadow-xl dark:bg-slate-900 dark:border-white/10">
+              <h3 id="deny-swap-title" className="font-display text-lg font-semibold text-slate-900 dark:text-slate-100">
+                Deny swap request
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 mb-3">
+                Provide a brief reason (stored on the record for audit).
+              </p>
+              <textarea
+                value={denyReason}
+                onChange={(e) => setDenyReason(e.target.value)}
+                rows={3}
+                className={cn(
+                  "w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm",
+                  "placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+                  "dark:bg-input/30",
+                )}
+                placeholder="Reason for denial…"
+                aria-label="Denial reason"
+              />
+              <div className="mt-4 flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={actionId !== null}
+                  onClick={() => {
+                    setDenyTargetId(null);
+                    setDenyReason("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="destructive"
+                  disabled={actionId !== null}
+                  onClick={() => void submitDeny()}
+                >
+                  {actionId === denyTargetId ? (
+                    <Loader2 className="mr-1 h-3 w-3 animate-spin" aria-hidden />
+                  ) : null}
+                  Confirm deny
+                </Button>
+              </div>
+            </div>
+          </div>
         ) : null}
       </div>
     </div>

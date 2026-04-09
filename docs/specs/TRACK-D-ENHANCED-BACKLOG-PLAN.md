@@ -76,7 +76,9 @@
 
 **~~D36 (2026-04-09)~~** **DONE — Module 11:** **`/admin/shift-swaps`** read-only **`shift_swap_requests`** + CSV. Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D37+ (owner priority):** remaining §1 rows (e.g. **23** OAuth/sync, **14** automation after clinical sign-off, **12** certificate storage depth beyond D11) — one bounded slice at a time.
+**~~D37 (2026-04-09)~~** **DONE — Module 11:** **`/admin/shift-swaps`** **approve/deny** (pending). Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D38+ (owner priority):** remaining §1 rows (e.g. **23** OAuth/sync, **14** automation after clinical sign-off, **12** certificate storage depth beyond D11) — one bounded slice at a time.
 
 ---
 
@@ -110,6 +112,7 @@
 | 25 | **D34** | **—** | ~~**Shared `csv-export` helpers**~~ **DONE** — all admin CSV hubs. |
 | 26 | **D35** | **11** | ~~**`/admin/schedules/[id]`** week detail + **shift assignments CSV**~~ **DONE** — see [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md). |
 | 27 | **D36** | **11** | ~~**`/admin/shift-swaps`** queue + **CSV**~~ **DONE** — see [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md). |
+| 28 | **D37** | **11** | ~~**`/admin/shift-swaps`** approve/deny~~ **DONE** — see [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md). |
 
 Defer **23 OAuth**, **22 MLLP**, **14 full rule engine** until product/security review.
 
