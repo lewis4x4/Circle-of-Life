@@ -28,10 +28,11 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 
 - Two tables + batch status enum; RLS for owner / org_admin / facility_admin; admin list + create draft batch.
 - Batch detail route: import approved `mileage_logs` (trip date within batch period, `approved_at` set, `payroll_export_id` null) into `payroll_export_lines` with `line_kind` = `mileage_reimbursement`, global idempotency key `mileage:{mileage_log_id}`; sets `mileage_logs.payroll_export_id` to the batch id.
+- Batch detail **Download CSV** (client-side): columns `idempotency_key`, staff name, `line_kind`, `amount_cents`, `payload_json` for vendor handoff.
 
 ### Enhanced (defer)
 
-- Worker that materializes lines from approved `time_records`; CSV download; provider-specific serializers.
+- Worker that materializes lines from approved `time_records`; provider-specific serializers beyond generic CSV.
 
 ---
 

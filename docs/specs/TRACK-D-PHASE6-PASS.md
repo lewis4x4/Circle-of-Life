@@ -154,6 +154,16 @@
 
 ---
 
+**D18 (2026-04-09):** **Module 13 — Payroll Integration** ([13-payroll-integration.md](./13-payroll-integration.md)) — **batch export CSV download**.
+
+**Slice:** **`/admin/payroll/[id]`** — **Download CSV** builds RFC-style rows from loaded **`payroll_export_lines`** (idempotency key, staff names, `line_kind`, `amount_cents`, JSON **`payload`**). Client-side download only; **no** new DDL.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-09T16-02-24-050Z-track-d-d18-payroll-batch-csv.json` (`npm run segment:gates -- --segment "track-d-d18-payroll-batch-csv" --ui --no-chaos`).
+
+**Mission alignment:** **pass** — finance staff can hand off structured line data to external payroll without expanding vendor integrations in-app.
+
+---
+
 ## Track D — plan (remaining)
 
 **Segments D1–D10:** Closed in repo with gate artifacts above. This completes the **Phase 6 Core visibility / workflow** slices we prioritized for COL (transport, training, dietary, referrals, reputation), plus **D10** org mileage rate.
@@ -163,7 +173,7 @@
 | Module | Backlog |
 |--------|---------|
 | **12** | ~~Storage certificate PDF uploads~~ (migration `115` + training hub); Baya/API, automated assignment, org-wide `training_compliance_snapshots` usage |
-| **13** | ~~Mileage → `payroll_export_lines` on draft batch~~ (D17); CSV/vendor serializers, time-record worker |
+| **13** | ~~Mileage → `payroll_export_lines`~~ (D17); ~~generic **CSV** download on batch~~ (D18); vendor-specific serializers, time-record worker |
 | **14** | ~~Read-only diet + med panel~~ (D13); automated med–texture cross-check vs medications; meal production; vendor API; full menu cycle |
 | **15** | ~~Week calendar + mileage approval queue~~ (D14, D15); full month grid, external calendar sync |
 | **22** | ~~Minimal **MSH** queue processor~~ (D12); ~~manual **Draft lead** from HL7~~ (D16); MLLP, full ADT parse, auto-**`referral_leads`** |

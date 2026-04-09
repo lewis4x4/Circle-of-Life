@@ -38,7 +38,9 @@
 
 **~~D13–D16 (2026-04-09)~~** **DONE:** Module **14** clinical review route; Module **15** calendar + mileage approvals; Module **22** HL7 manual **Draft lead**. Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D18+ (owner priority):** remaining §1 rows (e.g. **23** OAuth, **14** automation after clinical sign-off, **12** org-wide snapshots) — one bounded slice at a time.
+**~~D18 (2026-04-09)~~** **DONE — Module 13:** **`/admin/payroll/[id]`** **Download CSV** for **`payroll_export_lines`**. Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D19+ (owner priority):** remaining §1 rows (e.g. **23** OAuth, **14** automation after clinical sign-off, **12** org-wide snapshots) — one bounded slice at a time.
 
 ---
 
@@ -53,6 +55,7 @@
 | 6 | **D15** | **15** | ~~**Mileage approval** queue~~ **DONE** — `/admin/transportation/mileage-approvals`. |
 | 7 | **D16** | **22** | ~~Manual **Draft lead** from processed HL7~~ **DONE** — `/admin/referrals/hl7-inbound`. |
 | 8 | **D17** | **13** | ~~**Mileage → payroll lines** on draft batch~~ **DONE** — `/admin/payroll/[id]`. |
+| 9 | **D18** | **13** | ~~**CSV** download of batch lines~~ **DONE** — `/admin/payroll/[id]`. |
 
 Defer **23 OAuth**, **22 MLLP**, **14 full rule engine** until product/security review.
 

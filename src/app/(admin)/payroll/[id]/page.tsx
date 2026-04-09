@@ -20,9 +20,50 @@ type LineWithStaff = {
   id: string;
   line_kind: string;
   amount_cents: number | null;
+  idempotency_key: string;
   payload: Database["public"]["Tables"]["payroll_export_lines"]["Row"]["payload"];
   staff: { first_name: string | null; last_name: string | null } | null;
 };
+
+function csvEscapeCell(value: string): string {
+  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+  return value;
+}
+
+function buildPayrollLinesCsv(lines: LineWithStaff[]): string {
+  const header = [
+    "idempotency_key",
+    "staff_first_name",
+    "staff_last_name",
+    "line_kind",
+    "amount_cents",
+    "payload_json",
+  ].join(",");
+  const body = lines.map((line) => {
+    const fn = line.staff?.first_name ?? "";
+    const ln = line.staff?.last_name ?? "";
+    const payloadJson = JSON.stringify(line.payload ?? {});
+    return [
+      csvEscapeCell(line.idempotency_key),
+      csvEscapeCell(fn),
+      csvEscapeCell(ln),
+      csvEscapeCell(line.line_kind),
+      csvEscapeCell(String(line.amount_cents ?? "")),
+      csvEscapeCell(payloadJson),
+    ].join(",");
+  });
+  return [header, ...body].join("\r\n");
+}
+
+function triggerDownload(filename: string, text: string) {
+  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 function formatCents(cents: number | null) {
   if (cents === null || Number.isNaN(cents)) return "—";
@@ -76,7 +117,7 @@ export default function AdminPayrollBatchDetailPage() {
 
         const { data: lineRows, error: lErr } = await supabase
         .from("payroll_export_lines")
-        .select("id, line_kind, amount_cents, payload, staff(first_name, last_name)")
+        .select("id, line_kind, amount_cents, idempotency_key, payload, staff(first_name, last_name)")
         .eq("batch_id", batchId)
         .is("deleted_at", null)
         .order("created_at", { ascending: true });
@@ -293,9 +334,28 @@ export default function AdminPayrollBatchDetailPage() {
           )}
 
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Export lines ({lines.length})</CardTitle>
-              <CardDescription>Rows written for the external payroll handoff.</CardDescription>
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <CardTitle className="text-lg">Export lines ({lines.length})</CardTitle>
+                <CardDescription>Rows written for the external payroll handoff.</CardDescription>
+              </div>
+              {lines.length > 0 && batch && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="shrink-0 self-start"
+                  onClick={() => {
+                    const csv = buildPayrollLinesCsv(lines);
+                    const safeProv = batch.provider.replace(/[^a-zA-Z0-9._-]+/g, "_");
+                    triggerDownload(
+                      `payroll-export_${batch.period_start}_${batch.period_end}_${safeProv}.csv`,
+                      csv,
+                    );
+                  }}
+                >
+                  Download CSV
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               {lines.length === 0 ? (
