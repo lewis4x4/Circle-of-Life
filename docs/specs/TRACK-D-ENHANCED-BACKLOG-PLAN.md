@@ -64,7 +64,9 @@
 
 **~~D30 (2026-04-09)~~** **DONE — Module 11:** **`/admin/certifications`** **Download certifications CSV** ( **`staff_certifications`** + **`staff_display_name`** ). Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D31+ (owner priority):** remaining §1 rows (e.g. **23** OAuth/sync, **14** automation after clinical sign-off, **12** certificate storage depth) — one bounded slice at a time.
+**~~D31 (2026-04-09)~~** **DONE — Module 11:** **`/admin/time-records`** **Download time records CSV** ( **`time_records`** + **`staff_display_name`** ). Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D32+ (owner priority):** remaining §1 rows (e.g. **23** OAuth/sync, **14** automation after clinical sign-off, **12** certificate storage depth) — one bounded slice at a time.
 
 ---
 
@@ -92,6 +94,7 @@
 | 19 | **D28** | **23** | ~~**Reputation accounts CSV**~~ **DONE** — `/admin/reputation`. |
 | 20 | **D29** | **11** | ~~**Staff roster CSV**~~ **DONE** — `/admin/staff`. |
 | 21 | **D30** | **11** | ~~**Certifications matrix CSV**~~ **DONE** — `/admin/certifications`. |
+| 22 | **D31** | **11** | ~~**Time records CSV**~~ **DONE** — `/admin/time-records`. |
 
 Defer **23 OAuth**, **22 MLLP**, **14 full rule engine** until product/security review.
 

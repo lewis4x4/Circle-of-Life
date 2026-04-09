@@ -2,7 +2,8 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Clock } from "lucide-react";
+import { format } from "date-fns";
+import { ChevronRight, Clock, Download } from "lucide-react";
 
 import {
   AdminEmptyState,
@@ -11,12 +12,13 @@ import {
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import type { Database } from "@/types/database";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
@@ -55,13 +57,100 @@ type SupabaseStaffMini = {
 type QueryError = { message: string };
 type QueryResult<T> = { data: T[] | null; error: QueryError | null };
 
+type TimeRecordExportRow = Database["public"]["Tables"]["time_records"]["Row"] & {
+  staff_display_name: string;
+};
+
+function csvEscapeCell(value: string): string {
+  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+  return value;
+}
+
+function buildTimeRecordsCsv(rows: TimeRecordExportRow[]): string {
+  const header = [
+    "id",
+    "organization_id",
+    "facility_id",
+    "staff_id",
+    "staff_display_name",
+    "shift_assignment_id",
+    "clock_in",
+    "clock_out",
+    "clock_in_method",
+    "clock_out_method",
+    "clock_in_latitude",
+    "clock_in_longitude",
+    "clock_out_latitude",
+    "clock_out_longitude",
+    "approved",
+    "approved_at",
+    "approved_by",
+    "actual_hours",
+    "regular_hours",
+    "overtime_hours",
+    "scheduled_hours",
+    "break_minutes",
+    "discrepancy_notes",
+    "created_at",
+    "updated_at",
+    "created_by",
+    "updated_by",
+    "deleted_at",
+  ].join(",");
+  const body = rows.map((row) =>
+    [
+      csvEscapeCell(row.id),
+      csvEscapeCell(row.organization_id),
+      csvEscapeCell(row.facility_id),
+      csvEscapeCell(row.staff_id),
+      csvEscapeCell(row.staff_display_name),
+      csvEscapeCell(row.shift_assignment_id ?? ""),
+      csvEscapeCell(row.clock_in),
+      csvEscapeCell(row.clock_out ?? ""),
+      csvEscapeCell(row.clock_in_method),
+      csvEscapeCell(row.clock_out_method ?? ""),
+      csvEscapeCell(row.clock_in_latitude != null ? String(row.clock_in_latitude) : ""),
+      csvEscapeCell(row.clock_in_longitude != null ? String(row.clock_in_longitude) : ""),
+      csvEscapeCell(row.clock_out_latitude != null ? String(row.clock_out_latitude) : ""),
+      csvEscapeCell(row.clock_out_longitude != null ? String(row.clock_out_longitude) : ""),
+      csvEscapeCell(row.approved ? "true" : "false"),
+      csvEscapeCell(row.approved_at ?? ""),
+      csvEscapeCell(row.approved_by ?? ""),
+      csvEscapeCell(row.actual_hours != null ? String(row.actual_hours) : ""),
+      csvEscapeCell(row.regular_hours != null ? String(row.regular_hours) : ""),
+      csvEscapeCell(row.overtime_hours != null ? String(row.overtime_hours) : ""),
+      csvEscapeCell(row.scheduled_hours != null ? String(row.scheduled_hours) : ""),
+      csvEscapeCell(row.break_minutes != null ? String(row.break_minutes) : ""),
+      csvEscapeCell(row.discrepancy_notes ?? ""),
+      csvEscapeCell(row.created_at),
+      csvEscapeCell(row.updated_at),
+      csvEscapeCell(row.created_by ?? ""),
+      csvEscapeCell(row.updated_by ?? ""),
+      csvEscapeCell(row.deleted_at ?? ""),
+    ].join(","),
+  );
+  return [header, ...body].join("\r\n");
+}
+
+function triggerCsvDownload(filename: string, text: string) {
+  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 const DEFAULT_FILTERS = { search: "", approved: "all" };
 
 export default function AdminTimeRecordsPage() {
+  const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<TimeRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exportingCsv, setExportingCsv] = useState(false);
   const [search, setSearch] = useState(DEFAULT_FILTERS.search);
   const [approved, setApproved] = useState(DEFAULT_FILTERS.approved);
 
@@ -81,6 +170,59 @@ export default function AdminTimeRecordsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const exportTimeRecordsCsv = useCallback(async () => {
+    setExportingCsv(true);
+    setError(null);
+    try {
+      let q = supabase
+        .from("time_records" as never)
+        .select("*")
+        .is("deleted_at", null)
+        .order("clock_in", { ascending: false })
+        .limit(500);
+
+      if (isValidFacilityIdForQuery(selectedFacilityId)) {
+        q = q.eq("facility_id", selectedFacilityId);
+      }
+
+      const res = (await q) as unknown as QueryResult<Database["public"]["Tables"]["time_records"]["Row"]>;
+      if (res.error) throw res.error;
+      const list = res.data ?? [];
+      if (list.length === 0) {
+        const csv = buildTimeRecordsCsv([]);
+        triggerCsvDownload(`time-records-${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
+        return;
+      }
+
+      const staffIds = [...new Set(list.map((t) => t.staff_id))];
+      const staffRes = (await supabase
+        .from("staff" as never)
+        .select("id, first_name, last_name, deleted_at")
+        .in("id", staffIds)
+        .is("deleted_at", null)) as unknown as QueryResult<SupabaseStaffMini>;
+      if (staffRes.error) throw staffRes.error;
+
+      const nameById = new Map<string, string>();
+      for (const s of staffRes.data ?? []) {
+        const first = s.first_name?.trim() ?? "";
+        const last = s.last_name?.trim() ?? "";
+        nameById.set(s.id, `${first} ${last}`.trim() || "Staff member");
+      }
+
+      const exportRows: TimeRecordExportRow[] = list.map((t) => ({
+        ...t,
+        staff_display_name: nameById.get(t.staff_id) ?? "Unknown staff",
+      }));
+
+      const csv = buildTimeRecordsCsv(exportRows);
+      triggerCsvDownload(`time-records-${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to export time records.");
+    } finally {
+      setExportingCsv(false);
+    }
+  }, [supabase, selectedFacilityId]);
 
   const filteredRows = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -189,9 +331,25 @@ export default function AdminTimeRecordsPage() {
       ) : null}
       {!isLoading && filteredRows.length > 0 ? (
         <div className="relative overflow-visible z-10 w-full mt-4">
-          <div className="relative z-10 p-4 sm:p-6 mb-4 glass-panel rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-2xl">
-            <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Recent punches</h3>
-            <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">Newest first; open staff profile for employment context.</p>
+          <div className="relative z-10 p-4 sm:p-6 mb-4 glass-panel rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Recent punches</h3>
+              <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
+                Newest first; open staff profile for employment context.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shrink-0 font-mono text-[10px] uppercase tracking-widest"
+              disabled={exportingCsv}
+              aria-busy={exportingCsv}
+              onClick={() => void exportTimeRecordsCsv()}
+            >
+              <Download className="mr-2 h-3.5 w-3.5" aria-hidden />
+              {exportingCsv ? "Exporting…" : "Download time records CSV"}
+            </Button>
           </div>
           <MotionList className="space-y-3">
             {filteredRows.map((row) => (
