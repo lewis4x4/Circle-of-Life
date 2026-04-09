@@ -53,6 +53,9 @@ jobs:
         env:
           CI: true
 
+      - name: Install Playwright Chromium (auth smoke)
+        run: npx playwright install --with-deps chromium
+
       - name: Auth smoke (login UI)
         run: BASE_URL=http://127.0.0.1:4310 npm run demo:auth-smoke
         env:
@@ -73,10 +76,6 @@ jobs:
           else
             echo "ui_changed=false" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Install Playwright Chromium
-        if: steps.ui_changes.outputs.ui_changed == 'true'
-        run: npx playwright install --with-deps chromium
 
       - name: UI gates (conditional)
         if: steps.ui_changes.outputs.ui_changed == 'true'
