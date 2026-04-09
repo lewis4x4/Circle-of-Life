@@ -233,6 +233,11 @@ export default function DietaryClinicalReviewPage() {
                 role="status"
               >
                 <p className="font-semibold text-amber-950 dark:text-amber-50">Review: liquid-form medications vs thickened fluids</p>
+                {primaryOrder ? (
+                  <p className="text-[11px] font-mono mt-1 text-amber-800/85 dark:text-amber-300/90">
+                    Primary order fluid (IDDSI): {formatEnumLabel(primaryOrder.iddsi_fluid_level)}
+                  </p>
+                ) : null}
                 <p className="mt-1 text-amber-900/90 dark:text-amber-200/95">
                   Diet lists modified/thickened fluids, but these active medications have a liquid-like dosage form
                   string. Confirm appropriateness (e.g. thickening, alternate formulation) with pharmacy — advisory
@@ -255,6 +260,11 @@ export default function DietaryClinicalReviewPage() {
                 role="status"
               >
                 <p className="font-semibold text-violet-950 dark:text-violet-50">Review: solid oral forms vs texture-modified diet</p>
+                {primaryOrder ? (
+                  <p className="text-[11px] font-mono mt-1 text-violet-800/85 dark:text-violet-300/90">
+                    Primary order food (IDDSI): {formatEnumLabel(primaryOrder.iddsi_food_level)}
+                  </p>
+                ) : null}
                 <p className="mt-1 text-violet-900/90 dark:text-violet-200/95">
                   Diet lists IDDSI texture-modified foods (liquidized through soft bite–sized), but these active
                   medications have a solid oral dosage form string (e.g. tablet, capsule). Confirm crushing,

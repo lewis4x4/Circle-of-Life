@@ -62,6 +62,8 @@ Dietary is also a linchpin for clinical risk: IDDSI texture levels must align wi
 
 **Shipped (Track D52):** Expands the same solid-oral hint to **`level_5_minced_moist`** and **`level_6_soft_bite_sized`** — function **`solidOralFormVsTextureModifiedFoodHint`** / **`isTextureModifiedFoodForSolidOralHint`** in **`med-fluid-diet-hints.ts`** (replaces pureed-only predicate). **No** Edge job; **not** a clinical determination.
 
+**Shipped (Track D53):** **`/admin/dietary/clinical-review`** — hint callouts **echo the primary order’s IDDSI fluid (amber)** and **food (violet)** labels so staff see what triggered the advisory without scrolling the diet panel. **No** logic change to **`med-fluid-diet-hints.ts`**.
+
 - Edge Function: flag solid-dose medications vs. fluid viscosity level (cross-check with `resident_medications`) — **full automation** still deferred pending rules sign-off (see D50 advisory above).
 - Tray ticket generation with resident name, diet order, room/bed.
 - Menu planning calendar with nutritional targets.

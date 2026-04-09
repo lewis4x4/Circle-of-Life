@@ -113,7 +113,9 @@
 
 **~~Recommended next segment — D52~~** **DONE (2026-04-10)** — Module **14:** **Expand solid-oral hint** to minced moist + soft bite–sized — **`solidOralFormVsTextureModifiedFoodHint`** — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D53+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
+**~~Recommended next segment — D53~~** **DONE (2026-04-10)** — Module **14:** **Clinical review** — IDDSI fluid/food labels in hint callouts — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D54+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
 
 ---
 
