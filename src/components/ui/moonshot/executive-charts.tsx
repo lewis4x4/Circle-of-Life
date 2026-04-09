@@ -29,6 +29,17 @@ type CustomTooltipProps = Partial<TooltipContentProps<number, string>> & {
   suffix?: string;
 };
 
+const CHART_PX = 220;
+
+/** Recharts needs explicit pixel dimensions during SSR/static measurement (avoids width/height -1 warnings). */
+function ChartBox({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="w-full min-w-0" style={{ height: CHART_PX, minHeight: CHART_PX }}>
+      {children}
+    </div>
+  );
+}
+
 const DARK_COLORS = {
   emerald: "#10b981",    // emerald-500
   indigo: "#6366f1",     // indigo-500
@@ -65,7 +76,8 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label, p
 
 export function CeoGrowthChart({ data }: { data: ChartDatum[] }) {
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ChartBox>
+      <ResponsiveContainer width="100%" height={CHART_PX} minWidth={0}>
       <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
         <defs>
           <linearGradient id="colorMoveIns" x1="0" y1="0" x2="0" y2="1">
@@ -85,13 +97,15 @@ export function CeoGrowthChart({ data }: { data: ChartDatum[] }) {
         <Area type="monotone" name="Facility Tours" dataKey="tours" stroke={DARK_COLORS.indigo} strokeWidth={2} fillOpacity={1} fill="url(#colorTours)" />
         <Area type="monotone" name="Net Move-ins" dataKey="moveIns" stroke={DARK_COLORS.emerald} strokeWidth={3} fillOpacity={1} fill="url(#colorMoveIns)" />
       </AreaChart>
-    </ResponsiveContainer>
+      </ResponsiveContainer>
+    </ChartBox>
   );
 }
 
 export function CeoRiskChart({ data }: { data: ChartDatum[] }) {
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ChartBox>
+      <ResponsiveContainer width="100%" height={CHART_PX} minWidth={0}>
       <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={DARK_COLORS.grid} />
         <XAxis dataKey="facility" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: DARK_COLORS.axis }} dy={10} />
@@ -101,7 +115,8 @@ export function CeoRiskChart({ data }: { data: ChartDatum[] }) {
         <Bar name="L3/L4 Incidents" dataKey="criticalIncidents" fill={DARK_COLORS.rose} radius={[4, 4, 0, 0]} />
         <Bar name="Avg Reputation Score (out of 50)" dataKey="reputationInverse" fill={DARK_COLORS.amber} radius={[4, 4, 0, 0]} />
       </BarChart>
-    </ResponsiveContainer>
+      </ResponsiveContainer>
+    </ChartBox>
   );
 }
 
@@ -111,7 +126,8 @@ export function CfoLaborDonutChart({ data }: { data: ChartDatum[] }) {
   const COLORS = [DARK_COLORS.emerald, DARK_COLORS.indigo, DARK_COLORS.amber];
   
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ChartBox>
+      <ResponsiveContainer width="100%" height={CHART_PX} minWidth={0}>
       <PieChart>
         <Tooltip content={<CustomTooltip prefix="$" />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
         <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px' }} />
@@ -130,13 +146,15 @@ export function CfoLaborDonutChart({ data }: { data: ChartDatum[] }) {
           ))}
         </Pie>
       </PieChart>
-    </ResponsiveContainer>
+      </ResponsiveContainer>
+    </ChartBox>
   );
 }
 
 export function CfoRevenueMatrixChart({ data }: { data: ChartDatum[] }) {
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ChartBox>
+      <ResponsiveContainer width="100%" height={CHART_PX} minWidth={0}>
       <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={DARK_COLORS.grid} />
         <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: DARK_COLORS.axis }} dy={10} />
@@ -147,7 +165,8 @@ export function CfoRevenueMatrixChart({ data }: { data: ChartDatum[] }) {
         <Bar name="AR > 30 Days" dataKey="ar30" stackId="a" fill={DARK_COLORS.amber} />
         <Bar name="AR > 60 Days" dataKey="ar60" stackId="a" fill={DARK_COLORS.rose} radius={[4, 4, 0, 0]} />
       </BarChart>
-    </ResponsiveContainer>
+      </ResponsiveContainer>
+    </ChartBox>
   );
 }
 
@@ -155,7 +174,8 @@ export function CfoRevenueMatrixChart({ data }: { data: ChartDatum[] }) {
 
 export function CooAgencyBurnChart({ data }: { data: ChartDatum[] }) {
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ChartBox>
+      <ResponsiveContainer width="100%" height={CHART_PX} minWidth={0}>
       <ComposedChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={DARK_COLORS.grid} />
         <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: DARK_COLORS.axis }} dy={10} />
@@ -165,13 +185,15 @@ export function CooAgencyBurnChart({ data }: { data: ChartDatum[] }) {
         <Bar name="FTE Hours" dataKey="fteHours" fill={DARK_COLORS.blue} radius={[4, 4, 0, 0]} barSize={20} />
         <Line type="monotone" name="Agency/OT Spike" dataKey="agencyHours" stroke={DARK_COLORS.rose} strokeWidth={3} dot={{ r: 4, strokeWidth: 2, fill: '#0f172a' }} />
       </ComposedChart>
-    </ResponsiveContainer>
+      </ResponsiveContainer>
+    </ChartBox>
   );
 }
 
 export function CooIncidentDensityChart({ data }: { data: ChartDatum[] }) {
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ChartBox>
+      <ResponsiveContainer width="100%" height={CHART_PX} minWidth={0}>
       <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
         <defs>
           <linearGradient id="colorFalls" x1="0" y1="0" x2="0" y2="1">
@@ -196,6 +218,7 @@ export function CooIncidentDensityChart({ data }: { data: ChartDatum[] }) {
         <Area type="monotone" name="Med Errors" dataKey="medErrors" stackId="1" stroke={DARK_COLORS.violet} fill="url(#colorMeds)" />
         <Area type="monotone" name="Falls" dataKey="falls" stackId="1" stroke={DARK_COLORS.amber} fill="url(#colorFalls)" />
       </AreaChart>
-    </ResponsiveContainer>
+      </ResponsiveContainer>
+    </ChartBox>
   );
 }
