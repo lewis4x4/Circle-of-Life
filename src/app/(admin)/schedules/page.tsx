@@ -2,7 +2,8 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CalendarDays } from "lucide-react";
+import { format } from "date-fns";
+import { CalendarDays, Download } from "lucide-react";
 
 import {
   AdminEmptyState,
@@ -11,11 +12,12 @@ import {
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import type { Database } from "@/types/database";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
@@ -45,13 +47,68 @@ type SupabaseScheduleRow = {
 type QueryError = { message: string };
 type QueryResult<T> = { data: T[] | null; error: QueryError | null };
 
+type ScheduleCsvRow = Database["public"]["Tables"]["schedules"]["Row"];
+
+function csvEscapeCell(value: string): string {
+  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+  return value;
+}
+
+function buildSchedulesCsv(rows: ScheduleCsvRow[]): string {
+  const header = [
+    "id",
+    "organization_id",
+    "facility_id",
+    "week_start_date",
+    "status",
+    "notes",
+    "published_at",
+    "published_by",
+    "created_at",
+    "updated_at",
+    "created_by",
+    "updated_by",
+    "deleted_at",
+  ].join(",");
+  const body = rows.map((row) =>
+    [
+      csvEscapeCell(row.id),
+      csvEscapeCell(row.organization_id),
+      csvEscapeCell(row.facility_id),
+      csvEscapeCell(row.week_start_date),
+      csvEscapeCell(row.status),
+      csvEscapeCell(row.notes ?? ""),
+      csvEscapeCell(row.published_at ?? ""),
+      csvEscapeCell(row.published_by ?? ""),
+      csvEscapeCell(row.created_at),
+      csvEscapeCell(row.updated_at),
+      csvEscapeCell(row.created_by ?? ""),
+      csvEscapeCell(row.updated_by ?? ""),
+      csvEscapeCell(row.deleted_at ?? ""),
+    ].join(","),
+  );
+  return [header, ...body].join("\r\n");
+}
+
+function triggerCsvDownload(filename: string, text: string) {
+  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 const DEFAULT_FILTERS = { search: "", status: "all" };
 
 export default function AdminSchedulesPage() {
+  const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<ScheduleRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exportingCsv, setExportingCsv] = useState(false);
   const [search, setSearch] = useState(DEFAULT_FILTERS.search);
   const [status, setStatus] = useState(DEFAULT_FILTERS.status);
 
@@ -71,6 +128,33 @@ export default function AdminSchedulesPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const exportSchedulesCsv = useCallback(async () => {
+    setExportingCsv(true);
+    setError(null);
+    try {
+      let q = supabase
+        .from("schedules" as never)
+        .select("*")
+        .is("deleted_at", null)
+        .order("week_start_date", { ascending: false })
+        .limit(500);
+
+      if (isValidFacilityIdForQuery(selectedFacilityId)) {
+        q = q.eq("facility_id", selectedFacilityId);
+      }
+
+      const res = (await q) as unknown as QueryResult<ScheduleCsvRow>;
+      if (res.error) throw res.error;
+      const list = res.data ?? [];
+      const csv = buildSchedulesCsv(list);
+      triggerCsvDownload(`schedule-weeks-${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to export schedule weeks.");
+    } finally {
+      setExportingCsv(false);
+    }
+  }, [supabase, selectedFacilityId]);
 
   const filteredRows = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -178,9 +262,25 @@ export default function AdminSchedulesPage() {
       ) : null}
       {!isLoading && filteredRows.length > 0 ? (
         <div className="relative overflow-visible z-10 w-full mt-4">
-          <div className="relative z-10 p-4 sm:p-6 mb-4 glass-panel rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-2xl">
-            <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Schedule weeks</h3>
-            <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">Monday-start weeks; publish when ready for floor use.</p>
+          <div className="relative z-10 p-4 sm:p-6 mb-4 glass-panel rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Schedule weeks</h3>
+              <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
+                Monday-start weeks; publish when ready for floor use.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shrink-0 font-mono text-[10px] uppercase tracking-widest"
+              disabled={exportingCsv}
+              aria-busy={exportingCsv}
+              onClick={() => void exportSchedulesCsv()}
+            >
+              <Download className="mr-2 h-3.5 w-3.5" aria-hidden />
+              {exportingCsv ? "Exporting…" : "Download schedule weeks CSV"}
+            </Button>
           </div>
           <MotionList className="space-y-3">
             {filteredRows.map((row) => (

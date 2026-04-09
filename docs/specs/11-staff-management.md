@@ -411,7 +411,7 @@ Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
 | Staff Directory | `/admin/staff` | Sortable table: name, role, status, hire date, certs expiring. Quick filters by role. **Roster CSV download** (Track D29): up to 500 active `staff` rows, facility-scoped when a facility is selected (same scope as the live list); export excludes `ssn_last_four` and `date_of_birth`. |
 | Staff Profile | `/admin/staff/:id` | Employment details, certification list with expiration indicators, schedule view, time record history, performance notes |
 | Certification Dashboard | `/admin/certifications` | Grid: staff names × certification types. Green (current), Yellow (expiring in 90 days), Red (expired or missing). Drill down to renew. **Certifications CSV download** (Track D30): up to 500 `staff_certifications` rows with **`staff_display_name`**, facility-scoped when a facility is selected. |
-| Schedule Builder | `/admin/schedules?week=2026-04-06` | 7-day grid, shifts as rows, drag-drop staff assignment. Color coding: green (compliant), red (understaffed), yellow (overtime risk). Publish button with validation. |
+| Schedule Builder | `/admin/schedules` | Hub lists schedule **week** rows (`schedules`). **Schedule weeks CSV** (Track D33): up to 500 `schedules` rows, facility-scoped when a facility is selected. Week detail: 7-day grid, shifts as rows, drag-drop staff assignment; publish with validation. |
 | Time Records | `/admin/time-records` | Table: staff, date, clock in, clock out, hours, overtime, approved. Bulk approve button. **Time records CSV** (Track D31): up to 500 `time_records` rows with **`staff_display_name`**, facility-scoped when a facility is selected. |
 | Staffing Dashboard | `/admin/staffing` | Real-time ratio display per shift, historical ratio chart, alert log. **Ratio snapshots CSV** (Track D32): up to 500 `staffing_ratio_snapshots` rows, facility-scoped when a facility is selected (`staff_detail` as JSON in column `staff_detail_json`). |
 
@@ -438,6 +438,10 @@ Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
 ### Track D — staffing ratio snapshots CSV (shipped)
 
 **D32:** **`/admin/staffing`** — **Download snapshots CSV** queries up to **500** **`staffing_ratio_snapshots`** rows, **RFC-style** CSV; **`staff_detail`** serialized as **`staff_detail_json`**. Scope matches snapshot history (facility filter when valid). Mock gap/warning cards unchanged. **No** new DDL.
+
+### Track D — schedule weeks CSV (shipped)
+
+**D33:** **`/admin/schedules`** — **Download schedule weeks CSV** queries up to **500** **`schedules`** rows (`deleted_at` null), **RFC-style** CSV. Scope matches the hub list (facility filter when valid). **No** new DDL.
 
 ---
 
