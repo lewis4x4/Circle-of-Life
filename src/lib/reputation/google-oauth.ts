@@ -71,3 +71,42 @@ export async function exchangeAuthorizationCode(code: string): Promise<{
     expires_in: json.expires_in ?? 3600,
   };
 }
+
+/** Refresh a short-lived access token using the stored refresh token (server-side only). */
+export async function refreshAccessToken(refreshToken: string): Promise<{
+  access_token: string;
+  expires_in: number;
+}> {
+  const clientId = process.env.REPUTATION_GOOGLE_CLIENT_ID!.trim();
+  const clientSecret = process.env.REPUTATION_GOOGLE_CLIENT_SECRET!.trim();
+
+  const body = new URLSearchParams({
+    grant_type: "refresh_token",
+    refresh_token: refreshToken,
+    client_id: clientId,
+    client_secret: clientSecret,
+  });
+
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+
+  const json = (await res.json()) as {
+    access_token?: string;
+    expires_in?: number;
+    error?: string;
+    error_description?: string;
+  };
+
+  if (!res.ok || !json.access_token) {
+    const msg = json.error_description ?? json.error ?? `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+
+  return {
+    access_token: json.access_token,
+    expires_in: json.expires_in ?? 3600,
+  };
+}

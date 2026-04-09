@@ -39,6 +39,8 @@ export default function ReputationIntegrationsPage() {
   const [status, setStatus] = useState<Status | null>(null);
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -65,6 +67,31 @@ export default function ReputationIntegrationsPage() {
 
   const qError = searchParams.get("error");
   const qConnected = searchParams.get("connected");
+
+  async function syncReviews() {
+    setSyncing(true);
+    setSyncMessage(null);
+    setError(null);
+    try {
+      const res = await fetch("/api/reputation/sync/google", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+      const j = (await res.json()) as {
+        error?: string;
+        imported?: number;
+        accountsProcessed?: number;
+        details?: { label: string; inserted: number; fetched: number; error: string | null }[];
+      };
+      if (!res.ok) {
+        throw new Error(j.error ?? "Sync failed");
+      }
+      const imp = j.imported ?? 0;
+      const n = j.accountsProcessed ?? 0;
+      setSyncMessage(`Synced ${n} listing(s): ${imp} new review row(s) imported into Reputation (drafts).`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   async function disconnect() {
     setDisconnecting(true);
@@ -100,8 +127,8 @@ export default function ReputationIntegrationsPage() {
         <div>
           <h1 className="font-display text-2xl font-semibold tracking-tight">Integrations</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Connect external review platforms when your Google Cloud OAuth client is ready. Automated review
-            fetch remains a follow-up once credentials are stored.
+            Connect Google, then run a one-time import of reviews into Haven drafts (owner only). Scheduled
+            sync and Yelp remain future work.
           </p>
         </div>
       </div>
@@ -118,6 +145,12 @@ export default function ReputationIntegrationsPage() {
         </p>
       )}
 
+      {syncMessage && (
+        <p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-100">
+          {syncMessage}
+        </p>
+      )}
+
       {error && (
         <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
           {error}
@@ -128,8 +161,8 @@ export default function ReputationIntegrationsPage() {
         <CardHeader>
           <CardTitle>Google Business Profile</CardTitle>
           <CardDescription>
-            OAuth scope: Business Profile API access for future review sync. Only the{" "}
-            <strong>organization owner</strong> can connect or disconnect.
+            OAuth scope: Business Profile API (read reviews). Only the <strong>organization owner</strong> can
+            connect, disconnect, or run import.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -181,6 +214,17 @@ export default function ReputationIntegrationsPage() {
                     Only owner can connect
                   </Button>
                 )}
+
+                {status.canManage && status.connected ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={syncing}
+                    onClick={() => void syncReviews()}
+                  >
+                    {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Import Google reviews now"}
+                  </Button>
+                ) : null}
 
                 {status.canManage && status.connected ? (
                   <Button

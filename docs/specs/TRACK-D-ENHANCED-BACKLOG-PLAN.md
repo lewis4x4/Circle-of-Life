@@ -21,7 +21,8 @@
 | **15** | ~~**Calendar** view for transport requests~~ | — | — | — | **Shipped D14** — `/admin/transportation/calendar`. |
 | **22** | ~~**HL7 processor** (minimal **MSH** parse → **`processed`** / **`failed`**)~~ | — | — | — | **Shipped D12** — Edge **`process-referral-hl7-inbound`**; no auto-**`referral_leads`**. |
 | **22** | MLLP listener / hospital feed | High | High | Infra, VPN, partners | Not a single segment; defer. |
-| **23** | ~~**Google OAuth connect** (Business Profile scope; server token store `119`)~~ | — | — | — | **Shipped D44** — `/admin/reputation/integrations` + API routes; **defer** review fetch & Yelp. |
+| **23** | ~~**Google OAuth connect** (Business Profile scope; server token store `119`)~~ | — | — | — | **Shipped D44** — `/admin/reputation/integrations` + OAuth routes. |
+| **23** | ~~**Manual Google review import** (owner-triggered; drafts in `reputation_replies`)~~ | — | — | — | **Shipped D45** — `POST /api/reputation/sync/google` + integrations button; **defer** scheduled & Yelp. |
 | **12** | ~~**Certificate PDF upload**~~ (`staff_training_completions` + `competency-demonstrations` paths) | — | — | — | **D40** — `117` + log form + hub; **D11** — demonstrations. |
 | **14** | **Automated med–texture cross-check** (e.g. Edge job flagging solid vs thickened fluid) | Medium–high | **High (clinical)** | Med orders, pharmacist rules | Needs explicit **clinical rules** sign-off in spec before automation. |
 | **14** | ~~**Read-only “review” panel** (diet + resident meds)~~ | — | — | — | **Shipped D13** — `/admin/dietary/clinical-review`. |
@@ -92,7 +93,9 @@
 
 **~~Recommended next segment — D44~~** **DONE (2026-04-10)** — Module **23:** Google OAuth **connect** + migration **`119`** — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D45+ (owner priority):** remaining §1 rows (e.g. **23** automated review fetch / Yelp, **14** automation after clinical sign-off) — one bounded slice at a time.
+**~~Recommended next segment — D45~~** **DONE (2026-04-10)** — Module **23:** **Manual Google review import** — `POST /api/reputation/sync/google`, integrations **Import** button — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D46+ (owner priority):** remaining §1 rows (e.g. **23** scheduled review fetch / Yelp, **14** automation after clinical sign-off) — one bounded slice at a time.
 
 ---
 
