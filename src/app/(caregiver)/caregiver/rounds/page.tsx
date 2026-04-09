@@ -3,11 +3,8 @@
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2, Clock3, Loader2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock3, Loader2, RefreshCw } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RoundingTaskCard, type RoundingTaskCardData } from "@/components/rounding/RoundingTaskCard";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
@@ -98,72 +95,76 @@ export default function CaregiverRoundsPage() {
   }, [tasks]);
 
   if (configError) {
-    return <div className="rounded-lg border border-amber-800/60 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">{configError}</div>;
+    return <div className="rounded-xl border border-rose-800/60 bg-rose-950/40 px-6 py-4 text-sm text-rose-100 backdrop-blur-md">{configError}</div>;
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-zinc-400">
-        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-        Loading rounds…
+      <div className="flex h-[50vh] flex-col items-center justify-center gap-4 text-zinc-400">
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+        <p className="text-sm font-medium tracking-wide uppercase">Syncing Rounds…</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <Card className="border-zinc-800 bg-gradient-to-br from-zinc-950 to-zinc-900 text-zinc-100">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xl font-display">Smart Rounds</CardTitle>
-          <CardDescription className="text-zinc-400">
-            {facilityName ? `${facilityName} live rounding queue.` : "Live rounding queue."} Complete the due-now path in a few taps and capture exceptions when needed.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-2 text-xs">
-          <MetricPill icon={<AlertTriangle className="h-3.5 w-3.5" />} label="Critical" value={String(grouped.urgent.length)} tone="danger" />
-          <MetricPill icon={<Clock3 className="h-3.5 w-3.5" />} label="Due now" value={String(grouped.due.length)} tone="warning" />
-          <MetricPill icon={<Clock3 className="h-3.5 w-3.5" />} label="Next up" value={String(grouped.next.length)} tone="neutral" />
-          <MetricPill icon={<CheckCircle2 className="h-3.5 w-3.5" />} label="Completed" value={String(grouped.done.length)} tone="success" />
-        </CardContent>
-      </Card>
-
-      {loadError ? (
-        <div className="rounded-lg border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-100">
-          {loadError}
+    <div className="max-w-[800px] mx-auto pb-6 space-y-6">
+      
+      {/* ─── HEADER ──────────────────────────────────────────────────────────── */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-display font-light text-white tracking-tight">Smart Rounds</h1>
+          <p className="text-zinc-400 mt-1 uppercase tracking-widest text-xs font-semibold">
+            {facilityName ? `${facilityName} live queue` : "Live queue"}
+          </p>
         </div>
-      ) : null}
-
-      <div className="flex items-center gap-2">
-        <Button variant="outline" className="min-h-11 border-zinc-800 bg-zinc-950 text-zinc-100 hover:bg-zinc-900" onClick={() => void load()}>
-          Refresh queue
-        </Button>
-        {facilityId ? (
-          <Link
-            href={`/api/rounding/generate-tasks?facilityId=${encodeURIComponent(facilityId)}`}
-            className="text-xs text-zinc-500"
+        <div className="flex items-center gap-3">
+          <button 
+             onClick={() => void load()}
+             className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors border border-white/5 tap-responsive"
           >
-            API ready
-          </Link>
-        ) : null}
+             <RefreshCw className="w-4 h-4 text-zinc-300" />
+          </button>
+          <div className="glass-panel px-4 py-2 rounded-full border border-white/10 text-xs font-semibold text-emerald-400 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,1)]"></span>
+            SYNCED
+          </div>
+        </div>
       </div>
 
-      <Section title="Critical now" tone="danger" emptyMessage="No critical or missed rounds right now.">
+      {loadError && (
+        <div className="rounded-[1rem] border border-rose-800/60 bg-rose-950/30 px-5 py-4 text-sm text-rose-200">
+          {loadError}
+        </div>
+      )}
+
+      {/* ─── METRICS BLOCK ─────────────────────────────────────────────────── */}
+      <div className="glass-card rounded-[1.5rem] p-4 flex flex-wrap gap-2 md:grid md:grid-cols-4">
+        <MetricPill icon={<AlertTriangle className="h-3 w-3" />} label="Critical" value={String(grouped.urgent.length)} tone="danger" />
+        <MetricPill icon={<Clock3 className="h-3 w-3" />} label="Due now" value={String(grouped.due.length)} tone="warning" />
+        <MetricPill icon={<Clock3 className="h-3 w-3" />} label="Next up" value={String(grouped.next.length)} tone="neutral" />
+        <MetricPill icon={<CheckCircle2 className="h-3 w-3" />} label="Completed" value={String(grouped.done.length)} tone="success" />
+      </div>
+
+      {/* ─── LIST SECTIONS ─────────────────────────────────────────────────── */}
+      <Section title="Critical / Missed" tone="danger" emptyMessage="No critical rounds right now." count={grouped.urgent.length}>
         {grouped.urgent.map((task) => (
           <RoundingTaskCard key={task.id} task={task} href={`/caregiver/rounds/${task.residentId}?taskId=${task.id}`} />
         ))}
       </Section>
 
-      <Section title="Due now" tone="warning" emptyMessage="No due-now or overdue rounds right now.">
+      <Section title="Due Now" tone="warning" emptyMessage="No due-now rounds." count={grouped.due.length}>
         {grouped.due.map((task) => (
           <RoundingTaskCard key={task.id} task={task} href={`/caregiver/rounds/${task.residentId}?taskId=${task.id}`} />
         ))}
       </Section>
 
-      <Section title="Coming up" tone="neutral" emptyMessage="No upcoming rounds in the current window.">
+      <Section title="Coming Up" tone="neutral" emptyMessage="No upcoming rounds in window." count={grouped.next.length}>
         {grouped.next.map((task) => (
           <RoundingTaskCard key={task.id} task={task} href={`/caregiver/rounds/${task.residentId}?taskId=${task.id}`} />
         ))}
       </Section>
+
     </div>
   );
 }
@@ -181,20 +182,25 @@ function MetricPill({
 }) {
   const toneClass =
     tone === "danger"
-      ? "border-rose-800/60 bg-rose-950/30 text-rose-100"
+      ? "bg-rose-950/40 text-rose-100 border-transparent shadow-[inset_0_0_20px_rgba(225,29,72,0.15)]"
       : tone === "warning"
-        ? "border-amber-800/60 bg-amber-950/30 text-amber-100"
+        ? "bg-amber-950/30 text-amber-100 border-transparent"
         : tone === "success"
-          ? "border-emerald-800/60 bg-emerald-950/30 text-emerald-100"
-          : "border-zinc-800 bg-zinc-900/80 text-zinc-100";
+          ? "bg-emerald-950/20 text-emerald-100 border-transparent"
+          : "bg-white/5 text-zinc-100 border-transparent";
+          
+  const iconColor = 
+      tone === "danger" ? "text-rose-400" : tone === "warning" ? "text-amber-400" : tone === "success" ? "text-emerald-400" : "text-zinc-400";
 
   return (
-    <div className={`rounded-lg border px-3 py-2 ${toneClass}`}>
-      <div className="mb-1 flex items-center gap-1 text-[11px] uppercase tracking-wide">
-        {icon}
+    <div className={`flex-1 min-w-[120px] rounded-xl border px-4 py-3 flex flex-col justify-between ${toneClass}`}>
+      <div className="mb-2 flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest text-zinc-400">
+        <span className={iconColor}>{icon}</span>
         <span>{label}</span>
       </div>
-      <div className="text-lg font-semibold">{value}</div>
+      <div className={`text-2xl font-display font-medium tabular-nums tracking-tight ${tone === 'neutral' ? 'opacity-80' : ''}`}>
+         {value}
+      </div>
     </div>
   );
 }
@@ -203,28 +209,33 @@ function Section({
   title,
   tone,
   emptyMessage,
+  count,
   children,
 }: {
   title: string;
   tone: "neutral" | "warning" | "danger";
   emptyMessage: string;
+  count: number;
   children: ReactNode;
 }) {
   const items = Array.isArray(children) ? children.filter(Boolean) : [children].filter(Boolean);
-  const badgeVariant = tone === "danger" ? "destructive" : tone === "warning" ? "outline" : "secondary";
+  
+  if (items.length === 0 && tone === "neutral") return null;
 
   return (
-    <section className="space-y-2">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-300">{title}</h2>
-        <Badge variant={badgeVariant}>{items.length}</Badge>
+    <section className="space-y-4 pb-2">
+      <div className="flex items-center gap-3 border-b border-white/5 pb-2">
+        <h2 className="text-sm font-semibold uppercase tracking-widest text-zinc-400">{title}</h2>
+        <span className="px-2 py-0.5 rounded-full bg-white/10 text-white text-[10px] font-bold">
+           {count}
+        </span>
       </div>
       {items.length === 0 ? (
-        <Card className="border-zinc-800 bg-zinc-950/70 text-zinc-100">
-          <CardContent className="py-6 text-sm text-zinc-400">{emptyMessage}</CardContent>
-        </Card>
+         <div className="glass-card rounded-[1.5rem] border-dashed border-2 border-white/5 p-8 text-center bg-transparent">
+             <p className="text-sm text-zinc-500 font-medium tracking-wide">{emptyMessage}</p>
+         </div>
       ) : (
-        <div className="space-y-2">{items}</div>
+        <div className="space-y-3">{items}</div>
       )}
     </section>
   );

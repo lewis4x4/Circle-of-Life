@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Check, Clock3, Loader2, Pill, Shield, ShieldAlert, X } from "lucide-react";
+import { Check, Clock3, Loader2, Pill, Shield, ShieldAlert, X, RefreshCw } from "lucide-react";
 import { toDate } from "date-fns-tz";
 
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
@@ -14,10 +14,6 @@ import {
 } from "@/lib/caregiver/emar-queue";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
-
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 type ResidentMini = {
   id: string;
@@ -241,80 +237,90 @@ export default function CaregiverMedsPage() {
 
   if (configError) {
     return (
-      <div className="rounded-lg border border-amber-800/60 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">{configError}</div>
+      <div className="rounded-xl border border-rose-800/60 bg-rose-950/40 px-6 py-4 text-sm text-rose-100 backdrop-blur-md">{configError}</div>
     );
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-zinc-400">
-        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-        Loading eMAR…
+      <div className="flex h-[50vh] flex-col items-center justify-center gap-4 text-zinc-400">
+        <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+        <p className="text-sm font-medium tracking-wide uppercase">Syncing eMAR…</p>
       </div>
     );
   }
 
   if (loadError && !ctx) {
     return (
-      <div className="space-y-3">
-        <div className="rounded-lg border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-100">{loadError}</div>
+      <div className="space-y-4 max-w-md mx-auto mt-12">
+        <div className="rounded-[1.5rem] border border-rose-800/60 bg-rose-950/30 px-6 py-5 text-sm text-rose-100 text-center">
+          <ShieldAlert className="w-8 h-8 mx-auto mb-3 text-rose-400" />
+          <p>{loadError}</p>
+        </div>
         <Link
           href="/caregiver"
-          className="inline-flex h-11 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-4 text-sm font-medium text-zinc-200 hover:bg-zinc-800"
+          className="flex h-14 items-center justify-center rounded-2xl bg-white/10 border border-white/20 text-sm font-semibold text-white hover:bg-white/20 transition-colors tap-responsive"
         >
-          Back to shift home
+          Back to shift dashboard
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="max-w-[1000px] mx-auto pb-6 space-y-6">
+      
+      {/* ─── HIGHLIGHT BAR ─────────────────────────────────────────────────── */}
       <Link
         href="/caregiver/controlled-count"
-        className="flex items-center justify-between rounded-lg border border-teal-900/50 bg-teal-950/40 px-4 py-3 text-sm text-teal-100 hover:bg-teal-950/60"
+        className="flex items-center justify-between rounded-full border border-teal-500/30 bg-teal-900/30 backdrop-blur-xl px-5 py-3.5 text-sm text-teal-100 hover:bg-teal-900/50 transition-colors tap-responsive"
       >
-        <span className="flex items-center gap-2 font-medium">
+        <span className="flex items-center gap-3 font-semibold tracking-wide">
           <Shield className="h-4 w-4 text-teal-400" />
           Controlled substance count
         </span>
-        <span className="text-xs text-teal-300">Shift reconciliation</span>
+        <span className="text-[10px] uppercase tracking-widest font-bold text-teal-300 bg-teal-950/40 px-2.5 py-1 rounded-full border border-teal-800/50">Shift reconciliation</span>
       </Link>
 
-      <Card className="border-zinc-800 bg-gradient-to-br from-zinc-950 to-zinc-900 text-zinc-100">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xl font-display">eMAR Queue</CardTitle>
-          <CardDescription className="text-zinc-400">
-            {ctx?.facilityName ? (
-              <>
-                Live queue for <span className="text-zinc-200">{ctx.facilityName}</span> · times in facility timezone.
-              </>
-            ) : (
-              "Document medication administration against active orders."
-            )}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-2 text-xs">
-          <MetricPill label="Due now / overdue" value={String(counts.dueNow)} tone="danger" />
-          <MetricPill label="Due &lt; 90 min" value={String(counts.dueSoon)} tone="warning" />
-          <MetricPill label="In window" value={String(counts.total)} tone="neutral" />
-          <MetricPill label="Facility TZ" value={ctx?.timeZone?.split("/").pop() ?? "—"} tone="neutral" />
-        </CardContent>
-      </Card>
+      {/* ─── HEADER ──────────────────────────────────────────────────────────── */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-display font-light text-white tracking-tight">eMAR Queue</h1>
+          <p className="text-zinc-400 mt-1 uppercase tracking-widest text-xs font-semibold">
+            {ctx?.facilityName ? `${ctx.facilityName} · TZ: ${ctx.timeZone.split("/").pop()}` : "Document medication passes."}
+          </p>
+        </div>
+        <button 
+           onClick={() => void load()}
+           className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors border border-white/5 tap-responsive"
+        >
+           <RefreshCw className="w-4 h-4 text-zinc-300" />
+        </button>
+      </div>
 
-      {loadError ? (
-        <div className="rounded-lg border border-amber-800/60 bg-amber-950/30 px-4 py-2 text-xs text-amber-100">{loadError}</div>
-      ) : null}
+      {loadError && (
+        <div className="rounded-xl border border-amber-800/60 bg-amber-950/30 px-5 py-3 text-sm font-medium text-amber-200">
+          {loadError}
+        </div>
+      )}
 
-      {slots.length === 0 ? (
-        <Card className="border-zinc-800 bg-zinc-950/70 text-zinc-100">
-          <CardContent className="py-8 text-center text-sm text-zinc-400">
-            No medication passes in the current window. Active orders with scheduled times appear here automatically.
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-2">
-          {slots.map((item) => (
+      {/* ─── METRICS BLOCK ─────────────────────────────────────────────────── */}
+      <div className="glass-card rounded-[1.5rem] p-4 flex flex-wrap gap-2 md:grid md:grid-cols-3">
+        <MetricPill label="Due now / overdue" value={String(counts.dueNow)} tone="danger" />
+        <MetricPill label="Due < 90 min" value={String(counts.dueSoon)} tone="warning" />
+        <MetricPill label="In window" value={String(counts.total)} tone="neutral" />
+      </div>
+
+      {/* ─── QUEUE LIST ────────────────────────────────────────────────────── */}
+      <div className="space-y-4 pt-4">
+        {slots.length === 0 ? (
+           <div className="glass-card rounded-[1.5rem] border-dashed border-2 border-white/5 p-12 text-center bg-transparent">
+             <Pill className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
+             <p className="text-lg text-white font-medium mb-1">Queue is clear.</p>
+             <p className="text-sm text-zinc-500 font-medium tracking-wide">No medication passes left in the current window.</p>
+           </div>
+        ) : (
+          slots.map((item) => (
             <MedicationCard
               key={item.queueKey}
               item={item}
@@ -322,9 +328,10 @@ export default function CaregiverMedsPage() {
               onGiven={() => void documentDose(item, "given")}
               onRefused={() => void documentDose(item, "refused")}
             />
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
+
     </div>
   );
 }
@@ -340,17 +347,19 @@ function MetricPill({
 }) {
   const toneClass =
     tone === "danger"
-      ? "border-rose-800/60 bg-rose-950/30"
+      ? "bg-rose-950/40 text-rose-100 border-transparent shadow-[inset_0_0_20px_rgba(225,29,72,0.15)]"
       : tone === "warning"
-        ? "border-amber-800/60 bg-amber-950/30"
-        : tone === "success"
-          ? "border-emerald-800/60 bg-emerald-950/30"
-          : "border-zinc-800 bg-zinc-900/80";
-
+        ? "bg-amber-950/30 text-amber-100 border-transparent"
+        : "bg-white/5 text-zinc-100 border-transparent";
+          
   return (
-    <div className={`rounded-xl border px-3 py-2 ${toneClass}`}>
-      <p className="text-[10px] uppercase tracking-wide text-zinc-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-white">{value}</p>
+    <div className={`flex-1 min-w-[120px] rounded-[1.2rem] border px-5 py-4 flex flex-col justify-between ${toneClass}`}>
+      <div className="mb-2 uppercase tracking-widest text-[10px] font-bold text-zinc-400">
+        {label}
+      </div>
+      <div className="text-3xl font-display font-medium tabular-nums tracking-tight">
+         {value}
+      </div>
     </div>
   );
 }
@@ -366,70 +375,72 @@ function MedicationCard({
   onGiven: () => void;
   onRefused: () => void;
 }) {
+  const isDueNow = item.urgency === "due-now";
+
   return (
-    <Card
-      className={`text-zinc-100 ${
-        item.urgency === "due-now"
-          ? "border-rose-800/70 bg-rose-950/20"
-          : "border-zinc-800 bg-zinc-950/80"
-      }`}
-    >
-      <CardContent className="p-3">
-        <div className="mb-2 flex items-start justify-between gap-2">
-          <div>
-            <p className="text-sm font-semibold">{item.medicationLabel}</p>
-            <p className="mt-1 text-xs text-zinc-300">
-              {item.residentName} · Rm {item.roomLabel}
-            </p>
-          </div>
-          <Badge
-            className={
-              item.urgency === "due-now"
-                ? "border-rose-700 bg-rose-900/40 text-rose-200"
-                : "border-amber-700 bg-amber-900/40 text-amber-200"
-            }
-          >
-            {item.urgency === "due-now" ? "Due now" : "Due soon"}
-          </Badge>
-        </div>
+    <div className={`rounded-[2rem] p-6 transition-all relative overflow-hidden backdrop-blur-xl border ${
+       isDueNow 
+         ? "bg-rose-950/10 border-rose-500/30 shadow-[inset_0_0_40px_rgba(225,29,72,0.1)]"
+         : "glass-card bg-white/[0.02] hover:bg-white/[0.04]"
+    }`}>
+      
+      {/* Left side color accent bar for visual scanning */}
+      <div className={`absolute top-0 bottom-0 left-0 w-1.5 ${isDueNow ? 'bg-rose-500' : 'bg-transparent'}`}></div>
 
-        <div className="mb-3 flex flex-wrap gap-2 text-xs text-zinc-400">
-          <span className="inline-flex items-center gap-1">
-            <Pill className="h-3.5 w-3.5" />
-            {item.routeLabel}
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <Clock3 className="h-3.5 w-3.5" />
-            {item.scheduleLabel}
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <ShieldAlert className="h-3.5 w-3.5" />
-            {item.instructions}
-          </span>
-        </div>
+      <div className="flex flex-col gap-5 md:pl-2">
+         <div className="flex items-start justify-between gap-4">
+            <div>
+               <h3 className="text-xl md:text-2xl font-display text-white tracking-wide">{item.medicationLabel}</h3>
+               <p className="text-zinc-400 text-sm font-medium mt-1">
+                 {item.residentName} <span className="mx-2 opacity-50">&middot;</span> Rm {item.roomLabel}
+               </p>
+            </div>
+            {/* Status indicator pill */}
+            <div className={`shrink-0 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${
+               isDueNow ? "bg-rose-500/20 text-rose-300 border-rose-500/30" : "bg-amber-500/10 text-amber-300 border-amber-500/30"
+            }`}>
+               {isDueNow ? "Due Now" : "Due Soon"}
+            </div>
+         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            type="button"
-            disabled={busy}
-            className="h-10 bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50"
-            onClick={onGiven}
-          >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="mr-1.5 h-4 w-4" />}
-            Given
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={busy}
-            className="h-10 border-zinc-800 bg-zinc-900 text-zinc-200 hover:bg-zinc-800 hover:text-white disabled:opacity-50"
-            onClick={onRefused}
-          >
-            <X className="mr-1.5 h-4 w-4" />
-            Refused
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+         {/* Instructions block */}
+         <div className="flex flex-wrap items-center gap-3 py-3 border-y border-white/5">
+           <span className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-300 bg-black/40 px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">
+             <Pill className="h-3.5 w-3.5 text-indigo-400" />
+             {item.routeLabel}
+           </span>
+           <span className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-300 bg-black/40 px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">
+             <Clock3 className="h-3.5 w-3.5 text-zinc-400" />
+             {item.scheduleLabel}
+           </span>
+           <span className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-300 bg-black/40 px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">
+             <ShieldAlert className="h-3.5 w-3.5 text-emerald-400" />
+             {item.instructions}
+           </span>
+         </div>
+
+         <div className="grid grid-cols-2 gap-3 mt-1">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={onGiven}
+              className="h-14 rounded-xl flex items-center justify-center font-bold tracking-wide transition-all shadow-[0_4px_20px_rgba(16,185,129,0.15)] bg-emerald-500 border border-emerald-400 text-black hover:bg-emerald-400 disabled:opacity-50 tap-responsive"
+            >
+              {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="mr-2 h-5 w-5" />}
+              MARK GIVEN
+            </button>
+
+            <button
+              type="button"
+              disabled={busy}
+              onClick={onRefused}
+              className="h-14 rounded-xl flex items-center justify-center font-bold tracking-wide transition-all border border-white/10 bg-black/40 text-zinc-300 hover:bg-white/10 hover:text-white disabled:opacity-50 tap-responsive shadow-inner"
+            >
+              <X className="mr-2 h-5 w-5" />
+              REFUSED
+            </button>
+         </div>
+      </div>
+    </div>
   );
 }

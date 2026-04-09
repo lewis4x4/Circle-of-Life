@@ -3,9 +3,6 @@
 import Link from "next/link";
 import { AlertTriangle, ArrowRight, CheckCircle2, Clock3, UserRound } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
 type TaskStatus =
   | "upcoming"
   | "due_soon"
@@ -35,29 +32,29 @@ function statusTone(status: TaskStatus) {
     case "critically_overdue":
     case "missed":
       return {
-        card: "border-rose-800/70 bg-rose-950/30",
-        badge: "border-rose-700 bg-rose-900/40 text-rose-200",
-        icon: <AlertTriangle aria-hidden className="h-4 w-4 text-rose-300" />,
+        card: "bg-rose-950/40 border-rose-500/30 shadow-[inset_0_0_20px_rgba(225,29,72,0.1)]",
+        badge: "border-rose-700/50 bg-rose-500/20 text-rose-300",
+        icon: <AlertTriangle aria-hidden className="h-4 w-4 text-rose-400" />,
       };
     case "overdue":
     case "escalated":
       return {
-        card: "border-amber-800/70 bg-amber-950/25",
-        badge: "border-amber-700 bg-amber-900/40 text-amber-200",
-        icon: <Clock3 aria-hidden className="h-4 w-4 text-amber-300" />,
+        card: "bg-amber-950/40 border-amber-500/30",
+        badge: "border-amber-700/50 bg-amber-500/20 text-amber-300",
+        icon: <Clock3 aria-hidden className="h-4 w-4 text-amber-400" />,
       };
     case "completed_on_time":
     case "completed_late":
       return {
-        card: "border-emerald-800/70 bg-emerald-950/20",
-        badge: "border-emerald-700 bg-emerald-900/40 text-emerald-200",
-        icon: <CheckCircle2 aria-hidden className="h-4 w-4 text-emerald-300" />,
+        card: "bg-emerald-950/20 border-emerald-900/30 opacity-70",
+        badge: "border-emerald-800/50 bg-emerald-900/40 text-emerald-300",
+        icon: <CheckCircle2 aria-hidden className="h-4 w-4 text-emerald-400" />,
       };
     default:
       return {
-        card: "border-zinc-800 bg-zinc-950/80",
-        badge: "border-zinc-700 bg-zinc-900/50 text-zinc-200",
-        icon: <UserRound aria-hidden className="h-4 w-4 text-zinc-300" />,
+        card: "bg-white/[0.03] border-white/5 shadow-sm",
+        badge: "border-white/10 bg-white/5 text-zinc-300",
+        icon: <UserRound aria-hidden className="h-4 w-4 text-zinc-400" />,
       };
   }
 }
@@ -89,34 +86,42 @@ export function RoundingTaskCard({
   const tone = statusTone(task.derivedStatus);
 
   return (
-    <Link href={href} className="block">
-      <Card className={`transition-colors hover:bg-zinc-900/90 ${tone.card}`}>
-        <CardHeader className="pb-2">
+    <Link href={href} className="block group tap-responsive">
+      <div className={`rounded-[1.5rem] p-5 border backdrop-blur-xl transition-all duration-300 group-hover:brightness-110 ${tone.card}`}>
+        <div className="flex flex-col gap-4">
+          
           <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-2">
-              {tone.icon}
-              <div>
-                <CardTitle className="text-base text-zinc-100">{task.residentName}</CardTitle>
-                <CardDescription className="text-zinc-400">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-black/40 border border-white/5 flex items-center justify-center shrink-0 shadow-inner">
+                 {tone.icon}
+              </div>
+              <div className="flex flex-col">
+                <h3 className="text-lg font-display text-white tracking-wide">{task.residentName}</h3>
+                <p className="text-xs text-zinc-400/80 font-medium tracking-wide">
                   {task.roomLabel ? `${task.roomLabel} · ` : ""}
                   {task.assignedStaffName ? `Assigned to ${task.assignedStaffName}` : "Open assignment"}
-                </CardDescription>
+                </p>
               </div>
             </div>
-            <Badge className={tone.badge}>{formatStatus(task.derivedStatus)}</Badge>
+            
+            <div className={`px-2.5 py-1 rounded border text-[10px] uppercase font-bold tracking-widest leading-none flex items-center shrink-0 ${tone.badge}`}>
+               {formatStatus(task.derivedStatus)}
+            </div>
           </div>
-        </CardHeader>
-        <CardContent className="flex items-center justify-between gap-3">
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-zinc-100">{formatDueLabel(task.dueAt)}</p>
-            {task.note ? <p className="text-xs text-zinc-400">{task.note}</p> : null}
+
+          <div className="flex items-center justify-between pl-[3.25rem] border-t border-white/5 pt-3">
+             <div className="flex flex-col">
+                <span className="text-sm font-semibold text-zinc-200">{formatDueLabel(task.dueAt)}</span>
+                {task.note && <span className="text-xs text-zinc-500 mt-0.5">{task.note}</span>}
+             </div>
+             
+             <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors shrink-0">
+               <ArrowRight className="h-4 w-4 text-zinc-300" />
+             </div>
           </div>
-          <div className="inline-flex items-center gap-1 text-xs font-medium text-zinc-300">
-            Open
-            <ArrowRight className="h-3.5 w-3.5" />
-          </div>
-        </CardContent>
-      </Card>
+
+        </div>
+      </div>
     </Link>
   );
 }

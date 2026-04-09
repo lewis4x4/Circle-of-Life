@@ -4,7 +4,7 @@ import React, { Suspense, useCallback, useEffect, useMemo, useState } from "reac
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 
 import {
@@ -16,19 +16,6 @@ import {
 } from "@/lib/validation/caregiver-incident";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
-
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 const CATEGORY_LABELS: Record<(typeof caregiverIncidentCategoryValues)[number], string> = {
   fall_with_injury: "Fall with injury",
@@ -235,7 +222,9 @@ function CaregiverIncidentDraftPageInner() {
     }
   }, [queryResidentId, residents, form]);
 
-  async function onSubmit(values: CaregiverIncidentFormData) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const values = form.getValues();
     setSubmitError(null);
     if (!facilityId || !organizationId) {
       setSubmitError("Facility context is not ready. Refresh and try again.");
@@ -298,28 +287,31 @@ function CaregiverIncidentDraftPageInner() {
 
   if (configError) {
     return (
-      <div className="rounded-lg border border-amber-800/60 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">{configError}</div>
+      <div className="rounded-xl border border-rose-800/60 bg-rose-950/40 px-6 py-4 text-sm text-rose-100 backdrop-blur-md">{configError}</div>
     );
   }
 
   if (loadingContext) {
     return (
-      <div className="flex items-center justify-center py-16 text-zinc-400">
-        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-        Loading facility…
+      <div className="flex h-[50vh] flex-col items-center justify-center gap-4 text-zinc-400">
+        <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+        <p className="text-sm font-medium tracking-wide uppercase">Securing form context…</p>
       </div>
     );
   }
 
   if (loadError) {
     return (
-      <div className="space-y-3">
-        <div className="rounded-lg border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-100">{loadError}</div>
+      <div className="space-y-4 max-w-md mx-auto mt-12">
+        <div className="rounded-[1.5rem] border border-rose-800/60 bg-rose-950/30 px-6 py-5 text-sm text-rose-100 text-center">
+          <AlertTriangle className="w-8 h-8 mx-auto mb-3 text-rose-400" />
+          <p>{loadError}</p>
+        </div>
         <Link
           href="/caregiver"
-          className="inline-flex h-11 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-4 text-sm font-medium text-zinc-200 hover:bg-zinc-800"
+          className="flex h-14 items-center justify-center rounded-2xl bg-white/10 border border-white/20 text-sm font-semibold text-white hover:bg-white/20 transition-colors tap-responsive"
         >
-          Back to dashboard
+          Back to shift home
         </Link>
       </div>
     );
@@ -327,282 +319,223 @@ function CaregiverIncidentDraftPageInner() {
 
   if (submittedNumber) {
     return (
-      <Card className="border-emerald-900/50 bg-emerald-950/20 text-zinc-100">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-lg font-display text-emerald-100">
-            <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-            Incident submitted
-          </CardTitle>
-          <CardDescription className="text-emerald-200/80">
-            Report <span className="font-mono font-semibold text-emerald-100">{submittedNumber}</span> is on file. Nursing and administration can follow up in the operations console.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-2 sm:flex-row">
-          <Link
-            href="/caregiver"
-            className="inline-flex h-11 items-center justify-center rounded-lg bg-emerald-700 px-4 text-sm font-medium text-white hover:bg-emerald-600"
-          >
-            Return to shift home
-          </Link>
-          <Button
-            type="button"
-            variant="outline"
-            className="border-zinc-700 bg-zinc-900 text-zinc-200"
-            onClick={() => {
-              setSubmittedNumber(null);
-              form.reset(defaultFormValues());
-            }}
-          >
-            File another report
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="max-w-[700px] mx-auto mt-12">
+        <div className="glass-panel p-8 md:p-12 text-center flex flex-col items-center border border-emerald-500/30 bg-emerald-950/20 shadow-[inset_0_0_40px_rgba(16,185,129,0.05)] rounded-[2rem]">
+          <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mb-6 border border-emerald-400/50">
+             <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+          </div>
+          <h2 className="text-3xl font-display font-light text-white mb-2 tracking-tight">Incident Logged</h2>
+          <p className="text-zinc-400 mb-8 max-w-md leading-relaxed text-[15px]">
+             Report <span className="text-emerald-300 font-mono font-bold tracking-wider">{submittedNumber}</span> is securely on file. Nursing and administration can follow up in the operations console.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+             <Link
+               href="/caregiver"
+               className="h-14 px-8 rounded-2xl flex items-center justify-center font-bold tracking-wide transition-all shadow-lg bg-emerald-500 text-black hover:bg-emerald-400 tap-responsive"
+             >
+               RETURN TO SHIFT
+             </Link>
+             <button
+               type="button"
+               className="h-14 px-8 rounded-2xl flex items-center justify-center font-bold tracking-wide transition-all border border-white/10 bg-black/40 text-zinc-300 hover:bg-white/10 hover:text-white tap-responsive shadow-inner"
+               onClick={() => {
+                 setSubmittedNumber(null);
+                 form.reset(defaultFormValues());
+               }}
+             >
+               FILE ANOTHER
+             </button>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <Card className="border-zinc-800 bg-gradient-to-br from-zinc-950 to-zinc-900 text-zinc-100">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-xl font-display">
-            <AlertTriangle className="h-5 w-5 text-amber-500" />
-            Incident report
-          </CardTitle>
-          <CardDescription className="text-zinc-400">
-            {facilityName ? (
-              <>
-                Filing for <span className="text-zinc-200">{facilityName}</span>. Be factual; you can add detail after submission in the admin console if needed.
-              </>
-            ) : (
-              "File a structured incident for your assigned facility."
-            )}
-          </CardDescription>
-        </CardHeader>
-      </Card>
+    <div className="max-w-[900px] mx-auto pb-8 space-y-8">
+      
+      {/* ─── HEADER ──────────────────────────────────────────────────────────── */}
+      <div className="text-center md:text-left mb-6 md:mb-12">
+        <div className="md:hidden w-16 h-16 mx-auto bg-amber-500/20 rounded-full flex items-center justify-center mb-4 border border-amber-500/30">
+           <AlertTriangle className="w-8 h-8 text-amber-400" />
+        </div>
+        <h1 className="text-3xl md:text-5xl font-display font-light text-white tracking-tight flex items-center gap-4">
+           <AlertTriangle className="hidden md:block w-10 h-10 text-amber-500" />
+           Report Incident
+        </h1>
+        <p className="text-zinc-400 mt-3 max-w-lg text-[15px] leading-relaxed">
+          {facilityName ? (
+            <>Filing for <span className="text-white font-medium">{facilityName}</span>. Be factual; you can add detail after submission in the admin console if needed.</>
+          ) : (
+            "File a structured incident for your assigned facility."
+          )}
+        </p>
+      </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <Card className="border-zinc-800 bg-zinc-950/70 text-zinc-100">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">What happened</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name="residentId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-zinc-300">Resident (optional)</FormLabel>
-                    <FormControl>
-                      <select
-                        className="flex h-11 w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 text-sm text-zinc-100"
-                        value={field.value ?? ""}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      >
-                        <option value="">Not resident-specific</option>
-                        {residents.map((r) => (
-                          <option key={r.id} value={r.id}>
-                            {r.label}
-                          </option>
-                        ))}
-                      </select>
-                    </FormControl>
-                    <FormMessage className="text-xs text-rose-300" />
-                  </FormItem>
-                )}
-              />
+      <form onSubmit={onSubmit} className="space-y-6">
+        
+        {/* SECTION 1: WHAT HAPPENED */}
+        <div className="glass-panel rounded-[2rem] p-6 md:p-10">
+          <h3 className="text-sm font-semibold tracking-widest uppercase text-amber-400 mb-8 flex items-center gap-2">
+             <span className="w-2 h-2 rounded-full bg-amber-400"></span> Primary Classification
+          </h3>
+          
+          <div className="space-y-6">
+            <div className="space-y-2">
+               <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 pl-1">Resident <span className="text-zinc-600 font-normal opacity-70">(Optional)</span></label>
+               <div className="relative">
+                 <select
+                   className="w-full h-14 appearance-none rounded-[1.2rem] border border-white/10 bg-black/40 px-5 text-[15px] font-medium text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-inner tap-responsive"
+                   {...form.register("residentId")}
+                 >
+                   <option value="">Not resident-specific</option>
+                   {residents.map((r) => (
+                     <option key={r.id} value={r.id}>{r.label}</option>
+                   ))}
+                 </select>
+                 <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500 pointer-events-none" />
+               </div>
+            </div>
 
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-zinc-300">Category</FormLabel>
-                    <FormControl>
-                      <select
-                        className="flex h-11 w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 text-sm text-zinc-100"
-                        value={field.value}
-                        onChange={field.onChange}
-                      >
-                        {caregiverIncidentCategoryValues.map((v) => (
-                          <option key={v} value={v}>
-                            {CATEGORY_LABELS[v]}
-                          </option>
-                        ))}
-                      </select>
-                    </FormControl>
-                    <FormMessage className="text-xs text-rose-300" />
-                  </FormItem>
-                )}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 pl-1">Category</label>
+                  <div className="relative">
+                    <select
+                      className="w-full h-14 appearance-none rounded-[1.2rem] border border-white/10 bg-black/40 px-5 text-[15px] font-medium text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-inner tap-responsive"
+                      {...form.register("category")}
+                    >
+                      {caregiverIncidentCategoryValues.map((v) => (
+                        <option key={v} value={v}>{CATEGORY_LABELS[v]}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500 pointer-events-none" />
+                  </div>
+               </div>
 
-              <FormField
-                control={form.control}
-                name="severity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-zinc-300">Severity</FormLabel>
-                    <FormControl>
-                      <select
-                        className="flex h-11 w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 text-sm text-zinc-100"
-                        value={field.value}
-                        onChange={field.onChange}
-                      >
-                        {caregiverIncidentSeverityValues.map((v) => (
-                          <option key={v} value={v}>
-                            {SEVERITY_LABELS[v]}
-                          </option>
-                        ))}
-                      </select>
-                    </FormControl>
-                    <FormMessage className="text-xs text-rose-300" />
-                  </FormItem>
-                )}
-              />
+               <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 pl-1">Severity</label>
+                  <div className="relative">
+                    <select
+                      className="w-full h-14 appearance-none rounded-[1.2rem] border border-white/10 bg-black/40 px-5 text-[15px] font-medium text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-inner tap-responsive"
+                      {...form.register("severity")}
+                    >
+                      {caregiverIncidentSeverityValues.map((v) => (
+                        <option key={v} value={v}>{SEVERITY_LABELS[v]}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500 pointer-events-none" />
+                  </div>
+               </div>
+            </div>
 
-              <FormField
-                control={form.control}
-                name="occurredAtLocal"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-zinc-300">Occurred at</FormLabel>
-                    <FormControl>
-                      <Input type="datetime-local" className="border-zinc-800 bg-zinc-900 text-zinc-100" {...field} />
-                    </FormControl>
-                    <FormMessage className="text-xs text-rose-300" />
-                  </FormItem>
-                )}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 pl-1">Date & Time</label>
+                  <input 
+                     type="datetime-local" 
+                     className="w-full h-14 appearance-none rounded-[1.2rem] border border-white/10 bg-black/40 px-5 text-[15px] font-medium text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-inner tap-responsive"
+                     {...form.register("occurredAtLocal")}
+                  />
+               </div>
 
-              <FormField
-                control={form.control}
-                name="shift"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-zinc-300">Shift</FormLabel>
-                    <FormControl>
-                      <select
-                        className="flex h-11 w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 text-sm text-zinc-100"
-                        value={field.value}
-                        onChange={field.onChange}
-                      >
-                        {caregiverIncidentShiftValues.map((v) => (
-                          <option key={v} value={v}>
-                            {SHIFT_LABELS[v]}
-                          </option>
-                        ))}
-                      </select>
-                    </FormControl>
-                    <FormMessage className="text-xs text-rose-300" />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
+               <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 pl-1">Shift</label>
+                  <div className="relative">
+                    <select
+                      className="w-full h-14 appearance-none rounded-[1.2rem] border border-white/10 bg-black/40 px-5 text-[15px] font-medium text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-inner tap-responsive"
+                      {...form.register("shift")}
+                    >
+                      {caregiverIncidentShiftValues.map((v) => (
+                        <option key={v} value={v}>{SHIFT_LABELS[v]}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500 pointer-events-none" />
+                  </div>
+               </div>
+            </div>
+          </div>
+        </div>
 
-          <Card className="border-zinc-800 bg-zinc-950/70 text-zinc-100">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Where &amp; narrative</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name="locationDescription"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-zinc-300">Location</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g. Room 114, east hall near nurses&apos; station"
-                        className="border-zinc-800 bg-zinc-900 text-zinc-100"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className="text-xs text-rose-300" />
-                  </FormItem>
-                )}
-              />
+        {/* SECTION 2: WHERE & NARRATIVE */}
+        <div className="glass-panel rounded-[2rem] p-6 md:p-10">
+          <h3 className="text-sm font-semibold tracking-widest uppercase text-amber-400 mb-8 flex items-center gap-2">
+             <span className="w-2 h-2 rounded-full bg-amber-400"></span> Details & Location
+          </h3>
+          
+          <div className="space-y-6">
+            <div className="space-y-2">
+               <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 pl-1">Specific Location</label>
+               <input
+                  type="text"
+                  placeholder="e.g. Room 114, east hall near nurses' station"
+                  className="w-full h-14 appearance-none rounded-[1.2rem] border border-white/10 bg-black/40 px-5 text-[15px] font-medium text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-inner placeholder:text-zinc-600 tap-responsive"
+                  {...form.register("locationDescription")}
+               />
+            </div>
 
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-zinc-300">Description</FormLabel>
-                    <FormControl>
-                      <textarea
-                        rows={4}
-                        className="flex w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
-                        placeholder="Objective facts: what you saw, heard, or verified."
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className="text-xs text-rose-300" />
-                  </FormItem>
-                )}
-              />
+            <div className="space-y-2">
+               <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 pl-1">Factual Description</label>
+               <textarea
+                  rows={4}
+                  placeholder="Objective facts: what you saw, heard, or verified."
+                  className="w-full resize-none appearance-none rounded-[1.2rem] border border-white/10 bg-black/40 p-5 text-[15px] leading-relaxed text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-inner placeholder:text-zinc-600 tap-responsive"
+                  {...form.register("description")}
+               />
+            </div>
 
-              <FormField
-                control={form.control}
-                name="immediateActions"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-zinc-300">Immediate actions</FormLabel>
-                    <FormControl>
-                      <textarea
-                        rows={3}
-                        className="flex w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
-                        placeholder="First aid, supervision changes, notifications started, environment secured…"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className="text-xs text-rose-300" />
-                  </FormItem>
-                )}
-              />
+            <div className="space-y-2">
+               <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 pl-1">Immediate Actions Taken</label>
+               <textarea
+                  rows={3}
+                  placeholder="First aid given, supervision adjusted, area secured..."
+                  className="w-full resize-none appearance-none rounded-[1.2rem] border border-white/10 bg-black/40 p-5 text-[15px] leading-relaxed text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-inner placeholder:text-zinc-600 tap-responsive"
+                  {...form.register("immediateActions")}
+               />
+            </div>
+            
+            <div className="pt-2">
+               <label className="flex items-center gap-4 cursor-pointer group tap-responsive w-fit border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-colors pr-6 pl-4 py-4 rounded-2xl">
+                 <div className="relative w-6 h-6 rounded-md border-2 border-zinc-500 bg-black/40 flex items-center justify-center shrink-0">
+                    <input
+                      type="checkbox"
+                      className="absolute inset-0 opacity-0 cursor-pointer peer"
+                      {...form.register("injuryOccurred")}
+                    />
+                    <CheckCircle2 className="w-5 h-5 text-amber-500 opacity-0 peer-checked:opacity-100 transition-opacity" />
+                 </div>
+                 <span className="text-sm font-bold uppercase tracking-wider text-zinc-300 group-hover:text-white transition-colors">Visible Injury Occurred</span>
+               </label>
+            </div>
+          </div>
+        </div>
 
-              <FormField
-                control={form.control}
-                name="injuryOccurred"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-2 space-y-0">
-                    <FormControl>
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-zinc-600 bg-zinc-900"
-                        checked={field.value}
-                        onChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <Label className="text-zinc-300">Injury occurred</Label>
-                    </div>
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
+        {submitError && (
+          <div className="rounded-xl border border-rose-800/60 bg-rose-950/30 px-6 py-4 text-sm font-medium text-rose-200">
+             {submitError}
+          </div>
+        )}
 
-          {submitError ? (
-            <div className="rounded-lg border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-100">{submitError}</div>
-          ) : null}
-
-          <Button
+        {/* SUBMIT BUTTON */}
+        <div className="pt-4">
+          <button
             type="submit"
             disabled={submitting || !facilityId}
-            className="h-12 w-full bg-amber-600 text-white hover:bg-amber-500 disabled:opacity-60"
+            className="w-full h-16 rounded-[1.5rem] flex items-center justify-center font-bold tracking-widest uppercase transition-all shadow-[0_4px_30px_rgba(245,158,11,0.2)] bg-gradient-to-r from-amber-600 to-amber-500 text-black hover:from-amber-500 hover:to-amber-400 disabled:opacity-50 disabled:grayscale tap-responsive text-lg"
           >
             {submitting ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting…
+                <Loader2 className="mr-3 h-6 w-6 animate-spin" />
+                Submitting Report…
               </>
             ) : (
-              "Submit incident"
+              "Submit Official Record"
             )}
-          </Button>
-        </form>
-      </Form>
+          </button>
+        </div>
+
+      </form>
     </div>
   );
 }
@@ -611,9 +544,9 @@ export default function CaregiverIncidentDraftPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center py-16 text-zinc-400">
-          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-          Loading…
+        <div className="flex h-[50vh] flex-col items-center justify-center gap-4 text-zinc-400">
+          <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+          <p className="text-sm font-medium tracking-wide uppercase">Securing incident system…</p>
         </div>
       }
     >
