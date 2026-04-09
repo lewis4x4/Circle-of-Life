@@ -15,7 +15,7 @@ ON CONFLICT (id) DO UPDATE SET
   file_size_limit = EXCLUDED.file_size_limit,
   allowed_mime_types = EXCLUDED.allowed_mime_types;
 
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+-- RLS on storage.objects is already enabled on Supabase hosted; omit ALTER (migration role is not owner).
 
 DROP POLICY IF EXISTS competency_certificates_read ON storage.objects;
 
