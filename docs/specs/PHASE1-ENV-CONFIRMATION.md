@@ -2,11 +2,11 @@
 
 **Purpose:** Record **repo and CLI** checks for target Supabase alignment. **Dashboard-only** items (Pro, BAA, PITR) remain **owner-confirmed**.
 
-**Last run (repo/CLI):** 2026-04-08 — `npm run build` / `migrations:check`: **109** migration files **001–109** in [`supabase/migrations/`](../../supabase/migrations/) — see [README.md migration map](./README.md#migration-map-summary-repo-as-of-2026-04-08).
+**Last run (repo/CLI):** 2026-04-09 — `npm run migrations:check`: **113** migration files **001–113** in [`supabase/migrations/`](../../supabase/migrations/) — see [README.md](./README.md) (next migration **114**).
 
-**Last run (remote):** 2026-04-06 — `supabase db push` applied **093**, **094**, and **095** to project `manfqmasfqppukpobpld`. **Owner must re-run** `supabase migration list` after pulling latest repo — remote should align through **`109`** for full parity; document result below when confirmed.
+**Last run (remote):** **VERIFY** — Owner keeps `supabase migration list` Local/Remote aligned through **`113`** on project `manfqmasfqppukpobpld` after each pull (`supabase db push` as needed). Historic note: **093–095** auth remediation and later migrations (through **113** transport/mileage) land per ops runs.
 
-**Edge Functions (same session):** `export-audit-log`, `dispatch-push`, `generate-monthly-invoices`, and `exec-kpi-snapshot` deployed (`supabase functions deploy … --project-ref manfqmasfqppukpobpld`); bundles matched existing deployed versions (**No change found**).
+**Edge Functions:** Inventory and secrets: [`supabase/functions/README.md`](../../supabase/functions/README.md). **`npm run demo:ops-status`** checks that all nine deployed function slugs exist and are **ACTIVE** on the linked project (`ar-aging-check`, `dispatch-push`, `emar-missed-dose-check`, `exec-alert-evaluator`, `exec-kpi-snapshot`, `export-audit-log`, `generate-emar-schedule`, `generate-monthly-invoices`, `report-scheduler`).
 
 ---
 
@@ -28,16 +28,16 @@ Command: `supabase migration list`
 
 **Canonical ops flow:** [PHASE1-OPS-VERIFICATION-RUNBOOK.md](./PHASE1-OPS-VERIFICATION-RUNBOOK.md)
 
-**Local repo (file count / sequence):** **PASS** — `migrations:check` reports **001–109** (2026-04-08).
+**Local repo (file count / sequence):** **PASS** — `migrations:check` reports **001–113** (2026-04-09).
 
-**Remote (target Supabase project):** **VERIFY** — Re-run `supabase migration list` and `supabase db push` until Local/Remote show **001–109** (owner action; was **001–095** as of 2026-04-06).
+**Remote (target Supabase project):** **VERIFY** — Re-run `supabase migration list` and `supabase db push` until Local/Remote show **001–113** (owner action when repo advances).
 
 ---
 
 ## Seeded users / facility / facility selector
 
 - **Procedure:** [DEMO-SEED-RUNBOOK.md](./DEMO-SEED-RUNBOOK.md)
-- **Status:** Live remediation attempted. Auth repair migrations **093**, **094**, and **095** are on the target project, but pilot sign-in still fails with `Database error querying schema`; owner still verifies `user_profiles`, `user_facility_access`, family links, and admin facility selector behavior once auth is repaired.
+- **Status (2026-04-09):** Hosted Auth + migrations **`110`–`111`** cleared pilot JWT issuance for Track A **A1**; owner still verifies `user_profiles`, `user_facility_access`, family links, and **facility selector** on `/admin` for **PH1-P04** (single-facility pilot acceptable). If Auth regresses (`Database error querying schema`), see [PHASE1-AUTH-DEBUG-HANDOFF.md](./PHASE1-AUTH-DEBUG-HANDOFF.md).
 - **Canonical probe:** `npm run demo:auth-check` captures current `auth/v1/settings`, pilot login results, legacy login results, and optional Admin API user inventory when `SUPABASE_SERVICE_ROLE_KEY` is available.
 - **Compact status:** `npm run demo:ops-status` summarizes migration parity, required function inventory, and the current auth probe verdict in one JSON payload.
 - **Local web health:** `BASE_URL=http://127.0.0.1:3001 npm run demo:web-health` checks local login reachability plus unauthenticated admin/caregiver/family redirect behavior.
@@ -60,7 +60,7 @@ Command: `supabase migration list`
 | ID | Repo/CLI result | Owner still required |
 |----|-----------------|----------------------|
 | PH1-P01 | **PASS** — owner confirmed project ref | Brian Lewis — 2026-04-06: active project `manfqmasfqppukpobpld`; confirm `.env.local` `NEXT_PUBLIC_SUPABASE_URL` still matches (not committed) |
-| PH1-P02 | **VERIFY** | `supabase migration list` — target **001–109** local/remote parity (update row when owner confirms) |
+| PH1-P02 | **VERIFY** | `supabase migration list` — target **001–113** local/remote parity (update [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) when owner confirms) |
 | PH1-P03–P04 | — | Seed + facility selector UAT; current remediation scope is single-facility pilot |
 | PH1-P05 | N/A until Storage uploads | — |
 | PH1-P06 | — | Dashboard: Pro / BAA / PITR |

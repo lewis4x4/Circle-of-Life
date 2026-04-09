@@ -3,11 +3,17 @@ import { spawnSync } from "node:child_process";
 import process from "node:process";
 
 const PROJECT_REF = "manfqmasfqppukpobpld";
+/** Must match deployed bundles under `supabase/functions/` (see `supabase/functions/README.md`). */
 const REQUIRED_FUNCTIONS = [
-  "export-audit-log",
+  "ar-aging-check",
   "dispatch-push",
-  "generate-monthly-invoices",
+  "emar-missed-dose-check",
+  "exec-alert-evaluator",
   "exec-kpi-snapshot",
+  "export-audit-log",
+  "generate-emar-schedule",
+  "generate-monthly-invoices",
+  "report-scheduler",
 ];
 
 function runCommand(command, args) {
