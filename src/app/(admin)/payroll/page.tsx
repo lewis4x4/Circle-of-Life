@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
-import { Banknote } from "lucide-react";
+import { Banknote, Download } from "lucide-react";
 
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
@@ -20,6 +20,55 @@ import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 
 type BatchRow = Database["public"]["Tables"]["payroll_export_batches"]["Row"];
 
+function csvEscapeCell(value: string): string {
+  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+  return value;
+}
+
+function buildPayrollBatchesCsv(rows: BatchRow[]): string {
+  const header = [
+    "id",
+    "organization_id",
+    "facility_id",
+    "period_start",
+    "period_end",
+    "provider",
+    "status",
+    "notes",
+    "created_at",
+    "updated_at",
+    "created_by",
+    "updated_by",
+  ].join(",");
+  const body = rows.map((row) =>
+    [
+      csvEscapeCell(row.id),
+      csvEscapeCell(row.organization_id),
+      csvEscapeCell(row.facility_id),
+      csvEscapeCell(row.period_start),
+      csvEscapeCell(row.period_end),
+      csvEscapeCell(row.provider),
+      csvEscapeCell(row.status),
+      csvEscapeCell(row.notes ?? ""),
+      csvEscapeCell(row.created_at),
+      csvEscapeCell(row.updated_at),
+      csvEscapeCell(row.created_by ?? ""),
+      csvEscapeCell(row.updated_by ?? ""),
+    ].join(","),
+  );
+  return [header, ...body].join("\r\n");
+}
+
+function triggerCsvDownload(filename: string, text: string) {
+  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function formatStatus(s: string) {
   return s.replace(/_/g, " ");
 }
@@ -30,6 +79,7 @@ export default function AdminPayrollHubPage() {
   const [rows, setRows] = useState<BatchRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exportingCsv, setExportingCsv] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -60,6 +110,30 @@ export default function AdminPayrollHubPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const exportBatchesCsv = async () => {
+    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) return;
+    setExportingCsv(true);
+    setError(null);
+    try {
+      const { data, error: qErr } = await supabase
+        .from("payroll_export_batches")
+        .select("*")
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .order("period_start", { ascending: false })
+        .limit(500);
+      if (qErr) throw qErr;
+      const batchRows = (data ?? []) as BatchRow[];
+      const csv = buildPayrollBatchesCsv(batchRows);
+      const stamp = format(new Date(), "yyyy-MM-dd");
+      triggerCsvDownload(`payroll-export-batches-${stamp}.csv`, csv);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to export payroll batches.");
+    } finally {
+      setExportingCsv(false);
+    }
+  };
 
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
 
@@ -121,10 +195,25 @@ export default function AdminPayrollHubPage() {
 
       <div className="relative overflow-visible z-10 w-full mt-4">
         <div className="relative z-10 p-4 sm:p-6 mb-4 glass-panel rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-2xl">
-          <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Batches</h3>
-          <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
-            Pay period window and provider label; CSV/API export is Enhanced.
-          </p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Batches</h3>
+              <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
+                Pay period window and provider label. Open a batch for line items and line-level CSV; list batch metadata
+                export below.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!facilityReady || exportingCsv}
+              className="h-11 shrink-0 gap-2 rounded-full font-mono text-[10px] font-bold uppercase tracking-widest"
+              onClick={() => void exportBatchesCsv()}
+            >
+              <Download className="h-4 w-4" aria-hidden />
+              {exportingCsv ? "Preparing…" : "Download batches CSV"}
+            </Button>
+          </div>
         </div>
         
         {loading ? (

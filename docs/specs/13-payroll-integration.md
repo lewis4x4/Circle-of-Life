@@ -32,6 +32,8 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 
 ### Enhanced (defer)
 
+**Shipped (Track D26):** **`/admin/payroll`** — **Download batches CSV** queries up to **500** **`payroll_export_batches`** rows for the **selected facility** (metadata: period, provider, status, notes, audit columns). Batch **line** CSV remains on **`/admin/payroll/[id]`** (D18). **No** new DDL.
+
 - Worker that materializes lines from approved `time_records`; provider-specific serializers beyond generic CSV.
 
 ---

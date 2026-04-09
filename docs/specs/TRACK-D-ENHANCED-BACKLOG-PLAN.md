@@ -54,7 +54,9 @@
 
 **~~D25 (2026-04-09)~~** **DONE — Module 15:** **`/admin/transportation/mileage-approvals`** **Download mileage CSV** ( **`mileage_logs`** ). Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D26+ (owner priority):** remaining §1 rows (e.g. **23** OAuth/sync, **14** automation after clinical sign-off, **12** certificate storage depth) — one bounded slice at a time.
+**~~D26 (2026-04-09)~~** **DONE — Module 13:** **`/admin/payroll`** **Download batches CSV** ( **`payroll_export_batches`** ). Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D27+ (owner priority):** remaining §1 rows (e.g. **23** OAuth/sync, **14** automation after clinical sign-off, **12** certificate storage depth) — one bounded slice at a time.
 
 ---
 
@@ -77,6 +79,7 @@
 | 14 | **D23** | **14** | ~~**Diet orders CSV**~~ **DONE** — `/admin/dietary`. |
 | 15 | **D24** | **15** | ~~**Transport requests CSV**~~ **DONE** — `/admin/transportation`. |
 | 16 | **D25** | **15** | ~~**Mileage logs CSV**~~ **DONE** — `/admin/transportation/mileage-approvals`. |
+| 17 | **D26** | **13** | ~~**Payroll batches list CSV**~~ **DONE** — `/admin/payroll`. |
 
 Defer **23 OAuth**, **22 MLLP**, **14 full rule engine** until product/security review.
 
