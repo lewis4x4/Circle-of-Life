@@ -10,7 +10,7 @@
 
 ## Current state (reconciled 2026-04-09)
 
-**Repo migrations:** **`001`–`112`** — verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release.
+**Repo migrations:** **`001`–`113`** — verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release.
 
 **Where acceptance stands**
 
@@ -24,16 +24,16 @@
 
 **Important:** Code and migrations have **outpaced** formal Phase 1 acceptance. **Do not** treat “migrations applied” or “routes exist” as equivalent to **Track A closed** or **production-ready** for PHI.
 
-**Next free migration number:** **`113`** — use for all new DDL after updating this README and the relevant spec.
+**Next free migration number:** **`114`** — use for all new DDL after updating this README and the relevant spec.
 
 **Post–Phase 6 work already in repo (`096`–`109`)** — see [Post–Phase 6 shipped work](#postphase-6-shipped-work-migrations-096109) below. Older roadmap drafts that reserved `096`+ for “digital twin” or “maintenance” are **obsolete**; those migration numbers are now consumed as listed.
 
 ### What to do next (closeout order)
 
 1. **Track A** — **A1** (auth) + **A2** (RLS) owner-verified **2026-04-09**; **A3** real-auth UAT depth → **A4** env/seed → **A5** Pro/BAA/PITR → **A6** waiver review. Single roadmap: [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md). Production PHI still requires **A5** and remaining UAT rows.
-2. **Confirm remote DB** — `supabase migration list` on the target project must match **local `001`–`112`** before claiming parity.
+2. **Confirm remote DB** — `supabase migration list` on the target project must match **local `001`–`113`** before claiming parity.
 3. **Tracks B–D** — Platform hardening, workflow hardening, Phase 6 Enhanced gaps — per sections below.
-4. **Track E** — New DDL starting at migration **`113`** (after **`112`** resident transport requests) only after specs exist and Tracks A–D are appropriately satisfied for your risk tolerance.
+4. **Track E** — New DDL starting at migration **`114`** (after **`113`** mileage logs + fleet wheelchair flag) only after specs exist and Tracks A–D are appropriately satisfied for your risk tolerance.
 
 ---
 

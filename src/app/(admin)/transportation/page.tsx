@@ -265,7 +265,10 @@ export default function AdminTransportationHubPage() {
             <V2Card hoverColor="blue" className="flex flex-col justify-center items-start lg:items-end">
               <div className="relative z-10 text-left lg:text-right w-full">
                  <p className="hidden lg:block text-xs font-mono text-slate-500 mb-4">Fleet units, periodic inspections, and driver credentials.</p>
-                 <div className="flex gap-2 justify-start lg:justify-end">
+                 <div className="flex flex-wrap gap-2 justify-start lg:justify-end">
+                   <Link href="/admin/transportation/requests/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-600 border-none")} >
+                     + Transport request
+                   </Link>
                    <Link href="/admin/transportation/vehicles/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none")} >
                      + Vehicle
                    </Link>
@@ -280,13 +283,21 @@ export default function AdminTransportationHubPage() {
 
       {facilityReady && (
         <div className="rounded-2xl border border-slate-200/80 bg-white/50 px-4 py-4 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-950/40">
-          <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-              Upcoming resident transport
-            </h3>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Requests with appointment on or after today (RLS-scoped). New request UI can follow in a later slice.
-            </p>
+          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                Upcoming resident transport
+              </h3>
+              <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                Appointments on or after today. Open a row to assign vehicle/driver and complete.
+              </p>
+            </div>
+            <Link
+              href="/admin/transportation/requests/new"
+              className={cn(buttonVariants({ size: "sm", variant: "outline" }), "shrink-0 text-xs")}
+            >
+              New request
+            </Link>
           </div>
           {loading ? (
             <p className="text-sm font-mono text-slate-500">Loading requests…</p>
@@ -302,23 +313,25 @@ export default function AdminTransportationHubPage() {
                   : "Resident";
                 const apptDate = parseISO(`${row.appointment_date}T12:00:00.000Z`);
                 return (
-                  <MotionItem
-                    key={row.id}
-                    className="flex flex-col gap-1 rounded-xl border border-slate-200/90 bg-white/80 px-3 py-2.5 dark:border-slate-800 dark:bg-slate-900/50 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{name}</p>
-                      <p className="truncate text-xs text-slate-600 dark:text-slate-400">
-                        {row.destination_name}
-                        {row.purpose ? ` · ${row.purpose}` : ""}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 flex-wrap items-center gap-2 text-xs">
-                      <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                        {format(apptDate, "EEE MMM d")} · {formatAppointmentTime(row.appointment_time)}
-                      </span>
-                      <span className="capitalize text-slate-600 dark:text-slate-300">{formatEnum(row.status)}</span>
-                    </div>
+                  <MotionItem key={row.id} className="rounded-xl border border-slate-200/90 bg-white/80 dark:border-slate-800 dark:bg-slate-900/50">
+                    <Link
+                      href={`/admin/transportation/requests/${row.id}`}
+                      className="flex flex-col gap-1 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between hover:bg-slate-50/80 dark:hover:bg-slate-800/50"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{name}</p>
+                        <p className="truncate text-xs text-slate-600 dark:text-slate-400">
+                          {row.destination_name}
+                          {row.purpose ? ` · ${row.purpose}` : ""}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 flex-wrap items-center gap-2 text-xs">
+                        <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                          {format(apptDate, "EEE MMM d")} · {formatAppointmentTime(row.appointment_time)}
+                        </span>
+                        <span className="capitalize text-slate-600 dark:text-slate-300">{formatEnum(row.status)}</span>
+                      </div>
+                    </Link>
                   </MotionItem>
                 );
               })}

@@ -34,6 +34,7 @@ export default function AdminTransportationVehicleNewPage() {
   const [insurance, setInsurance] = useState("");
   const [registration, setRegistration] = useState("");
   const [notes, setNotes] = useState("");
+  const [wheelchairAccessible, setWheelchairAccessible] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,6 +66,7 @@ export default function AdminTransportationVehicleNewPage() {
         insurance_expires_on: insurance.trim() || null,
         registration_expires_on: registration.trim() || null,
         notes: notes.trim() || null,
+        wheelchair_accessible: wheelchairAccessible,
         created_by: user.id,
       });
       if (insErr) throw insErr;
@@ -174,6 +176,15 @@ export default function AdminTransportationVehicleNewPage() {
               <Label htmlFor="notes">Notes</Label>
               <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
             </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={wheelchairAccessible}
+                onChange={(e) => setWheelchairAccessible(e.target.checked)}
+                className="rounded border-input"
+              />
+              Wheelchair accessible (ADA / lift)
+            </label>
             <Button type="submit" disabled={saving || !facilityReady || !name.trim()}>
               {saving ? "Saving…" : "Save vehicle"}
             </Button>

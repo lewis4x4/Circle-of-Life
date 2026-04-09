@@ -5043,6 +5043,7 @@ export type Database = {
           updated_at: string
           updated_by: string | null
           vin: string | null
+          wheelchair_accessible: boolean
         }
         Insert: {
           created_at?: string
@@ -5064,6 +5065,7 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           vin?: string | null
+          wheelchair_accessible?: boolean
         }
         Update: {
           created_at?: string
@@ -5085,6 +5087,7 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           vin?: string | null
+          wheelchair_accessible?: boolean
         }
         Relationships: [
           {
@@ -7375,6 +7378,120 @@ export type Database = {
           tty?: string | null
         }
         Relationships: []
+      }
+      mileage_logs: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          destination: string
+          facility_id: string
+          id: string
+          miles: number
+          notes: string | null
+          organization_id: string
+          origin: string
+          payroll_export_id: string | null
+          purpose: string
+          reimbursement_amount_cents: number
+          reimbursement_rate_cents: number
+          resident_id: string | null
+          round_trip: boolean
+          staff_id: string
+          transport_request_id: string | null
+          trip_date: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          destination: string
+          facility_id: string
+          id?: string
+          miles: number
+          notes?: string | null
+          organization_id: string
+          origin: string
+          payroll_export_id?: string | null
+          purpose: string
+          reimbursement_amount_cents: number
+          reimbursement_rate_cents: number
+          resident_id?: string | null
+          round_trip?: boolean
+          staff_id: string
+          transport_request_id?: string | null
+          trip_date: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          destination?: string
+          facility_id?: string
+          id?: string
+          miles?: number
+          notes?: string | null
+          organization_id?: string
+          origin?: string
+          payroll_export_id?: string | null
+          purpose?: string
+          reimbursement_amount_cents?: number
+          reimbursement_rate_cents?: number
+          resident_id?: string | null
+          round_trip?: boolean
+          staff_id?: string
+          transport_request_id?: string | null
+          trip_date?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mileage_logs_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mileage_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mileage_logs_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mileage_logs_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mileage_logs_transport_request_id_fkey"
+            columns: ["transport_request_id"]
+            isOneToOne: false
+            referencedRelation: "resident_transport_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notification_routes: {
         Row: {

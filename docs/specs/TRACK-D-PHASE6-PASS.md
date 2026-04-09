@@ -57,3 +57,15 @@
 **Mission alignment:** **pass** — closes a documented Track D gap (scheduling side) with governed clinical/ops data.
 
 **Deferred:** Mileage link, driver–vehicle validation rules, full request CRUD UX.
+
+---
+
+**D6 (2026-04-09):** **Module 15 — Transportation** — **resident transport CRUD + mileage linkage**.
+
+**Slice:** Migration **`113`** — `mileage_logs` (with `transport_request_id` FK), `fleet_vehicles.wheelchair_accessible`. **Routes:** `/admin/transportation/requests/new`, `/admin/transportation/requests/[id]` with zod validation; assign vehicle/driver with wheelchair + driver-credential checks; optional **`mileage_logs`** row when completing **`staff_personal_vehicle`** trips with miles entered (default rate `DEFAULT_MILEAGE_RATE_CENTS`). Hub links + vehicle form wheelchair flag.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-09T00-57-17-400Z-track-d-phase6-d6-transport-request-crud.json` (`npm run segment:gates -- --segment "track-d-phase6-d6-transport-request-crud" --ui --no-chaos`).
+
+**Mission alignment:** **pass** — operational transport scheduling and reimbursement trail under RLS.
+
+**Deferred:** Payroll export approval workflow, org-level mileage rate setting, calendar view.
