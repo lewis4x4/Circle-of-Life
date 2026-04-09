@@ -205,7 +205,18 @@
 
 /* Family Shell Warm Background override */
 .family-shell {
-  --background: #fafaf9; /* stone-50 */
+  --background: #fffcf9; /* Base warm off-white */
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(28, 100%, 94%, 1) 0, transparent 40%),
+    radial-gradient(at 100% 0%, hsla(43, 100%, 94%, 1) 0, transparent 40%),
+    radial-gradient(at 100% 100%, hsla(190, 40%, 96%, 1) 0, transparent 40%);
+  background-attachment: fixed;
+}
+
+@layer utilities {
+  .glass-card-light {
+    @apply bg-white/70 backdrop-blur-xl border border-white shadow-[0_8px_30px_rgb(0,0,0,0.03)];
+  }
 }
 
 /* Micro-interaction definitions */
