@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 type Status = {
   googleOAuthEnvConfigured: boolean;
   stateSecretConfigured: boolean;
+  yelpFusionConfigured: boolean;
   connected: boolean;
   connectedAt: string | null;
   canManage: boolean;
@@ -40,6 +41,7 @@ export default function ReputationIntegrationsPage() {
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [syncingYelp, setSyncingYelp] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -93,6 +95,37 @@ export default function ReputationIntegrationsPage() {
     }
   }
 
+  async function syncYelpReviews() {
+    setSyncingYelp(true);
+    setSyncMessage(null);
+    setError(null);
+    try {
+      const res = await fetch("/api/reputation/sync/yelp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const j = (await res.json()) as {
+        error?: string;
+        imported?: number;
+        accountsProcessed?: number;
+        note?: string;
+      };
+      if (!res.ok) {
+        throw new Error(j.error ?? "Yelp sync failed");
+      }
+      const imp = j.imported ?? 0;
+      const n = j.accountsProcessed ?? 0;
+      setSyncMessage(
+        `Yelp: ${n} listing(s) processed, ${imp} new draft row(s). ${j.note ?? ""}`.trim(),
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Yelp sync failed");
+    } finally {
+      setSyncingYelp(false);
+    }
+  }
+
   async function disconnect() {
     setDisconnecting(true);
     setError(null);
@@ -127,8 +160,8 @@ export default function ReputationIntegrationsPage() {
         <div>
           <h1 className="font-display text-2xl font-semibold tracking-tight">Integrations</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Connect Google, then run a one-time import of reviews into Haven drafts (owner only). Scheduled
-            sync and Yelp remain future work.
+            Import public reviews into Haven drafts (owner only). Google uses OAuth; Yelp uses a server API key
+            (Fusion — up to 3 excerpts per listing).
           </p>
         </div>
       </div>
@@ -240,6 +273,53 @@ export default function ReputationIntegrationsPage() {
                     {disconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Disconnect Google"}
                   </Button>
                 ) : null}
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-slate-500">Could not load integration status.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Yelp (Fusion API)</CardTitle>
+          <CardDescription>
+            Server-only <strong>YELP_FUSION_API_KEY</strong>. Add a <strong>Yelp</strong> reputation account per
+            facility with <strong>External place ID</strong> = Yelp business id. Fusion returns up to{" "}
+            <strong>three</strong> review excerpts per import. Only the <strong>owner</strong> can run import.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {loading ? (
+            <p className="flex items-center gap-2 text-sm text-slate-500">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+            </p>
+          ) : status ? (
+            <>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                API key configured:{" "}
+                <strong>{status.yelpFusionConfigured ? "Yes" : "No (set YELP_FUSION_API_KEY)"}</strong>
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {status.canManage && status.yelpFusionConfigured ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={syncingYelp}
+                    onClick={() => void syncYelpReviews()}
+                  >
+                    {syncingYelp ? <Loader2 className="h-4 w-4 animate-spin" /> : "Import Yelp reviews now"}
+                  </Button>
+                ) : status.canManage ? (
+                  <Button type="button" disabled>
+                    Import Yelp (configure API key first)
+                  </Button>
+                ) : (
+                  <Button type="button" variant="secondary" disabled>
+                    Only owner can import
+                  </Button>
+                )}
               </div>
             </>
           ) : (

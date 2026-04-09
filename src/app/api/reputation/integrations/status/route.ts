@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { googleOAuthEnvReady } from "@/lib/reputation/google-oauth";
+import { yelpFusionEnvReady } from "@/lib/reputation/yelp-fusion";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 
@@ -40,6 +41,7 @@ export async function GET() {
   return NextResponse.json({
     googleOAuthEnvConfigured: googleOAuthEnvReady(),
     stateSecretConfigured: Boolean(process.env.REPUTATION_OAUTH_STATE_SECRET?.trim()?.length),
+    yelpFusionConfigured: yelpFusionEnvReady(),
     connected: Boolean(cred),
     connectedAt: cred?.connected_at ?? null,
     canManage: profile.app_role === "owner",

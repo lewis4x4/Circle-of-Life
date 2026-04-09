@@ -18,7 +18,7 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 - **`reputation_accounts`:** Facility-scoped connectors for external review surfaces (platform label, optional external place/listing id, notes).
 - **`reputation_replies`:** Draft or posted reply text, optional excerpt of the review being addressed, **`posted_by_user_id`** for auditability, and workflow status.
 
-**Non-goals (Core):** Yelp OAuth, **scheduled** review fetch, posting replies via platform APIs, or AI-generated reply text — **D44–D45** add **owner-only Google OAuth** and **manual** review import; automation beyond owner-triggered sync remains follow-up.
+**Non-goals (Core):** Yelp **OAuth**, posting replies via platform APIs, or AI-generated reply text — **D44–D47** add Google OAuth, manual/cron Google import, and **Yelp Fusion** excerpt import (API key, not OAuth); full automation remains follow-up.
 
 **Shipped (Track D19):** **`/admin/reputation`** — **Download replies CSV** (client-side export, up to **500** rows per facility with listing label and platform); does **not** call external review APIs.
 
@@ -40,7 +40,7 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 
 - **API:** `POST /api/reputation/sync/google` — optional JSON `{ "facilityId"?: "<uuid>" }` to limit to one facility’s Google listings. Uses **`refreshAccessToken`** + Business Profile **v4** `accounts/.../locations/.../reviews`. **No new DDL** — reuses **`reputation_accounts.external_place_id`** to resolve the location: prefer full resource name `accounts/{account}/locations/{location}`; otherwise numeric location id (search all accessible locations); otherwise match **Listing label** to Google **location title**.
 - **UI:** **`/admin/reputation/integrations`** — **Import Google reviews now** (owner + connected).
-- **Deferred:** Yelp, posting replies through Google API.
+- **Deferred:** Posting replies through Google API.
 
 ### Track D — D46 Cron-triggered Google review import (2026-04-10)
 
@@ -48,6 +48,15 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 
 - **API:** `POST /api/cron/reputation/google-reviews` — header **`x-cron-secret`** must equal env **`REPUTATION_GOOGLE_CRON_SECRET`**. Optional JSON body `{ "organization_id"?: "<uuid>" }` to sync a single org; omit to process **all** rows in **`reputation_google_oauth_credentials`**. Uses **service role** for DB access; new rows use **`created_by` = `connected_by`** from credentials — orgs with **`connected_by` null** are skipped (reconnect OAuth as owner).
 - **Shared logic:** **`runGoogleReviewSync`** in **`src/lib/reputation/run-google-review-sync.ts`** (manual **`POST /api/reputation/sync/google`** calls the same helper).
+
+### Track D — D47 Yelp Fusion review import (manual) (2026-04-10)
+
+**Purpose:** Import **up to three** Yelp review **excerpts** per business (Fusion API platform limit) into **`reputation_replies`** drafts for **`platform = yelp`** listings.
+
+- **Env:** **`YELP_FUSION_API_KEY`** (server-only, never browser). One key per deployment is typical; not per-org unless extended later.
+- **API:** **`POST /api/reputation/sync/yelp`** — owner only; optional **`facilityId`**. **`reputation_accounts.external_place_id`** = Yelp **business id**.
+- **UI:** **`/admin/reputation/integrations`** — **Import Yelp reviews now** when key is configured; status includes **`yelpFusionConfigured`**.
+- **Deferred:** Yelp posting API, per-org Yelp keys in DDL.
 
 ---
 

@@ -23,7 +23,8 @@
 | **22** | MLLP listener / hospital feed | High | High | Infra, VPN, partners | Not a single segment; defer. |
 | **23** | ~~**Google OAuth connect** (Business Profile scope; server token store `119`)~~ | — | — | — | **Shipped D44** — `/admin/reputation/integrations` + OAuth routes. |
 | **23** | ~~**Manual Google review import** (owner-triggered; drafts in `reputation_replies`)~~ | — | — | — | **Shipped D45** — `POST /api/reputation/sync/google` + integrations button. |
-| **23** | ~~**Cron Google review import** (`x-cron-secret`; all orgs or one)~~ | — | — | — | **Shipped D46** — `POST /api/cron/reputation/google-reviews`; **defer** Yelp & reply-post API. |
+| **23** | ~~**Cron Google review import** (`x-cron-secret`; all orgs or one)~~ | — | — | — | **Shipped D46** — `POST /api/cron/reputation/google-reviews`. |
+| **23** | ~~**Yelp Fusion manual import** (API key; up to 3 excerpts / business)~~ | — | — | — | **Shipped D47** — `POST /api/reputation/sync/yelp`; **defer** reply-post APIs. |
 | **12** | ~~**Certificate PDF upload**~~ (`staff_training_completions` + `competency-demonstrations` paths) | — | — | — | **D40** — `117` + log form + hub; **D11** — demonstrations. |
 | **14** | **Automated med–texture cross-check** (e.g. Edge job flagging solid vs thickened fluid) | Medium–high | **High (clinical)** | Med orders, pharmacist rules | Needs explicit **clinical rules** sign-off in spec before automation. |
 | **14** | ~~**Read-only “review” panel** (diet + resident meds)~~ | — | — | — | **Shipped D13** — `/admin/dietary/clinical-review`. |
@@ -98,7 +99,9 @@
 
 **~~Recommended next segment — D46~~** **DONE (2026-04-10)** — Module **23:** **Cron Google review import** — `POST /api/cron/reputation/google-reviews` — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D47+ (owner priority):** remaining §1 rows (e.g. **23** Yelp, **14** automation after clinical sign-off) — one bounded slice at a time.
+**~~Recommended next segment — D47~~** **DONE (2026-04-10)** — Module **23:** **Yelp Fusion** manual import — `POST /api/reputation/sync/yelp` — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D48+ (owner priority):** remaining §1 rows (e.g. **23** reply-post via platform APIs, **14** automation after clinical sign-off) — one bounded slice at a time.
 
 ---
 
