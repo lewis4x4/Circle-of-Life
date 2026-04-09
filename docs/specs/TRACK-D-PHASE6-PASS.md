@@ -414,6 +414,16 @@
 
 ---
 
+**D44 (2026-04-10):** **Module 23 — Reputation** ([23-reputation.md](./23-reputation.md)) — **Google OAuth connect + server-only token storage**.
+
+**Slice:** Migration **`119`** — **`reputation_google_oauth_credentials`** (RLS on, no user policies; service role in API routes). **`/admin/reputation/integrations`** + hub link; **`GET/DELETE`** API routes for status/disconnect; **`GET`** `/api/reputation/oauth/google` + **`/callback`** for Business Profile scope. Env contract in spec + `.env.example`. **Deferred:** automated review fetch / Yelp / API posting.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-09T22-39-00-595Z-track-d-d44-reputation-google-oauth.json` (`npm run segment:gates -- --segment "track-d-d44-reputation-google-oauth" --ui`)
+
+**Mission alignment:** **pass** — owner-controlled external integration path without changing manual reply workflows; tokens not exposed to client.
+
+---
+
 ## Track D — plan (remaining)
 
 **Segments D1–D10:** Closed in repo with gate artifacts above. This completes the **Phase 6 Core visibility / workflow** slices we prioritized for COL (transport, training, dietary, referrals, reputation), plus **D10** org mileage rate.
@@ -427,11 +437,11 @@
 | **14** | ~~Read-only diet + med panel~~ (D13); ~~**diet orders CSV** on hub~~ (D23); automated med–texture cross-check vs medications; meal production; vendor API; full menu cycle |
 | **15** | ~~Week calendar + mileage approval queue~~ (D14, D15); ~~**transport requests CSV** on hub~~ (D24); ~~**mileage logs CSV** on approvals~~ (D25); full month grid, external calendar sync |
 | **22** | ~~Minimal **MSH** queue processor~~ (D12); ~~manual **Draft lead** from HL7~~ (D16); ~~**HL7 queue CSV**~~ (D22); ~~**pipeline leads CSV** on hub~~ (D27); MLLP, full ADT parse, auto-**`referral_leads`** |
-| **23** | ~~**Replies CSV** export on hub~~ (D19); ~~**accounts CSV** on hub~~ (D28); external review platform OAuth/sync APIs |
+| **23** | ~~**Replies CSV** export on hub~~ (D19); ~~**accounts CSV** on hub~~ (D28); ~~Google OAuth **connect** + **`119`** token table~~ (D44); automated review fetch, Yelp, reply-post via API |
 | **11** | ~~**Staff roster CSV** on `/admin/staff`~~ (D29); ~~**Certifications CSV** on `/admin/certifications`~~ (D30); ~~**Time records CSV** on `/admin/time-records`~~ (D31); ~~**Staffing snapshots CSV** on `/admin/staffing`~~ (D32); ~~**Schedule weeks CSV** on `/admin/schedules`~~ (D33); ~~**Schedule week detail + shift assignments CSV**~~ (D35); ~~**Shift swap requests hub + CSV**~~ (D36); ~~**Shift swap approve/deny**~~ (D37); full scheduling builder UX depth, bulk time approve depth |
 
 **Authoritative README narrative:** [README.md](./README.md) — section **Track D — Phase 6 completion pass**.
 
-**Next segment:** Record as **D43+** in this file when a new bounded slice ships; use migration **`119+`** only when DDL is required ([README.md](./README.md) next free migration).
+**Next segment:** Record as **D45+** in this file when a new bounded slice ships; use migration **`120+`** only when DDL is required ([README.md](./README.md) next free migration).
 
 **Prioritized Enhanced plan (D11+ options, order, checklists):** [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md).

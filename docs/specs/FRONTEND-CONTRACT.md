@@ -34,6 +34,7 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 - `/admin/referrals/hl7-inbound` (Phase 6 Module 22 — `22-referral-crm.md`)
 - `/admin/referrals/hl7-inbound/new`
 - `/admin/reputation` (Phase 6 Module 23 — `23-reputation.md`)
+- `/admin/reputation/integrations` (Google OAuth prep — `23-reputation.md` Track D D44)
 - `/admin/reputation/accounts/new`
 - `/admin/reputation/replies/new`
 - `/admin/admissions` (Phase 4 Module 2 — `02-admissions-move-in.md`)

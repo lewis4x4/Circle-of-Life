@@ -239,26 +239,37 @@ export default function AdminReputationHubPage() {
               Reputation Control
             </h2>
           </div>
-          {facilityReady && (
-            <div className="flex flex-wrap gap-2 shrink-0 self-start">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={exportingAccountsCsv}
-                onClick={() => void exportAccountsCsv()}
+          <div className="flex flex-wrap gap-2 shrink-0 self-start">
+              <Link
+                href="/admin/reputation/integrations"
+                className={cn(
+                  buttonVariants({ variant: "secondary", size: "default" }),
+                  "font-mono uppercase tracking-widest text-[10px]",
+                )}
               >
-                {exportingAccountsCsv ? "Preparing…" : "Download accounts CSV"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={exportingCsv}
-                onClick={() => void exportRepliesCsv()}
-              >
-                {exportingCsv ? "Preparing…" : "Download replies CSV"}
-              </Button>
+                Integrations
+              </Link>
+              {facilityReady ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={exportingAccountsCsv}
+                    onClick={() => void exportAccountsCsv()}
+                  >
+                    {exportingAccountsCsv ? "Preparing…" : "Download accounts CSV"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={exportingCsv}
+                    onClick={() => void exportRepliesCsv()}
+                  >
+                    {exportingCsv ? "Preparing…" : "Download replies CSV"}
+                  </Button>
+                </>
+              ) : null}
             </div>
-          )}
         </header>
 
         <KineticGrid className="grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6" staggerMs={75}>
