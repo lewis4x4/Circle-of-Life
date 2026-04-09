@@ -4,8 +4,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Activity, AlertTriangle, ArrowRight, CheckCircle2, TrendingDown, TrendingUp } from "lucide-react";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
@@ -111,9 +109,9 @@ export default function ExecutiveOverviewPage() {
            facilities: { name: "Oakridge ALF" },
          };
          setAlerts([mockAlert]);
-      } else {
+       } else {
          setAlerts(alertData);
-      }
+       }
 
       // 3. Fetch Portfolio Facilities
       const { data: facData, error: facErr } = await supabase
@@ -151,18 +149,22 @@ export default function ExecutiveOverviewPage() {
   const formatCur = (val?: number) => val !== undefined ? `$${(val / 100).toLocaleString()}` : "--";
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-8 pb-12 overflow-x-hidden">
       <AmbientMatrix hasCriticals={alerts.some(a => a.severity === 'critical')} />
       
-      <div className="relative z-10 space-y-6">
-        <header className="mb-6 mt-2">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6 mb-4">
+      <div className="relative z-10 space-y-10 max-w-[1600px] mx-auto">
+        <header>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-200/50 dark:border-white/10 pb-8 mb-4 pt-4">
             <div>
-              <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Command Center</p>
-              <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-4">
+                 SYS: Command Center
+              </div>
+              <h2 className="text-4xl md:text-5xl font-display font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
                 Executive Intelligence
               </h2>
-              <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">Enterprise Portfolio Overview</p>
+              <p className="text-sm md:text-base text-slate-500 dark:text-zinc-400 mt-2 font-medium tracking-wide">
+                Enterprise Portfolio Overview
+              </p>
             </div>
             <div className="hidden md:block">
               <ExecutiveHubNav />
@@ -171,197 +173,217 @@ export default function ExecutiveOverviewPage() {
         </header>
 
         {/* Top Command Strip */}
-        <KineticGrid className="grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 mb-6" staggerMs={50}>
-          <div className="h-[120px]">
-             <V2Card hoverColor="emerald" className="border-emerald-500/20 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]">
+        <KineticGrid className="grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 mb-8" staggerMs={50}>
+          <div className="h-[180px]">
+             <V2Card hoverColor="emerald" className="border-emerald-500/20 shadow-[0_8px_30px_rgba(16,185,129,0.05)]">
                <Sparkline colorClass="text-emerald-500" variant={2} />
-               <div className="relative z-10 flex flex-col h-full justify-between">
-                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+               <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
+                 <h3 className="text-xs font-bold tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                    Occupancy
                  </h3>
-                 <div className="flex items-end gap-2 pb-1">
-                   <p className="text-3xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400">{formatPct(metrics['occ_pt'])}</p>
-                   <TrendingUp className="h-4 w-4 text-emerald-500 mb-1" />
+                 <div className="flex items-end gap-3 mt-auto">
+                   <p className="text-5xl font-display font-medium tracking-tight text-emerald-600 dark:text-emerald-400">{formatPct(metrics['occ_pt'])}</p>
+                   <TrendingUp className="h-5 w-5 text-emerald-500 mb-1.5" />
                  </div>
                </div>
              </V2Card>
           </div>
-          <div className="h-[120px]">
-             <V2Card hoverColor="indigo" className="border-indigo-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
+          <div className="h-[180px]">
+             <V2Card hoverColor="indigo" className="border-indigo-500/20 shadow-[0_8px_30px_rgba(99,102,241,0.05)]">
                <Sparkline colorClass="text-indigo-500" variant={1} />
-               <div className="relative z-10 flex flex-col h-full justify-between">
-                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+               <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
+                 <h3 className="text-xs font-bold tracking-widest uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
                    Billed MTD
                  </h3>
-                 <p className="text-2xl font-mono tracking-tighter text-indigo-600 dark:text-indigo-400 pb-1">{formatCur(metrics['rev_mtd'])}</p>
+                 <p className="text-4xl font-display font-medium tracking-tight text-indigo-600 dark:text-indigo-400 mt-auto">{formatCur(metrics['rev_mtd'])}</p>
                </div>
              </V2Card>
           </div>
-          <div className="h-[120px]">
-             <V2Card hoverColor="amber" className="border-amber-500/20 shadow-[inset_0_0_15px_rgba(245,158,11,0.05)]">
+          <div className="h-[180px]">
+             <V2Card hoverColor="amber" className="border-amber-500/20 shadow-[0_8px_30px_rgba(245,158,11,0.05)]">
                <Sparkline colorClass="text-amber-500" variant={3} />
-               <div className="relative z-10 flex flex-col h-full justify-between">
-                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-amber-600 dark:text-amber-500 flex items-center gap-2">
+               <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
+                 <h3 className="text-xs font-bold tracking-widest uppercase text-amber-600 dark:text-amber-500 flex items-center gap-2">
                    Labor Cost %
                  </h3>
-                 <div className="flex items-end gap-2 pb-1">
-                   <p className="text-3xl font-mono tracking-tighter text-amber-600 dark:text-amber-500">{formatPct(metrics['labor_pct'])}</p>
-                   <TrendingDown className="h-4 w-4 text-amber-500 mb-1" />
+                 <div className="flex items-end gap-3 mt-auto">
+                   <p className="text-5xl font-display font-medium tracking-tight text-amber-600 dark:text-amber-500">{formatPct(metrics['labor_pct'])}</p>
+                   <TrendingDown className="h-5 w-5 text-amber-500 mb-1.5" />
                  </div>
                </div>
              </V2Card>
           </div>
-          <div className="h-[120px]">
-             <V2Card hoverColor="rose" className="border-rose-500/20 shadow-[inset_0_0_15px_rgba(244,63,94,0.05)]">
-               <div className="relative z-10 flex flex-col h-full justify-between">
-                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2">
+          <div className="h-[180px]">
+             <V2Card hoverColor="rose" className="border-rose-500/20 shadow-[0_8px_30px_rgba(244,63,94,0.05)]">
+               <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
+                 <h3 className="text-xs font-bold tracking-widest uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2">
                    Incidents / 1k Days
                  </h3>
-                 <p className="text-3xl font-mono tracking-tighter text-rose-600 dark:text-rose-400 pb-1">{formatNum(metrics['inc_rate'])}</p>
+                 <p className="text-5xl font-display font-medium tracking-tight text-rose-600 dark:text-rose-400 mt-auto">{formatNum(metrics['inc_rate'])}</p>
                </div>
              </V2Card>
           </div>
-          <div className="h-[120px]">
-             <V2Card hoverColor="blue" className="border-blue-500/20 shadow-[inset_0_0_15px_rgba(59,130,246,0.05)]">
+          <div className="h-[180px]">
+             <V2Card hoverColor="blue" className="border-blue-500/20 shadow-[0_8px_30px_rgba(59,130,246,0.05)]">
                <Sparkline colorClass="text-blue-500" variant={2} />
-               <div className="relative z-10 flex flex-col h-full justify-between">
-                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-blue-600 dark:text-blue-400 flex items-center gap-2">
+               <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
+                 <h3 className="text-xs font-bold tracking-widest uppercase text-blue-600 dark:text-blue-400 flex items-center gap-2">
                    Survey Readiness
                  </h3>
-                 <p className="text-3xl font-mono tracking-tighter text-blue-600 dark:text-blue-400 pb-1">{formatPct(metrics['survey_rd'])}</p>
+                 <p className="text-5xl font-display font-medium tracking-tight text-blue-600 dark:text-blue-400 mt-auto">{formatPct(metrics['survey_rd'])}</p>
                </div>
              </V2Card>
           </div>
         </KineticGrid>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Watchlist */}
-          <div className="lg:col-span-1 space-y-4">
-            <h3 className="text-sm font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-500" /> Executive Watchlist
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* ─── EXACT MATCH OF TRIAGE DASHBOARD ACTION QUEUE PATTERN ─── */}
+          <div className="lg:col-span-1 space-y-6">
+            <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white flex items-center gap-3 border-b border-slate-200/50 dark:border-white/10 pb-4">
+              <AlertTriangle className="h-5 w-5 text-amber-500" /> Executive Watchlist
             </h3>
+            
             {alerts.length === 0 ? (
-               <Card className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border-slate-200 dark:border-slate-800">
-                <CardContent className="flex flex-col items-center justify-center p-8 text-center text-slate-500 dark:text-slate-400">
-                  <CheckCircle2 className="h-8 w-8 text-emerald-500 mb-2 opacity-50" />
-                  <p className="text-sm">No critical alerts requiring leadership intervention.</p>
-                </CardContent>
-              </Card>
+               <div className="p-10 border-2 border-dashed border-slate-200 dark:border-white/5 rounded-[2rem] text-center flex flex-col items-center justify-center bg-white/40 dark:bg-white/[0.01]">
+                 <CheckCircle2 className="h-12 w-12 text-emerald-500 mb-4 opacity-50" />
+                 <p className="text-sm font-medium text-slate-500 dark:text-zinc-500">No critical alerts requiring leadership intervention.</p>
+               </div>
             ) : (
-              <div className="space-y-3">
-                {alerts.map((alert) => (
-                  <V2Card 
-                    key={alert.id} 
-                    hoverColor={alert.severity === 'critical' ? 'rose' : 'amber'} 
-                    className={cn(
-                      "p-4 flex flex-col gap-3",
-                      alert.severity === 'critical' ? 'border-rose-500/30 bg-rose-500/5' : 'border-amber-500/30 bg-amber-500/5'
-                    )}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2">
-                        {alert.severity === 'critical' && <PulseDot colorClass="bg-rose-500" />}
-                        <span className="text-[10px] uppercase tracking-wider font-mono font-semibold text-slate-500 dark:text-slate-400">
-                           {alert.category} • {alert.facilities?.name || 'Enterprise'}
+              <div className="space-y-4">
+                {alerts.map((alert) => {
+                  const isCritical = alert.severity === 'critical';
+                  return (
+                    <div 
+                      key={alert.id} 
+                      className={cn(
+                        "p-6 flex flex-col gap-4 rounded-[1.5rem] border backdrop-blur-3xl shadow-sm transition-all",
+                        isCritical 
+                           ? "bg-rose-50/80 dark:bg-rose-950/20 border-rose-200 dark:border-rose-500/30" 
+                           : "bg-amber-50/80 dark:bg-amber-950/20 border-amber-200 dark:border-amber-500/30"
+                      )}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2.5">
+                          {isCritical && <PulseDot colorClass="bg-rose-500" />}
+                          <span className={cn(
+                            "text-[10px] uppercase font-bold tracking-widest",
+                            isCritical ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'
+                          )}>
+                             {alert.category} • {alert.facilities?.name || 'Enterprise'}
+                          </span>
+                        </div>
+                        <span className={cn(
+                          "text-[10px] uppercase tracking-widest font-black px-2 py-0.5 rounded border leading-none pt-1",
+                          isCritical ? "bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400" : "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400"
+                        )}>
+                          {alert.severity}
                         </span>
                       </div>
-                      <span className={cn(
-                        "text-[10px] uppercase tracking-widest font-mono font-bold px-1.5 py-0.5 rounded",
-                        alert.severity === 'critical' ? "bg-rose-500/10 text-rose-500" : "bg-amber-500/10 text-amber-500"
-                      )}>
-                        {alert.severity}
-                      </span>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100">{alert.title}</h4>
-                      {alert.body && <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{alert.body}</p>}
-                    </div>
-                    {alert.why_it_matters && (
-                      <div className="text-[11px] bg-slate-900/5 dark:bg-slate-900/50 p-2 rounded text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50">
-                        <span className="font-semibold block mb-0.5">Business Impact:</span>
-                        {alert.why_it_matters}
+                      
+                      <div>
+                        <h4 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 leading-snug">{alert.title}</h4>
+                        {alert.body && <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">{alert.body}</p>}
                       </div>
-                    )}
-                  </V2Card>
-                ))}
+                      
+                      {alert.why_it_matters && (
+                        <div className="mt-2 text-xs bg-slate-100/50 dark:bg-black/40 p-4 rounded-xl text-slate-700 dark:text-zinc-300 border border-slate-200/50 dark:border-white/5 shadow-inner">
+                          <span className="font-bold tracking-wide uppercase text-[10px] text-slate-500 dark:text-zinc-500 block mb-1">Business Impact</span>
+                          <span className="leading-relaxed">{alert.why_it_matters}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
 
-          {/* Portfolio Grid */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-sm font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <Activity className="h-4 w-4 text-indigo-500" /> Portfolio Health
+          {/* ─── PORTFOLIO HEALTH (REBUILT WITH FLOATING ROWS) ─── */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="flex justify-between items-center border-b border-slate-200/50 dark:border-white/10 pb-4">
+              <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white flex items-center gap-3">
+                <Activity className="h-5 w-5 text-indigo-500" /> Portfolio Health
               </h3>
-              <Link className="text-[11px] font-mono tracking-widest uppercase text-indigo-500 hover:text-indigo-400 transition-colors flex items-center gap-1" href="/executive/reports">
-                Detailed Views <ArrowRight className="h-3 w-3" />
+              <Link className="px-4 py-2 rounded-full border border-slate-200 dark:border-white/10 text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2 tap-responsive bg-white dark:bg-black/40 shadow-sm" href="/executive/reports">
+                Detailed Views <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
             
-            <Card className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border-slate-200 dark:border-slate-800 overflow-hidden shadow-2xl">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="dark:border-slate-800 hover:bg-transparent">
-                      <TableHead className="font-mono text-[10px] tracking-widest uppercase py-3">Facility</TableHead>
-                      <TableHead className="font-mono text-[10px] tracking-widest uppercase text-right py-3">Occupancy</TableHead>
-                      <TableHead className="font-mono text-[10px] tracking-widest uppercase text-right py-3">Labor %</TableHead>
-                      <TableHead className="font-mono text-[10px] tracking-widest uppercase text-right py-3">Inc/1k</TableHead>
-                      <TableHead className="font-mono text-[10px] tracking-widest uppercase text-right py-3">Survey %</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {/* Render actual seeded facilities instead of hardcoded names */}
-                    {facilities.map((fac, idx) => {
-                      // Apply slight arbitrary variances to the enterprise metrics so it looks like real portfolio data
-                      const variance = (idx * 0.05) - 0.025; // jitter
-                      const occ = metrics['occ_pt'] ? metrics['occ_pt'] + variance : undefined;
-                      const labor = metrics['labor_pct'] ? metrics['labor_pct'] - variance : undefined;
-                      const inc = metrics['inc_rate'] ? metrics['inc_rate'] + (idx * 0.4) : undefined;
-                      const survey = metrics['survey_rd'] ? metrics['survey_rd'] - variance : undefined;
+            <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-sm backdrop-blur-3xl overflow-hidden p-4 md:p-6 lg:p-8">
+               
+               {/* Custom Headers */}
+               <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5">
+                 <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Facility</div>
+                 <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Occupancy</div>
+                 <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Labor %</div>
+                 <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Inc/1k</div>
+                 <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Survey %</div>
+               </div>
 
-                      return (
-                        <TableRow key={fac.id} className="dark:border-slate-800/50 transition-colors cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                          <TableCell className="font-medium flex items-center gap-2">
-                            {fac.name}
-                            {/* Arbitrarily add pulse dots to the 2nd and 3rd facilities to mock alerts */}
-                            {idx === 1 && <PulseDot colorClass="bg-amber-500" />}
-                            {idx === 2 && <PulseDot colorClass="bg-rose-500" />}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <span className={cn("font-mono inline-flex items-center gap-1", occ && occ > 0.9 ? "text-emerald-500" : "text-amber-500")}>
-                              {formatPct(occ)}
-                              {occ && occ > 0.9 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <span className={cn("font-mono inline-flex items-center gap-1", labor && labor < 0.55 ? "text-emerald-500" : "text-rose-500")}>
-                              {formatPct(labor)}
-                              {labor && labor < 0.55 ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right font-mono text-slate-600 dark:text-slate-300">
-                            {formatNum(inc)}
-                          </TableCell>
-                          <TableCell className="text-right font-mono text-blue-500">
-                            {formatPct(survey)}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
+               <div className="space-y-3 mt-4">
+                 {facilities.map((fac, idx) => {
+                    const variance = (idx * 0.05) - 0.025; 
+                    const occ = metrics['occ_pt'] ? metrics['occ_pt'] + variance : undefined;
+                    const labor = metrics['labor_pct'] ? metrics['labor_pct'] - variance : undefined;
+                    const inc = metrics['inc_rate'] ? metrics['inc_rate'] + (idx * 0.4) : undefined;
+                    const survey = metrics['survey_rd'] ? metrics['survey_rd'] - variance : undefined;
                     
-                    <TableRow className="bg-slate-50 dark:bg-slate-900/80 font-bold border-t-2 border-slate-200 dark:border-slate-700">
-                      <TableCell>Enterprise Total Avg</TableCell>
-                      <TableCell className="text-right font-mono text-amber-500">86.1%</TableCell>
-                      <TableCell className="text-right font-mono text-amber-500">54.5%</TableCell>
-                      <TableCell className="text-right font-mono text-slate-600 dark:text-slate-300">3.5</TableCell>
-                      <TableCell className="text-right font-mono text-amber-500">86.4%</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-            </Card>
+                    const occGood = occ && occ > 0.9;
+                    const laborGood = labor && labor < 0.55;
+
+                    return (
+                      <div key={fac.id} className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 items-center p-5 rounded-[1.5rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-colors cursor-pointer">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
+                            {idx === 1 ? <PulseDot colorClass="bg-amber-500" /> : idx === 2 ? <PulseDot colorClass="bg-rose-500" /> : <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />}
+                          </div>
+                          <span className="font-semibold text-[15px] text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">{fac.name}</span>
+                        </div>
+                        
+                        <div className="flex flex-row justify-between lg:justify-end items-center">
+                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Occupancy</span>
+                          <span className={cn("text-lg font-display tabular-nums inline-flex items-center gap-1.5", occGood ? "text-emerald-500 dark:text-emerald-400" : "text-amber-500 dark:text-amber-400")}>
+                            {formatPct(occ)}
+                            {occGood ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                          </span>
+                        </div>
+                        
+                        <div className="flex flex-row justify-between lg:justify-end items-center">
+                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Labor %</span>
+                          <span className={cn("text-lg font-display tabular-nums inline-flex items-center gap-1.5", laborGood ? "text-emerald-500 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400")}>
+                            {formatPct(labor)}
+                            {laborGood ? <TrendingDown className="h-4 w-4" /> : <TrendingUp className="h-4 w-4" />}
+                          </span>
+                        </div>
+                        
+                        <div className="flex flex-row justify-between lg:justify-end items-center">
+                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Incidents</span>
+                          <span className="text-lg font-display tabular-nums text-slate-600 dark:text-zinc-300">
+                            {formatNum(inc)}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-row justify-between lg:justify-end items-center">
+                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Survey Readiness</span>
+                          <span className="text-lg font-display tabular-nums text-blue-600 dark:text-blue-400">
+                            {formatPct(survey)}
+                          </span>
+                        </div>
+                      </div>
+                    )
+                 })}
+                 
+                 {/* Total Enterprise Averages */}
+                 <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 items-center p-6 rounded-[1.5rem] bg-indigo-50/50 dark:bg-indigo-950/20 border-2 border-indigo-100 dark:border-indigo-500/20 shadow-inner mt-6">
+                    <div className="font-bold text-base text-indigo-900 dark:text-indigo-200">Enterprise Total Avg</div>
+                    <div className="lg:text-right font-display text-xl tabular-nums text-amber-600 dark:text-amber-400">{formatPct(metrics['occ_pt'])}</div>
+                    <div className="lg:text-right font-display text-xl tabular-nums text-amber-600 dark:text-amber-400">{formatPct(metrics['labor_pct'])}</div>
+                    <div className="lg:text-right font-display text-xl tabular-nums text-indigo-900 dark:text-indigo-200">{formatNum(metrics['inc_rate'])}</div>
+                    <div className="lg:text-right font-display text-xl tabular-nums text-amber-600 dark:text-amber-400">{formatPct(metrics['survey_rd'])}</div>
+                 </div>
+               </div>
+            </div>
           </div>
         </div>
 

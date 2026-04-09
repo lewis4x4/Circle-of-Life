@@ -1,12 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Loader2, MessageCircle, Send } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Loader2, MessageCircle, Send, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
 import type { StaffMessageRow, StaffMessageThread } from "@/lib/admin/family-messages-data";
+import { cn } from "@/lib/utils";
 import {
   fetchStaffMessageThreads,
   fetchStaffMessagesForResident,
@@ -92,106 +91,132 @@ export default function StaffFamilyMessagesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+      <div className="flex items-center justify-center py-40">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="space-y-3 py-12 text-center">
-        <p className="text-sm text-red-400">{error}</p>
-        <Button variant="outline" size="sm" onClick={() => { void loadThreads(); }}>Retry</Button>
+      <div className="mx-auto max-w-3xl rounded-[1.5rem] border border-rose-500/20 bg-rose-500/5 p-6 text-sm text-rose-700 dark:text-rose-400 font-medium tracking-wide flex flex-col items-center gap-4 mt-20">
+         <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/30">
+            <span className="font-bold">!</span>
+         </div>
+         {error}
+         <Button variant="outline" size="sm" onClick={() => { void loadThreads(); }}>Try Again</Button>
       </div>
     );
   }
 
   if (selectedResidentId) {
     return (
-      <div className="mx-auto max-w-3xl space-y-4">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setSelectedResidentId(null);
-              setMessages([]);
-              void loadThreads();
-            }}
-          >
-            <ArrowLeft className="mr-1 h-4 w-4" />
-            Back
-          </Button>
-          <h2 className="text-lg font-semibold">
-            Messages — {residentName}
-          </h2>
+      <div className="mx-auto max-w-4xl space-y-6 pb-12">
+        {/* Thread Header */}
+        <div className="flex flex-col gap-6 md:flex-row md:items-center justify-between bg-white/40 dark:bg-black/20 p-6 md:p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+           <div className="flex items-center gap-6">
+             <button
+               onClick={() => {
+                 setSelectedResidentId(null);
+                 setMessages([]);
+                 void loadThreads();
+               }}
+               className="w-12 h-12 rounded-full border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-white/5 transition-colors shrink-0 text-slate-500 hover:text-slate-900 dark:hover:text-white group tap-responsive"
+               aria-label="Back to threads"
+             >
+               <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
+             </button>
+             <div>
+               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 text-[10px] font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-2">
+                   Active Thread
+               </div>
+               <h2 className="text-2xl md:text-3xl font-display font-medium tracking-tight text-slate-900 dark:text-white">
+                 {residentName}
+               </h2>
+             </div>
+           </div>
         </div>
 
+        {/* Messages Body */}
         {msgLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
+          <div className="flex items-center justify-center py-40">
+            <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
           </div>
         ) : msgError ? (
-          <div className="py-8 text-center">
-            <p className="text-sm text-red-400">{msgError}</p>
-            <Button variant="outline" size="sm" className="mt-2" onClick={() => { void openThread(selectedResidentId); }}>
-              Retry
-            </Button>
+          <div className="mx-auto rounded-[1.5rem] border border-rose-500/20 bg-rose-500/5 p-6 text-sm text-rose-700 dark:text-rose-400 font-medium tracking-wide flex flex-col items-center gap-4">
+             <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/30">
+                <span className="font-bold">!</span>
+             </div>
+             {msgError}
+             <Button variant="outline" size="sm" onClick={() => { void openThread(selectedResidentId); }}>Retry</Button>
           </div>
         ) : (
           <>
-            <div className="max-h-[60vh] space-y-3 overflow-y-auto rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
-              {messages.length === 0 ? (
-                <p className="py-8 text-center text-sm text-zinc-500">No messages yet.</p>
-              ) : (
-                messages.map((m) => {
-                  const isStaff = m.authorKind === "staff";
-                  return (
-                    <div key={m.id} className={`flex ${isStaff ? "justify-end" : "justify-start"}`}>
-                      <div
-                        className={`max-w-[75%] rounded-xl px-4 py-2.5 text-sm ${
-                          isStaff
-                            ? "bg-blue-600 text-white"
-                            : "bg-white text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
-                        }`}
-                      >
-                        <p className={`text-xs font-medium ${isStaff ? "text-blue-100" : "text-zinc-500 dark:text-zinc-400"}`}>
-                          {m.authorName} · {m.createdAt}
-                        </p>
-                        <p className="mt-1 whitespace-pre-wrap">{m.body}</p>
+          <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-sm backdrop-blur-3xl overflow-hidden flex flex-col h-[65vh]">
+             
+             {/* Feed */}
+             <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
+                {messages.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                    <MessageCircle className="h-12 w-12 text-slate-300 dark:text-white/10 mb-4" />
+                    <p className="text-sm font-medium text-slate-500 dark:text-zinc-500">No messages yet. Start the conversation.</p>
+                  </div>
+                ) : (
+                  messages.map((m) => {
+                    const isStaff = m.authorKind === "staff";
+                    return (
+                      <div key={m.id} className={`flex ${isStaff ? "justify-end" : "justify-start"}`}>
+                        <div
+                          className={cn(
+                             "max-w-[85%] md:max-w-[70%] rounded-[2rem] px-6 py-4 text-sm shadow-sm",
+                             isStaff 
+                               ? "bg-indigo-600 text-white rounded-br-sm" 
+                               : "bg-white text-slate-900 border border-slate-200/60 dark:bg-white/5 dark:border-white/10 dark:text-white rounded-bl-sm"
+                          )}
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                             <p className={cn("text-[10px] font-bold uppercase tracking-widest", isStaff ? "text-indigo-200" : "text-slate-500 dark:text-zinc-400")}>
+                               {m.authorName} <span className="opacity-50 mx-1">•</span> {m.createdAt}
+                             </p>
+                          </div>
+                          <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{m.body}</p>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })
-              )}
-              <div ref={bottomRef} />
-            </div>
+                    );
+                  })
+                )}
+                <div ref={bottomRef} />
+             </div>
 
-            <div className="flex gap-2">
-              <textarea
-                placeholder="Type your reply to the family…"
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                maxLength={8000}
-                rows={2}
-                className="flex-1 resize-none rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                    e.preventDefault();
-                    void handleSend();
-                  }
-                }}
-              />
-              <Button
-                onClick={() => { void handleSend(); }}
-                disabled={!draft.trim() || sending}
-                className="h-auto self-end"
-              >
-                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              </Button>
-            </div>
-            <p className="text-right text-xs text-zinc-400">{draft.length}/8000 · Cmd+Enter to send</p>
+             {/* Composer */}
+             <div className="p-4 md:p-6 bg-slate-50/50 dark:bg-black/30 border-t border-slate-200/50 dark:border-white/5 flex gap-3 items-end">
+                <textarea
+                  placeholder="Type your reply to the family..."
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  maxLength={8000}
+                  rows={1}
+                  style={{ minHeight: "56px" }}
+                  className="flex-1 resize-none rounded-[1.5rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-6 py-4 text-[15px] shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 dark:text-zinc-100 placeholder:text-slate-400"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey || e.shiftKey)) {
+                      e.preventDefault();
+                      void handleSend();
+                    }
+                  }}
+                />
+                <button
+                  onClick={() => { void handleSend(); }}
+                  disabled={!draft.trim() || sending}
+                  className="h-14 w-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center shrink-0 shadow-md transition-all tap-responsive disabled:opacity-50 disabled:cursor-not-allowed outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                >
+                  {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5 ml-0.5" />}
+                </button>
+             </div>
+          </div>
+          <div className="flex justify-end px-4">
+             <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-zinc-500">{draft.length}/8000 · Cmd+Enter to send</p>
+          </div>
           </>
         )}
       </div>
@@ -199,52 +224,80 @@ export default function StaffFamilyMessagesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold">Family Messages</h1>
-        <p className="text-sm text-zinc-500">Conversations with families about their residents</p>
+    <div className="mx-auto max-w-5xl space-y-10 pb-12 w-full">
+      {/* ─── MOONSHOT HEADER ─── */}
+      <div className="flex flex-col gap-6 bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+         <div className="space-y-2">
+           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
+               SYS: Pipeline
+           </div>
+           <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+              Direct Messages
+           </h1>
+           <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400">
+             Conversations with families about their residents.
+           </p>
+         </div>
       </div>
 
       {threads.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <MessageCircle className="mx-auto h-10 w-10 text-zinc-300" />
-            <p className="mt-3 text-sm text-zinc-500">No family messages yet.</p>
-          </CardContent>
-        </Card>
+         <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-sm backdrop-blur-3xl overflow-hidden p-20 flex flex-col items-center text-center">
+            <CheckCircle2 className="mx-auto h-16 w-16 text-emerald-500 mb-6 opacity-80" />
+            <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white mb-2">Inbox Zero</h3>
+            <p className="text-sm font-medium text-slate-500 dark:text-zinc-500 max-w-sm">No family conversations currently require attention.</p>
+         </div>
       ) : (
-        <div className="space-y-2">
-          {threads.map((t) => (
-            <Card
-              key={t.residentId}
-              className="cursor-pointer transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900/60"
-              onClick={() => { void openThread(t.residentId); }}
-            >
-              <CardHeader className="pb-1">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <CardTitle className="text-base">{t.residentName}</CardTitle>
-                    <CardDescription>{t.roomLabel}</CardDescription>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 border-b border-slate-200/50 dark:border-white/10 pb-4 px-2">
+            <MessageCircle className="h-5 w-5 text-indigo-500" />
+            <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white tracking-tight">
+              Active Threads
+            </h3>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {threads.map((t) => (
+              <div
+                key={t.residentId}
+                className="group cursor-pointer tap-responsive rounded-[2rem] border border-slate-200/80 bg-white dark:border-white/10 dark:bg-white/5 p-6 shadow-sm transition-all hover:shadow-lg hover:-translate-y-1 hover:border-indigo-300 dark:hover:border-indigo-500/50"
+                onClick={() => { void openThread(t.residentId); }}
+              >
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="space-y-1">
+                    <h3 className="font-display text-lg font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors tracking-tight">
+                      {t.residentName}
+                    </h3>
+                    <p className="text-xs font-mono text-slate-500 dark:text-zinc-500">{t.roomLabel}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col items-end gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-zinc-500">
+                      {t.lastMessageAt}
+                    </span>
                     {t.unreadHint && (
-                      <Badge className="border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded border leading-none bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400 text-[10px] font-bold uppercase tracking-widest">
                         Family replied
-                      </Badge>
+                      </span>
                     )}
-                    <span className="text-xs text-zinc-400">{t.lastMessageAt}</span>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent className="pb-3">
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                  <span className="font-medium">{t.lastAuthorKind === "staff" ? "You" : "Family"}:</span>{" "}
-                  {t.lastMessageBody}
-                </p>
-                <p className="mt-1 text-xs text-zinc-400">{t.messageCount} message{t.messageCount !== 1 ? "s" : ""}</p>
-              </CardContent>
-            </Card>
-          ))}
+                
+                <div className="bg-slate-50 dark:bg-black/40 rounded-xl p-4 border border-slate-100 dark:border-white/5">
+                  <p className="text-sm text-slate-600 dark:text-zinc-300 line-clamp-2 leading-relaxed">
+                    <span className="font-bold text-slate-900 dark:text-white mr-1 opacity-70">
+                      {t.lastAuthorKind === "staff" ? "You" : "Family"}:
+                    </span>
+                    {t.lastMessageBody}
+                  </p>
+                </div>
+                
+                <div className="mt-4 flex items-center gap-2">
+                   <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-zinc-500">
+                     {t.messageCount} Message{t.messageCount !== 1 ? "s" : ""}
+                   </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

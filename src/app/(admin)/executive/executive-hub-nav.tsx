@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
@@ -22,7 +20,7 @@ export function ExecutiveHubNav() {
 
   return (
     <nav
-      className="flex flex-wrap gap-2 rounded-xl border border-slate-200/80 bg-white/80 p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/70"
+      className="flex flex-wrap gap-1.5 rounded-full border border-slate-200/50 bg-slate-100/50 p-1.5 shadow-inner dark:border-white/5 dark:bg-black/40 backdrop-blur-3xl"
       aria-label="Executive Intelligence sections"
     >
       {LINKS.map((item) => {
@@ -30,14 +28,18 @@ export function ExecutiveHubNav() {
           item.href === "/admin/executive"
             ? pathname === "/admin/executive"
             : pathname.startsWith(item.href);
+            
         return (
           <Link
             key={item.href}
             href={item.href}
             className={cn(
-              buttonVariants({ variant: isActive ? "default" : "outline", size: "sm" }),
-              isActive && "pointer-events-none",
+              "px-4 py-2 rounded-full text-xs font-semibold tracking-wide transition-all outline-none tap-responsive",
+              isActive 
+                 ? "bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm border border-slate-200/50 dark:border-white/10" 
+                 : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-white/5"
             )}
+            style={{ pointerEvents: isActive ? "none" : "auto" }}
           >
             {item.label}
           </Link>
