@@ -210,71 +210,68 @@ export default function AdminTrainingHubPage() {
       setLoadingInservice(false);
       return;
     }
-    try {
-      let q = supabase
-        .from("competency_demonstrations")
-        .select("*, staff(first_name, last_name), facilities(name)")
-        .is("deleted_at", null)
-        .order("demonstrated_at", { ascending: false })
-        .limit(50);
-      if (singleFacilityMode && selectedFacilityId) {
-        q = q.eq("facility_id", selectedFacilityId);
-      }
-      const { data, error: qErr } = await q;
-      if (qErr) throw qErr;
-      setRows((data ?? []) as DemoRow[]);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load competency demonstrations.");
-      setRows([]);
-    } finally {
-      setLoading(false);
+
+    let q = supabase
+      .from("competency_demonstrations")
+      .select("*, staff(first_name, last_name), facilities(name)")
+      .is("deleted_at", null)
+      .order("demonstrated_at", { ascending: false })
+      .limit(50);
+    if (singleFacilityMode && selectedFacilityId) {
+      q = q.eq("facility_id", selectedFacilityId);
     }
-    try {
-      let cq = supabase
-        .from("staff_training_completions")
-        .select(
-          "*, staff(first_name, last_name), facilities(name), training_programs(code, name)",
-        )
-        .is("deleted_at", null)
-        .order("completed_at", { ascending: false })
-        .limit(50);
-      if (singleFacilityMode && selectedFacilityId) {
-        cq = cq.eq("facility_id", selectedFacilityId);
-      }
-      const { data: cData, error: cErr } = await cq;
-      if (cErr) throw cErr;
-      setCompletionRows((cData ?? []) as CompletionRow[]);
-    } catch (e) {
+
+    let cq = supabase
+      .from("staff_training_completions")
+      .select(
+        "*, staff(first_name, last_name), facilities(name), training_programs(code, name)",
+      )
+      .is("deleted_at", null)
+      .order("completed_at", { ascending: false })
+      .limit(50);
+    if (singleFacilityMode && selectedFacilityId) {
+      cq = cq.eq("facility_id", selectedFacilityId);
+    }
+
+    let iq = supabase
+      .from("inservice_log_sessions")
+      .select(
+        "*, facilities(name), training_programs(code, name), inservice_log_attendees(id)",
+      )
+      .is("deleted_at", null)
+      .order("session_date", { ascending: false })
+      .limit(50);
+    if (singleFacilityMode && selectedFacilityId) {
+      iq = iq.eq("facility_id", selectedFacilityId);
+    }
+
+    const [demoRes, compRes, insRes] = await Promise.all([q, cq, iq]);
+
+    if (demoRes.error) {
+      setError(demoRes.error.message || "Failed to load competency demonstrations.");
+      setRows([]);
+    } else {
+      setRows((demoRes.data ?? []) as DemoRow[]);
+    }
+    setLoading(false);
+
+    if (compRes.error) {
       setCompletionError(
-        e instanceof Error ? e.message : "Failed to load staff training completions.",
+        compRes.error.message || "Failed to load staff training completions.",
       );
       setCompletionRows([]);
-    } finally {
-      setLoadingCompletions(false);
+    } else {
+      setCompletionRows((compRes.data ?? []) as CompletionRow[]);
     }
-    try {
-      let iq = supabase
-        .from("inservice_log_sessions")
-        .select(
-          "*, facilities(name), training_programs(code, name), inservice_log_attendees(id)",
-        )
-        .is("deleted_at", null)
-        .order("session_date", { ascending: false })
-        .limit(50);
-      if (singleFacilityMode && selectedFacilityId) {
-        iq = iq.eq("facility_id", selectedFacilityId);
-      }
-      const { data: iData, error: iErr } = await iq;
-      if (iErr) throw iErr;
-      setInserviceRows((iData ?? []) as InserviceRow[]);
-    } catch (e) {
-      setInserviceError(
-        e instanceof Error ? e.message : "Failed to load in-service sessions.",
-      );
+    setLoadingCompletions(false);
+
+    if (insRes.error) {
+      setInserviceError(insRes.error.message || "Failed to load in-service sessions.");
       setInserviceRows([]);
-    } finally {
-      setLoadingInservice(false);
+    } else {
+      setInserviceRows((insRes.data ?? []) as InserviceRow[]);
     }
+    setLoadingInservice(false);
   }, [supabase, selectedFacilityId, facilityReady, singleFacilityMode]);
 
   useEffect(() => {

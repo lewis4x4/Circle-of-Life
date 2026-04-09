@@ -3,8 +3,13 @@
  * Keep escaping logic in one place for consistent injection-safe exports.
  */
 export function csvEscapeCell(value: string): string {
-  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
-  return value;
+  let v = value;
+  // Reduce CSV/formula injection when files are opened in Excel/Sheets (leading =, +, -, @, tab).
+  if (/^[=+\-@\t\r]/.test(v)) {
+    v = `'${v}`;
+  }
+  if (/[",\r\n]/.test(v)) return `"${v.replace(/"/g, '""')}"`;
+  return v;
 }
 
 export function triggerCsvDownload(filename: string, text: string): void {

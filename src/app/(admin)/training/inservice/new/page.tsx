@@ -377,8 +377,13 @@ export default function AdminNewInserviceSessionPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Attendees</Label>
-              <div className="max-h-56 overflow-y-auto rounded-md border border-slate-200 p-3 dark:border-slate-800">
+              <fieldset className="space-y-2 border-0 p-0">
+                <legend className="text-sm font-medium leading-none">Attendees</legend>
+                <div
+                  className="max-h-56 overflow-y-auto rounded-md border border-slate-200 p-3 dark:border-slate-800"
+                  role="group"
+                  aria-label="Staff attendees for this in-service session"
+                >
                 {loading ? (
                   <p className="text-sm text-slate-500">Loading staff…</p>
                 ) : staffList.length === 0 ? (
@@ -393,6 +398,7 @@ export default function AdminNewInserviceSessionPage() {
                           checked={selectedStaffIds.has(s.id)}
                           onChange={() => toggleStaff(s.id)}
                           className="h-4 w-4 rounded border-slate-300"
+                          aria-label={`Attendee ${s.name}`}
                         />
                         <label htmlFor={`staff-${s.id}`} className="text-sm cursor-pointer">
                           {s.name}
@@ -401,7 +407,8 @@ export default function AdminNewInserviceSessionPage() {
                     ))}
                   </ul>
                 )}
-              </div>
+                </div>
+              </fieldset>
               <p className="text-[10px] text-slate-500">
                 {selectedStaffIds.size} selected
               </p>
