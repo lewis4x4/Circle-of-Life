@@ -229,6 +229,43 @@ export default function AdminNewInserviceSessionPage() {
         throw new Error(attErr.message);
       }
 
+      const catalogProgramId = programId.trim();
+      if (catalogProgramId) {
+        const completionRows: Database["public"]["Tables"]["staff_training_completions"]["Insert"][] =
+          [...selectedStaffIds].map((staffId) => ({
+            organization_id: orgId,
+            facility_id: selectedFacilityId,
+            staff_id: staffId,
+            training_program_id: catalogProgramId,
+            completed_at: sessionDate,
+            hours_completed: hn,
+            delivery_method: "in_person" as const,
+            evaluator_user_id: user.id,
+            notes: `In-service: ${t} (session ${sessionId})`,
+            created_by: user.id,
+          }));
+
+        const { error: compErr } = await supabase
+          .from("staff_training_completions")
+          .insert(completionRows);
+
+        if (compErr) {
+          await supabase.from("inservice_log_attendees").delete().eq("session_id", sessionId);
+          await supabase
+            .from("inservice_log_sessions")
+            .update({ deleted_at: new Date().toISOString() })
+            .eq("id", sessionId);
+          const msg = compErr.message ?? "";
+          if (msg.toLowerCase().includes("permission") || msg.toLowerCase().includes("policy")) {
+            setError(
+              "Could not log training completions for attendees (permission denied). Session was not saved.",
+            );
+            return;
+          }
+          throw new Error(compErr.message);
+        }
+      }
+
       router.push("/admin/training");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save in-service session.");
@@ -354,6 +391,10 @@ export default function AdminNewInserviceSessionPage() {
                   </option>
                 ))}
               </select>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                If you pick a catalog program, each selected attendee also receives a matching{" "}
+                <strong>staff training completion</strong> row (same date and hours as this session).
+              </p>
             </div>
 
             <div className="space-y-2">

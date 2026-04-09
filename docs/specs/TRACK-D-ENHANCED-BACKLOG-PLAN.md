@@ -88,7 +88,9 @@
 
 **~~D42 (2026-04-10)~~** **DONE — Module 12:** **`/admin/training`** in-service list + CSV; **`/admin/training/inservice/new`**. Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D43+ (owner priority):** remaining §1 rows (e.g. **23** OAuth/sync, **14** automation after clinical sign-off, **12** attendee→**`staff_training_completions`** automation) — one bounded slice at a time.
+**~~Recommended next segment — D43~~** **DONE (2026-04-10)** — Module **12:** **`/admin/training/inservice/new`** batch **`staff_training_completions`** when catalog program selected. Gate: `test-results/agent-gates/2026-04-09T20-39-46-632Z-track-d-d43-inservice-completion-automation.json` — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D44+ (owner priority):** remaining §1 rows (e.g. **23** OAuth/sync, **14** automation after clinical sign-off) — one bounded slice at a time.
 
 ---
 

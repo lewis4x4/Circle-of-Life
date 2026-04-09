@@ -19,13 +19,17 @@ Circle of Life operates five ALF facilities (Oakridge, Rising Oaks, Homewood Lod
 
 Florida ALF regulations (FAC 59A-36.011 and FAC 59A-36.022) mandate specific training categories for all staff at hire and annually. These must be tracked per-staff-member with completion dates, hours, and verifying signatures. COL currently tracks this via paper sign-in sheets (`Orientation & Training Sign-In.pdf`, in-service training sign-in logs) and Baya-issued competency certificates.
 
+### Track D — D43 in-service → completions (2026-04-10)
+
+**`/admin/training/inservice/new`:** when a **catalog training program** is selected, saving the session also inserts one **`staff_training_completions`** row per checked attendee (`completed_at` = session date, `hours_completed` = session hours, `delivery_method` = `in_person`, `evaluator_user_id` = signed-in user, `notes` references session id). If completion insert fails, attendee rows are removed and the session is soft-deleted (same recovery pattern as failed attendee insert). **No** new DDL; no completions when program is left blank.
+
 ### Track D — D42 in-service hub UI (2026-04-10)
 
-**`/admin/training`** lists the last **50** in-service **sessions** (RLS-scoped; optional facility filter). **Download in-service CSV** + **+ New in-service session** (single-facility header only) → **`/admin/training/inservice/new`** creates a session and **attendee** rows (no auto-**`staff_training_completions`** yet — spec business rule 5 deferred).
+**`/admin/training`** lists the last **50** in-service **sessions** (RLS-scoped; optional facility filter). **Download in-service CSV** + **+ New in-service session** (single-facility header only) → **`/admin/training/inservice/new`** creates a session and **attendee** rows; **D43** adds optional per-attendee **`staff_training_completions`** when a catalog program is chosen.
 
 ### Track D — D41 inservice DDL (2026-04-10)
 
-Migration **`118`** ships **`inservice_log_sessions`** and **`inservice_log_attendees`** per schema §Core (RLS, audit, indexes). **Deferred:** attendee → `staff_training_completions` trigger/Edge (spec business rule 5).
+Migration **`118`** ships **`inservice_log_sessions`** and **`inservice_log_attendees`** per schema §Core (RLS, audit, indexes). **D43** implements business rule 5 for catalog-linked sessions at save time (app-layer batch insert; no DB trigger required).
 
 ### Track D — D20 org-wide hub (2026-04-09)
 
@@ -321,7 +325,7 @@ CREATE POLICY "Admins manage in-service sessions"
 
 4. **Expiry calculation:** `expires_at` is set at completion: `completed_at + frequency interval`. For `biennial` → +2 years; `annual` → +1 year; `at_hire` and `one_time` → null.
 
-5. **In-service attendee completion:** Creating an `inservice_log_attendees` row auto-creates a `staff_training_completions` record for that staff/program/date via Edge Function (or trigger).
+5. **In-service attendee completion:** When the session is linked to a **`training_programs`** row, saving the session creates matching **`staff_training_completions`** rows for each attendee (same date/hours; app-layer insert on **`/admin/training/inservice/new`** — Track **D43**). Optional catalog program: if none is selected, only sign-in rows are stored.
 
 ---
 
