@@ -134,6 +134,7 @@ Use `Tester` to record the human who ran the step. Use `Notes` to capture:
 |----|------|--------|--------|------|-------|
 | PH1-TD1 | D1 Module 15 — `/admin/transportation` compliance cards from `driver_credentials` + `fleet_vehicles` dates | **PASS (repo)** | agent | 2026-04-09 | Replaces placeholder cards; 60-day window; gate: `test-results/agent-gates/2026-04-09T00-02-57-723Z-track-d-phase6-d1-transportation.json` |
 | PH1-TD2 | D2 Module 12 — `/admin/training` competency queue + status counts (no mock personas) | **PASS (repo)** | agent | 2026-04-09 | Gate: `test-results/agent-gates/2026-04-09T00-31-54-429Z-track-d-phase6-d2-training.json` |
+| PH1-TD3 | D3 Module 14 — `/admin/dietary` attention queue + batch stats from `diet_orders` (no mock NPO card) | **PASS (repo)** | agent | 2026-04-09 | Gate: `test-results/agent-gates/2026-04-09T00-35-52-241Z-track-d-phase6-d3-dietary.json` |
 
 ---
 
