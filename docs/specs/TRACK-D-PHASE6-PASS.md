@@ -68,7 +68,7 @@
 
 **Mission alignment:** **pass** — operational transport scheduling and reimbursement trail under RLS.
 
-**Deferred:** Payroll export approval workflow, org-level mileage rate setting, calendar view.
+**Deferred:** Payroll export approval workflow, calendar view (org mileage rate shipped in **D10**).
 
 ---
 
@@ -106,22 +106,34 @@
 
 ---
 
+**D10 (2026-04-09):** **Module 15 — Transportation** — **organization mileage reimbursement rate**.
+
+**Slice:** Migration **`114`** — `organization_transport_settings` (`mileage_reimbursement_rate_cents` per org, RLS + audit). **Routes:** `/admin/transportation/settings` (owner/org_admin edit; others read-only context). **Integration:** `transport/requests/[id]` completion with mileage uses `getOrganizationMileageRateCents`; hub links to settings. Fallback: `DEFAULT_MILEAGE_RATE_CENTS` when no row.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-09T02-13-30-573Z-track-d-phase6-d10-org-mileage-rate.json` (`npm run segment:gates -- --segment "track-d-phase6-d10-org-mileage-rate" --ui --no-chaos`).
+
+**Mission alignment:** **pass** — owner-visible reimbursement configuration; rates snapshotted on `mileage_logs` at insert.
+
+**Deferred:** Payroll export approval workflow, month/week calendar, external calendar sync.
+
+---
+
 ## Track D — plan (remaining)
 
-**Segments D1–D9:** Closed in repo with gate artifacts above. This completes the **Phase 6 Core visibility / workflow** slices we prioritized for COL (transport, training, dietary, referrals, reputation).
+**Segments D1–D10:** Closed in repo with gate artifacts above. This completes the **Phase 6 Core visibility / workflow** slices we prioritized for COL (transport, training, dietary, referrals, reputation), plus **D10** org mileage rate.
 
-**Not in scope for D1–D9 (deferrals + Enhanced — pick with owner priority):**
+**Not in scope for D1–D10 (deferrals + Enhanced — pick with owner priority):**
 
 | Module | Backlog |
 |--------|---------|
 | **12** | Storage certificate uploads, Baya/API, automated assignment, org-wide `training_compliance_snapshots` usage |
 | **14** | Automated med–texture cross-check vs medications; meal production; vendor API; full menu cycle |
-| **15** | Payroll mileage approval workflow, org-level mileage rate, month/week calendar, external calendar sync |
+| **15** | Payroll mileage approval workflow, month/week calendar, external calendar sync |
 | **22** | HL7 processor automation beyond queue ingest |
 | **23** | External review platform OAuth/sync APIs |
 
 **Authoritative README narrative:** [README.md](./README.md) — section **Track D — Phase 6 completion pass**.
 
-**Next segment:** Record as **D10+** in this file when a new bounded slice ships; use migration **`114+`** only when DDL is required ([README.md](./README.md) next free migration).
+**Next segment:** Record as **D11+** in this file when a new bounded slice ships; use migration **`115+`** only when DDL is required ([README.md](./README.md) next free migration).
 
-**Prioritized Enhanced plan (D10+ options, order, checklists):** [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md).
+**Prioritized Enhanced plan (D11+ options, order, checklists):** [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md).

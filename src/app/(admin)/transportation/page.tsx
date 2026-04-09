@@ -10,7 +10,7 @@ import {
   parseISO,
   startOfDay,
 } from "date-fns";
-import { Bus } from "lucide-react";
+import { Bus, MapPin, Clock, Settings2 } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -24,6 +24,7 @@ import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 
 type FleetRow = Database["public"]["Tables"]["fleet_vehicles"]["Row"];
 type InspectionRow = Database["public"]["Tables"]["vehicle_inspection_logs"]["Row"] & {
@@ -97,10 +98,10 @@ type VehicleAlert = {
 function formatAlertDeadline(daysUntil: number) {
   if (daysUntil < 0) {
     const n = Math.abs(daysUntil);
-    return `Expired ${n} day${n === 1 ? "" : "s"} ago`;
+    return `Expired ${n}d ago`;
   }
   if (daysUntil === 0) return "Expires today";
-  return `Expires in ${daysUntil} day${daysUntil === 1 ? "" : "s"}`;
+  return `In ${daysUntil}d`;
 }
 
 export default function AdminTransportationHubPage() {
@@ -255,103 +256,115 @@ export default function AdminTransportationHubPage() {
     return groups;
   }, [transportRequests]);
 
+  const hasCriticalAlerts = driverAlerts.some(a => a.daysUntil <= 14) || vehicleAlerts.some(a => a.daysUntil <= 14);
+
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={false} 
+      <AmbientMatrix hasCriticals={hasCriticalAlerts} 
         primaryClass="bg-indigo-700/10"
         secondaryClass="bg-slate-900/10"
       />
       
       <div className="relative z-10 space-y-6">
-        <header className="mb-8">
-          <div>
-            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 15 / Transportation</p>
-            <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
-              Fleet Operations
-            </h2>
-          </div>
-        </header>
+        
+        {/* ─── MOONSHOT HEADER ─── */}
+        <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+           <div className="space-y-2">
+             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
+                 SYS: Module 15
+             </div>
+             <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+                Fleet Operations
+                {hasCriticalAlerts && <PulseDot colorClass="bg-rose-500" />}
+             </h1>
+             <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
+               Manage facility transport requests, fleet inspections, and driver compliance all in one view.
+             </p>
+           </div>
+           <div className="flex flex-wrap items-center gap-2">
+             <Link href="/admin/transportation/requests/new" className={cn(buttonVariants({ size: "default" }), "h-12 px-6 rounded-full font-bold uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg")} >
+               + Transport request
+             </Link>
+             <Link href="/admin/transportation/vehicles/new" className={cn(buttonVariants({ size: "default" }), "h-12 px-6 rounded-full font-bold uppercase tracking-widest text-[10px] tap-responsive bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg")} >
+               + Vehicle
+             </Link>
+             <Link
+               href="/admin/transportation/settings"
+               className={cn(
+                 buttonVariants({ size: "default", variant: "outline" }),
+                 "h-12 gap-2 rounded-full border-slate-300/80 px-5 text-[10px] font-bold uppercase tracking-widest dark:border-white/15 dark:bg-white/5",
+               )}
+             >
+               <Settings2 className="h-4 w-4" aria-hidden />
+               Mileage rate
+             </Link>
+           </div>
+        </div>
 
-        <KineticGrid className="grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
-          <div className="h-[160px]">
-            <V2Card hoverColor="indigo" className="border-indigo-500/20 dark:border-indigo-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
+        <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
+          <div className="h-[160px] lg:col-span-2">
+            <V2Card hoverColor="indigo" className="border-indigo-500/20 dark:border-indigo-500/20 shadow-[0_8px_30px_rgba(99,102,241,0.05)]">
               <Sparkline colorClass="text-indigo-500" variant={3} />
               <MonolithicWatermark value={fleet.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
-              <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
-                  <Bus className="h-3.5 w-3.5" /> Fleet Size
+              <div className="relative z-10 flex flex-col h-full justify-between p-2">
+                <h3 className="text-[11px] font-bold tracking-widest uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                  <Bus className="h-4 w-4" /> Active Fleet Size
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-indigo-600 dark:text-indigo-400 pb-1">{fleet.length}</p>
+                <p className="text-6xl font-display font-medium tracking-tight text-indigo-600 dark:text-indigo-400 pb-1">{fleet.length}</p>
               </div>
             </V2Card>
           </div>
-          <div className="h-[160px]">
-            <V2Card hoverColor="slate">
-              <Sparkline colorClass="text-slate-400" variant={1} />
-              <MonolithicWatermark value={drivers.length} className="text-slate-800/5 dark:text-white/5 opacity-50" />
-              <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-slate-500 flex items-center gap-2">
+          <div className="h-[160px] lg:col-span-2">
+            <V2Card hoverColor="emerald" className="border-emerald-500/20 dark:border-emerald-500/20 shadow-[0_8px_30px_rgba(16,185,129,0.05)]">
+              <Sparkline colorClass="text-emerald-500" variant={1} />
+              <MonolithicWatermark value={drivers.length} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
+              <div className="relative z-10 flex flex-col h-full justify-between p-2">
+                <h3 className="text-[11px] font-bold tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                    Active Drivers
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-500 dark:from-white dark:to-slate-500 pb-1">{drivers.length}</p>
-              </div>
-            </V2Card>
-          </div>
-          <div className="col-span-1 md:col-span-2 h-[160px]">
-            <V2Card hoverColor="blue" className="flex flex-col justify-center items-start lg:items-end">
-              <div className="relative z-10 text-left lg:text-right w-full">
-                 <p className="hidden lg:block text-xs font-mono text-slate-500 mb-4">Fleet units, periodic inspections, and driver credentials.</p>
-                 <div className="flex flex-wrap gap-2 justify-start lg:justify-end">
-                   <Link href="/admin/transportation/requests/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-600 border-none")} >
-                     + Transport request
-                   </Link>
-                   <Link href="/admin/transportation/vehicles/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none")} >
-                     + Vehicle
-                   </Link>
-                   <Link href="/admin/transportation/inspections/new" className={cn(buttonVariants({ variant: "outline" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800")} >
-                     + Inspection
-                   </Link>
-                 </div>
+                <p className="text-6xl font-display font-medium tracking-tight text-emerald-600 dark:text-emerald-400 pb-1">{drivers.length}</p>
               </div>
             </V2Card>
           </div>
         </KineticGrid>
 
       {facilityReady && (
-        <div className="rounded-2xl border border-slate-200/80 bg-white/50 px-4 py-4 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-950/40">
-          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="glass-panel rounded-[2.5rem] border border-slate-200/60 bg-white/60 p-6 md:p-8 shadow-sm backdrop-blur-3xl dark:border-white/5 dark:bg-white/[0.015]">
+          <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between px-2 text-slate-800 dark:text-slate-200">
             <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                Upcoming resident transport
+              <h3 className="text-[14px] font-bold uppercase tracking-widest flex items-center gap-2">
+                <PulseDot colorClass="bg-indigo-500" />
+                Upcoming Resident Transport
               </h3>
-              <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                Appointments on or after today, grouped by day. Open a row to assign vehicle/driver and complete.
+              <p className="mt-2 text-sm font-medium text-slate-500 dark:text-slate-400">
+                Appointments on or after today. Open a row to assign a vehicle, driver, and complete.
               </p>
             </div>
             <Link
               href="/admin/transportation/requests/new"
-              className={cn(buttonVariants({ size: "sm", variant: "outline" }), "shrink-0 text-xs")}
+              className={cn(buttonVariants({ size: "default", variant: "outline" }), "shrink-0 h-12 rounded-full px-6 text-[10px] font-bold uppercase tracking-widest dark:border-white/10 bg-white dark:bg-white/5 shadow-sm")}
             >
-              New request
+              Log Request
             </Link>
           </div>
           {loading ? (
-            <p className="text-sm font-mono text-slate-500">Loading requests…</p>
+            <p className="text-sm font-mono text-slate-500 py-10 pl-2">Loading trips…</p>
           ) : transportRequests.length === 0 ? (
-            <p className="text-sm text-slate-600 dark:text-slate-300">
-              No upcoming transport requests on file for this facility.
-            </p>
+            <div className="p-16 text-center text-slate-500 bg-white/50 dark:bg-white/[0.02] rounded-[2.5rem] border border-dashed border-slate-200 dark:border-white/10 mx-2">
+               <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No scheduled trips</p>
+              <p className="text-sm opacity-80 mt-1">No upcoming transport requests on file.</p>
+            </div>
           ) : (
-            <div className="space-y-5">
+            <div className="space-y-12">
               {upcomingByDay.map((group) => (
                 <div key={group.dateStr}>
-                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  <p className="mb-4 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 pl-2">
                     {formatUpcomingDayLabel(group.dateStr)}
-                    <span className="ml-2 font-normal normal-case text-slate-400">
-                      ({group.rows.length} trip{group.rows.length === 1 ? "" : "s"})
+                    <span className="ml-2 font-normal text-slate-400">
+                      — {group.rows.length} Trip{group.rows.length === 1 ? "" : "s"}
                     </span>
                   </p>
-                  <MotionList className="space-y-2">
+                  <MotionList className="space-y-3">
                     {group.rows.map((row) => {
                       const name = row.residents
                         ? `${row.residents.first_name} ${row.residents.last_name}`
@@ -360,24 +373,44 @@ export default function AdminTransportationHubPage() {
                       return (
                         <MotionItem
                           key={row.id}
-                          className="rounded-xl border border-slate-200/90 bg-white/80 dark:border-slate-800 dark:bg-slate-900/50"
+                          className="rounded-[1.5rem] border border-slate-200/90 bg-white dark:border-white/5 dark:bg-white/[0.03] shadow-sm transform-gpu transition-colors hover:border-indigo-300 dark:hover:border-indigo-500/40 group overflow-hidden"
                         >
                           <Link
                             href={`/admin/transportation/requests/${row.id}`}
-                            className="flex flex-col gap-1 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between hover:bg-slate-50/80 dark:hover:bg-slate-800/50"
+                            className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between w-full h-full outline-none"
                           >
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{name}</p>
-                              <p className="truncate text-xs text-slate-600 dark:text-slate-400">
-                                {row.destination_name}
-                                {row.purpose ? ` · ${row.purpose}` : ""}
-                              </p>
+                            <div className="min-w-0 flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
+                                 <Bus className="w-5 h-5 text-indigo-500" />
+                              </div>
+                              <div>
+                                <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{name}</p>
+                                <p className="truncate text-sm font-medium text-slate-600 dark:text-slate-400 mt-1 flex items-center gap-2">
+                                  <MapPin className="w-3.5 h-3.5 opacity-50" />
+                                  {row.destination_name}
+                                  {row.purpose ? <><span className="opacity-30">•</span>{row.purpose}</> : ""}
+                                </p>
+                              </div>
                             </div>
-                            <div className="flex shrink-0 flex-wrap items-center gap-2 text-xs">
-                              <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                                {format(apptDate, "EEE MMM d")} · {formatAppointmentTime(row.appointment_time)}
-                              </span>
-                              <span className="capitalize text-slate-600 dark:text-slate-300">{formatEnum(row.status)}</span>
+                            <div className="flex shrink-0 flex-wrap items-center gap-4">
+                              <div className="flex flex-col items-end">
+                                <span className="font-bold uppercase tracking-widest text-[10px] text-slate-400 mb-1">Time</span>
+                                <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 flex items-center gap-1.5 border border-indigo-100 dark:border-indigo-500/20">
+                                  <Clock className="w-3 h-3" />
+                                  {format(apptDate, "EEE MMM d")} · {formatAppointmentTime(row.appointment_time)}
+                                </span>
+                              </div>
+                              <div className="flex flex-col items-end">
+                                <span className="font-bold uppercase tracking-widest text-[10px] text-slate-400 mb-1">Status</span>
+                                <span className={cn(
+                                  "rounded-full px-4 py-1 text-xs font-bold uppercase tracking-widest border",
+                                  row.status === "scheduled" ? "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" :
+                                  row.status === "completed" ? "bg-slate-100 border-slate-200 text-slate-600 dark:bg-white/5 dark:text-slate-400 dark:border-white/10" :
+                                  "bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20"
+                                )}>
+                                  {formatEnum(row.status)}
+                                </span>
+                              </div>
                             </div>
                           </Link>
                         </MotionItem>
@@ -392,13 +425,13 @@ export default function AdminTransportationHubPage() {
       )}
 
       {!facilityReady && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+        <p className="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-6 py-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100 shadow-sm font-medium">
           Select a facility to load fleet and driver records.
         </p>
       )}
 
       {error && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
+        <p className="rounded-[1.5rem] border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100 shadow-sm font-medium">
           {error}
         </p>
       )}
@@ -408,24 +441,24 @@ export default function AdminTransportationHubPage() {
           
           {/* ACTION QUEUE: Credential & Insurance Expiries */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-white/10 dark:border-white/5">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10 dark:border-white/5 mb-4 pl-2">
+              <h3 className="text-[12px] font-bold uppercase tracking-widest text-slate-800 dark:text-slate-200">
                 Compliance Blockers
               </h3>
             </div>
             
             <MotionList className="space-y-3">
               {loading ? (
-                <p className="text-sm font-mono text-slate-500">Loading…</p>
+                <p className="text-sm font-mono text-slate-500 pl-2">Loading…</p>
               ) : driverAlerts.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md">
-                  <p className="font-medium">
-                    {drivers.length === 0 && fleet.length === 0 ? "Inbox Zero" : "No driver alerts"}
+                <div className="p-12 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-[2rem] border border-dashed border-white/20 dark:border-white/5 backdrop-blur-md">
+                  <p className="font-semibold text-lg">
+                    {drivers.length === 0 && fleet.length === 0 ? "Inbox Zero" : "No Driver Alerts"}
                   </p>
-                  <p className="text-sm opacity-80">
+                  <p className="text-sm opacity-80 mt-1">
                     {drivers.length === 0 && fleet.length === 0
                       ? "Add fleet vehicles and driver credentials to track compliance."
-                      : `No license or medical card expiring within ${COMPLIANCE_WINDOW_DAYS} days (Track D data-driven reminders).`}
+                      : `No license or medical card expiring within ${COMPLIANCE_WINDOW_DAYS} days.`}
                   </p>
                 </div>
               ) : (
@@ -435,51 +468,51 @@ export default function AdminTransportationHubPage() {
                     <MotionItem
                       key={a.key}
                       className={cn(
-                        "p-5 rounded-2xl border shadow-sm backdrop-blur-xl relative overflow-hidden group transition-colors",
+                        "p-6 rounded-[2rem] border shadow-sm backdrop-blur-xl relative overflow-hidden group transition-colors",
                         critical
-                          ? "border-red-200 dark:border-red-900/30 bg-white/60 dark:bg-slate-900/60 hover:border-red-300 dark:hover:border-red-800/50"
-                          : "border-amber-200 dark:border-amber-900/30 bg-white/60 dark:bg-slate-900/60 hover:border-amber-300 dark:hover:border-amber-800/50",
+                          ? "border-red-200 dark:border-red-900/40 bg-white/60 dark:bg-slate-900/60 hover:border-red-300 dark:hover:border-red-800/60"
+                          : "border-amber-200 dark:border-amber-900/40 bg-white/60 dark:bg-slate-900/60 hover:border-amber-300 dark:hover:border-amber-800/60",
                       )}
                     >
                       <div
                         className={cn(
-                          "absolute top-0 left-0 w-1 h-full",
+                          "absolute top-0 left-0 w-1.5 h-full",
                           critical ? "bg-red-500" : "bg-amber-500",
                         )}
                       />
-                      <div className="flex justify-between items-start mb-3">
+                      <div className="flex justify-between items-start mb-4 pl-1">
                         <span
                           className={cn(
-                            "text-xs font-bold px-2 py-1 rounded-md uppercase tracking-wider",
+                            "text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border",
                             critical
-                              ? "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50"
-                              : "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50",
+                              ? "text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20"
+                              : "text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20",
                           )}
                         >
                           {a.daysUntil < 0 ? "Expired" : a.daysUntil <= 14 ? "Action needed" : "Upcoming"}
                         </span>
-                        <span className="text-xs text-slate-500 font-mono font-medium">
+                        <span className="text-xs text-slate-500 font-bold uppercase tracking-widest">
                           {formatAlertDeadline(a.daysUntil)}
                         </span>
                       </div>
-                      <div className="mb-4">
-                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
-                          {a.title} — {a.staffName}
+                      <div className="mb-5 pl-1">
+                        <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight leading-tight mb-2">
+                          {a.title} &mdash; {a.staffName}
                         </p>
-                        <p className="text-xs text-slate-600 dark:text-slate-400">
+                        <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
                           On file until {format(parseISO(a.expiresOn.length <= 10 ? `${a.expiresOn}T12:00:00.000Z` : a.expiresOn), "MMM d, yyyy")}.
                         </p>
                       </div>
-                      <div className="flex justify-start">
+                      <div className="flex justify-start pl-1 mt-2">
                         <Link
                           href={`/admin/staff/${a.staffId}`}
                           className={cn(
                             buttonVariants({ variant: "default", size: "sm" }),
-                            "font-mono uppercase tracking-widest text-[10px]",
-                            critical ? "bg-red-600 hover:bg-red-700 text-white" : "bg-amber-600 hover:bg-amber-700 text-white",
+                            "h-10 rounded-full px-6 font-bold uppercase tracking-widest text-[10px]",
+                            critical ? "bg-red-600 hover:bg-red-700 text-white shadow-md" : "bg-amber-500 hover:bg-amber-600 text-white shadow-md",
                           )}
                         >
-                          Open staff record
+                          Open Staff Record
                         </Link>
                       </div>
                     </MotionItem>
@@ -491,22 +524,22 @@ export default function AdminTransportationHubPage() {
           </div>
 
           {/* WATCHLIST: Fleet Inspections */}
-          <div className="space-y-4 lg:pl-6 lg:border-l border-white/10 dark:border-white/5 pt-6 lg:pt-0">
-            <div className="flex items-center justify-between pb-2 border-b border-white/10 dark:border-white/5 mb-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+          <div className="space-y-4 lg:pl-6 lg:border-l border-transparent dark:border-transparent pt-6 lg:pt-0">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10 dark:border-white/5 mb-4 pl-2">
+              <h3 className="text-[12px] font-bold uppercase tracking-widest text-slate-800 dark:text-slate-200">
                 Fleet Readiness
               </h3>
             </div>
             
             <MotionList className="space-y-3">
               {loading ? (
-                <p className="text-sm font-mono text-slate-500">Loading…</p>
+                <p className="text-sm font-mono text-slate-500 pl-2">Loading…</p>
               ) : vehicleAlerts.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md">
-                  <p className="font-medium">
-                    {fleet.length === 0 ? "No fleet units" : "No vehicle policy alerts"}
+                <div className="p-12 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-[2rem] border border-dashed border-white/20 dark:border-white/5 backdrop-blur-md">
+                  <p className="font-semibold text-lg">
+                    {fleet.length === 0 ? "No Fleet Units" : "No Vehicle Alerts"}
                   </p>
-                  <p className="text-sm opacity-80">
+                  <p className="text-sm opacity-80 mt-1">
                     {fleet.length === 0
                       ? "Register a vehicle to track insurance and registration expirations."
                       : `No insurance or registration expiring within ${COMPLIANCE_WINDOW_DAYS} days.`}
@@ -519,49 +552,51 @@ export default function AdminTransportationHubPage() {
                     <MotionItem
                       key={a.key}
                       className={cn(
-                        "p-5 rounded-2xl border shadow-sm backdrop-blur-xl relative overflow-hidden group transition-colors",
+                        "p-6 rounded-[2rem] border shadow-sm backdrop-blur-xl relative overflow-hidden group transition-colors",
                         critical
-                          ? "border-red-200 dark:border-red-900/30 bg-white/60 dark:bg-slate-900/60 hover:border-red-300 dark:hover:border-red-800/50"
-                          : "border-amber-200 dark:border-amber-900/30 bg-white/60 dark:bg-slate-900/60 hover:border-amber-300 dark:hover:border-amber-800/50",
+                          ? "border-red-200 dark:border-red-900/40 bg-white/60 dark:bg-slate-900/60 hover:border-red-300 dark:hover:border-red-800/60"
+                          : "border-amber-200 dark:border-amber-900/40 bg-white/60 dark:bg-slate-900/60 hover:border-amber-300 dark:hover:border-amber-800/60",
                       )}
                     >
                       <div
                         className={cn(
-                          "absolute top-0 left-0 w-1 h-full",
+                          "absolute top-0 left-0 w-1.5 h-full",
                           critical ? "bg-red-500" : "bg-amber-500",
                         )}
                       />
-                      <div className="flex justify-between items-start mb-3">
+                      <div className="flex justify-between items-start mb-4 pl-1">
                         <span
                           className={cn(
-                            "text-xs font-bold px-2 py-1 rounded-md uppercase tracking-wider",
+                            "text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border",
                             critical
-                              ? "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50"
-                              : "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50",
+                              ? "text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20"
+                              : "text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20",
                           )}
                         >
                           {a.title}
                         </span>
-                        <span className="text-xs text-slate-500 font-mono font-medium">
+                        <span className="text-xs text-slate-500 font-bold uppercase tracking-widest">
                           {formatAlertDeadline(a.daysUntil)}
                         </span>
                       </div>
-                      <div className="mb-4">
-                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">{a.vehicleName}</p>
-                        <p className="text-xs text-slate-600 dark:text-slate-400">
+                      <div className="mb-5 pl-1">
+                        <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight leading-tight mb-2">
+                          {a.vehicleName}
+                        </p>
+                        <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
                           Renewal date {format(parseISO(a.expiresOn.length <= 10 ? `${a.expiresOn}T12:00:00.000Z` : a.expiresOn), "MMM d, yyyy")}.
                         </p>
                       </div>
-                      <div className="flex justify-start">
+                      <div className="flex justify-start pl-1 mt-2">
                         <Link
                           href="/admin/transportation/inspections/new"
                           className={cn(
                             buttonVariants({ variant: "default", size: "sm" }),
-                            "font-mono uppercase tracking-widest text-[10px]",
-                            critical ? "bg-red-600 hover:bg-red-700 text-white" : "bg-amber-600 hover:bg-amber-700 text-white",
+                            "h-10 rounded-full px-6 font-bold uppercase tracking-widest text-[10px]",
+                            critical ? "bg-white text-red-600 hover:bg-slate-100 shadow-md border border-red-200 dark:border-red-500/30 dark:bg-white/5 dark:text-red-400 dark:hover:bg-red-500/20" : "bg-white text-amber-600 hover:bg-slate-100 shadow-md border border-amber-200 dark:border-amber-500/30 dark:bg-white/5 dark:text-amber-400 dark:hover:bg-amber-500/20",
                           )}
                         >
-                          Log inspection / follow-up
+                          Log Inspection / Follow-up
                         </Link>
                       </div>
                     </MotionItem>
@@ -570,25 +605,29 @@ export default function AdminTransportationHubPage() {
               )}
 
               {/* Real historical inspections */}
-              <MotionList className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
-                 <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Recent Logs</h4>
-                 {inspections.slice(0, 3).map(row => (
-                   <MotionItem key={row.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex gap-4 items-center">
-                     <div className="flex-1 min-w-0">
-                       <p className="text-xs font-medium text-slate-900 dark:text-slate-300 truncate">
-                         {row.fleet_vehicles?.name ?? "Unknown"}
-                       </p>
-                       <p className="text-[10px] text-slate-500 truncate capitalize">Result: {formatEnum(row.result)}</p>
-                     </div>
-                     <span className="text-[10px] font-mono text-indigo-600 dark:text-indigo-400 text-right">
-                       {format(new Date(row.inspected_at), "MMM d")}
-                     </span>
-                   </MotionItem>
-                 ))}
-                 {inspections.length === 0 && !loading && (
-                   <p className="text-xs text-slate-500 italic">No historical inspections.</p>
-                 )}
-              </MotionList>
+              <div className="glass-panel mt-10 p-6 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.015]">
+                 <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 mb-4 ml-2">Recent Logs</h4>
+                 <MotionList className="space-y-3">
+                   {inspections.slice(0, 3).map(row => (
+                     <MotionItem key={row.id} className="p-4 rounded-[1.5rem] border border-slate-200/60 dark:border-white/5 bg-white dark:bg-white/[0.03] flex gap-4 items-center shadow-sm">
+                       <div className="flex-1 min-w-0">
+                         <p className="text-sm font-semibold text-slate-900 dark:text-slate-300 tracking-tight truncate">
+                           {row.fleet_vehicles?.name ?? "Unknown"}
+                         </p>
+                         <p className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate capitalize mt-1">
+                           Result: {formatEnum(row.result)}
+                         </p>
+                       </div>
+                       <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 text-right bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 px-3 py-1.5 rounded-full shrink-0">
+                         {format(new Date(row.inspected_at), "MMM d")}
+                       </span>
+                     </MotionItem>
+                   ))}
+                   {inspections.length === 0 && !loading && (
+                     <p className="text-sm text-slate-500 dark:text-zinc-500 font-medium px-2 py-4">No historical inspections have been logged.</p>
+                   )}
+                 </MotionList>
+              </div>
             </MotionList>
             
           </div>

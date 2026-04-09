@@ -343,7 +343,7 @@ CREATE POLICY "Clinical staff manage transport requests"
 
 3. **Mileage reimbursement requires approval before payroll.** `mileage_logs` rows are only included in payroll export batches (Module 13) when `approved_at IS NOT NULL`. Staff submit; manager approves.
 
-4. **Reimbursement rate sourced from org settings.** The `reimbursement_rate_cents` is populated at insert from `organization_settings.mileage_rate_cents` (seeded at IRS standard rate or COL's custom rate). Stored on the row at time of entry — not recalculated retroactively.
+4. **Reimbursement rate sourced from org transport settings.** The `reimbursement_rate_cents` is populated at insert from `organization_transport_settings.mileage_reimbursement_rate_cents` (migration **`114`**; editable by `owner` / `org_admin` on `/admin/transportation/settings`). If unset, application fallback matches prior IRS-like default (`DEFAULT_MILEAGE_RATE_CENTS`). Stored on the row at time of entry — not recalculated retroactively.
 
 5. **Wheelchair requirement must match vehicle.** If `resident_transport_requests.wheelchair_required = true`, the assigned `vehicle_id` must reference a vehicle where `wheelchair_accessible = true`. API validates on assignment.
 
@@ -351,18 +351,23 @@ CREATE POLICY "Clinical staff manage transport requests"
 
 ---
 
-## Org Settings (New Fields Required)
+## Org transport settings (implemented)
 
-The following settings must be added to the org/facility settings model to support this module:
+**Mileage reimbursement rate** lives in **`organization_transport_settings`** (PK `organization_id`), column **`mileage_reimbursement_rate_cents`** — see migration **`114_organization_transport_settings.sql`**. Admin UI: `/admin/transportation/settings`.
+
+The following **additional** org/facility settings are still **to be modeled** when MVR cadence is productized:
 
 ```
-organization_settings.mileage_rate_cents  integer   -- cents per mile (e.g., 70 = $0.70 IRS 2025)
-organization_settings.mvr_pull_frequency  text      -- 'annual', 'biennial'
+-- Future: e.g. organizations.settings or a dedicated table
+mvr_pull_frequency  text   -- 'annual', 'biennial'
 ```
 
 ---
 
 ## UI Screens (Core)
+
+### `/admin/transportation/settings` — Mileage reimbursement rate
+- **Owner / org_admin:** Edit per-organization **`mileage_reimbursement_rate_cents`** (stored in **`organization_transport_settings`**). Preview at sample mileages; read-only notice for other roles.
 
 ### `/admin/transportation` — Transportation Hub
 - **Fleet tab:** Vehicle list with insurance/registration expiry badges (red if expired, yellow if <30 days). Add/edit vehicle form. "Log Inspection" action per vehicle.

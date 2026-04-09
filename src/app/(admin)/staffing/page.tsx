@@ -9,9 +9,15 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { KineticGrid } from "@/components/ui/kinetic-grid";
+import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
+import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
+import { Sparkline } from "@/components/ui/moonshot/sparkline";
+import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 type SnapshotRow = {
   id: string;
@@ -107,13 +113,21 @@ export default function AdminStaffingConsolePage() {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-12">
-      <header className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between shrink-0 pl-1">
+      <AmbientMatrix hasCriticals={shiftGaps.length > 0 || certWarnings.length > 0} 
+        primaryClass="bg-rose-700/10"
+        secondaryClass="bg-red-900/10"
+        criticalPrimaryClass="bg-red-700/20"
+        criticalSecondaryClass="bg-rose-900/10"
+      />
+      
+      <header className="relative z-10 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between shrink-0 pl-1 mb-8">
         <div>
-          <h2 className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 18 / Command</p>
+          <h2 className="font-display text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
             Workforce Command 
-            {shiftGaps.length > 0 && <span className="flex h-2.5 w-2.5 rounded-full bg-rose-500 animate-pulse ml-2" />}
+            {(shiftGaps.length > 0 || certWarnings.length > 0) && <PulseDot colorClass="bg-rose-500" />}
           </h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-sm font-mono text-slate-500 dark:text-slate-400">
             Real-time HPPD variance, schedule gaps, and compliance warnings.
           </p>
         </div>
@@ -128,138 +142,143 @@ export default function AdminStaffingConsolePage() {
       </header>
 
       {/* Exception Metrics (Top Grid) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4 relative z-10 mb-8" staggerMs={75}>
         {/* Metric 1: HPPD */}
-        <Card className="border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden bg-white dark:bg-slate-950">
-           <div className="absolute top-0 right-0 p-4 opacity-10">
-             <Activity className="w-16 h-16" />
-           </div>
-           <CardContent className="p-5 flex flex-col justify-between h-full relative z-10">
-             <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Current HPPD</span>
-             <div className="mt-2 flex items-end gap-3">
-                <span className={cn("text-4xl font-display font-medium tracking-tight", actualHPPD < targetHPPD ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400")}>
-                  {actualHPPD}
-                </span>
-                <span className="text-sm font-medium text-slate-400 mb-1">vs {targetHPPD} Target</span>
+        <div className="h-[160px]">
+          <V2Card hoverColor="blue">
+            <Sparkline colorClass="text-blue-500" variant={3} />
+             <div className="relative z-10 flex flex-col h-full justify-between">
+               <span className="text-[10px] font-mono tracking-widest uppercase flex items-center gap-2 text-slate-500"><Activity className="w-3.5 h-3.5" /> Current HPPD</span>
+               <div>
+                  <div className="mt-2 flex items-baseline gap-3">
+                    <span className={cn("text-5xl font-mono tracking-tighter pb-1", actualHPPD < targetHPPD ? "text-amber-500" : "text-emerald-500")}>
+                      {actualHPPD}
+                    </span>
+                    <span className="text-xs font-mono text-slate-400 uppercase tracking-widest">vs {targetHPPD} Target</span>
+                  </div>
+                  <p className="mt-1 text-[10px] uppercase font-mono tracking-widest text-amber-500 font-bold">-0.3 variance across active shifts. Risk of missing state minimums.</p>
+               </div>
              </div>
-             <p className="mt-2 text-xs text-amber-600 dark:text-amber-500 font-medium">-0.3 variance across active shifts. Risk of missing state minimums.</p>
-           </CardContent>
-        </Card>
+          </V2Card>
+        </div>
 
         {/* Metric 2: Unstaffed Next 48h */}
-        <Card className={cn("border-rose-200 dark:border-rose-900/50 shadow-sm relative overflow-hidden bg-rose-50/50 dark:bg-rose-950/20")}>
-           <div className="absolute top-0 right-0 p-4 opacity-10 text-rose-500">
-             <Users className="w-16 h-16" />
-           </div>
-           <CardContent className="p-5 flex flex-col justify-between h-full relative z-10">
-             <span className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">Open Shifts (48h)</span>
-             <div className="mt-2 flex items-end gap-3">
-                <span className="text-4xl font-display font-medium tracking-tight text-rose-700 dark:text-rose-400">
-                  {shiftGaps.reduce((sum, g) => sum + g.shortage, 0)}
-                </span>
-                <span className="text-sm font-medium text-rose-600/70 mb-1">roles unfilled</span>
+        <div className="h-[160px]">
+          <V2Card hoverColor="rose" className="border-rose-500/20 shadow-[inset_0_0_15px_rgba(244,63,94,0.05)] bg-rose-500/5">
+             <MonolithicWatermark value={shiftGaps.reduce((sum, g) => sum + g.shortage, 0).toString()} className="text-rose-500/10" />
+             <div className="relative z-10 flex flex-col h-full justify-between">
+               <span className="text-[10px] font-mono tracking-widest uppercase flex items-center gap-2 text-rose-500"><Users className="w-3.5 h-3.5" /> Open Shifts (48h)</span>
+               <div>
+                  <div className="mt-2 flex items-baseline gap-3">
+                    <span className="text-5xl font-mono tracking-tighter text-rose-500 pb-1">
+                      {shiftGaps.reduce((sum, g) => sum + g.shortage, 0)}
+                    </span>
+                    <span className="text-xs text-rose-500/70 font-mono uppercase tracking-widest">roles unfilled</span>
+                  </div>
+                  <p className="mt-1 text-[10px] uppercase font-mono tracking-widest text-rose-500 font-bold">Critical coverage gaps detected in Night shift.</p>
+               </div>
              </div>
-             <p className="mt-2 text-xs text-rose-700 dark:text-rose-400 font-medium">Critical coverage gaps detected in Night shift.</p>
-           </CardContent>
-        </Card>
+          </V2Card>
+        </div>
 
         {/* Metric 3: Certifications */}
-        <Card className={cn("border-amber-200 dark:border-amber-900/50 shadow-sm relative overflow-hidden bg-amber-50/50 dark:bg-amber-950/20")}>
-           <div className="absolute top-0 right-0 p-4 opacity-10 text-amber-500">
-             <FileWarning className="w-16 h-16" />
-           </div>
-           <CardContent className="p-5 flex flex-col justify-between h-full relative z-10">
-             <span className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Expired Credentials</span>
-             <div className="mt-2 flex items-end gap-3">
-                <span className="text-4xl font-display font-medium tracking-tight text-amber-700 dark:text-amber-400">
-                  {certWarnings.length}
-                </span>
-                <span className="text-sm font-medium text-amber-600/70 mb-1">staff on duty</span>
+        <div className="h-[160px]">
+          <V2Card hoverColor="amber" className="border-amber-500/20 shadow-[inset_0_0_15px_rgba(245,158,11,0.05)] bg-amber-500/5">
+             <MonolithicWatermark value={certWarnings.length.toString()} className="text-amber-500/10" />
+             <div className="relative z-10 flex flex-col h-full justify-between">
+               <span className="text-[10px] font-mono tracking-widest uppercase flex items-center gap-2 text-amber-500"><FileWarning className="w-3.5 h-3.5" /> Expired Credentials</span>
+               <div>
+                  <div className="mt-2 flex items-baseline gap-3">
+                    <span className="text-5xl font-mono tracking-tighter text-amber-500 pb-1">
+                      {certWarnings.length}
+                    </span>
+                    <span className="text-xs text-amber-500/70 font-mono uppercase tracking-widest">staff on duty</span>
+                  </div>
+                  <p className="mt-1 text-[10px] uppercase font-mono tracking-widest text-amber-500 font-bold">1 staff member blocked from assignment due to state registry expiry.</p>
+               </div>
              </div>
-             <p className="mt-2 text-xs text-amber-700 dark:text-amber-400 font-medium">1 staff member blocked from assignment due to state registry expiry.</p>
-           </CardContent>
-        </Card>
-      </div>
+          </V2Card>
+        </div>
+      </KineticGrid>
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-6 relative z-10">
          {/* Exception UI: Unstaffed Gaps */}
-         <Card className="border-slate-200 shadow-sm dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col">
-            <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
-               <CardTitle className="text-sm font-semibold flex items-center justify-between text-slate-800 dark:text-slate-200">
-                 Shift Assignment Gaps
-                 <Badge variant="secondary" className="font-normal text-[10px] bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200">Priority Dispatch</Badge>
-               </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 flex-1">
-               <div className="divide-y divide-slate-100 dark:divide-slate-800/60 p-3">
-                 {shiftGaps.map(gap => (
-                    <div key={gap.id} className="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm mb-3">
-                       <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                             <Clock className={cn("w-4 h-4", gap.urgency === "critical" ? "text-rose-500" : "text-amber-500")} />
-                             <span className="font-semibold text-sm text-slate-900 dark:text-slate-100">{gap.date} · {gap.shift}</span>
+         <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+               <h3 className="text-sm font-display font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">Shift Assignment Gaps</h3>
+               <Badge className="font-bold text-[9px] uppercase tracking-widest bg-rose-500/20 text-rose-500 dark:text-rose-400 border-none shadow-sm">Priority Dispatch</Badge>
+            </div>
+            <MotionList className="space-y-3">
+              {shiftGaps.map(gap => (
+                 <MotionItem key={gap.id}>
+                    <div className="glass-panel p-5 rounded-2xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 relative overflow-hidden group">
+                       <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                             <Clock className={cn("w-5 h-5", gap.urgency === "critical" ? "text-rose-500" : "text-amber-500")} />
+                             <span className="font-bold font-mono text-xs text-slate-900 dark:text-slate-100 uppercase tracking-widest">{gap.date} · {gap.shift}</span>
                           </div>
                           <Badge variant="outline" className={cn(
-                             "h-5 px-1.5 text-[10px] font-bold rounded-sm border-0",
-                             gap.urgency === "critical" ? "bg-rose-100 text-rose-800 dark:bg-rose-950/50 dark:text-rose-300" : "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+                             "h-6 px-2 text-[10px] tracking-widest font-mono font-bold rounded-md border-0 uppercase uppercase",
+                             gap.urgency === "critical" ? "bg-rose-500/20 text-rose-800 dark:text-rose-300" : "bg-amber-500/20 text-amber-800 dark:text-amber-300"
                           )}>
                              SHORT {gap.shortage} {gap.role}
                           </Badge>
                        </div>
-                       <div className="mt-4 flex gap-2">
-                          <Button size="sm" variant="default" className="w-full text-xs h-8 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900">
-                             <CalendarPlus className="w-3 h-3 mr-2" /> Broadcast to PRN Pool
+                       <div className="flex gap-2 w-full">
+                          <Button size="sm" className="w-full font-mono uppercase tracking-widest text-[9px] font-bold h-9 bg-slate-900/90 dark:bg-white/90 hover:bg-black dark:hover:bg-white text-white dark:text-black">
+                             <CalendarPlus className="w-3.5 h-3.5 mr-2" /> Broadcast to PRN
                           </Button>
-                          <Button size="sm" variant="outline" className="w-full text-xs h-8">
+                          <Button size="sm" variant="outline" className="w-full font-mono uppercase tracking-widest text-[9px] font-bold h-9 bg-white/50 dark:bg-black/50 border-white/20 dark:border-white/5">
                              Mandate Agency
                           </Button>
                        </div>
                     </div>
-                 ))}
-               </div>
-            </CardContent>
-         </Card>
+                 </MotionItem>
+              ))}
+            </MotionList>
+         </div>
 
          {/* Exception UI: Credential Blocks */}
-         <Card className="border-slate-200 shadow-sm dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col">
-            <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
-               <CardTitle className="text-sm font-semibold flex items-center justify-between text-slate-800 dark:text-slate-200">
-                 Credential Warnings (Blockers)
-                 <Link href="/admin/certifications" className="text-[10px] font-medium text-brand-600 hover:text-brand-700">View All</Link>
-               </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 flex-1">
-               <div className="divide-y divide-slate-100 dark:divide-slate-800/60 p-3">
-                 {certWarnings.map(cert => (
-                    <div key={cert.id} className="p-3 mb-2 flex items-center justify-between rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/30 dark:bg-rose-950/10">
-                       <div className="flex flex-col">
-                          <span className="font-semibold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                            {cert.staffName} <Badge variant="secondary" className="text-[9px] h-4 px-1">{cert.role}</Badge>
+         <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+               <h3 className="text-sm font-display font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">Credential Warnings (Blockers)</h3>
+               <Link href="/admin/certifications" className="text-[10px] font-mono tracking-widest uppercase font-bold text-indigo-500 hover:text-indigo-400">View All</Link>
+            </div>
+            
+            <MotionList className="space-y-3">
+              {certWarnings.map(cert => (
+                 <MotionItem key={cert.id}>
+                    <div className="glass-panel p-4 rounded-2xl border border-rose-500/30 dark:border-rose-500/20 bg-rose-500/5 relative overflow-hidden group flex items-center justify-between">
+                       <div className="flex flex-col gap-1">
+                          <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                            {cert.staffName} <Badge className="text-[9px] uppercase font-mono bg-white/50 dark:bg-black/50 text-slate-900 dark:text-slate-100 border-none shadow-sm">{cert.role}</Badge>
                           </span>
-                          <span className="text-xs text-rose-600 dark:text-rose-400 mt-0.5">
+                          <span className="text-xs font-mono font-semibold tracking-wide text-rose-600 dark:text-rose-400">
                             {cert.certName} expired {cert.daysExpired} days ago
                           </span>
                        </div>
-                       <Button size="sm" variant="outline" className="h-7 text-xs px-3 border-rose-200 text-rose-700 hover:bg-rose-100">
+                       <Button size="sm" variant="outline" className="font-mono uppercase tracking-widest text-[9px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20">
                           Remove from Shift
                        </Button>
                     </div>
+                 </MotionItem>
+              ))}
+            </MotionList>
+            
+            <div className="mt-4 glass-panel p-5 rounded-2xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40">
+               <p className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500 mb-4">Recent Ratio Snapshots (Historical)</p>
+               <div className="flex flex-col gap-3">
+                 {snapshots.slice(0, 3).map(snap => (
+                    <div key={snap.id} className="flex justify-between items-center text-sm">
+                      <span className="font-mono text-xs text-slate-600 dark:text-slate-400">{new Date(snap.snapshotAt).toLocaleDateString()} {snap.shift}</span>
+                      <span className={cn("font-mono text-xs font-bold uppercase tracking-widest", snap.isCompliant ? "text-emerald-500" : "text-rose-500")}>
+                         {snap.ratio.toFixed(1)} Ratio {snap.isCompliant ? "(OK)" : "(Fail)"}
+                      </span>
+                    </div>
                  ))}
-                 
-                 <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-4 px-1">
-                    <p className="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">Recent Ratio Snapshots (Historical)</p>
-                    {snapshots.slice(0, 3).map(snap => (
-                       <div key={snap.id} className="flex justify-between items-center py-2 text-sm text-slate-600 dark:text-slate-400">
-                         <span>{new Date(snap.snapshotAt).toLocaleDateString()} {snap.shift}</span>
-                         <span className={snap.isCompliant ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-rose-600 dark:text-rose-400 font-bold"}>
-                            {snap.ratio.toFixed(1)} Ratio {snap.isCompliant ? "(OK)" : "(Fail)"}
-                         </span>
-                       </div>
-                    ))}
-                 </div>
                </div>
-            </CardContent>
-         </Card>
+            </div>
+         </div>
       </div>
 
     </div>

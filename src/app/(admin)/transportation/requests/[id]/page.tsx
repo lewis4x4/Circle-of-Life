@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { DEFAULT_MILEAGE_RATE_CENTS } from "@/lib/transport/mileage-defaults";
+import { formatCentsPerMileUsd, getOrganizationMileageRateCents } from "@/lib/transport/org-mileage-rate";
 import {
   mileageLogLinkSchema,
   normalizeTimeForDb,
@@ -88,6 +89,7 @@ export default function EditResidentTransportRequestPage() {
   const [mileageDestination, setMileageDestination] = useState("");
   const [mileageMiles, setMileageMiles] = useState("");
   const [mileageRoundTrip, setMileageRoundTrip] = useState(false);
+  const [orgMileageRateCents, setOrgMileageRateCents] = useState(DEFAULT_MILEAGE_RATE_CENTS);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -142,6 +144,8 @@ export default function EditResidentTransportRequestPage() {
       }
       const r = req as RequestRow;
       setRow(r);
+      const rateCents = await getOrganizationMileageRateCents(supabase, r.organization_id);
+      setOrgMileageRateCents(rateCents);
       if (fac?.name) setFacilityName(fac.name);
       setStaffOptions((staffRes.data ?? []) as { id: string; first_name: string; last_name: string }[]);
       setFleetOptions(
@@ -289,7 +293,8 @@ export default function EditResidentTransportRequestPage() {
         if (!ml.success) throw new Error(ml.error.issues.map((x) => x.message).join(" "));
         const milesNum = ml.data.miles;
         const totalMiles = ml.data.round_trip ? milesNum * 2 : milesNum;
-        const reimbursement_amount_cents = Math.round(totalMiles * DEFAULT_MILEAGE_RATE_CENTS);
+        const rateCents = await getOrganizationMileageRateCents(supabase, ctx.ctx.organizationId);
+        const reimbursement_amount_cents = Math.round(totalMiles * rateCents);
 
         const { data: existingMl } = await supabase
           .from("mileage_logs")
@@ -308,7 +313,7 @@ export default function EditResidentTransportRequestPage() {
             destination: ml.data.destination,
             round_trip: ml.data.round_trip,
             miles: milesNum,
-            reimbursement_rate_cents: DEFAULT_MILEAGE_RATE_CENTS,
+            reimbursement_rate_cents: rateCents,
             reimbursement_amount_cents,
             resident_id: row.resident_id,
             transport_request_id: row.id,
@@ -559,8 +564,12 @@ export default function EditResidentTransportRequestPage() {
                   Optional mileage log (staff personal vehicle)
                 </h3>
                 <p className="mt-1 text-xs text-indigo-800/90 dark:text-indigo-200/90">
-                  If you set status to Completed, you can log reimbursable miles linked to this request (spec Enhanced).
-                  Rate: {DEFAULT_MILEAGE_RATE_CENTS}¢/mi. Leave miles blank to skip.
+                  If you set status to Completed, you can log reimbursable miles linked to this request. Effective rate:{" "}
+                  <strong>{formatCentsPerMileUsd(orgMileageRateCents)}</strong> per mile (snapshotted on the mileage log).{" "}
+                  <Link href="/admin/transportation/settings" className="underline underline-offset-2 hover:text-indigo-950 dark:hover:text-white">
+                    Organization reimbursement settings
+                  </Link>
+                  . Leave miles blank to skip.
                 </p>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1">

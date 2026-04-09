@@ -7758,6 +7758,41 @@ export type Database = {
           },
         ]
       }
+      organization_transport_settings: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          mileage_reimbursement_rate_cents: number
+          organization_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          mileage_reimbursement_rate_cents?: number
+          organization_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          mileage_reimbursement_rate_cents?: number
+          organization_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_transport_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           address_line_1: string | null

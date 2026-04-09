@@ -69,7 +69,7 @@ Use `Tester` to record the human who ran the step. Use `Notes` to capture:
 | ID | Item | Result | Tester | Date | Notes |
 |----|------|--------|--------|------|-------|
 | PH1-P01 | `.env.local` → correct Supabase project | **PASS** | owner | 2026-04-06 | Brian Lewis confirmed active project **`manfqmasfqppukpobpld`** (Supabase Authentication UI, PRODUCTION). Repo canonical URL: `https://manfqmasfqppukpobpld.supabase.co` ([README.md](./README.md)). Owner still responsible to keep local `.env.local` host aligned (never commit secrets). |
-| PH1-P02 | Migrations applied / list aligned remote | **VERIFY** | owner | 2026-04-09 | Repo includes **001–113**; owner keeps `supabase migration list` Local/Remote aligned on target (includes **`110`–`111`** for JWT `app_role` + `user_profiles.updated_by`, and **`112`–`113`** transport/mileage as applicable) |
+| PH1-P02 | Migrations applied / list aligned remote | **VERIFY** | owner | 2026-04-09 | Repo includes **001–114**; owner keeps `supabase migration list` Local/Remote aligned on target (includes **`110`–`111`** for JWT `app_role` + `user_profiles.updated_by`, **`112`–`113`** transport/mileage, **`114`** org transport settings as applicable) |
 | PH1-P03 | Seeded users + roles + facility access | **PASS** | owner | 2026-04-09 | Pilot users sign in; JWT includes `app_metadata.app_role` after **`110`**; `user_profiles` aligned per **`111`**. Confirmed live for owner, facility_admin, caregiver, family — see **Owner verification — 2026-04-09** above. |
 | PH1-P04 | Facility context in admin shell | PENDING | | | Spot-check facility selector on `/admin` when completing §B UAT; single-facility pilot still acceptable |
 | PH1-P05 | Storage buckets (if/when uploads added) | **N/A** | | | No Storage in Phase 1 UI per checklist |
@@ -138,6 +138,7 @@ Use `Tester` to record the human who ran the step. Use `Notes` to capture:
 | PH1-TD4 | D4 Module 22+23 — `/admin/referrals` HL7 pending/failed counts + SYS label; `/admin/reputation` SYS Module 23 + memoized reply lists | **PASS (repo)** | agent | 2026-04-09 | Gate: `test-results/agent-gates/2026-04-09T00-41-37-766Z-track-d-phase6-d4-referral-crm-reputation.json` |
 | PH1-TD5 | D5 Module 15 — migration `112` `resident_transport_requests` + `/admin/transportation` upcoming request list | **PASS (repo)** | agent | 2026-04-09 | Gate: `test-results/agent-gates/2026-04-09T00-47-20-706Z-track-d-phase6-d5-resident-transport-requests.json` |
 | PH1-TD6 | D6 Module 15 — migration `113` mileage logs + request CRUD routes + optional mileage on complete | **PASS (repo)** | agent | 2026-04-09 | Gate: `test-results/agent-gates/2026-04-09T00-57-17-400Z-track-d-phase6-d6-transport-request-crud.json` |
+| PH1-TD10 | D10 Module 15 — migration `114` `organization_transport_settings` + `/admin/transportation/settings` + org rate on new mileage rows | **PASS (repo)** | agent | 2026-04-09 | Gate: `test-results/agent-gates/2026-04-09T02-13-30-573Z-track-d-phase6-d10-org-mileage-rate.json` |
 
 ---
 

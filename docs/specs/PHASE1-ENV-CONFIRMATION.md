@@ -4,7 +4,7 @@
 
 **Last run (repo/CLI):** 2026-04-09 — `npm run migrations:check`: **113** migration files **001–113** in [`supabase/migrations/`](../../supabase/migrations/) — see [README.md](./README.md) (next migration **114**).
 
-**Last run (remote):** **VERIFY** — Owner keeps `supabase migration list` Local/Remote aligned through **`113`** on project `manfqmasfqppukpobpld` after each pull (`supabase db push` as needed). Historic note: **093–095** auth remediation and later migrations (through **113** transport/mileage) land per ops runs.
+**Last run (remote):** **VERIFY** — Owner keeps `supabase migration list` Local/Remote aligned through **`114`** on project `manfqmasfqppukpobpld` after each pull (`supabase db push` as needed). Historic note: **093–095** auth remediation and later migrations (through **114** org transport settings) land per ops runs.
 
 **Edge Functions:** Inventory and secrets: [`supabase/functions/README.md`](../../supabase/functions/README.md). **`npm run demo:ops-status`** checks that all nine deployed function slugs exist and are **ACTIVE** on the linked project (`ar-aging-check`, `dispatch-push`, `emar-missed-dose-check`, `exec-alert-evaluator`, `exec-kpi-snapshot`, `export-audit-log`, `generate-emar-schedule`, `generate-monthly-invoices`, `report-scheduler`).
 
