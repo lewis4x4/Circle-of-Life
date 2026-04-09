@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
+import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -48,11 +49,6 @@ type QueryError = { message: string };
 type QueryResult<T> = { data: T[] | null; error: QueryError | null };
 
 type ScheduleCsvRow = Database["public"]["Tables"]["schedules"]["Row"];
-
-function csvEscapeCell(value: string): string {
-  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
-  return value;
-}
 
 function buildSchedulesCsv(rows: ScheduleCsvRow[]): string {
   const header = [
@@ -88,16 +84,6 @@ function buildSchedulesCsv(rows: ScheduleCsvRow[]): string {
     ].join(","),
   );
   return [header, ...body].join("\r\n");
-}
-
-function triggerCsvDownload(filename: string, text: string) {
-  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
 }
 
 const DEFAULT_FILTERS = { search: "", status: "all" };
