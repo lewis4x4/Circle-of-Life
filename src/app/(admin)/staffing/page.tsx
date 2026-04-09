@@ -2,7 +2,8 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Users, AlertCircle, Clock, FileWarning, CalendarPlus, Activity } from "lucide-react";
+import { format } from "date-fns";
+import { Users, AlertCircle, Clock, FileWarning, CalendarPlus, Activity, Download } from "lucide-react";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
@@ -10,6 +11,7 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import type { Database } from "@/types/database";
 import { Skeleton } from "@/components/ui/skeleton";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
@@ -48,11 +50,65 @@ type CertWarning = {
   daysExpired: number;
 };
 
+type StaffingSnapshotCsvRow = Database["public"]["Tables"]["staffing_ratio_snapshots"]["Row"];
+
+function csvEscapeCell(value: string): string {
+  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+  return value;
+}
+
+function buildStaffingSnapshotsCsv(rows: StaffingSnapshotCsvRow[]): string {
+  const header = [
+    "id",
+    "organization_id",
+    "facility_id",
+    "snapshot_at",
+    "shift",
+    "residents_present",
+    "staff_on_duty",
+    "ratio",
+    "required_ratio",
+    "is_compliant",
+    "staff_detail_json",
+    "created_at",
+  ].join(",");
+  const body = rows.map((row) =>
+    [
+      csvEscapeCell(row.id),
+      csvEscapeCell(row.organization_id),
+      csvEscapeCell(row.facility_id),
+      csvEscapeCell(row.snapshot_at),
+      csvEscapeCell(row.shift),
+      csvEscapeCell(String(row.residents_present)),
+      csvEscapeCell(String(row.staff_on_duty)),
+      csvEscapeCell(String(row.ratio)),
+      csvEscapeCell(String(row.required_ratio)),
+      csvEscapeCell(row.is_compliant ? "true" : "false"),
+      csvEscapeCell(row.staff_detail != null ? JSON.stringify(row.staff_detail) : ""),
+      csvEscapeCell(row.created_at),
+    ].join(","),
+  );
+  return [header, ...body].join("\r\n");
+}
+
+function triggerCsvDownload(filename: string, text: string) {
+  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function AdminStaffingConsolePage() {
+  const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
   const [snapshots, setSnapshots] = useState<SnapshotRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exportingCsv, setExportingCsv] = useState(false);
+  const [csvExportError, setCsvExportError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -70,6 +126,32 @@ export default function AdminStaffingConsolePage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const exportStaffingSnapshotsCsv = useCallback(async () => {
+    setExportingCsv(true);
+    setCsvExportError(null);
+    try {
+      let q = supabase
+        .from("staffing_ratio_snapshots" as never)
+        .select("*")
+        .order("snapshot_at", { ascending: false })
+        .limit(500);
+
+      if (isValidFacilityIdForQuery(selectedFacilityId)) {
+        q = q.eq("facility_id", selectedFacilityId);
+      }
+
+      const res = await q;
+      if (res.error) throw res.error;
+      const list = (res.data ?? []) as StaffingSnapshotCsvRow[];
+      const csv = buildStaffingSnapshotsCsv(list);
+      triggerCsvDownload(`staffing-ratio-snapshots-${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
+    } catch (e) {
+      setCsvExportError(e instanceof Error ? e.message : "Failed to export staffing snapshots.");
+    } finally {
+      setExportingCsv(false);
+    }
+  }, [supabase, selectedFacilityId]);
 
   if (isLoading) {
     return (
@@ -131,13 +213,32 @@ export default function AdminStaffingConsolePage() {
             Real-time HPPD variance, schedule gaps, and compliance warnings.
           </p>
         </div>
-        <div className="flex gap-2">
-           <Link href="/admin/staff" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8 text-xs font-medium")}>
-             View Roster
-           </Link>
-           <Link href="/admin/schedules" className={cn(buttonVariants({ variant: "default", size: "sm" }), "h-8 text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white")}>
-             Master Schedule
-           </Link>
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
+            <Link href="/admin/staff" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8 text-xs font-medium")}>
+              View Roster
+            </Link>
+            <Link href="/admin/schedules" className={cn(buttonVariants({ variant: "default", size: "sm" }), "h-8 text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white")}>
+              Master Schedule
+            </Link>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs font-medium font-mono uppercase tracking-widest"
+              disabled={exportingCsv}
+              aria-busy={exportingCsv}
+              onClick={() => void exportStaffingSnapshotsCsv()}
+            >
+              <Download className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+              {exportingCsv ? "Exporting…" : "Snapshots CSV"}
+            </Button>
+          </div>
+          {csvExportError ? (
+            <p className="max-w-md text-right text-xs text-rose-600 dark:text-rose-400 font-mono" role="alert">
+              {csvExportError}
+            </p>
+          ) : null}
         </div>
       </header>
 

@@ -294,6 +294,16 @@
 
 ---
 
+**D32 (2026-04-09):** **Module 11 — Staff Management** ([11-staff-management.md](./11-staff-management.md)) — **staffing ratio snapshots CSV export**.
+
+**Slice:** **`/admin/staffing`** — **Snapshots CSV** queries up to **500** **`staffing_ratio_snapshots`** rows, RFC-style CSV (includes **`staff_detail`** as **`staff_detail_json`**). Facility filter matches snapshot query when a valid facility is selected. **No** new DDL; exception-first mock UI unchanged.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-09T17-26-02-598Z-track-d-d32-staffing-snapshots-csv.json` (`npm run segment:gates -- --segment "track-d-d32-staffing-snapshots-csv" --ui --no-chaos`).
+
+**Mission alignment:** **pass** — operators can archive ratio history under RLS without replacing mock scheduling widgets in this slice.
+
+---
+
 ## Track D — plan (remaining)
 
 **Segments D1–D10:** Closed in repo with gate artifacts above. This completes the **Phase 6 Core visibility / workflow** slices we prioritized for COL (transport, training, dietary, referrals, reputation), plus **D10** org mileage rate.
@@ -308,7 +318,7 @@
 | **15** | ~~Week calendar + mileage approval queue~~ (D14, D15); ~~**transport requests CSV** on hub~~ (D24); ~~**mileage logs CSV** on approvals~~ (D25); full month grid, external calendar sync |
 | **22** | ~~Minimal **MSH** queue processor~~ (D12); ~~manual **Draft lead** from HL7~~ (D16); ~~**HL7 queue CSV**~~ (D22); ~~**pipeline leads CSV** on hub~~ (D27); MLLP, full ADT parse, auto-**`referral_leads`** |
 | **23** | ~~**Replies CSV** export on hub~~ (D19); ~~**accounts CSV** on hub~~ (D28); external review platform OAuth/sync APIs |
-| **11** | ~~**Staff roster CSV** on `/admin/staff`~~ (D29); ~~**Certifications CSV** on `/admin/certifications`~~ (D30); ~~**Time records CSV** on `/admin/time-records`~~ (D31); full scheduling builder, bulk approve depth |
+| **11** | ~~**Staff roster CSV** on `/admin/staff`~~ (D29); ~~**Certifications CSV** on `/admin/certifications`~~ (D30); ~~**Time records CSV** on `/admin/time-records`~~ (D31); ~~**Staffing snapshots CSV** on `/admin/staffing`~~ (D32); full scheduling builder, bulk approve depth |
 
 **Authoritative README narrative:** [README.md](./README.md) — section **Track D — Phase 6 completion pass**.
 
