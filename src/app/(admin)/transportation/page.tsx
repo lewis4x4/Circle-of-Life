@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { differenceInCalendarDays, format, parseISO, startOfDay } from "date-fns";
+import {
+  addDays,
+  differenceInCalendarDays,
+  format,
+  isSameDay,
+  parseISO,
+  startOfDay,
+} from "date-fns";
 import { Bus } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
@@ -40,6 +47,20 @@ function formatAppointmentTime(t: string | null): string {
     return format(parseISO(`2000-01-01T${t.slice(0, 8)}`), "h:mm a");
   } catch {
     return t;
+  }
+}
+
+/** Group label for an appointment_date (YYYY-MM-DD): Today / Tomorrow / weekday. */
+function formatUpcomingDayLabel(dateStr: string): string {
+  try {
+    const d = parseISO(`${dateStr}T12:00:00.000Z`);
+    const today = startOfDay(new Date());
+    const target = startOfDay(d);
+    if (isSameDay(target, today)) return "Today";
+    if (isSameDay(target, addDays(today, 1))) return "Tomorrow";
+    return format(d, "EEEE, MMM d");
+  } catch {
+    return dateStr;
   }
 }
 
@@ -219,6 +240,21 @@ export default function AdminTransportationHubPage() {
 
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
 
+  const upcomingByDay = useMemo(() => {
+    const groups: { dateStr: string; rows: TransportRequestRow[] }[] = [];
+    for (const row of transportRequests) {
+      const d = row.appointment_date;
+      if (!d) continue;
+      const last = groups[groups.length - 1];
+      if (last && last.dateStr === d) {
+        last.rows.push(row);
+      } else {
+        groups.push({ dateStr: d, rows: [row] });
+      }
+    }
+    return groups;
+  }, [transportRequests]);
+
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <AmbientMatrix hasCriticals={false} 
@@ -289,7 +325,7 @@ export default function AdminTransportationHubPage() {
                 Upcoming resident transport
               </h3>
               <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                Appointments on or after today. Open a row to assign vehicle/driver and complete.
+                Appointments on or after today, grouped by day. Open a row to assign vehicle/driver and complete.
               </p>
             </div>
             <Link
@@ -306,36 +342,51 @@ export default function AdminTransportationHubPage() {
               No upcoming transport requests on file for this facility.
             </p>
           ) : (
-            <MotionList className="space-y-2">
-              {transportRequests.map((row) => {
-                const name = row.residents
-                  ? `${row.residents.first_name} ${row.residents.last_name}`
-                  : "Resident";
-                const apptDate = parseISO(`${row.appointment_date}T12:00:00.000Z`);
-                return (
-                  <MotionItem key={row.id} className="rounded-xl border border-slate-200/90 bg-white/80 dark:border-slate-800 dark:bg-slate-900/50">
-                    <Link
-                      href={`/admin/transportation/requests/${row.id}`}
-                      className="flex flex-col gap-1 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between hover:bg-slate-50/80 dark:hover:bg-slate-800/50"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{name}</p>
-                        <p className="truncate text-xs text-slate-600 dark:text-slate-400">
-                          {row.destination_name}
-                          {row.purpose ? ` · ${row.purpose}` : ""}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 flex-wrap items-center gap-2 text-xs">
-                        <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                          {format(apptDate, "EEE MMM d")} · {formatAppointmentTime(row.appointment_time)}
-                        </span>
-                        <span className="capitalize text-slate-600 dark:text-slate-300">{formatEnum(row.status)}</span>
-                      </div>
-                    </Link>
-                  </MotionItem>
-                );
-              })}
-            </MotionList>
+            <div className="space-y-5">
+              {upcomingByDay.map((group) => (
+                <div key={group.dateStr}>
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    {formatUpcomingDayLabel(group.dateStr)}
+                    <span className="ml-2 font-normal normal-case text-slate-400">
+                      ({group.rows.length} trip{group.rows.length === 1 ? "" : "s"})
+                    </span>
+                  </p>
+                  <MotionList className="space-y-2">
+                    {group.rows.map((row) => {
+                      const name = row.residents
+                        ? `${row.residents.first_name} ${row.residents.last_name}`
+                        : "Resident";
+                      const apptDate = parseISO(`${row.appointment_date}T12:00:00.000Z`);
+                      return (
+                        <MotionItem
+                          key={row.id}
+                          className="rounded-xl border border-slate-200/90 bg-white/80 dark:border-slate-800 dark:bg-slate-900/50"
+                        >
+                          <Link
+                            href={`/admin/transportation/requests/${row.id}`}
+                            className="flex flex-col gap-1 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between hover:bg-slate-50/80 dark:hover:bg-slate-800/50"
+                          >
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{name}</p>
+                              <p className="truncate text-xs text-slate-600 dark:text-slate-400">
+                                {row.destination_name}
+                                {row.purpose ? ` · ${row.purpose}` : ""}
+                              </p>
+                            </div>
+                            <div className="flex shrink-0 flex-wrap items-center gap-2 text-xs">
+                              <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                                {format(apptDate, "EEE MMM d")} · {formatAppointmentTime(row.appointment_time)}
+                              </span>
+                              <span className="capitalize text-slate-600 dark:text-slate-300">{formatEnum(row.status)}</span>
+                            </div>
+                          </Link>
+                        </MotionItem>
+                      );
+                    })}
+                  </MotionList>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}

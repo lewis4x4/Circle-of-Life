@@ -69,3 +69,15 @@
 **Mission alignment:** **pass** — operational transport scheduling and reimbursement trail under RLS.
 
 **Deferred:** Payroll export approval workflow, org-level mileage rate setting, calendar view.
+
+---
+
+**D7 (2026-04-09):** **Module 15 — Transportation** — **upcoming requests grouped by day (calendar-style)**.
+
+**Slice:** On `/admin/transportation`, the **Upcoming resident transport** list is **grouped by `appointment_date`** with headings **Today** / **Tomorrow** / weekday date and a per-day trip count. No new DDL; same RLS-backed query as D5/D6.
+
+**Deferred:** Full month/week grid, external calendar sync.
+
+**Mission alignment:** **pass** — improves scanability of scheduled trips without expanding scope beyond Module 15 Core data already in use.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-09T01-39-18-521Z-track-d-phase6-d7-transport-day-groups.json` (`npm run segment:gates -- --segment "track-d-phase6-d7-transport-day-groups" --ui --no-chaos`).
