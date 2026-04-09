@@ -121,7 +121,11 @@ export default function AdminNewScheduleWeekPage() {
         }
         throw new Error(ins.error.message);
       }
-      router.push("/admin/schedules");
+      if (ins.data?.id) {
+        router.push(`/admin/schedules/${ins.data.id}`);
+      } else {
+        router.push("/admin/schedules");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create schedule week.");
     } finally {
