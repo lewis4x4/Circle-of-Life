@@ -12,6 +12,7 @@ import {
   LogOut,
   MessageSquare,
   UserCircle2,
+  HeartPulse
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -74,56 +75,31 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="family-shell min-h-screen flex flex-col font-sans selection:bg-orange-100 selection:text-orange-900 text-stone-900">
-      {/* Hospitality Header */}
-      <header className="sticky top-0 z-40 bg-white/40 backdrop-blur-2xl border-b border-white/50 shadow-[0_4px_30px_rgb(0,0,0,0.02)]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="text-xl font-serif text-stone-800 tracking-tight shrink-0">Haven</span>
-            <span className="w-1 h-1 rounded-full bg-stone-300 shrink-0"></span>
-            <span
-              className="text-stone-500 font-medium truncate text-sm sm:text-base font-display"
-              title={sessionEmail ?? undefined}
-            >
-              {sessionEmail ?? "Family portal"}
-            </span>
-          </div>
-          
-          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-            <Link
-              href="/family/messages"
-              className="text-stone-400 hover:text-stone-600 tap-responsive transition-colors"
-              aria-label="Messages"
-            >
-              <MessageSquare className="w-5 h-5" />
-            </Link>
-            <button type="button" className="relative text-stone-400 hover:text-stone-600 tap-responsive transition-colors" aria-label="Notifications">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-0 right-0 w-1.5 h-1.5 rounded-full bg-orange-400"></span>
-            </button>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className="rounded-full p-1 tap-responsive outline-none text-stone-400 hover:text-stone-600 hover:bg-stone-100/50 transition-all focus-visible:ring-2 focus-visible:ring-orange-500/40"
-                aria-label="Account menu"
-              >
-                <UserCircle2 className="w-6 h-6" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 glass-card-light">
-                <DropdownMenuGroup>
-                  {sessionEmail ? (
-                    <>
-                      <DropdownMenuLabel className="truncate font-normal text-stone-500">
-                        {sessionEmail}
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator className="bg-stone-100" />
-                    </>
-                  ) : null}
-                  <DropdownMenuItem
+    <div className="family-shell min-h-screen text-stone-900 flex flex-col font-sans selection:bg-rose-100 selection:text-rose-900 relative">
+      
+      {/* Floating Top-Right Utilities */}
+      <div className="absolute top-4 right-4 md:top-6 md:right-6 z-50 flex items-center gap-2">
+         <button className="relative p-3 rounded-full bg-stone-50/60 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.05)] text-stone-600 hover:text-stone-900 tap-responsive transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50">
+            <Bell className="w-5 h-5" />
+            <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-rose-400"></span>
+         </button>
+
+         <DropdownMenu>
+            <DropdownMenuTrigger className="p-3 rounded-full bg-stone-50/60 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.05)] text-stone-600 hover:text-stone-900 tap-responsive transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50">
+               <UserCircle2 className="w-5 h-5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 glass-card-light rounded-2xl p-2 mt-2 border-white/70 shadow-lg">
+               <DropdownMenuGroup>
+                 <DropdownMenuLabel className="font-medium text-stone-600">
+                    {sessionEmail ?? "Family Portal"}
+                 </DropdownMenuLabel>
+                 <DropdownMenuSeparator className="bg-stone-200/50 my-1" />
+                 <DropdownMenuItem
                     variant="destructive"
-                    className="cursor-pointer"
+                    className="cursor-pointer rounded-xl font-medium focus:bg-rose-50 focus:text-rose-600 tap-responsive"
                     disabled={signingOut}
                     onClick={() => void handleSignOut()}
-                  >
+                 >
                     {signingOut ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -136,94 +112,61 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
                       </>
                     )}
                   </DropdownMenuItem>
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-        
-        {/* Navigation Tabs - Desktop */}
-        <div className="hidden md:flex max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-x-2 pb-2">
-          {(
-            [
-              { href: "/family", label: "Today", exact: true },
-              { href: "/family/calendar", label: "Calendar" },
-              { href: "/family/care-plan", label: "Care Plan" },
-              {
-                href: "/family/billing",
-                label: "Billing",
-                match: (p: string) =>
-                  p.startsWith("/family/billing") ||
-                  p.startsWith("/family/invoices") ||
-                  p.startsWith("/family/payments"),
-              },
-              { href: "/family/messages", label: "Messages" },
-            ] as const
-          ).map((tab) => {
-            const isActive =
-              "match" in tab && tab.match
-                ? tab.match(pathname)
-                : "exact" in tab && tab.exact
-                  ? pathname === tab.href || pathname === `${tab.href}/`
-                  : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
-            return (
-               <Link
-                key={tab.href}
-                href={tab.href}
-                className={`py-1.5 px-3 rounded-full font-medium text-sm tap-responsive transition-all ${
-                  isActive
-                    ? "bg-stone-900 text-white shadow-md shadow-stone-900/10"
-                    : "text-stone-500 hover:text-stone-800 hover:bg-stone-200/50"
-                }`}
-              >
-                {tab.label}
-              </Link>
-            );
-          })}
-        </div>
-      </header>
+               </DropdownMenuGroup>
+            </DropdownMenuContent>
+         </DropdownMenu>
+      </div>
 
-      {/* Main Content */}
-      <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 py-6 md:py-10">
+      {/* Main Content Area */}
+      <main className="flex-1 w-full pb-32 relative z-10">
         {children}
       </main>
 
-      {/* Mobile Bottom Navigation (only visible md and below) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-[calc(4rem+env(safe-area-inset-bottom))] bg-white/70 backdrop-blur-2xl border-t border-white/50 flex justify-around items-center px-2 pb-[env(safe-area-inset-bottom)] pt-1 z-50 shadow-[0_-4px_30px_rgba(0,0,0,0.03)]">
-        <MobileTab
-          href="/family"
-          label="Today"
-          icon={<CalendarHeart className="h-5 w-5" />}
-          active={pathname === "/family" || pathname === "/family/"}
-        />
-        <MobileTab
-          href="/family/calendar"
-          label="Calendar"
-          icon={<CalendarDays className="h-5 w-5" />}
-          active={pathname.startsWith("/family/calendar")}
-        />
-        <MobileTab
-          href="/family/care-plan"
-          label="Care"
-          icon={<UserCircle2 className="h-5 w-5" />}
-          active={pathname.startsWith("/family/care-plan")}
-        />
-        <MobileTab
-          href="/family/billing"
-          label="Billing"
-          icon={<CreditCard className="h-5 w-5" />}
-          active={
-            pathname.startsWith("/family/billing") ||
-            pathname.startsWith("/family/invoices") ||
-            pathname.startsWith("/family/payments")
-          }
-        />
-      </nav>
+      {/* Floating iPadOS Style Dock */}
+      <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
+         <nav className="glass-card-light pointer-events-auto rounded-[2.5rem] px-2 py-2 flex items-center gap-1 shadow-[0_12px_40px_rgb(0,0,0,0.08)] bg-white/70">
+           <DockTab
+              href="/family"
+              label="Journal"
+              icon={<CalendarHeart className="h-6 w-6" />}
+              active={pathname === "/family" || pathname === "/family/"}
+            />
+            <DockTab
+              href="/family/calendar"
+              label="Calendar"
+              icon={<CalendarDays className="h-6 w-6" />}
+              active={pathname.startsWith("/family/calendar")}
+            />
+            <DockTab
+              href="/family/care-plan"
+              label="Care Team"
+              icon={<HeartPulse className="h-6 w-6" />}
+              active={pathname.startsWith("/family/care-plan")}
+            />
+            <DockTab
+              href="/family/billing"
+              label="Billing"
+              icon={<CreditCard className="h-6 w-6" />}
+              active={
+                pathname.startsWith("/family/billing") ||
+                pathname.startsWith("/family/invoices") ||
+                pathname.startsWith("/family/payments")
+              }
+            />
+            <DockTab
+              href="/family/messages"
+              label="Messages"
+              icon={<MessageSquare className="h-6 w-6" />}
+              active={pathname.startsWith("/family/messages")}
+            />
+         </nav>
+      </div>
+
     </div>
   );
 }
 
-function MobileTab({
+function DockTab({
   href,
   label,
   icon,
@@ -237,14 +180,21 @@ function MobileTab({
   return (
     <Link
       href={href}
-      className={`flex flex-col items-center justify-center gap-1 w-16 h-full tap-responsive transition-colors ${
-        active ? "text-stone-900" : "text-stone-400 hover:text-stone-600"
+      className={`relative flex flex-col items-center justify-center gap-1 w-16 h-16 md:w-[4.5rem] md:h-[4.5rem] rounded-[1.8rem] tap-responsive transition-all ${
+        active 
+          ? "bg-white shadow-[0_2px_15px_rgb(0,0,0,0.04)] text-stone-900 border border-white" 
+          : "text-stone-500 hover:text-stone-800 hover:bg-white/40 border border-transparent"
       }`}
     >
-      <div className={active ? "scale-110 transition-transform text-orange-500 drop-shadow-sm" : "scale-100 transition-transform"}>
+      <div className={`${active ? "text-rose-500 scale-110 drop-shadow-sm" : "scale-100 text-stone-400"} transition-all duration-300`}>
         {icon}
       </div>
-      <span className={`text-[10px] tracking-wide ${active ? "font-bold text-stone-900" : "font-medium"}`}>{label}</span>
+      <span className={`text-[10px] tracking-wide transition-all ${active ? "font-bold text-stone-800" : "font-medium"}`}>{label}</span>
+      
+      {/* Active Dot Indicator underneath */}
+      {active && (
+         <div className="absolute -bottom-[2px] w-1 h-1 rounded-full bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.8)]"></div>
+      )}
     </Link>
   );
 }

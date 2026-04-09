@@ -203,19 +203,20 @@
   }
 }
 
-/* Family Shell Warm Background override */
+/* Family Shell Rich Mockup Gradient Override */
 .family-shell {
-  --background: #fffcf9; /* Base warm off-white */
+  --background: #fffafa; /* Base warm white */
   background-image: 
-    radial-gradient(at 0% 0%, hsla(28, 100%, 94%, 1) 0, transparent 40%),
-    radial-gradient(at 100% 0%, hsla(43, 100%, 94%, 1) 0, transparent 40%),
-    radial-gradient(at 100% 100%, hsla(190, 40%, 96%, 1) 0, transparent 40%);
+    radial-gradient(ellipse at 0% 0%, rgba(255, 235, 205, 1) 0%, transparent 60%),
+    radial-gradient(ellipse at 100% 0%, rgba(255, 204, 188, 1) 0%, transparent 70%),
+    radial-gradient(ellipse at 50% -20%, rgba(255, 228, 196, 1) 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 100%, rgba(240, 248, 255, 0.8) 0%, transparent 50%);
   background-attachment: fixed;
 }
 
 @layer utilities {
   .glass-card-light {
-    @apply bg-white/70 backdrop-blur-xl border border-white shadow-[0_8px_30px_rgb(0,0,0,0.03)];
+    @apply bg-white/60 backdrop-blur-2xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)];
   }
 }
 

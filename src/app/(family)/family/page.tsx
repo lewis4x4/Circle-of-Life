@@ -7,7 +7,6 @@ import {
   CalendarClock, 
   ClipboardList, 
   FileText, 
-  HeartPulse, 
   Loader2, 
   Shield,
   Activity,
@@ -21,6 +20,8 @@ import {
   type FamilyHomeSnapshot,
 } from "@/lib/family/family-feed";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
+
+import { cn } from "@/lib/utils";
 
 export default function FamilyHomePage() {
   const supabase = useMemo(() => createClient(), []);
@@ -69,9 +70,9 @@ export default function FamilyHomePage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-stone-500 gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-orange-400" />
-        <p className="text-sm font-medium tracking-wide">Bringing up your family dashboard…</p>
+      <div className="flex flex-col items-center justify-center py-48 text-stone-500 gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-rose-400" />
+        <p className="text-sm font-medium tracking-wide">Opening journal…</p>
       </div>
     );
   }
@@ -85,7 +86,7 @@ export default function FamilyHomePage() {
         </div>
         <button
           type="button"
-          className="w-full h-12 rounded-full bg-white text-stone-700 font-medium border border-stone-200 shadow-sm hover:bg-stone-50 transition-colors"
+          className="w-full h-12 rounded-full bg-white text-stone-700 font-medium border border-stone-200 shadow-sm hover:bg-stone-50 transition-colors cursor-pointer"
           onClick={() => void load()}
         >
           Retry Connection
@@ -98,103 +99,87 @@ export default function FamilyHomePage() {
     return null;
   }
 
+  const initial = snapshot.residentSummary ? snapshot.residentSummary.charAt(0).toUpperCase() : "H";
+  const firstName = snapshot.residentSummary ? snapshot.residentSummary.split(" ")[0] : "Resident";
+
   return (
-    <div className="pb-24 md:pb-8 flex flex-col gap-10">
+    <div className="pb-8 flex flex-col items-center">
       
-      {/* ─── PERSONALIZED HEADER ─── */}
-      <div className="text-center">
-        <div className="w-20 h-20 md:w-24 md:h-24 mx-auto bg-gradient-to-br from-orange-100 to-rose-100 rounded-full flex items-center justify-center border-4 border-white shadow-xl shadow-orange-900/5 mb-4">
-          <Heart className="w-8 h-8 md:w-10 md:h-10 text-orange-400/80" />
-        </div>
-        
-        {snapshot.linkedResidents > 0 ? (
-          <>
-            <h1 className="text-3xl md:text-5xl font-serif text-stone-800 tracking-tight mb-2">
-              Care updates for <span className="text-stone-900 font-medium">{snapshot.residentSummary}</span>
-            </h1>
-            <p className="text-stone-500 max-w-lg mx-auto text-sm md:text-base">
-              The latest clinical and billing information directly from your care team at Haven.
-            </p>
-          </>
-        ) : (
-          <>
-            <h1 className="text-3xl md:text-4xl font-serif text-stone-800 tracking-tight mb-2">
-              Welcome to Haven
-            </h1>
-            <p className="text-stone-500 max-w-lg mx-auto text-sm md:text-base">
-              When your account is linked to a resident, updates you are allowed to see will appear here. Ask your facility for an invitation.
-            </p>
-          </>
-        )}
+      {/* ─── FULL BLEED COVER PHOTO ─── */}
+      <div className="w-full h-48 md:h-64 absolute top-0 left-0 right-0 z-0 overflow-hidden">
+         <img 
+            src="/family-cover.png" 
+            alt="Warm watercolor dawn light" 
+            className="w-full h-full object-cover object-center opacity-90 mix-blend-multiply"
+         />
+         {/* Fade to background color seamlessly */}
+         <div className="absolute inset-0 bg-gradient-to-t from-[#fffafa] via-transparent to-white/10"></div>
       </div>
 
-      {/* ─── QUICK GLANCE STATS ─── */}
-      {snapshot.linkedResidents > 0 && (
-        <div className="flex flex-wrap justify-center gap-3 md:gap-4 max-w-2xl mx-auto w-full">
-          <StatChip label="Linked residents" value={snapshot.stats.linkedResidents} icon={<Heart className="w-3 h-3 text-emerald-500" />} />
-          <StatChip label="Clinical (7 days)" value={snapshot.stats.clinicalWeek} icon={<Activity className="w-3 h-3 text-rose-400" />} />
-          <StatChip label="Open billing" value={snapshot.stats.billingOpen} icon={<Banknote className="w-3 h-3 text-amber-500" />} />
-          <StatChip label="Feed today" value={snapshot.stats.feedToday} icon={<ClipboardList className="w-3 h-3 text-blue-500" />} />
-        </div>
-      )}
+      <div className="w-full max-w-2xl px-4 relative z-10 mt-20 md:mt-32">
+         {/* ─── OVERLAPPING AVATAR ─── */}
+         <div className="text-center mb-10">
+           <div className="w-24 h-24 md:w-32 md:h-32 mx-auto bg-white rounded-full flex items-center justify-center p-2 shadow-[0_20px_40px_rgba(251,146,60,0.15)] mb-6 ring-1 ring-stone-900/5">
+              <div className="w-full h-full rounded-full bg-gradient-to-br from-stone-50 to-stone-200 border-2 border-stone-100 flex items-center justify-center">
+                 <span className="text-4xl md:text-5xl font-serif text-stone-600 font-light">{initial}</span>
+              </div>
+           </div>
+           
+           {snapshot.linkedResidents > 0 ? (
+             <>
+               <h1 className="text-4xl md:text-6xl font-serif text-stone-800 tracking-tight mb-2">
+                 <span className="font-medium text-stone-900">{snapshot.residentSummary}</span>
+               </h1>
+               <p className="text-stone-500/80 max-w-lg mx-auto text-base md:text-lg mb-8 font-serif italic">
+                 Care Journal
+               </p>
+             </>
+           ) : (
+             <>
+               <h1 className="text-4xl md:text-5xl font-serif text-stone-800 tracking-tight mb-2">
+                 Welcome
+               </h1>
+               <p className="text-stone-500 max-w-lg mx-auto text-sm md:text-base">
+                 Ask your facility for an invitation link to connect your loved one.
+               </p>
+             </>
+           )}
 
-      {/* ─── THE TIMELINE FEED ─── */}
-      <div className="w-full max-w-2xl mx-auto mt-4">
-        <h2 className="text-xl font-serif text-stone-800 mb-6 flex items-center gap-2">
-          Today&apos;s timeline
-        </h2>
+            {/* ─── QUICK GLANCE STATS ─── */}
+           {snapshot.linkedResidents > 0 && (
+             <div className="flex flex-wrap justify-center gap-2 max-w-lg mx-auto w-full">
+               <StatChip label="Connected" value={snapshot.stats.linkedResidents} />
+               <StatChip label="Recent Clinical" value={snapshot.stats.clinicalWeek} />
+               {snapshot.stats.billingOpen > 0 && (
+                  <StatChip label="Open Invoices" value={snapshot.stats.billingOpen} />
+               )}
+             </div>
+           )}
+         </div>
 
-        {snapshot.linkedResidents === 0 || snapshot.items.length === 0 ? (
-          <div className="glass-card-light rounded-2xl flex flex-col items-center justify-center p-10 text-center border-dashed border-2 border-stone-200/50">
-            <div className="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center mb-4">
-              <CalendarClock className="w-5 h-5 text-stone-400" />
-            </div>
-            <p className="text-stone-600 font-medium">All caught up!</p>
-            <p className="text-sm text-stone-500 mt-1">No recent incidents or invoices. Check back as your team posts updates.</p>
-          </div>
-        ) : (
-          <div className="relative pl-6 md:pl-8 border-l-[3px] border-stone-200/60 pb-8 space-y-6">
-            {snapshot.items.map((item) => (
-              <TimelineItem key={`${item.kind}-${item.id}`} item={item} />
-            ))}
-          </div>
-        )}
-      </div>
+         {/* ─── THE JOURNAL FEED ─── */}
+         <div className="w-full mt-10 md:mt-16">
+           <div className="flex items-center justify-center mb-10">
+             <div className="h-px bg-stone-200 flex-1"></div>
+             <h2 className="text-2xl md:text-3xl font-serif text-stone-800 tracking-tight px-6 text-center">
+               {firstName}'s Updates
+             </h2>
+             <div className="h-px bg-stone-200 flex-1"></div>
+           </div>
 
-      {/* ─── PORTAL NAVIGATION CARDS ─── */}
-      <div className="w-full max-w-2xl mx-auto">
-        <h2 className="text-sm uppercase tracking-widest font-semibold text-stone-400 mb-4 pl-1">
-          Explore Portal
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-          <Link
-            href="/family/care-plan"
-            className="flex flex-col items-start gap-3 rounded-2xl bg-white/70 backdrop-blur-xl p-5 border border-white shadow-sm hover:shadow-md hover:bg-white text-stone-800 transition-all tap-responsive group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <HeartPulse className="h-5 w-5 text-rose-500" />
-            </div>
-            <span className="font-medium text-sm">Care summary</span>
-          </Link>
-          <Link
-            href="/family/billing"
-            className="flex flex-col items-start gap-3 rounded-2xl bg-white/70 backdrop-blur-xl p-5 border border-white shadow-sm hover:shadow-md hover:bg-white text-stone-800 transition-all tap-responsive group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Banknote className="h-5 w-5 text-orange-500" />
-            </div>
-            <span className="font-medium text-sm">Billing summary</span>
-          </Link>
-          <Link
-            href="/family/calendar"
-            className="flex flex-col items-start gap-3 rounded-2xl bg-white/70 backdrop-blur-xl p-5 border border-white shadow-sm hover:shadow-md hover:bg-white text-stone-800 transition-all tap-responsive group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <CalendarClock className="h-5 w-5 text-sky-500" />
-            </div>
-            <span className="font-medium text-sm">Facility calendar</span>
-          </Link>
-        </div>
+           {snapshot.linkedResidents === 0 || snapshot.items.length === 0 ? (
+             <div className="flex flex-col items-center justify-center p-12 text-center">
+               <p className="text-stone-400 font-serif italic text-xl">The journal is quiet right now.</p>
+               <p className="text-sm text-stone-400 mt-2">Updates will flow in gently when your team posts them.</p>
+             </div>
+           ) : (
+             <div className="space-y-6 md:space-y-8">
+               {snapshot.items.map((item) => (
+                 <JournalEntryCard key={`${item.kind}-${item.id}`} item={item} />
+               ))}
+             </div>
+           )}
+         </div>
       </div>
     </div>
   );
@@ -202,67 +187,57 @@ export default function FamilyHomePage() {
 
 /* ─── HELPER COMPONENTS ─── */
 
-function TimelineItem({ item }: { item: FamilyFeedItem }) {
+function JournalEntryCard({ item }: { item: FamilyFeedItem }) {
   const isInvoice = item.kind === "invoice";
   const isClinical = item.badge === "Clinical";
 
   const colorConfig = isInvoice
-    ? { dot: "bg-amber-400 ring-amber-100", icon: "text-amber-600 bg-amber-50" }
+    ? { iconBg: "bg-amber-100", iconColor: "text-amber-700" }
     : isClinical
-    ? { dot: "bg-rose-400 ring-rose-100", icon: "text-rose-600 bg-rose-50" }
-    : { dot: "bg-stone-400 ring-stone-100", icon: "text-stone-600 bg-stone-100" };
+    ? { iconBg: "bg-emerald-100", iconColor: "text-emerald-700" }
+    : { iconBg: "bg-sky-100", iconColor: "text-sky-700" };
 
   const icon = isInvoice ? (
-    <FileText className="h-4 w-4" />
+    <Banknote className={`w-5 h-5 ${colorConfig.iconColor}`} />
   ) : isClinical ? (
-    <ClipboardList className="h-4 w-4" />
+    <Heart className={`w-5 h-5 ${colorConfig.iconColor}`} />
   ) : (
-    <Shield className="h-4 w-4" />
+    <FileText className={`w-5 h-5 ${colorConfig.iconColor}`} />
   );
 
   const inner = (
-    <div className="glass-card-light rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-      {/* Subtle background glow effect on hover */}
-      <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/40 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+    <div className="glass-card-light rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgb(251,146,60,0.08)] transition-all duration-300 relative group bg-white/70">
       
-      <div className="flex items-start justify-between gap-4 mb-3 relative z-10">
-        <div className="flex items-center gap-3">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${colorConfig.icon}`}>
+      <div className="flex items-start justify-between gap-4 mb-4">
+         <div className="flex flex-col">
+            <span className="text-[10px] uppercase tracking-widest text-stone-400 font-semibold mb-1">{item.timeLabel}</span>
+            <h3 className="text-xl font-serif text-stone-800 leading-tight">{item.title}</h3>
+         </div>
+         {/* Subtle Floating Badge */}
+         <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-sm ${colorConfig.iconBg}`}>
             {icon}
-          </div>
-          <div>
-            <h3 className="font-medium text-stone-800 leading-tight">{item.title}</h3>
-            <p className="text-xs text-stone-500 mt-0.5">
-              {item.timeLabel} · {item.residentName}
-            </p>
-          </div>
-        </div>
-        {!isInvoice && (
-          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-stone-100 text-stone-500 whitespace-nowrap">
-            {item.badge}
-          </span>
-        )}
+         </div>
       </div>
-      <p className="text-sm text-stone-600 leading-relaxed relative z-10">
-        {item.detail}
+      
+      <p className="text-base text-stone-600 leading-relaxed font-light">
+         {item.detail} 
       </p>
 
       {isInvoice && (
-        <div className="mt-4 pt-3 border-t border-stone-100 flex justify-between items-center relative z-10">
-          <span className="text-xs font-semibold uppercase tracking-wide text-amber-600">View Invoice Details</span>
-          <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-amber-500 transition-colors" />
-        </div>
+         <div className="mt-6 pt-4 border-t border-stone-200/60 flex justify-between items-center relative z-10 group/btn tap-responsive">
+            <span className="text-xs font-semibold uppercase tracking-widest text-stone-500 group-hover/btn:text-stone-900 transition-colors">Review Documentation</span>
+            <div className="w-8 h-8 rounded-full bg-stone-100 group-hover/btn:bg-stone-200 flex items-center justify-center transition-colors">
+               <ChevronRight className="w-4 h-4 text-stone-500" />
+            </div>
+         </div>
       )}
     </div>
   );
 
   return (
-    <div className="relative group">
-      {/* Timeline Node */}
-      <div className={`absolute -left-[31.5px] md:-left-[39.5px] top-6 w-3 h-3 rounded-full ring-4 ${colorConfig.dot} shadow-sm z-10`} />
-      
+    <div className="relative group w-full">
       {isInvoice ? (
-        <Link href={item.href} className="block tap-responsive outline-none focus-visible:ring-2 focus-visible:ring-stone-400 rounded-2xl">
+        <Link href={item.href} className="block outline-none focus-visible:ring-2 focus-visible:ring-stone-400 rounded-[2rem]">
           {inner}
         </Link>
       ) : (
@@ -272,12 +247,11 @@ function TimelineItem({ item }: { item: FamilyFeedItem }) {
   );
 }
 
-function StatChip({ label, value, icon }: { label: string; value: string | number; icon: React.ReactNode }) {
+function StatChip({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="flex items-center gap-2 rounded-full glass-card-light py-1.5 px-3 md:px-4 shadow-sm border-white">
-      {icon}
-      <span className="text-xs font-medium text-stone-600">{label}:</span>
-      <span className="text-sm font-bold text-stone-900">{value}</span>
+    <div className="flex flex-col items-center justify-center rounded-2xl py-1.5 px-4">
+      <span className="text-[10px] uppercase font-bold tracking-widest text-stone-400 mb-0.5">{label}</span>
+      <span className="text-lg font-serif text-stone-700">{value}</span>
     </div>
   );
 }
