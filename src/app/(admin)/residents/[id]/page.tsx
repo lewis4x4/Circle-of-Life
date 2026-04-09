@@ -21,7 +21,7 @@ import { adlTypeLabel, assistanceLabel } from "@/lib/caregiver/adl-form-options"
 import { AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -337,11 +337,35 @@ export default function AdminResidentDetailPage() {
                  )}
                </div>
                
-               {/* Quick Action Bar */}
+               {/* Quick Action Bar — same logging flows as caregiver tablet (RLS applies) */}
                <div className="shrink-0 p-3 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex gap-2">
-                 <Button size="sm" variant="outline" className="text-xs flex-1"><Brain className="w-3.5 h-3.5 mr-1" /> Log Behavior</Button>
-                 <Button size="sm" variant="outline" className="text-xs flex-1"><Stethoscope className="w-3.5 h-3.5 mr-1" /> Log Condition</Button>
-                 <Button size="sm" variant="default" className="text-xs flex-1"><FileText className="w-3.5 h-3.5 mr-1" /> General Note</Button>
+                 <Link
+                   href={`/caregiver/resident/${residentId}/behavior`}
+                   className={cn(
+                     buttonVariants({ variant: "outline", size: "sm" }),
+                     "text-xs flex-1 inline-flex items-center justify-center gap-1",
+                   )}
+                 >
+                   <Brain className="w-3.5 h-3.5" /> Log Behavior
+                 </Link>
+                 <Link
+                   href={`/caregiver/resident/${residentId}/condition-change`}
+                   className={cn(
+                     buttonVariants({ variant: "outline", size: "sm" }),
+                     "text-xs flex-1 inline-flex items-center justify-center gap-1",
+                   )}
+                 >
+                   <Stethoscope className="w-3.5 h-3.5" /> Log Condition
+                 </Link>
+                 <Link
+                   href={`/caregiver/resident/${residentId}/log`}
+                   className={cn(
+                     buttonVariants({ variant: "default", size: "sm" }),
+                     "text-xs flex-1 inline-flex items-center justify-center gap-1",
+                   )}
+                 >
+                   <FileText className="w-3.5 h-3.5" /> General Note
+                 </Link>
                </div>
              </CardContent>
           </Card>

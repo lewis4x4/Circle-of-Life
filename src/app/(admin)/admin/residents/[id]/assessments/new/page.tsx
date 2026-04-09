@@ -144,9 +144,13 @@ export default function AssessmentEntryPage() {
       if (tplErr) throw new Error(tplErr.message);
 
       const role = profile.app_role ?? "";
-      const allowed = (tpls ?? []).filter((t) =>
-        (t.required_role as string[]).includes(role),
-      ) as unknown as AssessmentTemplate[];
+      // Seed templates only list nurse/caregiver/facility_admin; owner/org_admin must see catalog too.
+      const privilegedRoles = new Set(["owner", "org_admin"]);
+      const allowed = (tpls ?? []).filter((t) => {
+        if (privilegedRoles.has(role)) return true;
+        const rr = t.required_role as string[] | null;
+        return Array.isArray(rr) && rr.includes(role);
+      }) as unknown as AssessmentTemplate[];
       setTemplates(allowed);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load");
