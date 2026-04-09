@@ -50,7 +50,9 @@
 
 **~~D23 (2026-04-09)~~** **DONE — Module 14:** **`/admin/dietary`** **Download diet orders CSV**. Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D24+ (owner priority):** remaining §1 rows (e.g. **23** OAuth/sync, **14** automation after clinical sign-off) — one bounded slice at a time.
+**~~D24 (2026-04-09)~~** **DONE — Module 15:** **`/admin/transportation`** **Download transport CSV** ( **`resident_transport_requests`** ). Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D25+ (owner priority):** remaining §1 rows (e.g. **23** OAuth/sync, **14** automation after clinical sign-off, **12** certificate storage depth) — one bounded slice at a time.
 
 ---
 
@@ -71,6 +73,7 @@
 | 12 | **D21** | **12** | ~~**Demonstrations CSV**~~ **DONE** — `/admin/training`. |
 | 13 | **D22** | **22** | ~~**HL7 queue CSV**~~ **DONE** — `/admin/referrals/hl7-inbound`. |
 | 14 | **D23** | **14** | ~~**Diet orders CSV**~~ **DONE** — `/admin/dietary`. |
+| 15 | **D24** | **15** | ~~**Transport requests CSV**~~ **DONE** — `/admin/transportation`. |
 
 Defer **23 OAuth**, **22 MLLP**, **14 full rule engine** until product/security review.
 

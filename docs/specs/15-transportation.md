@@ -53,6 +53,8 @@ Transportation involves two distinct workflows at COL:
 
 **Shipped (Track D15):** **`/admin/transportation/mileage-approvals`** — queue of **`mileage_logs`** with **`approved_at` IS NULL**; **owner / org_admin / facility_admin / nurse** can set **`approved_at`** / **`approved_by`**; **undo** when **`payroll_export_id`** is still null. Module 13 payroll file generation remains separate.
 
+**Shipped (Track D24):** **`/admin/transportation`** — **Download transport CSV** queries up to **500** **`resident_transport_requests`** rows for the **selected facility** (**`residents(first_name, last_name)`** join), RFC-style CSV of scheduling fields and staff/vehicle UUIDs. **No** new DDL.
+
 - MVR (motor vehicle record) annual pull workflow with automated reminder.
 - DVIR mobile capture (pre/post trip inspection form on mobile).
 - Mileage reimbursement auto-calculation from IRS rate or custom org rate.

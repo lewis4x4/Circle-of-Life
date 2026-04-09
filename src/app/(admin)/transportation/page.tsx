@@ -10,9 +10,9 @@ import {
   parseISO,
   startOfDay,
 } from "date-fns";
-import { Bus, CalendarDays, CircleDollarSign, MapPin, Clock, Settings2 } from "lucide-react";
+import { Bus, CalendarDays, CircleDollarSign, Download, MapPin, Clock, Settings2 } from "lucide-react";
 
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -37,6 +37,89 @@ type DriverRow = Database["public"]["Tables"]["driver_credentials"]["Row"] & {
 type TransportRequestRow = Database["public"]["Tables"]["resident_transport_requests"]["Row"] & {
   residents: { first_name: string; last_name: string } | null;
 };
+
+type TransportRequestExportRow = Database["public"]["Tables"]["resident_transport_requests"]["Row"] & {
+  residents: { first_name: string; last_name: string } | null;
+};
+
+function csvEscapeCell(value: string): string {
+  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+  return value;
+}
+
+function buildTransportRequestsCsv(rows: TransportRequestExportRow[]): string {
+  const header = [
+    "id",
+    "organization_id",
+    "facility_id",
+    "resident_id",
+    "resident_first_name",
+    "resident_last_name",
+    "appointment_date",
+    "appointment_time",
+    "destination_name",
+    "destination_address",
+    "purpose",
+    "status",
+    "transport_type",
+    "requested_by",
+    "pickup_time",
+    "return_time",
+    "escort_required",
+    "wheelchair_required",
+    "driver_staff_id",
+    "escort_staff_id",
+    "vehicle_id",
+    "notes",
+    "cancellation_reason",
+    "created_at",
+    "updated_at",
+    "created_by",
+    "updated_by",
+  ].join(",");
+  const body = rows.map((row) =>
+    [
+      csvEscapeCell(row.id),
+      csvEscapeCell(row.organization_id),
+      csvEscapeCell(row.facility_id),
+      csvEscapeCell(row.resident_id),
+      csvEscapeCell(row.residents?.first_name ?? ""),
+      csvEscapeCell(row.residents?.last_name ?? ""),
+      csvEscapeCell(row.appointment_date),
+      csvEscapeCell(row.appointment_time ?? ""),
+      csvEscapeCell(row.destination_name),
+      csvEscapeCell(row.destination_address ?? ""),
+      csvEscapeCell(row.purpose),
+      csvEscapeCell(row.status),
+      csvEscapeCell(row.transport_type),
+      csvEscapeCell(row.requested_by),
+      csvEscapeCell(row.pickup_time ?? ""),
+      csvEscapeCell(row.return_time ?? ""),
+      csvEscapeCell(String(row.escort_required)),
+      csvEscapeCell(String(row.wheelchair_required)),
+      csvEscapeCell(row.driver_staff_id ?? ""),
+      csvEscapeCell(row.escort_staff_id ?? ""),
+      csvEscapeCell(row.vehicle_id ?? ""),
+      csvEscapeCell(row.notes ?? ""),
+      csvEscapeCell(row.cancellation_reason ?? ""),
+      csvEscapeCell(row.created_at),
+      csvEscapeCell(row.updated_at),
+      csvEscapeCell(row.created_by ?? ""),
+      csvEscapeCell(row.updated_by ?? ""),
+    ].join(","),
+  );
+  return [header, ...body].join("\r\n");
+}
+
+function triggerCsvDownload(filename: string, text: string) {
+  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 function formatEnum(s: string) {
   return s.replace(/_/g, " ");
@@ -113,6 +196,7 @@ export default function AdminTransportationHubPage() {
   const [transportRequests, setTransportRequests] = useState<TransportRequestRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exportingCsv, setExportingCsv] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -181,6 +265,30 @@ export default function AdminTransportationHubPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const exportTransportRequestsCsv = useCallback(async () => {
+    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) return;
+    setExportingCsv(true);
+    setError(null);
+    try {
+      const { data, error: qErr } = await supabase
+        .from("resident_transport_requests")
+        .select("*, residents(first_name, last_name)")
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .order("updated_at", { ascending: false })
+        .limit(500);
+      if (qErr) throw qErr;
+      const rows = (data ?? []) as TransportRequestExportRow[];
+      const csv = buildTransportRequestsCsv(rows);
+      const stamp = format(new Date(), "yyyy-MM-dd");
+      triggerCsvDownload(`resident-transport-requests-${stamp}.csv`, csv);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to export transport requests.");
+    } finally {
+      setExportingCsv(false);
+    }
+  }, [supabase, selectedFacilityId]);
 
   const driverAlerts = useMemo((): DriverAlert[] => {
     const out: DriverAlert[] = [];
@@ -361,6 +469,16 @@ export default function AdminTransportationHubPage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!facilityReady || exportingCsv}
+                className="shrink-0 h-12 gap-2 rounded-full px-5 text-[10px] font-bold uppercase tracking-widest dark:border-white/10 bg-white dark:bg-white/5 shadow-sm"
+                onClick={() => void exportTransportRequestsCsv()}
+              >
+                <Download className="h-4 w-4" aria-hidden />
+                {exportingCsv ? "Preparing…" : "Download transport CSV"}
+              </Button>
               <Link
                 href="/admin/transportation/calendar"
                 className={cn(
