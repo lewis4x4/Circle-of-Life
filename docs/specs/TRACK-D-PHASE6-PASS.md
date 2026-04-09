@@ -314,6 +314,16 @@
 
 ---
 
+**D34 (2026-04-09):** **Admin hub CSV helpers** — **shared `csvEscapeCell` + `triggerCsvDownload`** (`src/lib/csv-export.ts`).
+
+**Slice:** Remove duplicate CSV escape/download implementations from all admin pages that already ship hub CSV exports (training, reputation, certifications, dietary, time-records, staffing, transportation, payroll hub + batch detail, referrals + HL7 inbound, mileage approvals); **`/admin/staff`** and **`/admin/schedules`** already imported the shared module. **No** DDL, **no** CSV column changes.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-09T17-43-58-315Z-track-d-d34-csv-export-consolidation.json` (`npm run segment:gates -- --segment "track-d-d34-csv-export-consolidation" --ui --no-chaos`).
+
+**Mission alignment:** **pass** — single escaping/download path reduces drift and keeps exports predictable for audits.
+
+---
+
 ## Track D — plan (remaining)
 
 **Segments D1–D10:** Closed in repo with gate artifacts above. This completes the **Phase 6 Core visibility / workflow** slices we prioritized for COL (transport, training, dietary, referrals, reputation), plus **D10** org mileage rate.

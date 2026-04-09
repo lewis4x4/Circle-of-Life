@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { Users, AlertCircle, Clock, FileWarning, CalendarPlus, Activity, Download } from "lucide-react";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Badge } from "@/components/ui/badge";
@@ -52,11 +53,6 @@ type CertWarning = {
 
 type StaffingSnapshotCsvRow = Database["public"]["Tables"]["staffing_ratio_snapshots"]["Row"];
 
-function csvEscapeCell(value: string): string {
-  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
-  return value;
-}
-
 function buildStaffingSnapshotsCsv(rows: StaffingSnapshotCsvRow[]): string {
   const header = [
     "id",
@@ -89,16 +85,6 @@ function buildStaffingSnapshotsCsv(rows: StaffingSnapshotCsvRow[]): string {
     ].join(","),
   );
   return [header, ...body].join("\r\n");
-}
-
-function triggerCsvDownload(filename: string, text: string) {
-  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
 }
 
 export default function AdminStaffingConsolePage() {

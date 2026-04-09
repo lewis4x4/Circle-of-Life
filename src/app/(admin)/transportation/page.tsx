@@ -14,6 +14,7 @@ import { Bus, CalendarDays, CircleDollarSign, Download, MapPin, Clock, Settings2
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -41,11 +42,6 @@ type TransportRequestRow = Database["public"]["Tables"]["resident_transport_requ
 type TransportRequestExportRow = Database["public"]["Tables"]["resident_transport_requests"]["Row"] & {
   residents: { first_name: string; last_name: string } | null;
 };
-
-function csvEscapeCell(value: string): string {
-  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
-  return value;
-}
 
 function buildTransportRequestsCsv(rows: TransportRequestExportRow[]): string {
   const header = [
@@ -109,16 +105,6 @@ function buildTransportRequestsCsv(rows: TransportRequestExportRow[]): string {
     ].join(","),
   );
   return [header, ...body].join("\r\n");
-}
-
-function triggerCsvDownload(filename: string, text: string) {
-  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
 }
 
 function formatEnum(s: string) {

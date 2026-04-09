@@ -7,6 +7,7 @@ import { Star } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -26,11 +27,6 @@ type ReplyRow = Database["public"]["Tables"]["reputation_replies"]["Row"] & {
 
 function formatPlatform(p: string) {
   return p.replace(/_/g, " ");
-}
-
-function csvEscapeCell(value: string): string {
-  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
-  return value;
 }
 
 function buildReputationAccountsCsv(rows: AccountRow[]): string {
@@ -95,16 +91,6 @@ function buildReputationRepliesCsv(rows: ReplyRow[]): string {
     ].join(",");
   });
   return [header, ...body].join("\r\n");
-}
-
-function triggerCsvDownload(filename: string, text: string) {
-  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
 }
 
 export default function AdminReputationHubPage() {

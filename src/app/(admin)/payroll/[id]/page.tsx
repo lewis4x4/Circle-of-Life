@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -24,11 +25,6 @@ type LineWithStaff = {
   payload: Database["public"]["Tables"]["payroll_export_lines"]["Row"]["payload"];
   staff: { first_name: string | null; last_name: string | null } | null;
 };
-
-function csvEscapeCell(value: string): string {
-  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
-  return value;
-}
 
 function buildPayrollLinesCsv(lines: LineWithStaff[]): string {
   const header = [
@@ -53,16 +49,6 @@ function buildPayrollLinesCsv(lines: LineWithStaff[]): string {
     ].join(",");
   });
   return [header, ...body].join("\r\n");
-}
-
-function triggerDownload(filename: string, text: string) {
-  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
 }
 
 function formatCents(cents: number | null) {
@@ -347,7 +333,7 @@ export default function AdminPayrollBatchDetailPage() {
                   onClick={() => {
                     const csv = buildPayrollLinesCsv(lines);
                     const safeProv = batch.provider.replace(/[^a-zA-Z0-9._-]+/g, "_");
-                    triggerDownload(
+                    triggerCsvDownload(
                       `payroll-export_${batch.period_start}_${batch.period_end}_${safeProv}.csv`,
                       csv,
                     );

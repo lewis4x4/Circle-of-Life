@@ -16,6 +16,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
+import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -68,11 +69,6 @@ type StaffCertExportRow = Database["public"]["Tables"]["staff_certifications"]["
   staff_display_name: string;
 };
 
-function csvEscapeCell(value: string): string {
-  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
-  return value;
-}
-
 function buildCertificationsCsv(rows: StaffCertExportRow[]): string {
   const header = [
     "id",
@@ -121,16 +117,6 @@ function buildCertificationsCsv(rows: StaffCertExportRow[]): string {
     ].join(","),
   );
   return [header, ...body].join("\r\n");
-}
-
-function triggerCsvDownload(filename: string, text: string) {
-  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
 }
 
 const DEFAULT_FILTERS = { search: "", timeline: "all", dbStatus: "all" };

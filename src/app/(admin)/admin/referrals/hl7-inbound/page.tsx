@@ -12,6 +12,7 @@ import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { Badge } from "@/components/ui/badge";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -27,11 +28,6 @@ function previewRaw(s: string) {
 
 function formatStatus(s: string) {
   return s.replace(/_/g, " ");
-}
-
-function csvEscapeCell(value: string): string {
-  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
-  return value;
 }
 
 function buildHl7InboundCsv(rows: Row[]): string {
@@ -64,16 +60,6 @@ function buildHl7InboundCsv(rows: Row[]): string {
     ].join(","),
   );
   return [header, ...body].join("\r\n");
-}
-
-function triggerCsvDownload(filename: string, text: string) {
-  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
 }
 
 export default function AdminReferralsHl7InboundPage() {

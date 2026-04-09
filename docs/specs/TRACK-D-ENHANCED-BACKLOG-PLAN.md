@@ -70,7 +70,9 @@
 
 **~~D33 (2026-04-09)~~** **DONE — Module 11:** **`/admin/schedules`** **Download schedule weeks CSV** ( **`schedules`** ). Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D34+ (owner priority):** remaining §1 rows (e.g. **23** OAuth/sync, **14** automation after clinical sign-off, **12** certificate storage depth) — one bounded slice at a time.
+**~~D34 (2026-04-09)~~** **DONE — Admin CSV helpers:** **`src/lib/csv-export`** shared by **all** hub CSV pages (no duplicate `csvEscapeCell` / `triggerCsvDownload`). Gate: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D35+ (owner priority):** remaining §1 rows (e.g. **23** OAuth/sync, **14** automation after clinical sign-off, **12** certificate storage depth) — one bounded slice at a time.
 
 ---
 
@@ -101,6 +103,7 @@
 | 22 | **D31** | **11** | ~~**Time records CSV**~~ **DONE** — `/admin/time-records`. |
 | 23 | **D32** | **11** | ~~**Staffing ratio snapshots CSV**~~ **DONE** — `/admin/staffing`. |
 | 24 | **D33** | **11** | ~~**Schedule weeks CSV**~~ **DONE** — `/admin/schedules`. |
+| 25 | **D34** | **—** | ~~**Shared `csv-export` helpers**~~ **DONE** — all admin CSV hubs. |
 
 Defer **23 OAuth**, **22 MLLP**, **14 full rule engine** until product/security review.
 
