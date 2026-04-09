@@ -35,7 +35,7 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 - `/admin/referrals/hl7-inbound/new`
 - `/admin/reputation` (Phase 6 Module 23 — `23-reputation.md`)
 - `/admin/reputation/integrations` (Google OAuth + Google/Yelp review import — `23-reputation.md` Track D D44–D47; `POST /api/reputation/sync/google`, `POST /api/reputation/sync/yelp`, `POST /api/cron/reputation/google-reviews`)
-- `/admin/reputation` hub draft actions — `POST /api/reputation/replies/[id]/post-google` (Track D D48)
+- `/admin/reputation` hub draft actions — `POST /api/reputation/replies/[id]/post-google` (Track D D48); `POST /api/reputation/replies/[id]/post-yelp` (Track D D49)
 - `/admin/reputation/accounts/new`
 - `/admin/reputation/replies/new`
 - `/admin/admissions` (Phase 4 Module 2 — `02-admissions-move-in.md`)

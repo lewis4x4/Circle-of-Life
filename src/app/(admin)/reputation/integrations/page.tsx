@@ -19,6 +19,7 @@ type Status = {
   googleOAuthEnvConfigured: boolean;
   stateSecretConfigured: boolean;
   yelpFusionConfigured: boolean;
+  yelpPartnerPostConfigured: boolean;
   connected: boolean;
   connectedAt: string | null;
   canManage: boolean;
@@ -285,9 +286,11 @@ export default function ReputationIntegrationsPage() {
         <CardHeader>
           <CardTitle>Yelp (Fusion API)</CardTitle>
           <CardDescription>
-            Server-only <strong>YELP_FUSION_API_KEY</strong>. Add a <strong>Yelp</strong> reputation account per
-            facility with <strong>External place ID</strong> = Yelp business id. Fusion returns up to{" "}
-            <strong>three</strong> review excerpts per import. Only the <strong>owner</strong> can run import.
+            Server-only <strong>YELP_FUSION_API_KEY</strong> (import). Optional <strong>YELP_PARTNER_API_KEY</strong>{" "}
+            for posting public replies via Yelp Partner API; otherwise the Fusion key is tried. Add a{" "}
+            <strong>Yelp</strong> reputation account per facility with <strong>External place ID</strong> = Yelp
+            business id. Fusion returns up to <strong>three</strong> review excerpts per import. Only the{" "}
+            <strong>owner</strong> can run import.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -298,8 +301,15 @@ export default function ReputationIntegrationsPage() {
           ) : status ? (
             <>
               <p className="text-sm text-slate-600 dark:text-slate-400">
-                API key configured:{" "}
+                Fusion import key:{" "}
                 <strong>{status.yelpFusionConfigured ? "Yes" : "No (set YELP_FUSION_API_KEY)"}</strong>
+                <br />
+                Reply post (Partner API Bearer):{" "}
+                <strong>
+                  {status.yelpPartnerPostConfigured
+                    ? "Yes (YELP_PARTNER_API_KEY or Fusion fallback)"
+                    : "No (set YELP_FUSION_API_KEY or YELP_PARTNER_API_KEY)"}
+                </strong>
               </p>
               <div className="flex flex-wrap gap-2">
                 {status.canManage && status.yelpFusionConfigured ? (

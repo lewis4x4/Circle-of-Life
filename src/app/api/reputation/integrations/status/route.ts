@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { googleOAuthEnvReady } from "@/lib/reputation/google-oauth";
 import { yelpFusionEnvReady } from "@/lib/reputation/yelp-fusion";
+import { yelpPartnerPostEnvReady } from "@/lib/reputation/yelp-partner-reviews";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 
@@ -42,6 +43,8 @@ export async function GET() {
     googleOAuthEnvConfigured: googleOAuthEnvReady(),
     stateSecretConfigured: Boolean(process.env.REPUTATION_OAUTH_STATE_SECRET?.trim()?.length),
     yelpFusionConfigured: yelpFusionEnvReady(),
+    /** Partner "respond to review" uses Bearer; falls back to Fusion key when YELP_PARTNER_API_KEY unset. */
+    yelpPartnerPostConfigured: yelpPartnerPostEnvReady(),
     connected: Boolean(cred),
     connectedAt: cred?.connected_at ?? null,
     canManage: profile.app_role === "owner",
