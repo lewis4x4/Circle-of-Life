@@ -83,7 +83,7 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 - `/admin/training/inservice/new` (in-service session + attendees — Track D D42)
 - `/admin/dietary` (Phase 6 Module 14 — `14-dietary-nutrition.md`)
 - `/admin/dietary/new`
-- `/admin/dietary/clinical-review` (read-only diet order + resident medications — Track D13; advisory liquid-form vs thickened-fluid hint — Track D50)
+- `/admin/dietary/clinical-review` (read-only diet order + resident medications — Track D13; advisory med–diet hints — Track D50–D51)
 - `/admin/transportation` (Phase 6 Module 15 — `15-transportation.md`)
 - `/admin/transportation/calendar` (week strip + daily agenda for `resident_transport_requests` — Track D14)
 - `/admin/transportation/mileage-approvals` (`mileage_logs` approval queue — Track D15)
