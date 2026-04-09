@@ -37,6 +37,8 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 
 **Shipped (Track D22):** **`/admin/referrals/hl7-inbound`** — **Download queue CSV** (up to **500** rows for the selected facility), including **`raw_message`** for partner or archive handoff. **No** MLLP, **no** auto-leads.
 
+**Shipped (Track D27):** **`/admin/referrals`** — **Download leads CSV** (up to **500** **`referral_leads`** rows for the selected facility, **`referral_sources(name)`** join). **No** new DDL.
+
 ---
 
 ## RLS (normative)

@@ -244,6 +244,16 @@
 
 ---
 
+**D27 (2026-04-09):** **Module 22 — Referral CRM** ([22-referral-crm.md](./22-referral-crm.md)) — **referral leads pipeline CSV export**.
+
+**Slice:** **`/admin/referrals`** — **Download leads CSV** queries up to **500** **`referral_leads`** rows for the **selected facility** (**`referral_sources(name)`** join), RFC-style CSV. **No** MLLP, **no** new DDL.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-09T17-03-52-499Z-track-d-d27-referral-leads-csv.json` (`npm run segment:gates -- --segment "track-d-d27-referral-leads-csv" --ui --no-chaos`).
+
+**Mission alignment:** **pass** — admissions staff can archive pipeline PII under existing RLS without automated HL7 lead creation.
+
+---
+
 ## Track D — plan (remaining)
 
 **Segments D1–D10:** Closed in repo with gate artifacts above. This completes the **Phase 6 Core visibility / workflow** slices we prioritized for COL (transport, training, dietary, referrals, reputation), plus **D10** org mileage rate.
@@ -256,7 +266,7 @@
 | **13** | ~~Mileage → `payroll_export_lines`~~ (D17); ~~generic **CSV** download on batch~~ (D18); ~~**batches list CSV** on hub~~ (D26); vendor-specific serializers, time-record worker |
 | **14** | ~~Read-only diet + med panel~~ (D13); ~~**diet orders CSV** on hub~~ (D23); automated med–texture cross-check vs medications; meal production; vendor API; full menu cycle |
 | **15** | ~~Week calendar + mileage approval queue~~ (D14, D15); ~~**transport requests CSV** on hub~~ (D24); ~~**mileage logs CSV** on approvals~~ (D25); full month grid, external calendar sync |
-| **22** | ~~Minimal **MSH** queue processor~~ (D12); ~~manual **Draft lead** from HL7~~ (D16); ~~**HL7 queue CSV**~~ (D22); MLLP, full ADT parse, auto-**`referral_leads`** |
+| **22** | ~~Minimal **MSH** queue processor~~ (D12); ~~manual **Draft lead** from HL7~~ (D16); ~~**HL7 queue CSV**~~ (D22); ~~**pipeline leads CSV** on hub~~ (D27); MLLP, full ADT parse, auto-**`referral_leads`** |
 | **23** | ~~**Replies CSV** export on hub~~ (D19); external review platform OAuth/sync APIs |
 
 **Authoritative README narrative:** [README.md](./README.md) — section **Track D — Phase 6 completion pass**.

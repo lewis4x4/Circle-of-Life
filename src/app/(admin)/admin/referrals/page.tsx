@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { ClipboardList, UserPlus, ArrowRight } from "lucide-react";
+import { format } from "date-fns";
+import { ClipboardList, Download, UserPlus, ArrowRight } from "lucide-react";
 
 import { ReferralsHubNav } from "./referrals-hub-nav";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
@@ -21,6 +22,83 @@ type LeadRow = Pick<
 > & {
   referral_sources: { name: string } | null;
 };
+
+type LeadExportRow = Database["public"]["Tables"]["referral_leads"]["Row"] & {
+  referral_sources: { name: string } | null;
+};
+
+function csvEscapeCell(value: string): string {
+  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+  return value;
+}
+
+function buildReferralLeadsCsv(rows: LeadExportRow[]): string {
+  const header = [
+    "id",
+    "organization_id",
+    "facility_id",
+    "first_name",
+    "last_name",
+    "preferred_name",
+    "status",
+    "email",
+    "phone",
+    "date_of_birth",
+    "referral_source_id",
+    "referral_source_name",
+    "external_reference",
+    "converted_resident_id",
+    "converted_at",
+    "notes",
+    "pii_access_tier",
+    "merged_at",
+    "merged_by",
+    "merged_into_lead_id",
+    "created_at",
+    "updated_at",
+    "created_by",
+    "updated_by",
+  ].join(",");
+  const body = rows.map((row) =>
+    [
+      csvEscapeCell(row.id),
+      csvEscapeCell(row.organization_id),
+      csvEscapeCell(row.facility_id),
+      csvEscapeCell(row.first_name),
+      csvEscapeCell(row.last_name),
+      csvEscapeCell(row.preferred_name ?? ""),
+      csvEscapeCell(row.status),
+      csvEscapeCell(row.email ?? ""),
+      csvEscapeCell(row.phone ?? ""),
+      csvEscapeCell(row.date_of_birth ?? ""),
+      csvEscapeCell(row.referral_source_id ?? ""),
+      csvEscapeCell(row.referral_sources?.name ?? ""),
+      csvEscapeCell(row.external_reference ?? ""),
+      csvEscapeCell(row.converted_resident_id ?? ""),
+      csvEscapeCell(row.converted_at ?? ""),
+      csvEscapeCell(row.notes ?? ""),
+      csvEscapeCell(row.pii_access_tier),
+      csvEscapeCell(row.merged_at ?? ""),
+      csvEscapeCell(row.merged_by ?? ""),
+      csvEscapeCell(row.merged_into_lead_id ?? ""),
+      csvEscapeCell(row.created_at),
+      csvEscapeCell(row.updated_at),
+      csvEscapeCell(row.created_by ?? ""),
+      csvEscapeCell(row.updated_by ?? ""),
+    ].join(","),
+  );
+  return [header, ...body].join("\r\n");
+}
+
+function triggerCsvDownload(filename: string, text: string) {
+  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 function formatStatus(s: string) {
   return s.replace(/_/g, " ");
@@ -39,6 +117,7 @@ export default function AdminReferralsHubPage() {
     attention: 0,
   });
   const [hl7Counts, setHl7Counts] = useState({ pending: 0, failed: 0 });
+  const [exportingCsv, setExportingCsv] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -113,6 +192,30 @@ export default function AdminReferralsHubPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const exportReferralLeadsCsv = useCallback(async () => {
+    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) return;
+    setExportingCsv(true);
+    setLoadError(null);
+    try {
+      const { data, error: qErr } = await supabase
+        .from("referral_leads")
+        .select("*, referral_sources(name)")
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .order("updated_at", { ascending: false })
+        .limit(500);
+      if (qErr) throw qErr;
+      const list = (data ?? []) as LeadExportRow[];
+      const csv = buildReferralLeadsCsv(list);
+      const stamp = format(new Date(), "yyyy-MM-dd");
+      triggerCsvDownload(`referral-leads-${stamp}.csv`, csv);
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : "Failed to export referral leads.");
+    } finally {
+      setExportingCsv(false);
+    }
+  }, [supabase, selectedFacilityId]);
 
   const noFacility = !selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId);
 
@@ -238,11 +341,24 @@ export default function AdminReferralsHubPage() {
 
       {/* ─── CASE ROSTER (GLASS ROWS) ─── */}
       <div className="space-y-6">
-        <div className="flex items-center gap-3 border-b border-slate-200/50 dark:border-white/10 pb-4">
-          <ClipboardList className="h-5 w-5 text-indigo-500" />
-          <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white tracking-tight">
-            Pipeline Leads
-          </h3>
+        <div className="flex flex-col gap-3 border-b border-slate-200/50 dark:border-white/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <ClipboardList className="h-5 w-5 text-indigo-500" />
+            <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white tracking-tight">
+              Pipeline Leads
+            </h3>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={noFacility || exportingCsv}
+            className="h-10 shrink-0 gap-2 rounded-full text-[10px] font-bold uppercase tracking-widest"
+            onClick={() => void exportReferralLeadsCsv()}
+          >
+            <Download className="h-4 w-4" aria-hidden />
+            {exportingCsv ? "Preparing…" : "Download leads CSV"}
+          </Button>
         </div>
 
         {loadError ? (
