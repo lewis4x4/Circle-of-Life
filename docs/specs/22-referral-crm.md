@@ -33,6 +33,8 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 
 **Shipped (Track D12):** Edge Function **`process-referral-hl7-inbound`** — for **`pending`** queue rows, minimal **MSH** parse (message type + control id + trigger from `MSH-9`); updates status to **`processed`** / **`failed`** and **`parse_error`** codes; does **not** auto-create **`referral_leads`**.
 
+**Shipped (Track D16):** **`/admin/referrals/hl7-inbound`** — **Draft lead** on **`processed`** rows without **`linked_referral_lead_id`**: inserts **`referral_leads`** with **`external_reference`** = `hl7:{inbound_row_id}`, optional **PID-5** name via `tryParsePid5Name`, sets **`linked_referral_lead_id`**. Manual only (not triggered by the Edge Function).
+
 ---
 
 ## RLS (normative)

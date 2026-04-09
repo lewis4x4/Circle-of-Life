@@ -10,7 +10,7 @@ import {
   parseISO,
   startOfDay,
 } from "date-fns";
-import { Bus, MapPin, Clock, Settings2 } from "lucide-react";
+import { Bus, CalendarDays, CircleDollarSign, MapPin, Clock, Settings2 } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -282,6 +282,26 @@ export default function AdminTransportationHubPage() {
              </p>
            </div>
            <div className="flex flex-wrap items-center gap-2">
+             <Link
+               href="/admin/transportation/mileage-approvals"
+               className={cn(
+                 buttonVariants({ size: "default", variant: "outline" }),
+                 "h-12 gap-2 rounded-full border-slate-300/80 px-5 text-[10px] font-bold uppercase tracking-widest dark:border-white/15 dark:bg-white/5",
+               )}
+             >
+               <CircleDollarSign className="h-4 w-4" aria-hidden />
+               Mileage approvals
+             </Link>
+             <Link
+               href="/admin/transportation/calendar"
+               className={cn(
+                 buttonVariants({ size: "default", variant: "outline" }),
+                 "h-12 gap-2 rounded-full border-slate-300/80 px-5 text-[10px] font-bold uppercase tracking-widest dark:border-white/15 dark:bg-white/5",
+               )}
+             >
+               <CalendarDays className="h-4 w-4" aria-hidden />
+               Week view
+             </Link>
              <Link href="/admin/transportation/requests/new" className={cn(buttonVariants({ size: "default" }), "h-12 px-6 rounded-full font-bold uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg")} >
                + Transport request
              </Link>
@@ -340,12 +360,24 @@ export default function AdminTransportationHubPage() {
                 Appointments on or after today. Open a row to assign a vehicle, driver, and complete.
               </p>
             </div>
-            <Link
-              href="/admin/transportation/requests/new"
-              className={cn(buttonVariants({ size: "default", variant: "outline" }), "shrink-0 h-12 rounded-full px-6 text-[10px] font-bold uppercase tracking-widest dark:border-white/10 bg-white dark:bg-white/5 shadow-sm")}
-            >
-              Log Request
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/admin/transportation/calendar"
+                className={cn(
+                  buttonVariants({ size: "default", variant: "outline" }),
+                  "shrink-0 h-12 gap-2 rounded-full px-5 text-[10px] font-bold uppercase tracking-widest dark:border-white/10 bg-white dark:bg-white/5 shadow-sm",
+                )}
+              >
+                <CalendarDays className="h-4 w-4" aria-hidden />
+                Week view
+              </Link>
+              <Link
+                href="/admin/transportation/requests/new"
+                className={cn(buttonVariants({ size: "default", variant: "outline" }), "shrink-0 h-12 rounded-full px-6 text-[10px] font-bold uppercase tracking-widest dark:border-white/10 bg-white dark:bg-white/5 shadow-sm")}
+              >
+                Log Request
+              </Link>
+            </div>
           </div>
           {loading ? (
             <p className="text-sm font-mono text-slate-500 py-10 pl-2">Loading trips…</p>

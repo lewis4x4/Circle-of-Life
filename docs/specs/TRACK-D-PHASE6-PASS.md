@@ -128,6 +128,22 @@
 
 ---
 
+**D13–D16 (2026-04-09):** **Enhanced batch** — modules **14** (Dietary), **15** (Transportation), **22** (Referral CRM).
+
+- **D13 — Module 14** ([14-dietary-nutrition.md](./14-dietary-nutrition.md)) — **`/admin/dietary/clinical-review`** — facility-scoped resident selector (from **`diet_orders`**), primary diet order summary (IDDSI, allergies, texture, med/texture review notes) alongside **`resident_medications`** (read-only). **No** automated rule engine.
+
+- **D14 — Module 15** ([15-transportation.md](./15-transportation.md)) — **`/admin/transportation/calendar`** — Sunday-start week strip with trip counts; **clickable day** agenda for **`resident_transport_requests`**; week navigation. **No** new DDL.
+
+- **D15 — Module 15** ([15-transportation.md](./15-transportation.md)) — **`/admin/transportation/mileage-approvals`** — **`mileage_logs`** with **`approved_at` IS NULL** (pending) + recently approved; **owner / org_admin / facility_admin / nurse** may **Approve** or **Undo** when **`payroll_export_id`** is null. **No** payroll file generation.
+
+- **D16 — Module 22** ([22-referral-crm.md](./22-referral-crm.md)) — **`/admin/referrals/hl7-inbound`** — for **`processed`** rows without **`linked_referral_lead_id`**, **Draft lead** inserts **`referral_leads`** with **`external_reference`** = `hl7:{inbound_id}`, optional **PID-5** name; duplicate **`external_reference`** surfaces a clear error. **No** Edge automation.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-09T15-54-30-576Z-track-d-d13-d16-enhanced-batch.json` (`npm run segment:gates -- --segment "track-d-d13-d16-enhanced-batch" --ui --no-chaos`).
+
+**Mission alignment:** **pass** — human review for diet–med visibility, mileage approval before payroll export, and referral lead creation stays explicit and staff-controlled.
+
+---
+
 **D17 (2026-04-09):** **Module 13 — Payroll Integration** ([13-payroll-integration.md](./13-payroll-integration.md)) — **approved mileage → export lines**.
 
 **Slice:** **`/admin/payroll/[id]`** — draft batches show **Import mileage into batch**: loads **`mileage_logs`** with **`approved_at` set**, **`payroll_export_id` IS NULL**, **`trip_date`** within batch period; inserts **`payroll_export_lines`** (`line_kind` = `mileage_reimbursement`, idempotency `mileage:{log_id}`) and sets **`mileage_logs.payroll_export_id`**. Hub batches link to detail; payroll hub SYS label corrected to **Module 13**. **No** new DDL.
@@ -146,11 +162,11 @@
 
 | Module | Backlog |
 |--------|---------|
-| **12** | Storage certificate uploads, Baya/API, automated assignment, org-wide `training_compliance_snapshots` usage |
+| **12** | ~~Storage certificate PDF uploads~~ (migration `115` + training hub); Baya/API, automated assignment, org-wide `training_compliance_snapshots` usage |
 | **13** | ~~Mileage → `payroll_export_lines` on draft batch~~ (D17); CSV/vendor serializers, time-record worker |
-| **14** | Automated med–texture cross-check vs medications; meal production; vendor API; full menu cycle |
-| **15** | Payroll mileage approval workflow, month/week calendar, external calendar sync |
-| **22** | ~~Minimal **MSH** queue processor~~ (D12); MLLP, full ADT parse, auto-**`referral_leads`** |
+| **14** | ~~Read-only diet + med panel~~ (D13); automated med–texture cross-check vs medications; meal production; vendor API; full menu cycle |
+| **15** | ~~Week calendar + mileage approval queue~~ (D14, D15); full month grid, external calendar sync |
+| **22** | ~~Minimal **MSH** queue processor~~ (D12); ~~manual **Draft lead** from HL7~~ (D16); MLLP, full ADT parse, auto-**`referral_leads`** |
 | **23** | External review platform OAuth/sync APIs |
 
 **Authoritative README narrative:** [README.md](./README.md) — section **Track D — Phase 6 completion pass**.

@@ -50,6 +50,8 @@ Dietary is also a linchpin for clinical risk: IDDSI texture levels must align wi
 
 ### Enhanced (defer)
 
+**Shipped (Track D13):** Read-only **`/admin/dietary/clinical-review`** — resident selector (from facility diet orders), primary **diet order** panel (IDDSI, allergies, med/texture review notes) and **resident medications** list side-by-side; no automation vs `resident_medications`.
+
 - Edge Function: flag solid-dose medications vs. fluid viscosity level (cross-check with `resident_medications`).
 - Tray ticket generation with resident name, diet order, room/bed.
 - Menu planning calendar with nutritional targets.

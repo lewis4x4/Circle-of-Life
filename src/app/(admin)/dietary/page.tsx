@@ -177,7 +177,16 @@ export default function AdminDietaryHubPage() {
                IDDSI food and fluid levels with allergy constraints. Manage therapeutic diet orders across your facility.
              </p>
            </div>
-           <div>
+           <div className="flex flex-wrap items-center gap-3 justify-end">
+              <Link
+                href="/admin/dietary/clinical-review"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "default" }),
+                  "h-12 px-6 rounded-full font-bold uppercase tracking-widest text-[10px] border-slate-200 dark:border-white/10",
+                )}
+              >
+                Med / diet review
+              </Link>
               <Link href="/admin/dietary/new" className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-widest text-xs tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg")} >
                 + New Diet Order
               </Link>
@@ -267,13 +276,13 @@ export default function AdminDietaryHubPage() {
                       </div>
                       <div className="flex justify-start pl-2 mt-2">
                         <Link
-                          href="/admin/dietary/new"
+                          href={`/admin/dietary/clinical-review?resident=${row.resident_id}`}
                           className={cn(
                             buttonVariants({ variant: "default", size: "sm" }),
                             "h-10 rounded-full px-6 bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-black dark:hover:bg-slate-200 font-bold uppercase tracking-widest text-[10px]",
                           )}
                         >
-                          Review Request
+                          Clinical review
                         </Link>
                       </div>
                     </MotionItem>

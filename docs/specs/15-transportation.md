@@ -49,7 +49,10 @@ Transportation involves two distinct workflows at COL:
 
 ### Enhanced (defer)
 
-- Trip scheduling calendar with resident appointment linkage.
+**Shipped (Track D14):** **`/admin/transportation/calendar`** — week strip (Sunday-start) with per-day trip counts and selectable-day agenda for **`resident_transport_requests`** (same RLS scope as hub); prev/next week, “This week”. Full month grid / external sync remain deferred.
+
+**Shipped (Track D15):** **`/admin/transportation/mileage-approvals`** — queue of **`mileage_logs`** with **`approved_at` IS NULL**; **owner / org_admin / facility_admin / nurse** can set **`approved_at`** / **`approved_by`**; **undo** when **`payroll_export_id`** is still null. Module 13 payroll file generation remains separate.
+
 - MVR (motor vehicle record) annual pull workflow with automated reminder.
 - DVIR mobile capture (pre/post trip inspection form on mobile).
 - Mileage reimbursement auto-calculation from IRS rate or custom org rate.

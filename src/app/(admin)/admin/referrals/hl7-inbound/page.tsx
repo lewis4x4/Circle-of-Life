@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
-import { Activity, Ban, Check, Radio, Server, X } from "lucide-react";
+import { Activity, Ban, Check, Radio, Server, UserPlus, X } from "lucide-react";
 
 import { ReferralsHubNav } from "../referrals-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
+import { tryParsePid5Name } from "@/lib/referrals/hl7-pid-name";
 
 type Row = Database["public"]["Tables"]["referral_hl7_inbound"]["Row"];
 type Status = Database["public"]["Enums"]["referral_hl7_inbound_status"];
@@ -35,6 +36,7 @@ export default function AdminReferralsHl7InboundPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [creatingLeadId, setCreatingLeadId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -65,6 +67,65 @@ export default function AdminReferralsHl7InboundPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function createDraftLead(row: Row) {
+    if (row.status !== "processed" || row.linked_referral_lead_id) return;
+    setCreatingLeadId(row.id);
+    setError(null);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Sign in required.");
+
+      const parsed = tryParsePid5Name(row.raw_message);
+      const firstName = parsed?.first_name ?? "HL7";
+      const lastName = parsed?.last_name ?? "Referral";
+      const notes = [
+        "Created from HL7 inbound queue (manual).",
+        row.message_control_id ? `Message control ID: ${row.message_control_id}` : null,
+        row.trigger_event ? `Trigger: ${row.trigger_event}` : null,
+        `Inbound row: ${row.id}`,
+      ]
+        .filter(Boolean)
+        .join("\n");
+
+      const { data: lead, error: insErr } = await supabase
+        .from("referral_leads")
+        .insert({
+          organization_id: row.organization_id,
+          facility_id: row.facility_id,
+          first_name: firstName,
+          last_name: lastName,
+          notes,
+          external_reference: `hl7:${row.id}`,
+          status: "new",
+          created_by: user.id,
+          updated_by: user.id,
+        })
+        .select("id")
+        .single();
+      if (insErr) throw insErr;
+      if (!lead) throw new Error("No lead returned.");
+
+      const { error: linkErr } = await supabase
+        .from("referral_hl7_inbound")
+        .update({ linked_referral_lead_id: lead.id, updated_by: user.id })
+        .eq("id", row.id);
+      if (linkErr) throw linkErr;
+
+      await load();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Could not create lead.";
+      if (/duplicate|unique/i.test(msg)) {
+        setError("A referral lead already exists for this HL7 message (external reference).");
+      } else {
+        setError(msg);
+      }
+    } finally {
+      setCreatingLeadId(null);
+    }
+  }
 
   async function setStatus(id: string, status: Status) {
     setUpdatingId(id);
@@ -101,7 +162,8 @@ export default function AdminReferralsHl7InboundPage() {
                HL7 Inbound
              </h1>
             <p className="mt-2 text-sm font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl text-balance">
-               Raw ADT-style messages queued for the selected facility. Parsing and auto-lead creation are Enhanced.
+               Raw ADT-style messages queued for the selected facility. Processed messages can be linked to a referral lead
+               manually — no automatic lead creation.
             </p>
           </div>
           <div>
@@ -138,11 +200,12 @@ export default function AdminReferralsHl7InboundPage() {
                </div>
              ) : (
                <>
-                 <div className="hidden sm:grid grid-cols-[1fr_0.5fr_1fr_2fr_1.5fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10 text-left">
+                 <div className="hidden sm:grid grid-cols-[1fr_0.5fr_1fr_2fr_1.5fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10 text-left">
                     <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Received / Ctrl ID</div>
                     <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Status</div>
                     <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Trigger</div>
                     <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Preview</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Lead</div>
                     <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Actions</div>
                  </div>
 
@@ -155,7 +218,7 @@ export default function AdminReferralsHl7InboundPage() {
                        ) : (
                          rows.map((row) => (
                            <MotionItem key={row.id}>
-                              <div className="grid grid-cols-1 sm:grid-cols-[1fr_0.5fr_1fr_2fr_1.5fr] gap-4 sm:items-center p-5 rounded-2xl bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg transition-all duration-300 w-full outline-none">
+                              <div className="grid grid-cols-1 sm:grid-cols-[1fr_0.5fr_1fr_2fr_1.5fr_1fr] gap-4 sm:items-center p-5 rounded-2xl bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg transition-all duration-300 w-full outline-none">
                                 <div className="flex flex-col">
                                    <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Received / Ctrl ID</span>
                                    <span className="font-semibold text-sm text-slate-900 dark:text-slate-100 tracking-tight">{format(new Date(row.created_at), "MMM d, yyyy p")}</span>
@@ -183,6 +246,29 @@ export default function AdminReferralsHl7InboundPage() {
                                        {previewRaw(row.raw_message)}
                                      </p>
                                    </div>
+                                </div>
+                                <div className="flex flex-col sm:justify-center">
+                                   <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Lead</span>
+                                   {row.linked_referral_lead_id ? (
+                                     <Link
+                                       href={`/admin/referrals/${row.linked_referral_lead_id}`}
+                                       className="text-xs font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 truncate"
+                                     >
+                                       Open lead
+                                     </Link>
+                                   ) : row.status === "processed" ? (
+                                     <button
+                                       type="button"
+                                       className="inline-flex items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 h-8 px-3 text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors disabled:opacity-50 border border-indigo-200 dark:border-indigo-500/20 gap-1.5 shadow-sm w-fit"
+                                       disabled={creatingLeadId === row.id}
+                                       onClick={() => void createDraftLead(row)}
+                                     >
+                                       <UserPlus className="w-3.5 h-3.5" />
+                                       {creatingLeadId === row.id ? "…" : "Draft lead"}
+                                     </button>
+                                   ) : (
+                                     <span className="text-xs text-slate-400">—</span>
+                                   )}
                                 </div>
                                 <div className="flex flex-col sm:items-end justify-center">
                                    <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-2 mt-2">Actions</span>
