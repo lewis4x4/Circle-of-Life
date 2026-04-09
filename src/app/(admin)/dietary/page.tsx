@@ -28,6 +28,7 @@ function fluidIsThickened(level: string): boolean {
 function dietOrderNeedsAttention(row: DietRow): boolean {
   if (row.status === "draft") return true;
   if (row.requires_swallow_eval) return true;
+  if (row.medication_texture_review_notes?.trim()) return true;
   return Boolean(row.aspiration_notes?.trim());
 }
 
@@ -46,6 +47,13 @@ function attentionBadge(row: DietRow): { label: string; barClass: string; badgeC
       badgeClass: "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50",
     };
   }
+  if (row.medication_texture_review_notes?.trim()) {
+    return {
+      label: "Med / texture review",
+      barClass: "bg-violet-500",
+      badgeClass: "text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/50",
+    };
+  }
   return {
     label: "Aspiration notes",
     barClass: "bg-orange-500",
@@ -54,6 +62,8 @@ function attentionBadge(row: DietRow): { label: string; barClass: string; badgeC
 }
 
 function attentionSummary(row: DietRow): string {
+  const med = row.medication_texture_review_notes?.trim();
+  if (med) return med;
   const note = row.aspiration_notes?.trim();
   if (note) return note;
   if (row.status === "draft") return "Diet order is still in draft and needs activation.";
@@ -128,15 +138,17 @@ export default function AdminDietaryHubPage() {
   const batchStats = useMemo(() => {
     const n = rows.length;
     if (n === 0) {
-      return { thickenedPct: 0, swallowPct: 0, allergyPct: 0 };
+      return { thickenedPct: 0, swallowPct: 0, allergyPct: 0, medTexturePct: 0 };
     }
     const thickened = rows.filter((r) => fluidIsThickened(r.iddsi_fluid_level)).length;
     const swallow = rows.filter((r) => r.requires_swallow_eval).length;
     const allergy = rows.filter((r) => r.allergy_constraints.length > 0).length;
+    const medTexture = rows.filter((r) => r.medication_texture_review_notes?.trim()).length;
     return {
       thickenedPct: Math.round((thickened / n) * 100),
       swallowPct: Math.round((swallow / n) * 100),
       allergyPct: Math.round((allergy / n) * 100),
+      medTexturePct: Math.round((medTexture / n) * 100),
     };
   }, [rows]);
 
@@ -209,7 +221,8 @@ export default function AdminDietaryHubPage() {
               </h3>
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2">
-              Draft orders, pending swallow evals, or orders with aspiration notes (last 50 diet orders for this facility).
+              Draft orders, swallow evals, medication–texture review notes, or aspiration notes (last 50 diet orders for
+              this facility).
             </p>
 
             <MotionList className="space-y-3">
@@ -223,7 +236,9 @@ export default function AdminDietaryHubPage() {
               ) : attentionRows.length === 0 ? (
                 <div className="p-8 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md">
                   <p className="font-medium">All clear</p>
-                  <p className="text-sm opacity-80">No draft orders, swallow-evaluation flags, or aspiration notes in this batch.</p>
+                  <p className="text-sm opacity-80">
+                    No draft orders, swallow-evaluation flags, med/texture review notes, or aspiration notes in this batch.
+                  </p>
                 </div>
               ) : (
                 attentionRows.map((row) => {
@@ -345,6 +360,18 @@ export default function AdminDietaryHubPage() {
                   <div
                     className="bg-indigo-500 h-1.5 rounded-full transition-all"
                     style={{ width: `${loading ? 0 : batchStats.allergyPct}%` }}
+                  />
+                </div>
+              </div>
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex flex-col gap-2">
+                <div className="flex justify-between items-center">
+                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Med / texture review noted</p>
+                  <span className="text-xs font-bold text-violet-500">{loading ? "—" : `${batchStats.medTexturePct}%`}</span>
+                </div>
+                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="bg-violet-500 h-1.5 rounded-full transition-all"
+                    style={{ width: `${loading ? 0 : batchStats.medTexturePct}%` }}
                   />
                 </div>
               </div>

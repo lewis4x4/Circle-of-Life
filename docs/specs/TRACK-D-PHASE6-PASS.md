@@ -81,3 +81,15 @@
 **Mission alignment:** **pass** — improves scanability of scheduled trips without expanding scope beyond Module 15 Core data already in use.
 
 **Gate artifact:** `test-results/agent-gates/2026-04-09T01-39-18-521Z-track-d-phase6-d7-transport-day-groups.json` (`npm run segment:gates -- --segment "track-d-phase6-d7-transport-day-groups" --ui --no-chaos`).
+
+---
+
+**D8 (2026-04-09):** **Module 14 — Dietary & Nutrition** — **medication–texture cross-check visibility**.
+
+**Slice:** Use existing `diet_orders.medication_texture_review_notes` (spec Core): include non-empty rows in the **attention queue** with badge **Med / texture review**, show notes in the card summary, and add sidebar batch **%** “Med / texture review noted.” Extends D3 without new DDL. Create/edit path already captures the field on `/admin/dietary/new`.
+
+**Deferred:** Automated cross-check against `resident_medications` / pharmacy API (Enhanced).
+
+**Mission alignment:** **pass** — human-entered pharmacy–texture review notes surface for kitchen and nursing alignment.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-09T01-45-04-373Z-track-d-phase6-d8-dietary-med-texture-review.json` (`npm run segment:gates -- --segment "track-d-phase6-d8-dietary-med-texture-review" --ui --no-chaos`).
