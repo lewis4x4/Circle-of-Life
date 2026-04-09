@@ -2,20 +2,12 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CreditCard, FileText, Loader2, ShieldCheck } from "lucide-react";
+import { CreditCard, FileText, Loader2, ShieldCheck, Banknote } from "lucide-react";
 
-import {
-  fetchFamilyBillingContext,
-  formatUsd,
-  invoiceStatusBadgeClass,
-  type FamilyBillingContext,
-} from "@/lib/family/family-billing-data";
+import { fetchFamilyBillingContext, formatUsd, type FamilyBillingContext } from "@/lib/family/family-billing-data";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 function formatDue(ymd: string): string {
   const d = new Date(`${ymd}T12:00:00Z`);
@@ -63,29 +55,32 @@ export default function FamilyBillingSummaryPage() {
 
   if (configError) {
     return (
-      <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{configError}</div>
+      <div className="rounded-xl border border-rose-200 bg-white/60 backdrop-blur-md px-6 py-4 text-sm text-rose-800 shadow-sm max-w-lg mx-auto mt-20">{configError}</div>
     );
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-stone-500">
-        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-        Loading billing…
+      <div className="flex flex-col items-center justify-center py-48 text-stone-500 gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+        <p className="text-sm font-medium tracking-wide">Crunching the numbers…</p>
       </div>
     );
   }
 
   if (loadError) {
     return (
-      <div className="space-y-3 pb-16 md:pb-0">
-        <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">{loadError}</div>
+     <div className="space-y-4 pb-16 md:pb-0 max-w-md mx-auto text-center mt-20">
+        <div className="rounded-2xl border border-rose-200 bg-white/70 backdrop-blur-xl px-4 py-6 text-sm text-rose-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <Banknote className="w-8 h-8 text-rose-400 mx-auto mb-3" />
+          <p>{loadError}</p>
+        </div>
         <button
           type="button"
-          className={cn(buttonVariants({ variant: "outline" }), "border-stone-300")}
+          className="w-full h-12 rounded-full bg-white text-stone-700 font-medium border border-stone-200 shadow-sm hover:bg-stone-50 transition-colors cursor-pointer tap-responsive"
           onClick={() => void load()}
         >
-          Retry
+          Retry Connection
         </button>
       </div>
     );
@@ -104,91 +99,105 @@ export default function FamilyBillingSummaryPage() {
   const accountTone: "neutral" | "warning" | "success" = data.hasOverdue ? "warning" : data.totalBalanceDue > 0 ? "warning" : "success";
 
   return (
-    <div className="space-y-4 pb-16 md:pb-0">
-      <Card className="border-stone-200 bg-white text-stone-900">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xl font-display">Billing Summary</CardTitle>
-          <CardDescription>Read-only overview from invoices and payments visible to your account.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-2 text-xs">
-          <SummaryPill label="Open balance" value={formatUsd(data.totalBalanceDue)} tone={balanceTone} />
-          <SummaryPill
-            label="Last payment"
-            value={data.lastPaymentAmount != null ? formatUsd(data.lastPaymentAmount) : "—"}
-            tone="neutral"
-          />
-          <SummaryPill label="Payment date" value={data.lastPaymentDateLabel ?? "—"} tone="neutral" />
-          <SummaryPill label="Account status" value={accountStatus} tone={accountTone} />
-        </CardContent>
-      </Card>
+    <div className="pb-8 flex flex-col items-center max-w-3xl mx-auto w-full px-4 pt-12 md:pt-20">
+      
+      {/* HEADER */}
+      <div className="text-center mb-16">
+        <div className="w-16 h-16 mx-auto bg-amber-100 rounded-[1.5rem] flex items-center justify-center rounded-tl-sm rotate-3 transform mb-6 shadow-sm">
+           <Banknote className="w-8 h-8 text-amber-600 -rotate-3" />
+        </div>
+        <h1 className="text-4xl md:text-5xl font-serif text-stone-800 tracking-tight mb-3">Billing Summary</h1>
+        <p className="text-stone-500 max-w-lg mx-auto text-base">
+          Read-only overview from invoices and payments visible to your account.
+        </p>
+      </div>
 
-      <Card className="border-stone-200 bg-white text-stone-900">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Recent Invoices</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {recent.length === 0 ? (
-            <p className="py-4 text-center text-sm text-stone-600">No invoices to show yet.</p>
-          ) : (
-            recent.map((invoice) => (
-              <div key={invoice.id} className="rounded-lg border border-stone-200 bg-stone-50 p-3">
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <p className="text-sm font-semibold">{invoice.invoiceNumber}</p>
-                  <Badge className={invoiceStatusBadgeClass(invoice.status)}>{invoice.statusLabel}</Badge>
-                </div>
-                <div className="grid min-w-0 grid-cols-1 gap-1 text-xs text-stone-600 sm:grid-cols-3 sm:gap-2">
-                  <p className="min-w-0 break-words">{invoice.periodLabel}</p>
-                  <p>{formatUsd(invoice.total)}</p>
-                  <p className="min-w-0 break-words">
-                    {invoice.status === "paid"
-                      ? "Paid"
-                      : `Due ${formatDue(invoice.dueDate)}`}
-                  </p>
-                </div>
-              </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
+      <div className="w-full space-y-12">
+         {/* Financial Overview Blocks */}
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <SummaryBlock label="Open balance" value={formatUsd(data.totalBalanceDue)} tone={balanceTone} />
+            <SummaryBlock label="Account status" value={accountStatus} tone={accountTone} />
+            <SummaryBlock
+              label="Last payment"
+              value={data.lastPaymentAmount != null ? formatUsd(data.lastPaymentAmount) : "—"}
+              tone="neutral"
+            />
+            <SummaryBlock label="Payment date" value={data.lastPaymentDateLabel ?? "—"} tone="neutral" />
+         </div>
 
-      <Card className="border-stone-200 bg-white text-stone-900">
-        <CardContent className="p-4">
-          <p className="mb-2 inline-flex items-center gap-1 text-sm font-medium">
-            <ShieldCheck className="h-4 w-4 text-emerald-600" />
-            Phase 1 billing scope
-          </p>
-          <p className="mb-3 text-sm text-stone-700">
-            Family billing is read-only during this phase. Online payment actions are scheduled for a future release.
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <Link
-              href="/family/invoices"
-              className={cn(
-                buttonVariants({ variant: "outline" }),
-                "h-10 border-stone-300 bg-white text-stone-800 hover:bg-stone-50",
-              )}
-            >
-              <FileText className="mr-1.5 h-4 w-4" />
-              View Invoices
-            </Link>
-            <Link
-              href="/family/payments"
-              className={cn(
-                buttonVariants({ variant: "outline" }),
-                "h-10 border-stone-300 bg-white text-stone-800 hover:bg-stone-50",
-              )}
-            >
-              <CreditCard className="mr-1.5 h-4 w-4" />
-              View Payments
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
+         {/* Invoices */}
+         <div className="glass-card-light rounded-[2rem] p-6 md:p-8 bg-white/70">
+            <h2 className="text-2xl font-serif text-stone-800 tracking-tight mb-6 flex items-center gap-2">Recent Invoices</h2>
+            
+            {recent.length === 0 ? (
+               <div className="p-8 text-center border-dashed border-2 border-stone-200/50 rounded-3xl">
+                  <p className="text-stone-500 font-medium">No invoices to show yet.</p>
+               </div>
+            ) : (
+               <div className="space-y-3">
+                  {recent.map((invoice) => (
+                    <div key={invoice.id} className="rounded-3xl border border-stone-100 bg-white/50 p-5 shadow-sm transition-all hover:bg-white hover:shadow-md">
+                      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                           <p className="text-xs uppercase tracking-widest text-stone-400 font-bold mb-0.5">{invoice.invoiceNumber}</p>
+                           <p className="text-lg font-serif text-stone-800">{invoice.periodLabel}</p>
+                        </div>
+                        <span className={cn(
+                           "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest",
+                           invoice.status === "paid" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700" 
+                        )}>
+                           {invoice.statusLabel}
+                        </span>
+                      </div>
+                      <div className="mt-4 pt-4 border-t border-stone-100 flex min-w-0 flex-wrap items-center justify-between gap-4">
+                        <p className="text-2xl font-serif text-stone-900 tracking-tight">{formatUsd(invoice.total)}</p>
+                        <p className={`text-sm font-medium ${invoice.status === 'paid' ? 'text-stone-400' : 'text-stone-600'}`}>
+                          {invoice.status === "paid"
+                            ? "Paid"
+                            : `Due ${formatDue(invoice.dueDate)}`}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+               </div>
+            )}
+         </div>
+
+         {/* VISIBILITY SCOPE FOOTER */}
+         <div className="glass-card-light rounded-[2rem] p-6 md:p-8 bg-white/70">
+           <div className="mb-4 flex items-center justify-between gap-2">
+             <p className="inline-flex items-center gap-2 text-sm font-semibold text-stone-800 uppercase tracking-widest">
+               <ShieldCheck className="h-4 w-4 text-emerald-500" />
+               Phase 1 Scope
+             </p>
+           </div>
+           <p className="mb-6 text-sm text-stone-600 leading-relaxed max-w-xl">
+             Family billing is read-only during this phase. Online payment actions are scheduled for a future release.
+           </p>
+           <div className="flex flex-wrap gap-3">
+             <Link
+               href="/family/invoices"
+               className="flex-1 min-w-[140px] h-12 rounded-2xl border border-stone-200 bg-white text-stone-700 font-medium hover:bg-stone-50 transition-colors shadow-sm inline-flex items-center justify-center tap-responsive"
+             >
+               <FileText className="mr-2 h-4 w-4 text-stone-400" />
+               View Invoices
+             </Link>
+             <Link
+               href="/family/payments"
+               className="flex-1 min-w-[140px] h-12 rounded-2xl bg-amber-500 text-white font-medium hover:bg-amber-400 transition-colors shadow-[0_4px_14px_rgba(245,158,11,0.15)] inline-flex items-center justify-center tap-responsive"
+             >
+               <CreditCard className="mr-2 h-4 w-4 text-amber-100" />
+               View Payments
+             </Link>
+           </div>
+         </div>
+
+      </div>
     </div>
   );
 }
 
-function SummaryPill({
+function SummaryBlock({
   label,
   value,
   tone,
@@ -197,17 +206,20 @@ function SummaryPill({
   value: string;
   tone: "neutral" | "warning" | "success";
 }) {
-  const toneClass =
+  const styleClass =
     tone === "warning"
-      ? "border-amber-300 bg-amber-50"
+      ? "bg-amber-50 border-amber-200/50"
       : tone === "success"
-        ? "border-emerald-300 bg-emerald-50"
-        : "border-stone-200 bg-stone-50";
+        ? "bg-emerald-50 border-emerald-200/50"
+        : "bg-white/70 border-white";
+
+  const textTone = 
+      tone === "warning" ? "text-amber-900" : tone === "success" ? "text-emerald-900" : "text-stone-800";
 
   return (
-    <div className={`rounded-xl border px-3 py-2 ${toneClass}`}>
-      <p className="text-[10px] uppercase tracking-wide text-stone-500">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-stone-900">{value}</p>
+    <div className={`glass-card-light rounded-[2rem] p-6 shadow-sm border ${styleClass}`}>
+      <p className="text-xs uppercase font-bold tracking-widest text-stone-400 mb-1">{label}</p>
+      <p className={`text-2xl md:text-3xl font-serif tracking-tight ${textTone}`}>{value}</p>
     </div>
   );
 }
