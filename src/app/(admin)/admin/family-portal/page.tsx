@@ -11,6 +11,7 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 type TriageRow = Database["public"]["Tables"]["family_message_triage_items"]["Row"] & {
   family_portal_messages: { body: string } | null;
@@ -153,16 +154,17 @@ export default function AdminFamilyPortalPage() {
           </h3>
         </div>
 
-        <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-sm backdrop-blur-3xl overflow-hidden p-4 md:p-6 lg:p-8">
-           <div className="hidden lg:grid grid-cols-[2fr_1fr_2fr_3fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5">
-             <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Resident</div>
-             <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Status</div>
-             <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Keywords</div>
-             <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Message Snippet</div>
-             <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Updated</div>
+        <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-2xl backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative">
+           <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
+           <div className="hidden lg:grid grid-cols-[2fr_1fr_2fr_3fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Resident</div>
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Status</div>
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Keywords</div>
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Message Snippet</div>
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Updated</div>
            </div>
 
-           <div className="space-y-3 mt-4">
+           <div className="space-y-4 mt-6 relative z-10">
              {!facilityReady ? (
                <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500">
                  Awaiting facility selection...
@@ -179,49 +181,50 @@ export default function AdminFamilyPortalPage() {
                  No clinical triage anomalies detected in family messages.
                </div>
              ) : (
-                triage.map((row) => (
-                  <div
-                    key={row.id} 
-                    className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_2fr_3fr_1fr] gap-4 items-center p-5 rounded-[1.5rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-rose-200 dark:hover:border-rose-500/30 transition-colors w-full cursor-pointer outline-none"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                        <PulseDot colorClass="bg-rose-500" />
+                <MotionList className="space-y-4">
+                  {triage.map((row) => (
+                    <MotionItem key={row.id}>
+                      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_2fr_3fr_1fr] gap-4 items-center p-6 rounded-[1.8rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-rose-200 dark:hover:border-rose-500/30 transition-all duration-300 w-full cursor-pointer outline-none hover:shadow-lg dark:hover:bg-white/[0.05]">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
+                            <PulseDot colorClass="bg-rose-500" />
+                          </div>
+                          <span className="font-semibold text-xl text-slate-900 dark:text-white truncate group-hover:text-rose-600 dark:group-hover:text-rose-300 transition-colors tracking-tight font-display">
+                             {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "—"}
+                          </span>
+                        </div>
+                        
+                        <div className="flex flex-row justify-between lg:justify-start items-center">
+                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Status</span>
+                          <span className="text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded-full border shadow-inner bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400">
+                            {formatStatus(row.triage_status)}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-row justify-between lg:justify-start items-center">
+                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Keywords</span>
+                          <span className="text-sm font-mono text-rose-600 dark:text-rose-400 truncate max-w-[200px]">
+                            {(row.matched_keywords?.length ?? 0) > 0 ? row.matched_keywords.join(", ") : "—"}
+                          </span>
+                        </div>
+                        
+                        <div className="flex flex-row justify-between lg:justify-start items-center">
+                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Snippet</span>
+                          <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 truncate max-w-[300px]">
+                            {row.family_portal_messages?.body ?? "—"}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-row justify-between lg:justify-end items-center">
+                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Updated</span>
+                          <span className="text-[11px] font-mono tracking-wide text-slate-500 dark:text-zinc-500 whitespace-nowrap">
+                            {format(new Date(row.updated_at), "MMM d, yyyy")}
+                          </span>
+                        </div>
                       </div>
-                      <span className="font-semibold text-lg text-slate-900 dark:text-white truncate group-hover:text-rose-600 dark:group-hover:text-rose-300 transition-colors tracking-tight">
-                         {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "—"}
-                      </span>
-                    </div>
-                    
-                    <div className="flex flex-row justify-between lg:justify-start items-center">
-                      <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Status</span>
-                      <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded border leading-none pt-1 bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400">
-                        {formatStatus(row.triage_status)}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-row justify-between lg:justify-start items-center">
-                      <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Keywords</span>
-                      <span className="text-sm font-mono text-rose-600 dark:text-rose-400 truncate max-w-[200px]">
-                        {(row.matched_keywords?.length ?? 0) > 0 ? row.matched_keywords.join(", ") : "—"}
-                      </span>
-                    </div>
-                    
-                    <div className="flex flex-row justify-between lg:justify-start items-center">
-                      <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Snippet</span>
-                      <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 truncate max-w-[300px]">
-                        {row.family_portal_messages?.body ?? "—"}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-row justify-between lg:justify-end items-center">
-                      <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Updated</span>
-                      <span className="text-sm font-medium text-slate-500 dark:text-zinc-500 whitespace-nowrap">
-                        {format(new Date(row.updated_at), "MMM d, yyyy")}
-                      </span>
-                    </div>
-                  </div>
-                ))
+                    </MotionItem>
+                  ))}
+                </MotionList>
              )}
            </div>
         </div>
@@ -236,16 +239,17 @@ export default function AdminFamilyPortalPage() {
           </h3>
         </div>
 
-        <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-sm backdrop-blur-3xl overflow-hidden p-4 md:p-6 lg:p-8">
-           <div className="hidden lg:grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5">
-             <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Resident</div>
-             <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Start Time</div>
-             <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Status</div>
-             <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Recording OK</div>
-             <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Room</div>
+        <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-2xl backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative">
+           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
+           <div className="hidden lg:grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Resident</div>
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Start Time</div>
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Status</div>
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Recording OK</div>
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Room</div>
            </div>
 
-           <div className="space-y-3 mt-4">
+           <div className="space-y-4 mt-6 relative z-10">
              {!facilityReady ? (
                <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500">
                  Awaiting facility selection...
@@ -259,49 +263,50 @@ export default function AdminFamilyPortalPage() {
                  No scheduled conferences for this facility.
                </div>
              ) : (
-                conferences.map((row) => (
-                  <div
-                    key={row.id} 
-                    className="grid grid-cols-1 lg:grid-cols-[2fr_1.5fr_1fr_1fr_1fr] gap-4 items-center p-5 rounded-[1.5rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm w-full"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                <MotionList className="space-y-4">
+                  {conferences.map((row) => (
+                    <MotionItem key={row.id}>
+                      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1.5fr_1fr_1fr_1fr] gap-4 items-center p-6 rounded-[1.8rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-lg dark:hover:bg-white/[0.05] transition-all duration-300 w-full group">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
+                            <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                          </div>
+                          <span className="font-semibold text-xl text-slate-900 dark:text-white truncate tracking-tight font-display group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">
+                             {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "—"}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-row justify-between lg:justify-start items-center">
+                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Start</span>
+                          <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">
+                            {format(new Date(row.scheduled_start), "MMM d, yyyy p")}
+                          </span>
+                        </div>
+                        
+                        <div className="flex flex-row justify-between lg:justify-start items-center">
+                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Status</span>
+                          <span className="text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded-full border shadow-inner bg-slate-500/10 text-slate-600 border-slate-500/20 dark:text-slate-400">
+                            {formatStatus(row.status)}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-row justify-between lg:justify-start items-center">
+                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Recording</span>
+                          <span className={cn("text-xs font-bold uppercase tracking-widest", row.recording_consent ? "text-emerald-500" : "text-rose-500")}>
+                            {row.recording_consent ? "Yes" : "No"}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-row justify-between lg:justify-start items-center">
+                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Room</span>
+                          <span className="text-sm font-mono text-slate-500 dark:text-zinc-500 truncate">
+                            {row.external_room_id ?? "—"}
+                          </span>
+                        </div>
                       </div>
-                      <span className="font-semibold text-lg text-slate-900 dark:text-white truncate tracking-tight">
-                         {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "—"}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-row justify-between lg:justify-start items-center">
-                      <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Start</span>
-                      <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">
-                        {format(new Date(row.scheduled_start), "MMM d, yyyy p")}
-                      </span>
-                    </div>
-                    
-                    <div className="flex flex-row justify-between lg:justify-start items-center">
-                      <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Status</span>
-                      <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded border leading-none pt-1 bg-slate-500/10 text-slate-600 border-slate-500/20 dark:text-slate-400">
-                        {formatStatus(row.status)}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-row justify-between lg:justify-start items-center">
-                      <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Recording</span>
-                      <span className={cn("text-xs font-bold uppercase tracking-widest", row.recording_consent ? "text-emerald-500" : "text-rose-500")}>
-                        {row.recording_consent ? "Yes" : "No"}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-row justify-between lg:justify-start items-center">
-                      <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Room</span>
-                      <span className="text-sm font-mono text-slate-500 dark:text-zinc-500 truncate">
-                        {row.external_room_id ?? "—"}
-                      </span>
-                    </div>
-                  </div>
-                ))
+                    </MotionItem>
+                  ))}
+                </MotionList>
              )}
            </div>
         </div>
@@ -316,15 +321,16 @@ export default function AdminFamilyPortalPage() {
           </h3>
         </div>
 
-        <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-sm backdrop-blur-3xl overflow-hidden p-4 md:p-6 lg:p-8">
-           <div className="hidden lg:grid grid-cols-[2fr_2fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5">
-             <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Resident</div>
-             <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Type</div>
-             <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Version</div>
-             <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Signed</div>
+        <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-2xl backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative">
+           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
+           <div className="hidden lg:grid grid-cols-[2fr_2fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Resident</div>
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Type</div>
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Version</div>
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Signed</div>
            </div>
 
-           <div className="space-y-3 mt-4">
+           <div className="space-y-4 mt-6 relative z-10">
              {!facilityReady ? (
                <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500">
                  Awaiting facility selection...
@@ -338,42 +344,43 @@ export default function AdminFamilyPortalPage() {
                  No consent records for this facility.
                </div>
              ) : (
-                consents.map((row) => (
-                  <div
-                    key={row.id} 
-                    className="grid grid-cols-1 lg:grid-cols-[2fr_2fr_1fr_1fr] gap-4 items-center p-5 rounded-[1.5rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm w-full"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <MotionList className="space-y-4">
+                  {consents.map((row) => (
+                    <MotionItem key={row.id}>
+                      <div className="grid grid-cols-1 lg:grid-cols-[2fr_2fr_1fr_1fr] gap-4 items-center p-6 rounded-[1.8rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-lg dark:hover:bg-white/[0.05] transition-all duration-300 w-full group">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                          </div>
+                          <span className="font-semibold text-xl text-slate-900 dark:text-white truncate tracking-tight font-display group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors">
+                             {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "—"}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-row justify-between lg:justify-start items-center">
+                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Type</span>
+                          <span className="text-sm font-semibold text-slate-700 dark:text-zinc-300">
+                            {row.consent_type}
+                          </span>
+                        </div>
+                        
+                        <div className="flex flex-row justify-between lg:justify-start items-center">
+                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Version</span>
+                          <span className="text-xs font-mono text-slate-500 dark:text-zinc-500">
+                            {row.document_version}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-row justify-between lg:justify-start items-center">
+                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Signed</span>
+                          <span className="text-[11px] font-mono tracking-wide text-slate-500 dark:text-zinc-500">
+                            {format(new Date(row.signed_at), "MMM d, yyyy")}
+                          </span>
+                        </div>
                       </div>
-                      <span className="font-semibold text-lg text-slate-900 dark:text-white truncate tracking-tight">
-                         {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "—"}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-row justify-between lg:justify-start items-center">
-                      <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Type</span>
-                      <span className="text-sm font-semibold text-slate-700 dark:text-zinc-300">
-                        {row.consent_type}
-                      </span>
-                    </div>
-                    
-                    <div className="flex flex-row justify-between lg:justify-start items-center">
-                      <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Version</span>
-                      <span className="text-sm font-mono text-slate-500 dark:text-zinc-500">
-                        {row.document_version}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-row justify-between lg:justify-start items-center">
-                      <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Signed</span>
-                      <span className="text-sm font-medium text-slate-500 dark:text-zinc-500">
-                        {format(new Date(row.signed_at), "MMM d, yyyy")}
-                      </span>
-                    </div>
-                  </div>
-                ))
+                    </MotionItem>
+                  ))}
+                </MotionList>
              )}
            </div>
         </div>

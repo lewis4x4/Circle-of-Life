@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { Banknote } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -119,46 +119,55 @@ export default function AdminPayrollHubPage() {
         </p>
       )}
 
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/5 bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent pointer-events-none" />
-        <div className="relative z-10 border-b border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 p-6 flex flex-col gap-1">
-          <h3 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">Batches</h3>
-          <p className="text-sm font-mono text-slate-500 dark:text-slate-400">
+      <div className="relative overflow-visible z-10 w-full mt-4">
+        <div className="relative z-10 p-4 sm:p-6 mb-4 glass-panel rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-2xl">
+          <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Batches</h3>
+          <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
             Pay period window and provider label; CSV/API export is Enhanced.
           </p>
         </div>
-        <div className="relative z-10 overflow-x-auto p-4 sm:p-6">
-          {loading ? (
-            <p className="text-sm font-mono text-slate-500">Loading…</p>
-          ) : !facilityReady ? null : rows.length === 0 ? (
-            <p className="text-sm font-mono text-slate-500">No payroll export batches for this facility yet.</p>
-          ) : (
-            <Table>
-              <TableHeader className="bg-white/40 dark:bg-black/40 border-b border-white/20 dark:border-white/10">
-                <TableRow className="border-none hover:bg-transparent">
-                  <TableHead>Period</TableHead>
-                  <TableHead>Provider</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Updated</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((row) => (
-                  <TableRow key={row.id} className="border-slate-100 dark:border-slate-800 hover:bg-emerald-500/5 dark:hover:bg-emerald-500/10 transition-colors cursor-pointer group">
-                    <TableCell className="whitespace-nowrap text-sm">
-                      {row.period_start} → {row.period_end}
-                    </TableCell>
-                    <TableCell>{row.provider}</TableCell>
-                    <TableCell className="capitalize">{formatStatus(row.status)}</TableCell>
-                    <TableCell className="whitespace-nowrap text-xs text-slate-500">
-                      {format(new Date(row.updated_at), "MMM d, yyyy p")}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </div>
+        
+        {loading ? (
+           <p className="text-sm font-mono text-slate-500">Loading…</p>
+        ) : !facilityReady ? null : rows.length === 0 ? (
+           <p className="text-sm font-mono text-slate-500">No payroll export batches for this facility yet.</p>
+        ) : (
+          <MotionList className="space-y-3">
+             {rows.map((row) => (
+               <MotionItem key={row.id}>
+                 <div className="p-4 sm:p-5 rounded-2xl glass-panel group transition-all duration-300 hover:scale-[1.01] hover:border-emerald-500/30 hover:bg-white/70 dark:hover:bg-emerald-900/10 border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 w-full flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    
+                    <div className="flex flex-col min-w-[200px] gap-1">
+                       <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Period</span>
+                       <span className="font-bold font-mono text-slate-900 dark:text-slate-100 uppercase tracking-widest text-xs">
+                          {row.period_start} → {row.period_end}
+                       </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 w-full items-center">
+                       <div className="flex flex-col gap-1.5">
+                          <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Provider</span>
+                          <span className="font-mono text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest">{row.provider}</span>
+                       </div>
+                       <div className="flex flex-col gap-1.5">
+                          <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Status</span>
+                          <span className={cn("font-mono text-xs font-bold uppercase tracking-widest", row.status === "exported" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-500")}>
+                             {formatStatus(row.status)}
+                          </span>
+                       </div>
+                       <div className="flex flex-col gap-1.5">
+                          <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Updated</span>
+                          <span className="font-mono text-xs text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                             {format(new Date(row.updated_at), "MMM d, yyyy")}
+                          </span>
+                       </div>
+                    </div>
+                    
+                 </div>
+               </MotionItem>
+             ))}
+          </MotionList>
+        )}
       </div>
       </div>
     </div>

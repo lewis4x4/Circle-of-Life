@@ -2,14 +2,13 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Loader2, LogIn, LogOut } from "lucide-react";
+import { Clock3, Loader2, LogIn, LogOut } from "lucide-react";
 
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 type StaffRow = Pick<
   Database["public"]["Tables"]["staff"]["Row"],
@@ -173,67 +172,81 @@ export default function CaregiverClockPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <Card className="border-zinc-800 bg-gradient-to-br from-zinc-950 to-zinc-900 text-zinc-100">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xl font-display">Time clock</CardTitle>
-          <CardDescription className="text-zinc-400">
-            {facilityName ? `Punch in/out for ${facilityName}.` : "Mobile punch tied to your staff profile."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+    <div className="space-y-4 max-w-lg mx-auto mt-4 md:mt-10">
+      <div className="glass-panel p-6 sm:p-10 rounded-[3rem] border border-white/5 bg-gradient-to-br from-indigo-950/40 via-slate-900/60 to-black/80 backdrop-blur-3xl shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100 flex flex-col items-center text-center">
+        <div className="w-16 h-16 rounded-[2rem] bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30 mb-6 shadow-inner">
+          <Clock3 className="h-8 w-8 text-indigo-400" />
+        </div>
+        
+        <h3 className="text-3xl font-display font-semibold text-white tracking-wide mb-2">Time clock</h3>
+        <p className="text-sm font-mono text-indigo-200/60 max-w-xs mb-8">
+          {facilityName ? `Punch in/out for ${facilityName}.` : "Mobile punch tied to your staff profile."}
+        </p>
+
+        <div className="w-full space-y-6">
           {staff ? (
-            <p className="text-sm text-zinc-300">
-              {staff.first_name} {staff.last_name}
-            </p>
+            <div className="py-2">
+              <p className="text-[10px] uppercase tracking-widest font-mono text-zinc-500 font-bold mb-1">Authenticated As</p>
+              <p className="text-xl font-display text-white">
+                {staff.first_name} {staff.last_name}
+              </p>
+            </div>
           ) : null}
 
-          {msg ? <div className="rounded-lg border border-amber-800/60 bg-amber-950/30 px-3 py-2 text-sm text-amber-100">{msg}</div> : null}
+          {msg ? <div className="rounded-2xl border border-amber-500/30 bg-amber-950/40 px-4 py-3 text-sm text-amber-200 font-mono max-w-sm mx-auto shadow-inner">{msg}</div> : null}
 
           {staff && !msg?.includes("No staff profile") ? (
-            <>
+            <div className="space-y-6 mt-4">
               {openPunch ? (
-                <div className="rounded-lg border border-emerald-800/50 bg-emerald-950/20 px-3 py-2 text-sm text-emerald-100">
-                  Clocked in at {new Date(openPunch.clock_in).toLocaleString()}
+                <div className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-[11px] uppercase tracking-widest font-mono text-emerald-300 font-bold w-fit mx-auto shadow-[inset_0_1px_10px_rgba(16,185,129,0.1)]">
+                  Clocked in at {new Date(openPunch.clock_in).toLocaleTimeString()}
                 </div>
               ) : (
-                <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-sm text-zinc-400">
-                  You are not clocked in.
+                <div className="rounded-full border border-white/10 bg-black/40 px-5 py-3 text-[11px] uppercase tracking-widest font-mono text-zinc-400 font-bold w-fit mx-auto shadow-inner">
+                  You are not clocked in
                 </div>
               )}
 
               {openPunch ? (
                 <Button
                   type="button"
-                  className="h-12 w-full bg-rose-700 text-white hover:bg-rose-600 disabled:opacity-50"
+                  className="h-16 rounded-full font-mono uppercase tracking-widest text-xs px-8 w-full shadow-[0_4px_20px_rgba(225,29,72,0.15)] transition-all hover:scale-[1.02] border-0 text-white font-bold bg-rose-600 hover:bg-rose-500 disabled:opacity-50 tap-responsive"
                   disabled={acting}
                   onClick={() => void clockOut()}
                 >
-                  {acting ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogOut className="mr-2 h-5 w-5" />}
-                  Clock out
+                  {acting ? <Loader2 className="h-5 w-5 animate-spin mx-auto scale-125" /> : (
+                    <>
+                      <LogOut className="mr-3 h-5 w-5" />
+                      Clock out
+                    </>
+                  )}
                 </Button>
               ) : (
                 <Button
                   type="button"
-                  className="h-12 w-full bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50"
+                  className="h-16 rounded-full font-mono uppercase tracking-widest text-xs px-8 w-full shadow-[0_4px_20px_rgba(16,185,129,0.15)] transition-all hover:scale-[1.02] border-0 text-zinc-950 font-bold bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 tap-responsive"
                   disabled={acting}
                   onClick={() => void clockIn()}
                 >
-                  {acting ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogIn className="mr-2 h-5 w-5" />}
-                  Clock in
+                  {acting ? <Loader2 className="h-5 w-5 animate-spin mx-auto scale-125 text-zinc-950" /> : (
+                    <>
+                      <LogIn className="mr-3 h-5 w-5 text-zinc-950" />
+                      Clock in
+                    </>
+                  )}
                 </Button>
               )}
-            </>
+            </div>
           ) : null}
 
           <Link
             href="/caregiver"
-            className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-sm font-medium text-zinc-200 hover:bg-zinc-800"
+            className="inline-flex h-14 w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-[11px] uppercase tracking-widest font-mono font-bold text-zinc-300 hover:bg-white/[0.08] hover:text-white transition-colors tap-responsive shadow-inner mt-4"
           >
-            Back to shift home
+            Back to shift dashboard
           </Link>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

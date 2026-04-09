@@ -15,8 +15,8 @@ import type { Database } from "@/types/database";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 export default function CaregiverTasksPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -192,50 +192,49 @@ export default function CaregiverTasksPage() {
 
   return (
     <div className="space-y-4">
-      <Card className="border-zinc-800 bg-gradient-to-br from-zinc-950 to-zinc-900 text-zinc-100">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xl font-display">Task &amp; ADL queue</CardTitle>
-          <CardDescription className="text-zinc-400">
+      <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-white/5 bg-gradient-to-br from-cyan-950/40 via-slate-900/40 to-black/60 backdrop-blur-3xl shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
+        <div className="mb-6">
+          <h3 className="text-2xl font-display font-semibold text-white tracking-wide">Task &amp; ADL queue</h3>
+          <p className="text-sm font-mono text-cyan-400/80 mt-1">
             {ctx?.facilityName ? (
               <>
-                Live census at <span className="text-zinc-200">{ctx.facilityName}</span>. Log ADL passes against today&apos;s date
+                Live census at <span className="text-white font-bold">{ctx.facilityName}</span>. Log ADL passes against today&apos;s date
                 in facility time.
               </>
             ) : (
               "Prioritize residents with fewer documented ADL passes today, then log each pass."
             )}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-2 text-xs">
+          </p>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <MetricPill label="Residents in scope" value={String(metrics.residents)} tone="neutral" />
           <MetricPill label="No ADL yet today" value={String(metrics.noPass)} tone="danger" />
           <MetricPill label="ADL passes today" value={String(metrics.totalAdl)} tone="success" />
           <MetricPill label="Shift bucket" value={ctx ? currentShiftForTimezone(ctx.timeZone) : "—"} tone="neutral" />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {loadError ? (
         <div className="rounded-lg border border-amber-800/60 bg-amber-950/30 px-4 py-2 text-xs text-amber-100">{loadError}</div>
       ) : null}
 
       {sortedResidents.length === 0 ? (
-        <Card className="border-zinc-800 bg-zinc-950/70 text-zinc-100">
-          <CardContent className="py-8 text-center text-sm text-zinc-400">
-            No active residents in this facility scope. Add census in the admin console.
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-2">
-          {sortedResidents.map((r) => (
-            <ResidentAdlCard
-              key={r.id}
-              resident={r}
-              passesToday={adlCountByResident.get(r.id) ?? 0}
-              busy={submittingId === r.id}
-              onSubmit={(p) => void logAdl(r, p)}
-            />
-          ))}
+        <div className="glass-panel p-8 rounded-2xl border border-white/5 bg-slate-900/40 text-center backdrop-blur-xl">
+          <p className="text-sm font-mono text-zinc-400">No active residents in this facility scope. Add census in the admin console.</p>
         </div>
+      ) : (
+        <MotionList className="space-y-3">
+          {sortedResidents.map((r) => (
+            <MotionItem key={r.id}>
+              <ResidentAdlCard
+                resident={r}
+                passesToday={adlCountByResident.get(r.id) ?? 0}
+                busy={submittingId === r.id}
+                onSubmit={(p) => void logAdl(r, p)}
+              />
+            </MotionItem>
+          ))}
+        </MotionList>
       )}
     </div>
   );
@@ -252,17 +251,17 @@ function MetricPill({
 }) {
   const toneClass =
     tone === "danger"
-      ? "border-rose-800/60 bg-rose-950/30"
+      ? "bg-rose-950/30 border-rose-500/20 shadow-[inset_0_1px_10px_rgba(225,29,72,0.1)]"
       : tone === "warning"
-        ? "border-amber-800/60 bg-amber-950/30"
+        ? "bg-amber-950/30 border-amber-500/20 shadow-[inset_0_1px_10px_rgba(217,119,6,0.1)]"
         : tone === "success"
-          ? "border-emerald-800/60 bg-emerald-950/30"
-          : "border-zinc-800 bg-zinc-900/80";
+          ? "bg-emerald-950/30 border-emerald-500/20 shadow-[inset_0_1px_10px_rgba(16,185,129,0.1)]"
+          : "bg-slate-900/40 border-white/5 shadow-[inset_0_1px_10px_rgba(255,255,255,0.02)]";
 
   return (
-    <div className={`rounded-xl border px-3 py-2 ${toneClass}`}>
-      <p className="text-[10px] uppercase tracking-wide text-zinc-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-white">{value}</p>
+    <div className={`rounded-xl border p-4 backdrop-blur-xl ${toneClass}`}>
+      <p className="text-[9px] uppercase tracking-widest font-mono text-zinc-400">{label}</p>
+      <p className="mt-1.5 text-2xl font-semibold font-display text-white">{value}</p>
     </div>
   );
 }
@@ -291,65 +290,68 @@ function ResidentAdlCard({
   const priority = passesToday === 0 ? "critical" : passesToday < 2 ? "high" : "normal";
   const priorityClasses =
     priority === "critical"
-      ? "border-rose-800/70 bg-rose-950/20"
+      ? "border-rose-500/30 bg-gradient-to-br from-rose-950/40 to-black/60 shadow-[inset_0_1px_10px_rgba(225,29,72,0.1)] hover:border-rose-500/50"
       : priority === "high"
-        ? "border-amber-800/70 bg-amber-950/20"
-        : "border-zinc-800 bg-zinc-950/80";
+        ? "border-amber-500/30 bg-gradient-to-br from-amber-950/40 to-black/60 shadow-[inset_0_1px_10px_rgba(217,119,6,0.1)] hover:border-amber-500/50"
+        : "border-emerald-500/10 bg-slate-900/40 shadow-[inset_0_1px_10px_rgba(16,185,129,0.05)] hover:border-emerald-500/30";
 
   return (
-    <Card className={`text-zinc-100 ${priorityClasses}`}>
-      <CardContent className="space-y-3 p-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <UserRound className="h-4 w-4 text-zinc-500" />
+    <div className={`p-4 md:p-5 rounded-2xl glass-panel group transition-all duration-300 border backdrop-blur-xl overflow-hidden relative ${priorityClasses}`}>
+      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none" />
+      <div className="space-y-4 relative z-10 w-full">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center border ${priority === 'critical' ? 'bg-rose-500/20 border-rose-500/40 text-rose-300' : priority === 'high' ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'}`}>
+               <UserRound className="h-5 w-5" />
+            </div>
             <div>
-              <p className="text-sm font-medium text-white">{resident.displayName}</p>
-              <p className="mt-0.5 text-xs text-zinc-400">Room {resident.roomLabel}</p>
+              <p className="text-base font-semibold text-white tracking-wide">{resident.displayName}</p>
+              <p className="text-[11px] font-mono uppercase tracking-widest text-zinc-400 mt-0.5">Room {resident.roomLabel}</p>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-1">
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
             <Badge
-              className={
+              className={`rounded-full px-3 py-0.5 text-[9px] uppercase tracking-widest font-mono font-bold border ${
                 priority === "critical"
-                  ? "border-rose-700 bg-rose-900/40 text-rose-200"
+                  ? "border-rose-500/40 bg-rose-500/20 text-rose-300"
                   : priority === "high"
-                    ? "border-amber-700 bg-amber-900/40 text-amber-200"
-                    : "border-zinc-700 bg-zinc-900 text-zinc-200"
-              }
+                    ? "border-amber-500/40 bg-amber-500/20 text-amber-300"
+                    : "border-emerald-500/40 bg-emerald-500/20 text-emerald-300"
+              }`}
             >
               {priority === "critical" ? "No ADL yet" : priority === "high" ? "Light pass" : "Stable"}
             </Badge>
-            <span className="inline-flex items-center gap-1 text-[10px] text-zinc-500">
+            <span className="inline-flex items-center gap-1.5 text-[10px] uppercase font-mono tracking-widest text-zinc-400">
               <Clock3 className="h-3 w-3" />
               {passesToday} pass{passesToday === 1 ? "" : "es"} today
             </span>
           </div>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-2">
-          <div className="space-y-1">
-            <Label className="text-xs text-zinc-400">ADL</Label>
+        <div className="grid gap-3 sm:grid-cols-2 pt-2">
+          <div className="space-y-1.5 focus-within:text-cyan-400 transition-colors">
+            <Label className="text-[10px] uppercase font-mono tracking-widest text-zinc-500 font-bold">ADL Type</Label>
             <select
-              className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 text-sm text-zinc-100"
+              className="flex h-12 w-full rounded-full border border-white/10 bg-black/40 px-4 text-sm text-zinc-200 outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 appearance-none font-mono"
               value={adlType}
               onChange={(e) => setAdlType(e.target.value)}
             >
               {ADL_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
+                <option key={o.value} value={o.value} className="bg-slate-900 text-sm">
                   {o.label}
                 </option>
               ))}
             </select>
           </div>
-          <div className="space-y-1">
-            <Label className="text-xs text-zinc-400">Assistance</Label>
+          <div className="space-y-1.5 focus-within:text-cyan-400 transition-colors">
+            <Label className="text-[10px] uppercase font-mono tracking-widest text-zinc-500 font-bold">Assistance</Label>
             <select
-              className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 text-sm text-zinc-100"
+              className="flex h-12 w-full rounded-full border border-white/10 bg-black/40 px-4 text-sm text-zinc-200 outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 appearance-none font-mono"
               value={assistance}
               onChange={(e) => setAssistance(e.target.value as Database["public"]["Enums"]["assistance_level"])}
             >
               {ASSIST_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
+                <option key={o.value} value={o.value} className="bg-slate-900 text-sm">
                   {o.label}
                 </option>
               ))}
@@ -357,37 +359,44 @@ function ResidentAdlCard({
           </div>
         </div>
 
-        <label className="flex items-center gap-2 text-xs text-zinc-300">
-          <input
-            type="checkbox"
-            className="h-4 w-4 rounded border-zinc-600 bg-zinc-900"
-            checked={refused}
-            onChange={(e) => setRefused(e.target.checked)}
-          />
-          Refused / deferred
-        </label>
+        <div className="pt-2">
+            <textarea
+              rows={2}
+              placeholder="Optional note (objective, brief)"
+              className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 font-mono resize-none"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+        </div>
+        
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
+            <label className="flex items-center gap-3 text-sm text-zinc-300 shrink-0 cursor-pointer group">
+              <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${refused ? 'bg-cyan-500 border-cyan-500' : 'border-zinc-600 bg-black/40 group-hover:border-cyan-500/50'}`}>
+                {refused && <CheckCircle2 className="w-3.5 h-3.5 text-black" />}
+              </div>
+              <input
+                type="checkbox"
+                className="hidden"
+                checked={refused}
+                onChange={(e) => setRefused(e.target.checked)}
+              />
+              <span className="font-mono text-xs uppercase tracking-widest select-none">Refused / deferred</span>
+            </label>
 
-        <textarea
-          rows={2}
-          placeholder="Optional note (objective, brief)"
-          className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-        />
-
-        <Button
-          type="button"
-          disabled={busy}
-          className="h-10 w-full bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50"
-          onClick={() => {
-            onSubmit({ adlType, assistance, refused, notes });
-            setNotes("");
-          }}
-        >
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-1.5 h-4 w-4" />}
-          Log ADL pass
-        </Button>
-      </CardContent>
-    </Card>
+            <Button
+              type="button"
+              disabled={busy}
+              className={`h-12 rounded-full font-mono uppercase tracking-widest text-[10px] px-8 w-full sm:w-auto shadow-lg transition-all hover:scale-[1.02] border-0 text-zinc-950 font-bold ${refused ? 'bg-amber-400 hover:bg-amber-300 focus:ring-amber-500/50' : 'bg-cyan-400 hover:bg-cyan-300 focus:ring-cyan-500/50'}`}
+              onClick={() => {
+                onSubmit({ adlType, assistance, refused, notes });
+                setNotes("");
+              }}
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin text-zinc-950" /> : <CheckCircle2 className="mr-2 h-4 w-4 text-zinc-950" />}
+              {refused ? "Log Deferral" : "Log ADL Pass"}
+            </Button>
+        </div>
+      </div>
+    </div>
   );
 }

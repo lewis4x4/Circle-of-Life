@@ -11,6 +11,7 @@ import {
   fetchStaffMessagesForResident,
   postStaffMessage,
 } from "@/lib/admin/family-messages-data";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 export default function StaffFamilyMessagesPage() {
   const [threads, setThreads] = useState<StaffMessageThread[]>([]);
@@ -255,49 +256,50 @@ export default function StaffFamilyMessagesPage() {
             </h3>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <MotionList className="grid gap-4 sm:grid-cols-2">
             {threads.map((t) => (
-              <div
-                key={t.residentId}
-                className="group cursor-pointer tap-responsive rounded-[2rem] border border-slate-200/80 bg-white dark:border-white/10 dark:bg-white/5 p-6 shadow-sm transition-all hover:shadow-lg hover:-translate-y-1 hover:border-indigo-300 dark:hover:border-indigo-500/50"
-                onClick={() => { void openThread(t.residentId); }}
-              >
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <div className="space-y-1">
-                    <h3 className="font-display text-lg font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors tracking-tight">
-                      {t.residentName}
-                    </h3>
-                    <p className="text-xs font-mono text-slate-500 dark:text-zinc-500">{t.roomLabel}</p>
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-zinc-500">
-                      {t.lastMessageAt}
-                    </span>
-                    {t.unreadHint && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded border leading-none bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400 text-[10px] font-bold uppercase tracking-widest">
-                        Family replied
+              <MotionItem key={t.residentId}>
+                <div
+                  className="group cursor-pointer tap-responsive rounded-[2.5rem] bg-white/60 dark:bg-black/20 border border-slate-200/50 dark:border-white/5 shadow-sm hover:shadow-xl dark:hover:bg-white/[0.03] transition-all duration-300 backdrop-blur-xl p-6 md:p-8"
+                  onClick={() => { void openThread(t.residentId); }}
+                >
+                  <div className="flex items-start justify-between gap-4 mb-4">
+                    <div className="space-y-1">
+                      <h3 className="font-display text-xl md:text-2xl font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors tracking-tight">
+                        {t.residentName}
+                      </h3>
+                      <p className="text-sm font-mono text-slate-500 dark:text-zinc-500">{t.roomLabel}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-zinc-500">
+                        {t.lastMessageAt}
                       </span>
-                    )}
+                      {t.unreadHint && (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full border shadow-inner bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400 text-[10px] font-bold uppercase tracking-widest">
+                          Family replied
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white dark:bg-white/[0.02] rounded-[1.5rem] p-5 shadow-sm border border-slate-100 dark:border-white/5">
+                    <p className="text-[15px] text-slate-600 dark:text-zinc-300 line-clamp-2 leading-relaxed">
+                      <span className="font-bold text-slate-900 dark:text-white mr-2 opacity-80 uppercase tracking-widest text-[10px]">
+                        {t.lastAuthorKind === "staff" ? "You" : "Family"}
+                      </span>
+                      {t.lastMessageBody}
+                    </p>
+                  </div>
+                  
+                  <div className="mt-5 flex items-center gap-2">
+                     <div className="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-zinc-500">
+                       {t.messageCount} Message{t.messageCount !== 1 ? "s" : ""}
+                     </div>
                   </div>
                 </div>
-                
-                <div className="bg-slate-50 dark:bg-black/40 rounded-xl p-4 border border-slate-100 dark:border-white/5">
-                  <p className="text-sm text-slate-600 dark:text-zinc-300 line-clamp-2 leading-relaxed">
-                    <span className="font-bold text-slate-900 dark:text-white mr-1 opacity-70">
-                      {t.lastAuthorKind === "staff" ? "You" : "Family"}:
-                    </span>
-                    {t.lastMessageBody}
-                  </p>
-                </div>
-                
-                <div className="mt-4 flex items-center gap-2">
-                   <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-zinc-500">
-                     {t.messageCount} Message{t.messageCount !== 1 ? "s" : ""}
-                   </div>
-                </div>
-              </div>
+              </MotionItem>
             ))}
-          </div>
+          </MotionList>
         </div>
       )}
     </div>

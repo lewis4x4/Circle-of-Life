@@ -4,14 +4,17 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { BarChart3, TrendingUp } from "lucide-react";
 
-import { AdminEmptyState, AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
+import { KineticGrid } from "@/components/ui/kinetic-grid";
+import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { Sparkline } from "@/components/ui/moonshot/sparkline";
+import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 
 const DAYS = 90;
 
@@ -95,109 +98,114 @@ export default function AdminIncidentTrendsPage() {
   }, [rows]);
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <Link
-            href="/admin/incidents"
-            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "mb-2 inline-flex gap-1 px-0")}
-          >
-            ← Incident queue
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50">
-              <BarChart3 className="h-5 w-5 text-brand-600" />
+    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+      <AmbientMatrix hasCriticals={stats.open > 0} 
+        primaryClass="bg-indigo-700/10"
+        secondaryClass="bg-rose-500/10"
+      />
+      
+      <div className="relative z-10 space-y-6 max-w-5xl mx-auto">
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+          <div className="space-y-2">
+            <Link href="/admin/incidents" className={cn(buttonVariants({ variant: "link", size: "sm" }), "h-auto p-0 text-xs text-slate-500 mb-2 uppercase tracking-widest font-bold")}>
+              ← Incident queue
+            </Link>
+            <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+              Incident Trends {stats.open > 0 && <PulseDot colorClass="bg-rose-500" />}
+            </h1>
+            <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
+              Last {DAYS} days scoped to your facility selection.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="glass-panel px-4 py-2 rounded-xl flex items-center gap-3">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Totals</span>
+              <span className="font-mono text-lg font-bold text-slate-800 dark:text-slate-200 tabular-nums">{stats.total}</span>
             </div>
-            <div>
-              <h1 className="font-display text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-                Incident trends
-              </h1>
-              <p className="mt-1 text-slate-500 dark:text-slate-400">
-                Last {DAYS} days, scoped to your facility selection.
-              </p>
+            <div className="glass-panel px-4 py-2 rounded-xl border-amber-200/50 bg-amber-50/50 dark:border-amber-900/30 dark:bg-amber-950/20 flex items-center gap-3">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-amber-700 dark:text-amber-500">Open</span>
+              <span className="font-mono text-lg font-bold text-amber-700 dark:text-amber-400 tabular-nums">{stats.open}</span>
             </div>
           </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="outline" className="border-slate-200 dark:border-slate-700">
-            <TrendingUp className="mr-1 h-3.5 w-3.5" />
-            {stats.total} incidents
-          </Badge>
-          <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
-            {stats.open} open / investigating
-          </Badge>
-        </div>
-      </header>
+        </header>
 
-      {loading ? <AdminTableLoadingState /> : null}
-      {!loading && error ? (
-        <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} />
-      ) : null}
-      {!loading && !error && rows.length === 0 ? (
-        <AdminEmptyState
-          title="No incidents in this window"
-          description="When reportable events land in Supabase for the selected facility, category and severity distributions appear here."
-        />
-      ) : null}
+        {loading ? (
+          <p className="text-sm font-mono text-slate-500 text-center py-12">Loading trends…</p>
+        ) : error ? (
+          <div className="p-12 text-center text-rose-600 bg-rose-50 dark:bg-rose-950/20 rounded-[2.5rem] border border-rose-200 dark:border-rose-900/50">
+            <p className="font-medium text-lg">{error}</p>
+            <button onClick={() => void load()} className="mt-4 text-sm underline hover:no-underline">Retry</button>
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="p-12 text-center text-slate-500 bg-white/50 dark:bg-white/[0.02] rounded-[2.5rem] border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
+            <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Incidents Found</p>
+            <p className="text-sm opacity-80 mt-1">When reportable events land in Supabase, their category and severity distributions will appear here.</p>
+          </div>
+        ) : (
+          <KineticGrid className="grid-cols-1 lg:grid-cols-2 gap-6" staggerMs={75}>
+            <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
+              <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4">
+                <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-3">
+                  <BarChart3 className="w-5 h-5 text-indigo-500" /> By Category
+                </h3>
+              </div>
+              <div className="space-y-5">
+                {stats.byCategory.slice(0, 12).map(([cat, count]) => (
+                  <div key={cat} className="space-y-1.5 focus-within:outline-none group">
+                    <div className="flex justify-between text-sm">
+                      <span className="truncate pr-2 font-medium text-slate-800 dark:text-slate-200 font-mono tracking-tight capitalize">{humanCategory(cat)}</span>
+                      <span className="shrink-0 font-bold tabular-nums text-slate-900 dark:text-white">{count}</span>
+                    </div>
+                    <div className="h-3 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800 shadow-inner relative">
+                      <div
+                        className="h-full rounded-full bg-indigo-500 relative transition-all duration-1000 group-hover:brightness-110"
+                        style={{ width: `${Math.max(2, Math.round((count / stats.maxCat) * 100))}%` }}
+                      >
+                         <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/20" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-      {!loading && rows.length > 0 ? (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="border-slate-200/70 shadow-soft dark:border-slate-800">
-            <CardHeader>
-              <CardTitle className="font-display text-lg">By category</CardTitle>
-              <CardDescription>Raw incident_category enum counts</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {stats.byCategory.slice(0, 12).map(([cat, count]) => (
-                <div key={cat} className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="truncate pr-2 text-slate-700 dark:text-slate-300">{humanCategory(cat)}</span>
-                    <span className="shrink-0 font-medium tabular-nums text-slate-900 dark:text-slate-100">{count}</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-teal-500 to-teal-600"
-                      style={{ width: `${Math.round((count / stats.maxCat) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card className="border-slate-200/70 shadow-soft dark:border-slate-800">
-            <CardHeader>
-              <CardTitle className="font-display text-lg">By severity</CardTitle>
-              <CardDescription>Distribution across L1–L4</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {stats.bySeverity.map(([sev, count]) => (
-                <div key={sev} className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="uppercase text-slate-700 dark:text-slate-300">{sev.replace(/_/g, " ")}</span>
-                    <span className="font-medium tabular-nums text-slate-900 dark:text-slate-100">{count}</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                    <div
-                      className={cn(
-                        "h-full rounded-full",
-                        sev === "level_4"
-                          ? "bg-red-500"
-                          : sev === "level_3"
-                            ? "bg-orange-500"
-                            : sev === "level_2"
+            <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
+              <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4">
+                <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-3">
+                  <TrendingUp className="w-5 h-5 text-rose-500" /> By Severity
+                </h3>
+              </div>
+              <div className="space-y-5">
+                {stats.bySeverity.map(([sev, count]) => (
+                  <div key={sev} className="space-y-1.5 focus-within:outline-none group">
+                    <div className="flex justify-between text-sm items-center">
+                      <span className="uppercase tracking-widest text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-black/40 px-2 py-0.5 rounded shadow-sm">{sev.replace(/_/g, " ")}</span>
+                      <span className="font-bold tabular-nums text-slate-900 dark:text-white text-lg">{count}</span>
+                    </div>
+                    <div className="h-3 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800 shadow-inner relative">
+                      <div
+                        className={cn(
+                          "h-full rounded-full relative transition-all duration-1000 group-hover:brightness-110",
+                          sev === "level_4"
+                            ? "bg-rose-500"
+                            : sev === "level_3"
                               ? "bg-amber-500"
-                              : "bg-slate-400",
-                      )}
-                      style={{ width: `${Math.round((count / stats.maxSev) * 100)}%` }}
-                    />
+                              : sev === "level_2"
+                                ? "bg-amber-300 dark:bg-yellow-600"
+                                : "bg-slate-400",
+                        )}
+                        style={{ width: `${Math.max(2, Math.round((count / stats.maxSev) * 100))}%` }}
+                      >
+                         <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/20" />
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
+                ))}
+              </div>
+            </div>
+          </KineticGrid>
+        )}
+      </div>
     </div>
   );
 }

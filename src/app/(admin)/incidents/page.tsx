@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { MotionCard } from "@/components/ui/motion-card";
+import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 
 type IncidentSeverity = "level_1" | "level_2" | "level_3" | "level_4";
 type IncidentStatus = "new" | "investigating" | "regulatory_review" | "closed";
@@ -106,12 +106,16 @@ export default function AdminIncidentsKanbanPage() {
   ];
 
   return (
-    <div className="flex flex-col h-[calc(100vh-6rem)] space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-6">
-      <header className="shrink-0 flex items-end justify-between px-1">
+    <div className="relative flex flex-col h-[calc(100vh-6rem)] space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-6">
+      <AmbientMatrix 
+        primaryClass="bg-rose-500/10" 
+        secondaryClass="bg-indigo-600/5" 
+      />
+      <header className="relative z-10 shrink-0 flex items-end justify-between px-1">
         <div>
-           <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-1">Incident Command Center</p>
-           <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
-             Safety Operations Kanban {rows.filter(r => r.status === "new").length > 0 && <PulseDot />}
+           <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-1">SYS: Module 07 / Incident Command Center</p>
+           <h2 className="text-4xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+             Safety Operations Kanban {rows.filter(r => r.status === "new").length > 0 && <PulseDot colorClass="bg-rose-500" />}
            </h2>
         </div>
         <div className="flex items-center gap-2">
@@ -122,17 +126,17 @@ export default function AdminIncidentsKanbanPage() {
       </header>
 
       {/* Kanban Board Container */}
-      <div className="flex-1 min-h-0 flex gap-4 overflow-x-auto pb-4 px-1 scrollbar-hide">
+      <div className="relative z-10 flex-1 min-h-0 flex gap-6 overflow-x-auto pb-4 px-1 scrollbar-hide">
         {columns.map((col, idx) => {
           const colRows = rows.filter(r => r.status === col.id);
           return (
-            <MotionCard key={col.id} delay={idx * 0.1} className="flex-1 min-w-[320px] flex flex-col bg-slate-100/50 dark:bg-slate-900/30 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 overflow-hidden">
-               <div className="shrink-0 p-4 border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between bg-slate-100/80 dark:bg-slate-900/80">
-                 <div className="flex items-center gap-2">
-                   <div className={cn("w-2.5 h-2.5 rounded-full shadow-sm", col.dot)}></div>
-                   <h3 className="font-semibold text-slate-800 dark:text-slate-200 text-sm tracking-wide uppercase">{col.label}</h3>
+            <div key={col.id} className="flex-1 min-w-[340px] flex flex-col glass-panel rounded-[2rem] border border-white/20 dark:border-white/5 overflow-hidden shadow-2xl relative bg-white/30 dark:bg-black/20">
+               <div className="shrink-0 p-5 border-b border-white/20 dark:border-white/5 flex items-center justify-between bg-white/40 dark:bg-black/40 backdrop-blur-md relative z-10">
+                 <div className="flex items-center gap-3">
+                   <div className={cn("w-3 h-3 rounded-full shadow-sm", col.dot)}></div>
+                   <h3 className="font-semibold text-slate-800 dark:text-slate-200 text-sm tracking-widest uppercase font-mono">{col.label}</h3>
                  </div>
-                 <Badge variant="secondary" className="bg-white/60 dark:bg-black/40 text-slate-600">{colRows.length}</Badge>
+                 <Badge variant="secondary" className="bg-white/60 dark:bg-white/10 text-slate-800 dark:text-slate-200 shadow-none font-mono">{colRows.length}</Badge>
                </div>
                
                <ScrollArea className="flex-1 p-3">
@@ -151,7 +155,7 @@ export default function AdminIncidentsKanbanPage() {
                    </MotionList>
                  )}
                </ScrollArea>
-            </MotionCard>
+            </div>
           );
         })}
       </div>
@@ -167,80 +171,80 @@ function KanbanCard({ incident, now }: { incident: IncidentRow; now: number }) {
     const hoursLeft = (incident.followupDueMs - now) / 3600000;
     if (hoursLeft < 0) {
       countdownRibbon = (
-        <Badge variant="destructive" className="w-full flex justify-center py-1 rounded-none border-b border-rose-600 font-mono text-[10px] tracking-widest font-bold">
-          <AlertCircle className="w-3 h-3 mr-1.5" /> DOH DEADLINE BREACHED
-        </Badge>
+        <div className="w-full bg-rose-500/10 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 py-2 flex justify-center border-b border-rose-500/20 font-mono text-[10px] tracking-widest font-bold">
+          <AlertCircle className="w-3.5 h-3.5 mr-2 animate-bounce" /> DOH DEADLINE BREACHED
+        </div>
       );
     } else if (hoursLeft <= 24) {
       countdownRibbon = (
-        <Badge variant="destructive" className="w-full flex justify-center py-1 rounded-none border-b border-rose-600 font-mono text-[10px] tracking-widest font-bold bg-rose-500">
-          <Clock className="w-3 h-3 mr-1.5 animate-pulse" /> {Math.ceil(hoursLeft)} HOURS TO DOH DEADLINE
-        </Badge>
+        <div className="w-full bg-rose-500 text-white py-2 flex justify-center font-mono text-[10px] tracking-widest font-bold shadow-sm">
+          <Clock className="w-3 h-3 mr-2 animate-pulse" /> {Math.ceil(hoursLeft)} HOURS TO DOH DEADLINE
+        </div>
       );
     } else if (hoursLeft <= 72) {
       countdownRibbon = (
-        <Badge variant="outline" className="w-full flex justify-center py-1 rounded-none border-b border-amber-300 font-mono text-[10px] tracking-widest font-bold bg-amber-50 text-amber-800">
+        <div className="w-full bg-amber-100/50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-400 py-1.5 flex justify-center border-b border-amber-200/50 dark:border-amber-900/50 font-mono text-[10px] tracking-widest font-bold">
            {Math.ceil(hoursLeft / 24)} DAYS TO REGULATORY DEADLINE
-        </Badge>
+        </div>
       );
     }
   }
 
   return (
-    <Card className="overflow-hidden border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing bg-white dark:bg-slate-950">
+    <div className="relative overflow-hidden rounded-2xl glass-panel group transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] cursor-grab active:cursor-grabbing border border-white/40 dark:border-white/10 bg-white/70 dark:bg-slate-900/60 backdrop-blur-md">
       {countdownRibbon}
-      <CardContent className="p-4 flex flex-col gap-3">
+      <div className="p-5 flex flex-col gap-4">
         <div className="flex items-start justify-between">
            <div className="flex flex-col">
-             <span className="text-xs font-mono text-slate-400 mb-0.5">{incident.incidentNumber}</span>
-             <span className="font-semibold text-slate-900 dark:text-slate-100 text-sm">{incident.residentName}</span>
+             <span className="text-[10px] font-mono tracking-widest uppercase text-slate-500 mb-1">{incident.incidentNumber}</span>
+             <span className="font-bold text-slate-900 dark:text-slate-100 text-base">{incident.residentName}</span>
            </div>
            {incident.severity === "level_4" ? (
-             <Badge variant="destructive" className="h-5 px-1.5 text-[9px] font-bold rounded-sm border-0">L4 SEVERE</Badge>
+             <Badge variant="destructive" className="h-6 px-2 text-[10px] font-mono tracking-wider font-bold rounded-md bg-rose-500">L4 SEVERE</Badge>
            ) : incident.severity === "level_3" ? (
-             <Badge className="h-5 px-1.5 text-[9px] font-bold rounded-sm border-0 bg-orange-500">L3 MAJOR</Badge>
+             <Badge className="h-6 px-2 text-[10px] font-mono tracking-wider font-bold rounded-md bg-amber-500 text-white border-0 hover:bg-amber-600">L3 MAJOR</Badge>
            ) : (
-             <Badge variant="secondary" className="h-5 px-1.5 text-[9px] font-bold rounded-sm border-0">{incident.severity.replace('level_', 'L')}</Badge>
+             <Badge variant="secondary" className="h-6 px-2 text-[10px] font-mono tracking-wider font-bold rounded-md border-0 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300">{incident.severity.replace('level_', 'L')}</Badge>
            )}
         </div>
         
-        <div className="flex flex-col gap-1.5 text-xs">
-          <div className="flex justify-between text-slate-600 dark:text-slate-400">
-            <span className="font-medium text-slate-500">Class:</span>
-            <span className="capitalize">{incident.category.replace(/_/g, ' ')}</span>
+        <div className="grid grid-cols-2 gap-3 text-xs bg-white/50 dark:bg-black/20 p-3 rounded-xl border border-white/20 dark:border-white/5">
+          <div className="flex flex-col gap-1">
+            <span className="font-mono text-[9px] uppercase tracking-widest text-slate-400">Class</span>
+            <span className="font-medium capitalize text-slate-800 dark:text-slate-300">{incident.category.replace(/_/g, ' ')}</span>
           </div>
-          <div className="flex justify-between text-slate-600 dark:text-slate-400">
-            <span className="font-medium text-slate-500">Reported:</span>
-            <span>{incident.reportedAt}</span>
+          <div className="flex flex-col gap-1">
+            <span className="font-mono text-[9px] uppercase tracking-widest text-slate-400">Reported</span>
+            <span className="font-medium text-slate-800 dark:text-slate-300">{incident.reportedAt}</span>
           </div>
         </div>
         
-        <div className="pt-3 mt-1 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-           <div className="flex items-center gap-2">
-             <div className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[9px] font-bold text-slate-600">
+        <div className="pt-2 flex items-center justify-between">
+           <div className="flex items-center gap-2.5">
+             <div className="w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-[10px] font-bold text-indigo-700 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-500/20">
                {incident.reportedBy.charAt(0) || "S"}
              </div>
-             <span className="text-[10px] text-slate-500 truncate max-w-[80px]">{incident.reportedBy}</span>
+             <span className="text-xs font-medium text-slate-600 dark:text-slate-400 truncate max-w-[100px]">{incident.reportedBy}</span>
            </div>
            
            {incident.status === "new" && (
-             <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 shadow-none font-medium text-brand-600 border-brand-200">
-               Begin Triage <ArrowRight className="w-3 h-3 ml-1" />
+             <Button size="sm" variant="default" className="h-8 text-xs px-3 shadow-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
+               Begin Triage <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
              </Button>
            )}
            {incident.status === "investigating" && (
-             <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 shadow-none font-medium">
+             <Button size="sm" variant="outline" className="h-8 text-xs px-3 shadow-none font-medium rounded-lg border-white/40 dark:border-white/10 glass-panel hover:bg-white dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 transition-colors">
                Update RN Notes
              </Button>
            )}
            {incident.status === "regulatory_review" && (
-             <Button size="sm" variant="default" className="h-6 text-[10px] px-2 shadow-none font-medium bg-blue-600 hover:bg-blue-700">
-               Sign Off <CheckCircle2 className="w-3 h-3 ml-1" />
+             <Button size="sm" variant="default" className="h-8 text-xs px-3 shadow-md font-semibold bg-emerald-600 hover:bg-emerald-700 rounded-lg text-white">
+               Sign Off <CheckCircle2 className="w-3.5 h-3.5 ml-1.5" />
              </Button>
            )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 

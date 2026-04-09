@@ -158,10 +158,10 @@ export default function AdminFinanceHubPage() {
         </KineticGrid>
 
         {/* ACTION QUEUE: Financial Triage */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-6 border-t border-slate-200/50 dark:border-slate-800/50">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-6 border-t border-white/20 dark:border-white/5">
           
           <div className="col-span-1 lg:col-span-2 space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+            <div className="flex items-center justify-between pb-2 border-b border-white/20 dark:border-white/5">
               <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                 Action Ledger
               </h3>
@@ -171,21 +171,21 @@ export default function AdminFinanceHubPage() {
               {loading ? (
                 <p className="text-sm font-mono text-slate-500">Loading ledger…</p>
               ) : unpostedInvoices === 0 ? (
-                <div className="p-8 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-2xl border border-slate-200 dark:border-slate-800 backdrop-blur-md">
-                   <p className="font-medium">Ledger Reconciled</p>
-                   <p className="text-sm opacity-80">All invoices and journal entries are currently posted.</p>
+                <div className="p-8 text-center text-slate-500 bg-white/40 dark:bg-black/20 rounded-3xl border border-white/20 dark:border-white/5 glass-panel backdrop-blur-2xl shadow-xl">
+                   <p className="font-display font-medium text-slate-900 dark:text-slate-100">Ledger Reconciled</p>
+                   <p className="text-sm opacity-80 font-mono tracking-wide mt-1">All invoices and journal entries are currently posted.</p>
                 </div>
               ) : (
                 <>
                   {/* MOCK Action Items based on fetched unposted invoices count */}
                   {unpostedInvoices != null && unpostedInvoices > 0 && Array.from({ length: Math.min(3, unpostedInvoices) }).map((_, i) => (
-                    <MotionItem key={i} className="p-5 rounded-2xl border border-amber-200 dark:border-amber-900/30 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-amber-300 dark:hover:border-amber-800/50 transition-colors">
+                    <MotionItem key={i} className="glass-panel p-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 dark:bg-amber-900/10 backdrop-blur-2xl relative overflow-hidden group hover:border-amber-500/40 hover:bg-amber-500/10 dark:hover:bg-amber-900/20 transition-all duration-300">
                       <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
                       <div className="flex justify-between items-start mb-3">
-                         <span className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-1 rounded-md uppercase tracking-wider">
+                         <span className="text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-500/20 shadow-sm border-0 px-2 py-1 rounded-md uppercase tracking-widest">
                            Unposted Invoice
                          </span>
-                         <span className="text-xs text-amber-600 font-mono font-medium">Pending Manager Approval</span>
+                         <span className="text-[10px] text-amber-600/80 dark:text-amber-500 font-mono tracking-widest uppercase font-bold">Pending Manager Approval</span>
                       </div>
                       <div className="mb-4">
                         <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
@@ -198,10 +198,10 @@ export default function AdminFinanceHubPage() {
                           Invoice received on Monday. Auto-coded to `5100-Dietary`. Awaiting final posting to GL.
                         </p>
                       </div>
-                      <div className="flex gap-2 justify-start">
+                      <div className="flex gap-2 justify-start mt-2">
                           <Link
                             href="/admin/billing/invoices"
-                            className={cn(buttonVariants({ variant: "default", size: "sm" }), "bg-amber-600 hover:bg-amber-700 text-white font-mono uppercase tracking-widest text-[10px]")}
+                            className={cn(buttonVariants({ variant: "default", size: "sm" }), "bg-amber-600 hover:bg-amber-700 text-black font-mono uppercase tracking-widest text-[9px] shadow-lg")}
                           >
                             Review & Post
                           </Link>
@@ -213,18 +213,18 @@ export default function AdminFinanceHubPage() {
             </MotionList>
           </div>
 
-          <div className="col-span-1 border-l border-slate-200 dark:border-slate-800 pl-0 lg:pl-6 pt-6 lg:pt-0">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800 mb-4">
+          <div className="col-span-1 border-l border-white/20 dark:border-white/5 pl-0 lg:pl-6 pt-6 lg:pt-0">
+            <div className="flex items-center justify-between pb-2 border-b border-white/20 dark:border-white/5 mb-4">
               <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                 Period Status
               </h3>
             </div>
             
             <div className="space-y-4">
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex flex-col gap-2">
+              <div className="glass-panel p-4 rounded-2xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 flex flex-col gap-2 backdrop-blur-2xl shadow-xl">
                  <div className="flex justify-between items-center mb-1">
-                   <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Period: Q2 Active</p>
-                   <span className="text-xs font-bold text-emerald-600 uppercase">Open</span>
+                   <p className="text-[10px] uppercase font-mono tracking-widest font-semibold text-slate-900 dark:text-slate-100">Period: Q2 Active</p>
+                   <span className="text-[10px] tracking-widest font-mono font-bold text-emerald-600 uppercase">Open</span>
                  </div>
                  <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
                    <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: '45%' }}></div>

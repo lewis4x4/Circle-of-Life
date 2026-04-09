@@ -9,7 +9,14 @@ import { loadReportsRoleContext } from "@/lib/reports/auth";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
-type CountCard = { title: string; value: number; hint: string; icon: LucideIcon; color: string; href: string };
+import { KineticGrid } from "@/components/ui/kinetic-grid";
+import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { Sparkline } from "@/components/ui/moonshot/sparkline";
+import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
+import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
+import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+
+type CountCard = { title: string; value: number; hint: string; icon: LucideIcon; color: string; href: string; variant: 1 | 2 | 3 | 4 | 5 };
 
 export default function ReportsOverviewPage() {
   const supabase = createClient();
@@ -68,7 +75,8 @@ export default function ReportsOverviewPage() {
               hint: "Official and custom templates",
               icon: Fingerprint,
               color: "indigo",
-              href: "/admin/reports/templates"
+              href: "/admin/reports/templates",
+              variant: 1
             },
             {
               title: "Saved Reports",
@@ -76,7 +84,8 @@ export default function ReportsOverviewPage() {
               hint: "Pinned or inherited variants",
               icon: Save,
               color: "emerald",
-              href: "/admin/reports/saved"
+              href: "/admin/reports/saved",
+              variant: 2
             },
             {
               title: "Active Schedules",
@@ -84,7 +93,8 @@ export default function ReportsOverviewPage() {
               hint: "Recurring report jobs",
               icon: Clock,
               color: "amber",
-              href: "/admin/reports/scheduled"
+              href: "/admin/reports/scheduled",
+              variant: 3
             },
             {
               title: "Report Packs",
@@ -92,7 +102,8 @@ export default function ReportsOverviewPage() {
               hint: "Executive & compliance bundles",
               icon: FolderOpen,
               color: "rose",
-              href: "/admin/reports/packs"
+              href: "/admin/reports/packs",
+              variant: 4
             },
             {
               title: "Run History",
@@ -100,7 +111,8 @@ export default function ReportsOverviewPage() {
               hint: "Executed report runs audit log",
               icon: Layers,
               color: "blue",
-              href: "/admin/reports/history"
+              href: "/admin/reports/history",
+              variant: 5
             },
           ]);
         }
@@ -124,7 +136,8 @@ export default function ReportsOverviewPage() {
         hint: "Auditing catalog...",
         icon: Fingerprint,
         color: "slate",
-        href: "#"
+        href: "#",
+        variant: 1
       })),
     []
   );
@@ -139,28 +152,26 @@ export default function ReportsOverviewPage() {
   } as const;
 
   return (
-    <div className="space-y-10 pb-12 w-full max-w-[1600px] mx-auto">
+    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+      <AmbientMatrix hasCriticals={false} 
+        primaryClass="bg-indigo-700/10"
+        secondaryClass="bg-slate-900/10"
+      />
       
-      {/* ─── MOONSHOT HEADER ─── */}
-      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
-        <div className="space-y-2">
-           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
-               SYS: Intelligence
-           </div>
-           <h1 className="text-4xl md:text-5xl font-display font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-              Reporting Hub
-           </h1>
-           <p className="text-slate-600 dark:text-zinc-400 font-medium tracking-wide mt-2">
-             Template-first reporting with scheduling, packs, and audited exports.
-           </p>
+      <div className="relative z-10 space-y-6">
+        <ReportsHubNav />
+        <div className="flex items-center gap-3">
+          <Layers className="h-8 w-8 text-slate-600 dark:text-slate-300" aria-hidden />
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Reporting Hub</h1>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Template-first reporting with scheduling, packs, and audited exports.
+            </p>
+          </div>
         </div>
-        <div className="hidden md:block">
-           <ReportsHubNav />
-        </div>
-      </div>
 
       {error && (
-         <div className="rounded-[1.5rem] border border-rose-800/60 bg-rose-950/40 p-6 text-sm text-rose-200 font-medium tracking-wide flex items-center gap-4">
+         <div className="glass-panel rounded-2xl border border-rose-500/20 bg-rose-500/10 p-6 text-sm text-rose-600 dark:text-rose-400 font-medium tracking-wide flex items-center gap-4">
             <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/30">
                <span className="font-bold">!</span>
             </div>
@@ -169,45 +180,41 @@ export default function ReportsOverviewPage() {
       )}
 
       {/* ─── METRIC PILLARS ─── */}
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 xl:gap-8 pt-4 lg:px-4">
+      <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4" staggerMs={75}>
         {(loading ? placeholderCards : orderedCards).map((card, idx) => {
           const Icon = card.icon;
-          const tone = colors[card.color as keyof typeof colors] || colors.slate;
+          const colorName = card.color;
 
           return (
-            <Link key={card.title + idx} href={card.href} className="block group tap-responsive outline-none">
-               <div className={cn(
-                 "relative h-[240px] w-full overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white/60 backdrop-blur-3xl p-8 transition-all duration-500 flex flex-col justify-between",
-                 "dark:border-white/5 dark:bg-white/[0.015] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]",
-                 "hover:-translate-y-2 hover:shadow-2xl dark:hover:border-white/10 dark:hover:bg-white/[0.03]"
-               )}>
-                  {/* Subtle top glare */}
-                  <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                  
-                  {/* Radial bloom via pseudo-element mapped to color */}
-                  <div className={`absolute inset-0 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none mix-blend-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] ${tone.split(' ')[0]} via-transparent to-transparent`} />
-                  
-                  <div className="relative z-10 flex items-start justify-between">
-                     <span className="text-sm font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 w-[60%] leading-relaxed">
-                        {card.title}
-                     </span>
-                     <div className={`w-14 h-14 rounded-[1rem] flex items-center justify-center border shadow-inner ${tone.split(' ').slice(1).join(' ')}`}>
-                        <Icon className="w-6 h-6" />
+            <Link key={card.title + idx} href={card.href} className="block group h-[160px] lg:h-[180px] tap-responsive outline-none">
+              <V2Card hoverColor={colorName} className="flex flex-col h-full bg-white/40 dark:bg-black/20 p-5 rounded-3xl border border-white/20 dark:border-white/5 backdrop-blur-2xl shadow-xl transition-all hover:-translate-y-1 overflow-hidden">
+                 <Sparkline colorClass={`text-${colorName}-500`} variant={card.variant} />
+                 <MonolithicWatermark value={loading ? 0 : card.value} className="opacity-40" />
+
+                 <div className="relative z-10 flex flex-col h-full justify-between">
+                   <div className="flex justify-between items-start">
+                     <h3 className={cn("text-[10px] font-mono tracking-widest uppercase w-2/3 leading-snug flex items-center gap-2", `text-${colorName}-600 dark:text-${colorName}-400`)}>
+                       {card.title}
+                     </h3>
+                     <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center group-hover:bg-opacity-20 transition-colors border", `border-${colorName}-500/20 text-${colorName}-600 dark:text-${colorName}-400 bg-${colorName}-500/10 shadow-inner`)}>
+                       <Icon className="w-4 h-4" />
                      </div>
-                  </div>
-                  
-                  <div className="relative z-10 flex flex-col gap-2 mt-auto">
-                     <span className="text-6xl md:text-7xl font-display font-medium tabular-nums tracking-tight text-slate-900 dark:text-white leading-none">
+                   </div>
+                   
+                   <div className="flex flex-col">
+                     <span className={cn("text-4xl lg:text-5xl font-mono tracking-tighter tabular-nums pb-1 leading-none text-slate-800 dark:text-slate-100 group-hover:text-transparent group-hover:bg-clip-text transition-all duration-300", `group-hover:bg-gradient-to-b group-hover:from-${colorName}-600 group-hover:to-${colorName}-400 dark:group-hover:from-${colorName}-300 dark:group-hover:to-${colorName}-500`)}>
                         {loading ? "-" : card.value.toLocaleString()}
                      </span>
-                     <span className="text-sm font-semibold text-slate-500 dark:text-zinc-500 tracking-wide">
+                     <span className="text-[9px] uppercase tracking-widest font-mono text-slate-500 dark:text-slate-400 mt-1">
                         {card.hint}
                      </span>
-                  </div>
-               </div>
+                   </div>
+                 </div>
+              </V2Card>
             </Link>
           );
         })}
+      </KineticGrid>
       </div>
     </div>
   );

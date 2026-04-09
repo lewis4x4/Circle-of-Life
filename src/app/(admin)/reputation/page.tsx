@@ -215,7 +215,7 @@ export default function AdminReputationHubPage() {
                 </div>
               ) : (
                 draftReplies.map((row) => (
-                  <MotionItem key={row.id} className="p-5 rounded-2xl border border-red-200 dark:border-red-900/30 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-red-300 dark:hover:border-red-800/50 transition-colors">
+                  <MotionItem key={row.id} className="glass-panel rounded-2xl p-6 border border-indigo-500/10 dark:border-indigo-500/5 bg-white/50 dark:bg-slate-900/40 relative overflow-hidden group transition-all hover:bg-white/70 dark:hover:bg-slate-900/60 hover:border-indigo-500/30">
                     <div className="absolute top-0 left-0 w-1 h-full bg-red-500" />
                     <div className="flex justify-between items-start mb-3">
                        <span className="text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 px-2 py-1 rounded-md uppercase tracking-wider">

@@ -18,7 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
@@ -250,80 +250,74 @@ export default function AdminStaffPage() {
       ) : null}
 
       {!isLoading && filteredRows.length > 0 ? (
-        <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/5 bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent pointer-events-none" />
-          <div className="relative z-10 border-b border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 p-6 flex flex-col gap-1">
-            <h3 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">Team Directory</h3>
-            <p className="text-sm font-mono text-slate-500 dark:text-slate-400">Roster from staff, certifications, and upcoming shift assignments.</p>
+        <div className="relative overflow-visible z-10 w-full mt-4">
+          <div className="relative z-10 p-4 sm:p-6 mb-4 glass-panel rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-2xl">
+            <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Team Directory</h3>
+            <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">Roster from staff, certifications, and upcoming shift assignments.</p>
           </div>
-          <div className="relative z-10 overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-white/40 dark:bg-black/40 border-b border-white/20 dark:border-white/10">
-                <TableRow className="border-none hover:bg-transparent">
-                  <TableHead className="pl-4 font-medium">Staff</TableHead>
-                  <TableHead className="font-medium">Role</TableHead>
-                  <TableHead className="font-medium">Status</TableHead>
-                  <TableHead className="font-medium">Certifications</TableHead>
-                  <TableHead className="font-medium">Next Shift</TableHead>
-                  <TableHead className="font-medium">
-                    <span className="inline-flex items-center gap-1">
-                      Overtime Risk
-                      <ArrowUpDown className="h-3.5 w-3.5 text-slate-400" />
-                    </span>
-                  </TableHead>
-                  <TableHead className="w-10 pr-4 text-right font-medium"> </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRows.map((staff) => (
-                  <TableRow key={staff.id} className="border-slate-100 dark:border-slate-800 hover:bg-blue-500/5 dark:hover:bg-blue-500/10 transition-colors cursor-pointer group">
-                    <TableCell className="pl-4">
-                      <div className="flex items-center gap-3">
+          
+          <MotionList className="space-y-3">
+            {filteredRows.map((staff) => (
+              <MotionItem key={staff.id}>
+                <Link href={`/admin/staff/${staff.id}`} className="block focus-visible:outline-none focus:ring-2 focus:ring-indigo-500 rounded-2xl">
+                  <div className="p-4 sm:p-5 rounded-2xl glass-panel group transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 w-full">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      
+                      {/* Avatar and Name */}
+                      <div className="flex items-center gap-4 min-w-[220px]">
                         {staff.photoUrl ? (
-                          <Avatar size="default" className="ring-1 ring-slate-200 dark:ring-slate-700">
+                          <Avatar size="default" className="ring-2 ring-white/50 dark:ring-slate-800/80 shadow-md">
                             <AvatarImage src={staff.photoUrl} alt={staff.name} />
-                            <AvatarFallback className="bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-100">
+                            <AvatarFallback className="bg-indigo-100 text-indigo-900 dark:bg-indigo-900/50 dark:text-indigo-100">
                               {staff.initials}
                             </AvatarFallback>
                           </Avatar>
                         ) : (
                           <div
-                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-medium text-slate-600 ring-1 ring-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:ring-slate-700"
+                            className="flex h-10 w-10 shrink-0 shadow-md items-center justify-center rounded-full bg-slate-200/80 text-sm font-bold text-slate-600 ring-2 ring-white/50 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-slate-800"
                             aria-hidden
                           >
                             {staff.name.charAt(0).toUpperCase()}
                           </div>
                         )}
-                        <span className="font-medium text-slate-900 dark:text-slate-100">{staff.name}</span>
+                        <div className="flex flex-col">
+                           <span className="font-bold text-slate-900 dark:text-slate-100">{staff.name}</span>
+                           <span className="text-[10px] uppercase tracking-widest font-mono text-slate-500 mt-0.5">{staff.role}</span>
+                        </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <RoleBadge role={staff.role} />
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={staff.status} />
-                    </TableCell>
-                    <TableCell>
-                      <CertificationBadge certifications={staff.certifications} />
-                    </TableCell>
-                    <TableCell className="text-slate-500 dark:text-slate-400">{staff.nextShift}</TableCell>
-                    <TableCell>
-                      <OvertimeRiskBadge risk={staff.overtimeRisk} />
-                    </TableCell>
-                    <TableCell className="pr-4 text-right">
-                      <Link
-                        href={`/admin/staff/${staff.id}`}
-                        className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
-                        aria-label={`Open ${staff.name}`}
-                      >
-                        <ChevronRight className="h-4 w-4 text-slate-500" />
-                      </Link>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+
+                      {/* Role & Status Data */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full md:w-3/4 items-center">
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Status</span>
+                          <div><StatusBadge status={staff.status} /></div>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Certifications</span>
+                          <div><CertificationBadge certifications={staff.certifications} /></div>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Next Shift</span>
+                          <span className="font-mono text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white/60 dark:bg-black/30 w-fit px-2 py-0.5 rounded shadow-sm">{staff.nextShift}</span>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400 flex items-center gap-1">Overtime Risk <ArrowUpDown className="h-2.5 w-2.5" /></span>
+                          <div><OvertimeRiskBadge risk={staff.overtimeRisk} /></div>
+                        </div>
+                      </div>
+                      
+                      <div className="hidden sm:flex shrink-0">
+                         <div className="w-8 h-8 rounded-full bg-white/50 dark:bg-white/5 flex items-center justify-center group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 transition-colors">
+                           <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" />
+                         </div>
+                      </div>
+
+                    </div>
+                  </div>
+                </Link>
+              </MotionItem>
+            ))}
+          </MotionList>
         </div>
       ) : null}
       </div>
@@ -495,40 +489,40 @@ function RoleBadge({ role }: { role: StaffRole }) {
       label: "Med Tech",
       className: "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300",
     },
-    admin: { label: "Admin", className: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300" },
+    admin: { label: "Admin", className: "bg-slate-200/50 text-slate-800 dark:bg-slate-800/50 dark:text-slate-300 hover:bg-slate-300/50 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm" },
   };
   return <Badge className={map[role].className}>{map[role].label}</Badge>;
 }
 
 function StatusBadge({ status }: { status: StaffStatus }) {
   const map: Record<StaffStatus, { label: string; className: string }> = {
-    active: { label: "Active", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" },
+    active: { label: "Active", className: "bg-emerald-500/20 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm" },
     off_shift: {
       label: "Off Shift",
-      className: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+      className: "bg-slate-200/50 text-slate-800 dark:bg-slate-800/50 dark:text-slate-300 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm",
     },
-    on_leave: { label: "On Leave", className: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" },
+    on_leave: { label: "On Leave", className: "bg-amber-500/20 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm" },
   };
   return <Badge className={map[status].className}>{map[status].label}</Badge>;
 }
 
 function CertificationBadge({ certifications }: { certifications: CertificationStatus }) {
   const map: Record<CertificationStatus, { label: string; className: string }> = {
-    current: { label: "Current", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" },
+    current: { label: "Current", className: "bg-emerald-500/20 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm" },
     expiring_soon: {
       label: "Expiring Soon",
-      className: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+      className: "bg-amber-500/20 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm",
     },
-    expired: { label: "Expired", className: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300" },
+    expired: { label: "Expired", className: "bg-red-500/20 text-red-800 dark:bg-red-950/60 dark:text-red-400 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm" },
   };
   return <Badge className={map[certifications].className}>{map[certifications].label}</Badge>;
 }
 
 function OvertimeRiskBadge({ risk }: { risk: "low" | "medium" | "high" }) {
   const map = {
-    low: { label: "Low", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" },
-    medium: { label: "Medium", className: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" },
-    high: { label: "High", className: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300" },
+    low: { label: "Low", className: "bg-emerald-500/20 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm" },
+    medium: { label: "Medium", className: "bg-amber-500/20 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm" },
+    high: { label: "High", className: "bg-red-500/20 text-red-800 dark:bg-red-950/60 dark:text-red-400 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm" },
   } as const;
   return <Badge className={map[risk].className}>{map[risk].label}</Badge>;
 }

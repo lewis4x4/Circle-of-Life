@@ -7,8 +7,7 @@ import { useParams } from "next/navigation";
 import { ReportsHubNav } from "@/components/reports/reports-hub-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { loadReportsRoleContext } from "@/lib/reports/auth";
 import { executeReportTemplate, type ReportExecutionResult } from "@/lib/reports/executors";
 import { PHASE1_TEMPLATE_SEED } from "@/lib/reports/templates";
@@ -158,64 +157,60 @@ export default function ReportRunPage() {
         </div>
       </div>
 
-      {error && <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
+      {error && <p className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-600 dark:text-rose-400 font-medium">{error}</p>}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Execution</CardTitle>
-          <CardDescription>Set scope and run now. Every run is recorded in report history.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid gap-2 max-w-md">
-            <label htmlFor="facility-id" className="text-sm font-medium">
-              Optional facility scope (UUID)
-            </label>
-            <input
-              id="facility-id"
-              value={facilityId}
-              onChange={(event) => setFacilityId(event.target.value)}
-              className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950"
-              placeholder="Leave empty for organization scope"
-            />
+      <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-slate-200 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-3xl shadow-sm relative overflow-visible mb-6 z-10 w-full transition-all">
+          <div className="mb-6">
+            <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white">Execution</h3>
+            <p className="text-sm font-mono text-slate-500 dark:text-slate-400">Set scope and run now. Every run is recorded in report history.</p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={() => void onRun()} disabled={running || !orgId}>
-              {running ? "Running..." : "Run report"}
-            </Button>
-            <Button variant="secondary" onClick={() => void onExportCsv()} disabled={!result}>
-              Download CSV
-            </Button>
-            <Button variant="outline" onClick={() => void onPrint()} disabled={!result}>
-              Print / PDF
-            </Button>
+          <div className="space-y-6">
+            <div className="grid gap-2 max-w-md">
+              <label htmlFor="facility-id" className="text-[10px] font-mono uppercase tracking-widest text-slate-500 dark:text-slate-400 font-bold">
+                Optional facility scope (UUID)
+              </label>
+              <input
+                id="facility-id"
+                value={facilityId}
+                onChange={(event) => setFacilityId(event.target.value)}
+                className="h-12 w-full rounded-full border border-slate-200 dark:border-white/10 bg-white/40 dark:bg-black/20 px-4 py-2 text-sm backdrop-blur-xl shadow-sm focus-visible:ring-indigo-500 focus-visible:outline-none focus:ring-2 appearance-none font-mono"
+                placeholder="Leave empty for organization scope"
+              />
+            </div>
+            <div className="flex flex-wrap gap-3 mt-4">
+              <Button className="rounded-full font-mono uppercase tracking-widest text-[10px] h-10 hover:-translate-y-0.5 transition-transform shadow-lg px-8 bg-indigo-600 hover:bg-indigo-700 text-white border-0" onClick={() => void onRun()} disabled={running || !orgId}>
+                {running ? "Running..." : "Run report"}
+              </Button>
+              <Button variant="secondary" className="rounded-full font-mono uppercase tracking-widest text-[10px] h-10 hover:-translate-y-0.5 transition-transform shadow-sm px-6 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-white border border-slate-200 dark:border-white/10" onClick={() => void onExportCsv()} disabled={!result}>
+                Download CSV
+              </Button>
+              <Button variant="outline" className="rounded-full font-mono uppercase tracking-widest text-[10px] h-10 hover:-translate-y-0.5 transition-transform shadow-sm px-6 border border-slate-300 dark:border-white/10 bg-transparent hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300" onClick={() => void onPrint()} disabled={!result}>
+                Print / PDF
+              </Button>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+      </div>
 
       {result && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Run result preview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Metric</TableHead>
-                  <TableHead>Value</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+        <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-slate-200 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-3xl shadow-sm relative overflow-visible z-10 w-full transition-all">
+          <div className="mb-6">
+            <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white">Run result preview</h3>
+          </div>
+            <MotionList className="space-y-3">
                 {result.summary.map((row) => (
-                  <TableRow key={row.key}>
-                    <TableCell>{row.key}</TableCell>
-                    <TableCell>{row.value == null ? "—" : String(row.value)}</TableCell>
-                  </TableRow>
+                  <MotionItem key={row.key}>
+                    <div className="p-4 rounded-xl glass-panel border border-slate-200 dark:border-white/5 bg-white/60 dark:bg-slate-900/40 w-full flex items-center justify-between gap-6 backdrop-blur-xl shadow-sm">
+                       <span className="font-mono text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                           {row.key}
+                       </span>
+                       <span className="font-bold font-mono text-slate-900 dark:text-slate-100 text-sm">
+                           {row.value == null ? "—" : String(row.value)}
+                       </span>
+                    </div>
+                  </MotionItem>
                 ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+            </MotionList>
+        </div>
       )}
     </div>
   );

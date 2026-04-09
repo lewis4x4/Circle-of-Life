@@ -15,7 +15,7 @@ import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client
 
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
@@ -212,64 +212,73 @@ export default function CaregiverPrnFollowupPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <Card className="border-zinc-800 bg-zinc-950/80 text-zinc-100">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-lg font-display">
+    <div className="space-y-4 max-w-3xl mx-auto">
+      <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-white/5 bg-gradient-to-br from-violet-950/40 via-slate-900/40 to-black/60 backdrop-blur-3xl shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
+        <h3 className="flex items-center gap-3 text-2xl font-display font-semibold text-white tracking-wide">
+          <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center border border-violet-500/30">
             <Pill className="h-5 w-5 text-violet-400" />
-            PRN follow-up
-          </CardTitle>
-          <CardDescription className="text-zinc-400">
-            PRN administrations that still need an effectiveness check (per order window, default {DEFAULT_PRN_REASSESS_MINUTES}{" "}
-            min).
-          </CardDescription>
-        </CardHeader>
-      </Card>
+          </div>
+          PRN follow-up
+        </h3>
+        <p className="text-sm font-mono text-violet-200/60 mt-4 max-w-xl">
+          PRN administrations that still need an effectiveness check (per order window, default <span className="font-bold text-white">{DEFAULT_PRN_REASSESS_MINUTES}</span> min).
+        </p>
+      </div>
 
       {loadError ? (
         <div className="rounded-lg border border-amber-800/60 bg-amber-950/30 px-4 py-2 text-xs text-amber-100">{loadError}</div>
       ) : null}
 
       {rows.length === 0 ? (
-        <Card className="border-zinc-800 bg-zinc-950/70 text-zinc-100">
-          <CardContent className="py-8 text-center text-sm text-zinc-400">No pending PRN reassessments.</CardContent>
-        </Card>
+        <div className="glass-panel p-8 rounded-[2rem] border border-white/5 bg-slate-900/40 text-center backdrop-blur-xl">
+          <p className="text-sm font-mono text-zinc-400">No pending PRN reassessments.</p>
+        </div>
       ) : (
-        <div className="space-y-2">
+        <MotionList className="space-y-4">
           {rows.map((r) => (
-            <Card key={r.id} className="border-zinc-800 bg-zinc-950/60 text-zinc-100">
-              <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start">
-                <div className="flex flex-1 flex-col gap-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium">{r.med}</span>
-                    <Badge
-                      className={
-                        r.status === "overdue"
-                          ? "border-rose-800/60 bg-rose-950/40 text-rose-200"
-                          : "border-amber-800/60 bg-amber-950/40 text-amber-200"
-                      }
-                    >
-                      {r.status === "overdue" ? "Overdue reassess" : "Reassess pending"}
-                    </Badge>
+            <MotionItem key={r.id}>
+              <div className="p-6 md:p-8 rounded-[2rem] glass-panel group transition-all duration-300 border border-white/5 bg-white/[0.02] backdrop-blur-xl relative overflow-hidden flex flex-col md:flex-row md:items-start gap-4">
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none" />
+                 
+                <div className="flex flex-1 flex-col gap-2 relative z-10 w-full">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl font-display tracking-wide font-semibold text-white">{r.med}</span>
+                      <Badge
+                        className={`rounded-full px-3 py-1 text-[9px] uppercase tracking-widest font-mono font-bold shadow-inner ${
+                          r.status === "overdue"
+                            ? "border-rose-500/40 bg-rose-500/20 text-rose-300"
+                            : "border-amber-500/40 bg-amber-500/20 text-amber-300"
+                        }`}
+                      >
+                        {r.status === "overdue" ? "Overdue reassess" : "Reassess pending"}
+                      </Badge>
+                    </div>
                   </div>
-                  <p className="text-xs text-zinc-400">
-                    {r.name} · Room {r.room}
+                  
+                  <p className="text-[11px] uppercase tracking-widest font-mono font-bold text-zinc-400">
+                    <span className="text-zinc-200">{r.name}</span> <span className="mx-2 opacity-50">·</span> Rm {r.room}
                   </p>
-                  <p className="flex items-center gap-1 text-xs text-zinc-300">
-                    <Activity className="h-3.5 w-3.5 text-zinc-500" />
-                    Given {r.givenLabel} · Target by {r.reassessLabel} ({r.minutes} min window)
-                  </p>
+                  
+                  <div className="flex flex-col gap-2 mt-2 pt-3 border-t border-white/5">
+                    <p className="flex items-center gap-2 text-[11px] font-mono leading-relaxed text-zinc-300 bg-black/40 w-fit px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">
+                      <Activity className="h-3.5 w-3.5 text-violet-400" />
+                      Given {r.givenLabel} <span className="text-zinc-500 mx-1">/</span> Target by {r.reassessLabel} ({r.minutes} min)
+                    </p>
+                  </div>
+                  
                   {!r.canDocument ? (
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-xs text-zinc-500 mt-2 font-mono">
                       Only the administering staff or a nurse can document effectiveness for this dose.
                     </p>
                   ) : null}
+                  
                   {r.canDocument && openId === r.id ? (
-                    <div className="mt-2 space-y-2 rounded-lg border border-zinc-800 bg-zinc-900/80 p-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs text-zinc-400">Effectiveness</Label>
+                    <div className="mt-4 space-y-4 rounded-2xl border border-white/5 bg-black/40 p-5 shadow-inner">
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest font-mono text-zinc-500 pl-1">Effectiveness Result</Label>
                         <select
-                          className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-950 px-2 text-sm text-zinc-100"
+                          className="flex h-14 w-full appearance-none rounded-2xl border border-white/10 bg-black/60 px-5 text-sm text-zinc-200 font-medium font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/50 shadow-inner tap-responsive"
                           value={result}
                           onChange={(e) => setResult(e.target.value)}
                         >
@@ -281,58 +290,56 @@ export default function CaregiverPrnFollowupPage() {
                       </div>
                       <textarea
                         rows={2}
-                        placeholder="Optional notes"
-                        className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-2 py-1.5 text-sm text-zinc-100"
+                        placeholder="Optional narrative notes..."
+                        className="w-full resize-none rounded-2xl border border-white/10 bg-black/60 px-5 py-4 text-sm text-zinc-200 font-medium font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/50 shadow-inner placeholder:text-zinc-600 tap-responsive"
                         value={effNotes}
                         onChange={(e) => setEffNotes(e.target.value)}
                       />
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-3 pt-2">
                         <Button
                           type="button"
-                          size="sm"
                           disabled={savingId === r.id}
-                          className="bg-violet-600 text-white hover:bg-violet-500"
+                          className="h-12 px-8 rounded-full font-mono uppercase tracking-widest text-[10px] shadow-[0_4px_20px_rgba(139,92,246,0.15)] transition-all hover:scale-[1.02] border border-violet-500 text-white font-bold bg-violet-600 hover:bg-violet-500 tap-responsive flex-1 sm:flex-none"
                           onClick={() => void saveEffectiveness(r.id)}
                         >
-                          {savingId === r.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                          Save
+                          {savingId === r.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                          Save Result
                         </Button>
-                        <Button type="button" size="sm" variant="ghost" onClick={() => setOpenId(null)}>
+                        <Button type="button" className="h-12 px-6 rounded-full font-mono uppercase tracking-widest text-[10px] font-bold bg-black/40 hover:bg-white/10 text-zinc-300 border border-white/10 flex-1 sm:flex-none tap-responsive" onClick={() => setOpenId(null)}>
                           Cancel
                         </Button>
                       </div>
                     </div>
                   ) : null}
+                  
                   {r.canDocument && openId !== r.id ? (
                     <Button
                       type="button"
-                      variant="outline"
-                      size="sm"
-                      className="mt-1 w-fit border-zinc-700 text-zinc-200"
+                      className="mt-3 w-fit h-12 px-6 rounded-full font-mono uppercase tracking-widest text-[10px] font-bold bg-black/40 hover:bg-white/10 text-zinc-300 border border-white/10 tap-responsive shadow-inner"
                       onClick={() => {
                         setOpenId(r.id);
                         setResult("effective");
                         setEffNotes("");
                       }}
                     >
-                      Document reassessment
+                      Document Reassessment
                     </Button>
                   ) : null}
                 </div>
-                <Link
-                  href={`/caregiver/meds`}
-                  className={cn(
-                    buttonVariants({ variant: "ghost", size: "icon" }),
-                    "shrink-0 self-end text-zinc-400 hover:text-white sm:self-start",
-                  )}
-                  aria-label="Open eMAR"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </Link>
-              </CardContent>
-            </Card>
+                
+                <div className="md:border-l border-white/5 md:pl-6 pt-4 md:pt-0 mt-2 md:mt-0 relative top-1 flex justify-end">
+                   <Link
+                     href={`/caregiver/meds`}
+                     className="w-12 h-12 rounded-full border border-white/10 bg-black/40 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-colors tap-responsive shadow-inner"
+                     aria-label="Open eMAR"
+                   >
+                     <ChevronRight className="h-5 w-5" />
+                   </Link>
+                </div>
+              </div>
+            </MotionItem>
           ))}
-        </div>
+        </MotionList>
       )}
     </div>
   );

@@ -8,6 +8,7 @@ import { ReferralsHubNav } from "./referrals-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -248,16 +249,17 @@ export default function AdminReferralsHubPage() {
            <p className="text-sm text-rose-600 dark:text-rose-400" role="alert">{loadError}</p>
         ) : null}
 
-        <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-sm backdrop-blur-3xl overflow-hidden p-4 md:p-6 lg:p-8">
-           
-           <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5">
-             <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Lead Name</div>
-             <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Status</div>
-             <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Source</div>
-             <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Updated</div>
+        <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-2xl backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative">
+           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
+
+           <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Lead Name</div>
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Status</div>
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Source</div>
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Updated</div>
            </div>
 
-           <div className="space-y-3 mt-4">
+           <div className="space-y-4 mt-6 relative z-10">
              {noFacility ? (
                <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500">
                  Select a facility to view leads.
@@ -271,50 +273,53 @@ export default function AdminReferralsHubPage() {
                  No leads yet. Starts with <strong>New lead</strong>.
                </div>
              ) : (
-                rows.map((r) => {
-                  const isNew = r.status.includes('new');
-                  
-                  return (
-                    <Link
-                      key={r.id} 
-                      href={`/admin/referrals/${r.id}`}
-                      className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-4 items-center p-5 rounded-[1.5rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-colors w-full cursor-pointer outline-none"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                          {isNew ? <PulseDot colorClass="bg-emerald-500" /> : <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />}
-                        </div>
-                        <span className="font-semibold text-lg text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors tracking-tight">
-                           {r.first_name} {r.last_name}
-                        </span>
-                      </div>
-                      
-                      <div className="flex flex-row justify-between lg:justify-start items-center">
-                        <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Status</span>
-                        <span className={cn(
-                          "text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded border leading-none pt-1",
-                          isNew ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400" : "bg-slate-500/10 text-slate-600 border-slate-500/20 dark:text-slate-400"
-                        )}>
-                          {formatStatus(r.status)}
-                        </span>
-                      </div>
-                      
-                      <div className="flex flex-row justify-between lg:justify-end items-center">
-                        <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Source</span>
-                        <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 truncate">
-                          {r.referral_sources?.name ?? "—"}
-                        </span>
-                      </div>
+                <MotionList className="space-y-4">
+                  {rows.map((r) => {
+                    const isNew = r.status.includes('new');
+                    
+                    return (
+                      <MotionItem key={r.id}>
+                        <Link
+                          href={`/admin/referrals/${r.id}`}
+                          className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-4 items-center p-6 rounded-[1.8rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 w-full cursor-pointer outline-none hover:shadow-lg dark:hover:bg-white/[0.05]"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
+                              {isNew ? <PulseDot colorClass="bg-emerald-500" /> : <div className="w-2 h-2 rounded-full bg-indigo-500" />}
+                            </div>
+                            <span className="font-semibold text-xl text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors tracking-tight font-display">
+                               {r.first_name} {r.last_name}
+                            </span>
+                          </div>
+                          
+                          <div className="flex flex-row justify-between lg:justify-start items-center">
+                            <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Status</span>
+                            <span className={cn(
+                              "text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded-full border shadow-inner",
+                              isNew ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400" : "bg-slate-500/10 text-slate-600 border-slate-500/20 dark:text-slate-400"
+                            )}>
+                              {formatStatus(r.status)}
+                            </span>
+                          </div>
+                          
+                          <div className="flex flex-row justify-between lg:justify-end items-center">
+                            <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Source</span>
+                            <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 truncate">
+                              {r.referral_sources?.name ?? "—"}
+                            </span>
+                          </div>
 
-                      <div className="flex flex-row justify-between lg:justify-end items-center">
-                        <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Updated</span>
-                        <span className="text-sm font-medium text-slate-500 dark:text-zinc-500">
-                          {new Date(r.updated_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
-                        </span>
-                      </div>
-                    </Link>
-                  )
-                })
+                          <div className="flex flex-row justify-between lg:justify-end items-center">
+                            <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Updated</span>
+                            <span className="text-[11px] font-mono tracking-wide text-slate-500 dark:text-zinc-500">
+                              {new Date(r.updated_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                            </span>
+                          </div>
+                        </Link>
+                      </MotionItem>
+                    )
+                  })}
+                </MotionList>
              )}
            </div>
         </div>

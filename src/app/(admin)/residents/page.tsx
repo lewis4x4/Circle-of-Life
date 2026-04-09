@@ -17,13 +17,13 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 type Acuity = 1 | 2 | 3;
 type AdlStatus = "independent" | "assisted" | "dependent";
@@ -177,47 +177,50 @@ export default function AdminResidentsPage() {
       <AmbientMatrix hasCriticals={highAcuityCount > 0} />
       
       <div className="relative z-10 space-y-6">
-        <header className="mb-8">
-          <div>
-            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 08 / Residents</p>
-            <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
-              Resident Hub {highAcuityCount > 0 && <PulseDot />}
-            </h2>
-          </div>
-        </header>
+        
+        {/* ─── MOONSHOT HEADER ─── */}
+        <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+           <div className="space-y-2">
+             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
+                 SYS: Module 08
+             </div>
+             <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+                Resident Hub
+                {highAcuityCount > 0 && <PulseDot colorClass="bg-rose-500" />}
+             </h1>
+             <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400">
+               Unified census view with acuity & ADL scope.
+             </p>
+           </div>
+           <div>
+              <Link href="/admin/residents/new" className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-widest text-xs tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg")} >
+                + Initialize Intake
+              </Link>
+           </div>
+        </div>
 
         <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
-          <div className="h-[160px]">
+          <div className="h-[160px] lg:col-span-2">
             <V2Card hoverColor="emerald">
               <Sparkline colorClass="text-emerald-500" variant={1} />
               <MonolithicWatermark value={activeCount} className="text-emerald-900/5 dark:text-emerald-100/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-slate-500 flex items-center gap-2">
-                  <Users className="h-3.5 w-3.5" /> Total Census
+                <h3 className="text-[10px] font-mono tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2 font-bold">
+                  <Users className="h-4 w-4" /> Total Census
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-500 dark:from-white dark:to-slate-500 pb-1">{activeCount}</p>
+                <p className="text-6xl font-display font-medium tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-500 dark:from-white dark:to-slate-400 pb-1">{activeCount}</p>
               </div>
             </V2Card>
           </div>
-          <div className="h-[160px]">
-            <V2Card hoverColor="rose" className="border-rose-500/20 dark:border-rose-500/20 shadow-[inset_0_0_15px_rgba(244,63,94,0.05)]">
+          <div className="h-[160px] lg:col-span-2">
+            <V2Card hoverColor="rose" className="border-rose-500/20 dark:border-rose-500/20 shadow-[0_8px_30px_rgba(244,63,94,0.05)]">
               <Sparkline colorClass="text-rose-500" variant={4} />
               <MonolithicWatermark value={highAcuityCount} className="text-rose-600/5 dark:text-rose-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-widest uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2 font-bold">
                   High Acuity Profile
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-rose-600 dark:text-rose-400 pb-1">{highAcuityCount}</p>
-              </div>
-            </V2Card>
-          </div>
-          <div className="col-span-1 md:col-span-2 h-[160px]">
-            <V2Card hoverColor="indigo" className="flex flex-col justify-center items-start lg:items-end">
-              <div className="relative z-10 text-left lg:text-right w-full">
-                <p className="hidden lg:block text-xs font-mono text-slate-500 mb-4">Unified census view with acuity & ADL scope</p>
-                <Link href="/admin/residents/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none")} >
-                  + Initialize Intake
-                </Link>
+                <p className="text-6xl font-display font-medium tracking-tight text-rose-600 dark:text-rose-400 pb-1">{highAcuityCount}</p>
               </div>
             </V2Card>
           </div>
@@ -274,74 +277,71 @@ export default function AdminResidentsPage() {
       ) : null}
 
       {!isLoading && filteredRows.length > 0 ? (
-        <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/5 bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent pointer-events-none" />
-          <div className="relative z-10 border-b border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 p-6 flex flex-col gap-1">
-            <h3 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">Census Table</h3>
-            <p className="text-sm font-mono text-slate-500 dark:text-slate-400">Filterable scaffold pattern for Residents, Incidents, Staff, and Billing modules.</p>
-          </div>
-          <div className="relative z-10 overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-white/40 dark:bg-black/40 border-b border-white/20 dark:border-white/10">
-                <TableRow className="border-none hover:bg-transparent">
-                  <TableHead className="pl-4 font-medium">Resident</TableHead>
-                  <TableHead className="font-medium">Room</TableHead>
-                  <TableHead className="font-medium">Unit</TableHead>
-                  <TableHead className="font-medium">Acuity</TableHead>
-                  <TableHead className="font-medium">ADL Status</TableHead>
-                  <TableHead className="font-medium">Current Status</TableHead>
-                  <TableHead className="font-medium">
-                    <span className="inline-flex items-center gap-1">
-                      Updated
-                      <ArrowUpDown className="h-3.5 w-3.5 text-slate-400" />
-                    </span>
-                  </TableHead>
-                  <TableHead className="w-10 pr-4 text-right font-medium"> </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRows.map((resident) => (
-                  <TableRow key={resident.id} className="border-slate-100 dark:border-slate-800 hover:bg-indigo-500/5 dark:hover:bg-indigo-500/10 transition-colors cursor-pointer group">
-                    <TableCell className="pl-4">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-medium text-slate-600 ring-1 ring-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:ring-slate-700"
-                          aria-hidden
-                        >
-                          {resident.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-medium text-slate-900 dark:text-slate-100">{resident.name}</span>
-                          <span className="text-xs text-slate-500 dark:text-slate-400">{resident.careSummary}</span>
-                        </div>
+        <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-2xl backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative">
+           
+           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
+
+           <div className="hidden lg:grid grid-cols-[3fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Resident</div>
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Location</div>
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Acuity</div>
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">ADL Status</div>
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Current Status</div>
+             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Updated</div>
+           </div>
+
+           <div className="space-y-4 mt-6 relative z-10">
+             <MotionList className="space-y-4">
+             {filteredRows.map((resident) => (
+                <MotionItem key={resident.id}>
+                  <Link
+                    href={`/admin/residents/${resident.id}`}
+                    className="grid grid-cols-1 lg:grid-cols-[3fr_1fr_1fr_1fr_1fr_1fr] gap-4 items-center p-6 rounded-[1.8rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg dark:hover:bg-white/[0.05] transition-all duration-300 w-full cursor-pointer outline-none"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 flex flex-col items-center justify-center shrink-0">
+                        <span className="text-indigo-600 dark:text-indigo-400 font-bold text-sm">{resident.initials}</span>
                       </div>
-                    </TableCell>
-                    <TableCell>{resident.room}</TableCell>
-                    <TableCell>{resident.unit}</TableCell>
-                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-xl font-display text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors tracking-tight">{resident.name}</span>
+                        <span className="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-[250px] truncate">{resident.careSummary}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-row justify-between lg:justify-start items-center">
+                      <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Location</span>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-semibold text-slate-900 dark:text-slate-200">{resident.room}</span>
+                        <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">{resident.unit}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-row justify-between lg:justify-start items-center">
+                      <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Acuity</span>
                       <AcuityBadge acuity={resident.acuity} />
-                    </TableCell>
-                    <TableCell>
+                    </div>
+
+                    <div className="flex flex-row justify-between lg:justify-start items-center">
+                      <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">ADL Status</span>
                       <AdlBadge status={resident.adlStatus} />
-                    </TableCell>
-                    <TableCell>
+                    </div>
+
+                    <div className="flex flex-row justify-between lg:justify-start items-center">
+                      <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Current Status</span>
                       <ResidentStatusBadge status={resident.status} />
-                    </TableCell>
-                    <TableCell className="text-slate-500 dark:text-slate-400">{resident.updatedAt}</TableCell>
-                    <TableCell className="pr-4 text-right">
-                      <Link
-                        href={`/admin/residents/${resident.id}`}
-                        className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
-                        aria-label={`Open ${resident.name}`}
-                      >
-                        <ChevronRight className="h-4 w-4 text-slate-500" />
-                      </Link>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                    </div>
+
+                    <div className="flex flex-row justify-between lg:justify-end items-center">
+                      <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Updated</span>
+                      <span className="text-[11px] font-mono tracking-widest text-slate-500 dark:text-zinc-500 whitespace-nowrap">
+                        {resident.updatedAt}
+                      </span>
+                    </div>
+                  </Link>
+                </MotionItem>
+             ))}
+             </MotionList>
+           </div>
         </div>
       ) : null}
       </div>
@@ -493,16 +493,16 @@ function formatUpdatedAt(value: string | null): string {
 function AcuityBadge({ acuity }: { acuity: Acuity }) {
   if (acuity === 3) {
     return (
-      <Badge className="border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400 gap-1.5 flex items-center shadow-[inset_0_0_10px_rgba(244,63,94,0.1)]">
-        <PulseDot className="h-1.5 w-1.5" />
+      <Badge className="border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400 gap-1.5 flex items-center shadow-[inset_0_0_10px_rgba(244,63,94,0.1)] px-2 py-0.5 text-[10px] uppercase font-bold tracking-widest">
+        <PulseDot className="h-1.5 w-1.5" colorClass="bg-rose-500" />
         Acuity 3
       </Badge>
     );
   }
   if (acuity === 2) {
-    return <Badge className="border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400">Acuity 2</Badge>;
+    return <Badge className="border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 text-[10px] uppercase font-bold tracking-widest">Acuity 2</Badge>;
   }
-  return <Badge className="border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">Acuity 1</Badge>;
+  return <Badge className="border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-[10px] uppercase font-bold tracking-widest">Acuity 1</Badge>;
 }
 
 function AdlBadge({ status }: { status: AdlStatus }) {
@@ -521,7 +521,7 @@ function AdlBadge({ status }: { status: AdlStatus }) {
     },
   };
 
-  return <Badge className={map[status].className}>{map[status].label}</Badge>;
+  return <Badge className={cn("px-2 py-0.5 text-[10px] uppercase font-bold tracking-widest", map[status].className)}>{map[status].label}</Badge>;
 }
 
 function ResidentStatusBadge({ status }: { status: ResidencyStatus }) {
@@ -540,5 +540,5 @@ function ResidentStatusBadge({ status }: { status: ResidencyStatus }) {
     },
   };
 
-  return <Badge className={map[status].className}>{map[status].label}</Badge>;
+  return <Badge className={cn("px-2 py-0.5 text-[10px] uppercase font-bold tracking-widest", map[status].className)}>{map[status].label}</Badge>;
 }

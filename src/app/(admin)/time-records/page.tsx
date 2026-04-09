@@ -17,7 +17,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
@@ -188,62 +188,56 @@ export default function AdminTimeRecordsPage() {
         <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />
       ) : null}
       {!isLoading && filteredRows.length > 0 ? (
-        <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/5 bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent pointer-events-none" />
-          <div className="relative z-10 border-b border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 p-6 flex flex-col gap-1">
-            <h3 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">Recent punches</h3>
-            <p className="text-sm font-mono text-slate-500 dark:text-slate-400">Newest first; open staff profile for employment context.</p>
+        <div className="relative overflow-visible z-10 w-full mt-4">
+          <div className="relative z-10 p-4 sm:p-6 mb-4 glass-panel rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-2xl">
+            <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Recent punches</h3>
+            <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">Newest first; open staff profile for employment context.</p>
           </div>
-          <div className="relative z-10 overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-white/40 dark:bg-black/40 border-b border-white/20 dark:border-white/10">
-                <TableRow className="border-none hover:bg-transparent">
-                  <TableHead>Staff</TableHead>
-                  <TableHead className="hidden sm:table-cell">Clock in</TableHead>
-                  <TableHead className="hidden sm:table-cell">Clock out</TableHead>
-                  <TableHead className="hidden md:table-cell">Hours</TableHead>
-                  <TableHead>Approved</TableHead>
-                  <TableHead className="pr-4 text-right"> </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRows.map((row) => (
-                  <TableRow key={row.id} className="border-slate-100 dark:border-slate-800 hover:bg-blue-500/5 dark:hover:bg-blue-500/10 transition-colors cursor-pointer group">
-                    <TableCell className="font-medium text-slate-900 dark:text-slate-100">{row.staffName}</TableCell>
-                    <TableCell className="hidden text-slate-600 dark:text-slate-400 sm:table-cell">
-                      {formatDateTime(row.clockIn)}
-                    </TableCell>
-                    <TableCell className="hidden text-slate-600 dark:text-slate-400 sm:table-cell">
-                      {row.clockOut ? formatDateTime(row.clockOut) : "—"}
-                    </TableCell>
-                    <TableCell className="hidden text-slate-600 dark:text-slate-400 md:table-cell">
-                      {row.actualHours != null ? Number(row.actualHours).toFixed(2) : "—"}
-                    </TableCell>
-                    <TableCell>
-                      {row.approved ? (
-                        <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-                          Yes
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-                          No
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="pr-4 text-right">
-                      <Link
-                        href={`/admin/staff/${row.staffId}`}
-                        className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
-                        aria-label={`Open ${row.staffName}`}
-                      >
-                        <ChevronRight className="h-4 w-4 text-slate-500" />
-                      </Link>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <MotionList className="space-y-3">
+            {filteredRows.map((row) => (
+              <MotionItem key={row.id}>
+                <Link href={`/admin/staff/${row.staffId}`} className="block focus-visible:outline-none focus:ring-2 focus:ring-indigo-500 rounded-2xl">
+                  <div className="p-4 sm:p-5 rounded-2xl glass-panel group transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 w-full flex items-center justify-between">
+                     <div className="flex flex-col md:flex-row md:items-center gap-4 w-full">
+                       <div className="min-w-[150px]">
+                         <span className="font-bold text-slate-900 dark:text-slate-100">{row.staffName}</span>
+                       </div>
+                       
+                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full items-center">
+                          <div className="flex flex-col gap-1.5">
+                             <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Clock In</span>
+                             <span className="font-mono text-xs text-slate-700 dark:text-slate-300">{formatDateTime(row.clockIn)}</span>
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                             <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Clock Out</span>
+                             <span className="font-mono text-xs text-slate-700 dark:text-slate-300">{row.clockOut ? formatDateTime(row.clockOut) : "—"}</span>
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                             <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Hours</span>
+                             <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400">{row.actualHours != null ? Number(row.actualHours).toFixed(2) : "—"}</span>
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                             <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Approved</span>
+                             <div>
+                               {row.approved ? (
+                                  <Badge className="bg-emerald-500/20 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2">Yes</Badge>
+                               ) : (
+                                  <Badge className="bg-amber-500/20 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2">No</Badge>
+                               )}
+                             </div>
+                          </div>
+                       </div>
+                     </div>
+                     <div className="hidden sm:flex shrink-0 ml-4">
+                        <div className="w-8 h-8 rounded-full bg-white/50 dark:bg-white/5 flex items-center justify-center group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 transition-colors">
+                          <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" />
+                        </div>
+                     </div>
+                  </div>
+                </Link>
+              </MotionItem>
+            ))}
+          </MotionList>
         </div>
       ) : null}
       </div>

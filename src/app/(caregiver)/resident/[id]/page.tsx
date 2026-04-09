@@ -2,17 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { AlertTriangle, CalendarClock, Check, Droplets, HeartPulse, Loader2, Pill, Plus, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import {
+  fetchCaregiverResidentProfile,
+  type CaregiverResidentProfile,
+  type RiskBanner,
+} from "@/lib/caregiver/resident-profile";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
-import type { CaregiverResidentProfile, RiskBanner } from "@/lib/caregiver/resident-profile";
-import { fetchCaregiverResidentProfile } from "@/lib/caregiver/resident-profile";
+import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 
 function zonedTimeShort(now: Date, tz: string): string {
@@ -103,155 +105,176 @@ export default function CaregiverResidentQuickProfilePage() {
     : "success";
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 max-w-4xl mx-auto pb-12">
       {vitalAlerts.length > 0 && (
-        <div className="rounded-lg border border-rose-800/80 bg-rose-950/50 px-3 py-2 text-sm text-rose-100">
-          <div className="flex items-start gap-2">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-300" />
-            <div>
+        <div className="rounded-[2xl] border border-rose-500/40 bg-gradient-to-r from-rose-500/20 to-rose-900/10 px-6 py-4 text-sm text-rose-100 shadow-[0_4px_30px_rgba(225,29,72,0.1)] backdrop-blur-xl">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/40 mt-1">
+               <AlertTriangle className="h-5 w-5 text-rose-400" />
+            </div>
+            <div className="flex-1">
+              <h4 className="text-rose-300 font-display font-semibold tracking-wide text-lg mb-1">Vital Sign Alert</h4>
               {vitalAlerts.map((a) => (
-                <p key={a.id}>
-                  {a.vital_type.replace(/_/g, " ")} is {a.recorded_value} — exceeds threshold {a.threshold_value} (
-                  {a.direction}). Notify nurse.
+                <p key={a.id} className="text-rose-200 mt-1 font-mono leading-relaxed">
+                  <span className="font-bold text-white capitalize">{a.vital_type.replace(/_/g, " ")}</span> is <span className="font-bold text-rose-300">{a.recorded_value}</span> — exceeds threshold <span className="font-bold">{a.threshold_value}</span> ({a.direction}). Notify nurse immediately.
                 </p>
               ))}
             </div>
           </div>
         </div>
       )}
-      <Card className="border-zinc-800 bg-gradient-to-br from-zinc-950 to-zinc-900 text-zinc-100">
-        <CardHeader className="pb-2">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <CardTitle className="text-xl font-display">{p.displayName}</CardTitle>
-              <CardDescription className="text-zinc-400">
-                {p.roomLabel} · {p.status === "hospital_hold" ? "Hospital Hold" : p.primaryDiagnosis ?? ""}
-              </CardDescription>
-            </div>
-            {p.fallRiskLevel === "high" && (
-              <Badge className="border-rose-700 bg-rose-900/40 text-rose-200">High fall risk</Badge>
-            )}
-            {p.fallRiskLevel === "moderate" && (
-              <Badge className="border-amber-700 bg-amber-900/40 text-amber-200">Fall risk</Badge>
-            )}
-            {p.elopementRisk && (
-              <Badge className="border-rose-700 bg-rose-900/40 text-rose-200">Elopement risk</Badge>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-2 text-xs">
-          <MetricPill label="Acuity" value={p.acuityLevel ?? "—"} tone={acuityTone} />
-          <MetricPill
-            label="Meds Due"
-            value={p.scheduledMedsDueNow > 0 ? `${p.scheduledMedsDueNow} now` : "None"}
-            tone={medsTone}
-          />
-          <MetricPill label="Active Meds" value={String(p.activeMedCount)} tone="neutral" />
-          <MetricPill
-            label="Mood"
-            value={p.recentDailyLogMood ?? "—"}
-            tone={moodTone}
-          />
-        </CardContent>
-      </Card>
+      
+      {/* ─── RESIDENT HEADER & METRICS ──────────────────────────────────────────── */}
+      <div className="glass-panel p-8 md:p-10 rounded-[3rem] border border-white/5 bg-gradient-to-br from-indigo-950/40 via-slate-900/60 to-black/80 backdrop-blur-3xl shadow-2xl relative overflow-hidden z-10 w-full transition-all text-zinc-100">
+         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
 
-      {p.riskBanners.length > 0 && (
-        <Card className="border-amber-900/60 bg-amber-950/20 text-zinc-100">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <AlertTriangle className="h-4 w-4 text-amber-400" />
-              Risk Banners
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            {p.riskBanners.map((banner: RiskBanner, i: number) => (
-              <BannerRow key={`${banner.title}-${i}`} {...banner} />
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      <Card className="border-zinc-800 bg-zinc-950/70 text-zinc-100">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Shift Actions</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-2">
-          <ActionLink
-            href="/caregiver/meds"
-            icon={<Pill className="h-4 w-4" />}
-            label="Open eMAR"
-          />
-          <ActionLink
-            href={`/caregiver/resident/${residentId}/adl`}
-            icon={<CalendarClock className="h-4 w-4" />}
-            label="ADL"
-          />
-          <ActionLink
-            href={`/caregiver/resident/${residentId}/log`}
-            icon={<HeartPulse className="h-4 w-4" />}
-            label="Shift log"
-          />
-          <ActionLink
-            href={`/caregiver/resident/${residentId}/behavior`}
-            icon={<AlertTriangle className="h-4 w-4" />}
-            label="Behavior"
-          />
-          <ActionLink
-            href={`/caregiver/resident/${residentId}/condition-change`}
-            icon={<Droplets className="h-4 w-4" />}
-            label="Condition change"
-          />
-        </CardContent>
-      </Card>
-
-      {!noteOpen ? (
-        <Button
-          type="button"
-          className="h-11 w-full bg-emerald-600 text-white hover:bg-emerald-500"
-          onClick={() => { setNoteOpen(true); setNoteSaved(false); }}
-        >
-          <Plus className="mr-1.5 h-4 w-4" />
-          Quick Add Note
-        </Button>
-      ) : (
-        <Card className="border-zinc-800 bg-zinc-950/70 text-zinc-100">
-          <CardContent className="space-y-3 pt-4">
-            {noteSaved ? (
-              <div className="flex items-center gap-2 text-sm text-emerald-400">
-                <Check className="h-4 w-4" />
-                Note saved to daily log.
+         <div className="flex flex-col md:flex-row gap-8 relative z-10">
+           <div className="flex-1">
+              <div className="flex flex-wrap items-center gap-4 mb-3">
+                 <h2 className="text-4xl md:text-5xl font-display font-semibold tracking-tight text-white mb-1">{p.displayName}</h2>
               </div>
-            ) : null}
-            <textarea
-              rows={3}
-              autoFocus
-              placeholder="Objective, brief note…"
-              className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600"
-              value={noteDraft}
-              onChange={(e) => setNoteDraft(e.target.value)}
-            />
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                disabled={noteSaving || !noteDraft.trim()}
-                className="h-9 bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50"
-                onClick={() => { void saveQuickNote(); }}
-              >
-                {noteSaving ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
-                Save
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                className="h-9 text-zinc-400 hover:text-white"
-                onClick={() => { setNoteOpen(false); setNoteDraft(""); setNoteSaved(false); }}
-              >
-                Cancel
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              <p className="text-zinc-400 text-lg flex items-center gap-3 font-mono font-medium tracking-wide">
+                <span className="bg-white/10 px-3 py-1 rounded-full text-white">{p.roomLabel}</span>
+                <span className="opacity-50">|</span>
+                {p.status === "hospital_hold" ? "Hospital Hold" : p.primaryDiagnosis ?? "No Primary Diagnosis"}
+              </p>
+              
+              <div className="flex flex-wrap gap-2 mt-6">
+                 {p.fallRiskLevel === "high" && (
+                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-rose-500/40 bg-rose-500/20 text-[10px] uppercase tracking-widest font-mono font-bold text-rose-300 shadow-inner">
+                     <AlertTriangle className="w-3.5 h-3.5" /> High Fall Risk
+                   </span>
+                 )}
+                 {p.fallRiskLevel === "moderate" && (
+                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-amber-500/40 bg-amber-500/20 text-[10px] uppercase tracking-widest font-mono font-bold text-amber-300 shadow-inner">
+                     <AlertTriangle className="w-3.5 h-3.5" /> Fall Risk
+                   </span>
+                 )}
+                 {p.elopementRisk && (
+                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-rose-500/40 bg-rose-500/20 text-[10px] uppercase tracking-widest font-mono font-bold text-rose-300 shadow-inner">
+                     <AlertTriangle className="w-3.5 h-3.5" /> Elopement Risk
+                   </span>
+                 )}
+              </div>
+           </div>
+           
+           <div className="grid grid-cols-2 gap-3 shrink-0 md:w-80">
+              <MetricPill label="Acuity" value={p.acuityLevel ?? "—"} tone={acuityTone} />
+              <MetricPill
+                label="Meds Due"
+                value={p.scheduledMedsDueNow > 0 ? `${p.scheduledMedsDueNow} now` : "None"}
+                tone={medsTone}
+              />
+              <MetricPill label="Active Meds" value={String(p.activeMedCount)} tone="neutral" />
+              <MetricPill
+                label="Mood"
+                value={p.recentDailyLogMood ?? "—"}
+                tone={moodTone}
+              />
+           </div>
+         </div>
+      </div>
+
+      {/* ─── RISK BANNERS ──────────────────────────────────────────────────────── */}
+      {p.riskBanners.length > 0 && (
+         <div className="glass-panel p-8 rounded-[2rem] border border-amber-500/30 bg-gradient-to-br from-amber-950/20 to-black/40 backdrop-blur-3xl shadow-[0_8px_32px_rgba(217,119,6,0.1)] relative w-full text-zinc-100">
+           <h3 className="flex items-center gap-3 text-xl font-display font-semibold text-amber-300 tracking-wide mb-6">
+              <AlertTriangle className="h-5 w-5" />
+              Risk Considerations
+           </h3>
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {p.riskBanners.map((banner: RiskBanner, i: number) => (
+                <BannerRow key={`${banner.title}-${i}`} {...banner} />
+              ))}
+           </div>
+         </div>
       )}
+
+      {/* ─── ACTION GRID ───────────────────────────────────────────────────────── */}
+      <div className="glass-panel p-8 rounded-[2rem] border border-white/5 bg-white/[0.02] backdrop-blur-xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
+         <h4 className="text-xl font-display font-semibold text-white tracking-wide mb-6">Shift Actions</h4>
+         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+            <ActionLink
+              href="/caregiver/meds"
+              icon={<Pill className="h-5 w-5 text-violet-400" />}
+              label="Open eMAR"
+            />
+            <ActionLink
+              href={`/caregiver/resident/${residentId}/adl`}
+              icon={<CalendarClock className="h-5 w-5 text-emerald-400" />}
+              label="ADL Queue"
+            />
+            <ActionLink
+              href={`/caregiver/resident/${residentId}/log`}
+              icon={<HeartPulse className="h-5 w-5 text-pink-400" />}
+              label="Shift Log"
+            />
+            <ActionLink
+              href={`/caregiver/resident/${residentId}/behavior`}
+              icon={<AlertTriangle className="h-5 w-5 text-amber-400" />}
+              label="Behavior"
+            />
+            <ActionLink
+              href={`/caregiver/resident/${residentId}/condition-change`}
+              icon={<Droplets className="h-5 w-5 text-teal-400" />}
+              label="Condition"
+            />
+         </div>
+      </div>
+
+      {/* ─── QUICK NOTE ────────────────────────────────────────────────────────── */}
+      <div className="mt-8">
+         {!noteOpen ? (
+           <Button
+             type="button"
+             className="w-full h-16 rounded-[1.5rem] flex items-center justify-center font-bold tracking-widest uppercase transition-all shadow-[0_4px_30px_rgba(16,185,129,0.15)] bg-gradient-to-r from-emerald-600 to-emerald-500 text-black hover:from-emerald-500 hover:to-emerald-400 tap-responsive text-sm font-mono border-0"
+             onClick={() => { setNoteOpen(true); setNoteSaved(false); }}
+           >
+             <Plus className="mr-3 h-5 w-5" />
+             Quick Note
+           </Button>
+         ) : (
+           <div className="glass-panel p-6 rounded-[2rem] border border-emerald-500/30 bg-emerald-950/20 backdrop-blur-xl relative overflow-visible z-10 w-full transition-all text-zinc-100 shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]">
+               {noteSaved ? (
+                 <div className="flex flex-col items-center justify-center py-6">
+                    <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/40 mb-4">
+                       <Check className="h-8 w-8 text-emerald-400" />
+                    </div>
+                    <p className="text-xl font-display text-emerald-300 font-semibold tracking-wide">Note Saved.</p>
+                 </div>
+               ) : (
+                 <div className="space-y-4">
+                     <p className="text-xs font-bold uppercase tracking-widest text-emerald-300/80 font-mono">Quick Shift Note for {p.displayName}</p>
+                     <textarea
+                       rows={4}
+                       autoFocus
+                       placeholder="Objective, brief observation..."
+                       className="w-full resize-none appearance-none rounded-[1.2rem] border border-white/10 bg-black/60 p-5 text-[15px] leading-relaxed text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 shadow-inner placeholder:text-zinc-600 tap-responsive font-medium"
+                       value={noteDraft}
+                       onChange={(e) => setNoteDraft(e.target.value)}
+                     />
+                     <div className="flex gap-3 pt-2">
+                       <Button
+                         type="button"
+                         disabled={noteSaving || !noteDraft.trim()}
+                         className="flex-1 h-14 rounded-full font-mono uppercase tracking-widest text-xs px-8 shadow-lg transition-all hover:scale-[1.02] border-0 text-black font-bold bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 tap-responsive"
+                         onClick={() => { void saveQuickNote(); }}
+                       >
+                         {noteSaving ? <Loader2 className="mr-3 h-5 w-5 animate-spin" /> : "Save"}
+                       </Button>
+                       <Button
+                         type="button"
+                         className="flex-[0.5] h-14 rounded-full font-mono uppercase tracking-widest text-xs px-8 transition-all border border-white/10 bg-black/40 text-zinc-300 hover:bg-white/10 hover:text-white tap-responsive shadow-inner font-bold"
+                         onClick={() => { setNoteOpen(false); setNoteDraft(""); setNoteSaved(false); }}
+                       >
+                         Cancel
+                       </Button>
+                     </div>
+                 </div>
+               )}
+           </div>
+         )}
+      </div>
     </div>
   );
 
@@ -329,17 +352,17 @@ function MetricPill({
 }) {
   const toneClass =
     tone === "danger"
-      ? "border-rose-800/60 bg-rose-950/30"
+      ? "bg-rose-500/10 border-rose-500/30 text-rose-300 shadow-[inset_0_0_15px_rgba(225,29,72,0.1)]"
       : tone === "warning"
-        ? "border-amber-800/60 bg-amber-950/30"
+        ? "bg-amber-500/10 border-amber-500/30 text-amber-300 shadow-[inset_0_0_15px_rgba(245,158,11,0.1)]"
         : tone === "success"
-          ? "border-emerald-800/60 bg-emerald-950/30"
-          : "border-zinc-800 bg-zinc-900/80";
+          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300 shadow-[inset_0_0_15px_rgba(16,185,129,0.1)]"
+          : "bg-white/5 border-white/10 text-white shadow-inner";
 
   return (
-    <div className={`rounded-xl border px-3 py-2 ${toneClass}`}>
-      <p className="text-[10px] uppercase tracking-wide text-zinc-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-white">{value}</p>
+    <div className={`rounded-2xl border px-4 py-3 flex flex-col justify-center min-h-[5rem] ${toneClass}`}>
+      <p className="text-[9px] uppercase tracking-widest font-mono font-bold opacity-70 mb-1">{label}</p>
+      <p className="text-2xl font-display font-semibold tracking-tight">{value}</p>
     </div>
   );
 }
@@ -355,18 +378,18 @@ function BannerRow({
 }) {
   const toneClass =
     tone === "danger"
-      ? "border-rose-800/70 bg-rose-950/20"
+      ? "border-rose-500/40 bg-rose-500/10 text-rose-300"
       : tone === "warning"
-        ? "border-amber-800/70 bg-amber-950/20"
-        : "border-emerald-800/60 bg-emerald-950/20";
+        ? "border-amber-500/40 bg-amber-500/10 text-amber-300"
+        : "border-emerald-500/40 bg-emerald-500/10 text-emerald-300";
 
   return (
-    <div className={`rounded-lg border p-3 ${toneClass}`}>
-      <p className="inline-flex items-center gap-1 text-sm font-medium text-zinc-100">
-        <ShieldCheck className="h-4 w-4 text-zinc-400" />
+    <div className={`rounded-xl border p-4 ${toneClass} shadow-inner`}>
+      <p className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest font-mono text-white mb-1">
+        <ShieldCheck className="h-4 w-4" />
         {title}
       </p>
-      <p className="mt-1 text-xs text-zinc-400">{detail}</p>
+      <p className="text-xs leading-relaxed text-white/80 font-medium">{detail}</p>
     </div>
   );
 }
@@ -375,10 +398,12 @@ function ActionLink({ href, icon, label }: { href: string; icon: React.ReactNode
   return (
     <Link
       href={href}
-      className="inline-flex h-12 items-center justify-start gap-2 rounded-md border border-zinc-800 bg-zinc-900 px-3 text-zinc-100 transition-colors hover:bg-zinc-800 hover:text-white tap-responsive"
+      className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/5 bg-black/40 p-4 text-zinc-100 transition-all hover:bg-white/10 hover:text-white tap-responsive shadow-inner aspect-square text-center"
     >
-      {icon}
-      <span className="text-xs">{label}</span>
+      <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
+        {icon}
+      </div>
+      <span className="text-[10px] font-mono font-bold uppercase tracking-widest">{label}</span>
     </Link>
   );
 }

@@ -11,7 +11,7 @@ import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client
 
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { cn } from "@/lib/utils";
 
 type OpenCondition = {
@@ -133,60 +133,71 @@ export default function CaregiverFollowupsPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <Card className="border-zinc-800 bg-zinc-950/80 text-zinc-100">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-lg font-display">
+    <div className="space-y-4 max-w-3xl mx-auto">
+      <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-white/5 bg-gradient-to-br from-teal-950/40 via-slate-900/40 to-black/60 backdrop-blur-3xl shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
+        <h3 className="flex items-center gap-3 text-2xl font-display font-semibold text-white tracking-wide">
+          <div className="w-10 h-10 rounded-full bg-teal-500/20 flex items-center justify-center border border-teal-500/30">
             <BellRing className="h-5 w-5 text-teal-400" />
-            Follow-ups
-          </CardTitle>
-          <CardDescription className="text-zinc-400">
-            Open condition change reports for your facility (resolve in the clinical / nurse workflow).
-          </CardDescription>
-        </CardHeader>
-      </Card>
+          </div>
+          Condition Follow-ups
+        </h3>
+        <p className="text-sm font-mono text-teal-200/60 mt-4 max-w-xl">
+          Open condition change reports for your facility (resolve in the clinical / nurse workflow).
+        </p>
+      </div>
 
       {rows.length === 0 ? (
-        <Card className="border-zinc-800 bg-zinc-950/70 text-zinc-100">
-          <CardContent className="py-8 text-center text-sm text-zinc-400">No open follow-ups right now.</CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-2">
-          {rows.map((r) => (
-            <Card key={r.id} className="border-zinc-800 bg-zinc-950/60 text-zinc-100">
-              <CardContent className="flex items-center gap-3 p-4">
-                <div className="flex flex-1 flex-col gap-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium">{r.title}</span>
-                    <Badge
-                      className={
-                        r.priority === "high"
-                          ? "border-rose-800/60 bg-rose-950/40 text-rose-200"
-                          : "border-zinc-700 bg-zinc-900 text-zinc-300"
-                      }
-                    >
-                      {r.priority === "high" ? "Priority" : "Routine"}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-zinc-400">
-                    {r.name} · Room {r.roomLabel}
-                  </p>
-                  <p className="flex items-center gap-1 text-xs text-amber-200/90">
-                    <Clock3 className="h-3.5 w-3.5" />
-                    Reported {r.reportedAtLabel}
-                  </p>
-                </div>
-                <Link
-                  href={`/caregiver/resident/${r.residentId}/condition-change`}
-                  className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "shrink-0 text-zinc-400 hover:text-white")}
-                  aria-label={`Open ${r.name}`}
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </Link>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="glass-panel p-8 rounded-[2rem] border border-white/5 bg-slate-900/40 text-center backdrop-blur-xl">
+          <p className="text-sm font-mono text-zinc-400">No open follow-ups right now.</p>
         </div>
+      ) : (
+        <MotionList className="space-y-4">
+          {rows.map((r) => (
+            <MotionItem key={r.id}>
+              <div className="p-6 md:p-8 rounded-[2rem] glass-panel group transition-all duration-300 border border-white/5 bg-white/[0.02] backdrop-blur-xl relative overflow-hidden flex flex-col md:flex-row md:items-center gap-4">
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none" />
+                 
+                <div className="flex flex-1 flex-col gap-2 relative z-10 w-full">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2">
+                    <div className="flex items-start md:items-center gap-3">
+                      <span className="text-xl font-display tracking-wide font-semibold text-white leading-tight">{r.title}</span>
+                      <Badge
+                        className={`rounded-full px-3 py-1 text-[9px] uppercase tracking-widest font-mono font-bold shadow-inner shrink-0 ${
+                          r.priority === "high"
+                            ? "border-rose-500/40 bg-rose-500/20 text-rose-300"
+                            : "border-teal-500/40 bg-teal-500/20 text-teal-300"
+                        }`}
+                      >
+                        {r.priority === "high" ? "Priority" : "Routine"}
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  <p className="text-[11px] uppercase tracking-widest font-mono font-bold text-zinc-400">
+                    <span className="text-zinc-200">{r.name}</span> <span className="mx-2 opacity-50">·</span> Rm {r.roomLabel}
+                  </p>
+                  
+                  <div className="flex flex-col gap-2 mt-2 pt-3 border-t border-white/5">
+                    <p className="flex items-center gap-2 text-[11px] font-mono leading-relaxed text-amber-200/90 bg-amber-950/30 w-fit px-3 py-1.5 rounded-lg border border-amber-500/20 shadow-inner">
+                      <Clock3 className="h-3.5 w-3.5" />
+                      Reported {r.reportedAtLabel}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="md:border-l border-white/5 md:pl-6 pt-4 md:pt-0 mt-2 md:mt-0 relative top-1 flex justify-end">
+                  <Link
+                    href={`/caregiver/resident/${r.residentId}/condition-change`}
+                    className="w-12 h-12 rounded-full border border-white/10 bg-black/40 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-colors tap-responsive shadow-inner shrink-0"
+                    aria-label={`Open ${r.name}`}
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </Link>
+                </div>
+              </div>
+            </MotionItem>
+          ))}
+        </MotionList>
       )}
     </div>
   );

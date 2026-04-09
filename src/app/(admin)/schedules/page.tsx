@@ -16,7 +16,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
@@ -177,42 +177,43 @@ export default function AdminSchedulesPage() {
         <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />
       ) : null}
       {!isLoading && filteredRows.length > 0 ? (
-        <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/5 bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent pointer-events-none" />
-          <div className="relative z-10 border-b border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 p-6 flex flex-col gap-1">
-            <h3 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">Schedule weeks</h3>
-            <p className="text-sm font-mono text-slate-500 dark:text-slate-400">Monday-start weeks; publish when ready for floor use.</p>
+        <div className="relative overflow-visible z-10 w-full mt-4">
+          <div className="relative z-10 p-4 sm:p-6 mb-4 glass-panel rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-2xl">
+            <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Schedule weeks</h3>
+            <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">Monday-start weeks; publish when ready for floor use.</p>
           </div>
-          <div className="relative z-10 overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-white/40 dark:bg-black/40 border-b border-white/20 dark:border-white/10">
-                <TableRow className="border-none hover:bg-transparent">
-                  <TableHead>Week</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="hidden md:table-cell">Published</TableHead>
-                  <TableHead className="hidden lg:table-cell">Notes</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRows.map((row) => (
-                  <TableRow key={row.id} className="border-slate-100 dark:border-slate-800 hover:bg-indigo-500/5 dark:hover:bg-indigo-500/10 transition-colors cursor-pointer group">
-                    <TableCell className="font-medium text-slate-900 dark:text-slate-100">
-                      {formatWeekLabel(row.weekStartDate)}
-                    </TableCell>
-                    <TableCell>
-                      <ScheduleStatusBadge status={row.status} />
-                    </TableCell>
-                    <TableCell className="hidden text-slate-600 dark:text-slate-400 md:table-cell">
-                      {row.publishedAt ? formatDateTime(row.publishedAt) : "—"}
-                    </TableCell>
-                    <TableCell className="hidden max-w-md truncate text-slate-500 dark:text-slate-400 lg:table-cell">
-                      {row.notes?.trim() || "—"}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <MotionList className="space-y-3">
+            {filteredRows.map((row) => (
+              <MotionItem key={row.id}>
+                 <Link href={`/admin/schedules/${row.id}`} className="block focus-visible:outline-none focus:ring-2 focus:ring-indigo-500 rounded-2xl">
+                  <div className="p-4 sm:p-5 rounded-2xl glass-panel group transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 w-full flex items-center justify-between">
+                     <div className="flex flex-col gap-2">
+                        <span className="font-bold text-slate-900 dark:text-slate-100">{formatWeekLabel(row.weekStartDate)}</span>
+                        
+                        <div className="flex items-center gap-4">
+                           <div className="flex flex-col gap-1">
+                             <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Status</span>
+                             <div><ScheduleStatusBadge status={row.status} /></div>
+                           </div>
+                           
+                           <div className="flex flex-col gap-1">
+                             <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Published</span>
+                             <span className="text-xs text-slate-600 dark:text-slate-400">{row.publishedAt ? formatDateTime(row.publishedAt) : "—"}</span>
+                           </div>
+
+                           {row.notes && (
+                           <div className="hidden md:flex flex-col gap-1 ml-4 border-l pl-4 border-slate-300 dark:border-slate-700">
+                             <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Notes</span>
+                             <span className="text-xs text-slate-500 dark:text-slate-400 max-w-[200px] lg:max-w-md truncate">{row.notes.trim()}</span>
+                           </div>
+                           )}
+                        </div>
+                     </div>
+                  </div>
+                 </Link>
+              </MotionItem>
+            ))}
+          </MotionList>
         </div>
       ) : null}
       </div>
@@ -265,12 +266,12 @@ function formatDateTime(iso: string): string {
 
 function ScheduleStatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; className: string }> = {
-    draft: { label: "Draft", className: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300" },
+    draft: { label: "Draft", className: "bg-slate-200/50 text-slate-800 dark:bg-slate-800/50 dark:text-slate-300 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm" },
     published: {
       label: "Published",
-      className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+      className: "bg-emerald-500/20 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm",
     },
-    archived: { label: "Archived", className: "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400" },
+    archived: { label: "Archived", className: "bg-slate-200/50 text-slate-800 dark:bg-slate-800/50 dark:text-slate-300 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm" },
   };
   const m = map[status] ?? { label: status, className: "bg-slate-100 text-slate-600" };
   return <Badge className={m.className}>{m.label}</Badge>;

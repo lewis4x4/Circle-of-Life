@@ -190,17 +190,17 @@ export default function AdminInsuranceHubPage() {
           </div>
         </KineticGrid>
 
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/5 bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent pointer-events-none" />
-        <div className="relative z-10 border-b border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 p-6 flex flex-col gap-1">
-          <h3 className="text-base font-display font-semibold text-slate-900 dark:text-slate-100">Total cost of risk (TCoR)</h3>
-          <p className="text-sm font-mono text-slate-500 dark:text-slate-400">
-            Module 18 Enhanced — rolling ~12 months. Premiums sum stated policy premiums for in-force policies
-            overlapping the window; losses sum paid + reserve on claims whose loss date (or reported date) falls in the
-            window. Operational estimate, not GAAP.
-          </p>
-        </div>
-        <div className="relative z-10 p-6 space-y-4">
+      <div className="relative overflow-visible z-10 w-full mt-4 space-y-8">
+        <div className="relative overflow-visible z-10 w-full">
+          <div className="glass-panel p-4 sm:p-6 mb-4 rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-xl">
+            <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Total cost of risk (TCoR)</h3>
+            <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
+              Module 18 Enhanced — rolling ~12 months. Premiums sum stated policy premiums for in-force policies
+              overlapping the window; losses sum paid + reserve on claims whose loss date (or reported date) falls in the
+              window. Operational estimate, not GAAP.
+            </p>
+          </div>
+          <div className="glass-panel p-6 rounded-2xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 text-sm backdrop-blur-2xl shadow-sm space-y-4">
           <div className="flex flex-wrap items-end gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="tcor-entity">Entity</Label>
@@ -258,15 +258,14 @@ export default function AdminInsuranceHubPage() {
             <p className="text-sm text-slate-500">No TCoR data.</p>
           )}
         </div>
-      </div>
-
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/5 bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent pointer-events-none" />
-        <div className="relative z-10 border-b border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 p-6 flex flex-col gap-1">
-          <h3 className="text-base font-display font-semibold text-slate-900 dark:text-slate-100">Quick links</h3>
-          <p className="text-sm font-mono text-slate-500 dark:text-slate-400">Navigate insurance workflows.</p>
         </div>
-        <div className="relative z-10 p-6 flex flex-col gap-2 text-sm">
+
+        <div className="relative overflow-visible z-10 w-full mt-4">
+          <div className="glass-panel p-4 sm:p-6 mb-4 rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-xl">
+            <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Quick links</h3>
+            <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">Navigate insurance workflows.</p>
+          </div>
+          <div className="glass-panel p-6 rounded-2xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 flex flex-col gap-3 text-sm backdrop-blur-2xl shadow-sm">
           <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-widest hover:text-indigo-500 transition-colors" href="/admin/insurance/policies">
             Policy inventory
           </Link>
@@ -286,7 +285,8 @@ export default function AdminInsuranceHubPage() {
             Workers’ comp
           </Link>
         </div>
-      </div>
+          </div>
+        </div>
       </div>
     </div>
   );

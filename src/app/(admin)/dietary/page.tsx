@@ -16,6 +16,7 @@ import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 
 type DietRow = Database["public"]["Tables"]["diet_orders"]["Row"] & {
   residents: { first_name: string; last_name: string } | null;
@@ -37,27 +38,27 @@ function attentionBadge(row: DietRow): { label: string; barClass: string; badgeC
     return {
       label: "Draft order",
       barClass: "bg-amber-500",
-      badgeClass: "text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50",
+      badgeClass: "text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20",
     };
   }
   if (row.requires_swallow_eval) {
     return {
       label: "Swallow eval",
       barClass: "bg-rose-500",
-      badgeClass: "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50",
+      badgeClass: "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20",
     };
   }
   if (row.medication_texture_review_notes?.trim()) {
     return {
       label: "Med / texture review",
       barClass: "bg-violet-500",
-      badgeClass: "text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/50",
+      badgeClass: "text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-500/10 border-violet-200 dark:border-violet-500/20",
     };
   }
   return {
     label: "Aspiration notes",
     barClass: "bg-orange-500",
-    badgeClass: "text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-950/50",
+    badgeClass: "text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-500/10 border-orange-200 dark:border-orange-500/20",
   };
 }
 
@@ -162,50 +163,50 @@ export default function AdminDietaryHubPage() {
       />
       
       <div className="relative z-10 space-y-6">
-        <header className="mb-8">
-          <div>
-            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 14 / Dietary & Nutrition</p>
-            <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
-              Dietary & Nutrition
-            </h2>
-          </div>
-        </header>
+        
+        {/* ─── MOONSHOT HEADER ─── */}
+        <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+           <div className="space-y-2">
+             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
+                 SYS: Module 14
+             </div>
+             <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+                Dietary & Nutrition
+             </h1>
+             <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
+               IDDSI food and fluid levels with allergy constraints. Manage therapeutic diet orders across your facility.
+             </p>
+           </div>
+           <div>
+              <Link href="/admin/dietary/new" className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-widest text-xs tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg")} >
+                + New Diet Order
+              </Link>
+           </div>
+        </div>
 
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4 mb-6" staggerMs={75}>
-          <div className="h-[160px]">
-            <V2Card hoverColor="indigo" className="border-indigo-500/20 dark:border-indigo-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
+          <div className="h-[160px] md:col-span-3">
+            <V2Card hoverColor="indigo" className="border-indigo-500/20 dark:border-indigo-500/20 shadow-[0_8px_30px_rgba(99,102,241,0.05)]">
               <Sparkline colorClass="text-indigo-500" variant={3} />
               <MonolithicWatermark value={rows.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
-              <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
-                  <Utensils className="h-3.5 w-3.5" /> Active Diet Orders
+              <div className="relative z-10 flex flex-col h-full justify-between p-2">
+                <h3 className="text-[11px] font-bold tracking-widest uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                  <Utensils className="h-4 w-4" /> Active Diet Orders
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-indigo-600 dark:text-indigo-400 pb-1">{rows.length}</p>
-              </div>
-            </V2Card>
-          </div>
-          <div className="col-span-1 md:col-span-2 h-[160px]">
-            <V2Card hoverColor="blue" className="flex flex-col justify-center items-start lg:items-end">
-              <div className="relative z-10 text-left lg:text-right w-full">
-                 <p className="hidden lg:block text-xs font-mono text-slate-500 mb-4">IDDSI food and fluid levels with allergy constraints.</p>
-                 <div className="flex gap-2 justify-start lg:justify-end">
-                   <Link href="/admin/dietary/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none")} >
-                     + New Diet Order
-                   </Link>
-                 </div>
+                <p className="text-6xl font-display tracking-tight font-medium text-indigo-600 dark:text-indigo-400 pb-1">{rows.length}</p>
               </div>
             </V2Card>
           </div>
         </KineticGrid>
 
       {!facilityReady && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+        <p className="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-6 py-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100 shadow-sm font-medium">
           Select a facility to load diet orders.
         </p>
       )}
 
       {error && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
+        <p className="rounded-[1.5rem] border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100 shadow-sm font-medium">
           {error}
         </p>
       )}
@@ -215,28 +216,24 @@ export default function AdminDietaryHubPage() {
           
           {/* ACTION QUEUE: Dietary Risk Board */}
           <div className="col-span-1 lg:col-span-2 space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-white/10 dark:border-white/5">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                Attention queue
+            <div className="flex items-center justify-between pb-2">
+              <h3 className="text-[12px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 flex items-center gap-2">
+                <PulseDot colorClass="bg-indigo-500" /> Attention Queue
               </h3>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2">
-              Draft orders, swallow evals, medication–texture review notes, or aspiration notes (last 50 diet orders for
-              this facility).
-            </p>
-
-            <MotionList className="space-y-3">
+            
+            <MotionList className="space-y-4">
               {loading ? (
                 <p className="text-sm font-mono text-slate-500">Loading…</p>
               ) : rows.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md">
-                   <p className="font-medium">No diet orders</p>
-                  <p className="text-sm opacity-80">No active diet orders for this facility yet.</p>
+                <div className="p-12 text-center text-slate-500 bg-white/50 dark:bg-white/[0.02] rounded-[2.5rem] border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
+                   <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No diet orders</p>
+                  <p className="text-sm opacity-80 mt-1">No active diet orders for this facility yet.</p>
                 </div>
               ) : attentionRows.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md">
-                  <p className="font-medium">All clear</p>
-                  <p className="text-sm opacity-80">
+                <div className="p-12 text-center text-slate-500 bg-white/50 dark:bg-white/[0.02] rounded-[2.5rem] border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
+                  <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">All Clear</p>
+                  <p className="text-sm opacity-80 mt-1">
                     No draft orders, swallow-evaluation flags, med/texture review notes, or aspiration notes in this batch.
                   </p>
                 </div>
@@ -246,37 +243,37 @@ export default function AdminDietaryHubPage() {
                   return (
                     <MotionItem
                       key={row.id}
-                      className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-indigo-300 dark:hover:border-indigo-800/50 transition-colors"
+                      className="p-6 rounded-[2rem] border border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm tap-responsive group hover:border-indigo-300 dark:hover:border-indigo-500/30 transition-colors relative overflow-hidden"
                     >
-                      <div className={cn("absolute top-0 left-0 w-1 h-full", badge.barClass)} />
-                      <div className="flex justify-between items-start mb-3 gap-2">
+                      <div className={cn("absolute top-0 left-0 w-1.5 h-full", badge.barClass)} />
+                      <div className="flex justify-between items-start mb-4 gap-2 pl-2">
                         <span
                           className={cn(
-                            "text-xs font-bold px-2 py-1 rounded-md uppercase tracking-wider",
+                            "text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border",
                             badge.badgeClass,
                           )}
                         >
                           {badge.label}
                         </span>
-                        <span className="text-xs text-slate-500 font-mono shrink-0">
-                          Updated {formatRelativeShort(row.updated_at)}
+                        <span className="text-xs text-slate-400 font-bold uppercase tracking-widest">
+                          Updated: {formatRelativeShort(row.updated_at)}
                         </span>
                       </div>
-                      <div className="mb-4">
-                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
+                      <div className="mb-5 pl-2">
+                        <p className="text-xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight mb-2">
                           {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Resident"}
                         </p>
-                        <p className="text-xs text-slate-600 dark:text-slate-400">{attentionSummary(row)}</p>
+                        <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{attentionSummary(row)}</p>
                       </div>
-                      <div className="flex justify-start">
+                      <div className="flex justify-start pl-2 mt-2">
                         <Link
                           href="/admin/dietary/new"
                           className={cn(
                             buttonVariants({ variant: "default", size: "sm" }),
-                            "bg-indigo-600 hover:bg-indigo-700 text-white font-mono uppercase tracking-widest text-[10px]",
+                            "h-10 rounded-full px-6 bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-black dark:hover:bg-slate-200 font-bold uppercase tracking-widest text-[10px]",
                           )}
                         >
-                          Review / new order
+                          Review Request
                         </Link>
                       </div>
                     </MotionItem>
@@ -286,97 +283,104 @@ export default function AdminDietaryHubPage() {
             </MotionList>
 
             {!loading && rows.length > 0 && rosterRows.length > 0 && (
-              <MotionList className="mt-8 space-y-3 opacity-90">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Other active diet orders</h4>
-                {rosterRows.map((row) => (
-                  <MotionItem
-                    key={row.id}
-                    className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex gap-4 items-center"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-slate-900 dark:text-slate-300 truncate">
-                        {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Unknown"}
-                      </p>
-                      <p className="text-[10px] text-slate-500 truncate capitalize">
-                        Food: {row.iddsi_food_level.replace(/_/g, " ")} | Fluids: {row.iddsi_fluid_level.replace(/_/g, " ")}
-                      </p>
-                    </div>
-                    {fluidIsThickened(row.iddsi_fluid_level) ? (
-                      <span className="text-[10px] font-mono text-amber-600 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded text-right">
-                        Thickened
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-mono text-slate-500 text-right">Standard</span>
-                    )}
-                  </MotionItem>
-                ))}
-              </MotionList>
+              <div className="glass-panel mt-10 p-6 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.015]">
+                <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 mb-4 ml-2">Other Active Diet Orders</h4>
+                <MotionList className="space-y-3">
+                  {rosterRows.map((row) => (
+                    <MotionItem
+                      key={row.id}
+                      className="p-4 rounded-[1.5rem] border border-slate-200/60 dark:border-white/5 bg-white dark:bg-white/[0.03] flex flex-col md:flex-row gap-4 md:items-center justify-between group hover:border-indigo-200 dark:hover:border-indigo-500/20 transition-colors shadow-sm"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-200 tracking-tight truncate flex items-center gap-2">
+                          {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Unknown"}
+                        </p>
+                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate capitalize mt-1">
+                          Food: {row.iddsi_food_level.replace(/_/g, " ")} &middot; Fluids: {row.iddsi_fluid_level.replace(/_/g, " ")}
+                        </p>
+                      </div>
+                      {fluidIsThickened(row.iddsi_fluid_level) ? (
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600 bg-amber-50 border border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/20 dark:text-amber-400 px-3 py-1.5 rounded-full shrink-0 h-fit">
+                          Thickened
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 bg-slate-100 border border-slate-200 dark:bg-white/5 dark:border-white/10 px-3 py-1.5 rounded-full shrink-0 h-fit">
+                          Standard
+                        </span>
+                      )}
+                    </MotionItem>
+                  ))}
+                </MotionList>
+              </div>
             )}
             
           </div>
 
           {/* WATCHLIST: Kitchen Operations Context */}
-          <div className="col-span-1 border-l border-white/10 dark:border-white/5 pl-0 lg:pl-6 pt-6 lg:pt-0">
-            <div className="flex items-center justify-between pb-2 border-b border-white/10 dark:border-white/5 mb-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                Therapeutic Context
-              </h3>
-            </div>
-            
-            <div className="space-y-4">
-              <p className="text-[9px] text-slate-500 leading-snug">
-                Share of the loaded diet-order batch (up to 50 rows). Not a clinical risk score or facility-wide census.
-              </p>
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex flex-col gap-2">
-                <div className="flex justify-between items-center">
-                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Thickened fluids</p>
-                  <span className="text-xs font-bold text-amber-500">{loading ? "—" : `${batchStats.thickenedPct}%`}</span>
-                </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
-                  <div
-                    className="bg-amber-500 h-1.5 rounded-full transition-all"
-                    style={{ width: `${loading ? 0 : batchStats.thickenedPct}%` }}
-                  />
-                </div>
+          <div className="col-span-1 border-l border-transparent dark:border-transparent lg:pl-6 pt-6 lg:pt-0">
+            <div className="glass-panel p-6 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
+              <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-200 dark:border-white/5">
+                <h3 className="text-[12px] font-bold uppercase tracking-widest text-slate-800 dark:text-slate-200">
+                  Therapeutic Context
+                </h3>
               </div>
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex flex-col gap-2">
-                <div className="flex justify-between items-center">
-                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Swallow eval flagged</p>
-                  <span className="text-xs font-bold text-rose-500">{loading ? "—" : `${batchStats.swallowPct}%`}</span>
+              
+              <div className="space-y-4">
+                <div className="p-5 rounded-[1.5rem] border border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/[0.03] flex flex-col gap-3 shadow-sm">
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Thickened Fluids</p>
+                    <span className="text-xs font-bold text-amber-500 bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 rounded-md">{loading ? "—" : `${batchStats.thickenedPct}%`}</span>
+                  </div>
+                  <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-2 overflow-hidden shadow-inner">
+                    <div
+                      className="bg-amber-500 h-2 rounded-full transition-all duration-1000 ease-out"
+                      style={{ width: `${loading ? 0 : batchStats.thickenedPct}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
-                  <div
-                    className="bg-rose-500 h-1.5 rounded-full transition-all"
-                    style={{ width: `${loading ? 0 : batchStats.swallowPct}%` }}
-                  />
+                
+                <div className="p-5 rounded-[1.5rem] border border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/[0.03] flex flex-col gap-3 shadow-sm">
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Swallow Flags</p>
+                    <span className="text-xs font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded-md">{loading ? "—" : `${batchStats.swallowPct}%`}</span>
+                  </div>
+                  <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-2 overflow-hidden shadow-inner">
+                    <div
+                      className="bg-rose-500 h-2 rounded-full transition-all duration-1000 ease-out"
+                      style={{ width: `${loading ? 0 : batchStats.swallowPct}%` }}
+                    />
+                  </div>
                 </div>
-              </div>
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex flex-col gap-2">
-                <div className="flex justify-between items-center">
-                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Allergy constraints</p>
-                  <span className="text-xs font-bold text-indigo-500">{loading ? "—" : `${batchStats.allergyPct}%`}</span>
+                
+                <div className="p-5 rounded-[1.5rem] border border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/[0.03] flex flex-col gap-3 shadow-sm">
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Allergy Alert</p>
+                    <span className="text-xs font-bold text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded-md">{loading ? "—" : `${batchStats.allergyPct}%`}</span>
+                  </div>
+                  <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-2 overflow-hidden shadow-inner">
+                    <div
+                      className="bg-indigo-500 h-2 rounded-full transition-all duration-1000 ease-out"
+                      style={{ width: `${loading ? 0 : batchStats.allergyPct}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
-                  <div
-                    className="bg-indigo-500 h-1.5 rounded-full transition-all"
-                    style={{ width: `${loading ? 0 : batchStats.allergyPct}%` }}
-                  />
-                </div>
-              </div>
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex flex-col gap-2">
-                <div className="flex justify-between items-center">
-                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Med / texture review noted</p>
-                  <span className="text-xs font-bold text-violet-500">{loading ? "—" : `${batchStats.medTexturePct}%`}</span>
-                </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
-                  <div
-                    className="bg-violet-500 h-1.5 rounded-full transition-all"
-                    style={{ width: `${loading ? 0 : batchStats.medTexturePct}%` }}
-                  />
+                
+                <div className="p-5 rounded-[1.5rem] border border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/[0.03] flex flex-col gap-3 shadow-sm">
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Texture Reviews</p>
+                    <span className="text-xs font-bold text-violet-500 bg-violet-50 dark:bg-violet-500/10 px-2 py-0.5 rounded-md">{loading ? "—" : `${batchStats.medTexturePct}%`}</span>
+                  </div>
+                  <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-2 overflow-hidden shadow-inner">
+                    <div
+                      className="bg-violet-500 h-2 rounded-full transition-all duration-1000 ease-out"
+                      style={{ width: `${loading ? 0 : batchStats.medTexturePct}%` }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+
         </div>
       )}
       </div>

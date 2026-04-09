@@ -14,11 +14,12 @@ import {
 
 import { RoundingHubNav } from "../rounding-hub-nav";
 import { QuickCheckDrawer, type QuickCheckTask } from "@/components/rounding/QuickCheckDrawer";
+import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -249,82 +250,83 @@ export default function AdminRoundingLivePage() {
         </div>
 
         {/* Task list */}
-        <KineticGrid className="grid-cols-1 gap-3" staggerMs={30} baseDelayMs={100}>
+        <MotionList className="grid grid-cols-1 gap-4">
           {sorted.map((task) => {
             const cfg = statusConfig(task.status);
             const Icon = cfg.icon;
             const canCheck = isActionable(task.status);
 
             return (
-              <div
-                key={task.id}
-                className={cn(
-                  "group relative overflow-hidden rounded-[14px] border p-4 transition-all duration-300",
-                  "bg-white/5 backdrop-blur-md dark:bg-[#0A0A0A]/50",
-                  cfg.bg,
-                  canCheck && "cursor-pointer hover:brightness-110",
-                )}
-                onClick={canCheck ? () => openSingleCheck(task) : undefined}
-                role={canCheck ? "button" : undefined}
-                tabIndex={canCheck ? 0 : undefined}
-                onKeyDown={canCheck ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openSingleCheck(task); } } : undefined}
-              >
-                <div className="flex items-center gap-4">
-                  <div className={cn("flex items-center gap-2 shrink-0", cfg.color)}>
-                    <Icon aria-hidden className="h-5 w-5" />
-                    {cfg.pulse && <PulseDot colorClass={cfg.color.replace("text-", "bg-")} />}
-                  </div>
+              <MotionItem key={task.id}>
+                <div
+                  className={cn(
+                    "group relative overflow-hidden rounded-[2rem] border p-5 transition-all duration-300 shadow-sm hover:shadow-lg dark:hover:shadow-white/[0.01]",
+                    "bg-white/60 backdrop-blur-3xl dark:bg-black/20",
+                    cfg.bg,
+                    canCheck && "cursor-pointer tap-responsive hover:brightness-105",
+                  )}
+                  onClick={canCheck ? () => openSingleCheck(task) : undefined}
+                  role={canCheck ? "button" : undefined}
+                  tabIndex={canCheck ? 0 : undefined}
+                  onKeyDown={canCheck ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openSingleCheck(task); } } : undefined}
+                >
+                  <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+                    <div className={cn("flex items-center gap-2 shrink-0 md:mb-0 mb-2 w-full md:w-auto border-b md:border-b-0 border-white/10 pb-2 md:pb-0", cfg.color)}>
+                      <Icon aria-hidden className="h-6 w-6" />
+                      {cfg.pulse && <PulseDot colorClass={cfg.color.replace("text-", "bg-")} />}
+                    </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-slate-100 truncate">
-                        {displayName(task.residents) || "Resident"}
-                      </span>
-                      {(task.residents as LiveTaskRow["residents"] & { room_number?: string | null })?.room_number && (
-                        <span className="text-[10px] font-mono tracking-wider text-slate-500 bg-slate-800/50 px-1.5 py-0.5 rounded">
-                          RM {(task.residents as LiveTaskRow["residents"] & { room_number?: string | null })?.room_number}
+                    <div className="flex-1 min-w-0 w-full">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span className="font-semibold text-lg md:text-xl font-display text-slate-900 dark:text-slate-100 truncate tracking-tight">
+                          {displayName(task.residents) || "Resident"}
                         </span>
+                        {(task.residents as LiveTaskRow["residents"] & { room_number?: string | null })?.room_number && (
+                          <span className="text-[10px] font-mono tracking-wider text-slate-500 bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded border border-slate-200/50 dark:border-white/5">
+                            RM {(task.residents as LiveTaskRow["residents"] & { room_number?: string | null })?.room_number}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-xs font-medium text-slate-500 dark:text-zinc-500 mt-1 uppercase tracking-widest">
+                        <span>{displayName(task.staff) || "Unassigned"}</span>
+                        <span className="text-slate-300 dark:text-slate-700">|</span>
+                        <span>{task.shift_assignments?.shift_type ?? "—"} shift</span>
+                      </div>
+                    </div>
+
+                    <div className="text-left md:text-right shrink-0 flex items-center justify-between md:justify-end gap-4 w-full md:w-auto mt-4 md:mt-0 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-white/5">
+                      <div>
+                        <span className={cn("text-xs font-mono font-bold tracking-widest", cfg.color)}>{formatDueLabel(task.due_at)}</span>
+                        <div className="mt-1.5 md:mt-1">
+                          <Badge variant={cfg.badgeVariant} className="text-[9px] font-bold tracking-widest uppercase px-2 py-0.5 shadow-sm">
+                            {cfg.label}
+                          </Badge>
+                        </div>
+                      </div>
+                      {canCheck && (
+                        <div className={cn(
+                          "rounded-full border px-6 py-2.5 text-[10px] uppercase tracking-widest font-bold transition-all shadow-md",
+                          "border-emerald-500/50 bg-emerald-600 text-white",
+                          "group-hover:bg-emerald-500 group-hover:border-emerald-400 group-hover:shadow-lg hover:-translate-y-0.5 scale-100",
+                        )}>
+                          Check In
+                        </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
-                      <span>{displayName(task.staff) || "Unassigned"}</span>
-                      <span className="text-slate-700">|</span>
-                      <span className="uppercase tracking-wider">{task.shift_assignments?.shift_type ?? "—"} shift</span>
-                    </div>
-                  </div>
-
-                  <div className="text-right shrink-0 flex items-center gap-3">
-                    <div>
-                      <span className={cn("text-sm font-mono", cfg.color)}>{formatDueLabel(task.due_at)}</span>
-                      <div className="mt-1">
-                        <Badge variant={cfg.badgeVariant} className="text-[10px]">
-                          {cfg.label}
-                        </Badge>
-                      </div>
-                    </div>
-                    {canCheck && (
-                      <div className={cn(
-                        "rounded-lg border px-3 py-2 text-xs font-semibold transition-all",
-                        "border-emerald-500/50 bg-emerald-950/40 text-emerald-300",
-                        "group-hover:bg-emerald-500 group-hover:text-white group-hover:border-emerald-400",
-                      )}>
-                        Check In
-                      </div>
-                    )}
                   </div>
                 </div>
-              </div>
+              </MotionItem>
             );
           })}
 
           {sorted.length === 0 && (
-            <div className="rounded-[14px] border border-slate-800/50 bg-slate-900/30 p-12 text-center">
-              <Eye aria-hidden className="mx-auto h-8 w-8 text-slate-600 mb-3" />
-              <p className="text-sm text-slate-400">No rounding tasks found for the current scope.</p>
-              <p className="text-xs text-slate-600 mt-1">Select a facility and generate tasks from observation plans.</p>
+            <div className="rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] p-16 text-center backdrop-blur-3xl shadow-sm">
+              <Eye aria-hidden className="mx-auto h-12 w-12 text-slate-300 dark:text-white/10 mb-4" />
+              <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">All Clear</p>
+              <p className="text-sm font-medium text-slate-500 dark:text-zinc-500 mt-1">No rounding tasks found for the current scope.</p>
             </div>
           )}
-        </KineticGrid>
+        </MotionList>
 
         <div className="block md:hidden pt-2">
           <RoundingHubNav />

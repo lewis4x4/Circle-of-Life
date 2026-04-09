@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Check, Clock3, Loader2, Pill, Shield, ShieldAlert, X, RefreshCw } from "lucide-react";
 import { toDate } from "date-fns-tz";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import {
@@ -305,7 +306,7 @@ export default function CaregiverMedsPage() {
       )}
 
       {/* ─── METRICS BLOCK ─────────────────────────────────────────────────── */}
-      <div className="glass-card rounded-[1.5rem] p-4 flex flex-wrap gap-2 md:grid md:grid-cols-3">
+      <div className="glass-panel rounded-[2rem] p-4 flex flex-wrap gap-2 md:grid md:grid-cols-3 border border-white/5 bg-slate-900/40 backdrop-blur-xl">
         <MetricPill label="Due now / overdue" value={String(counts.dueNow)} tone="danger" />
         <MetricPill label="Due < 90 min" value={String(counts.dueSoon)} tone="warning" />
         <MetricPill label="In window" value={String(counts.total)} tone="neutral" />
@@ -314,21 +315,24 @@ export default function CaregiverMedsPage() {
       {/* ─── QUEUE LIST ────────────────────────────────────────────────────── */}
       <div className="space-y-4 pt-4">
         {slots.length === 0 ? (
-           <div className="glass-card rounded-[1.5rem] border-dashed border-2 border-white/5 p-12 text-center bg-transparent">
-             <Pill className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
+           <div className="glass-panel rounded-[2rem] border-dashed border-2 border-white/10 p-12 text-center bg-transparent backdrop-blur-md">
+             <Pill className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
              <p className="text-lg text-white font-medium mb-1">Queue is clear.</p>
              <p className="text-sm text-zinc-500 font-medium tracking-wide">No medication passes left in the current window.</p>
            </div>
         ) : (
-          slots.map((item) => (
-            <MedicationCard
-              key={item.queueKey}
-              item={item}
-              busy={actingKey === item.queueKey}
-              onGiven={() => void documentDose(item, "given")}
-              onRefused={() => void documentDose(item, "refused")}
-            />
-          ))
+          <MotionList className="space-y-4">
+            {slots.map((item) => (
+              <MotionItem key={item.queueKey}>
+                <MedicationCard
+                  item={item}
+                  busy={actingKey === item.queueKey}
+                  onGiven={() => void documentDose(item, "given")}
+                  onRefused={() => void documentDose(item, "refused")}
+                />
+              </MotionItem>
+            ))}
+          </MotionList>
         )}
       </div>
 
@@ -381,7 +385,7 @@ function MedicationCard({
     <div className={`rounded-[2rem] p-6 transition-all relative overflow-hidden backdrop-blur-xl border ${
        isDueNow 
          ? "bg-rose-950/10 border-rose-500/30 shadow-[inset_0_0_40px_rgba(225,29,72,0.1)]"
-         : "glass-card bg-white/[0.02] hover:bg-white/[0.04]"
+         : "glass-panel bg-white/[0.02] border-white/5 hover:bg-white/[0.04]"
     }`}>
       
       {/* Left side color accent bar for visual scanning */}

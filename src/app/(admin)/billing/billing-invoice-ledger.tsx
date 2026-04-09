@@ -17,7 +17,7 @@ import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
@@ -261,61 +261,58 @@ export function BillingInvoiceLedger({
       ) : null}
 
       {!isLoading && filteredRows.length > 0 ? (
-        <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/5 bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent pointer-events-none" />
-          <div className="relative z-10 border-b border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 p-6 flex flex-col gap-1">
-            <h3 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">{cardTitle}</h3>
-            <p className="text-sm font-mono text-slate-500 dark:text-slate-400">{cardDescription}</p>
+        <div className="relative overflow-visible z-10 w-full mt-4">
+          <div className="relative z-10 p-4 sm:p-6 mb-4 glass-panel rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-2xl">
+            <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">{cardTitle}</h3>
+            <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">{cardDescription}</p>
           </div>
-          <div className="relative z-10 overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-white/40 dark:bg-black/40 border-b border-white/20 dark:border-white/10">
-                <TableRow className="border-none hover:bg-transparent">
-                  <TableHead className="pl-4 font-medium">Invoice #</TableHead>
-                  <TableHead className="font-medium">Resident</TableHead>
-                  <TableHead className="font-medium">Payer Type</TableHead>
-                  <TableHead className="font-medium">Status</TableHead>
-                  <TableHead className="font-medium">Amount Due</TableHead>
-                  <TableHead className="font-medium">Due Date</TableHead>
-                  <TableHead className="font-medium">
-                    <span className="inline-flex items-center gap-1">
-                      Updated
-                      <ArrowUpDown className="h-3.5 w-3.5 text-slate-400" />
-                    </span>
-                  </TableHead>
-                  <TableHead className="w-10 pr-4 text-right font-medium"> </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRows.map((row) => (
-                  <TableRow key={row.id} className="border-slate-100 dark:border-slate-800 hover:bg-emerald-500/5 dark:hover:bg-emerald-500/10 transition-colors cursor-pointer group">
-                    <TableCell className="pl-4 font-medium text-slate-900 dark:text-slate-100">
-                      {row.invoiceNumber}
-                    </TableCell>
-                    <TableCell>{row.residentName}</TableCell>
-                    <TableCell>
-                      <PayerTypeBadge payerType={row.payerType} />
-                    </TableCell>
-                    <TableCell>
-                      <InvoiceStatusBadge status={row.status} />
-                    </TableCell>
-                    <TableCell>{billingCurrency.format(row.amountDueCents / 100)}</TableCell>
-                    <TableCell className="text-slate-500 dark:text-slate-400">{row.dueDate}</TableCell>
-                    <TableCell className="text-slate-500 dark:text-slate-400">{row.updatedAt}</TableCell>
-                    <TableCell className="pr-4 text-right">
-                      <Link
-                        href={`/admin/billing/invoices/${row.id}`}
-                        className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
-                        aria-label={`Open invoice ${row.invoiceNumber}`}
-                      >
-                        <ChevronRight className="h-4 w-4 text-slate-500" />
-                      </Link>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <MotionList className="space-y-3">
+             {filteredRows.map((row) => (
+                <MotionItem key={row.id}>
+                  <Link href={`/admin/billing/invoices/${row.id}`} className="block focus-visible:outline-none focus:ring-2 focus:ring-indigo-500 rounded-2xl">
+                     <div className="p-4 sm:p-5 rounded-2xl glass-panel group transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 w-full flex flex-col md:flex-row lg:items-center justify-between gap-4">
+                        
+                        <div className="flex flex-col min-w-[200px] gap-1 shrink-0">
+                           <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Invoice #</span>
+                           <span className="font-bold font-mono text-slate-900 dark:text-slate-100 uppercase tracking-widest text-xs">
+                              {row.invoiceNumber}
+                           </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 w-full items-center">
+                           <div className="flex flex-col gap-1.5 lg:col-span-2">
+                              <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Resident</span>
+                              <span className="font-mono text-xs font-bold text-slate-700 dark:text-slate-300">{row.residentName}</span>
+                           </div>
+                           <div className="flex flex-col gap-1.5">
+                              <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Payer Type</span>
+                              <div className="flex"><PayerTypeBadge payerType={row.payerType} /></div>
+                           </div>
+                           <div className="flex flex-col gap-1.5">
+                              <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Status</span>
+                              <div className="flex"><InvoiceStatusBadge status={row.status} /></div>
+                           </div>
+                           <div className="flex flex-col gap-1.5 align-right text-left md:text-right">
+                              <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Amount Due</span>
+                              <span className="font-mono text-xs font-bold text-slate-900 dark:text-slate-100">{billingCurrency.format(row.amountDueCents / 100)}</span>
+                           </div>
+                           <div className="flex flex-col gap-1.5 align-right text-left md:text-right">
+                              <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Due / Updated</span>
+                              <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest">{row.dueDate}</span>
+                           </div>
+                        </div>
+
+                        <div className="hidden sm:flex shrink-0 ml-4">
+                            <div className="w-8 h-8 rounded-full bg-white/50 dark:bg-white/5 flex items-center justify-center group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 transition-colors">
+                            <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" />
+                            </div>
+                        </div>
+
+                     </div>
+                  </Link>
+                </MotionItem>
+             ))}
+          </MotionList>
         </div>
       ) : null}
       </div>
@@ -423,25 +420,22 @@ function formatUpdatedAt(iso: string): string {
 
 export function PayerTypeBadge({ payerType }: { payerType: PayerTypeUi }) {
   const map: Record<PayerTypeUi, { label: string; className: string }> = {
-    private_pay: { label: "Private Pay", className: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300" },
-    medicaid: { label: "Medicaid", className: "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300" },
-    ltc_insurance: {
-      label: "LTC Insurance",
-      className: "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300",
-    },
+    private_pay: { label: "Private Pay", className: "bg-slate-500/20 text-slate-800 dark:bg-slate-800/50 dark:text-slate-300 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
+    medicaid: { label: "Medicaid", className: "bg-blue-500/20 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
+    ltc_insurance: { label: "LTC Insurance", className: "bg-violet-500/20 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
   };
   return <Badge className={map[payerType].className}>{map[payerType].label}</Badge>;
 }
 
 export function InvoiceStatusBadge({ status }: { status: InvoiceStatusUi }) {
   const map: Record<InvoiceStatusUi, { label: string; className: string }> = {
-    draft: { label: "Draft", className: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300" },
-    sent: { label: "Sent", className: "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300" },
-    partial: { label: "Partial", className: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" },
-    paid: { label: "Paid", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" },
-    overdue: { label: "Overdue", className: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300" },
-    void: { label: "Void", className: "bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200" },
-    written_off: { label: "Written Off", className: "bg-orange-100 text-orange-800 dark:bg-orange-950/40 dark:text-orange-200" },
+    draft: { label: "Draft", className: "bg-slate-500/20 text-slate-800 dark:bg-slate-800/50 dark:text-slate-300 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
+    sent: { label: "Sent", className: "bg-blue-500/20 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
+    partial: { label: "Partial", className: "bg-amber-500/20 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
+    paid: { label: "Paid", className: "bg-emerald-500/20 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
+    overdue: { label: "Overdue", className: "bg-rose-500/20 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
+    void: { label: "Void", className: "bg-zinc-500/20 text-zinc-800 dark:bg-zinc-800/40 dark:text-zinc-200 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
+    written_off: { label: "Written Off", className: "bg-orange-500/20 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
   };
   return <Badge className={map[status].className}>{map[status].label}</Badge>;
 }
