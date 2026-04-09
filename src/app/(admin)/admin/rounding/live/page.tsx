@@ -93,7 +93,7 @@ function toDrawerTask(task: LiveTaskRow): QuickCheckTask {
 export default function AdminRoundingLivePage() {
   const { selectedFacilityId } = useFacilityStore();
   const supabase = useMemo(() => createClient(), []);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [tasks, setTasks] = useState<LiveTaskRow[]>(DEMO_TASKS);
 
   // Drawer state

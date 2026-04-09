@@ -4,14 +4,12 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { FinanceHubNav } from "../finance-hub-nav";
-import { buttonVariants } from "@/components/ui/button";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { ArrowLeft, ArrowRight, CircleDollarSign } from "lucide-react";
+import { ArrowRight, CircleDollarSign } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
-import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 
 type JournalRow = Database["public"]["Tables"]["journal_entries"]["Row"];

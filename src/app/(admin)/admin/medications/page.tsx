@@ -6,7 +6,6 @@ import { ClipboardList, Pill, ShieldAlert, Stethoscope } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { cn } from "@/lib/utils";
 
 const links = [

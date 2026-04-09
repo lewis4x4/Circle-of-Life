@@ -14,10 +14,9 @@ import { fetchActiveResidentsWithRooms } from "@/lib/caregiver/facility-resident
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
 
 type MedJoin = {
   medication_name: string;

@@ -80,7 +80,7 @@ export default function AdminRoundingReportsPage() {
   const { selectedFacilityId } = useFacilityStore();
   const [from, setFrom] = useState(() => new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 16));
   const [to, setTo] = useState(() => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16));
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [summary, setSummary] = useState<ReportSummary>(DEMO_SUMMARY);
   const [breakdowns, setBreakdowns] = useState<{ byShift: BreakdownRow[]; byStaff: BreakdownRow[]; byResident: BreakdownRow[] }>({
     byShift: DEMO_BY_SHIFT,

@@ -478,22 +478,6 @@ function formatNextShiftLabel(shiftDate: string, shiftType: string): string {
   return `${datePart} · ${typeLabel}`;
 }
 
-function RoleBadge({ role }: { role: StaffRole }) {
-  const map: Record<StaffRole, { label: string; className: string }> = {
-    nurse: { label: "Nurse", className: "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300" },
-    caregiver: {
-      label: "Caregiver",
-      className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
-    },
-    med_tech: {
-      label: "Med Tech",
-      className: "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300",
-    },
-    admin: { label: "Admin", className: "bg-slate-200/50 text-slate-800 dark:bg-slate-800/50 dark:text-slate-300 hover:bg-slate-300/50 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm" },
-  };
-  return <Badge className={map[role].className}>{map[role].label}</Badge>;
-}
-
 function StatusBadge({ status }: { status: StaffStatus }) {
   const map: Record<StaffStatus, { label: string; className: string }> = {
     active: { label: "Active", className: "bg-emerald-500/20 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm" },

@@ -12,7 +12,6 @@ import Link from "next/link";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 
@@ -141,15 +140,6 @@ export default function ReportsOverviewPage() {
       })),
     []
   );
-
-  const colors = {
-    indigo: "from-indigo-500/20 border-indigo-500/30 text-indigo-400 bg-indigo-500/10",
-    emerald: "from-emerald-500/20 border-emerald-500/30 text-emerald-400 bg-emerald-500/10",
-    amber: "from-amber-500/20 border-amber-500/30 text-amber-400 bg-amber-500/10",
-    rose: "from-rose-500/20 border-rose-500/30 text-rose-400 bg-rose-500/10",
-    blue: "from-blue-500/20 border-blue-500/30 text-blue-400 bg-blue-500/10",
-    slate: "from-slate-500/20 border-slate-500/30 text-slate-400 bg-slate-500/10",
-  } as const;
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">

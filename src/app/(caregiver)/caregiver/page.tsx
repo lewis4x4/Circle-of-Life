@@ -30,7 +30,7 @@ export default function CaregiverHomePage() {
   const [configError, setConfigError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [facilityName, setFacilityName] = useState<string | null>(null);
+  const [, setFacilityName] = useState<string | null>(null);
   const [timeZone, setTimeZone] = useState("America/New_York");
   const [brief, setBrief] = useState<CaregiverShiftBrief | null>(null);
   const [activeOutbreak, setActiveOutbreak] = useState<{ id: string; infection_type: string } | null>(null);

@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowUpDown, ChevronRight, Users } from "lucide-react";
+import { Users } from "lucide-react";
 
 import {
   AdminEmptyState,

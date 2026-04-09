@@ -6,7 +6,6 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, CreditCard } from "lucide-react";
 
 import { AdminTableLoadingState } from "@/components/common/admin-list-patterns";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";

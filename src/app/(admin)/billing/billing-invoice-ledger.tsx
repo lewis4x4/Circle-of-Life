@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowUpDown, ChevronRight, CreditCard } from "lucide-react";
+import { ChevronRight, CreditCard } from "lucide-react";
 
 import {
   AdminEmptyState,

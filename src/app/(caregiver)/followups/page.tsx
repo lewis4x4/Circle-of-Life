@@ -10,9 +10,7 @@ import { fetchActiveResidentsWithRooms } from "@/lib/caregiver/facility-resident
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { cn } from "@/lib/utils";
 
 type OpenCondition = {
   id: string;

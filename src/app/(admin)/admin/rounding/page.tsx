@@ -48,7 +48,7 @@ const DEMO_SUMMARY: OverviewSummary = {
 export default function AdminRoundingHubPage() {
   const { selectedFacilityId } = useFacilityStore();
   const supabase = useMemo(() => createClient(), []);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [summary, setSummary] = useState<OverviewSummary>(DEMO_SUMMARY);
 
   const load = useCallback(async () => {

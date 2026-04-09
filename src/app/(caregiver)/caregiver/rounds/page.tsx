@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { AlertTriangle, CheckCircle2, Clock3, Loader2, RefreshCw } from "lucide-react";
 
 import { RoundingTaskCard, type RoundingTaskCardData } from "@/components/rounding/RoundingTaskCard";
@@ -25,7 +24,7 @@ function displayName(person?: { first_name: string | null; last_name: string | n
 export default function CaregiverRoundsPage() {
   const supabase = useMemo(() => createClient(), []);
   const [facilityName, setFacilityName] = useState<string | null>(null);
-  const [facilityId, setFacilityId] = useState<string | null>(null);
+  const [, setFacilityId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [configError, setConfigError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);

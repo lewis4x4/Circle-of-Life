@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Activity, ArrowLeft, Brain, CalendarClock, ClipboardList, Sparkles } from "lucide-react";
+import { Activity, ArrowLeft, Brain, CalendarClock } from "lucide-react";
 
 import {
   AdminEmptyState,

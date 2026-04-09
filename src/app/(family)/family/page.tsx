@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Banknote, FileText, Loader2, Shield, Heart, ChevronRight } from "lucide-react";
 
@@ -94,12 +95,17 @@ export default function FamilyHomePage() {
     <div className="pb-8 flex flex-col items-center">
       
       {/* ─── FULL BLEED COVER PHOTO ─── */}
-      <div className="w-full h-48 md:h-64 absolute top-0 left-0 right-0 z-0 overflow-hidden">
-         <img 
-            src="/family-cover.png" 
-            alt="Warm watercolor dawn light" 
-            className="w-full h-full object-cover object-center opacity-90 mix-blend-multiply"
-         />
+      <div className="absolute inset-x-0 top-0 z-0 h-48 w-full overflow-hidden md:h-64">
+        <div className="relative h-full w-full">
+          <Image
+            src="/family-cover.png"
+            alt="Warm watercolor dawn light"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-center opacity-90 mix-blend-multiply"
+          />
+        </div>
          {/* Fade to background color seamlessly */}
          <div className="absolute inset-0 bg-gradient-to-t from-[#fffafa] via-transparent to-white/10"></div>
       </div>

@@ -14,7 +14,6 @@ import { cn } from "@/lib/utils";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
