@@ -12,7 +12,7 @@
 
 **Repo migrations:** **`001`–`116`** — verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release.
 
-**Remote migration parity:** Re-run `supabase migration list` after **`116`** ships to remote; prior **PASS** (2026-04-10) was for **001–115** on **`manfqmasfqppukpobpld`**. Authoritative record: [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
+**Remote migration parity:** **PASS (2026-04-10)** — `supabase migration list` aligned **001–116** on **`manfqmasfqppukpobpld`**. Re-run after each migration-adding PR. Authoritative record: [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
 
 **Where acceptance stands**
 
