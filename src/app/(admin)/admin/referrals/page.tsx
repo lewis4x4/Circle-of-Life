@@ -37,6 +37,7 @@ export default function AdminReferralsHubPage() {
     converted: 0,
     attention: 0,
   });
+  const [hl7Counts, setHl7Counts] = useState({ pending: 0, failed: 0 });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -44,6 +45,7 @@ export default function AdminReferralsHubPage() {
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
       setRows([]);
       setCounts({ new: 0, pipeline: 0, converted: 0, attention: 0 });
+      setHl7Counts({ pending: 0, failed: 0 });
       setLoading(false);
       return;
     }
@@ -67,7 +69,14 @@ export default function AdminReferralsHubPage() {
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null);
 
-      const [cNew, cConv, cAtt, cPipe] = await Promise.all([
+      const hl7Base = () =>
+        supabase
+          .from("referral_hl7_inbound")
+          .select("id", { count: "exact", head: true })
+          .eq("facility_id", selectedFacilityId)
+          .is("deleted_at", null);
+
+      const [cNew, cConv, cAtt, cPipe, hl7Pending, hl7Failed] = await Promise.all([
         base().eq("status", "new"),
         base().eq("status", "converted"),
         base().in("status", ["new", "contacted"]),
@@ -77,6 +86,8 @@ export default function AdminReferralsHubPage() {
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
           .not("status", "in", "(converted,lost,merged)"),
+        hl7Base().eq("status", "pending"),
+        hl7Base().eq("status", "failed"),
       ]);
 
       setCounts({
@@ -85,9 +96,14 @@ export default function AdminReferralsHubPage() {
         converted: cConv.count ?? 0,
         attention: cAtt.count ?? 0,
       });
+      setHl7Counts({
+        pending: hl7Pending.count ?? 0,
+        failed: hl7Failed.count ?? 0,
+      });
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : "Could not load referrals.");
       setRows([]);
+      setHl7Counts({ pending: 0, failed: 0 });
     } finally {
       setLoading(false);
     }
@@ -102,6 +118,9 @@ export default function AdminReferralsHubPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <div>
+        <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">
+          SYS: Module 22 / Referral CRM
+        </p>
         <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
           Referrals
         </h1>
@@ -160,6 +179,27 @@ export default function AdminReferralsHubPage() {
           </CardContent>
         </Card>
       </div>
+
+      {!noFacility ? (
+        <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/40">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-800 dark:text-slate-100">HL7 ADT inbound</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                {loading
+                  ? "Loading queue counts…"
+                  : `Pending ${hl7Counts.pending} · Failed ${hl7Counts.failed} for this facility. Open the queue for processed and ignored messages.`}
+              </p>
+            </div>
+            <Link
+              href="/admin/referrals/hl7-inbound"
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "shrink-0 w-full sm:w-auto")}
+            >
+              View queue
+            </Link>
+          </div>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Link href="/admin/referrals/new" className="group block">

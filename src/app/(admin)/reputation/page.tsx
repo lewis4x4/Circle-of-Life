@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Star } from "lucide-react";
 
@@ -80,6 +80,9 @@ export default function AdminReputationHubPage() {
     void load();
   }, [load]);
 
+  const draftReplies = useMemo(() => replies.filter((r) => r.status === "draft"), [replies]);
+  const postedReplies = useMemo(() => replies.filter((r) => r.status === "posted"), [replies]);
+
   async function markPosted(id: string) {
     setUpdatingId(id);
     setError(null);
@@ -110,7 +113,7 @@ export default function AdminReputationHubPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={replies.filter(r => r.status === 'draft').length > 0} 
+      <AmbientMatrix hasCriticals={draftReplies.length > 0}
         primaryClass="bg-indigo-700/10"
         secondaryClass="bg-red-900/10"
       />
@@ -118,7 +121,7 @@ export default function AdminReputationHubPage() {
       <div className="relative z-10 space-y-6">
         <header className="mb-8">
           <div>
-            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 10 / Reputation Settings</p>
+            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 23 / Reputation & Online Presence</p>
             <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
               Reputation Control
             </h2>
@@ -139,17 +142,17 @@ export default function AdminReputationHubPage() {
             </V2Card>
           </div>
           <div className="h-[160px]">
-            <V2Card hoverColor="red" className={replies.filter(r => r.status === 'draft').length > 0 ? "border-red-500/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]" : ""}>
+            <V2Card hoverColor="red" className={draftReplies.length > 0 ? "border-red-500/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]" : ""}>
               <Sparkline colorClass="text-red-500" variant={2} />
-              <MonolithicWatermark value={replies.filter(r => r.status === 'draft').length} className="text-red-600/5 dark:text-red-400/5 opacity-50" />
+              <MonolithicWatermark value={draftReplies.length} className="text-red-600/5 dark:text-red-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <div className="flex items-center justify-between">
                   <h3 className="text-[10px] font-mono tracking-widest uppercase text-red-600 dark:text-red-400 flex items-center gap-2">
                      Draft Replies
                   </h3>
-                  {replies.filter(r => r.status === 'draft').length > 0 && <PulseDot colorClass="bg-red-500" />}
+                  {draftReplies.length > 0 && <PulseDot colorClass="bg-red-500" />}
                 </div>
-                <p className="text-4xl font-mono tracking-tighter text-red-600 dark:text-red-400 pb-1">{replies.filter(r => r.status === 'draft').length}</p>
+                <p className="text-4xl font-mono tracking-tighter text-red-600 dark:text-red-400 pb-1">{draftReplies.length}</p>
               </div>
             </V2Card>
           </div>
@@ -193,13 +196,13 @@ export default function AdminReputationHubPage() {
             <MotionList className="space-y-3">
               {loading ? (
                 <p className="text-sm font-mono text-slate-500">Loading replies…</p>
-              ) : replies.filter(r => r.status === 'draft').length === 0 ? (
+              ) : draftReplies.length === 0 ? (
                 <div className="p-8 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md">
                    <p className="font-medium">Inbox Zero</p>
                    <p className="text-sm opacity-80">All reputation exceptions resolved.</p>
                 </div>
               ) : (
-                replies.filter(r => r.status === 'draft').map((row) => (
+                draftReplies.map((row) => (
                   <MotionItem key={row.id} className="p-5 rounded-2xl border border-red-200 dark:border-red-900/30 bg-white/60 dark:bg-slate-900/60 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:border-red-300 dark:hover:border-red-800/50 transition-colors">
                     <div className="absolute top-0 left-0 w-1 h-full bg-red-500" />
                     <div className="flex justify-between items-start mb-3">
@@ -234,10 +237,10 @@ export default function AdminReputationHubPage() {
             </MotionList>
             
             {/* Posted Feed */}
-            {replies.filter(r => r.status === 'posted').length > 0 && (
+            {postedReplies.length > 0 && (
               <MotionList className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Recently Posted</h4>
-                 {replies.filter(r => r.status === 'posted').slice(0, 3).map(row => (
+                 {postedReplies.slice(0, 3).map((row) => (
                    <MotionItem key={row.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex gap-4 items-center">
                      <div className="flex-1 min-w-0">
                        <p className="text-xs font-medium text-slate-900 dark:text-slate-300 truncate">{row.reputation_accounts?.label}</p>
