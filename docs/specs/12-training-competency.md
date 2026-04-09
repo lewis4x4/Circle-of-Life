@@ -19,6 +19,10 @@ Circle of Life operates five ALF facilities (Oakridge, Rising Oaks, Homewood Lod
 
 Florida ALF regulations (FAC 59A-36.011 and FAC 59A-36.022) mandate specific training categories for all staff at hire and annually. These must be tracked per-staff-member with completion dates, hours, and verifying signatures. COL currently tracks this via paper sign-in sheets (`Orientation & Training Sign-In.pdf`, in-service training sign-in logs) and Baya-issued competency certificates.
 
+### Track D — D20 org-wide hub (2026-04-09)
+
+When the admin shell facility control is **All facilities**, `/admin/training` lists the **latest 50** `competency_demonstrations` rows scoped by **RLS** (`haven.accessible_facility_ids()`), with **facility name** on each row. **New demonstration** still requires a **single** facility selected (existing `/admin/training/new` behavior). This is **not** the scheduled `training_compliance_snapshots` Enhanced feature.
+
 ---
 
 ## Florida Mandatory Training Requirements (Seed Data)

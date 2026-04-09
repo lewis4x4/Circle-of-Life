@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { GraduationCap } from "lucide-react";
 
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -22,6 +22,7 @@ import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 type DemoRow = Database["public"]["Tables"]["competency_demonstrations"]["Row"] & {
   staff: { first_name: string; last_name: string } | null;
+  facilities: { name: string } | null;
 };
 
 function formatStatus(s: string) {
@@ -46,22 +47,31 @@ export default function AdminTrainingHubPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  /** `null` = All facilities (RLS scopes rows to accessible facilities). */
+  const orgWideMode = selectedFacilityId === null;
+  const singleFacilityMode =
+    Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
+  const facilityReady = orgWideMode || singleFacilityMode;
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
+    if (!facilityReady) {
       setRows([]);
       setLoading(false);
       return;
     }
     try {
-      const { data, error: qErr } = await supabase
+      let q = supabase
         .from("competency_demonstrations")
-        .select("*, staff(first_name, last_name)")
-        .eq("facility_id", selectedFacilityId)
+        .select("*, staff(first_name, last_name), facilities(name)")
         .is("deleted_at", null)
         .order("demonstrated_at", { ascending: false })
         .limit(50);
+      if (singleFacilityMode && selectedFacilityId) {
+        q = q.eq("facility_id", selectedFacilityId);
+      }
+      const { data, error: qErr } = await q;
       if (qErr) throw qErr;
       setRows((data ?? []) as DemoRow[]);
     } catch (e) {
@@ -70,7 +80,7 @@ export default function AdminTrainingHubPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, selectedFacilityId]);
+  }, [supabase, selectedFacilityId, facilityReady, singleFacilityMode]);
 
   useEffect(() => {
     void load();
@@ -111,8 +121,6 @@ export default function AdminTrainingHubPage() {
     [rows],
   );
 
-  const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
-
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <AmbientMatrix hasCriticals={false} 
@@ -148,11 +156,32 @@ export default function AdminTrainingHubPage() {
           <div className="col-span-1 md:col-span-2 h-[160px]">
             <V2Card hoverColor="blue" className="flex flex-col justify-center items-start lg:items-end">
               <div className="relative z-10 text-left lg:text-right w-full">
-                 <p className="hidden lg:block text-xs font-mono text-slate-500 mb-4">Documented skills demonstrations for the selected facility.</p>
-                 <div className="flex gap-2 justify-start lg:justify-end">
-                   <Link href="/admin/training/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none")} >
-                     + New Demonstration
-                   </Link>
+                 <p className="hidden lg:block text-xs font-mono text-slate-500 mb-4">
+                   {orgWideMode
+                     ? "Last 50 competency demonstrations across your accessible facilities (ordered by date). RLS enforces scope."
+                     : "Documented skills demonstrations for the selected facility."}
+                 </p>
+                 <div className="flex flex-col items-start gap-2 lg:items-end">
+                   {orgWideMode ? (
+                     <Button
+                       type="button"
+                       disabled
+                       className="font-mono uppercase tracking-widest text-[10px] opacity-70"
+                       title="Select a single facility in the header to record a new demonstration."
+                     >
+                       + New Demonstration
+                     </Button>
+                   ) : (
+                     <Link
+                       href="/admin/training/new"
+                       className={cn(
+                         buttonVariants({ size: "default" }),
+                         "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none",
+                       )}
+                     >
+                       + New Demonstration
+                     </Link>
+                   )}
                  </div>
               </div>
             </V2Card>
@@ -161,7 +190,7 @@ export default function AdminTrainingHubPage() {
 
       {!facilityReady && (
         <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
-          Select a facility to load competency demonstrations.
+          Facility selection is invalid. Choose a facility or &quot;All facilities&quot; in the header.
         </p>
       )}
 
@@ -191,7 +220,8 @@ export default function AdminTrainingHubPage() {
                     <div className="p-8 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md">
                       <p className="font-medium">No open demonstrations</p>
                       <p className="text-sm opacity-80 mt-1">
-                        Nothing in draft, submitted, or failed status for this facility (last 50 records).
+                        Nothing in draft, submitted, or failed status in the loaded batch (last 50 records
+                        {orgWideMode ? " across accessible facilities" : " for this facility"}).
                       </p>
                     </div>
                   ) : (
@@ -240,8 +270,15 @@ export default function AdminTrainingHubPage() {
                           >
                             {title}
                           </span>
-                          <span className="text-[10px] uppercase tracking-widest text-slate-500 font-mono font-bold bg-white/50 dark:bg-black/30 px-2 py-0.5 rounded shadow-sm">
-                            Session {format(new Date(row.demonstrated_at), "MMM d, yyyy")}
+                          <span className="flex flex-col items-end gap-1 text-right sm:flex-row sm:items-center sm:gap-2">
+                            {orgWideMode && row.facilities?.name ? (
+                              <span className="text-[9px] uppercase tracking-widest text-indigo-600 dark:text-indigo-400 font-mono font-bold bg-indigo-500/10 px-2 py-0.5 rounded">
+                                {row.facilities.name}
+                              </span>
+                            ) : null}
+                            <span className="text-[10px] uppercase tracking-widest text-slate-500 font-mono font-bold bg-white/50 dark:bg-black/30 px-2 py-0.5 rounded shadow-sm">
+                              Session {format(new Date(row.demonstrated_at), "MMM d, yyyy")}
+                            </span>
                           </span>
                         </div>
                         <div className="mb-4">
@@ -299,6 +336,11 @@ export default function AdminTrainingHubPage() {
                           className="glass-panel p-3 rounded-xl border border-white/20 dark:border-white/5 bg-white/30 dark:bg-slate-900/30 flex gap-4 items-center"
                         >
                           <div className="flex-1 min-w-0">
+                            {orgWideMode && row.facilities?.name ? (
+                              <p className="text-[9px] font-mono uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-0.5 truncate">
+                                {row.facilities.name}
+                              </p>
+                            ) : null}
                             <p className="text-xs font-medium text-slate-900 dark:text-slate-300 truncate">
                               {row.staff ? `${row.staff.first_name} ${row.staff.last_name}` : "Unknown"}
                             </p>
@@ -342,8 +384,8 @@ export default function AdminTrainingHubPage() {
             
             <div className="space-y-4">
               <p className="text-[10px] text-slate-500 leading-relaxed">
-                Counts below are from the last 50 competency demonstrations loaded for this facility (not org-wide
-                compliance snapshots).
+                Counts below are from the last 50 competency demonstrations in this view (not scheduled{" "}
+                <span className="font-mono">training_compliance_snapshots</span>).
               </p>
               <div className="glass-panel p-4 rounded-xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 flex flex-col gap-2">
                 <div className="flex justify-between items-center">

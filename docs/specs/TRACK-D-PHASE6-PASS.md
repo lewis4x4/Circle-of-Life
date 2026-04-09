@@ -174,6 +174,16 @@
 
 ---
 
+**D20 (2026-04-09):** **Module 12 — Training & Competency** ([12-training-competency.md](./12-training-competency.md)) — **org-wide competency hub**.
+
+**Slice:** **`/admin/training`** when the header selector is **All facilities** loads the **latest 50** **`competency_demonstrations`** rows **without** a facility filter; **RLS** limits rows to accessible facilities. **Facility name** is shown on each card in org-wide mode. **+ New Demonstration** is disabled until a single facility is selected (unchanged create flow). **No** new DDL; **not** `training_compliance_snapshots`.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-09T16-12-12-498Z-track-d-d20-training-org-wide-hub.json` (`npm run segment:gates -- --segment "track-d-d20-training-org-wide-hub" --ui --no-chaos`).
+
+**Mission alignment:** **pass** — multi-site owners see a single cross-facility queue under existing governance.
+
+---
+
 ## Track D — plan (remaining)
 
 **Segments D1–D10:** Closed in repo with gate artifacts above. This completes the **Phase 6 Core visibility / workflow** slices we prioritized for COL (transport, training, dietary, referrals, reputation), plus **D10** org mileage rate.
@@ -182,7 +192,7 @@
 
 | Module | Backlog |
 |--------|---------|
-| **12** | ~~Storage certificate PDF uploads~~ (migration `115` + training hub); Baya/API, automated assignment, org-wide `training_compliance_snapshots` usage |
+| **12** | ~~Storage certificate PDF uploads~~ (migration `115` + training hub); ~~org-wide hub list~~ (D20); Baya/API, automated assignment, scheduled `training_compliance_snapshots` |
 | **13** | ~~Mileage → `payroll_export_lines`~~ (D17); ~~generic **CSV** download on batch~~ (D18); vendor-specific serializers, time-record worker |
 | **14** | ~~Read-only diet + med panel~~ (D13); automated med–texture cross-check vs medications; meal production; vendor API; full menu cycle |
 | **15** | ~~Week calendar + mileage approval queue~~ (D14, D15); full month grid, external calendar sync |
