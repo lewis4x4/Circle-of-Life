@@ -21,3 +21,15 @@
 **Gate artifact:** `test-results/agent-gates/2026-04-09T00-31-54-429Z-track-d-phase6-d2-training.json` (`npm run segment:gates -- --segment "track-d-phase6-d2-training" --ui --no-chaos`).
 
 **Deferred:** Storage certificate uploads, Baya API, automated assignment (spec Enhanced).
+
+---
+
+**D3 (2026-04-09):** **Module 14 — Dietary & Nutrition** ([14-dietary-nutrition.md](./14-dietary-nutrition.md)).
+
+**Slice:** Replace mock NPO persona and fake “facility-wide” percentages on `/admin/dietary` with **RLS-backed** `diet_orders` data: **attention queue** for `draft`, `requires_swallow_eval`, or non-empty `aspiration_notes`; **roster** for other orders in the batch; sidebar **batch percentages** (thickened fluids, swallow-eval flagged, allergy constraints) with disclaimer. Correct SYS label to **Module 14**.
+
+**Gate artifact:** run `npm run segment:gates -- --segment "track-d-phase6-d3-dietary" --ui --no-chaos` and record the JSON path below after PASS.
+
+**Mission alignment:** **pass** — uses existing clinical diet order rows under RLS; improves kitchen visibility without new DDL.
+
+**Deferred:** Meal production sheets, vendor API, full menu cycle (spec Enhanced).
