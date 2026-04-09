@@ -264,6 +264,16 @@
 
 ---
 
+**D29 (2026-04-09):** **Module 11 — Staff Management** ([11-staff-management.md](./11-staff-management.md)) — **staff roster CSV export**.
+
+**Slice:** **`/admin/staff`** — **Download roster CSV** queries up to **500** **`staff`** rows (active only), RFC-style CSV; **excludes** **`ssn_last_four`** and **`date_of_birth`** from columns. Facility filter matches the live directory when a valid facility is selected. **No** new DDL.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-09T17-10-51-740Z-track-d-d29-staff-roster-csv.json` (`npm run segment:gates -- --segment "track-d-d29-staff-roster-csv" --ui --no-chaos`).
+
+**Mission alignment:** **pass** — operators can archive roster fields under RLS without expanding integration scope.
+
+---
+
 ## Track D — plan (remaining)
 
 **Segments D1–D10:** Closed in repo with gate artifacts above. This completes the **Phase 6 Core visibility / workflow** slices we prioritized for COL (transport, training, dietary, referrals, reputation), plus **D10** org mileage rate.
@@ -278,6 +288,7 @@
 | **15** | ~~Week calendar + mileage approval queue~~ (D14, D15); ~~**transport requests CSV** on hub~~ (D24); ~~**mileage logs CSV** on approvals~~ (D25); full month grid, external calendar sync |
 | **22** | ~~Minimal **MSH** queue processor~~ (D12); ~~manual **Draft lead** from HL7~~ (D16); ~~**HL7 queue CSV**~~ (D22); ~~**pipeline leads CSV** on hub~~ (D27); MLLP, full ADT parse, auto-**`referral_leads`** |
 | **23** | ~~**Replies CSV** export on hub~~ (D19); ~~**accounts CSV** on hub~~ (D28); external review platform OAuth/sync APIs |
+| **11** | ~~**Staff roster CSV** on `/admin/staff`~~ (D29); full scheduling builder, time records UX depth |
 
 **Authoritative README narrative:** [README.md](./README.md) — section **Track D — Phase 6 completion pass**.
 

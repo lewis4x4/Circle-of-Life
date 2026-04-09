@@ -408,7 +408,7 @@ Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
 
 | Screen | Route | Description |
 |--------|-------|-------------|
-| Staff Directory | `/admin/staff` | Sortable table: name, role, status, hire date, certs expiring. Quick filters by role. |
+| Staff Directory | `/admin/staff` | Sortable table: name, role, status, hire date, certs expiring. Quick filters by role. **Roster CSV download** (Track D29): up to 500 active `staff` rows, facility-scoped when a facility is selected (same scope as the live list); export excludes `ssn_last_four` and `date_of_birth`. |
 | Staff Profile | `/admin/staff/:id` | Employment details, certification list with expiration indicators, schedule view, time record history, performance notes |
 | Certification Dashboard | `/admin/certifications` | Grid: staff names × certification types. Green (current), Yellow (expiring in 90 days), Red (expired or missing). Drill down to renew. |
 | Schedule Builder | `/admin/schedules?week=2026-04-06` | 7-day grid, shifts as rows, drag-drop staff assignment. Color coding: green (compliant), red (understaffed), yellow (overtime risk). Publish button with validation. |
@@ -422,6 +422,10 @@ Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
 | My Schedule | `/caregiver/me/schedule` | Week view of my shifts across all facilities. Tap shift for details. |
 | Clock In/Out | `/caregiver/me/clock` | Large clock-in button. Shows GPS status. Current shift info. Clock-out button. |
 | Swap Board | `/caregiver/me/swaps` | Open swap requests at my facility. My pending requests. Claim button. |
+
+### Track D — staff roster CSV (shipped)
+
+**D29:** **`/admin/staff`** — **Download roster CSV** queries up to **500** **`staff`** rows (`deleted_at` null), **RFC-style** CSV. Scope matches the directory list: **filters by selected facility** when the facility id is valid; otherwise **no facility filter** (RLS still applies). **No** `ssn_last_four` or `date_of_birth` columns in the file. **No** new DDL.
 
 ---
 
