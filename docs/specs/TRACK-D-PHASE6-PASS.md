@@ -474,6 +474,16 @@
 
 ---
 
+**D50 (2026-04-10):** **Module 14 — Dietary** ([14-dietary-nutrition.md](./14-dietary-nutrition.md)) — **read-only liquid-form vs thickened-fluid hint** on clinical review.
+
+**Slice:** **`src/lib/dietary/med-fluid-diet-hints.ts`** — when **`iddsi_fluid_level`** is not thin/unassessed and an **active** med’s **`form`** matches liquid-like keywords, show an **advisory** callout on **`/admin/dietary/clinical-review`** (pharmacy/prescriber confirm). **No** Edge job, **no** migration.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-09T23-24-37-055Z-track-d-d50-dietary-clinical-review-fluid-hint.json` (`npm run segment:gates -- --segment "track-d-d50-dietary-clinical-review-fluid-hint" --ui`)
+
+**Mission alignment:** **pass** — surfaces a common operational mismatch for human follow-up; explicitly not automated clinical decision-making.
+
+---
+
 ## Track D — plan (remaining)
 
 **Segments D1–D10:** Closed in repo with gate artifacts above. This completes the **Phase 6 Core visibility / workflow** slices we prioritized for COL (transport, training, dietary, referrals, reputation), plus **D10** org mileage rate.
@@ -484,7 +494,7 @@
 |--------|---------|
 | **12** | ~~Storage certificate PDF uploads~~ (migration `115` + training hub); ~~org-wide hub list~~ (D20); ~~demonstrations **CSV**~~ (D21); ~~`training_programs` + `staff_training_completions` hub + CSV~~ (D38); ~~**log completion** form~~ (D39); ~~completion **PDF** + `117` storage RLS~~ (D40); ~~**inservice** session + attendee DDL~~ (D41 / `118`); ~~inservice **hub** + CSV + **new session** form~~ (D42); ~~attendee→**`staff_training_completions`** (catalog program on save)~~ (D43); Baya/API, automated assignment, scheduled `training_compliance_snapshots` |
 | **13** | ~~Mileage → `payroll_export_lines`~~ (D17); ~~generic **CSV** download on batch~~ (D18); ~~**batches list CSV** on hub~~ (D26); vendor-specific serializers, time-record worker |
-| **14** | ~~Read-only diet + med panel~~ (D13); ~~**diet orders CSV** on hub~~ (D23); automated med–texture cross-check vs medications; meal production; vendor API; full menu cycle |
+| **14** | ~~Read-only diet + med panel~~ (D13); ~~**diet orders CSV** on hub~~ (D23); ~~read-only **liquid vs thickened-fluid** advisory on clinical review~~ (D50); full Edge med–texture automation (pending clinical rules); meal production; vendor API; full menu cycle |
 | **15** | ~~Week calendar + mileage approval queue~~ (D14, D15); ~~**transport requests CSV** on hub~~ (D24); ~~**mileage logs CSV** on approvals~~ (D25); full month grid, external calendar sync |
 | **22** | ~~Minimal **MSH** queue processor~~ (D12); ~~manual **Draft lead** from HL7~~ (D16); ~~**HL7 queue CSV**~~ (D22); ~~**pipeline leads CSV** on hub~~ (D27); MLLP, full ADT parse, auto-**`referral_leads`** |
 | **23** | ~~**Replies CSV** export on hub~~ (D19); ~~**accounts CSV** on hub~~ (D28); ~~Google OAuth **connect** + **`119`** token table~~ (D44); ~~**manual** Google review import~~ (D45); ~~**cron** Google review import~~ (D46); ~~**Yelp Fusion** manual import~~ (D47); ~~**Google** reply post~~ (D48); ~~**Yelp** reply post (Partner API)~~ (D49) |
@@ -492,6 +502,6 @@
 
 **Authoritative README narrative:** [README.md](./README.md) — section **Track D — Phase 6 completion pass**.
 
-**Next segment:** Record as **D50+** in this file when a new bounded slice ships; use migration **`120+`** only when DDL is required ([README.md](./README.md) next free migration).
+**Next segment:** Record as **D51+** in this file when a new bounded slice ships; use migration **`120+`** only when DDL is required ([README.md](./README.md) next free migration).
 
 **Prioritized Enhanced plan (D11+ options, order, checklists):** [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md).

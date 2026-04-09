@@ -28,7 +28,7 @@
 | **23** | ~~**Post reply to Google** (`updateReply` from draft)~~ | — | — | — | **Shipped D48** — `POST /api/reputation/replies/[id]/post-google` + hub. |
 | **23** | ~~**Post reply to Yelp** (Partner public comment)~~ | — | — | — | **Shipped D49** — `POST /api/reputation/replies/[id]/post-yelp` + hub; **`yelp-partner-reviews.ts`**. |
 | **12** | ~~**Certificate PDF upload**~~ (`staff_training_completions` + `competency-demonstrations` paths) | — | — | — | **D40** — `117` + log form + hub; **D11** — demonstrations. |
-| **14** | **Automated med–texture cross-check** (e.g. Edge job flagging solid vs thickened fluid) | Medium–high | **High (clinical)** | Med orders, pharmacist rules | Needs explicit **clinical rules** sign-off in spec before automation. |
+| **14** | **Automated med–texture cross-check** (e.g. Edge job flagging solid vs thickened fluid) | Medium–high | **High (clinical)** | Med orders, pharmacist rules | **Partial:** **D50** read-only **liquid-form vs thickened-fluid** hint on **`/admin/dietary/clinical-review`** (`med-fluid-diet-hints.ts`). **Full Edge automation** still needs **clinical / pharmacy** sign-off. |
 | **14** | ~~**Read-only “review” panel** (diet + resident meds)~~ | — | — | — | **Shipped D13** — `/admin/dietary/clinical-review`. |
 
 ---
@@ -107,7 +107,9 @@
 
 **~~Recommended next segment — D49~~** **DONE (2026-04-10)** — Module **23:** **Yelp post reply** — `POST /api/reputation/replies/[id]/post-yelp` — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D50+ (owner priority):** remaining §1 rows (e.g. **14** automation after clinical sign-off) — one bounded slice at a time.
+**~~Recommended next segment — D50~~** **DONE (2026-04-10)** — Module **14:** **Clinical review advisory** — liquid-form medication hint vs thickened-fluid diet — `src/lib/dietary/med-fluid-diet-hints.ts` + hub — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D51+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
 
 ---
 

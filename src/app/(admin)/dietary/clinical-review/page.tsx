@@ -12,6 +12,7 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { liquidFormVsThickenedFluidsHint } from "@/lib/dietary/med-fluid-diet-hints";
 
 type DietRow = Database["public"]["Tables"]["diet_orders"]["Row"] & {
   residents: { first_name: string; last_name: string; id: string } | null;
@@ -98,6 +99,13 @@ export default function DietaryClinicalReviewPage() {
 
   const primaryOrder = useMemo(() => pickPrimaryDietOrder(ordersForSelected), [ordersForSelected]);
 
+  const thickenedFluidLiquidHint = useMemo(() => {
+    if (!primaryOrder) {
+      return { show: false as const, matches: [] as { id: string; medication_name: string; form: string | null }[] };
+    }
+    return liquidFormVsThickenedFluidsHint(primaryOrder.iddsi_fluid_level, meds);
+  }, [primaryOrder, meds]);
+
   useEffect(() => {
     if (residentsOptions.length === 0) return;
     const q = searchParams.get("resident")?.trim();
@@ -153,8 +161,9 @@ export default function DietaryClinicalReviewPage() {
               Diet order and medications
             </h1>
             <p className="mt-1 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl text-sm">
-              Read-only side-by-side view for nursing and kitchen alignment. Does not apply automated rules; human
-              judgment applies.
+              Read-only side-by-side view for nursing and kitchen alignment. Automated hints flag only obvious
+              data-pattern cases (e.g. liquid-form meds vs thickened-fluid diets); pharmacy and prescriber
+              confirmation still required.
             </p>
           </div>
           <Link
@@ -210,6 +219,28 @@ export default function DietaryClinicalReviewPage() {
                 ))}
               </select>
             </label>
+
+            {selectedResidentId && thickenedFluidLiquidHint.show && (
+              <div
+                className="rounded-[1.5rem] border border-amber-300/80 bg-amber-50/90 dark:border-amber-800/60 dark:bg-amber-950/35 px-5 py-4 text-sm text-amber-950 dark:text-amber-100"
+                role="status"
+              >
+                <p className="font-semibold text-amber-950 dark:text-amber-50">Review: liquid-form medications vs thickened fluids</p>
+                <p className="mt-1 text-amber-900/90 dark:text-amber-200/95">
+                  Diet lists modified/thickened fluids, but these active medications have a liquid-like dosage form
+                  string. Confirm appropriateness (e.g. thickening, alternate formulation) with pharmacy — advisory
+                  only, not a clinical determination.
+                </p>
+                <ul className="mt-2 list-disc pl-5 space-y-0.5 text-amber-950/90 dark:text-amber-100/95">
+                  {thickenedFluidLiquidHint.matches.map((m) => (
+                    <li key={m.id}>
+                      <span className="font-medium">{m.medication_name}</span>
+                      {m.form?.trim() ? <span className="text-amber-800/95 dark:text-amber-200/90"> — {m.form}</span> : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {selectedResidentId && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">

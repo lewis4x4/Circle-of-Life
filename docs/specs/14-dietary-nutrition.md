@@ -54,9 +54,11 @@ Dietary is also a linchpin for clinical risk: IDDSI texture levels must align wi
 
 ### Enhanced (defer)
 
-**Shipped (Track D13):** Read-only **`/admin/dietary/clinical-review`** — resident selector (from facility diet orders), primary **diet order** panel (IDDSI, allergies, med/texture review notes) and **resident medications** list side-by-side; no automation vs `resident_medications`.
+**Shipped (Track D13):** Read-only **`/admin/dietary/clinical-review`** — resident selector (from facility diet orders), primary **diet order** panel (IDDSI, allergies, med/texture review notes) and **resident medications** list side-by-side.
 
-- Edge Function: flag solid-dose medications vs. fluid viscosity level (cross-check with `resident_medications`).
+**Shipped (Track D50):** Same route — **advisory hint** when IDDSI fluid is **not** thin (`level_0_thin`) / not unassessed and an **active** medication’s free-text **`form`** matches liquid-like keywords (e.g. solution, suspension). Implementation: **`src/lib/dietary/med-fluid-diet-hints.ts`**. **Not** a clinical determination; pharmacy/prescriber must confirm. **Deferred:** Edge/cron automation and expanded rule sets (require explicit **clinical / pharmacy** sign-off in spec).
+
+- Edge Function: flag solid-dose medications vs. fluid viscosity level (cross-check with `resident_medications`) — **full automation** still deferred pending rules sign-off (see D50 advisory above).
 - Tray ticket generation with resident name, diet order, room/bed.
 - Menu planning calendar with nutritional targets.
 - Automated HACCP alert if temperature reading fails threshold.
