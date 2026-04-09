@@ -33,6 +33,40 @@ function csvEscapeCell(value: string): string {
   return value;
 }
 
+function buildReputationAccountsCsv(rows: AccountRow[]): string {
+  const header = [
+    "id",
+    "organization_id",
+    "facility_id",
+    "label",
+    "platform",
+    "is_active",
+    "external_place_id",
+    "notes",
+    "created_at",
+    "updated_at",
+    "created_by",
+    "updated_by",
+  ].join(",");
+  const body = rows.map((row) =>
+    [
+      csvEscapeCell(row.id),
+      csvEscapeCell(row.organization_id),
+      csvEscapeCell(row.facility_id),
+      csvEscapeCell(row.label),
+      csvEscapeCell(String(row.platform)),
+      csvEscapeCell(String(row.is_active)),
+      csvEscapeCell(row.external_place_id ?? ""),
+      csvEscapeCell(row.notes ?? ""),
+      csvEscapeCell(row.created_at),
+      csvEscapeCell(row.updated_at),
+      csvEscapeCell(row.created_by ?? ""),
+      csvEscapeCell(row.updated_by ?? ""),
+    ].join(","),
+  );
+  return [header, ...body].join("\r\n");
+}
+
 function buildReputationRepliesCsv(rows: ReplyRow[]): string {
   const header = [
     "id",
@@ -82,6 +116,7 @@ export default function AdminReputationHubPage() {
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
+  const [exportingAccountsCsv, setExportingAccountsCsv] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -152,6 +187,29 @@ export default function AdminReputationHubPage() {
     }
   }
 
+  async function exportAccountsCsv() {
+    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) return;
+    setExportingAccountsCsv(true);
+    setError(null);
+    try {
+      const { data, error: qErr } = await supabase
+        .from("reputation_accounts")
+        .select("*")
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .order("label", { ascending: true })
+        .limit(500);
+      if (qErr) throw qErr;
+      const rows = (data ?? []) as AccountRow[];
+      const csv = buildReputationAccountsCsv(rows);
+      triggerCsvDownload(`reputation-accounts_${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "CSV export failed.");
+    } finally {
+      setExportingAccountsCsv(false);
+    }
+  }
+
   async function markPosted(id: string) {
     setUpdatingId(id);
     setError(null);
@@ -196,15 +254,24 @@ export default function AdminReputationHubPage() {
             </h2>
           </div>
           {facilityReady && (
-            <Button
-              type="button"
-              variant="outline"
-              className="shrink-0 self-start"
-              disabled={exportingCsv}
-              onClick={() => void exportRepliesCsv()}
-            >
-              {exportingCsv ? "Preparing…" : "Download replies CSV"}
-            </Button>
+            <div className="flex flex-wrap gap-2 shrink-0 self-start">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={exportingAccountsCsv}
+                onClick={() => void exportAccountsCsv()}
+              >
+                {exportingAccountsCsv ? "Preparing…" : "Download accounts CSV"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={exportingCsv}
+                onClick={() => void exportRepliesCsv()}
+              >
+                {exportingCsv ? "Preparing…" : "Download replies CSV"}
+              </Button>
+            </div>
           )}
         </header>
 
