@@ -162,7 +162,11 @@ export default function ReputationIntegrationsPage() {
           <CardTitle>Google Business Profile</CardTitle>
           <CardDescription>
             OAuth scope: Business Profile API (read reviews). Only the <strong>organization owner</strong> can
-            connect, disconnect, or run import.
+            connect, disconnect, or run import. For automated runs, ops can schedule{" "}
+            <code className="rounded bg-slate-100 px-1 text-xs dark:bg-slate-800">POST /api/cron/reputation/google-reviews</code>{" "}
+            with header <code className="rounded bg-slate-100 px-1 text-xs dark:bg-slate-800">x-cron-secret</code> (see{" "}
+            <code className="rounded bg-slate-100 px-1 text-xs dark:bg-slate-800">REPUTATION_GOOGLE_CRON_SECRET</code>
+            ).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

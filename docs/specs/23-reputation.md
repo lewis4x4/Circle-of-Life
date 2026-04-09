@@ -40,7 +40,14 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 
 - **API:** `POST /api/reputation/sync/google` — optional JSON `{ "facilityId"?: "<uuid>" }` to limit to one facility’s Google listings. Uses **`refreshAccessToken`** + Business Profile **v4** `accounts/.../locations/.../reviews`. **No new DDL** — reuses **`reputation_accounts.external_place_id`** to resolve the location: prefer full resource name `accounts/{account}/locations/{location}`; otherwise numeric location id (search all accessible locations); otherwise match **Listing label** to Google **location title**.
 - **UI:** **`/admin/reputation/integrations`** — **Import Google reviews now** (owner + connected).
-- **Deferred:** Cron/scheduled sync, Yelp, posting replies through Google API.
+- **Deferred:** Yelp, posting replies through Google API.
+
+### Track D — D46 Cron-triggered Google review import (2026-04-10)
+
+**Purpose:** Same import as **D45**, invoked by **trusted schedulers** (e.g. Netlify cron) without a browser session.
+
+- **API:** `POST /api/cron/reputation/google-reviews` — header **`x-cron-secret`** must equal env **`REPUTATION_GOOGLE_CRON_SECRET`**. Optional JSON body `{ "organization_id"?: "<uuid>" }` to sync a single org; omit to process **all** rows in **`reputation_google_oauth_credentials`**. Uses **service role** for DB access; new rows use **`created_by` = `connected_by`** from credentials — orgs with **`connected_by` null** are skipped (reconnect OAuth as owner).
+- **Shared logic:** **`runGoogleReviewSync`** in **`src/lib/reputation/run-google-review-sync.ts`** (manual **`POST /api/reputation/sync/google`** calls the same helper).
 
 ---
 
