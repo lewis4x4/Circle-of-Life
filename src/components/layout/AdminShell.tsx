@@ -319,8 +319,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-3">
           
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 tap-responsive focus-visible:outline-none transition-all">
-              <Building2 className="w-4 h-4 text-slate-500 dark:text-zinc-400" />
+            <DropdownMenuTrigger
+              data-testid="admin-facility-filter-trigger"
+              aria-label={
+                facilitiesLoadFailed
+                  ? "Facility filter — failed to load list, open for retry"
+                  : facilitiesLoading
+                    ? "Facility filter — loading"
+                    : `Facility filter — ${selectedFacilityId === null ? "all facilities" : currentFacility?.name ?? "selected facility"}`
+              }
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 tap-responsive focus-visible:outline-none transition-all"
+            >
+              <Building2 className="w-4 h-4 text-slate-500 dark:text-zinc-400" aria-hidden />
               <span className="text-sm font-medium text-slate-900 dark:text-slate-200 truncate max-w-[140px] md:max-w-[200px]">
                 {facilityTriggerLabel}
               </span>
