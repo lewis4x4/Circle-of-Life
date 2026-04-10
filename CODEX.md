@@ -32,6 +32,7 @@
 
 ## References
 
+- Autonomous loop (BOOT / FIND / RECORD): `docs/Autonomous.md`
 - Implementation specs (drop zone): `docs/specs/` — see `docs/specs/README.md`
 - Full agent registry: `agents/registry.yaml`
 - Playbooks: `agents/playbooks/`

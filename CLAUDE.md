@@ -16,3 +16,4 @@ When planning or reviewing work, state **mission alignment** (`pass` | `risk` | 
 - **Build sequence:** `docs/specs/README.md`
 - **Track A closeout:** `docs/specs/TRACK-A-CLOSEOUT-ROADMAP.md`
 - **Command contract:** `CODEX.md`
+- **Autonomous loop log (BOOT / FIND / RECORD):** `docs/Autonomous.md`

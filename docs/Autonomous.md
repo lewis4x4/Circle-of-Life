@@ -167,12 +167,25 @@ From `npm run segment:gates` (see `CODEX.md`): hygiene, security scan, ESLint, m
 
 ---
 
+## RECORD — round 2026-04-10 (loop: CODEX + CLAUDE → Autonomous.md)
+
+| Field | Value |
+|-------|--------|
+| **BOOT** | [CODEX.md](../CODEX.md), [CLAUDE.md](../CLAUDE.md), `git status` clean @**cb37a58**. |
+| **FIND** | **D85+** clinical-gated. **Unblocked:** engineer entrypoints did not link **`docs/Autonomous.md`** (loop continuity). |
+| **BUILD** | [CODEX.md](../CODEX.md) **References** + [CLAUDE.md](../CLAUDE.md) **Key references** — one line each. |
+| **Mission alignment** | **pass** — discoverable loop log supports disciplined closeout without scope creep. |
+| **Gate artifact** | `test-results/agent-gates/2026-04-10T12-14-54-527Z-loop-codex-claude-autonomous-ref.json` |
+| **Deferred** | **D85+** Edge/cron automation. |
+
+---
+
 ## RECORD — loop exit (optional)
 
 | Field | Value |
 |-------|--------|
 | **date** | **2026-04-10** |
-| **reason** | **D85+** still **clinical / pharmacy** gated. This loop synced **AGENTS.md** with migration **`120`**; no Module 14 Edge automation without COL sign-off. |
+| **reason** | **D85+** still **clinical / pharmacy** gated. This loop added **Autonomous.md** pointers in **CODEX** / **CLAUDE**; no Module 14 automation without COL sign-off. |
 | **next_human_action** | Remote **`001`–`120`** parity; COL clinical sign-off for **D85+**; Track A UAT / Pro–BAA–PITR per owner schedule. |
 
 ---
