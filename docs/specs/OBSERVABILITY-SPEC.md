@@ -112,7 +112,7 @@ Existing functions (`export-audit-log`, `dispatch-push`, `generate-monthly-invoi
 | Invalid credentials error shown | `npm run demo:auth-smoke` | yes |
 | Target project auth status | `npm run demo:auth-check` | yes |
 | Migration + function + auth summary | `npm run demo:ops-status` | yes |
-| All local checks bundled | `npm run demo:pilot-readiness` | yes |
+| All local checks bundled | `npm run demo:pilot-readiness` (`BASE_URL`); optional `PILOT_READINESS_AUTH_SMOKE_REAL=1` appends `demo:auth-smoke:real` | yes |
 
 ---
 
@@ -134,7 +134,7 @@ These are **Track B2 Enhanced** or **post-pilot** scope.
 | Error tracking SDK integrated | **DONE (code)** — `@sentry/nextjs`, root config files (`sentry.server.config.ts`, `sentry.edge.config.ts`, `instrumentation-client.ts`), CSP allowlist, PHI stripping (`beforeSend`, `sendDefaultPii: false`); real DSN/env verification still pending |
 | Edge Function structured log shape | **DONE** — shared `supabase/functions/_shared/structured-log.ts` (`slog`, `withTiming`); adopted in core functions including `generate-monthly-invoices`, `exec-kpi-snapshot`, `export-audit-log`, `dispatch-push`, `report-scheduler`, Track C functions (`ar-aging-check`, `generate-emar-schedule`, `emar-missed-dose-check`, `exec-alert-evaluator`) |
 | Cron monthly review checklist | **DONE** — defined in §3; ready to use (manual) |
-| Application health scripts | **DONE** — `web-health`, `auth-smoke`, `auth-check`, `ops-status`, `pilot-readiness` |
+| Application health scripts | **DONE** — `web-health`, `auth-smoke`, `auth-check`, `ops-status`, `pilot-readiness` (+ optional `auth-smoke:real` via `PILOT_READINESS_AUTH_SMOKE_REAL`) |
 
 ## Manual completion steps (owner / ops)
 

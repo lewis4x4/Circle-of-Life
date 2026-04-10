@@ -29,6 +29,8 @@
 | `npm run design:review` | Playwright UI snapshots + report |
 | `npm run stress:test` | Logic / chaos simulation suite |
 | `npm run segment:gates` | Hygiene + security + lint + migrations + build + optional UI/a11y |
+| `npm run demo:pilot-readiness` | Bundled local probes — set `BASE_URL`; optional `PILOT_READINESS_AUTH_SMOKE_REAL=1` runs Playwright `demo:auth-smoke:real` (Track A PH1-A04 / PH1-P04) |
+| `npm run demo:auth-smoke:real` | Playwright — four pilot roles; needs running app + seed credentials |
 
 ## References
 
