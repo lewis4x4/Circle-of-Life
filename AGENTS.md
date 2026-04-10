@@ -29,6 +29,7 @@ Mission alignment (`pass` | `risk` | `fail`) must be recorded in every segment h
 |----------|------|
 | **This file (agent operating guide)** | `AGENTS.md` |
 | **Engineer command contract** | `CODEX.md` |
+| **Autonomous loop log (BOOT / FIND / RECORD)** | `docs/Autonomous.md` |
 | **Spec folder (source of truth for what to build)** | `docs/specs/` |
 | **Spec index + build sequence** | `docs/specs/README.md` |
 | **Roadmap orientation (read-only context)** | `docs/roadmap-overview.md` |

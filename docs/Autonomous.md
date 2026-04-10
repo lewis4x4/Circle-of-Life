@@ -180,12 +180,25 @@ From `npm run segment:gates` (see `CODEX.md`): hygiene, security scan, ESLint, m
 
 ---
 
+## RECORD — round 2026-04-10 (loop: AGENTS.md resource table → Autonomous.md)
+
+| Field | Value |
+|-------|--------|
+| **BOOT** | [AGENTS.md](../AGENTS.md) “Where Everything Lives”, `git status` clean @**54e3811**. |
+| **FIND** | **D85+** clinical-gated. **Unblocked:** resource table had **CODEX** + gates but not **`docs/Autonomous.md`** (already in **CODEX** / **CLAUDE** from prior commit). |
+| **BUILD** | [AGENTS.md](../AGENTS.md) — one table row after **`CODEX.md`**. |
+| **Mission alignment** | **pass** — single index for agents matches engineer entrypoints. |
+| **Gate artifact** | `test-results/agent-gates/2026-04-10T12-17-12-644Z-loop-agents-table-autonomous-ref.json` |
+| **Deferred** | **D85+** until clinical sign-off. |
+
+---
+
 ## RECORD — loop exit (optional)
 
 | Field | Value |
 |-------|--------|
 | **date** | **2026-04-10** |
-| **reason** | **D85+** still **clinical / pharmacy** gated. This loop added **Autonomous.md** pointers in **CODEX** / **CLAUDE**; no Module 14 automation without COL sign-off. |
+| **reason** | **D85+** still **clinical / pharmacy** gated. This loop added **`docs/Autonomous.md`** to the **AGENTS** resource table; no Module 14 automation without COL sign-off. |
 | **next_human_action** | Remote **`001`–`120`** parity; COL clinical sign-off for **D85+**; Track A UAT / Pro–BAA–PITR per owner schedule. |
 
 ---
