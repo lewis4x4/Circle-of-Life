@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Activity, Ban, Check, Radio, Server, UserPlus, X } from "lucide-react";
 
@@ -20,6 +20,14 @@ import { tryParsePid5Name } from "@/lib/referrals/hl7-pid-name";
 
 type Row = Database["public"]["Tables"]["referral_hl7_inbound"]["Row"];
 type Status = Database["public"]["Enums"]["referral_hl7_inbound_status"];
+
+const STATUS_FILTERS: { value: "all" | Status; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "pending", label: "Pending" },
+  { value: "processed", label: "Processed" },
+  { value: "failed", label: "Failed" },
+  { value: "ignored", label: "Ignored" },
+];
 
 function previewRaw(s: string) {
   const t = s.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
@@ -72,6 +80,12 @@ export default function AdminReferralsHl7InboundPage() {
   const [creatingLeadId, setCreatingLeadId] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"all" | Status>("all");
+
+  const filteredRows = useMemo(() => {
+    if (statusFilter === "all") return rows;
+    return rows.filter((r) => r.status === statusFilter);
+  }, [rows, statusFilter]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -263,11 +277,38 @@ export default function AdminReferralsHl7InboundPage() {
         </header>
 
         <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-2xl backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative">
-           <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
+           <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1 flex items-center gap-2">
                  <Server className="h-5 w-5 text-indigo-500" /> Message Queue
               </h3>
-              <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-1 uppercase">Most recent first</p>
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400">Status</span>
+                  <select
+                    className={cn(
+                      "h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-900 outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-100",
+                      "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50",
+                    )}
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as "all" | Status)}
+                  >
+                    {STATUS_FILTERS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <p className="text-[10px] font-mono tracking-widest text-slate-400 uppercase">
+                  {rows.length > 0 ? (
+                    <>
+                      Showing {filteredRows.length} of {rows.length} · Most recent first
+                    </>
+                  ) : (
+                    <>Most recent first</>
+                  )}
+                </p>
+              </div>
            </div>
 
            <div className="relative z-10 w-full overflow-hidden">
@@ -300,8 +341,12 @@ export default function AdminReferralsHl7InboundPage() {
                          <div className="p-12 text-center text-slate-500 dark:text-slate-400 text-sm font-medium bg-white/50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5">
                             No HL7 messages yet.
                          </div>
+                       ) : filteredRows.length === 0 ? (
+                         <div className="p-12 text-center text-slate-500 dark:text-slate-400 text-sm font-medium bg-white/50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5">
+                            No messages match this status filter.
+                         </div>
                        ) : (
-                         rows.map((row) => (
+                         filteredRows.map((row) => (
                            <MotionItem key={row.id}>
                               <div className="grid grid-cols-1 sm:grid-cols-[1fr_0.5fr_1fr_2fr_1.5fr_1fr] gap-4 sm:items-center p-5 rounded-2xl bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg transition-all duration-300 w-full outline-none">
                                 <div className="flex flex-col">

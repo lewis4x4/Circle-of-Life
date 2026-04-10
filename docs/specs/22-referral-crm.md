@@ -39,6 +39,8 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 
 **Shipped (Track D65):** Same route — **Copy raw** per row (full **`raw_message`** to clipboard) for quick partner handoff without downloading CSV.
 
+**Shipped (Track D67):** Same route — **status** filter (**All** / **pending** / **processed** / **failed** / **ignored**) on the loaded queue; client-side only; CSV export remains full scope.
+
 **Shipped (Track D27):** **`/admin/referrals`** — **Download leads CSV** (up to **500** **`referral_leads`** rows for the selected facility, **`referral_sources(name)`** join). **No** new DDL.
 
 ---

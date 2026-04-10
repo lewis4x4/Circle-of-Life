@@ -141,7 +141,9 @@
 
 **~~Recommended next segment — D66~~** **DONE (2026-04-10)** — Module **15:** **`/admin/transportation/calendar`** **`?date=`** deep link + request detail **View on transportation calendar** — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D67+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
+**~~Recommended next segment — D67~~** **DONE (2026-04-10)** — Module **22:** **`/admin/referrals/hl7-inbound`** — **status filter** (client-side) — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D68+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
 
 ---
 
