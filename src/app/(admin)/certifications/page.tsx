@@ -149,59 +149,6 @@ export default function AdminCertificationsPage() {
     void load();
   }, [load]);
 
-  const exportCertificationsCsv = useCallback(async () => {
-    setExportingCsv(true);
-    setError(null);
-    try {
-      let q = supabase
-        .from("staff_certifications" as never)
-        .select("*")
-        .is("deleted_at", null)
-        .order("expiration_date", { ascending: true })
-        .limit(500);
-
-      if (isValidFacilityIdForQuery(selectedFacilityId)) {
-        q = q.eq("facility_id", selectedFacilityId);
-      }
-
-      const certRes = (await q) as unknown as QueryResult<Database["public"]["Tables"]["staff_certifications"]["Row"]>;
-      if (certRes.error) throw certRes.error;
-      const certs = certRes.data ?? [];
-      if (certs.length === 0) {
-        const csv = buildCertificationsCsv([]);
-        triggerCsvDownload(`staff-certifications-${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
-        return;
-      }
-
-      const staffIds = [...new Set(certs.map((c) => c.staff_id))];
-      const staffRes = (await supabase
-        .from("staff" as never)
-        .select("id, first_name, last_name, deleted_at")
-        .in("id", staffIds)
-        .is("deleted_at", null)) as unknown as QueryResult<SupabaseStaffMini>;
-      if (staffRes.error) throw staffRes.error;
-
-      const nameById = new Map<string, string>();
-      for (const s of staffRes.data ?? []) {
-        const first = s.first_name?.trim() ?? "";
-        const last = s.last_name?.trim() ?? "";
-        nameById.set(s.id, `${first} ${last}`.trim() || "Staff member");
-      }
-
-      const exportRows: StaffCertExportRow[] = certs.map((c) => ({
-        ...c,
-        staff_display_name: nameById.get(c.staff_id) ?? "Unknown staff",
-      }));
-
-      const csv = buildCertificationsCsv(exportRows);
-      triggerCsvDownload(`staff-certifications-${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to export certifications.");
-    } finally {
-      setExportingCsv(false);
-    }
-  }, [supabase, selectedFacilityId]);
-
   const filteredRows = useMemo(() => {
     const q = search.trim().toLowerCase();
     return rows.filter((row) => {
@@ -216,6 +163,71 @@ export default function AdminCertificationsPage() {
       return matchesSearch && matchesTimeline && matchesDb;
     });
   }, [rows, search, timeline, dbStatus]);
+
+  const exportCertificationsCsv = useCallback(async () => {
+    setExportingCsv(true);
+    setError(null);
+    try {
+      const ids = filteredRows.map((r) => r.id);
+      const hubFiltersDefault =
+        search.trim() === "" &&
+        timeline === DEFAULT_FILTERS.timeline &&
+        dbStatus === DEFAULT_FILTERS.dbStatus;
+      const scope = hubFiltersDefault ? "" : "_filtered";
+      const stamp = format(new Date(), "yyyy-MM-dd");
+
+      if (ids.length === 0) {
+        triggerCsvDownload(`staff-certifications-${stamp}${scope}.csv`, buildCertificationsCsv([]));
+        return;
+      }
+
+      const certRes = (await supabase
+        .from("staff_certifications" as never)
+        .select("*")
+        .in("id", ids)
+        .is("deleted_at", null)) as unknown as QueryResult<
+        Database["public"]["Tables"]["staff_certifications"]["Row"]
+      >;
+      if (certRes.error) throw certRes.error;
+      const certs = certRes.data ?? [];
+      const order = new Map(ids.map((id, i) => [id, i]));
+      const sortedCerts = [...certs].sort(
+        (a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0),
+      );
+
+      if (sortedCerts.length === 0) {
+        triggerCsvDownload(`staff-certifications-${stamp}${scope}.csv`, buildCertificationsCsv([]));
+        return;
+      }
+
+      const staffIds = [...new Set(sortedCerts.map((c) => c.staff_id))];
+      const staffRes = (await supabase
+        .from("staff" as never)
+        .select("id, first_name, last_name, deleted_at")
+        .in("id", staffIds)
+        .is("deleted_at", null)) as unknown as QueryResult<SupabaseStaffMini>;
+      if (staffRes.error) throw staffRes.error;
+
+      const nameById = new Map<string, string>();
+      for (const s of staffRes.data ?? []) {
+        const first = s.first_name?.trim() ?? "";
+        const last = s.last_name?.trim() ?? "";
+        nameById.set(s.id, `${first} ${last}`.trim() || "Staff member");
+      }
+
+      const exportRows: StaffCertExportRow[] = sortedCerts.map((c) => ({
+        ...c,
+        staff_display_name: nameById.get(c.staff_id) ?? "Unknown staff",
+      }));
+
+      const csv = buildCertificationsCsv(exportRows);
+      triggerCsvDownload(`staff-certifications-${stamp}${scope}.csv`, csv);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to export certifications.");
+    } finally {
+      setExportingCsv(false);
+    }
+  }, [supabase, filteredRows, search, timeline, dbStatus]);
 
   const listEmptyCopy = useMemo(
     () =>

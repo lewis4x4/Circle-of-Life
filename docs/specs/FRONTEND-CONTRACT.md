@@ -77,7 +77,7 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 - `/admin/staff` (**roster CSV** hub filter scope — Track D D80)
 - `/admin/staff/new`
 - `/admin/staff/[id]`
-- `/admin/certifications`
+- `/admin/certifications` (**certifications CSV** hub filter scope — Track D D81)
 - `/admin/certifications/new`
 - `/admin/training` (Phase 6 Module 12 — `12-training-competency.md`)
 - `/admin/training/new`
