@@ -122,23 +122,31 @@ export default function AdminReferralsHl7InboundPage() {
     setExportingCsv(true);
     setError(null);
     try {
-      const { data, error: qErr } = await supabase
+      let query = supabase
         .from("referral_hl7_inbound")
         .select("*")
         .eq("facility_id", selectedFacilityId)
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(500);
+      if (statusFilter !== "all") {
+        query = query.eq("status", statusFilter);
+      }
+      const { data, error: qErr } = await query;
       if (qErr) throw qErr;
       const exportRows = (data ?? []) as Row[];
       const csv = buildHl7InboundCsv(exportRows);
-      triggerCsvDownload(`hl7-inbound-queue_${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
+      const day = format(new Date(), "yyyy-MM-dd");
+      const base = `hl7-inbound-queue_${day}`;
+      const filename =
+        statusFilter === "all" ? `${base}.csv` : `${base}_${statusFilter}.csv`;
+      triggerCsvDownload(filename, csv);
     } catch (e) {
       setError(e instanceof Error ? e.message : "CSV export failed.");
     } finally {
       setExportingCsv(false);
     }
-  }, [selectedFacilityId, supabase]);
+  }, [selectedFacilityId, statusFilter, supabase]);
 
   async function createDraftLead(row: Row) {
     if (row.status !== "processed" || row.linked_referral_lead_id) return;
@@ -262,6 +270,11 @@ export default function AdminReferralsHl7InboundPage() {
               variant="outline"
               disabled={noFacility || exportingCsv}
               className="h-14 rounded-full px-6 font-bold uppercase tracking-widest text-xs"
+              title={
+                statusFilter === "all"
+                  ? "Export up to 500 messages (all statuses), most recent first."
+                  : `Export up to 500 ${statusFilter} messages, most recent first.`
+              }
               onClick={() => void exportQueueCsv()}
             >
               {exportingCsv ? "Preparing…" : "Download queue CSV"}

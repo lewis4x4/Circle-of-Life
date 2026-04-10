@@ -143,7 +143,9 @@
 
 **~~Recommended next segment — D67~~** **DONE (2026-04-10)** — Module **22:** **`/admin/referrals/hl7-inbound`** — **status filter** (client-side) — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D68+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
+**~~Recommended next segment — D68~~** **DONE (2026-04-10)** — Module **22:** **`/admin/referrals/hl7-inbound`** — **queue CSV respects status filter** (query + filename) — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D69+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
 
 ---
 
