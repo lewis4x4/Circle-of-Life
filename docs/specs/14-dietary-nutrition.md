@@ -64,7 +64,7 @@ Dietary is also a linchpin for clinical risk: IDDSI texture levels must align wi
 
 **Shipped (Track D53):** **`/admin/dietary/clinical-review`** — hint callouts **echo the primary order’s IDDSI fluid (amber)** and **food (violet)** labels so staff see what triggered the advisory without scrolling the diet panel. **No** logic change to **`med-fluid-diet-hints.ts`**.
 
-**Shipped (Track D54):** **`next.config.ts`** — **`/dietary`** and **`/dietary/*`** **308** redirect to **`/admin/dietary`** (route group otherwise exposes the hub without the `/admin` prefix).
+**Shipped (Track D54–D55):** **`next.config.ts`** — **`/dietary`** and **`/dietary/*`** **308** redirect to **`/admin/dietary`** (route group otherwise exposes the hub without the `/admin` prefix). **D55** applies the same pattern to other `(admin)` hub roots that mirror **`/admin/<segment>`** (see **`next.config.ts`** and **`FRONTEND-CONTRACT.md`**).
 
 - Edge Function: flag solid-dose medications vs. fluid viscosity level (cross-check with `resident_medications`) — **full automation** still deferred pending rules sign-off (see D50 advisory above).
 - Tray ticket generation with resident name, diet order, room/bed.

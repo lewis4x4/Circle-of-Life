@@ -25,6 +25,8 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 
 ### Admin shell routes
 
+Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...`, which would otherwise produce URLs **without** the `/admin` prefix (for example `/staff`). **`next.config.ts`** `redirects` sends **`/<segment>`** and **`/<segment>/*`** to **`/admin/<segment>`** for every hub that has a matching `admin/<segment>` tree (Track D **D54** Module 14 dietary, **D55** all other listed hubs — see the `segments` list in `next.config.ts`). Hubs that exist only under `admin/...` (no duplicate `(admin)/<segment>` root) are unchanged.
+
 - `/admin`
 - `/admin/search` (Phase 3.5 platform search index UI)
 - `/admin/referrals` (Phase 4 Module 1 hub — `01-referral-inquiry.md`)
@@ -81,7 +83,7 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 - `/admin/training/new`
 - `/admin/training/completions/new` (log `staff_training_completions` — Track D D39)
 - `/admin/training/inservice/new` (in-service session + attendees — Track D D42)
-- `/admin/dietary` (Phase 6 Module 14 — `14-dietary-nutrition.md`; **`/dietary` redirects here** — Track D D54)
+- `/admin/dietary` (Phase 6 Module 14 — `14-dietary-nutrition.md`; **`/dietary` redirects here** — Track D D54–D55)
 - `/admin/dietary/new`
 - `/admin/dietary/clinical-review` (read-only diet order + resident medications — Track D13; advisory med–diet hints — Track D50–D53)
 - `/admin/transportation` (Phase 6 Module 15 — `15-transportation.md`)

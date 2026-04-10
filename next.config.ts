@@ -58,12 +58,36 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
-  /** Route group `(admin)` omits `admin` from the path; `/dietary` would bypass shell URL expectations. */
+  /**
+   * Route group `(admin)` omits `admin` from the path; `/training` etc. would bypass `/admin/...` URL expectations.
+   * Only segments with both `(admin)/<segment>/page.tsx` and `admin/<segment>/page.tsx` are listed.
+   */
   async redirects() {
-    return [
-      { source: "/dietary", destination: "/admin/dietary", permanent: true },
-      { source: "/dietary/:path*", destination: "/admin/dietary/:path*", permanent: true },
+    const segments = [
+      "billing",
+      "certifications",
+      "dietary",
+      "executive",
+      "finance",
+      "incidents",
+      "insurance",
+      "payroll",
+      "reports",
+      "reputation",
+      "residents",
+      "schedules",
+      "search",
+      "staff",
+      "staffing",
+      "time-records",
+      "training",
+      "transportation",
+      "vendors",
     ];
+    return segments.flatMap((seg) => [
+      { source: `/${seg}`, destination: `/admin/${seg}`, permanent: true },
+      { source: `/${seg}/:path*`, destination: `/admin/${seg}/:path*`, permanent: true },
+    ]);
   },
   async headers() {
     return [

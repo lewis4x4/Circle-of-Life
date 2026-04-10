@@ -524,6 +524,16 @@
 
 ---
 
+**D55 (2026-04-10):** **Platform — Admin shell canonical URLs** (`FRONTEND-CONTRACT.md`)
+
+**Slice:** **`next.config.ts`** `redirects` — for each hub that has both **`(admin)/<segment>/page.tsx`** and **`admin/<segment>/page.tsx`**, **`/<segment>`** and **`/<segment>/:path*`** → **`/admin/<segment>`** (permanent). Extends **D54** (dietary-only) to **billing, certifications, dietary, executive, finance, incidents, insurance, payroll, reports, reputation, residents, schedules, search, staff, staffing, time-records, training, transportation, vendors**. **No** migration.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-10T00-06-14-016Z-track-d-d55-admin-shell-canonical-redirects.json` (`npm run segment:gates -- --segment "track-d-d55-admin-shell-canonical-redirects" --ui`)
+
+**Mission alignment:** **pass** — consistent operator-facing URLs with the admin shell; no clinical automation.
+
+---
+
 ## Track D — plan (remaining)
 
 **Segments D1–D10:** Closed in repo with gate artifacts above. This completes the **Phase 6 Core visibility / workflow** slices we prioritized for COL (transport, training, dietary, referrals, reputation), plus **D10** org mileage rate.
@@ -542,6 +552,6 @@
 
 **Authoritative README narrative:** [README.md](./README.md) — section **Track D — Phase 6 completion pass**.
 
-**Next segment:** Record as **D55+** in this file when a new bounded slice ships; use migration **`120+`** only when DDL is required ([README.md](./README.md) next free migration).
+**Next segment:** Record as **D56+** in this file when a new bounded slice ships; use migration **`120+`** only when DDL is required ([README.md](./README.md) next free migration).
 
 **Prioritized Enhanced plan (D11+ options, order, checklists):** [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md).
