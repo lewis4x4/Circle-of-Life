@@ -16,12 +16,7 @@ Deno.serve(async (req) => {
   const origin = req.headers.get("origin");
 
   if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: {
-        ...getCorsHeaders(origin),
-        "Access-Control-Allow-Methods": "POST, PATCH, DELETE, OPTIONS",
-      },
-    });
+    return new Response("ok", { headers: getCorsHeaders(origin) });
   }
   if (req.method !== "POST") {
     return jsonResponse({ error: "Method not allowed" }, 405, origin);

@@ -431,8 +431,22 @@ Deno.serve(async (req) => {
       const { error: storageErr } = await admin.storage
         .from("documents")
         .upload(storagePath, fileBuffer, { contentType: file.type });
+      const storageOk = !storageErr;
       if (storageErr) {
-        console.error("Storage upload failed:", storageErr);
+        t.log({
+          event: "storage_upload_failed",
+          outcome: "error",
+          error_message: storageErr.message,
+        });
+      }
+
+      const metadata: Record<string, unknown> = {
+        original_filename: file.name,
+        upload_kind: kind,
+      };
+      if (storageOk) {
+        metadata.storage_bucket = "documents";
+        metadata.storage_path = storagePath;
       }
 
       const { data: doc, error: docInsertErr } = await admin
@@ -446,12 +460,7 @@ Deno.serve(async (req) => {
           audience: gov.audience,
           status: gov.status,
           uploaded_by: user.id,
-          metadata: {
-            storage_bucket: "documents",
-            storage_path: storagePath,
-            original_filename: file.name,
-            upload_kind: kind,
-          },
+          metadata,
         })
         .select("id, workspace_id, title")
         .single();

@@ -73,7 +73,7 @@ Do **not** send `facility_id` and `organization_id` together.
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically.
 
-**Knowledge Base (`ingest`, `knowledge-agent`):** set **`OPENAI_API_KEY`** and **`ANTHROPIC_API_KEY`** in **Edge Functions → Secrets** (same names). Requires DB migration **`126_knowledge_base.sql`** (pgvector + **`documents`** / **`chunks`** + RPCs).
+**Knowledge Base (`ingest`, `knowledge-agent`):** set **`OPENAI_API_KEY`** and **`ANTHROPIC_API_KEY`** in **Edge Functions → Secrets** (same names). Apply migrations **`126_knowledge_base.sql`** then **`130_kb_security_and_schema_reconciliation.sql`** (pgvector + KB tables + RPCs). KB RPCs (`retrieve_evidence`, `log_knowledge_gap`, `increment_usage`) are **`EXECUTE` for `service_role` only** — clients must call these via Edge Functions (JWT verified), not direct PostgREST.
 
 ### Scheduling (monthly invoice generation)
 

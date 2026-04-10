@@ -54,9 +54,17 @@ async function executeTool(
           model: "text-embedding-3-small",
           input: input.query as string,
         }),
+        signal: AbortSignal.timeout(60_000),
       });
+      if (!embRes.ok) {
+        const errText = await embRes.text();
+        return { error: `Embedding API ${embRes.status}: ${errText.slice(0, 500)}` };
+      }
       const embData = await embRes.json();
-      const embedding = embData.data[0].embedding as number[];
+      const embedding = embData?.data?.[0]?.embedding as number[] | undefined;
+      if (!embedding?.length) {
+        return { error: "Embedding API returned no vector" };
+      }
 
       const { data, error } = await admin.rpc("retrieve_evidence", {
         query_embedding: `[${embedding.join(",")}]`,
@@ -346,6 +354,24 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Could not create conversation" }, 500, origin);
     }
     conversationId = conv.id;
+  } else {
+    const { data: existingConv, error: convLookupErr } = await admin
+      .from("chat_conversations")
+      .select("id, user_id, workspace_id")
+      .eq("id", conversationId)
+      .maybeSingle();
+    if (convLookupErr || !existingConv) {
+      t.log({ event: "conv_not_found", outcome: "blocked", conversation_id: conversationId });
+      return jsonResponse({ error: "Conversation not found" }, 404, origin);
+    }
+    if (existingConv.user_id !== user.id) {
+      t.log({ event: "conv_forbidden_user", outcome: "blocked", conversation_id: conversationId });
+      return jsonResponse({ error: "Forbidden" }, 403, origin);
+    }
+    if (existingConv.workspace_id !== workspaceId) {
+      t.log({ event: "conv_forbidden_org", outcome: "blocked", conversation_id: conversationId });
+      return jsonResponse({ error: "Forbidden" }, 403, origin);
+    }
   }
 
   let history: { role: string; content: unknown }[] = [];
