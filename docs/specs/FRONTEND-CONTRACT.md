@@ -27,6 +27,8 @@ The project must not introduce React Router + Vite in parallel with Next.js.
 
 Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...`, which would otherwise produce URLs **without** the `/admin` prefix (for example `/staff`). **`next.config.ts`** `redirects` sends **`/<segment>`** and **`/<segment>/*`** to **`/admin/<segment>`** for every hub that has a matching `admin/<segment>` tree (Track D **D54** Module 14 dietary, **D55** all other listed hubs — see the `segments` list in `next.config.ts`). Hubs that exist only under `admin/...` (no duplicate `(admin)/<segment>` root) are unchanged.
 
+**Admin chrome (`AdminShell`):** The header **Haven** brand (logo + wordmark) links to the marketing home **`/`** — `src/components/layout/AdminShell.tsx`.
+
 - `/admin`
 - `/admin/search` (Phase 3.5 platform search index UI)
 - `/admin/referrals` (Phase 4 Module 1 hub — `01-referral-inquiry.md`; Phase 6 **pipeline status filter + CSV** — `22-referral-crm.md` **D70**; **pipeline search** — **D72**)

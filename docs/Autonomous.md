@@ -232,12 +232,25 @@ From `npm run segment:gates` (see `CODEX.md`): hygiene, security scan, ESLint, m
 
 ---
 
+## RECORD — round 2026-04-10 (loop: FRONTEND-CONTRACT admin brand → /)
+
+| Field | Value |
+|-------|--------|
+| **BOOT** | [FRONTEND-CONTRACT.md](./specs/FRONTEND-CONTRACT.md), `git status` clean @**061ecf2**. |
+| **FIND** | **D85+** clinical-gated. **Unblocked:** canonical contract did not yet state **AdminShell** header brand → **`/`** (**078e2fe**). |
+| **BUILD** | [FRONTEND-CONTRACT.md](./specs/FRONTEND-CONTRACT.md) §2 **Admin chrome** bullet. |
+| **Mission alignment** | **pass** — spec matches shipped UX; no clinical automation. |
+| **Gate artifact** | `test-results/agent-gates/2026-04-10T12-32-57-815Z-loop-frontend-contract-admin-brand-home.json` |
+| **Deferred** | **D85+** until clinical sign-off. |
+
+---
+
 ## RECORD — loop exit (optional)
 
 | Field | Value |
 |-------|--------|
 | **date** | **2026-04-10** |
-| **reason** | **D85+** still **clinical / pharmacy** gated. Loop log updated for **078e2fe** (admin header brand → **`/`**). |
+| **reason** | **D85+** still **clinical / pharmacy** gated. **FRONTEND-CONTRACT** updated for admin header brand; loop log complete for this round. |
 | **next_human_action** | Remote **`001`–`120`** parity; COL clinical sign-off for **D85+**; Track A UAT / Pro–BAA–PITR per owner schedule. |
 
 ---
