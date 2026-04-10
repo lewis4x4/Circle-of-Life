@@ -30,7 +30,7 @@ interface WriteAuditParams {
 export async function writeUserAuditEntry(params: WriteAuditParams): Promise<void> {
   const supabase = createServiceRoleClient();
 
-  const { error } = await supabase.from("user_management_audit_log").insert({
+  const { error } = await supabase.from("user_management_audit_log" as never).insert({
     organization_id: params.organizationId,
     acting_user_id: params.actingUserId,
     target_user_id: params.targetUserId,
@@ -38,7 +38,7 @@ export async function writeUserAuditEntry(params: WriteAuditParams): Promise<voi
     resource_type: params.resourceType ?? "user",
     changes: params.changes,
     reason: params.reason ?? null,
-  });
+  } as any);
 
   if (error) {
     // Log but don't throw — audit failure shouldn't block the operation

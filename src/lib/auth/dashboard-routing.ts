@@ -7,7 +7,7 @@ export interface DashboardConfig {
   /** Landing route for this role */
   route: string;
   /** Which shell to use */
-  shell: "admin" | "caregiver";
+  shell: "admin" | "caregiver" | "family";
   /** Nav groups visible in sidebar */
   visibleGroups: string[];
   /** Sections to render on the dashboard page */

@@ -72,40 +72,40 @@ Multi-entity architecture, insurance + clinical loop, AI-native workflows, **Flo
 
 ## Implementation status in this repo (not the external roadmap file)
 
-*Last refreshed: 2026-04-08.*
+*Last refreshed: 2026-04-10.* Track D D1–D84 shipped; migration parity 001–120 confirmed.
 
 | Module | Spec File | Spec Status | Build Status |
 |--------|-----------|-------------|--------------|
 | 00 — Foundation | `00-foundation.md` | FULL | Core shipped |
 | 00 — Foundation Regulatory | `00-foundation-regulatory.md` | PARTIAL | Core shipped |
-| 01 — Referral & Inquiry | `01-referral-inquiry.md` | PARTIAL + COL notes | Queued |
-| 02 — Admissions | `02-admissions-move-in.md` | PARTIAL + COL notes | Queued / partial UI |
+| 01 — Referral & Inquiry | `01-referral-inquiry.md` | PARTIAL + COL notes | Core shipped — Phase 4 migrations `075`–`076` + Track D referral pipeline (D65–D72) |
+| 02 — Admissions | `02-admissions-move-in.md` | PARTIAL + COL notes | Core shipped — Phase 4 migrations `077`–`078`; UI routes live |
 | 03 — Resident Profile | `03-resident-profile.md` | FULL | Core shipped |
 | 03 — Resident Profile Advanced | `03-resident-profile-advanced.md` | PARTIAL | Core shipped |
 | 04 — Daily Operations | `04-daily-operations.md` | FULL | Core shipped |
-| 04 — Daily Operations Offline | `04-daily-operations-offline.md` | STUB | Pending |
-| 05 — Discharge & Transition | `05-discharge-transition.md` | PARTIAL + COL notes | Queued |
+| 04 — Daily Operations Offline | `04-daily-operations-offline.md` | STUB | Pending — PWA offline beyond `054` deferred |
+| 05 — Discharge & Transition | `05-discharge-transition.md` | PARTIAL + COL notes | Core shipped — Phase 4 migrations `079`–`080`; UI routes live |
 | 06 — Medication Management | `06-medication-management.md` | FULL | Core shipped |
 | 07 — Incident Reporting | `07-incident-reporting.md` | FULL + COL notes | Core shipped |
 | 08 — Compliance Engine | `08-compliance-engine.md` | FULL + COL notes | Core shipped |
 | 09 — Infection Control | `09-infection-control.md` | FULL + COL notes | Core shipped |
-| 10 — Quality Metrics | `10-quality-metrics.md` | PARTIAL + COL notes | In progress |
-| 11 — Staff Management | `11-staff-management.md` | FULL + COL notes | Core shipped |
-| 12 — Training & Competency | `12-training-competency.md` | PARTIAL (promoted from STUB) | Pending |
-| 13 — Payroll Integration | `13-payroll-integration.md` | STUB | Blocked — COL payroll vendor unknown |
-| 14 — Dietary & Nutrition | `14-dietary-nutrition.md` | PARTIAL (promoted from STUB) | Pending |
-| 15 — Transportation | `15-transportation.md` | PARTIAL (promoted from STUB) | Pending |
+| 10 — Quality Metrics | `10-quality-metrics.md` | PARTIAL + COL notes | Core shipped — Phase 5 migrations `081`–`082`; UI routes live |
+| 11 — Staff Management | `11-staff-management.md` | FULL + COL notes | Core shipped + Track D (D29–D37, D60, D79–D84): roster/certs/schedules/shifts/time-records CSVs, filters, bulk approve, shift swap approve/deny |
+| 12 — Training & Competency | `12-training-competency.md` | PARTIAL (promoted from STUB) | Core shipped — migrations `086`–`087`, `115`–`118`; Track D (D2, D20–D21, D38–D43): catalog, completions, inservice, PDF upload, CSVs |
+| 13 — Payroll Integration | `13-payroll-integration.md` | STUB | Core shipped (CSV handoff) — migration `088`; Track D (D17–D18, D26, D58–D59, D64, D69, D73–D74): batch mgmt, time import, mileage import, vendor handoff CSV, hours split CSV. Vendor API blocked — COL payroll vendor unknown |
+| 14 — Dietary & Nutrition | `14-dietary-nutrition.md` | PARTIAL (promoted from STUB) | Core shipped — migration `089`; Track D (D3, D13, D23, D50–D55, D77): clinical review, IDDSI med–diet hints, CSVs, filters, redirects |
+| 15 — Transportation | `15-transportation.md` | PARTIAL (promoted from STUB) | Core shipped — migration `090`, `112`–`114`; Track D (D1, D10, D14–D15, D24–D25, D56–D57, D61–D63, D66, D76, D78): calendar (week+month), .ics, mileage approvals, Google/Outlook links, CSVs, filters |
 | 16 — Billing & Collections | `16-billing.md` | FULL + COL notes | Core shipped |
 | 17 — Entity Finance | `17-entity-facility-finance.md` | PARTIAL + COL notes | Core shipped |
 | 18 — Insurance & Risk | `18-insurance-risk-finance.md` | PARTIAL + COL notes | Core shipped |
-| 19 — Vendor Management | `19-vendor-contract-management.md` | PARTIAL + COL notes | In progress |
-| 21 — Family Portal | `21-family-portal.md` | PARTIAL + COL notes | Queued |
-| 22 — Referral CRM | `22-referral-crm.md` | STUB | Pending |
-| 23 — Reputation | `23-reputation.md` | STUB | Pending |
+| 19 — Vendor Management | `19-vendor-contract-management.md` | PARTIAL + COL notes | Core shipped — migration `046`; 12 admin routes live |
+| 21 — Family Portal | `21-family-portal.md` | PARTIAL + COL notes | Core shipped — Phase 5 migrations `083`–`084`; UI routes live |
+| 22 — Referral CRM | `22-referral-crm.md` | PARTIAL + COL notes | Core shipped — migration `091`; Track D (D4, D12, D16, D22, D27, D65–D72): HL7 Edge processor, pipeline filters/search, Copy raw, CSVs |
+| 23 — Reputation | `23-reputation.md` | PARTIAL + COL notes | Core shipped — migration `092`, `119`; Track D (D4, D19, D28, D44–D49, D75): Google OAuth, manual+cron import, Yelp Fusion, reply posting (Google+Yelp), CSVs |
 | 24 — Executive Intelligence | `24-executive-intelligence.md` | FULL + COL notes | Core shipped |
-| 24 — Executive Intelligence v2 | `24-executive-v2.md` | STUB | Pending |
-| 25 — Resident Assurance Engine | `25-resident-assurance-engine.md` | PARTIAL + COL notes | In progress |
-| 26 — Reporting Module | `26-reporting-module.md` | STUB | Pending |
+| 24 — Executive Intelligence v2 | `24-executive-v2.md` | STUB | Pending — NLQ/scenarios deferred |
+| 25 — Resident Assurance Engine | `25-resident-assurance-engine.md` | PARTIAL + COL notes | In progress — migrations `098`–`109` in repo; full roadmap per owner priority |
+| 26 — Reporting Module | `26-reporting-module.md` | STUB | Pending — skeleton only |
 
 **Spec status key:**
 - `FULL` — Complete: DDL, RLS, API contracts, UI screens, business rules, edge functions
@@ -115,9 +115,8 @@ Multi-entity architecture, insurance + clinical loop, AI-native workflows, **Flo
 - `(promoted from STUB)` — Enriched with COL wiki operational context on April 8, 2026
 
 **Build status key:**
-- `Core shipped` — Migration applied, primary UI live, gates passed
+- `Core shipped` — Migration applied, primary UI live, gates passed (Track D enhancements noted where applicable)
 - `In progress` — Active build or hardening
-- `Queued / partial UI` — Spec complete enough to start; build not yet begun
 - `Pending` — Spec needs more work or COL data before build starts
 - `Blocked` — Cannot proceed without specific external input (noted in cell)
 
@@ -129,14 +128,13 @@ Multi-entity architecture, insurance + clinical loop, AI-native workflows, **Flo
 
 ### Completion-first sequencing
 
-Current position: **closeout + hardening before expanding scope.** Do not start new modules until:
+Current position: **closeout + acceptance before expanding scope.** Track D (D1–D84) has completed the Phase 6 completion pass for modules 11, 12, 13, 14, 15, 22, 23. Do not start new modules until:
 
-1. **Phase 1 acceptance closeout** — RLS JWT matrix, real-auth UAT, env/seed verification, Pro/BAA/PITR attestation, active waiver review. See `TRACK-A-CLOSEOUT-ROADMAP.md`.
-2. **Platform hardening** — automated regression coverage, observability, CI hardening, runbooks.
-3. **Workflow hardening** — billing, eMAR, referral/admission/discharge, family/audit, executive operations.
-4. **COL document collection** — 21 items identified in `docs/haven-gap-analysis.docx`. CRITICAL items must be collected before compliance engine and admission modules can be fully activated.
-5. **Phase 6 completion pass** — deepen training (12), dietary (14), transportation (15), referral CRM (22), reputation (23) beyond manual Core flows.
-6. **Then** resume: Resident Assurance Engine (25), then remaining strategic/moonshot modules.
+1. **Phase 1 acceptance closeout** — A1+A2 done (2026-04-09); A3 real-auth UAT depth, A4 env/seed, A5 Pro/BAA/PITR, A6 waiver review remain. See `TRACK-A-CLOSEOUT-ROADMAP.md`.
+2. **Phases 3–6 formal acceptance** — 47 UAT rows across 5 phase checklists, all PENDING owner walkthrough. See `PHASE3-6-ACCEPTANCE-EXECUTION-LOG.md`.
+3. **COL document collection** — 21 items identified in `docs/haven-gap-analysis.docx`. 5 CRITICAL items must be collected before compliance engine and admission modules can be fully activated.
+4. **Track D Enhanced backlog (D85+)** — optional staged improvements per `TRACK-D-ENHANCED-BACKLOG-PLAN.md`, one bounded slice at a time, owner priority.
+5. **Then** resume: Resident Assurance Engine (25), then remaining strategic/moonshot modules (Track E, migration `121+`).
 
 Use these delivery states consistently: **Spec written → Core shipped → Operationally hardened → Acceptance complete.**
 

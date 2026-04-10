@@ -27,7 +27,7 @@ export function FacilityAccessManager({
   primaryId,
   onPrimaryChange,
 }: FacilityAccessManagerProps) {
-  const { facilities } = useFacilityStore();
+  const { availableFacilities: facilities } = useFacilityStore();
   const [showAdd, setShowAdd] = useState(false);
 
   const available = facilities.filter((f) => !selected.includes(f.id));

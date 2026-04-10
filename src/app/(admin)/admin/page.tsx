@@ -8,6 +8,7 @@ import { AlertCircle, Clock, ShieldAlert, Pill, FileWarning, CheckCircle2, UserC
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminDashboardSnapshot, type AdminDashboardSnapshot } from "@/lib/admin-dashboard-snapshot";
 import { createClient } from "@/lib/supabase/client";
+import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import { cn } from "@/lib/utils";
 
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
@@ -26,19 +27,19 @@ export default function AdminDashboardPage() {
     try {
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
-      
-      const role = sessionData.session?.user?.app_metadata?.role || "facility_admin";
-      
+
+      const role = (sessionData.session?.user?.app_metadata?.app_role as string) || "facility_admin";
+
+      // Role-based routing via centralized config
+      const config = getRoleDashboardConfig(role);
+
+      // Redirect roles that don't land on /admin
       if (role === 'owner' || role === 'org_admin') {
-        router.replace('/admin/executive');
+        router.replace(config.route);
         return;
       }
-      if (role === 'nurse' || role === 'caregiver') {
-        router.replace('/admin/assessments/overdue'); 
-        return;
-      }
-      if (role === 'finance' || role === 'billing') {
-        router.replace('/admin/finance');
+      if (role === 'caregiver' || role === 'housekeeper' || role === 'family') {
+        router.replace(config.route);
         return;
       }
       const data = await fetchAdminDashboardSnapshot(selectedFacilityId);

@@ -65,7 +65,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
     .eq("id", targetUserId)
     .is("deleted_at", null)
     .maybeSingle();
-  if (!target || target.organization_id !== actor.organization_id) {
+  if (!target || target.organization_id !== actor.organization_id!) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
     .from("facilities")
     .select("id, name")
     .eq("id", facility_id)
-    .eq("organization_id", actor.organization_id)
+    .eq("organization_id", actor.organization_id!)
     .is("deleted_at", null)
     .maybeSingle();
   if (!facility) {
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
     .insert({
       user_id: targetUserId,
       facility_id,
-      organization_id: actor.organization_id,
+      organization_id: actor.organization_id!,
       is_primary,
       granted_by: actor.id,
     })
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
 
   // Audit
   await writeUserAuditEntry({
-    organizationId: actor.organization_id,
+    organizationId: actor.organization_id!,
     actingUserId: actor.id,
     targetUserId,
     action: "grant_access",
@@ -216,7 +216,7 @@ export async function DELETE(request: NextRequest, ctx: RouteContext) {
 
   // Audit
   await writeUserAuditEntry({
-    organizationId: actor.organization_id,
+    organizationId: actor.organization_id!,
     actingUserId: actor.id,
     targetUserId,
     action: "revoke_access",

@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { canManageUser, ROLE_HIERARCHY } from "@/lib/rbac";
+import { canManageUser } from "@/lib/rbac";
 import { listUsersQuerySchema, createUserSchema } from "@/lib/validation/user-management";
 import { adminInviteUser, adminCreateUser } from "@/lib/supabase/admin-client";
 import { writeUserAuditEntry } from "@/lib/audit/user-management-audit";
@@ -64,14 +64,14 @@ export async function GET(request: NextRequest) {
   const { page, page_size, search, role, facility_id, status, sort_by, sort_order } = parsed.data;
   const offset = (page - 1) * page_size;
 
-  // Build query
-  let query = admin
+  // Build query — new columns (job_title, manager_user_id) not yet in generated types
+  let query: any = admin
     .from("user_profiles")
     .select(
       "id, email, full_name, phone, app_role, job_title, avatar_url, is_active, last_login_at, manager_user_id, created_at, updated_at, deleted_at",
       { count: "exact" },
     )
-    .eq("organization_id", actor.organization_id);
+    .eq("organization_id", actor.organization_id!);
 
   // Status filter
   if (status === "active") {
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Fetch facility access for each user
-  const userIds = (users ?? []).map((u) => u.id);
+  const userIds = (users ?? []).map((u: any) => u.id);
   let facilityMap: Record<string, Array<{ facility_id: string; facility_name: string; is_primary: boolean }>> = {};
   if (userIds.length > 0) {
     const { data: accessRows } = await admin
@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const data = (users ?? []).map((u) => ({
+  const data = (users ?? []).map((u: any) => ({
     ...u,
     facilities: facilityMap[u.id] ?? [],
   }));
@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
   const { data: facilities } = await admin
     .from("facilities")
     .select("id")
-    .eq("organization_id", actor.organization_id)
+    .eq("organization_id", actor.organization_id!)
     .in("id", facilityIds)
     .is("deleted_at", null);
   if ((facilities ?? []).length !== facilityIds.length) {
@@ -225,13 +225,13 @@ export async function POST(request: NextRequest) {
     if (data.send_invite) {
       const result = await adminInviteUser(data.email, {
         app_role: data.app_role,
-        organization_id: actor.organization_id,
+        organization_id: actor.organization_id!,
       });
       authUserId = result.id;
     } else {
       const result = await adminCreateUser(data.email, {
         app_role: data.app_role,
-        organization_id: actor.organization_id,
+        organization_id: actor.organization_id!,
         email_confirm: true,
       });
       authUserId = result.user.id;
@@ -242,21 +242,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 
-  // Create user_profiles record
+  // Create user_profiles record — new columns need as any
   const { data: profile, error: insertErr } = await admin
     .from("user_profiles")
     .insert({
       id: authUserId,
-      organization_id: actor.organization_id,
+      organization_id: actor.organization_id!,
       email: data.email,
       full_name: data.full_name,
       phone: data.phone ?? null,
-      app_role: data.app_role,
+      app_role: data.app_role as any,
       job_title: data.job_title ?? null,
       avatar_url: data.avatar_url ?? null,
       manager_user_id: data.manager_user_id ?? null,
       is_active: true,
-    })
+    } as any)
     .select()
     .single();
   if (insertErr) {
@@ -267,7 +267,7 @@ export async function POST(request: NextRequest) {
   const accessRows = data.facilities.map((f) => ({
     user_id: authUserId,
     facility_id: f.facility_id,
-    organization_id: actor.organization_id,
+    organization_id: actor.organization_id!,
     is_primary: f.is_primary,
     granted_by: actor.id,
   }));
@@ -278,7 +278,7 @@ export async function POST(request: NextRequest) {
 
   // Audit
   await writeUserAuditEntry({
-    organizationId: actor.organization_id,
+    organizationId: actor.organization_id!,
     actingUserId: actor.id,
     targetUserId: authUserId,
     action: "create",

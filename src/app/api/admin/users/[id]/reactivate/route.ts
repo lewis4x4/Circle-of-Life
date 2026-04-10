@@ -89,7 +89,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
 
   // Audit
   await writeUserAuditEntry({
-    organizationId: actor.organization_id,
+    organizationId: actor.organization_id!,
     actingUserId: actor.id,
     targetUserId,
     action: "reactivate",

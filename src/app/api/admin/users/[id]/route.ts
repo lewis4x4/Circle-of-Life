@@ -7,9 +7,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { canManageUser, getRoleTier } from "@/lib/rbac";
+import { canManageUser } from "@/lib/rbac";
 import { updateUserSchema, deleteUserSchema } from "@/lib/validation/user-management";
-import { adminUpdateUserRole, adminDisableUser, adminEnableUser } from "@/lib/supabase/admin-client";
+import { adminUpdateUserRole, adminDisableUser } from "@/lib/supabase/admin-client";
 import { writeUserAuditEntry } from "@/lib/audit/user-management-audit";
 
 interface RouteContext {
@@ -49,7 +49,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
     .from("user_profiles")
     .select("id, organization_id, email, full_name, phone, app_role, job_title, avatar_url, is_active, last_login_at, manager_user_id, created_at, updated_at, deleted_at")
     .eq("id", id)
-    .maybeSingle();
+    .maybeSingle() as any;
   if (error || !profile) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
@@ -67,10 +67,10 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   return NextResponse.json({
     data: {
       ...profile,
-      facilities: (facilities ?? []).map((f) => ({
+      facilities: (facilities ?? []).map((f: any) => ({
         id: f.id,
         facility_id: f.facility_id,
-        facility_name: (f.facilities as unknown as { name: string })?.name ?? "",
+        facility_name: f.facilities?.name ?? "",
         is_primary: f.is_primary,
         granted_at: f.granted_at,
         granted_by: f.granted_by,
@@ -108,12 +108,12 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
 
   const admin = actor.admin;
 
-  // Fetch target
+  // Fetch target — new columns not yet in generated types
   const { data: target, error: targetErr } = await admin
     .from("user_profiles")
     .select("id, organization_id, email, full_name, phone, app_role, job_title, is_active, manager_user_id")
     .eq("id", id)
-    .maybeSingle();
+    .maybeSingle() as any;
   if (targetErr || !target) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
@@ -196,7 +196,7 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
 
   // Audit
   await writeUserAuditEntry({
-    organizationId: actor.organization_id,
+    organizationId: actor.organization_id!,
     actingUserId: actor.id,
     targetUserId: id,
     action: auditAction,
@@ -272,7 +272,7 @@ export async function DELETE(request: NextRequest, ctx: RouteContext) {
 
   // Audit
   await writeUserAuditEntry({
-    organizationId: actor.organization_id,
+    organizationId: actor.organization_id!,
     actingUserId: actor.id,
     targetUserId: id,
     action: "soft_delete",
