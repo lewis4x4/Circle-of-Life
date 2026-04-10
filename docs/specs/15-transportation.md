@@ -71,6 +71,8 @@ Transportation involves two distinct workflows at COL:
 
 **Shipped (Track D25):** **`/admin/transportation/mileage-approvals`** — **Download mileage CSV** queries up to **500** **`mileage_logs`** rows for the **selected facility** (**`staff`**, **`residents`** joins), RFC-style CSV (amounts in cents, approval and payroll-export IDs). **No** new DDL.
 
+**Shipped (Track D78):** Same route — **CSV** dropdown scopes export: **All rows** | **Pending approval only** (`approved_at` IS NULL) | **Approved only** (`approved_at` IS NOT NULL); filename **`mileage-logs-YYYY-MM-DD_pending.csv`** / **`_approved.csv`** when not **All**. Hub tabs unchanged.
+
 - MVR (motor vehicle record) annual pull workflow with automated reminder.
 - DVIR mobile capture (pre/post trip inspection form on mobile).
 - Mileage reimbursement auto-calculation from IRS rate or custom org rate.

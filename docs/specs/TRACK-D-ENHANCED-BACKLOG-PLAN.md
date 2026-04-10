@@ -163,7 +163,9 @@
 
 **~~Recommended next segment — D77~~** **DONE (2026-04-10)** — Module **14:** **`/admin/dietary`** — **status filter + diet orders CSV scope** — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D78+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
+**~~Recommended next segment — D78~~** **DONE (2026-04-10)** — Module **15:** **`/admin/transportation/mileage-approvals`** — **mileage CSV scope** (pending / approved / all) — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D79+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
 
 ---
 

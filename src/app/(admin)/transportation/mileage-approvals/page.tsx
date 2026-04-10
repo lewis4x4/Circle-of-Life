@@ -93,6 +93,14 @@ function formatUsd(cents: number): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
 }
 
+type MileageCsvScope = "all" | "pending" | "approved";
+
+const MILEAGE_CSV_SCOPE_OPTIONS: { value: MileageCsvScope; label: string }[] = [
+  { value: "all", label: "All rows" },
+  { value: "pending", label: "Pending approval only" },
+  { value: "approved", label: "Approved only" },
+];
+
 export default function MileageApprovalsPage() {
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
@@ -104,6 +112,7 @@ export default function MileageApprovalsPage() {
   const [actorRole, setActorRole] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
+  const [mileageCsvScope, setMileageCsvScope] = useState<MileageCsvScope>("all");
 
   const canApprove = actorRole !== null && APPROVER_ROLES.has(actorRole);
 
@@ -172,11 +181,17 @@ export default function MileageApprovalsPage() {
     setExportingCsv(true);
     setError(null);
     try {
-      const { data, error: qErr } = await supabase
+      let q = supabase
         .from("mileage_logs")
         .select("*, staff(first_name, last_name), residents(first_name, last_name)")
         .eq("facility_id", selectedFacilityId)
-        .is("deleted_at", null)
+        .is("deleted_at", null);
+      if (mileageCsvScope === "pending") {
+        q = q.is("approved_at", null);
+      } else if (mileageCsvScope === "approved") {
+        q = q.not("approved_at", "is", null);
+      }
+      const { data, error: qErr } = await q
         .order("trip_date", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(500);
@@ -184,13 +199,15 @@ export default function MileageApprovalsPage() {
       const rows = (data ?? []) as MileageExportRow[];
       const csv = buildMileageLogsCsv(rows);
       const stamp = format(new Date(), "yyyy-MM-dd");
-      triggerCsvDownload(`mileage-logs-${stamp}.csv`, csv);
+      const scope =
+        mileageCsvScope === "all" ? "" : `_${mileageCsvScope}`;
+      triggerCsvDownload(`mileage-logs-${stamp}${scope}.csv`, csv);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to export mileage logs.");
     } finally {
       setExportingCsv(false);
     }
-  }, [supabase, selectedFacilityId]);
+  }, [supabase, selectedFacilityId, mileageCsvScope]);
 
   const pendingCount = pending.length;
 
@@ -275,6 +292,21 @@ export default function MileageApprovalsPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <span className="whitespace-nowrap font-bold uppercase tracking-widest">CSV</span>
+              <select
+                className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-white/15 dark:bg-white/5 dark:text-slate-100"
+                value={mileageCsvScope}
+                onChange={(e) => setMileageCsvScope(e.target.value as MileageCsvScope)}
+                aria-label="Mileage CSV scope"
+              >
+                {MILEAGE_CSV_SCOPE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             <Button
               type="button"
               variant="outline"
