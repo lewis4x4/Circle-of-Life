@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Banknote, Download } from "lucide-react";
 
@@ -20,6 +20,16 @@ import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 
 type BatchRow = Database["public"]["Tables"]["payroll_export_batches"]["Row"];
+type PayrollBatchStatus = Database["public"]["Enums"]["payroll_export_batch_status"];
+
+const BATCH_STATUS_FILTERS: { value: "all" | PayrollBatchStatus; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "draft", label: "Draft" },
+  { value: "queued", label: "Queued" },
+  { value: "exported", label: "Exported" },
+  { value: "failed", label: "Failed" },
+  { value: "voided", label: "Voided" },
+];
 
 function buildPayrollBatchesCsv(rows: BatchRow[]): string {
   const header = [
@@ -66,6 +76,12 @@ export default function AdminPayrollHubPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<"all" | PayrollBatchStatus>("all");
+
+  const filteredRows = useMemo(() => {
+    if (statusFilter === "all") return rows;
+    return rows.filter((r) => r.status === statusFilter);
+  }, [rows, statusFilter]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -102,18 +118,25 @@ export default function AdminPayrollHubPage() {
     setExportingCsv(true);
     setError(null);
     try {
-      const { data, error: qErr } = await supabase
+      let query = supabase
         .from("payroll_export_batches")
         .select("*")
         .eq("facility_id", selectedFacilityId)
         .is("deleted_at", null)
         .order("period_start", { ascending: false })
         .limit(500);
+      if (statusFilter !== "all") {
+        query = query.eq("status", statusFilter);
+      }
+      const { data, error: qErr } = await query;
       if (qErr) throw qErr;
       const batchRows = (data ?? []) as BatchRow[];
       const csv = buildPayrollBatchesCsv(batchRows);
       const stamp = format(new Date(), "yyyy-MM-dd");
-      triggerCsvDownload(`payroll-export-batches-${stamp}.csv`, csv);
+      const base = `payroll-export-batches-${stamp}`;
+      const filename =
+        statusFilter === "all" ? `${base}.csv` : `${base}_${statusFilter}.csv`;
+      triggerCsvDownload(filename, csv);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to export payroll batches.");
     } finally {
@@ -149,7 +172,9 @@ export default function AdminPayrollHubPage() {
                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                   <Banknote className="h-3.5 w-3.5" /> Export Batches
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1">{rows.length}</p>
+                <p className="text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1">
+                  {filteredRows.length}
+                </p>
               </div>
             </V2Card>
           </div>
@@ -181,24 +206,57 @@ export default function AdminPayrollHubPage() {
 
       <div className="relative overflow-visible z-10 w-full mt-4">
         <div className="relative z-10 p-4 sm:p-6 mb-4 glass-panel rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-2xl">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Batches</h3>
-              <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
-                Pay period window and provider label. Open a batch for line items and line-level CSV; list batch metadata
-                export below.
-              </p>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Batches</h3>
+                <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
+                  Pay period window and provider label. Open a batch for line items and line-level CSV; list batch metadata
+                  export below.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!facilityReady || exportingCsv}
+                className="h-11 shrink-0 gap-2 rounded-full font-mono text-[10px] font-bold uppercase tracking-widest"
+                title={
+                  statusFilter === "all"
+                    ? "Export up to 500 batches (all statuses), most recent period first."
+                    : `Export up to 500 ${statusFilter} batches, most recent period first.`
+                }
+                onClick={() => void exportBatchesCsv()}
+              >
+                <Download className="h-4 w-4" aria-hidden />
+                {exportingCsv ? "Preparing…" : "Download batches CSV"}
+              </Button>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!facilityReady || exportingCsv}
-              className="h-11 shrink-0 gap-2 rounded-full font-mono text-[10px] font-bold uppercase tracking-widest"
-              onClick={() => void exportBatchesCsv()}
-            >
-              <Download className="h-4 w-4" aria-hidden />
-              {exportingCsv ? "Preparing…" : "Download batches CSV"}
-            </Button>
+            {facilityReady ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400">Status</span>
+                  <select
+                    className={cn(
+                      "h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-900 outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-100",
+                      "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50",
+                    )}
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as "all" | PayrollBatchStatus)}
+                  >
+                    {BATCH_STATUS_FILTERS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {rows.length > 0 ? (
+                  <p className="text-[10px] font-mono tracking-widest text-slate-400 uppercase">
+                    Showing {filteredRows.length} of {rows.length} · Period desc
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </div>
         
@@ -206,9 +264,11 @@ export default function AdminPayrollHubPage() {
            <p className="text-sm font-mono text-slate-500">Loading…</p>
         ) : !facilityReady ? null : rows.length === 0 ? (
            <p className="text-sm font-mono text-slate-500">No payroll export batches for this facility yet.</p>
+        ) : filteredRows.length === 0 ? (
+           <p className="text-sm font-mono text-slate-500">No batches match this status filter.</p>
         ) : (
           <MotionList className="space-y-3">
-             {rows.map((row) => (
+             {filteredRows.map((row) => (
                <MotionItem key={row.id}>
                  <Link
                    href={`/admin/payroll/${row.id}`}
