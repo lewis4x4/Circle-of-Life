@@ -127,7 +127,9 @@
 
 **~~Recommended next segment — D59~~** **DONE (2026-04-10)** — Module **13:** **`/admin/payroll/[id]`** **flat CSV** export (hours/miles columns) — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D60+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
+**~~Recommended next segment — D60~~** **DONE (2026-04-10)** — Module **11:** **`/admin/time-records`** **bulk approve** pending punches — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D61+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
 
 ---
 

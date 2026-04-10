@@ -137,6 +137,7 @@ export default function AdminTimeRecordsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
+  const [approvingBulk, setApprovingBulk] = useState(false);
   const [search, setSearch] = useState(DEFAULT_FILTERS.search);
   const [approved, setApproved] = useState(DEFAULT_FILTERS.approved);
 
@@ -242,6 +243,49 @@ export default function AdminTimeRecordsPage() {
 
   const pendingApproval = rows.filter((r) => !r.approved && r.clockOut).length;
 
+  const bulkApprovePending = useCallback(async () => {
+    if (!isValidFacilityIdForQuery(selectedFacilityId)) {
+      setError("Select a facility to approve punches.");
+      return;
+    }
+    const pending = rows.filter((r) => !r.approved && r.clockOut);
+    if (pending.length === 0) return;
+
+    setApprovingBulk(true);
+    setError(null);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Sign in required.");
+
+      const now = new Date().toISOString();
+      const ids = pending.map((r) => r.id);
+
+      const { error: uErr } = await supabase
+        .from("time_records" as never)
+        .update({
+          approved: true,
+          approved_at: now,
+          approved_by: user.id,
+          updated_by: user.id,
+        } as never)
+        .in("id", ids)
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .eq("approved", false)
+        .not("clock_out", "is", null);
+
+      if (uErr) throw uErr;
+
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Bulk approve failed.");
+    } finally {
+      setApprovingBulk(false);
+    }
+  }, [load, rows, selectedFacilityId, supabase]);
+
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <AmbientMatrix hasCriticals={pendingApproval > 0} 
@@ -324,18 +368,36 @@ export default function AdminTimeRecordsPage() {
                 Newest first; open staff profile for employment context.
               </p>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="shrink-0 font-mono text-[10px] uppercase tracking-widest"
-              disabled={exportingCsv}
-              aria-busy={exportingCsv}
-              onClick={() => void exportTimeRecordsCsv()}
-            >
-              <Download className="mr-2 h-3.5 w-3.5" aria-hidden />
-              {exportingCsv ? "Exporting…" : "Download time records CSV"}
-            </Button>
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="font-mono text-[10px] uppercase tracking-widest border-amber-300 text-amber-900 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-100 dark:hover:bg-amber-950/40"
+                disabled={
+                  approvingBulk ||
+                  exportingCsv ||
+                  pendingApproval === 0 ||
+                  !isValidFacilityIdForQuery(selectedFacilityId)
+                }
+                aria-busy={approvingBulk}
+                onClick={() => void bulkApprovePending()}
+              >
+                {approvingBulk ? "Approving…" : `Approve all pending (${pendingApproval})`}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="font-mono text-[10px] uppercase tracking-widest"
+                disabled={exportingCsv || approvingBulk}
+                aria-busy={exportingCsv}
+                onClick={() => void exportTimeRecordsCsv()}
+              >
+                <Download className="mr-2 h-3.5 w-3.5" aria-hidden />
+                {exportingCsv ? "Exporting…" : "Download time records CSV"}
+              </Button>
+            </div>
           </div>
           <MotionList className="space-y-3">
             {filteredRows.map((row) => (
