@@ -97,6 +97,7 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 - `/admin/transportation/drivers/new`
 - `/admin/schedules` (**schedule weeks CSV** hub filter scope — Track D D82)
 - `/admin/schedules/new`
+- `/admin/shift-swaps` (**shift swap CSV** hub filter scope — Track D D83)
 - `/admin/time-records` (bulk approve pending punches with clock-out — Track D60; CSV — D31; **CSV matches approval filter** — D79)
 - `/admin/payroll` (Phase 6 — `13-payroll-integration.md`; **batch status filter + CSV** — D73; **hub search** — D74)
 - `/admin/payroll/new`

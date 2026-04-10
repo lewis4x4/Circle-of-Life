@@ -159,6 +159,71 @@ export default function AdminShiftSwapsPage() {
     });
   }, [rows, search, status]);
 
+  const exportShiftSwapsCsv = useCallback(async () => {
+    setExportingCsv(true);
+    setNotice(null);
+    try {
+      const ids = filteredRows.map((r) => r.id);
+      const hubFiltersDefault =
+        search.trim() === "" && status === DEFAULT_FILTERS.status;
+      const scope = hubFiltersDefault ? "" : "_filtered";
+      const stamp = format(new Date(), "yyyy-MM-dd");
+
+      if (ids.length === 0) {
+        triggerCsvDownload(`shift-swap-requests-${stamp}${scope}.csv`, buildShiftSwapsCsv([]));
+        return;
+      }
+
+      const res = (await supabase
+        .from("shift_swap_requests" as never)
+        .select("*")
+        .in("id", ids)
+        .is("deleted_at", null)) as unknown as QueryResult<SwapRowDb>;
+      if (res.error) throw res.error;
+      const raw = res.data ?? [];
+      const order = new Map(ids.map((id, i) => [id, i]));
+      const list = raw.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+
+      if (list.length === 0) {
+        triggerCsvDownload(`shift-swap-requests-${stamp}${scope}.csv`, buildShiftSwapsCsv([]));
+        return;
+      }
+
+      const staffIds = new Set<string>();
+      for (const r of list) {
+        staffIds.add(r.requesting_staff_id);
+        if (r.covering_staff_id) staffIds.add(r.covering_staff_id);
+      }
+
+      const staffRes = (await supabase
+        .from("staff" as never)
+        .select("id, first_name, last_name, deleted_at")
+        .in("id", [...staffIds])
+        .is("deleted_at", null)) as unknown as QueryResult<SupabaseStaffMini>;
+      if (staffRes.error) throw staffRes.error;
+
+      const byId = new Map<string, SupabaseStaffMini>();
+      for (const s of staffRes.data ?? []) {
+        byId.set(s.id, s);
+      }
+
+      const exportRows: SwapExportRow[] = list.map((row) => ({
+        ...row,
+        requesting_staff_display_name: staffDisplayName(byId.get(row.requesting_staff_id)),
+        covering_staff_display_name: row.covering_staff_id
+          ? staffDisplayName(byId.get(row.covering_staff_id))
+          : "",
+      }));
+
+      const csv = buildShiftSwapsCsv(exportRows);
+      triggerCsvDownload(`shift-swap-requests-${stamp}${scope}.csv`, csv);
+    } catch (e) {
+      setNotice(e instanceof Error ? e.message : "Export failed.");
+    } finally {
+      setExportingCsv(false);
+    }
+  }, [supabase, filteredRows, search, status]);
+
   const pendingCount = useMemo(
     () => rows.filter((r) => r.status.toLowerCase() === "pending").length,
     [rows],
@@ -251,64 +316,6 @@ export default function AdminShiftSwapsPage() {
       setActionId(null);
     }
   }, [denyTargetId, denyReason, supabase, load]);
-
-  const exportShiftSwapsCsv = useCallback(async () => {
-    setExportingCsv(true);
-    setNotice(null);
-    try {
-      let q = supabase
-        .from("shift_swap_requests" as never)
-        .select("*")
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-        .limit(500);
-
-      if (isValidFacilityIdForQuery(selectedFacilityId)) {
-        q = q.eq("facility_id", selectedFacilityId);
-      }
-
-      const res = (await q) as unknown as QueryResult<SwapRowDb>;
-      if (res.error) throw res.error;
-      const list = res.data ?? [];
-      if (list.length === 0) {
-        triggerCsvDownload(`shift-swap-requests-${format(new Date(), "yyyy-MM-dd")}.csv`, buildShiftSwapsCsv([]));
-        return;
-      }
-
-      const staffIds = new Set<string>();
-      for (const r of list) {
-        staffIds.add(r.requesting_staff_id);
-        if (r.covering_staff_id) staffIds.add(r.covering_staff_id);
-      }
-
-      const staffRes = (await supabase
-        .from("staff" as never)
-        .select("id, first_name, last_name, deleted_at")
-        .in("id", [...staffIds])
-        .is("deleted_at", null)) as unknown as QueryResult<SupabaseStaffMini>;
-      if (staffRes.error) throw staffRes.error;
-
-      const byId = new Map<string, SupabaseStaffMini>();
-      for (const s of staffRes.data ?? []) {
-        byId.set(s.id, s);
-      }
-
-      const exportRows: SwapExportRow[] = list.map((row) => ({
-        ...row,
-        requesting_staff_display_name: staffDisplayName(byId.get(row.requesting_staff_id)),
-        covering_staff_display_name: row.covering_staff_id
-          ? staffDisplayName(byId.get(row.covering_staff_id))
-          : "",
-      }));
-
-      const csv = buildShiftSwapsCsv(exportRows);
-      triggerCsvDownload(`shift-swap-requests-${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
-    } catch (e) {
-      setNotice(e instanceof Error ? e.message : "Export failed.");
-    } finally {
-      setExportingCsv(false);
-    }
-  }, [supabase, selectedFacilityId]);
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
