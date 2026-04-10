@@ -105,10 +105,10 @@ async function runArAgingSummary(params: ExecuteParams): Promise<ReportExecution
   today.setHours(0, 0, 0, 0);
 
   let notYetDue = 0;
-  let d1_30 = 0;
-  let d31_60 = 0;
-  let d61_90 = 0;
-  let d90 = 0;
+  let bucket1To30Cents = 0;
+  let bucket31To60Cents = 0;
+  let bucket61To90Cents = 0;
+  let bucketOver90Cents = 0;
   let total = 0;
 
   const detailRows: Record<string, string | number | null>[] = [];
@@ -120,10 +120,10 @@ async function runArAgingSummary(params: ExecuteParams): Promise<ReportExecution
     const diffMs = today.getTime() - due.getTime();
     const daysPast = Math.floor(diffMs / 86400000);
     if (daysPast <= 0) notYetDue += bal;
-    else if (daysPast <= 30) d1_30 += bal;
-    else if (daysPast <= 60) d31_60 += bal;
-    else if (daysPast <= 90) d61_90 += bal;
-    else d90 += bal;
+    else if (daysPast <= 30) bucket1To30Cents += bal;
+    else if (daysPast <= 60) bucket31To60Cents += bal;
+    else if (daysPast <= 90) bucket61To90Cents += bal;
+    else bucketOver90Cents += bal;
 
     detailRows.push({
       invoice_number: inv.invoice_number,
@@ -138,10 +138,10 @@ async function runArAgingSummary(params: ExecuteParams): Promise<ReportExecution
     { key: "arOpenInvoiceCount", value: invRows.length },
     { key: "arTotalBalanceCents", value: total },
     { key: "arNotYetDueCents", value: notYetDue },
-    { key: "arDays1To30Cents", value: d1_30 },
-    { key: "arDays31To60Cents", value: d31_60 },
-    { key: "arDays61To90Cents", value: d61_90 },
-    { key: "arDaysOver90Cents", value: d90 },
+    { key: "arDays1To30Cents", value: bucket1To30Cents },
+    { key: "arDays31To60Cents", value: bucket31To60Cents },
+    { key: "arDays61To90Cents", value: bucket61To90Cents },
+    { key: "arDaysOver90Cents", value: bucketOver90Cents },
   ];
 
   return {
@@ -194,9 +194,11 @@ async function runIncidentTrendSummary(params: ExecuteParams): Promise<ReportExe
     discovered_at: r.discovered_at,
   }));
 
+  const incidents30dTotal = rows.length;
+
   return {
     summary: [
-      { key: "incidentsRecorded30d", value: rows.length },
+      { key: "incidentsRecorded30d", value: incidents30dTotal },
       { key: "incidentsFallRelated30d", value: fallCt },
       { key: "incidentsMedicationRelated30d", value: medCt },
       { key: "openIncidentsSnapshot", value: kpi.clinical.openIncidents },
@@ -233,9 +235,11 @@ async function runStaffingCoverageByShift(params: ExecuteParams): Promise<Report
     else if (r.shift_type === "night") nightCt += 1;
   }
 
+  const shiftAssignmentRowCount = rows.length;
+
   return {
     summary: [
-      { key: "shiftAssignmentsScheduled14d", value: rows.length },
+      { key: "shiftAssignmentsScheduled14d", value: shiftAssignmentRowCount },
       { key: "coverageDayShifts14d", value: dayCt },
       { key: "coverageEveningShifts14d", value: eveCt },
       { key: "coverageNightShifts14d", value: nightCt },
@@ -280,9 +284,11 @@ async function runOvertimeLaborPressure(params: ExecuteParams): Promise<ReportEx
     }
   }
 
+  const timeRecordRowCount = rows.length;
+
   return {
     summary: [
-      { key: "timePunches30d", value: rows.length },
+      { key: "timePunches30d", value: timeRecordRowCount },
       { key: "overtimeHoursTotal30d", value: Math.round(otHours * 10) / 10 },
       { key: "distinctStaffWithOvertime30d", value: staffWithOt.size },
     ],
@@ -491,10 +497,12 @@ async function runSurveyReadinessSummary(params: ExecuteParams): Promise<ReportE
   const { count, error } = await closedQ;
   if (error) throw new Error(error.message);
 
+  const deficienciesClosedInWindow = count ?? 0;
+
   return {
     summary: [
       { key: "openSurveyDeficiencies", value: kpi.compliance.openSurveyDeficiencies },
-      { key: "surveyDeficienciesClosed30d", value: count ?? 0 },
+      { key: "surveyDeficienciesClosed30d", value: deficienciesClosedInWindow },
     ],
     rows: [],
     footnotes: [

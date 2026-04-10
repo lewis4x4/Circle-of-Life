@@ -221,7 +221,7 @@ Defer **23 OAuth**, **22 MLLP**, **14 full rule engine** until product/security 
 
 - **Track A** can remain skipped for **engineering** progress; PHI production still needs owner attestation separately.
 - **COL clinical sign-off** required before **automated** dietary or HL7 **lead creation**.
-- **Next migration number** in README: **`120`** — use for the next DDL (D44 shipped **`119`**).
+- **Next migration number** in README: **`121`** — use for the next DDL (multi-facility demo seed shipped **`120`**).
 
 ---
 

@@ -2,9 +2,9 @@
 
 **Purpose:** Record **repo and CLI** checks for target Supabase alignment. **Dashboard-only** items (Pro, BAA, PITR) remain **owner-confirmed**.
 
-**Last run (repo/CLI):** 2026-04-10 — `npm run migrations:check`: **119** migration files **001–119** in [`supabase/migrations/`](../../supabase/migrations/) — see [README.md](./README.md) (next migration **120**).
+**Last run (repo/CLI):** 2026-04-10 — `npm run migrations:check`: **120** migration files **001–120** in [`supabase/migrations/`](../../supabase/migrations/) — see [README.md](./README.md) (next migration **121**).
 
-**Last run (remote):** Re-run `supabase migration list` after **`119`** (`supabase db push`); prior **PASS** was **001–118** on **`manfqmasfqppukpobpld`** before **`119`** (reputation Google OAuth credentials). Re-run after each migration-adding PR before release.
+**Last run (remote):** Re-run `supabase migration list` after **`120`** (`supabase db push`). Re-run after each migration-adding PR before release.
 
 **Edge Functions:** Inventory and secrets: [`supabase/functions/README.md`](../../supabase/functions/README.md) (**10** function folders). **`npm run demo:ops-status`** checks a **core** set of deployed slugs are **ACTIVE** on the linked project; confirm **`process-referral-hl7-inbound`** separately if you rely on Module 22 HL7 processing.
 
@@ -28,9 +28,9 @@ Command: `supabase migration list`
 
 **Canonical ops flow:** [PHASE1-OPS-VERIFICATION-RUNBOOK.md](./PHASE1-OPS-VERIFICATION-RUNBOOK.md)
 
-**Local repo (file count / sequence):** **PASS** — `migrations:check` reports **001–119** (2026-04-10).
+**Local repo (file count / sequence):** **PASS** — `migrations:check` reports **001–120** (2026-04-10).
 
-**Remote (target Supabase project):** Apply **`119`** then confirm parity **001–119** (`manfqmasfqppukpobpld`). If a pull adds `120+`, run `supabase db push` (or CI) until this command shows parity again.
+**Remote (target Supabase project):** Apply **`120`** then confirm parity **001–120** (`manfqmasfqppukpobpld`). If a pull adds `121+`, run `supabase db push` (or CI) until this command shows parity again.
 
 ---
 
@@ -60,7 +60,7 @@ Command: `supabase migration list`
 | ID | Repo/CLI result | Owner still required |
 |----|-----------------|----------------------|
 | PH1-P01 | **PASS** — owner confirmed project ref | Brian Lewis — 2026-04-06: active project `manfqmasfqppukpobpld`; confirm `.env.local` `NEXT_PUBLIC_SUPABASE_URL` still matches (not committed) |
-| PH1-P02 | **PASS (2026-04-10)** | `supabase migration list` — **001–119** local/remote parity after **`119`** pushed (re-verify remote after each migration PR) |
+| PH1-P02 | **PASS (2026-04-10)** | `supabase migration list` — **001–120** local/remote parity after **`120`** pushed (re-verify remote after each migration PR) |
 | PH1-P03–P04 | — | Seed + facility selector UAT; current remediation scope is single-facility pilot |
 | PH1-P05 | N/A until Storage uploads | — |
 | PH1-P06 | — | Dashboard: Pro / BAA / PITR |
