@@ -40,6 +40,8 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 
 **Shipped (Track D64):** Same route — third download **`Download CSV (vendor handoff)`**: **`period_start`**, **`period_end`**, idempotency, staff names, **`line_kind`**, **`hours`**, **`miles`**, **`amount_usd`** (two decimal places from **`amount_cents`**). **`buildPayrollLinesCsvVendorHandoff`**. ADP/Gusto **exact** proprietary templates remain defer.
 
+**Shipped (Track D69):** Same route — fourth download **`Download CSV (hours split)`**: same period + idempotency + staff + **`line_kind`** + **`miles`** + **`amount_usd`** as vendor handoff shape, but **`regular_hours`**, **`overtime_hours`**, and **`total_hours`** (payload-derived; **`total_hours`** matches flat/single-hours logic) for **`time_record_hours`** lines. **`buildPayrollLinesCsvHoursSplit`**. Generic columns only — not vendor-proprietary layouts.
+
 - Provider-specific proprietary column layouts (defer).
 
 ---

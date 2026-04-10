@@ -12,6 +12,7 @@ import { triggerCsvDownload } from "@/lib/csv-export";
 import {
   buildPayrollLinesCsvFlat,
   buildPayrollLinesCsvGeneric,
+  buildPayrollLinesCsvHoursSplit,
   buildPayrollLinesCsvVendorHandoff,
   type PayrollExportLineRow,
 } from "@/lib/payroll/payroll-export-csv";
@@ -455,7 +456,10 @@ export default function AdminPayrollBatchDetailPage() {
                 <CardDescription>
                   Full export includes JSON payload per row. Flat export adds parsed hours (time lines) and miles
                   (mileage) columns without a JSON field. Vendor handoff adds pay-period columns and{' '}
-                  <span className="font-mono text-xs">amount_usd</span> (not ADP/Gusto proprietary layouts).
+                  <span className="font-mono text-xs">amount_usd</span> (not ADP/Gusto proprietary layouts). Hours split
+                  adds separate <span className="font-mono text-xs">regular_hours</span> /{' '}
+                  <span className="font-mono text-xs">overtime_hours</span> /{' '}
+                  <span className="font-mono text-xs">total_hours</span> for time lines.
                 </CardDescription>
               </div>
               {lines.length > 0 && batch && (
@@ -507,6 +511,25 @@ export default function AdminPayrollBatchDetailPage() {
                     }}
                   >
                     Download CSV (vendor handoff)
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="shrink-0"
+                    title="Regular / overtime / total hours for time lines; generic columns, not vendor-specific layouts."
+                    onClick={() => {
+                      const csv = buildPayrollLinesCsvHoursSplit(toExportRows(lines), {
+                        period_start: batch.period_start,
+                        period_end: batch.period_end,
+                      });
+                      const safeProv = batch.provider.replace(/[^a-zA-Z0-9._-]+/g, "_");
+                      triggerCsvDownload(
+                        `payroll-export-hours-split_${batch.period_start}_${batch.period_end}_${safeProv}.csv`,
+                        csv,
+                      );
+                    }}
+                  >
+                    Download CSV (hours split)
                   </Button>
                 </div>
               )}
