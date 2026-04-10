@@ -1,5 +1,7 @@
 # Segment handoff — {{segment_id}}
 
+**See also:** Autonomous loop continuity (BOOT / FIND / RECORD) — `docs/Autonomous.md`.
+
 ## Summary
 
 - **Segment id:** {{segment_id}}

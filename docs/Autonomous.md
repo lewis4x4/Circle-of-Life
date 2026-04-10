@@ -271,12 +271,25 @@ From `npm run segment:gates` (see `CODEX.md`): hygiene, security scan, ESLint, m
 
 ---
 
+## RECORD — round 2026-04-10 (loop: segment-handoff template → Autonomous.md)
+
+| Field | Value |
+|-------|--------|
+| **BOOT** | [segment-handoff.md](../agents/templates/segment-handoff.md), `git status` clean @**2b73021**. |
+| **FIND** | **D85+** clinical-gated. **Unblocked:** segment handoff template had no **`docs/Autonomous.md`** cross-link. |
+| **BUILD** | [segment-handoff.md](../agents/templates/segment-handoff.md) — **See also** line under title. |
+| **Mission alignment** | **pass** — handoffs align with loop continuity discipline. |
+| **Gate artifact** | `test-results/agent-gates/2026-04-10T12-44-06-696Z-loop-segment-handoff-autonomous-ref.json` |
+| **Deferred** | **D85+** Edge/cron automation. |
+
+---
+
 ## RECORD — loop exit (optional)
 
 | Field | Value |
 |-------|--------|
 | **date** | **2026-04-10** |
-| **reason** | **D85+** still **clinical / pharmacy** gated. This loop linked **`docs/Autonomous.md`** from **`.cursor/rules/segment-gates-cursor.mdc`**. |
+| **reason** | **D85+** still **clinical / pharmacy** gated. This loop linked **`docs/Autonomous.md`** from **`agents/templates/segment-handoff.md`**. |
 | **next_human_action** | Remote **`001`–`120`** parity; COL clinical sign-off for **D85+**; Track A UAT / Pro–BAA–PITR per owner schedule. |
 
 ---
