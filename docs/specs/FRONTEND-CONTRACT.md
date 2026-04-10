@@ -97,7 +97,7 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 - `/admin/transportation/drivers/new`
 - `/admin/schedules`
 - `/admin/schedules/new`
-- `/admin/time-records` (bulk approve pending punches with clock-out — Track D60; CSV — D31)
+- `/admin/time-records` (bulk approve pending punches with clock-out — Track D60; CSV — D31; **CSV matches approval filter** — D79)
 - `/admin/payroll` (Phase 6 — `13-payroll-integration.md`; **batch status filter + CSV** — D73; **hub search** — D74)
 - `/admin/payroll/new`
 - `/admin/payroll/[id]` (import mileage + **approved time records** into lines — Track D17 + D58; **full + flat + vendor handoff + hours split CSV** — D18 + D59 + D64 + D69)

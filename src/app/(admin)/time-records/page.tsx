@@ -172,13 +172,21 @@ export default function AdminTimeRecordsPage() {
       if (isValidFacilityIdForQuery(selectedFacilityId)) {
         q = q.eq("facility_id", selectedFacilityId);
       }
+      if (approved === "yes") {
+        q = q.eq("approved", true);
+      } else if (approved === "no") {
+        q = q.eq("approved", false);
+      }
 
       const res = (await q) as unknown as QueryResult<Database["public"]["Tables"]["time_records"]["Row"]>;
       if (res.error) throw res.error;
       const list = res.data ?? [];
+      const scope =
+        approved === "all" ? "" : approved === "yes" ? "_approved" : "_not_approved";
+      const stamp = format(new Date(), "yyyy-MM-dd");
       if (list.length === 0) {
         const csv = buildTimeRecordsCsv([]);
-        triggerCsvDownload(`time-records-${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
+        triggerCsvDownload(`time-records-${stamp}${scope}.csv`, csv);
         return;
       }
 
@@ -203,13 +211,13 @@ export default function AdminTimeRecordsPage() {
       }));
 
       const csv = buildTimeRecordsCsv(exportRows);
-      triggerCsvDownload(`time-records-${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
+      triggerCsvDownload(`time-records-${stamp}${scope}.csv`, csv);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to export time records.");
     } finally {
       setExportingCsv(false);
     }
-  }, [supabase, selectedFacilityId]);
+  }, [supabase, selectedFacilityId, approved]);
 
   const filteredRows = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -365,7 +373,8 @@ export default function AdminTimeRecordsPage() {
             <div>
               <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Recent punches</h3>
               <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
-                Newest first; open staff profile for employment context.
+                Newest first; open staff profile for employment context. Download includes up to 500 rows matching the
+                approval filter above (search is list-only).
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 shrink-0">
