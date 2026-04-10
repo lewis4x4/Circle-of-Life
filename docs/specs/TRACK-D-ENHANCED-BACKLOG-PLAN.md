@@ -129,7 +129,9 @@
 
 **~~Recommended next segment — D60~~** **DONE (2026-04-10)** — Module **11:** **`/admin/time-records`** **bulk approve** pending punches — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D61+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
+**~~Recommended next segment — D61~~** **DONE (2026-04-10)** — Module **15:** **`/admin/transportation/requests/[id]`** **Add to Google Calendar** (template URL; one-way add) — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D62+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
 
 ---
 

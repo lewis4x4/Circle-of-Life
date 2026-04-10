@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { format, parseISO } from "date-fns";
+import { addHours, format, parseISO } from "date-fns";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,7 @@ import {
   normalizeTimeForDb,
   residentTransportRequestUpdateSchema,
 } from "@/lib/transport/transport-request-schemas";
+import { buildGoogleCalendarTemplateUrl } from "@/lib/transport/google-calendar-template-url";
 import {
   isCredentialDateValid,
   wheelchairVehicleError,
@@ -341,6 +342,25 @@ export default function EditResidentTransportRequestPage() {
 
   const showMileageHint = transportType === "staff_personal_vehicle" && Boolean(driverStaffId);
 
+  const googleCalendarHref = useMemo(() => {
+    if (!row) return null;
+    if (!appointmentDate) return null;
+    const timePart = appointmentTime.trim() || "09:00";
+    const start = new Date(`${appointmentDate}T${timePart}:00`);
+    if (Number.isNaN(start.getTime())) return null;
+    const end = addHours(start, 1);
+    const rn = row.residents
+      ? `${row.residents.first_name} ${row.residents.last_name}`
+      : "Resident";
+    return buildGoogleCalendarTemplateUrl({
+      title: `Transport: ${rn} — ${destinationName}`,
+      details: [purpose.trim(), notes.trim()].filter(Boolean).join("\n\n") || undefined,
+      location: [destinationName.trim(), destinationAddress.trim()].filter(Boolean).join(" — ") || undefined,
+      start,
+      end,
+    });
+  }, [row, appointmentDate, appointmentTime, destinationName, destinationAddress, purpose, notes]);
+
   if (!facilityReady) {
     return (
       <div className="mx-auto max-w-xl p-6">
@@ -417,6 +437,19 @@ export default function EditResidentTransportRequestPage() {
                 <Input type="time" value={appointmentTime} onChange={(e) => setAppointmentTime(e.target.value)} />
               </div>
             </div>
+            {googleCalendarHref ? (
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <a
+                  href={googleCalendarHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  Add to Google Calendar
+                </a>
+                <span className="text-slate-500"> — opens in a new tab; one-way add, not a live sync.</span>
+              </p>
+            ) : null}
 
             <div className="space-y-2">
               <Label htmlFor="tt">Transport type</Label>
