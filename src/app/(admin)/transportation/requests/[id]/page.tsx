@@ -475,6 +475,17 @@ export default function EditResidentTransportRequestPage() {
                 <Input type="time" value={appointmentTime} onChange={(e) => setAppointmentTime(e.target.value)} />
               </div>
             </div>
+            {/^\d{4}-\d{2}-\d{2}$/.test(appointmentDate) ? (
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <Link
+                  href={`/admin/transportation/calendar?date=${encodeURIComponent(appointmentDate)}`}
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  View on transportation calendar
+                </Link>
+                <span className="text-slate-500"> — week containing this appointment.</span>
+              </p>
+            ) : null}
             {externalCalendarHandoff ? (
               <p className="text-sm text-slate-600 dark:text-slate-400">
                 <span className="text-slate-500">Add to calendar: </span>

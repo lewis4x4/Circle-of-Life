@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   addMonths,
@@ -54,6 +55,7 @@ function formatAppointmentTime(t: string | null): string {
 }
 
 export default function TransportationWeekCalendarPage() {
+  const searchParams = useSearchParams();
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
   const [viewMode, setViewMode] = useState<CalendarViewMode>("week");
@@ -131,6 +133,22 @@ export default function TransportationWeekCalendarPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  /** Deep link from transport request detail: `?date=YYYY-MM-DD` and optional `?view=week|month`. */
+  useEffect(() => {
+    const raw = searchParams.get("date");
+    if (!raw || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return;
+    const [ys, ms, ds] = raw.split("-").map((x) => Number(x));
+    if (!ys || !ms || !ds) return;
+    const day = startOfDay(new Date(ys, ms - 1, ds));
+    if (Number.isNaN(day.getTime())) return;
+    setWeekAnchor(day);
+    setMonthAnchor(startOfMonth(day));
+    setSelectedDay(day);
+    const v = searchParams.get("view");
+    if (v === "month") setViewMode("month");
+    else if (v === "week") setViewMode("week");
+  }, [searchParams]);
 
   /** Keep agenda day inside the visible month grid when the anchor month changes. */
   useEffect(() => {

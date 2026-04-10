@@ -59,6 +59,8 @@ Transportation involves two distinct workflows at COL:
 
 **Shipped (Track D63):** Same route — **Download `.ics`** for the current trip (**`buildTransportRequestsIcs`**, same RFC 5545 rules as **D57**); handoff for **Apple Calendar** and other ICS clients.
 
+**Shipped (Track D66):** **`/admin/transportation/calendar`** — query **`date=YYYY-MM-DD`** (optional **`view=week|month`**) aligns week/month anchors and selected day. **`/admin/transportation/requests/[id]`** — **View on transportation calendar** deep-links with **`?date=`** (appointment date).
+
 **External sync** (bidirectional / subscribe URL) remains deferred.
 
 **Shipped (Track D15):** **`/admin/transportation/mileage-approvals`** — queue of **`mileage_logs`** with **`approved_at` IS NULL**; **owner / org_admin / facility_admin / nurse** can set **`approved_at`** / **`approved_by`**; **undo** when **`payroll_export_id`** is still null. Module 13 payroll file generation remains separate.
