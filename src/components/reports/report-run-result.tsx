@@ -55,14 +55,14 @@ function groupIcon(groupName: string) {
 function buildGrouped(summary: SummaryRow[]) {
   const map = new Map<string, SummaryRow[]>();
   for (const row of summary) {
-    const g = resolvePresentation(row.key).group;
+    const g = resolvePresentation(row.metricKey).group;
     const list = map.get(g) ?? [];
     list.push(row);
     map.set(g, list);
   }
   return [...map.entries()].sort((a, b) => {
-    const oa = Math.min(...a[1].map((r) => resolvePresentation(r.key).groupOrder));
-    const ob = Math.min(...b[1].map((r) => resolvePresentation(r.key).groupOrder));
+    const oa = Math.min(...a[1].map((r) => resolvePresentation(r.metricKey).groupOrder));
+    const ob = Math.min(...b[1].map((r) => resolvePresentation(r.metricKey).groupOrder));
     return oa - ob || a[0].localeCompare(b[0]);
   });
 }
@@ -87,10 +87,10 @@ export function ReportRunResult({ summary, detailRows }: ReportRunResultProps) {
           </div>
           <MotionList className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {rows.map((row) => {
-              const pres = resolvePresentation(row.key);
+              const pres = resolvePresentation(row.metricKey);
               const display = formatMetricValue(row.value, pres.format);
               return (
-                <MotionItem key={row.key}>
+                <MotionItem key={row.metricKey}>
                   <div className="flex h-full flex-col justify-between rounded-2xl border border-slate-200/80 bg-white/70 p-4 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-slate-900/50">
                     <p className="text-xs font-medium leading-snug text-slate-600 dark:text-slate-300">
                       {pres.label}

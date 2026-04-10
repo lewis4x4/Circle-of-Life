@@ -84,15 +84,43 @@ From `npm run segment:gates` (see `CODEX.md`): hygiene, security scan, ESLint, m
 | **Gate artifact** | `test-results/agent-gates/2026-04-10T02-20-28-303Z-autonomous-doc-sync-2026-04-10.json` |
 | **Gitleaks** | Historical false positives on `a8f6235` report executors (`{ key, value }` / `d1_30`-style names) — **`.gitleaksignore`** fingerprints + variable renames in `executors/index.ts`. |
 | **Deferred** | **D85+** code until clinical sign-off; Module 25 until Track A / owner priority. |
+| **Loop exit (incomplete)** | First run stopped after one cycle without **RECORD — loop exit**; **D85+** was FIND but not buildable without sign-off — should have LOOP’d to a second bounded slice or written explicit exit. **Fixed in doc:** LOOP section now requires explicit exit or another cycle. |
+| **Follow-up (2026-04-10)** | Report summary rows renamed **`key` → `metricKey`** to avoid gitleaks `generic-api-key` false positives on `{ key: "…", value: … }`; `.gitleaksignore` extended for historical commits. |
 
 ---
 
-## LOOP — restart
+## RECORD — loop exit (optional)
 
-1. **BOOT:** Re-read the four files in the table above + `git log`.  
-2. **FIND:** Confirm **D85+** still blocked on clinical rules; confirm **121** still next migration unless a new file landed.  
-3. **PLAN** the next **bounded** segment (spec-first).  
-4. **BUILD** → **REVIEW** → **FIX** → **COMMIT** → **RECORD** here.  
+| Field | Value |
+|-------|--------|
+| **date** | *(fill when stopping a multi-round session)* |
+| **reason** | *(e.g. no unblocked segments; owner only; gates blocked)* |
+| **next_human_action** | *(e.g. clinical sign-off for D85+)* |
+
+---
+
+## LOOP — restart (must not “just stop”)
+
+**Failure mode (2026-04-10):** After COMMIT/PUSH/RECORD, the run **ended** instead of continuing the loop. **LOOP is not optional documentation** — it means either start another full **BOOT → FIND → … → RECORD** cycle in the **same session**, or **explicitly stop with a recorded reason** (see below).
+
+### When to continue vs stop
+
+| Situation | Action |
+|-----------|--------|
+| **FIND** returns an **agent-executable** bounded segment (spec exists, no owner waiver needed) | **Immediately** LOOP: go to **BOOT** again and ship that segment (one commit per segment per `CODEX.md`). |
+| **FIND** returns **D85+** or similar **blocked** on owner/clinical sign-off | Do **not** ship the blocked automation. **LOOP** by selecting the **next unblocked** item: e.g. doc/parity, tooling, spec clarification, Track A prep scripts, or a **prep** slice that does not violate the blocker — or **STOP** only after recording **why** in this file under **RECORD — loop exit**. |
+| **No work** left that fits repo rules | **STOP** with **RECORD — loop exit**: `reason`, `next_human_action`, `date`. |
+
+### LOOP checklist (same session)
+
+After **RECORD** for round *N*:
+
+1. **BOOT** again (same four files + `git log -15`).  
+2. **FIND** again — is there a **different** next item that is shippable today?  
+3. If yes → **PLAN → BUILD → REVIEW → FIX → COMMIT → RECORD** (round *N+1*).  
+4. If no → **RECORD — loop exit** (one short paragraph), then stop.  
+
+**Stopping without a loop exit note is considered an incomplete run.**
 
 ---
 

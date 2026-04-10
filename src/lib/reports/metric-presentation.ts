@@ -289,7 +289,7 @@ export function formatMetricValue(
   }
 }
 
-export type SummaryRow = { key: string; value: string | number | null };
+export type SummaryRow = { metricKey: string; value: string | number | null };
 
 export function summaryRowsToCsv(rows: SummaryRow[]): string {
   if (rows.length === 0) return "";
@@ -298,9 +298,9 @@ export function summaryRowsToCsv(rows: SummaryRow[]): string {
   const lines = [
     ["metric_key", "metric_label", "value"].map(escape).join(","),
     ...rows.map((row) => {
-      const pres = resolvePresentation(row.key);
+      const pres = resolvePresentation(row.metricKey);
       const formatted = formatMetricValue(row.value, pres.format);
-      return [row.key, pres.label, formatted].map(escape).join(",");
+      return [row.metricKey, pres.label, formatted].map(escape).join(",");
     }),
   ];
   return lines.join("\n");
@@ -335,15 +335,15 @@ export function buildReportPrintHtml(props: {
 
   const byGroup = new Map<string, SummaryRow[]>();
   for (const row of summary) {
-    const pres = resolvePresentation(row.key);
+    const pres = resolvePresentation(row.metricKey);
     const list = byGroup.get(pres.group) ?? [];
     list.push(row);
     byGroup.set(pres.group, list);
   }
 
   const orderedGroups = [...byGroup.entries()].sort((a, b) => {
-    const oa = Math.min(...a[1].map((r) => resolvePresentation(r.key).groupOrder));
-    const ob = Math.min(...b[1].map((r) => resolvePresentation(r.key).groupOrder));
+    const oa = Math.min(...a[1].map((r) => resolvePresentation(r.metricKey).groupOrder));
+    const ob = Math.min(...b[1].map((r) => resolvePresentation(r.metricKey).groupOrder));
     return oa - ob || a[0].localeCompare(b[0]);
   });
 
@@ -351,7 +351,7 @@ export function buildReportPrintHtml(props: {
     .map(([groupName, groupRows]) => {
       const body = groupRows
         .map((row) => {
-          const pres = resolvePresentation(row.key);
+          const pres = resolvePresentation(row.metricKey);
           const formatted = formatMetricValue(row.value, pres.format);
           return `<tr><td>${escapeHtml(pres.label)}</td><td class="num">${escapeHtml(formatted)}</td></tr>`;
         })

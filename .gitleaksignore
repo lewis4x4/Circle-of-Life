@@ -5,3 +5,10 @@ a8f62351936c752c9383622dff0a0e21bd71511f:src/lib/reports/executors/index.ts:gene
 a8f62351936c752c9383622dff0a0e21bd71511f:src/lib/reports/executors/index.ts:generic-api-key:143
 a8f62351936c752c9383622dff0a0e21bd71511f:src/lib/reports/executors/index.ts:generic-api-key:238
 a8f62351936c752c9383622dff0a0e21bd71511f:src/lib/reports/executors/index.ts:generic-api-key:497
+
+# 95a0338 — same pattern after variable renames (bucket*, etc.); superseded by metricKey field name in later commits
+95a0338b431fb47ee55ab6da88dda13770808f35:src/lib/reports/executors/index.ts:generic-api-key:141
+95a0338b431fb47ee55ab6da88dda13770808f35:src/lib/reports/executors/index.ts:generic-api-key:142
+95a0338b431fb47ee55ab6da88dda13770808f35:src/lib/reports/executors/index.ts:generic-api-key:143
+95a0338b431fb47ee55ab6da88dda13770808f35:src/lib/reports/executors/index.ts:generic-api-key:242
+95a0338b431fb47ee55ab6da88dda13770808f35:src/lib/reports/executors/index.ts:generic-api-key:505

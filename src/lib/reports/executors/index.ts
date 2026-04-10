@@ -4,7 +4,7 @@ import { fetchExecutiveKpiSnapshot } from "@/lib/exec-kpi-snapshot";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database, Json } from "@/types/database";
 
-export type ReportSummaryRow = { key: string; value: string | number | null };
+export type ReportSummaryRow = { metricKey: string; value: string | number | null };
 
 export type ReportExecutionResult = {
   summary: ReportSummaryRow[];
@@ -45,21 +45,21 @@ async function runExecutiveSnapshot(params: ExecuteParams): Promise<ReportExecut
   );
 
   const summary: ReportSummaryRow[] = [
-    { key: "occupiedResidents", value: kpi.census.occupiedResidents },
-    { key: "licensedBeds", value: kpi.census.licensedBeds },
-    { key: "occupancyPct", value: kpi.census.occupancyPct },
-    { key: "openInvoices", value: kpi.financial.openInvoicesCount },
-    { key: "balanceDueCents", value: kpi.financial.totalBalanceDueCents },
-    { key: "openIncidents", value: kpi.clinical.openIncidents },
-    { key: "medicationErrorsMtd", value: kpi.clinical.medicationErrorsMtd },
-    { key: "openSurveyDeficiencies", value: kpi.compliance.openSurveyDeficiencies },
-    { key: "certificationsExpiring30d", value: kpi.workforce.certificationsExpiring30d },
-    { key: "activeOutbreaks", value: kpi.infection.activeOutbreaks },
+    { metricKey: "occupiedResidents", value: kpi.census.occupiedResidents },
+    { metricKey: "licensedBeds", value: kpi.census.licensedBeds },
+    { metricKey: "occupancyPct", value: kpi.census.occupancyPct },
+    { metricKey: "openInvoices", value: kpi.financial.openInvoicesCount },
+    { metricKey: "balanceDueCents", value: kpi.financial.totalBalanceDueCents },
+    { metricKey: "openIncidents", value: kpi.clinical.openIncidents },
+    { metricKey: "medicationErrorsMtd", value: kpi.clinical.medicationErrorsMtd },
+    { metricKey: "openSurveyDeficiencies", value: kpi.compliance.openSurveyDeficiencies },
+    { metricKey: "certificationsExpiring30d", value: kpi.workforce.certificationsExpiring30d },
+    { metricKey: "activeOutbreaks", value: kpi.infection.activeOutbreaks },
   ];
 
   return {
     summary,
-    rows: summary.map((item) => ({ metric: item.key, value: item.value })),
+    rows: summary.map((item) => ({ metric: item.metricKey, value: item.value })),
   };
 }
 
@@ -135,13 +135,13 @@ async function runArAgingSummary(params: ExecuteParams): Promise<ReportExecution
   }
 
   const summary: ReportSummaryRow[] = [
-    { key: "arOpenInvoiceCount", value: invRows.length },
-    { key: "arTotalBalanceCents", value: total },
-    { key: "arNotYetDueCents", value: notYetDue },
-    { key: "arDays1To30Cents", value: bucket1To30Cents },
-    { key: "arDays31To60Cents", value: bucket31To60Cents },
-    { key: "arDays61To90Cents", value: bucket61To90Cents },
-    { key: "arDaysOver90Cents", value: bucketOver90Cents },
+    { metricKey: "arOpenInvoiceCount", value: invRows.length },
+    { metricKey: "arTotalBalanceCents", value: total },
+    { metricKey: "arNotYetDueCents", value: notYetDue },
+    { metricKey: "arDays1To30Cents", value: bucket1To30Cents },
+    { metricKey: "arDays31To60Cents", value: bucket31To60Cents },
+    { metricKey: "arDays61To90Cents", value: bucket61To90Cents },
+    { metricKey: "arDaysOver90Cents", value: bucketOver90Cents },
   ];
 
   return {
@@ -198,10 +198,10 @@ async function runIncidentTrendSummary(params: ExecuteParams): Promise<ReportExe
 
   return {
     summary: [
-      { key: "incidentsRecorded30d", value: incidents30dTotal },
-      { key: "incidentsFallRelated30d", value: fallCt },
-      { key: "incidentsMedicationRelated30d", value: medCt },
-      { key: "openIncidentsSnapshot", value: kpi.clinical.openIncidents },
+      { metricKey: "incidentsRecorded30d", value: incidents30dTotal },
+      { metricKey: "incidentsFallRelated30d", value: fallCt },
+      { metricKey: "incidentsMedicationRelated30d", value: medCt },
+      { metricKey: "openIncidentsSnapshot", value: kpi.clinical.openIncidents },
     ],
     rows: detailRows,
     footnotes: ["30-day window is rolling from today. Detail rows are capped at 500 in the preview; export CSV for the full extract."],
@@ -239,10 +239,10 @@ async function runStaffingCoverageByShift(params: ExecuteParams): Promise<Report
 
   return {
     summary: [
-      { key: "shiftAssignmentsScheduled14d", value: shiftAssignmentRowCount },
-      { key: "coverageDayShifts14d", value: dayCt },
-      { key: "coverageEveningShifts14d", value: eveCt },
-      { key: "coverageNightShifts14d", value: nightCt },
+      { metricKey: "shiftAssignmentsScheduled14d", value: shiftAssignmentRowCount },
+      { metricKey: "coverageDayShifts14d", value: dayCt },
+      { metricKey: "coverageEveningShifts14d", value: eveCt },
+      { metricKey: "coverageNightShifts14d", value: nightCt },
     ],
     rows: rows.slice(0, 500).map((r) => ({
       shift_date: r.shift_date,
@@ -288,9 +288,9 @@ async function runOvertimeLaborPressure(params: ExecuteParams): Promise<ReportEx
 
   return {
     summary: [
-      { key: "timePunches30d", value: timeRecordRowCount },
-      { key: "overtimeHoursTotal30d", value: Math.round(otHours * 10) / 10 },
-      { key: "distinctStaffWithOvertime30d", value: staffWithOt.size },
+      { metricKey: "timePunches30d", value: timeRecordRowCount },
+      { metricKey: "overtimeHoursTotal30d", value: Math.round(otHours * 10) / 10 },
+      { metricKey: "distinctStaffWithOvertime30d", value: staffWithOt.size },
     ],
     rows: rows
       .filter((r) => (r.overtime_hours ?? 0) > 0)
@@ -344,8 +344,8 @@ async function runMedicationExceptionReport(params: ExecuteParams): Promise<Repo
 
   return {
     summary: [
-      { key: "medicationErrorsMtd", value: kpi.clinical.medicationErrorsMtd },
-      { key: "medicationErrorsYtd", value: ytdRows.length },
+      { metricKey: "medicationErrorsMtd", value: kpi.clinical.medicationErrorsMtd },
+      { metricKey: "medicationErrorsYtd", value: ytdRows.length },
     ],
     rows: mtdRows.slice(0, 500).map((r) => ({
       occurred_at: r.occurred_at,
@@ -390,10 +390,10 @@ async function runResidentAssuranceRounding(params: ExecuteParams): Promise<Repo
 
   return {
     summary: [
-      { key: "roundingTasksDue7d", value: total },
-      { key: "roundingTasksCompleted7d", value: completed },
-      { key: "roundingTasksOverdue7d", value: overdue },
-      { key: "roundingOnTimePct7d", value: onTimePct },
+      { metricKey: "roundingTasksDue7d", value: total },
+      { metricKey: "roundingTasksCompleted7d", value: completed },
+      { metricKey: "roundingTasksOverdue7d", value: overdue },
+      { metricKey: "roundingOnTimePct7d", value: onTimePct },
     ],
     rows: [],
     footnotes: [
@@ -469,8 +469,8 @@ async function runTrainingCertificationExpiry(params: ExecuteParams): Promise<Re
 
   return {
     summary: [
-      { key: "certificationsExpiring30d", value: kpi.workforce.certificationsExpiring30d },
-      { key: "activeStaffCount", value: staffRes.count ?? 0 },
+      { metricKey: "certificationsExpiring30d", value: kpi.workforce.certificationsExpiring30d },
+      { metricKey: "activeStaffCount", value: staffRes.count ?? 0 },
     ],
     rows: detailRows,
     footnotes: ["Expiry window is rolling 30 days from today for active certifications."],
@@ -501,8 +501,8 @@ async function runSurveyReadinessSummary(params: ExecuteParams): Promise<ReportE
 
   return {
     summary: [
-      { key: "openSurveyDeficiencies", value: kpi.compliance.openSurveyDeficiencies },
-      { key: "surveyDeficienciesClosed30d", value: deficienciesClosedInWindow },
+      { metricKey: "openSurveyDeficiencies", value: kpi.compliance.openSurveyDeficiencies },
+      { metricKey: "surveyDeficienciesClosed30d", value: deficienciesClosedInWindow },
     ],
     rows: [],
     footnotes: [
