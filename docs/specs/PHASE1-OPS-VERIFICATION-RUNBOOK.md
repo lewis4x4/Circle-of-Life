@@ -59,7 +59,7 @@ npm run audit:ci
 
 Expected:
 
-- `build` passes with migrations `001`–`111`
+- `build` passes with migrations `001`–`120`
 - migration replay passes locally
 - no high-severity audit or tracked-secret failures
 
@@ -124,42 +124,62 @@ All five functions now emit **structured JSON logs** per `OBSERVABILITY-SPEC.md`
 
 Owner confirms these in Supabase dashboard.
 
-### Edge Function secrets
+### Edge Function secrets — ✅ confirmed set (2026-04-10)
 
-Required names:
+All required secrets verified via `supabase secrets list`:
 
-- `GENERATE_MONTHLY_INVOICES_SECRET`
-- `EXEC_KPI_SNAPSHOT_SECRET`
-- `VAPID_PUBLIC_KEY`
-- `VAPID_PRIVATE_KEY`
-- `VAPID_SUBJECT`
-- `REPORT_SCHEDULER_SECRET`
-- `DISPATCH_PUSH_SECRET` if server or cron callers use secret-based dispatch
+- `GENERATE_MONTHLY_INVOICES_SECRET` ✅
+- `EXEC_KPI_SNAPSHOT_SECRET` ✅
+- `REPORT_SCHEDULER_SECRET` ✅
+- `AR_AGING_CHECK_SECRET` ✅
+- `GENERATE_EMAR_SCHEDULE_SECRET` ✅
+- `EMAR_MISSED_DOSE_SECRET` ✅
+- `EXEC_ALERT_EVALUATOR_SECRET` ✅
+- `PROCESS_REFERRAL_HL7_INBOUND_SECRET` ✅
+- `DISPATCH_PUSH_SECRET` ✅
+- `VAPID_PUBLIC_KEY` ✅
+- `VAPID_PRIVATE_KEY` ✅
+- `VAPID_SUBJECT` ✅
+- `SENTRY_DSN` ✅ (B2 observability)
+- `SENTRY_ORG` ✅
+- `SENTRY_PROJECT` ✅
 
-### Cron ownership register
+### Cron ownership register — ✅ all registered (2026-04-10)
 
-| Job | Function | Schedule | Scheduler | Owner | Replay if failed |
-|-----|----------|----------|-----------|-------|------------------|
-| Monthly invoices | `generate-monthly-invoices` | 1st of month, ~02:00 UTC (per org) | Supabase Edge Cron / GitHub Actions / external | ☐ (record name) | Re-POST with same `organization_id` + explicit `billing_year`/`billing_month`; idempotent via unique index (migration `071`) |
-| Daily KPI snapshot | `exec-kpi-snapshot` | Daily ~03:00 UTC (per org) | Supabase Edge Cron / GitHub Actions / external | ☐ (record name) | Re-POST with same `organization_id` + `snapshot_date`; deletes same-day rows before insert |
-| Report scheduler | `report-scheduler` | Periodic (daily or custom) | Supabase Edge Cron / GitHub Actions / external | ☐ (record name) | Re-POST; picks up schedules whose `next_run_at` is overdue; safe to rerun |
-| Push dispatch | `dispatch-push` | Event-driven (not cron) | Application triggers | N/A | Retry the POST; no state mutation on failure |
-| Audit export | `export-audit-log` | On-demand (user-initiated) | Admin UI | N/A | Re-POST with same `job_id`; job row tracks state |
+Verified via `SELECT jobid, schedule, command, active FROM cron.job;` — all `pg_cron` jobs active on project `manfqmasfqppukpobpld`.
 
-Fill in **Owner** and **Scheduler** columns when crons are configured in the dashboard or CI.
+| Job | Function | Schedule (UTC) | Scheduler | Owner | `pg_cron` jobid | Replay if failed |
+|-----|----------|----------------|-----------|-------|-----------------|------------------|
+| AR aging | `ar-aging-check` | `0 12 * * *` (daily 12:00) | pg_cron + pg_net | Brian Lewis | 1 | Re-POST; idempotent (status flip only) |
+| eMAR schedule | `generate-emar-schedule` | `0 5 * * *` (daily 05:00) | pg_cron + pg_net | Brian Lewis | 2 | Re-POST; skips existing rows |
+| Missed-dose alerts | `emar-missed-dose-check` | `*/30 * * * *` (every 30 min) | pg_cron + pg_net | Brian Lewis | 3 | Re-POST; dedupes via `deep_link_path` |
+| Daily KPI snapshot | `exec-kpi-snapshot` | `0 3 * * *` (daily 03:00) | pg_cron + pg_net | Brian Lewis | 4 | Re-POST with same `organization_id` + `snapshot_date`; deletes same-day rows before insert |
+| Monthly invoices | `generate-monthly-invoices` | `0 2 1 * *` (1st of month 02:00) | pg_cron + pg_net | Brian Lewis | 6 | Re-POST with same `organization_id` + explicit `billing_year`/`billing_month`; idempotent via unique index (migration `071`) |
+| Report scheduler | `report-scheduler` | `0 6 * * *` (daily 06:00) | pg_cron + pg_net | Brian Lewis | 10 | Re-POST; picks up schedules whose `next_run_at` is overdue; safe to rerun |
+| Executive alerts | `exec-alert-evaluator` | `30 3 * * *` (daily 03:30) | pg_cron + pg_net | Brian Lewis | 11 | Re-POST; dedupes on unresolved title + facility |
+| Push dispatch | `dispatch-push` | Event-driven (not cron) | Application triggers | N/A | — | Retry the POST; no state mutation on failure |
+| Audit export | `export-audit-log` | On-demand (user-initiated) | Admin UI | N/A | — | Re-POST with same `job_id`; job row tracks state |
+| HL7 inbound parse | `process-referral-hl7-inbound` | On-demand / as needed | Manual or future cron | N/A | — | Re-POST; processes `pending` rows; safe to rerun |
 
 ### Secret rotation
 
 | Secret | Used by | Rotation cadence | Rotation owner | How to rotate |
 |--------|---------|-----------------|----------------|---------------|
-| `GENERATE_MONTHLY_INVOICES_SECRET` | `generate-monthly-invoices` | Quarterly or on leak | ☐ | `supabase secrets set GENERATE_MONTHLY_INVOICES_SECRET=<new>` then update scheduler header |
-| `EXEC_KPI_SNAPSHOT_SECRET` | `exec-kpi-snapshot` | Quarterly or on leak | ☐ | `supabase secrets set EXEC_KPI_SNAPSHOT_SECRET=<new>` then update scheduler header |
-| `REPORT_SCHEDULER_SECRET` | `report-scheduler` | Quarterly or on leak | ☐ | `supabase secrets set REPORT_SCHEDULER_SECRET=<new>` then update scheduler header |
-| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | `dispatch-push` | Rarely (key pair) | ☐ | Regenerate VAPID pair, `supabase secrets set` both, re-subscribe clients |
-| `VAPID_SUBJECT` | `dispatch-push` | On domain change | ☐ | `supabase secrets set VAPID_SUBJECT=mailto:<new>` |
-| `DISPATCH_PUSH_SECRET` | `dispatch-push` (server callers) | Quarterly or on leak | ☐ | `supabase secrets set DISPATCH_PUSH_SECRET=<new>` then update callers |
+| `GENERATE_MONTHLY_INVOICES_SECRET` | `generate-monthly-invoices` | Quarterly or on leak | Brian Lewis | `supabase secrets set GENERATE_MONTHLY_INVOICES_SECRET=<new>` then update `cron.job` command (jobid 6) |
+| `EXEC_KPI_SNAPSHOT_SECRET` | `exec-kpi-snapshot` | Quarterly or on leak | Brian Lewis | `supabase secrets set EXEC_KPI_SNAPSHOT_SECRET=<new>` then update `cron.job` command (jobid 4) |
+| `REPORT_SCHEDULER_SECRET` | `report-scheduler` | Quarterly or on leak | Brian Lewis | `supabase secrets set REPORT_SCHEDULER_SECRET=<new>` then update `cron.job` command (jobid 10) |
+| `AR_AGING_CHECK_SECRET` | `ar-aging-check` | Quarterly or on leak | Brian Lewis | `supabase secrets set AR_AGING_CHECK_SECRET=<new>` then update `cron.job` command (jobid 1) |
+| `GENERATE_EMAR_SCHEDULE_SECRET` | `generate-emar-schedule` | Quarterly or on leak | Brian Lewis | `supabase secrets set GENERATE_EMAR_SCHEDULE_SECRET=<new>` then update `cron.job` command (jobid 2) |
+| `EMAR_MISSED_DOSE_SECRET` | `emar-missed-dose-check` | Quarterly or on leak | Brian Lewis | `supabase secrets set EMAR_MISSED_DOSE_SECRET=<new>` then update `cron.job` command (jobid 3) |
+| `EXEC_ALERT_EVALUATOR_SECRET` | `exec-alert-evaluator` | Quarterly or on leak | Brian Lewis | `supabase secrets set EXEC_ALERT_EVALUATOR_SECRET=<new>` then update `cron.job` command (jobid 11) |
+| `PROCESS_REFERRAL_HL7_INBOUND_SECRET` | `process-referral-hl7-inbound` | Quarterly or on leak | Brian Lewis | `supabase secrets set PROCESS_REFERRAL_HL7_INBOUND_SECRET=<new>` (no cron to update) |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | `dispatch-push` | Rarely (key pair) | Brian Lewis | Regenerate VAPID pair, `supabase secrets set` both, re-subscribe clients |
+| `VAPID_SUBJECT` | `dispatch-push` | On domain change | Brian Lewis | `supabase secrets set VAPID_SUBJECT=mailto:<new>` |
+| `DISPATCH_PUSH_SECRET` | `dispatch-push` (server callers) | Quarterly or on leak | Brian Lewis | `supabase secrets set DISPATCH_PUSH_SECRET=<new>` then update callers |
 
 **Auto-injected (no rotation needed):** `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
+
+**Note on rotation:** Cron secrets are embedded in `cron.job.command` text. After rotating a secret via `supabase secrets set`, also update the corresponding `cron.job` row: `SELECT cron.alter_job(<jobid>, command := '<updated SQL with new secret>');`
 
 ### Edge Function failure triage
 

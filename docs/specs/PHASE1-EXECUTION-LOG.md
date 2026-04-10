@@ -167,11 +167,13 @@ Use `Tester` to record the human who ran the step. Use `Notes` to capture:
 
 | ID | Item | Result | Tester | Date | Notes |
 |----|------|--------|--------|------|-------|
-| PH1-TC1 | C1 billing — `ar-aging-check` + finance paths documented | **PASS (repo)** | agent | 2026-04-09 | Edge function added; owner deploy + cron; manual invoice↔GL reconciliation still ops-owned |
-| PH1-TC2 | C2 eMAR — schedule + missed-dose Edge functions | **PASS (repo)** | agent | 2026-04-09 | `generate-emar-schedule`, `emar-missed-dose-check`; PRN/CS workflows = checklist UAT |
-| PH1-TC3 | C3 lifecycle runbook | **PASS (repo)** | agent | 2026-04-09 | Owner executes happy path on target per runbook |
-| PH1-TC4 | C4 family + audit baseline | **PASS (repo)** | agent | 2026-04-09 | Existing export + family shell; §D UAT remains owner |
-| PH1-TC5 | C5 executive — `exec-alert-evaluator` | **PASS (repo)** | agent | 2026-04-09 | Deploy + schedule after `exec-kpi-snapshot` or daily |
+| PH1-TC1 | C1 billing — `ar-aging-check` + finance paths documented | **PASS (repo + ops)** | Brian Lewis | 2026-04-10 | Edge function deployed + ACTIVE; cron jobid 1 (`0 12 * * *`), jobid 6 monthly invoices (`0 2 1 * *`); secrets set; manual invoice↔GL reconciliation still ops-owned |
+| PH1-TC2 | C2 eMAR — schedule + missed-dose Edge functions | **PASS (repo + ops)** | Brian Lewis | 2026-04-10 | `generate-emar-schedule` deployed; cron jobid 2 (`0 5 * * *`). `emar-missed-dose-check` deployed; cron jobid 3 (`*/30 * * * *`). Secrets set. PRN/CS workflows = checklist UAT |
+| PH1-TC3 | C3 lifecycle runbook | **PASS (repo)** | agent | 2026-04-09 | Runbook in [TRACK-C-LIFECYCLE-RUNBOOK.md](./TRACK-C-LIFECYCLE-RUNBOOK.md); no Edge Functions to deploy. Happy-path walkthrough remains Track A §B UAT |
+| PH1-TC4 | C4 family + audit baseline | **PASS (repo + ops)** | Brian Lewis | 2026-04-10 | `export-audit-log` deployed + ACTIVE (v16); `dispatch-push` deployed + ACTIVE (v14) with VAPID keys + dispatch secret set. §D family UAT remains owner |
+| PH1-TC5 | C5 executive — `exec-alert-evaluator` | **PASS (repo + ops)** | Brian Lewis | 2026-04-10 | `exec-kpi-snapshot` deployed; cron jobid 4 (`0 3 * * *`). `exec-alert-evaluator` deployed; cron jobid 11 (`30 3 * * *`). Both pass org_id to COL org. Secrets set |
+
+**Track B/C ops closure (2026-04-10):** All 10 Edge Functions deployed + ACTIVE; all secrets set (including Sentry B2); 7 pg_cron jobs registered and active. Full inventory in [PHASE1-OPS-VERIFICATION-RUNBOOK.md](./PHASE1-OPS-VERIFICATION-RUNBOOK.md) §4.
 
 ---
 
