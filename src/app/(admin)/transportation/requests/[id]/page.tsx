@@ -18,7 +18,10 @@ import {
   normalizeTimeForDb,
   residentTransportRequestUpdateSchema,
 } from "@/lib/transport/transport-request-schemas";
-import { buildGoogleCalendarTemplateUrl } from "@/lib/transport/google-calendar-template-url";
+import {
+  buildGoogleCalendarTemplateUrl,
+  buildOutlookCalendarComposeUrl,
+} from "@/lib/transport/google-calendar-template-url";
 import {
   isCredentialDateValid,
   wheelchairVehicleError,
@@ -342,7 +345,7 @@ export default function EditResidentTransportRequestPage() {
 
   const showMileageHint = transportType === "staff_personal_vehicle" && Boolean(driverStaffId);
 
-  const googleCalendarHref = useMemo(() => {
+  const externalCalendarHandoff = useMemo(() => {
     if (!row) return null;
     if (!appointmentDate) return null;
     const timePart = appointmentTime.trim() || "09:00";
@@ -352,13 +355,17 @@ export default function EditResidentTransportRequestPage() {
     const rn = row.residents
       ? `${row.residents.first_name} ${row.residents.last_name}`
       : "Resident";
-    return buildGoogleCalendarTemplateUrl({
+    const params = {
       title: `Transport: ${rn} — ${destinationName}`,
       details: [purpose.trim(), notes.trim()].filter(Boolean).join("\n\n") || undefined,
       location: [destinationName.trim(), destinationAddress.trim()].filter(Boolean).join(" — ") || undefined,
       start,
       end,
-    });
+    };
+    return {
+      google: buildGoogleCalendarTemplateUrl(params),
+      outlook: buildOutlookCalendarComposeUrl(params),
+    };
   }, [row, appointmentDate, appointmentTime, destinationName, destinationAddress, purpose, notes]);
 
   if (!facilityReady) {
@@ -437,17 +444,30 @@ export default function EditResidentTransportRequestPage() {
                 <Input type="time" value={appointmentTime} onChange={(e) => setAppointmentTime(e.target.value)} />
               </div>
             </div>
-            {googleCalendarHref ? (
+            {externalCalendarHandoff ? (
               <p className="text-sm text-slate-600 dark:text-slate-400">
+                <span className="text-slate-500">Add to calendar: </span>
                 <a
-                  href={googleCalendarHref}
+                  href={externalCalendarHandoff.google}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-medium text-primary underline-offset-4 hover:underline"
                 >
-                  Add to Google Calendar
+                  Google
                 </a>
-                <span className="text-slate-500"> — opens in a new tab; one-way add, not a live sync.</span>
+                <span className="text-slate-400"> · </span>
+                <a
+                  href={externalCalendarHandoff.outlook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  Outlook
+                </a>
+                <span className="text-slate-500">
+                  {" "}
+                  — opens in a new tab; one-way add, not a live sync.
+                </span>
               </p>
             ) : null}
 

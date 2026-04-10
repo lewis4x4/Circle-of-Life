@@ -91,7 +91,7 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 - `/admin/transportation/mileage-approvals` (`mileage_logs` approval queue — Track D15)
 - `/admin/transportation/settings` (org mileage reimbursement rate — `owner` / `org_admin`)
 - `/admin/transportation/requests/new`
-- `/admin/transportation/requests/[id]` (**Add to Google Calendar** template link — Track D D61)
+- `/admin/transportation/requests/[id]` (**Google + Outlook** one-way compose links — Track D D61–D62)
 - `/admin/transportation/vehicles/new`
 - `/admin/transportation/inspections/new`
 - `/admin/transportation/drivers/new`

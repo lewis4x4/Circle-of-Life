@@ -55,6 +55,8 @@ Transportation involves two distinct workflows at COL:
 
 **Shipped (Track D61):** **`/admin/transportation/requests/[id]`** — **Add to Google Calendar** link (Google `render?action=TEMPLATE` URL with resident, destination, purpose, notes, location; **1-hour** slot from **`appointment_date`** + **`appointment_time`**, default **09:00** if time blank). One-way add in the user’s browser — **not** OAuth, **not** live sync.
 
+**Shipped (Track D62):** Same route — **Outlook** on the web compose deeplink (**`outlook.office.com`** **`calendar/0/deeplink/compose`**, **`startdt`** / **`enddt`** ISO) alongside Google. Same assumptions as D61.
+
 **External sync** (bidirectional / subscribe URL) remains deferred.
 
 **Shipped (Track D15):** **`/admin/transportation/mileage-approvals`** — queue of **`mileage_logs`** with **`approved_at` IS NULL**; **owner / org_admin / facility_admin / nurse** can set **`approved_at`** / **`approved_by`**; **undo** when **`payroll_export_id`** is still null. Module 13 payroll file generation remains separate.
