@@ -297,12 +297,25 @@ From `npm run segment:gates` (see `CODEX.md`): hygiene, security scan, ESLint, m
 
 ---
 
+## RECORD — round 2026-04-10 (loop: QA playbook → Autonomous.md)
+
+| Field | Value |
+|-------|--------|
+| **BOOT** | [qa-agent.md](../agents/playbooks/qa-agent.md), `git status` clean @**94d7870**. |
+| **FIND** | **D85+** clinical-gated. **Unblocked:** QA playbook (gate signals) had no **`docs/Autonomous.md`** pointer. |
+| **BUILD** | [qa-agent.md](../agents/playbooks/qa-agent.md) — **See also** section. |
+| **Mission alignment** | **pass** — QA role aligns with segment gate + loop continuity. |
+| **Gate artifact** | `test-results/agent-gates/2026-04-10T12-49-09-441Z-loop-qa-playbook-autonomous-ref.json` |
+| **Deferred** | **D85+** Edge/cron automation. |
+
+---
+
 ## RECORD — loop exit (optional)
 
 | Field | Value |
 |-------|--------|
 | **date** | **2026-04-10** |
-| **reason** | **D85+** still **clinical / pharmacy** gated. This loop linked **`docs/Autonomous.md`** from **`agents/playbooks/engineer-of-record.md`**. |
+| **reason** | **D85+** still **clinical / pharmacy** gated. This loop linked **`docs/Autonomous.md`** from **`agents/playbooks/qa-agent.md`**. |
 | **next_human_action** | Remote **`001`–`120`** parity; COL clinical sign-off for **D85+**; Track A UAT / Pro–BAA–PITR per owner schedule. |
 
 ---

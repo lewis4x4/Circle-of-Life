@@ -13,3 +13,7 @@ Validate acceptance signals the gate runner encodes: **migrations order**, **pro
 ## Manual / exploratory
 
 Document device or flow checks in the segment handoff when automation cannot cover them.
+
+## See also
+
+- `docs/Autonomous.md` — autonomous loop continuity (BOOT / FIND / RECORD) between sessions.
