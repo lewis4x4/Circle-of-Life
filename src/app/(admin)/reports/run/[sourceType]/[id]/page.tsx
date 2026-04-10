@@ -10,8 +10,10 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { loadReportsRoleContext } from "@/lib/reports/auth";
 import { executeReportTemplate, type ReportExecutionResult } from "@/lib/reports/executors";
+import { resolveReportTemplateIdBySlug } from "@/lib/reports/resolve-template-id";
 import { PHASE1_TEMPLATE_SEED } from "@/lib/reports/templates";
 import { createClient } from "@/lib/supabase/client";
+import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 
 function rowsToCsv(rows: Record<string, string | number | null>[]): string {
@@ -55,14 +57,27 @@ export default function ReportRunPage() {
     setRunning(true);
     setError(null);
     try {
+      const trimmedFacility = facilityId.trim();
+      if (trimmedFacility && !isValidFacilityIdForQuery(trimmedFacility)) {
+        throw new Error(
+          "Optional facility scope must be a valid facility UUID, or leave the field empty for organization-wide scope.",
+        );
+      }
+
+      const scopedFacilityId = trimmedFacility ? trimmedFacility : null;
+
+      const resolved = await resolveReportTemplateIdBySlug(supabase, sourceId, orgId);
+      if ("error" in resolved) throw new Error(resolved.error);
+
       const { data: runRow, error: runErr } = await supabase
         .from("report_runs")
         .insert({
           organization_id: orgId,
           source_type: sourceType as "template" | "saved_view" | "pack",
-          source_id: sourceId,
+          source_id: resolved.id,
+          template_id: resolved.id,
           status: "running",
-          run_scope_json: facilityId ? { facility_id: facilityId } : {},
+          run_scope_json: scopedFacilityId ? { facility_id: scopedFacilityId } : {},
         })
         .select("id")
         .single();
@@ -71,7 +86,7 @@ export default function ReportRunPage() {
       const execution = await executeReportTemplate(sourceId, {
         supabase,
         organizationId: orgId,
-        facilityId: facilityId || null,
+        facilityId: scopedFacilityId,
       });
       setResult(execution);
       setLastRunId(runRow.id);
@@ -81,7 +96,7 @@ export default function ReportRunPage() {
         .update({
           status: "completed",
           completed_at: new Date().toISOString(),
-          filter_snapshot_json: facilityId ? { facilityId } : {},
+          filter_snapshot_json: scopedFacilityId ? { facilityId: scopedFacilityId } : {},
         })
         .eq("id", runRow.id)
         .eq("organization_id", orgId);
