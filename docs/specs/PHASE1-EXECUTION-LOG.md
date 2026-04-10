@@ -52,6 +52,71 @@ Rows that do not require a successful authenticated session were still executed 
 4. If a row cannot run because the single-facility pilot lacks required data, mark **WAIVED** only with owner approval and cite the reason in `Notes`
 5. Do not convert a manual UAT row to PASS based on repo evidence alone
 
+## §B–§E — Prepared test steps (Track A A3 helper, 2026-04-10)
+
+Use **Oakridge** as the selected facility unless the row says otherwise. Sign in with the **role named in PHASE1-ACCEPTANCE-CHECKLIST** for that surface. Capture **URL + screenshot** for each PASS.
+
+### B1 `/admin` (PH1-B101–B102)
+
+- **B101:** Load `/admin`. Confirm no crash; dashboard cards show numbers from DB **or** explicit empty state (not demo hydration unless `NEXT_PUBLIC_DEMO_MODE=true`).
+- **B102:** Click **Residents** (or equivalent nav) → lands on `/admin/residents` without error.
+
+### B2 Residents (PH1-B201–B204)
+
+- **B201:** `/admin/residents` — exercise search + one filter; open one resident row.
+- **B202:** `/admin/residents/[id]` — profile loads; verify facility matches selector.
+- **B203:** `/admin/residents/[id]/care-plan` — plan loads or empty state.
+- **B204:** `/admin/residents/[id]/billing` — payer/invoice list scoped to resident.
+
+### B3 Staff (PH1-B301–B306)
+
+- **B301:** `/admin/staff` — roster loads; open one staff member.
+- **B302:** `/admin/staff/[id]` — detail loads.
+- **B303:** `/admin/certifications` — list loads.
+- **B304:** `/admin/schedules` — list loads; open a week if present.
+- **B305:** `/admin/staffing` — list or empty state.
+- **B306:** `/admin/time-records` — list loads.
+
+### B4 Incidents (PH1-B401–B404)
+
+- **B401:** `/admin/incidents` — board loads (**no** DEMO- rows unless demo mode on).
+- **B402:** Open one incident detail `/admin/incidents/[id]`.
+- **B403:** `/admin/incidents/trends` — chart/time window loads or empty.
+- **B404:** `/admin/incidents/[id]/rca` — save a short RCA note → refresh → still present (Postgres).
+
+### B5 Billing (PH1-B501–B509)
+
+- **B501:** `/admin/billing` — hub loads.
+- **B502–B503:** Invoices list + one detail UUID that exists (unknown UUID → not found, not demo).
+- **B504:** `/admin/billing/invoices/generate` — dry-run/preview without error (or document RLS block).
+- **B505:** `/admin/billing/payments/new` — form loads; submit only if safe test data.
+- **B506:** `/admin/billing/rates` — schedules visible.
+- **B507–B509:** AR aging / org AR / revenue — pages load; note zeros vs errors.
+
+### B6 Other admin (PH1-B601–B604)
+
+- **B601:** `/admin/family-messages` (or current triage route) — loads.
+- **B602:** `/admin/assessments/overdue` — loads (**no** fake Eleanor/Arthur rows unless demo mode).
+- **B603:** `/admin/care-plans/reviews-due` — loads or empty.
+- **B604:** If multi-facility available: change facility → lists re-query; else note single-facility pilot.
+
+### C Caregiver (PH1-C01–C13)
+
+- Sign in as **caregiver** pilot. For each route: load, confirm shell chrome, no admin leakage.
+- **C03 / C12:** Meds + PRN follow-up path if training data exists.
+- **C06:** Clock punch or view — no error.
+- **C07–C11:** Pick one resident from `/caregiver` and walk **resident detail → log → ADL/behavior/condition** as time allows.
+
+### D Family (PH1-D01–D05)
+
+- Sign in as **family** pilot. Confirm **cannot** open `/admin/*` (PH1-A04 overlap).
+- **D01–D05:** Each family route loads; messages/calendar show facility-scoped data only.
+
+### E Cross-cutting (PH1-E01–E04)
+
+- **E01–E03:** On 3+ routes above, note skeleton/empty/error UI (no infinite spinners).
+- **E04:** Resize to ~390px width on a caregiver page — usable without horizontal scroll breakage.
+
 ## Execution owner fields
 
 Use `Tester` to record the human who ran the step. Use `Notes` to capture:

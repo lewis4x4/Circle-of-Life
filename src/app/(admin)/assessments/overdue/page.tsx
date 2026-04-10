@@ -6,6 +6,7 @@ import { ClipboardCheck, CalendarClock, UserSquare2, ShieldAlert } from "lucide-
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
+import { isDemoMode } from "@/lib/demo-mode";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -115,8 +116,7 @@ export default function ClinicalDeskPage() {
         fetchReviewsDue(selectedFacilityId)
       ]);
       
-      // DEMO HYDRATION: Ensure Desk is heavily populated for CEO demo if DB is unseeded
-      if (liveAssessments.length === 0 && liveCarePlans.length === 0) {
+      if (liveAssessments.length === 0 && liveCarePlans.length === 0 && isDemoMode()) {
         setAssessments([
           { id: "a1", residentId: "r1", residentName: "Eleanor Vance", assessmentType: "Fall Risk / 14-Day MDS", assessmentDate: "—", nextDueDate: "3 days ago", daysOverdue: 3, riskLevel: "High", totalScore: null },
           { id: "a2", residentId: "r2", residentName: "Arthur Pendelton", assessmentType: "Elopement Risk", assessmentDate: "—", nextDueDate: "3 days ago", daysOverdue: 3, riskLevel: "Critical", totalScore: null },

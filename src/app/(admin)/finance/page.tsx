@@ -8,6 +8,7 @@ import { FinanceHubNav } from "./finance-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { isDemoMode } from "@/lib/demo-mode";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
@@ -18,6 +19,7 @@ import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 export default function AdminFinanceHubPage() {
+  const demo = isDemoMode();
   const supabase = createClient();
   const [postedCount, setPostedCount] = useState<number | null>(null);
   const [unpostedInvoices, setUnpostedInvoices] = useState<number | null>(null);
@@ -177,37 +179,66 @@ export default function AdminFinanceHubPage() {
                 </div>
               ) : (
                 <>
-                  {/* MOCK Action Items based on fetched unposted invoices count */}
-                  {unpostedInvoices != null && unpostedInvoices > 0 && Array.from({ length: Math.min(3, unpostedInvoices) }).map((_, i) => (
-                    <MotionItem key={i} className="glass-panel p-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 dark:bg-amber-900/10 backdrop-blur-2xl relative overflow-hidden group hover:border-amber-500/40 hover:bg-amber-500/10 dark:hover:bg-amber-900/20 transition-all duration-300">
-                      <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
-                      <div className="flex justify-between items-start mb-3">
-                         <span className="text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-500/20 shadow-sm border-0 px-2 py-1 rounded-md uppercase tracking-widest">
-                           Unposted Invoice
-                         </span>
-                         <span className="text-[10px] text-amber-600/80 dark:text-amber-500 font-mono tracking-widest uppercase font-bold">Pending Manager Approval</span>
-                      </div>
-                      <div className="mb-4">
-                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
-                          Ref: INV-{8004 + i} — Sysco Foods Corp
-                        </p>
-                        <p className="text-sm font-mono text-slate-900 dark:text-slate-100 font-bold mb-1">
-                          $1,24{i}.00
-                        </p>
-                        <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                          Invoice received on Monday. Auto-coded to `5100-Dietary`. Awaiting final posting to GL.
-                        </p>
-                      </div>
-                      <div className="flex gap-2 justify-start mt-2">
+                  {demo &&
+                    unpostedInvoices != null &&
+                    unpostedInvoices > 0 &&
+                    Array.from({ length: Math.min(3, unpostedInvoices) }).map((_, i) => (
+                      <MotionItem
+                        key={i}
+                        className="glass-panel p-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 dark:bg-amber-900/10 backdrop-blur-2xl relative overflow-hidden group hover:border-amber-500/40 hover:bg-amber-500/10 dark:hover:bg-amber-900/20 transition-all duration-300"
+                      >
+                        <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
+                        <div className="flex justify-between items-start mb-3">
+                          <span className="text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-500/20 shadow-sm border-0 px-2 py-1 rounded-md uppercase tracking-widest">
+                            Unposted Invoice
+                          </span>
+                          <span className="text-[10px] text-amber-600/80 dark:text-amber-500 font-mono tracking-widest uppercase font-bold">
+                            Pending Manager Approval
+                          </span>
+                        </div>
+                        <div className="mb-4">
+                          <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
+                            Ref: INV-{8004 + i} — Sysco Foods Corp
+                          </p>
+                          <p className="text-sm font-mono text-slate-900 dark:text-slate-100 font-bold mb-1">
+                            $1,24{i}.00
+                          </p>
+                          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                            Invoice received on Monday. Auto-coded to `5100-Dietary`. Awaiting final posting to GL.
+                          </p>
+                        </div>
+                        <div className="flex gap-2 justify-start mt-2">
                           <Link
                             href="/admin/billing/invoices"
-                            className={cn(buttonVariants({ variant: "default", size: "sm" }), "bg-amber-600 hover:bg-amber-700 text-black font-mono uppercase tracking-widest text-[9px] shadow-lg")}
+                            className={cn(
+                              buttonVariants({ variant: "default", size: "sm" }),
+                              "bg-amber-600 hover:bg-amber-700 text-black font-mono uppercase tracking-widest text-[9px] shadow-lg",
+                            )}
                           >
                             Review & Post
                           </Link>
-                      </div>
+                        </div>
+                      </MotionItem>
+                    ))}
+                  {!demo && unpostedInvoices != null && unpostedInvoices > 0 && (
+                    <MotionItem className="glass-panel p-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 dark:bg-amber-900/10 backdrop-blur-2xl">
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                        {unpostedInvoices} unposted invoice{unpostedInvoices === 1 ? "" : "s"} pending GL posting.
+                      </p>
+                      <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
+                        Review invoices in Billing to post journal entries — sample vendor lines are not shown without demo mode.
+                      </p>
+                      <Link
+                        href="/admin/billing/invoices"
+                        className={cn(
+                          buttonVariants({ variant: "default", size: "sm" }),
+                          "mt-4 bg-amber-600 hover:bg-amber-700 text-black font-mono uppercase tracking-widest text-[9px] shadow-lg",
+                        )}
+                      >
+                        Open invoices
+                      </Link>
                     </MotionItem>
-                  ))}
+                  )}
                 </>
               )}
             </MotionList>
@@ -221,16 +252,30 @@ export default function AdminFinanceHubPage() {
             </div>
             
             <div className="space-y-4">
-              <div className="glass-panel p-4 rounded-2xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 flex flex-col gap-2 backdrop-blur-2xl shadow-xl">
-                 <div className="flex justify-between items-center mb-1">
-                   <p className="text-[10px] uppercase font-mono tracking-widest font-semibold text-slate-900 dark:text-slate-100">Period: Q2 Active</p>
-                   <span className="text-[10px] tracking-widest font-mono font-bold text-emerald-600 uppercase">Open</span>
-                 </div>
-                 <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
-                   <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: '45%' }}></div>
-                 </div>
-                 <p className="text-[10px] text-slate-500 mt-1">16 Days remaining before soft-close.</p>
-              </div>
+              {demo ? (
+                <div className="glass-panel p-4 rounded-2xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 flex flex-col gap-2 backdrop-blur-2xl shadow-xl">
+                  <div className="flex justify-between items-center mb-1">
+                    <p className="text-[10px] uppercase font-mono tracking-widest font-semibold text-slate-900 dark:text-slate-100">
+                      Period: Q2 Active
+                    </p>
+                    <span className="text-[10px] tracking-widest font-mono font-bold text-emerald-600 uppercase">Open</span>
+                  </div>
+                  <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                    <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: "45%" }} />
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1">16 Days remaining before soft-close.</p>
+                </div>
+              ) : (
+                <div className="glass-panel p-4 rounded-2xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-xl">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Period close status is managed under Period close — no sample timeline in non-demo mode.</p>
+                  <Link
+                    href="/admin/finance/period-close"
+                    className="mt-3 inline-block text-[11px] font-mono uppercase tracking-widest text-indigo-600 dark:text-indigo-400 hover:underline"
+                  >
+                    Open period close →
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
 

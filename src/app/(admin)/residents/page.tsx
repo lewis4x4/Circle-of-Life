@@ -13,6 +13,7 @@ import {
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { createClient } from "@/lib/supabase/client";
+import { isDemoMode } from "@/lib/demo-mode";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -106,8 +107,8 @@ export default function AdminResidentsPage() {
       const liveRows = await fetchResidentsFromSupabase(selectedFacilityId);
       if (liveRows.length > 0) {
         setRows(liveRows);
-      } else {
-        // DEMO HYDRATION: Provide rich visual data for CEO demo if DB is unseeded
+      } else if (isDemoMode()) {
+        // DEMO HYDRATION: sample roster when DB is unseeded (NEXT_PUBLIC_DEMO_MODE=true only)
         setRows([
           { id: "m1", name: "Margaret Sullivan", initials: "MS", room: "101-A", unit: "East Wing", acuity: 2, adlStatus: "assisted", status: "active", careSummary: "Routine assisted ADL support", updatedAt: "Oct 12, 09:42 AM" },
           { id: "m2", name: "Arthur Pendelton", initials: "AP", room: "102-B", unit: "East Wing", acuity: 1, adlStatus: "independent", status: "active", careSummary: "Independent daily routine", updatedAt: "Oct 12, 08:30 AM" },
@@ -115,6 +116,8 @@ export default function AdminResidentsPage() {
           { id: "m4", name: "Robert Chen", initials: "RC", room: "201-A", unit: "West Wing", acuity: 1, adlStatus: "independent", status: "active", careSummary: "Independent daily routine", updatedAt: "Oct 10, 04:20 PM" },
           { id: "m5", name: "Lucille Booth", initials: "LB", room: "205-B", unit: "West Wing", acuity: 2, adlStatus: "assisted", status: "active", careSummary: "Routine assisted ADL support", updatedAt: "Oct 12, 07:10 AM" },
         ]);
+      } else {
+        setRows([]);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load data");

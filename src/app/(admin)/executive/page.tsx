@@ -15,12 +15,14 @@ import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { ExecutiveHubNav } from "./executive-hub-nav";
 
 import type { ExecutiveAlertRow } from "@/lib/exec-alerts";
+import { isDemoMode } from "@/lib/demo-mode";
 
 interface AlertWithFacility extends ExecutiveAlertRow {
   facilities?: { name: string } | null;
 }
 
 export default function ExecutiveOverviewPage() {
+  const demo = isDemoMode();
   const supabase = createClient();
   const [, setLoading] = useState(true);
   const [, setError] = useState<string | null>(null);
@@ -50,12 +52,14 @@ export default function ExecutiveOverviewPage() {
       const latestMap: Record<string, number> = {};
       
       if (!snapData || snapData.length === 0) {
-        // DEMO HYDRATION: If database is unseeded, inject a perfect portfolio snapshot
-        latestMap['occ_pt'] = 0.861;
-        latestMap['rev_mtd'] = 84500000;
-        latestMap['labor_pct'] = 0.545;
-        latestMap['inc_rate'] = 3.5;
-        latestMap['survey_rd'] = 0.864;
+        // DEMO HYDRATION: optional sample KPIs when DB is unseeded (NEXT_PUBLIC_DEMO_MODE=true only)
+        if (demo) {
+          latestMap['occ_pt'] = 0.861;
+          latestMap['rev_mtd'] = 84500000;
+          latestMap['labor_pct'] = 0.545;
+          latestMap['inc_rate'] = 3.5;
+          latestMap['survey_rd'] = 0.864;
+        }
       } else {
         for (const row of snapData) {
           if (!latestMap[row.metric_code]) {
@@ -75,7 +79,7 @@ export default function ExecutiveOverviewPage() {
 
       if (alertErr) throw alertErr;
       
-      if (!alertData || alertData.length === 0) {
+      if ((!alertData || alertData.length === 0) && demo) {
          const nowIso = new Date().toISOString();
          const mockAlert: AlertWithFacility = {
            id: "mock-1",
@@ -110,7 +114,7 @@ export default function ExecutiveOverviewPage() {
          };
          setAlerts([mockAlert]);
        } else {
-         setAlerts(alertData);
+         setAlerts(alertData ?? []);
        }
 
       // 3. Fetch Portfolio Facilities
@@ -122,7 +126,7 @@ export default function ExecutiveOverviewPage() {
         
       if (!facErr && facData && facData.length > 0) {
         setFacilities(facData);
-      } else {
+      } else if (demo) {
         setFacilities([
           { id: "f1", name: "Grande Cypress ALF" },
           { id: "f2", name: "Homewood Lodge ALF" },
@@ -130,6 +134,8 @@ export default function ExecutiveOverviewPage() {
           { id: "f4", name: "Plantation ALF" },
           { id: "f5", name: "Rising Oaks ALF" },
         ]);
+      } else {
+        setFacilities([]);
       }
 
     } catch (e) {
@@ -137,7 +143,7 @@ export default function ExecutiveOverviewPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, demo]);
 
   useEffect(() => {
     void load();

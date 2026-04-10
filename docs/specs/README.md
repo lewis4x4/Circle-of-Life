@@ -21,6 +21,12 @@
 | Phase 1 — engineering (lint, build, replay, gates) | **PASS** | [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) |
 | Phase 1 — full acceptance (real auth, RLS matrix, UAT, Pro/BAA/PITR) | **NOT COMPLETE** — **Track A:** A1+A2 **done** (2026-04-09); A3–A6 remain | [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md), [PHASE1-ACCEPTANCE-CHECKLIST.md](./PHASE1-ACCEPTANCE-CHECKLIST.md) |
 | Phase 2 — acceptance | **PASS** (2026-04-04) | [PHASE2-ACCEPTANCE-CHECKLIST.md](./PHASE2-ACCEPTANCE-CHECKLIST.md) |
+| Phase 3 — acceptance (finance, insurance, vendors, executive v1) | **PENDING** — formal checklist | [PHASE3-ACCEPTANCE-CHECKLIST.md](./PHASE3-ACCEPTANCE-CHECKLIST.md) |
+| Phase 3.5 — acceptance (platform hardening `050`–`069`) | **PENDING** | [PHASE35-ACCEPTANCE-CHECKLIST.md](./PHASE35-ACCEPTANCE-CHECKLIST.md) |
+| Phase 4 — acceptance (referral, admissions, discharge) | **PENDING** | [PHASE4-ACCEPTANCE-CHECKLIST.md](./PHASE4-ACCEPTANCE-CHECKLIST.md) |
+| Phase 5 — acceptance (quality, family, executive v2) | **PENDING** | [PHASE5-ACCEPTANCE-CHECKLIST.md](./PHASE5-ACCEPTANCE-CHECKLIST.md) |
+| Phase 6 — acceptance (training, payroll, dietary, transport, CRM, reputation) | **PENDING** | [PHASE6-ACCEPTANCE-CHECKLIST.md](./PHASE6-ACCEPTANCE-CHECKLIST.md) |
+| Phases 3–6 — rollup + execution log | **PENDING** (owner UAT on pilot) | [HAVEN-ACCEPTANCE-SUMMARY.md](./HAVEN-ACCEPTANCE-SUMMARY.md), [PHASE3-6-ACCEPTANCE-EXECUTION-LOG.md](./PHASE3-6-ACCEPTANCE-EXECUTION-LOG.md) |
 | Phases 3–6 — Core DDL + primary UI | **Shipped** in repo | Phase tables below |
 | Phases 3–6 — live proof / operational hardening | **Incomplete** until Track A closes; **Tracks B–C engineering complete** (see sections below); **Track D** Core **D1–D10** + Enhanced **D12–D84** shipped (see [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md)) — further Enhanced backlog per plan | Same tables + [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md) |
 

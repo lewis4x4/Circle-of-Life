@@ -8,6 +8,7 @@ import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { CeoGrowthChart, CeoRiskChart } from "@/components/ui/moonshot/executive-charts";
+import { isDemoMode } from "@/lib/demo-mode";
 
 const MOCK_GROWTH_DATA = [
   { month: "Jan", tours: 12, moveIns: 4 },
@@ -33,14 +34,26 @@ const MOCK_RISK_DATA = [
 ];
 
 export default function CeoDashboardPage() {
-  // Static placeholders for V1 CEO Dashboard since data pipelines are still hydrating
-  const metrics = useMemo(() => ({
-    occ_pt: { value: "86.1%", trend: "up", color: "emerald" },
-    move_ins: { value: "48", trend: "up", color: "indigo" },
-    waitlist: { value: "112", color: "indigo" },
-    inc_rate: { value: "3.5", trend: "down", color: "rose" },
-    survey_rd: { value: "86.4%", color: "blue" },
-  }), []);
+  const demo = isDemoMode();
+  // Sample KPIs / charts only when NEXT_PUBLIC_DEMO_MODE=true; otherwise show empty-state–friendly placeholders.
+  const metrics = useMemo(() => {
+    if (!demo) {
+      return {
+        occ_pt: { value: "—", trend: "flat", color: "slate" },
+        move_ins: { value: "—", trend: "flat", color: "slate" },
+        waitlist: { value: "—", color: "slate" },
+        inc_rate: { value: "—", trend: "flat", color: "slate" },
+        survey_rd: { value: "—", color: "slate" },
+      } as const;
+    }
+    return {
+      occ_pt: { value: "86.1%", trend: "up", color: "emerald" },
+      move_ins: { value: "48", trend: "up", color: "indigo" },
+      waitlist: { value: "112", color: "indigo" },
+      inc_rate: { value: "3.5", trend: "down", color: "rose" },
+      survey_rd: { value: "86.4%", color: "blue" },
+    };
+  }, [demo]);
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -103,7 +116,9 @@ export default function CeoDashboardPage() {
                  <h3 className="text-[10px] font-mono tracking-widest uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2">
                    Enterprise Quality Risk Map
                  </h3>
-                 <p className="text-xl font-mono tracking-tighter text-rose-600 dark:text-rose-400 pb-1 mt-auto leading-tight">2 Facilities Elevated</p>
+                 <p className="text-xl font-mono tracking-tighter text-rose-600 dark:text-rose-400 pb-1 mt-auto leading-tight">
+                   {demo ? "2 Facilities Elevated" : "—"}
+                 </p>
                </div>
              </V2Card>
           </div>
@@ -114,14 +129,26 @@ export default function CeoDashboardPage() {
              <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Growth & Acumen Funnel</h4>
              <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Tours vs Move-in conversion pipeline over trailing 12 months.</p>
              <div className="flex-1 min-h-0">
-               <CeoGrowthChart data={MOCK_GROWTH_DATA} />
+               {demo ? (
+                 <CeoGrowthChart data={MOCK_GROWTH_DATA} />
+               ) : (
+                 <div className="flex h-full min-h-[140px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-300/80 p-6 text-center dark:border-slate-600">
+                   <p className="text-sm text-slate-600 dark:text-slate-400">No growth snapshot data.</p>
+                 </div>
+               )}
              </div>
           </div>
           <div className="h-80 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur flex flex-col p-6 shadow-lg">
              <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Legal & Reputation Risk Index</h4>
              <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Severe Incidents (L3/L4) relative to Public Reputation scoring.</p>
              <div className="flex-1 min-h-0">
-               <CeoRiskChart data={MOCK_RISK_DATA} />
+               {demo ? (
+                 <CeoRiskChart data={MOCK_RISK_DATA} />
+               ) : (
+                 <div className="flex h-full min-h-[140px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-300/80 p-6 text-center dark:border-slate-600">
+                   <p className="text-sm text-slate-600 dark:text-slate-400">No risk index data.</p>
+                 </div>
+               )}
              </div>
           </div>
         </div>

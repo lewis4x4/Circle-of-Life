@@ -8,6 +8,7 @@ import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { CfoLaborDonutChart, CfoRevenueMatrixChart } from "@/components/ui/moonshot/executive-charts";
+import { isDemoMode } from "@/lib/demo-mode";
 
 const MOCK_LABOR_DATA = [
   { name: "Direct Care Nursing", value: 2420000 },
@@ -25,12 +26,23 @@ const MOCK_REVENUE_DATA = [
 ];
 
 export default function CfoDashboardPage() {
-  const metrics = useMemo(() => ({
-    rev_mtd: { value: "$84.5M", color: "indigo" },
-    col_mtd: { value: "$82.1M", color: "indigo" },
-    labor_pct: { value: "54.5%", color: "amber" },
-    aging_ar: { value: "$4.2M", color: "rose" }
-  }), []);
+  const demo = isDemoMode();
+  const metrics = useMemo(() => {
+    if (!demo) {
+      return {
+        rev_mtd: { value: "—", color: "slate" },
+        col_mtd: { value: "—", color: "slate" },
+        labor_pct: { value: "—", color: "slate" },
+        aging_ar: { value: "—", color: "slate" },
+      };
+    }
+    return {
+      rev_mtd: { value: "$84.5M", color: "indigo" },
+      col_mtd: { value: "$82.1M", color: "indigo" },
+      labor_pct: { value: "54.5%", color: "amber" },
+      aging_ar: { value: "$4.2M", color: "rose" },
+    };
+  }, [demo]);
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -105,14 +117,26 @@ export default function CfoDashboardPage() {
              <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Labor vs Non-Labor Expenditure</h4>
              <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Year-to-date trailing payroll allocation.</p>
              <div className="flex-1 min-h-0">
-               <CfoLaborDonutChart data={MOCK_LABOR_DATA} />
+               {demo ? (
+                 <CfoLaborDonutChart data={MOCK_LABOR_DATA} />
+               ) : (
+                 <div className="flex h-full min-h-[140px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-300/80 p-6 text-center dark:border-slate-600">
+                   <p className="text-sm text-slate-600 dark:text-slate-400">No labor allocation data.</p>
+                 </div>
+               )}
              </div>
           </div>
           <div className="h-80 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur flex flex-col p-6 shadow-lg">
              <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Revenue Leakage Matrix</h4>
              <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Collected revenue relative to outstanding aging balances.</p>
              <div className="flex-1 min-h-0">
-               <CfoRevenueMatrixChart data={MOCK_REVENUE_DATA} />
+               {demo ? (
+                 <CfoRevenueMatrixChart data={MOCK_REVENUE_DATA} />
+               ) : (
+                 <div className="flex h-full min-h-[140px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-300/80 p-6 text-center dark:border-slate-600">
+                   <p className="text-sm text-slate-600 dark:text-slate-400">No revenue matrix data.</p>
+                 </div>
+               )}
              </div>
           </div>
         </div>

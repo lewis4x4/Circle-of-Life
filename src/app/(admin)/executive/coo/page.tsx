@@ -8,6 +8,7 @@ import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { CooAgencyBurnChart, CooIncidentDensityChart } from "@/components/ui/moonshot/executive-charts";
+import { isDemoMode } from "@/lib/demo-mode";
 
 const MOCK_AGENCY_DATA = [
   { month: "Sep", fteHours: 12400, agencyHours: 850 },
@@ -28,12 +29,23 @@ const MOCK_INCIDENT_DATA = [
 ];
 
 export default function CooDashboardPage() {
-  const metrics = useMemo(() => ({
-    med_pass: { value: "98.9%", color: "emerald" },
-    staff_fill: { value: "93.4%", color: "amber" },
-    inc_rate: { value: "3.5", color: "rose" },
-    audits: { value: "14 Open", color: "blue" }
-  }), []);
+  const demo = isDemoMode();
+  const metrics = useMemo(() => {
+    if (!demo) {
+      return {
+        med_pass: { value: "—", color: "slate" },
+        staff_fill: { value: "—", color: "slate" },
+        inc_rate: { value: "—", color: "slate" },
+        audits: { value: "—", color: "slate" },
+      };
+    }
+    return {
+      med_pass: { value: "98.9%", color: "emerald" },
+      staff_fill: { value: "93.4%", color: "amber" },
+      inc_rate: { value: "3.5", color: "rose" },
+      audits: { value: "14 Open", color: "blue" },
+    };
+  }, [demo]);
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -108,14 +120,26 @@ export default function CooDashboardPage() {
              <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Nursing Agency Burn & Churn</h4>
              <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">FTE contracted hours vs variable emergency staffing density.</p>
              <div className="flex-1 min-h-0">
-               <CooAgencyBurnChart data={MOCK_AGENCY_DATA} />
+               {demo ? (
+                 <CooAgencyBurnChart data={MOCK_AGENCY_DATA} />
+               ) : (
+                 <div className="flex h-full min-h-[140px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-300/80 p-6 text-center dark:border-slate-600">
+                   <p className="text-sm text-slate-600 dark:text-slate-400">No agency staffing data.</p>
+                 </div>
+               )}
              </div>
           </div>
           <div className="h-80 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur flex flex-col p-6 shadow-lg">
              <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Safety Risk Dispersion Matrix</h4>
              <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Stacked incident volume broken down by acuity classifications.</p>
              <div className="flex-1 min-h-0">
-               <CooIncidentDensityChart data={MOCK_INCIDENT_DATA} />
+               {demo ? (
+                 <CooIncidentDensityChart data={MOCK_INCIDENT_DATA} />
+               ) : (
+                 <div className="flex h-full min-h-[140px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-300/80 p-6 text-center dark:border-slate-600">
+                   <p className="text-sm text-slate-600 dark:text-slate-400">No incident density data.</p>
+                 </div>
+               )}
              </div>
           </div>
         </div>

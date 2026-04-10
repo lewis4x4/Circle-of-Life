@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
+import { isDemoMode } from "@/lib/demo-mode";
 import { cn } from "@/lib/utils";
 
 type PlanRow = {
@@ -49,15 +50,18 @@ const DEMO_PLANS: PlanRow[] = [
 export default function AdminRoundingPlansPage() {
   const { selectedFacilityId } = useFacilityStore();
   const supabase = useMemo(() => createClient(), []);
+  const demo = isDemoMode();
+  const emptyPlansFallback = useMemo<PlanRow[]>(() => [], []);
+  const fallbackPlans = demo ? DEMO_PLANS : emptyPlansFallback;
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [plans, setPlans] = useState<PlanRow[]>(DEMO_PLANS);
+  const [plans, setPlans] = useState<PlanRow[]>(() => (isDemoMode() ? DEMO_PLANS : []));
 
   const load = useCallback(async () => {
     setLoading(true);
 
     if (!selectedFacilityId || !isBrowserSupabaseConfigured()) {
-      setPlans(DEMO_PLANS);
+      setPlans(fallbackPlans);
       setLoading(false);
       return;
     }
@@ -72,13 +76,13 @@ export default function AdminRoundingPlansPage() {
 
       if (error) throw error;
       const rows = (data ?? []) as unknown as PlanRow[];
-      setPlans(rows.length > 0 ? rows : DEMO_PLANS);
+      setPlans(rows.length > 0 ? rows : fallbackPlans);
     } catch {
-      setPlans(DEMO_PLANS);
+      setPlans(fallbackPlans);
     } finally {
       setLoading(false);
     }
-  }, [selectedFacilityId, supabase]);
+  }, [selectedFacilityId, supabase, fallbackPlans]);
 
   useEffect(() => {
     void load();

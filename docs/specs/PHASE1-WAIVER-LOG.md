@@ -24,6 +24,8 @@
 
 **Note:** Replace remediation **TBD** with real issue URLs when filed.
 
+**A6 review (2026-04-10):** **W-ADMIN-01** remains **valid** — list-first vs wizard coverage is still mixed across modules; expiry **2026-10-01** unchanged. No additional waivers opened; remediated table above unchanged.
+
 ---
 
 ## Roadmap linkage

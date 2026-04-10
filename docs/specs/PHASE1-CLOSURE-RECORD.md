@@ -6,7 +6,7 @@
 
 **Do not overstate:** This document must distinguish **automated/repo verification** from **live UAT + RLS + production compliance**.
 
-**Last updated:** 2026-04-09 — pilot **login + shell routing** + **RLS matrix (owner sign-off, single-facility pilot)**; **full** Phase 1 acceptance still pending §B–§E UAT depth, PH1-A04, Pro/BAA/PITR, waiver review. Repo migrations **001–120** (see [README.md](./README.md); doc parity **2026-04-10**).
+**Last updated:** 2026-04-10 — same as 2026-04-09 for **Phase 1** Track A; **formal Phases 3–6 acceptance checklists** added ([HAVEN-ACCEPTANCE-SUMMARY.md](./HAVEN-ACCEPTANCE-SUMMARY.md)) — **Phase 1 full acceptance still** pending §B–§E UAT depth, PH1-A04, Pro/BAA/PITR, waiver review. Repo migrations **001–120** (see [README.md](./README.md)).
 
 ---
 
