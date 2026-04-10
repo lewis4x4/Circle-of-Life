@@ -724,6 +724,16 @@
 
 ---
 
+**D75 (2026-04-10):** **Module 23 — Reputation** ([23-reputation.md](./23-reputation.md)) — **replies CSV status scope**.
+
+**Slice:** **`/admin/reputation`** — **Replies CSV** dropdown (**All** / **draft** / **posted** / **failed**) scopes the **Download replies CSV** query (up to **500** rows); filename suffix **`_draft`**, **`_posted`**, or **`_failed`** when not **All**. Hub list columns unchanged. **No** migration.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-10T00-59-05-074Z-track-d-d75-reputation-replies-csv-status.json` (`npm run segment:gates -- --segment "track-d-d75-reputation-replies-csv-status" --ui`)
+
+**Mission alignment:** **pass** — operators can export only failed or draft replies for handoff without changing posting APIs or review import behavior.
+
+---
+
 ## Track D — plan (remaining)
 
 **Segments D1–D10:** Closed in repo with gate artifacts above. This completes the **Phase 6 Core visibility / workflow** slices we prioritized for COL (transport, training, dietary, referrals, reputation), plus **D10** org mileage rate.
@@ -737,11 +747,11 @@
 | **14** | ~~Read-only diet + med panel~~ (D13); ~~**diet orders CSV** on hub~~ (D23); ~~read-only **liquid vs thickened-fluid** advisory on clinical review~~ (D50); ~~read-only **solid oral vs texture-modified food** (IDDSI 3–6)~~ (D51–D52); ~~hint callouts show IDDSI food/fluid labels~~ (D53); full Edge med–texture automation (pending clinical rules); meal production; vendor API; full menu cycle |
 | **15** | ~~Week calendar + mileage approval queue~~ (D14, D15); ~~**transport requests CSV** on hub~~ (D24); ~~**mileage logs CSV** on approvals~~ (D25); ~~full month grid~~ (D56); ~~calendar **`.ics` export**~~ (D57); ~~request detail **Google + Outlook** one-way compose links~~ (D61, D62); ~~request detail **single-trip `.ics`**~~ (D63); ~~calendar **`?date=`** deep link + request **View on calendar**~~ (D66); external calendar **live sync** |
 | **22** | ~~Minimal **MSH** queue processor~~ (D12); ~~manual **Draft lead** from HL7~~ (D16); ~~**HL7 queue CSV**~~ (D22); ~~**pipeline leads CSV** on hub~~ (D27); ~~**pipeline status filter + CSV**~~ (D70); ~~**pipeline search** (client-side)~~ (D72); ~~**Copy raw** on inbound queue~~ (D65); ~~**status filter** on inbound queue~~ (D67); ~~**CSV export respects status filter**~~ (D68); ~~**queue search** (client-side)~~ (D71); MLLP, full ADT parse, auto-**`referral_leads`** |
-| **23** | ~~**Replies CSV** export on hub~~ (D19); ~~**accounts CSV** on hub~~ (D28); ~~Google OAuth **connect** + **`119`** token table~~ (D44); ~~**manual** Google review import~~ (D45); ~~**cron** Google review import~~ (D46); ~~**Yelp Fusion** manual import~~ (D47); ~~**Google** reply post~~ (D48); ~~**Yelp** reply post (Partner API)~~ (D49) |
+| **23** | ~~**Replies CSV** export on hub~~ (D19); ~~**replies CSV** **status** scope~~ (D75); ~~**accounts CSV** on hub~~ (D28); ~~Google OAuth **connect** + **`119`** token table~~ (D44); ~~**manual** Google review import~~ (D45); ~~**cron** Google review import~~ (D46); ~~**Yelp Fusion** manual import~~ (D47); ~~**Google** reply post~~ (D48); ~~**Yelp** reply post (Partner API)~~ (D49) |
 | **11** | ~~**Staff roster CSV** on `/admin/staff`~~ (D29); ~~**Certifications CSV** on `/admin/certifications`~~ (D30); ~~**Time records CSV** on `/admin/time-records`~~ (D31); ~~**Staffing snapshots CSV** on `/admin/staffing`~~ (D32); ~~**Schedule weeks CSV** on `/admin/schedules`~~ (D33); ~~**Schedule week detail + shift assignments CSV**~~ (D35); ~~**Shift swap requests hub + CSV**~~ (D36); ~~**Shift swap approve/deny**~~ (D37); ~~**Bulk approve** pending time punches~~ (D60); full scheduling builder UX depth |
 
 **Authoritative README narrative:** [README.md](./README.md) — section **Track D — Phase 6 completion pass**.
 
-**Next segment:** Record as **D75+** in this file when a new bounded slice ships; use migration **`120+`** only when DDL is required ([README.md](./README.md) next free migration).
+**Next segment:** Record as **D76+** in this file when a new bounded slice ships; use migration **`120+`** only when DDL is required ([README.md](./README.md) next free migration).
 
 **Prioritized Enhanced plan (D11+ options, order, checklists):** [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md).

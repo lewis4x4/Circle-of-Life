@@ -26,6 +26,14 @@ type AccountRow = Database["public"]["Tables"]["reputation_accounts"]["Row"];
 type ReplyRow = Database["public"]["Tables"]["reputation_replies"]["Row"] & {
   reputation_accounts: { label: string; platform: Database["public"]["Enums"]["reputation_platform"] } | null;
 };
+type ReputationReplyStatus = Database["public"]["Enums"]["reputation_reply_status"];
+
+const REPLIES_CSV_STATUS_FILTERS: { value: "all" | ReputationReplyStatus; label: string }[] = [
+  { value: "all", label: "All statuses" },
+  { value: "draft", label: "Draft only" },
+  { value: "posted", label: "Posted only" },
+  { value: "failed", label: "Failed only" },
+];
 
 function formatPlatform(p: string) {
   return p.replace(/_/g, " ");
@@ -107,6 +115,9 @@ export default function AdminReputationHubPage() {
   const [postingYelpId, setPostingYelpId] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
   const [exportingAccountsCsv, setExportingAccountsCsv] = useState(false);
+  const [repliesCsvStatusFilter, setRepliesCsvStatusFilter] = useState<
+    "all" | ReputationReplyStatus
+  >("all");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -159,17 +170,26 @@ export default function AdminReputationHubPage() {
     setExportingCsv(true);
     setError(null);
     try {
-      const { data, error: qErr } = await supabase
+      let q = supabase
         .from("reputation_replies")
         .select("*, reputation_accounts(label, platform)")
         .eq("facility_id", selectedFacilityId)
-        .is("deleted_at", null)
+        .is("deleted_at", null);
+      if (repliesCsvStatusFilter !== "all") {
+        q = q.eq("status", repliesCsvStatusFilter);
+      }
+      const { data, error: qErr } = await q
         .order("created_at", { ascending: false })
         .limit(500);
       if (qErr) throw qErr;
       const rows = (data ?? []) as ReplyRow[];
       const csv = buildReputationRepliesCsv(rows);
-      triggerCsvDownload(`reputation-replies_${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
+      const scope =
+        repliesCsvStatusFilter === "all" ? "" : `_${repliesCsvStatusFilter}`;
+      triggerCsvDownload(
+        `reputation-replies_${format(new Date(), "yyyy-MM-dd")}${scope}.csv`,
+        csv,
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : "CSV export failed.");
     } finally {
@@ -316,6 +336,25 @@ export default function AdminReputationHubPage() {
                   >
                     {exportingAccountsCsv ? "Preparing…" : "Download accounts CSV"}
                   </Button>
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="whitespace-nowrap">Replies CSV</span>
+                    <select
+                      className="rounded-md border border-input bg-background px-2 py-1.5 text-xs text-foreground"
+                      value={repliesCsvStatusFilter}
+                      onChange={(e) =>
+                        setRepliesCsvStatusFilter(
+                          e.target.value as "all" | ReputationReplyStatus,
+                        )
+                      }
+                      aria-label="Replies CSV status scope"
+                    >
+                      {REPLIES_CSV_STATUS_FILTERS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   <Button
                     type="button"
                     variant="outline"

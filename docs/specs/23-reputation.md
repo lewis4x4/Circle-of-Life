@@ -22,6 +22,8 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 
 **Shipped (Track D19):** **`/admin/reputation`** — **Download replies CSV** (client-side export, up to **500** rows per facility with listing label and platform); does **not** call external review APIs.
 
+**Shipped (Track D75):** Same hub — **Replies CSV** dropdown scopes export by **`reputation_reply_status`** (**all** / **draft** / **posted** / **failed**); filename includes **`_<status>`** when filtered.
+
 **Shipped (Track D28):** **`/admin/reputation`** — **Download accounts CSV** (up to **500** **`reputation_accounts`** rows per facility: label, platform, place id, notes, audit columns). **No** OAuth, **no** new DDL.
 
 ### Track D — D44 Google OAuth (integrations) (2026-04-10)
