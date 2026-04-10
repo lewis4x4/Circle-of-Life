@@ -141,13 +141,26 @@ From `npm run segment:gates` (see `CODEX.md`): hygiene, security scan, ESLint, m
 
 ---
 
+## RECORD — round 2026-04-10 (loop: TRACK-D PASS next-DDL hint)
+
+| Field | Value |
+|-------|--------|
+| **BOOT** | [README.md](./specs/README.md), [TRACK-D-PHASE6-PASS.md](./specs/TRACK-D-PHASE6-PASS.md), `git status` clean @**e25167b**. |
+| **FIND** | **D85+** clinical-gated. **Unblocked:** [TRACK-D-PHASE6-PASS.md](./specs/TRACK-D-PHASE6-PASS.md) footer said new DDL **`120+`** while next free file is **`121`**; [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./specs/TRACK-D-ENHANCED-BACKLOG-PLAN.md) rules still said **`119+`**. |
+| **BUILD** | Both: **`121+`** (after **`120`**) + README pointer where applicable. |
+| **Mission alignment** | **pass** — spec/runbook pointers stay aligned with repo migration sequence. |
+| **Gate artifact** | `test-results/agent-gates/2026-04-10T12-11-13-093Z-loop-track-d-pass-next-ddl-121-hint.json` |
+| **Deferred** | **D85+** Edge/cron automation pending clinical sign-off. |
+
+---
+
 ## RECORD — loop exit (optional)
 
 | Field | Value |
 |-------|--------|
-| **date** | **2026-04-10** (loop restart: FIND-only round + explicit exit — no repo doc/code delta beyond this log) |
-| **reason** | **D85+** remains **clinical / pharmacy** gated. Second **FIND** this session: no additional bounded segment (doc parity, tooling, or prep) identified that beats waiting on owner/clinical inputs. |
-| **next_human_action** | Owner: remote **`001`–`120`** parity; COL: clinical sign-off for **D85+**; delegated tester: Track A §B–§E depth UAT when scheduled. |
+| **date** | **2026-04-10** |
+| **reason** | **D85+** still **clinical / pharmacy** gated. This loop shipped one doc footnote (**`121+`**); no further agent segment identified without owner/clinical input. |
+| **next_human_action** | Remote **`001`–`120`** parity; COL clinical sign-off for **D85+**; Track A UAT / Pro–BAA–PITR per owner schedule. |
 
 ---
 

@@ -6,7 +6,7 @@
 
 - No multi-module megabranches; each segment has one **primary module** and explicit **out-of-scope** bullets.
 - **Spec first:** Add or extend a short **COL Alignment / Enhanced slice** subsection in the relevant `docs/specs/*.md` before coding when behavior is new.
-- **DDL:** Use migration **`119+`** only when a column/table is required; otherwise prefer existing columns (`organizations.settings` JSON, existing queue tables).
+- **DDL:** Use migration **`121+`** only when a column/table is required (next free after **`120`**); otherwise prefer existing columns (`organizations.settings` JSON, existing queue tables).
 - **Verify:** `npm run segment:gates -- --segment "<id>" --ui` when routes/UI change.
 
 ---
