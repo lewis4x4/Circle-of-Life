@@ -24,6 +24,15 @@ type DietRow = Database["public"]["Tables"]["diet_orders"]["Row"] & {
   residents: { first_name: string; last_name: string } | null;
 };
 
+type DietOrderStatus = Database["public"]["Enums"]["diet_order_status"];
+
+const DIET_ORDER_STATUS_FILTERS: { value: "all" | DietOrderStatus; label: string }[] = [
+  { value: "all", label: "All statuses" },
+  { value: "draft", label: "Draft" },
+  { value: "active", label: "Active" },
+  { value: "discontinued", label: "Discontinued" },
+];
+
 function fluidIsThickened(level: string): boolean {
   return level.includes("mildly") || level.includes("moderately") || level.includes("extremely");
 }
@@ -141,6 +150,7 @@ export default function AdminDietaryHubPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
+  const [dietOrderStatusFilter, setDietOrderStatusFilter] = useState<"all" | DietOrderStatus>("all");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -177,55 +187,63 @@ export default function AdminDietaryHubPage() {
     setExportingCsv(true);
     setError(null);
     try {
-      const { data, error: qErr } = await supabase
+      let q = supabase
         .from("diet_orders")
         .select("*, residents(first_name, last_name)")
         .eq("facility_id", selectedFacilityId)
-        .is("deleted_at", null)
-        .order("updated_at", { ascending: false })
-        .limit(500);
+        .is("deleted_at", null);
+      if (dietOrderStatusFilter !== "all") {
+        q = q.eq("status", dietOrderStatusFilter);
+      }
+      const { data, error: qErr } = await q.order("updated_at", { ascending: false }).limit(500);
       if (qErr) throw qErr;
       const exportRows = (data ?? []) as DietRow[];
       const csv = buildDietOrdersCsv(exportRows);
-      triggerCsvDownload(`diet-orders_${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
+      const scope = dietOrderStatusFilter === "all" ? "" : `_${dietOrderStatusFilter}`;
+      triggerCsvDownload(`diet-orders_${format(new Date(), "yyyy-MM-dd")}${scope}.csv`, csv);
     } catch (e) {
       setError(e instanceof Error ? e.message : "CSV export failed.");
     } finally {
       setExportingCsv(false);
     }
-  }, [selectedFacilityId, supabase]);
+  }, [selectedFacilityId, supabase, dietOrderStatusFilter]);
+
+  const displayRows = useMemo(() => {
+    if (dietOrderStatusFilter === "all") return rows;
+    return rows.filter((r) => r.status === dietOrderStatusFilter);
+  }, [rows, dietOrderStatusFilter]);
 
   const attentionRows = useMemo(
     () =>
-      rows
+      displayRows
         .filter(dietOrderNeedsAttention)
         .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()),
-    [rows],
+    [displayRows],
   );
 
   const attentionIds = useMemo(() => new Set(attentionRows.map((r) => r.id)), [attentionRows]);
 
   const rosterRows = useMemo(
-    () => rows.filter((r) => !attentionIds.has(r.id)).slice(0, 8),
-    [rows, attentionIds],
+    () => displayRows.filter((r) => !attentionIds.has(r.id)).slice(0, 8),
+    [displayRows, attentionIds],
   );
 
   const batchStats = useMemo(() => {
-    const n = rows.length;
+    const n = displayRows.length;
     if (n === 0) {
       return { thickenedPct: 0, swallowPct: 0, allergyPct: 0, medTexturePct: 0 };
     }
-    const thickened = rows.filter((r) => fluidIsThickened(r.iddsi_fluid_level)).length;
-    const swallow = rows.filter((r) => r.requires_swallow_eval).length;
-    const allergy = rows.filter((r) => r.allergy_constraints.length > 0).length;
-    const medTexture = rows.filter((r) => r.medication_texture_review_notes?.trim()).length;
+    const thickened = displayRows.filter((r) => fluidIsThickened(r.iddsi_fluid_level)).length;
+    const swallow = displayRows.filter((r) => r.requires_swallow_eval).length;
+    const allergy = displayRows.filter((r) => r.allergy_constraints.length > 0).length;
+    const medTexture = displayRows.filter((r) => r.medication_texture_review_notes?.trim()).length;
     return {
       thickenedPct: Math.round((thickened / n) * 100),
       swallowPct: Math.round((swallow / n) * 100),
       allergyPct: Math.round((allergy / n) * 100),
       medTexturePct: Math.round((medTexture / n) * 100),
     };
-  }, [rows]);
+  }, [displayRows]);
 
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
 
@@ -249,9 +267,32 @@ export default function AdminDietaryHubPage() {
              </h1>
              <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
                IDDSI food and fluid levels with allergy constraints. Manage therapeutic diet orders across your facility.
+               {rows.length > 0 && (
+                 <span className="block mt-1 text-xs">
+                   Showing {displayRows.length} of {rows.length} loaded order{rows.length === 1 ? "" : "s"}
+                   {dietOrderStatusFilter !== "all" ? ` (${dietOrderStatusFilter})` : ""}.
+                 </span>
+               )}
              </p>
            </div>
            <div className="flex flex-wrap items-center gap-3 justify-end">
+              <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                <span className="whitespace-nowrap font-bold uppercase tracking-widest">Status</span>
+                <select
+                  className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-white/15 dark:bg-white/5 dark:text-slate-100"
+                  value={dietOrderStatusFilter}
+                  onChange={(e) =>
+                    setDietOrderStatusFilter(e.target.value as "all" | DietOrderStatus)
+                  }
+                  aria-label="Filter diet orders by status"
+                >
+                  {DIET_ORDER_STATUS_FILTERS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <Button
                 type="button"
                 variant="outline"
@@ -280,12 +321,12 @@ export default function AdminDietaryHubPage() {
           <div className="h-[160px] md:col-span-3">
             <V2Card hoverColor="indigo" className="border-indigo-500/20 dark:border-indigo-500/20 shadow-[0_8px_30px_rgba(99,102,241,0.05)]">
               <Sparkline colorClass="text-indigo-500" variant={3} />
-              <MonolithicWatermark value={rows.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
+              <MonolithicWatermark value={displayRows.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between p-2">
                 <h3 className="text-[11px] font-bold tracking-widest uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
                   <Utensils className="h-4 w-4" /> Active Diet Orders
                 </h3>
-                <p className="text-6xl font-display tracking-tight font-medium text-indigo-600 dark:text-indigo-400 pb-1">{rows.length}</p>
+                <p className="text-6xl font-display tracking-tight font-medium text-indigo-600 dark:text-indigo-400 pb-1">{displayRows.length}</p>
               </div>
             </V2Card>
           </div>
@@ -321,6 +362,11 @@ export default function AdminDietaryHubPage() {
                 <div className="p-12 text-center text-slate-500 bg-white/50 dark:bg-white/[0.02] rounded-[2.5rem] border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
                    <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No diet orders</p>
                   <p className="text-sm opacity-80 mt-1">No active diet orders for this facility yet.</p>
+                </div>
+              ) : displayRows.length === 0 ? (
+                <div className="p-12 text-center text-slate-500 bg-white/50 dark:bg-white/[0.02] rounded-[2.5rem] border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
+                  <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No orders match this status</p>
+                  <p className="text-sm opacity-80 mt-1">Try &quot;All statuses&quot; or another filter.</p>
                 </div>
               ) : attentionRows.length === 0 ? (
                 <div className="p-12 text-center text-slate-500 bg-white/50 dark:bg-white/[0.02] rounded-[2.5rem] border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
@@ -374,7 +420,7 @@ export default function AdminDietaryHubPage() {
               )}
             </MotionList>
 
-            {!loading && rows.length > 0 && rosterRows.length > 0 && (
+            {!loading && displayRows.length > 0 && rosterRows.length > 0 && (
               <div className="glass-panel mt-10 p-6 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.015]">
                 <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 mb-4 ml-2">Other Active Diet Orders</h4>
                 <MotionList className="space-y-3">

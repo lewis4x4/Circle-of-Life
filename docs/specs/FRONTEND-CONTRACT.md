@@ -83,7 +83,7 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 - `/admin/training/new`
 - `/admin/training/completions/new` (log `staff_training_completions` — Track D D39)
 - `/admin/training/inservice/new` (in-service session + attendees — Track D D42)
-- `/admin/dietary` (Phase 6 Module 14 — `14-dietary-nutrition.md`; **`/dietary` redirects here** — Track D D54–D55)
+- `/admin/dietary` (Phase 6 Module 14 — `14-dietary-nutrition.md`; **`/dietary` redirects here** — Track D D54–D55; hub **status filter** + **CSV status scope** — D77)
 - `/admin/dietary/new`
 - `/admin/dietary/clinical-review` (read-only diet order + resident medications — Track D13; advisory med–diet hints — Track D50–D53)
 - `/admin/transportation` (Phase 6 Module 15 — `15-transportation.md`; hub **status filter** + **CSV status scope** — D76)

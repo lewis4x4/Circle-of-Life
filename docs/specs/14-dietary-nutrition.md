@@ -30,6 +30,8 @@ Dietary is also a linchpin for clinical risk: IDDSI texture levels must align wi
 
 **`/admin/dietary`** — **Download diet orders CSV** exports up to **500** **`diet_orders`** rows for the **selected facility** (with resident name join), RFC-style CSV. **No** automated med–texture cross-check, **no** new DDL.
 
+**Shipped (Track D77):** Same hub — **Status** filter (**All** / **`diet_order_status`**) on the **50** loaded rows; **Showing N of M**; attention queue, roster, and **Therapeutic Context** percentages use the **filtered** set; **Download diet orders CSV** applies **`.eq("status", …)`** when not **All**; filename **`diet-orders_YYYY-MM-DD_<status>.csv`** when filtered.
+
 ---
 
 ## Purpose (Core)
