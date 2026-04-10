@@ -284,12 +284,25 @@ From `npm run segment:gates` (see `CODEX.md`): hygiene, security scan, ESLint, m
 
 ---
 
+## RECORD — round 2026-04-10 (loop: engineer-of-record playbook → Autonomous.md)
+
+| Field | Value |
+|-------|--------|
+| **BOOT** | [engineer-of-record.md](../agents/playbooks/engineer-of-record.md), `git status` clean @**a915a90**. |
+| **FIND** | **D85+** clinical-gated. **Unblocked:** engineer playbook had no **`docs/Autonomous.md`** pointer. |
+| **BUILD** | [engineer-of-record.md](../agents/playbooks/engineer-of-record.md) — **See also** section. |
+| **Mission alignment** | **pass** — EOR workflow matches loop continuity docs. |
+| **Gate artifact** | `test-results/agent-gates/2026-04-10T12-47-32-707Z-loop-engineer-playbook-autonomous-ref.json` |
+| **Deferred** | **D85+** until clinical sign-off. |
+
+---
+
 ## RECORD — loop exit (optional)
 
 | Field | Value |
 |-------|--------|
 | **date** | **2026-04-10** |
-| **reason** | **D85+** still **clinical / pharmacy** gated. This loop linked **`docs/Autonomous.md`** from **`agents/templates/segment-handoff.md`**. |
+| **reason** | **D85+** still **clinical / pharmacy** gated. This loop linked **`docs/Autonomous.md`** from **`agents/playbooks/engineer-of-record.md`**. |
 | **next_human_action** | Remote **`001`–`120`** parity; COL clinical sign-off for **D85+**; Track A UAT / Pro–BAA–PITR per owner schedule. |
 
 ---
