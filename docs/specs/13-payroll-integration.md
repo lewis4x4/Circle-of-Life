@@ -36,6 +36,8 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 
 **Shipped (Track D73):** Same hub — **status** filter (**All** / **draft** / **queued** / **exported** / **failed** / **voided**) on the **50** loaded batches; **Showing N of M**; **Download batches CSV** applies **`.eq("status", …)`** when not **All** (up to **500**); filename **`_<status>`** when filtered.
 
+**Shipped (Track D74):** Same hub — **Search** (client-side) on loaded batches: **period** dates, **provider**, **notes**, **id**, **status**; composes with **status** filter; summary count matches visible rows; **CSV** unchanged (**status** scope only).
+
 **Shipped (Track D58):** **`/admin/payroll/[id]`** (draft batches) — **Import approved `time_records`** into **`payroll_export_lines`** with **`line_kind`** = **`time_record_hours`**, **`time_record_id`** set, **`amount_cents`** null (vendor applies rates), **`payload`** = clock times + hour fields; idempotency **`time_record:{time_record_id}`**; **`clock_in`** filtered to pay period using **`America/New_York`** wall bounds (`src/lib/payroll/pay-period-bounds.ts`). Skips rows already present on any non-deleted export line with that idempotency key.
 
 **Shipped (Track D59):** Same route — second download **`Download CSV (flat)`**: columns **`hours`** (from **`time_record_hours`** payload: **`actual_hours`** else **`regular_hours` + `overtime_hours`**) and **`miles`** (from **`mileage_reimbursement`** payload), plus idempotency, staff name, **`line_kind`**, **`amount_cents`**. Implemented in **`src/lib/payroll/payroll-export-csv.ts`**.

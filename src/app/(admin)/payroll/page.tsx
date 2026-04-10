@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { Banknote, Download } from "lucide-react";
+import { Banknote, Download, Search } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
@@ -77,11 +78,24 @@ export default function AdminPayrollHubPage() {
   const [error, setError] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
   const [statusFilter, setStatusFilter] = useState<"all" | PayrollBatchStatus>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const filteredRows = useMemo(() => {
     if (statusFilter === "all") return rows;
     return rows.filter((r) => r.status === statusFilter);
   }, [rows, statusFilter]);
+
+  const displayRows = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return filteredRows;
+    return filteredRows.filter((r) => {
+      const hay = [r.period_start, r.period_end, r.provider, r.notes, r.id, r.status]
+        .filter((s): s is string => typeof s === "string" && s.length > 0)
+        .join("\n")
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }, [filteredRows, searchQuery]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -167,13 +181,13 @@ export default function AdminPayrollHubPage() {
           <div className="h-[160px]">
             <V2Card hoverColor="emerald" className="border-emerald-500/20 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]">
               <Sparkline colorClass="text-emerald-500" variant={3} />
-              <MonolithicWatermark value={rows.length} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
+              <MonolithicWatermark value={displayRows.length} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                   <Banknote className="h-3.5 w-3.5" /> Export Batches
                 </h3>
                 <p className="text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1">
-                  {filteredRows.length}
+                  {displayRows.length}
                 </p>
               </div>
             </V2Card>
@@ -221,9 +235,10 @@ export default function AdminPayrollHubPage() {
                 disabled={!facilityReady || exportingCsv}
                 className="h-11 shrink-0 gap-2 rounded-full font-mono text-[10px] font-bold uppercase tracking-widest"
                 title={
-                  statusFilter === "all"
+                  (statusFilter === "all"
                     ? "Export up to 500 batches (all statuses), most recent period first."
-                    : `Export up to 500 ${statusFilter} batches, most recent period first.`
+                    : `Export up to 500 ${statusFilter} batches, most recent period first.`) +
+                  " Search does not narrow the CSV."
                 }
                 onClick={() => void exportBatchesCsv()}
               >
@@ -232,7 +247,18 @@ export default function AdminPayrollHubPage() {
               </Button>
             </div>
             {facilityReady ? (
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                <label className="flex min-w-0 max-w-full flex-1 items-center gap-2 sm:max-w-md">
+                  <Search className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+                  <Input
+                    type="search"
+                    placeholder="Search period, provider, notes, id…"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-9 rounded-lg border-slate-200 bg-white text-sm dark:border-white/10 dark:bg-white/5"
+                    aria-label="Filter batches by text"
+                  />
+                </label>
                 <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                   <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400">Status</span>
                   <select
@@ -252,7 +278,15 @@ export default function AdminPayrollHubPage() {
                 </label>
                 {rows.length > 0 ? (
                   <p className="text-[10px] font-mono tracking-widest text-slate-400 uppercase">
-                    Showing {filteredRows.length} of {rows.length} · Period desc
+                    {searchQuery.trim() ? (
+                      <>
+                        Showing {displayRows.length} of {filteredRows.length} · Search
+                      </>
+                    ) : (
+                      <>
+                        Showing {filteredRows.length} of {rows.length} · Period desc
+                      </>
+                    )}
                   </p>
                 ) : null}
               </div>
@@ -266,9 +300,11 @@ export default function AdminPayrollHubPage() {
            <p className="text-sm font-mono text-slate-500">No payroll export batches for this facility yet.</p>
         ) : filteredRows.length === 0 ? (
            <p className="text-sm font-mono text-slate-500">No batches match this status filter.</p>
+        ) : displayRows.length === 0 ? (
+           <p className="text-sm font-mono text-slate-500">No batches match this search.</p>
         ) : (
           <MotionList className="space-y-3">
-             {filteredRows.map((row) => (
+             {displayRows.map((row) => (
                <MotionItem key={row.id}>
                  <Link
                    href={`/admin/payroll/${row.id}`}
