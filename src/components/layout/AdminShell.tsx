@@ -185,6 +185,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       group: "Quality & Risk",
       icon: ShieldCheck,
       items: [
+        { key: "incidents-new", href: "/admin/incidents/new", label: "Report Incident", enabled: true, icon: ShieldAlert },
         { key: "incidents", href: "/admin/incidents", label: "Incident queue", enabled: true, icon: ShieldAlert },
         { key: "infection", href: "/admin/infection-control", label: "Infection Control", enabled: true, icon: Biohazard },
         { key: "compliance", href: "/admin/compliance", label: "Compliance & Safety", enabled: true, icon: Scale },

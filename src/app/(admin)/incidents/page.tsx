@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { AlertCircle, Clock, ShieldAlert, ArrowRight, CheckCircle2 } from "lucide-react";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -192,7 +193,8 @@ function KanbanCard({ incident, now }: { incident: IncidentRow; now: number }) {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-2xl glass-panel group transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] cursor-grab active:cursor-grabbing border border-white/40 dark:border-white/10 bg-white/70 dark:bg-slate-900/60 backdrop-blur-md">
+    <Link href={`/admin/incidents/${incident.id}`} className="block">
+    <div className="relative overflow-hidden rounded-2xl glass-panel group transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] cursor-pointer border border-white/40 dark:border-white/10 bg-white/70 dark:bg-slate-900/60 backdrop-blur-md">
       {countdownRibbon}
       <div className="p-5 flex flex-col gap-4">
         <div className="flex items-start justify-between">
@@ -246,6 +248,7 @@ function KanbanCard({ incident, now }: { incident: IncidentRow; now: number }) {
         </div>
       </div>
     </div>
+    </Link>
   );
 }
 

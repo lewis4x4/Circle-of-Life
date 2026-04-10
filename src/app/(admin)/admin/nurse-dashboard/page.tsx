@@ -62,7 +62,7 @@ export default function NurseDashboardPage() {
         <ActionTile label="Open eMAR" href="/admin/residents" gradient="bg-teal-500" />
         <ActionTile label="Controlled Counts" href="/admin/residents" gradient="bg-rose-500" />
         <ActionTile label="Med Error Review" href="/admin/incidents?category=medication_error" gradient="bg-amber-500" />
-        <ActionTile label="Report Incident" href="/admin/incidents" gradient="bg-indigo-500" />
+        <ActionTile label="Report Incident" href="/admin/incidents/new" gradient="bg-indigo-500" />
       </div>
 
       {/* Bottom sections */}
