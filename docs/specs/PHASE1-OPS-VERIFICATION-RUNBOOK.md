@@ -39,6 +39,12 @@ For a **single local pilot-readiness bundle** (chains web-health, auth-smoke, au
 BASE_URL=http://127.0.0.1:3001 npm run demo:pilot-readiness
 ```
 
+To append **Playwright** authenticated smoke (**`demo:auth-smoke:real`** — four pilot roles; supports **PH1-A04** / **PH1-P04** evidence), set:
+
+```bash
+BASE_URL=http://127.0.0.1:3001 PILOT_READINESS_AUTH_SMOKE_REAL=1 npm run demo:pilot-readiness
+```
+
 ---
 
 ## 1. Repo hygiene and build baseline
