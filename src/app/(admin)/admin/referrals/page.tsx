@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { ClipboardList, Download, UserPlus, ArrowRight } from "lucide-react";
 
@@ -17,12 +17,27 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 
+type ReferralLeadStatus = Database["public"]["Enums"]["referral_lead_status"];
+
 type LeadRow = Pick<
   Database["public"]["Tables"]["referral_leads"]["Row"],
   "id" | "first_name" | "last_name" | "status" | "updated_at"
 > & {
   referral_sources: { name: string } | null;
 };
+
+const LEAD_STATUS_FILTERS: { value: "all" | ReferralLeadStatus; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "new", label: "New" },
+  { value: "contacted", label: "Contacted" },
+  { value: "tour_scheduled", label: "Tour scheduled" },
+  { value: "tour_completed", label: "Tour completed" },
+  { value: "application_pending", label: "Application pending" },
+  { value: "waitlisted", label: "Waitlisted" },
+  { value: "converted", label: "Converted" },
+  { value: "lost", label: "Lost" },
+  { value: "merged", label: "Merged" },
+];
 
 type LeadExportRow = Database["public"]["Tables"]["referral_leads"]["Row"] & {
   referral_sources: { name: string } | null;
@@ -104,6 +119,12 @@ export default function AdminReferralsHubPage() {
   });
   const [hl7Counts, setHl7Counts] = useState({ pending: 0, failed: 0 });
   const [exportingCsv, setExportingCsv] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<"all" | ReferralLeadStatus>("all");
+
+  const filteredRows = useMemo(() => {
+    if (statusFilter === "all") return rows;
+    return rows.filter((r) => r.status === statusFilter);
+  }, [rows, statusFilter]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -184,24 +205,31 @@ export default function AdminReferralsHubPage() {
     setExportingCsv(true);
     setLoadError(null);
     try {
-      const { data, error: qErr } = await supabase
+      let query = supabase
         .from("referral_leads")
         .select("*, referral_sources(name)")
         .eq("facility_id", selectedFacilityId)
         .is("deleted_at", null)
         .order("updated_at", { ascending: false })
         .limit(500);
+      if (statusFilter !== "all") {
+        query = query.eq("status", statusFilter);
+      }
+      const { data, error: qErr } = await query;
       if (qErr) throw qErr;
       const list = (data ?? []) as LeadExportRow[];
       const csv = buildReferralLeadsCsv(list);
       const stamp = format(new Date(), "yyyy-MM-dd");
-      triggerCsvDownload(`referral-leads-${stamp}.csv`, csv);
+      const base = `referral-leads-${stamp}`;
+      const filename =
+        statusFilter === "all" ? `${base}.csv` : `${base}_${statusFilter}.csv`;
+      triggerCsvDownload(filename, csv);
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : "Failed to export referral leads.");
     } finally {
       setExportingCsv(false);
     }
-  }, [supabase, selectedFacilityId]);
+  }, [supabase, selectedFacilityId, statusFilter]);
 
   const noFacility = !selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId);
 
@@ -328,11 +356,35 @@ export default function AdminReferralsHubPage() {
       {/* ─── CASE ROSTER (GLASS ROWS) ─── */}
       <div className="space-y-6">
         <div className="flex flex-col gap-3 border-b border-slate-200/50 dark:border-white/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <ClipboardList className="h-5 w-5 text-indigo-500" />
             <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white tracking-tight">
               Pipeline Leads
             </h3>
+            {!noFacility ? (
+              <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400">Status</span>
+                <select
+                  className={cn(
+                    "h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-900 outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-100",
+                    "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50",
+                  )}
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as "all" | ReferralLeadStatus)}
+                >
+                  {LEAD_STATUS_FILTERS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            {!noFacility && rows.length > 0 ? (
+              <p className="text-[10px] font-mono tracking-widest text-slate-400 uppercase">
+                Showing {filteredRows.length} of {rows.length} · Most recent first
+              </p>
+            ) : null}
           </div>
           <Button
             type="button"
@@ -340,6 +392,11 @@ export default function AdminReferralsHubPage() {
             size="sm"
             disabled={noFacility || exportingCsv}
             className="h-10 shrink-0 gap-2 rounded-full text-[10px] font-bold uppercase tracking-widest"
+            title={
+              statusFilter === "all"
+                ? "Export up to 500 leads (all statuses), most recently updated first."
+                : `Export up to 500 ${statusFilter.replace(/_/g, " ")} leads, most recently updated first.`
+            }
             onClick={() => void exportReferralLeadsCsv()}
           >
             <Download className="h-4 w-4" aria-hidden />
@@ -374,9 +431,13 @@ export default function AdminReferralsHubPage() {
                <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
                  No leads yet. Starts with <strong>New lead</strong>.
                </div>
+             ) : filteredRows.length === 0 ? (
+               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
+                 No leads match this status filter.
+               </div>
              ) : (
                 <MotionList className="space-y-4">
-                  {rows.map((r) => {
+                  {filteredRows.map((r) => {
                     const isNew = r.status.includes('new');
                     
                     return (

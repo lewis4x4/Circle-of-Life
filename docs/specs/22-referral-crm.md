@@ -45,6 +45,8 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 
 **Shipped (Track D27):** **`/admin/referrals`** — **Download leads CSV** (up to **500** **`referral_leads`** rows for the selected facility, **`referral_sources(name)`** join). **No** new DDL.
 
+**Shipped (Track D70):** Same hub — **status** filter on the loaded pipeline list (**All** + each **`referral_lead_status`**); **Showing N of M**; **Download leads CSV** applies the same filter server-side when not **All** (up to **500**); filename **`_<status>`** when filtered.
+
 ---
 
 ## RLS (normative)
