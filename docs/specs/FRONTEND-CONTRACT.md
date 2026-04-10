@@ -33,7 +33,7 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 - `/admin/referrals/new`
 - `/admin/referrals/[id]`
 - `/admin/referrals/sources`
-- `/admin/referrals/hl7-inbound` (Phase 6 Module 22 — `22-referral-crm.md`; **Copy raw** — D65; **status filter** — D67; **CSV respects filter** — D68)
+- `/admin/referrals/hl7-inbound` (Phase 6 Module 22 — `22-referral-crm.md`; **Copy raw** — D65; **status filter** — D67; **CSV respects filter** — D68; **search** — D71)
 - `/admin/referrals/hl7-inbound/new`
 - `/admin/reputation` (Phase 6 Module 23 — `23-reputation.md`)
 - `/admin/reputation/integrations` (Google OAuth + Google/Yelp review import — `23-reputation.md` Track D D44–D47; `POST /api/reputation/sync/google`, `POST /api/reputation/sync/yelp`, `POST /api/cron/reputation/google-reviews`)

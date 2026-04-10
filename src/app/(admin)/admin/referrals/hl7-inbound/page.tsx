@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { Activity, Ban, Check, Radio, Server, UserPlus, X } from "lucide-react";
+import { Activity, Ban, Check, Radio, Search, Server, UserPlus, X } from "lucide-react";
 
 import { ReferralsHubNav } from "../referrals-hub-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
@@ -81,11 +82,29 @@ export default function AdminReferralsHl7InboundPage() {
   const [exportingCsv, setExportingCsv] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | Status>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const filteredRows = useMemo(() => {
     if (statusFilter === "all") return rows;
     return rows.filter((r) => r.status === statusFilter);
   }, [rows, statusFilter]);
+
+  const displayRows = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return filteredRows;
+    return filteredRows.filter((r) => {
+      const hay = [
+        r.message_control_id,
+        r.trigger_event,
+        r.parse_error,
+        r.raw_message,
+      ]
+        .filter((s): s is string => typeof s === "string" && s.length > 0)
+        .join("\n")
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }, [filteredRows, searchQuery]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -271,9 +290,10 @@ export default function AdminReferralsHl7InboundPage() {
               disabled={noFacility || exportingCsv}
               className="h-14 rounded-full px-6 font-bold uppercase tracking-widest text-xs"
               title={
-                statusFilter === "all"
+                (statusFilter === "all"
                   ? "Export up to 500 messages (all statuses), most recent first."
-                  : `Export up to 500 ${statusFilter} messages, most recent first.`
+                  : `Export up to 500 ${statusFilter} messages, most recent first.`) +
+                " Search does not narrow the CSV."
               }
               onClick={() => void exportQueueCsv()}
             >
@@ -294,7 +314,18 @@ export default function AdminReferralsHl7InboundPage() {
               <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1 flex items-center gap-2">
                  <Server className="h-5 w-5 text-indigo-500" /> Message Queue
               </h3>
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                <label className="flex min-w-0 max-w-full flex-1 items-center gap-2 sm:max-w-xs">
+                  <Search className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+                  <Input
+                    type="search"
+                    placeholder="Search control ID, trigger, raw…"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-9 rounded-lg border-slate-200 bg-white text-sm dark:border-white/10 dark:bg-white/5"
+                    aria-label="Filter queue by text"
+                  />
+                </label>
                 <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                   <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400">Status</span>
                   <select
@@ -314,9 +345,15 @@ export default function AdminReferralsHl7InboundPage() {
                 </label>
                 <p className="text-[10px] font-mono tracking-widest text-slate-400 uppercase">
                   {rows.length > 0 ? (
-                    <>
-                      Showing {filteredRows.length} of {rows.length} · Most recent first
-                    </>
+                    searchQuery.trim() ? (
+                      <>
+                        Showing {displayRows.length} of {filteredRows.length} · Search
+                      </>
+                    ) : (
+                      <>
+                        Showing {filteredRows.length} of {rows.length} · Most recent first
+                      </>
+                    )
                   ) : (
                     <>Most recent first</>
                   )}
@@ -358,8 +395,12 @@ export default function AdminReferralsHl7InboundPage() {
                          <div className="p-12 text-center text-slate-500 dark:text-slate-400 text-sm font-medium bg-white/50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5">
                             No messages match this status filter.
                          </div>
+                       ) : displayRows.length === 0 ? (
+                         <div className="p-12 text-center text-slate-500 dark:text-slate-400 text-sm font-medium bg-white/50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5">
+                            No messages match this search.
+                         </div>
                        ) : (
-                         filteredRows.map((row) => (
+                         displayRows.map((row) => (
                            <MotionItem key={row.id}>
                               <div className="grid grid-cols-1 sm:grid-cols-[1fr_0.5fr_1fr_2fr_1.5fr_1fr] gap-4 sm:items-center p-5 rounded-2xl bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg transition-all duration-300 w-full outline-none">
                                 <div className="flex flex-col">
