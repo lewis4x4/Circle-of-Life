@@ -79,7 +79,7 @@ BEGIN
         public.chunks c
         INNER JOIN public.documents d ON d.id = c.document_id
           AND d.deleted_at IS NULL
-          AND d.workspace_id = p_workspace_id
+          AND d.workspace_id::uuid = p_workspace_id
       WHERE
         public.document_role_can_view_audience (d.audience, user_role)
         AND (d.status = 'published'
@@ -102,7 +102,7 @@ BEGIN
         public.chunks c
         INNER JOIN public.documents d ON d.id = c.document_id
           AND d.deleted_at IS NULL
-          AND d.workspace_id = p_workspace_id
+          AND d.workspace_id::uuid = p_workspace_id
       WHERE
         public.document_role_can_view_audience (d.audience, user_role)
         AND (d.status = 'published'
@@ -156,7 +156,7 @@ BEGIN
       public.chunks c
       INNER JOIN public.documents d ON d.id = c.document_id
         AND d.deleted_at IS NULL
-        AND d.workspace_id = p_workspace_id
+        AND d.workspace_id::uuid = p_workspace_id
     WHERE
       public.document_role_can_view_audience (d.audience, user_role)
       AND (d.status = 'published'
@@ -216,10 +216,10 @@ CREATE POLICY kb_job_runs_org_rw ON public.kb_job_runs
   FOR ALL
   TO authenticated
   USING (
-    workspace_id = haven.organization_id ()
+    workspace_id::uuid = haven.organization_id ()
     AND workspace_id IS NOT NULL)
   WITH CHECK (
-    workspace_id = haven.organization_id ()
+    workspace_id::uuid = haven.organization_id ()
     AND workspace_id IS NOT NULL);
 
 COMMENT ON FUNCTION public.retrieve_evidence (text, text, text, integer, float, uuid) IS 'KB search; EXECUTE reserved for service_role — call only from Edge Functions after JWT + user_profiles org check.';

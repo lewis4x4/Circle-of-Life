@@ -12,6 +12,8 @@ import {
   Zap,
   Flame,
   BarChart3,
+  Bell,
+  X,
 } from "lucide-react";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -19,6 +21,11 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { fetchComplianceDashboardSnapshot } from "@/lib/compliance-dashboard-snapshot";
 import { getComplianceScore, getLatestScan } from "@/lib/compliance-scan";
+import {
+  getPendingReminders,
+  dismissReminder,
+  type ComplianceReminder,
+} from "@/lib/compliance-reminders";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -56,6 +63,7 @@ export default function AdminCompliancePage() {
   // Enhanced tier state
   const [complianceScore, setComplianceScore] = useState<{ percentage: number; passed: number; total: number } | null>(null);
   const [emergencyItems, setEmergencyItems] = useState<EmergencyItem[]>([]);
+  const [reminders, setReminders] = useState<ComplianceReminder[]>([]);
 
   const loadSnapshot = useCallback(async () => {
     setSnapLoading(true);
@@ -126,6 +134,20 @@ export default function AdminCompliancePage() {
     setDefLoading(false);
   }, [supabase, selectedFacilityId]);
 
+  const loadReminders = useCallback(async () => {
+    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
+      setReminders([]);
+      return;
+    }
+
+    try {
+      const data = await getPendingReminders(selectedFacilityId);
+      setReminders(data);
+    } catch (e) {
+      console.error("Failed to load reminders:", e);
+    }
+  }, [selectedFacilityId]);
+
   const loadEnhancedData = useCallback(async () => {
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
       setComplianceScore(null);
@@ -164,6 +186,10 @@ export default function AdminCompliancePage() {
   useEffect(() => {
     void loadEnhancedData();
   }, [loadEnhancedData]);
+
+  useEffect(() => {
+    void loadReminders();
+  }, [loadReminders]);
 
   const facilityReady = !!(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
 
@@ -453,6 +479,80 @@ export default function AdminCompliancePage() {
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* Enhanced Tier: Compliance Reminders */}
+        {reminders.length > 0 && (
+          <div className="rounded-3xl glass-panel p-6 border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/30">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-3 rounded-lg ${
+                  reminders.some((r) => r.reminder_type === 'weekly_digest')
+                    ? "bg-indigo-100"
+                    : "bg-amber-100"
+                }`}>
+                  <Bell className="h-6 w-6 text-indigo-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100">Pending Reminders</h2>
+                  <p className="text-sm text-slate-500">Action items requiring attention</p>
+                </div>
+              </div>
+              <Link href="/admin/compliance/deficiencies/new" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "glass-panel bg-indigo-50/30 dark:bg-indigo-900/20 text-[10px] uppercase tracking-widest font-mono text-indigo-700 dark:text-indigo-300")}>
+                View All
+              </Link>
+            </div>
+            <MotionList className="space-y-3">
+              {reminders.slice(0, 5).map((reminder) => {
+                const isWeekly = reminder.reminder_type === 'weekly_digest';
+                const isUrgent = reminder.reminder_type === 'poc_due' || reminder.reminder_type === 'assessment_overdue';
+                return (
+                  <MotionItem key={reminder.id} className="p-4 rounded-xl glass-panel transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/40 dark:border-white/5 bg-white/50 dark:bg-slate-900/30">
+                    <div className="flex items-start justify-between gap-4 w-full">
+                      <div className="flex items-start gap-3 flex-1">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          isWeekly ? 'bg-indigo-100' : isUrgent ? 'bg-rose-100' : 'bg-amber-100'
+                        }`}>
+                          {isWeekly ? (
+                            <ClipboardList className="h-5 w-5 text-indigo-600" />
+                          ) : isUrgent ? (
+                            <AlertTriangle className="h-5 w-5 text-rose-600" />
+                          ) : (
+                            <Zap className="h-5 w-5 text-amber-600" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-medium text-slate-900 dark:text-slate-100">{reminder.title}</p>
+                            {isUrgent && (
+                              <Badge variant="destructive" className="text-[9px] uppercase tracking-widest">Urgent</Badge>
+                            )}
+                          </div>
+                          {reminder.description && (
+                            <p className="text-sm text-slate-600 dark:text-slate-400">{reminder.description}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {reminder.action_url && (
+                          <Link href={reminder.action_url} className={buttonVariants({ variant: "outline", size: "sm" })}>
+                            View
+                          </Link>
+                        )}
+                        <button
+                          onClick={() => dismissReminder(reminder.id, selectedFacilityId || "").then(setReminders(r => r.filter(x => x.id !== reminder.id)))}
+                          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          title="Dismiss reminder"
+                        >
+                          <X className="h-4 w-4 text-slate-400" />
+                        </button>
+                      </div>
+                    </div>
+                  </MotionItem>
+                );
+              })}
+            </MotionList>
           </div>
         )}
 

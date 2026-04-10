@@ -655,32 +655,78 @@ If compliance dashboard load performance becomes an issue, a materialized view o
 
 ---
 
-## ENHANCED TIER (build if time allows)
+## ENHANCED TIER ✅ IMPLEMENTED
 
-### Rule-Based Compliance Scoring (10-15 high-value AHCA tags)
+### Rule-Based Compliance Scoring (10-15 high-value AHCA tags) ✅
 
-- Define `compliance_rules` for a focused set of commonly cited tags:
+- ✅ Define `compliance_rules` for a focused set of commonly cited tags:
   - Tag 220 (Personal Care): are ADL care plans current? Are daily ADL logs present for assigned residents?
   - Tag 417 (Adequate Care): PRN effectiveness documented? Condition changes reported within timeframe?
   - Tag 502 (Infection Control): infection surveillance records present? Staff illness tracking active?
-- Each rule: tag number, description, SQL query that returns pass/fail, severity if failing
-- Dashboard shows: pass/fail per tag with drill-down to specific non-compliant records
+  - Tag 201 (Resident Rights): rights violations documented and addressed
+  - Tag 205 (Grievance): grievances logged and resolved
+  - Tag 309 (Staffing): staffing ratios maintained
+  - Tag 314 (Staff Training): training records current
+  - Tag 325 (Background Screening): background screenings current
+  - Tag 404 (Resident Assessment): assessments completed on schedule
+  - Tag 409 (Care Plan Updates): care plans reviewed and updated
+  - Tag 501 (Medication Admin): medication administration documented
+  - Tag 504 (Medication Errors): error rate below threshold
+  - Tag 601 (Physical Plant): facility maintenance current
+  - Tag 602 (Emergency Prep): emergency drills and checks completed
+  - Tag 701 (Dietary): dietary assessments and needs met
+- ✅ Each rule: tag number, description, SQL query that returns pass/fail, severity if failing
+- ✅ RPC function `execute_compliance_rule()` safely executes queries server-side
+- ✅ Dashboard shows: pass/fail per tag with drill-down to specific non-compliant records
 
-### Compliance Reminders & Task Generation
+**Migrations:**
+- `124_compliance_rules.sql` - Core schema and 3 initial rules
+- `127_compliance_rule_executor.sql` - RPC function for safe query execution
+- `128_compliance_rules_expanded.sql` - 9 additional AHCA tag rules
 
-- Weekly digest: "3 assessments overdue, 2 care plan reviews due, 1 POC submission due Friday"
-- Surface on admin dashboard as an action card with links
+### Compliance Reminders & Task Generation ✅
 
-### Historical Deficiency Analysis
+- ✅ Weekly digest: "3 assessments overdue, 2 care plan reviews due, 1 POC submission due Friday"
+- ✅ Surface on admin dashboard as an action card with links
+- ✅ Reminder types: weekly_digest, poc_due, assessment_overdue, care_plan_review_due, policy_acknowledgment_overdue
+- ✅ Dismiss functionality for pending reminders
 
-- Chart: deficiency count by tag over time (which tags get cited most?)
-- Recurrence tracking: was this tag cited before? When was it corrected? How long was the gap?
+**Files:**
+- `src/lib/compliance-reminders.ts` - Reminder generation and management functions
+- `src/app/(admin)/admin/compliance/page.tsx` - Reminder UI cards on dashboard
 
-### Emergency Preparedness Checklist
+### Historical Deficiency Analysis ✅
 
-- Structured tracking: generator tests (monthly), fire drills (quarterly), evacuation drills
-- Each with date, participants, notes, next due date
-- Dashboard widget: "Next fire drill due in X days"
+- ✅ Chart: deficiency count by tag over time (which tags get cited most?)
+- ✅ Recurrence tracking: was this tag cited before? When was it corrected? How long was the gap?
+- ✅ LineChart for trend analysis by tag over time
+- ✅ BarChart for most-cited tags
+- ✅ Table showing recurrence details with gap tracking
+
+**Files:**
+- `src/lib/deficiency-analysis.ts` - Analysis functions (already existed)
+- `src/app/(admin)/admin/compliance/deficiencies/analysis/page.tsx` - Analysis UI with charts
+
+### Emergency Preparedness Checklist ✅
+
+- ✅ Structured tracking: generator tests (monthly), fire drills (quarterly), evacuation drills
+- ✅ Each with date, participants, notes, next due date
+- ✅ Dashboard widget: "Next fire drill due in X days"
+
+**Migrations:**
+- `125_emergency_preparedness.sql` - Emergency checklist tables and seed data
+
+**Files:**
+- `src/app/(admin)/admin/compliance/emergency-preparedness/page.tsx` - Full emergency checklist UI
+
+### Bug Fixes ✅
+
+Three bugs in migration 124 have been fixed:
+
+**Migration 129_compliance_bugfixes.sql:**
+- ✅ Fixed index on `compliance_scans` that referenced non-existent `deleted_at` column
+- ✅ Fixed RLS policy on `compliance_reminders` that referenced non-existent `user_id` column
+- ✅ Added `updated_at` column to `compliance_scans` table for trigger compatibility
 
 ---
 

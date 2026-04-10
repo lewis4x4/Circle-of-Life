@@ -146,6 +146,9 @@ CREATE INDEX IF NOT EXISTS idx_kb_analytics_workspace ON public.kb_analytics_eve
 -- ---------------------------------------------------------------------------
 -- RPCs
 -- ---------------------------------------------------------------------------
+-- Production may have an older variant with different parameter names; PG
+-- forbids renaming parameters via CREATE OR REPLACE.
+DROP FUNCTION IF EXISTS public.document_role_can_view_audience (text, text);
 
 CREATE OR REPLACE FUNCTION public.document_role_can_view_audience (
   p_audience text,
@@ -214,7 +217,7 @@ BEGIN
       public.chunks c
       INNER JOIN public.documents d ON d.id = c.document_id
         AND d.deleted_at IS NULL
-        AND d.workspace_id = p_workspace_id
+        AND d.workspace_id::uuid = p_workspace_id
     WHERE
       public.document_role_can_view_audience (d.audience, user_role)
       AND (d.status = 'published'
@@ -239,7 +242,7 @@ BEGIN
       public.chunks c
       INNER JOIN public.documents d ON d.id = c.document_id
         AND d.deleted_at IS NULL
-        AND d.workspace_id = p_workspace_id
+        AND d.workspace_id::uuid = p_workspace_id
     WHERE
       public.document_role_can_view_audience (d.audience, user_role)
       AND (d.status = 'published'
@@ -335,33 +338,33 @@ DROP POLICY IF EXISTS kb_documents_org_rw ON public.documents;
 CREATE POLICY kb_documents_org_rw ON public.documents
   FOR ALL
   TO authenticated
-  USING (workspace_id = haven.organization_id ())
-  WITH CHECK (workspace_id = haven.organization_id ());
+  USING (workspace_id::uuid = haven.organization_id ())
+  WITH CHECK (workspace_id::uuid = haven.organization_id ());
 
 DROP POLICY IF EXISTS kb_chunks_org_rw ON public.chunks;
 
 CREATE POLICY kb_chunks_org_rw ON public.chunks
   FOR ALL
   TO authenticated
-  USING (workspace_id = haven.organization_id ())
-  WITH CHECK (workspace_id = haven.organization_id ());
+  USING (workspace_id::uuid = haven.organization_id ())
+  WITH CHECK (workspace_id::uuid = haven.organization_id ());
 
 DROP POLICY IF EXISTS knowledge_gaps_org_rw ON public.knowledge_gaps;
 
 CREATE POLICY knowledge_gaps_org_rw ON public.knowledge_gaps
   FOR ALL
   TO authenticated
-  USING (workspace_id = haven.organization_id ())
-  WITH CHECK (workspace_id = haven.organization_id ());
+  USING (workspace_id::uuid = haven.organization_id ())
+  WITH CHECK (workspace_id::uuid = haven.organization_id ());
 
 DROP POLICY IF EXISTS kb_chat_conv_org_rw ON public.chat_conversations;
 
 CREATE POLICY kb_chat_conv_org_rw ON public.chat_conversations
   FOR ALL
   TO authenticated
-  USING (workspace_id = haven.organization_id ()
+  USING (workspace_id::uuid = haven.organization_id ()
     AND user_id = auth.uid ())
-  WITH CHECK (workspace_id = haven.organization_id ()
+  WITH CHECK (workspace_id::uuid = haven.organization_id ()
     AND user_id = auth.uid ());
 
 DROP POLICY IF EXISTS kb_chat_msg_org_rw ON public.chat_messages;
@@ -369,9 +372,9 @@ DROP POLICY IF EXISTS kb_chat_msg_org_rw ON public.chat_messages;
 CREATE POLICY kb_chat_msg_org_rw ON public.chat_messages
   FOR ALL
   TO authenticated
-  USING (workspace_id = haven.organization_id ()
+  USING (workspace_id::uuid = haven.organization_id ()
     AND user_id = auth.uid ())
-  WITH CHECK (workspace_id = haven.organization_id ()
+  WITH CHECK (workspace_id::uuid = haven.organization_id ()
     AND user_id = auth.uid ());
 
 DROP POLICY IF EXISTS document_audit_events_org_rw ON public.document_audit_events;
@@ -386,7 +389,7 @@ CREATE POLICY document_audit_events_org_rw ON public.document_audit_events
         public.documents d
       WHERE
         d.id = document_audit_events.document_id
-        AND d.workspace_id = haven.organization_id ()))
+        AND d.workspace_id::uuid = haven.organization_id ()))
   WITH CHECK (EXISTS (
       SELECT
         1
@@ -394,16 +397,16 @@ CREATE POLICY document_audit_events_org_rw ON public.document_audit_events
         public.documents d
       WHERE
         d.id = document_audit_events.document_id
-        AND d.workspace_id = haven.organization_id ()));
+        AND d.workspace_id::uuid = haven.organization_id ()));
 
 DROP POLICY IF EXISTS usage_counters_self_org ON public.usage_counters;
 
 CREATE POLICY usage_counters_self_org ON public.usage_counters
   FOR ALL
   TO authenticated
-  USING (workspace_id = haven.organization_id ()
+  USING (workspace_id::uuid = haven.organization_id ()
     AND user_id = auth.uid ())
-  WITH CHECK (workspace_id = haven.organization_id ()
+  WITH CHECK (workspace_id::uuid = haven.organization_id ()
     AND user_id = auth.uid ());
 
 DROP POLICY IF EXISTS kb_job_runs_org_rw ON public.kb_job_runs;
@@ -412,17 +415,17 @@ CREATE POLICY kb_job_runs_org_rw ON public.kb_job_runs
   FOR ALL
   TO authenticated
   USING (workspace_id IS NULL
-    OR workspace_id = haven.organization_id ())
+    OR workspace_id::uuid = haven.organization_id ())
   WITH CHECK (workspace_id IS NULL
-    OR workspace_id = haven.organization_id ());
+    OR workspace_id::uuid = haven.organization_id ());
 
 DROP POLICY IF EXISTS kb_analytics_org_rw ON public.kb_analytics_events;
 
 CREATE POLICY kb_analytics_org_rw ON public.kb_analytics_events
   FOR ALL
   TO authenticated
-  USING (workspace_id = haven.organization_id ())
-  WITH CHECK (workspace_id = haven.organization_id ());
+  USING (workspace_id::uuid = haven.organization_id ())
+  WITH CHECK (workspace_id::uuid = haven.organization_id ());
 
 -- ---------------------------------------------------------------------------
 -- Storage: bucket `documents` for KB uploads (path: kb/{org_id}/...)

@@ -43,10 +43,11 @@ CREATE TABLE compliance_scans (
   rules_passed integer NOT NULL DEFAULT 0,
   rules_failed integer NOT NULL DEFAULT 0,
   notes text,
-  created_at timestamptz NOT NULL DEFAULT now()
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_compliance_scans_facility ON compliance_scans(facility_id, scanned_at DESC) WHERE deleted_at IS NULL;
+CREATE INDEX idx_compliance_scans_facility ON compliance_scans(facility_id, scanned_at DESC);
 
 -- ============================================================
 -- COMPLIANCE SCAN RESULTS (per-rule results for drill-down)
@@ -187,7 +188,7 @@ CREATE POLICY staff_see_own_reminders ON compliance_reminders
     organization_id = haven.organization_id()
     AND deleted_at IS NULL
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND (user_id = auth.uid() OR haven.app_role() IN ('owner', 'org_admin', 'facility_admin'))
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin')
   );
 
 -- ============================================================

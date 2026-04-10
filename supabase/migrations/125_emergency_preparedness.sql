@@ -40,9 +40,6 @@ CREATE TABLE emergency_checklist_items (
 CREATE INDEX idx_emergency_items_facility ON emergency_checklist_items(facility_id)
   WHERE deleted_at IS NULL;
 
-CREATE INDEX idx_emergency_items_due ON emergency_checklist_items(facility_id, next_due_date)
-  WHERE deleted_at IS NULL AND next_due_date < CURRENT_DATE;
-
 -- ============================================================
 -- EMERGENCY CHECKLIST COMPLETIONS (history)
 -- ============================================================

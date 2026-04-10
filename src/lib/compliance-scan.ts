@@ -163,32 +163,54 @@ async function evaluateRule(
   scanId: string,
   supabase: ReturnType<typeof createClient>,
 ): Promise<ComplianceScanResult> {
-  // For now, we create placeholder results
-  // In production, this would execute rule.check_query via RPC
+  try {
+    // Execute the rule via server-side RPC for safe SQL execution
+    const { data: result, error } = await supabase.rpc("execute_compliance_rule", {
+      p_rule_id: rule.id,
+      p_facility_id: facilityId,
+    });
 
-  const passed = Math.random() > 0.3; // Simulated - replace with actual query execution
-  const nonCompliantCount = passed ? 0 : Math.floor(Math.random() * 10) + 1;
+    if (error) {
+      console.error(`Rule execution failed for ${rule.tag_number}:`, error);
+      throw new Error(`Failed to execute rule ${rule.tag_number}: ${error.message}`);
+    }
 
-  const { data: result } = await supabase
-    .from("compliance_scan_results")
-    .insert({
-      scan_id: scanId,
-      facility_id: facilityId,
-      organization_id: organizationId,
-      rule_id: rule.id,
-      tag_number: rule.tag_number,
-      passed,
-      non_compliant_count: nonCompliantCount,
-      context: passed ? null : { simulated: true },
-    })
-    .select()
-    .single();
+    if (!result || result.length === 0) {
+      throw new Error(`No result returned for rule ${rule.tag_number}`);
+    }
 
-  if (!result) {
-    throw new Error(`Failed to create scan result for rule ${rule.tag_number}`);
+    const { passed, non_compliant_count } = result[0];
+
+    // Store the scan result
+    const { data: scanResult } = await supabase
+      .from("compliance_scan_results")
+      .insert({
+        scan_id: scanId,
+        facility_id: facilityId,
+        organization_id: organizationId,
+        rule_id: rule.id,
+        tag_number: rule.tag_number,
+        passed,
+        non_compliant_count: non_compliant_count ?? 0,
+        context: passed ? null : {
+          rule_id: rule.id,
+          rule_title: rule.tag_title,
+          executed_at: new Date().toISOString(),
+        },
+      })
+      .select()
+      .single();
+
+    if (!scanResult) {
+      throw new Error(`Failed to create scan result for rule ${rule.tag_number}`);
+    }
+
+    return scanResult;
+  } catch (e) {
+    // Log the error but don't fail the entire scan
+    console.error(`Error evaluating rule ${rule.tag_number}:`, e);
+    throw e;
   }
-
-  return result;
 }
 
 /**
