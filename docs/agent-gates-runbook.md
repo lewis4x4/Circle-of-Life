@@ -2,6 +2,8 @@
 
 Deterministic segment gates mirror the **Autonomous Codex** model: implement a bounded segment, run gates, keep JSON proof, then commit.
 
+**Loop continuity:** Session discipline (BOOT → FIND → RECORD) lives in **`docs/Autonomous.md`**.
+
 ## Mission (ship gate)
 
 Duplicated in `docs/mission-statement.md`, `AGENTS.md`, `CLAUDE.md`, `CODEX.md`, and `agents/registry.yaml`. Every segment should record **mission alignment**: `pass` | `risk` | `fail`.
