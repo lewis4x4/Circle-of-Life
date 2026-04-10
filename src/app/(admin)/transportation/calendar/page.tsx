@@ -16,13 +16,15 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
-import { ArrowLeft, Bus, CalendarDays, ChevronLeft, ChevronRight, Clock, MapPin } from "lucide-react";
+import { ArrowLeft, Bus, CalendarDays, ChevronLeft, ChevronRight, Clock, Download, MapPin } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
+import { triggerFileDownload } from "@/lib/csv-export";
+import { buildTransportRequestsIcs } from "@/lib/transportation/transport-requests-ics";
 import { cn } from "@/lib/utils";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MotionItem, MotionList } from "@/components/ui/motion-list";
@@ -195,6 +197,25 @@ export default function TransportationWeekCalendarPage() {
     }
   };
 
+  const downloadCalendarIcs = () => {
+    const text = buildTransportRequestsIcs(
+      rows.map((r) => ({
+        id: r.id,
+        appointment_date: r.appointment_date,
+        appointment_time: r.appointment_time,
+        destination_name: r.destination_name,
+        purpose: r.purpose,
+        status: r.status,
+        destination_address: r.destination_address,
+        residents: r.residents,
+      })),
+      "Haven transport (calendar)",
+    );
+    const from = format(rangeStart, "yyyy-MM-dd");
+    const to = format(rangeEnd, "yyyy-MM-dd");
+    triggerFileDownload(`haven-transport-${viewMode}-${from}_${to}.ics`, text, "text/calendar;charset=utf-8");
+  };
+
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <AmbientMatrix hasCriticals={false} primaryClass="bg-indigo-700/10" secondaryClass="bg-slate-900/10" />
@@ -309,12 +330,28 @@ export default function TransportationWeekCalendarPage() {
                   <ChevronRight className="h-5 w-5" />
                 </button>
               </div>
-              <Link
-                href="/admin/transportation/requests/new"
-                className={cn(buttonVariants({ size: "default" }), "h-11 rounded-full text-[10px] font-bold uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 text-white")}
-              >
-                + Request
-              </Link>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={downloadCalendarIcs}
+                  disabled={loading}
+                  className={cn(
+                    buttonVariants({ variant: "outline", size: "default" }),
+                    "h-11 rounded-full gap-2 text-[10px] font-bold uppercase tracking-widest",
+                    loading && "pointer-events-none opacity-50",
+                  )}
+                  aria-label="Download calendar as ICS file"
+                >
+                  <Download className="h-4 w-4" />
+                  .ics
+                </button>
+                <Link
+                  href="/admin/transportation/requests/new"
+                  className={cn(buttonVariants({ size: "default" }), "h-11 rounded-full text-[10px] font-bold uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 text-white")}
+                >
+                  + Request
+                </Link>
+              </div>
             </div>
 
             {viewMode === "week" ? (

@@ -87,7 +87,7 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 - `/admin/dietary/new`
 - `/admin/dietary/clinical-review` (read-only diet order + resident medications — Track D13; advisory med–diet hints — Track D50–D53)
 - `/admin/transportation` (Phase 6 Module 15 — `15-transportation.md`)
-- `/admin/transportation/calendar` (week or month grid + daily agenda for `resident_transport_requests` — Track D14–D56)
+- `/admin/transportation/calendar` (week or month grid + daily agenda for `resident_transport_requests`; **Download `.ics`** for loaded window — Track D14–D57)
 - `/admin/transportation/mileage-approvals` (`mileage_logs` approval queue — Track D15)
 - `/admin/transportation/settings` (org mileage reimbursement rate — `owner` / `org_admin`)
 - `/admin/transportation/requests/new`

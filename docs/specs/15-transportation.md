@@ -49,7 +49,11 @@ Transportation involves two distinct workflows at COL:
 
 ### Enhanced (defer)
 
-**Shipped (Track D14–D56):** **`/admin/transportation/calendar`** — **Week** strip (Sunday-start) with per-day trip counts and selectable-day agenda for **`resident_transport_requests`** (same RLS scope as hub); prev/next week, “This week”. **Month** (Track D56): full month grid with weekday headers, muted padding days outside the month, trip counts per cell, prev/next month, “This month”; query window is the full calendar grid (up to **500** rows). **External sync** remains deferred.
+**Shipped (Track D14–D56):** **`/admin/transportation/calendar`** — **Week** strip (Sunday-start) with per-day trip counts and selectable-day agenda for **`resident_transport_requests`** (same RLS scope as hub); prev/next week, “This week”. **Month** (Track D56): full month grid with weekday headers, muted padding days outside the month, trip counts per cell, prev/next month, “This month”; query window is the full calendar grid (up to **500** rows).
+
+**Shipped (Track D57):** Same route — **Download `.ics`** (RFC 5545) for trips currently loaded in the view (week or month window); timed events use **`TZID=America/New_York`**; **all-day** when **`appointment_time`** is null; **`STATUS:CANCELLED`** when applicable. Operator handoff to Outlook/Google/Apple — **not** live OAuth/webcal sync.
+
+**External sync** (bidirectional / subscribe URL) remains deferred.
 
 **Shipped (Track D15):** **`/admin/transportation/mileage-approvals`** — queue of **`mileage_logs`** with **`approved_at` IS NULL**; **owner / org_admin / facility_admin / nurse** can set **`approved_at`** / **`approved_by`**; **undo** when **`payroll_export_id`** is still null. Module 13 payroll file generation remains separate.
 
