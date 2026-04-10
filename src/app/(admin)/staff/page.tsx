@@ -196,44 +196,6 @@ export default function AdminStaffPage() {
     void loadStaff();
   }, [loadStaff]);
 
-  const exportStaffRosterCsv = useCallback(async () => {
-    setExportingCsv(true);
-    setError(null);
-    try {
-      let q = supabase
-        .from("staff" as never)
-        .select(
-          `id, organization_id, facility_id, first_name, last_name, preferred_name,
-          staff_role, employment_status, hire_date, email, phone, phone_alt,
-          address_line_1, address_line_2, city, state, zip,
-          emergency_contact_name, emergency_contact_phone, emergency_contact_relationship,
-          is_full_time, is_float_pool, excluded_from_care,
-          max_hours_per_week, hourly_rate, overtime_rate,
-          termination_date, termination_reason, notes,
-          photo_url, user_id, created_at, updated_at, created_by, updated_by, deleted_at`,
-        )
-        .is("deleted_at", null)
-        .order("last_name", { ascending: true })
-        .order("first_name", { ascending: true })
-        .limit(500);
-
-      if (isValidFacilityIdForQuery(selectedFacilityId)) {
-        q = q.eq("facility_id", selectedFacilityId);
-      }
-
-      const { data, error: qErr } = await q;
-      if (qErr) throw qErr;
-      const list = (data ?? []) as StaffCsvRow[];
-      const csv = buildStaffRosterCsv(list);
-      const stamp = format(new Date(), "yyyy-MM-dd");
-      triggerCsvDownload(`staff-roster-${stamp}.csv`, csv);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to export staff roster.");
-    } finally {
-      setExportingCsv(false);
-    }
-  }, [supabase, selectedFacilityId]);
-
   const filteredRows = useMemo(() => {
     const loweredSearch = search.trim().toLowerCase();
     return rows.filter((row) => {
@@ -247,6 +209,52 @@ export default function AdminStaffPage() {
       return matchesSearch && matchesRole && matchesStatus && matchesCert;
     });
   }, [rows, search, role, status, cert]);
+
+  const exportStaffRosterCsv = useCallback(async () => {
+    setExportingCsv(true);
+    setError(null);
+    try {
+      const ids = filteredRows.map((r) => r.id);
+      const hubFiltersDefault =
+        search.trim() === "" &&
+        role === DEFAULT_FILTERS.role &&
+        status === DEFAULT_FILTERS.status &&
+        cert === DEFAULT_FILTERS.cert;
+      const scope = hubFiltersDefault ? "" : "_filtered";
+      const stamp = format(new Date(), "yyyy-MM-dd");
+
+      if (ids.length === 0) {
+        triggerCsvDownload(`staff-roster-${stamp}${scope}.csv`, buildStaffRosterCsv([]));
+        return;
+      }
+
+      const { data, error: qErr } = await supabase
+        .from("staff" as never)
+        .select(
+          `id, organization_id, facility_id, first_name, last_name, preferred_name,
+          staff_role, employment_status, hire_date, email, phone, phone_alt,
+          address_line_1, address_line_2, city, state, zip,
+          emergency_contact_name, emergency_contact_phone, emergency_contact_relationship,
+          is_full_time, is_float_pool, excluded_from_care,
+          max_hours_per_week, hourly_rate, overtime_rate,
+          termination_date, termination_reason, notes,
+          photo_url, user_id, created_at, updated_at, created_by, updated_by, deleted_at`,
+        )
+        .in("id", ids)
+        .is("deleted_at", null);
+
+      if (qErr) throw qErr;
+      const raw = (data ?? []) as StaffCsvRow[];
+      const order = new Map(ids.map((id, i) => [id, i]));
+      const list = raw.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+      const csv = buildStaffRosterCsv(list);
+      triggerCsvDownload(`staff-roster-${stamp}${scope}.csv`, csv);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to export staff roster.");
+    } finally {
+      setExportingCsv(false);
+    }
+  }, [supabase, filteredRows, search, role, status, cert]);
 
   const listEmptyCopy = useMemo(
     () =>

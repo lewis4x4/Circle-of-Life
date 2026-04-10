@@ -74,7 +74,7 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 - `/admin/incidents/[id]`
 - `/admin/incidents/[id]/rca`
 - `/admin/incidents/trends`
-- `/admin/staff`
+- `/admin/staff` (**roster CSV** hub filter scope — Track D D80)
 - `/admin/staff/new`
 - `/admin/staff/[id]`
 - `/admin/certifications`

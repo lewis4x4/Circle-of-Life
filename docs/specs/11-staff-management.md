@@ -408,7 +408,7 @@ Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
 
 | Screen | Route | Description |
 |--------|-------|-------------|
-| Staff Directory | `/admin/staff` | Sortable table: name, role, status, hire date, certs expiring. Quick filters by role. **Roster CSV download** (Track D29): up to 500 active `staff` rows, facility-scoped when a facility is selected (same scope as the live list); export excludes `ssn_last_four` and `date_of_birth`. |
+| Staff Directory | `/admin/staff` | Sortable table: name, role, status, hire date, certs expiring. Quick filters by role. **Roster CSV download** (Track D29): full-row export for **`staff`** visible in the hub (same facility scope as the live list; list loads up to **300** rows); **hub filter scope** (Track D80): export matches **search**, **role**, **status**, and **certification** filters when any are set (`_filtered` filename suffix); export excludes `ssn_last_four` and `date_of_birth`. |
 | Staff Profile | `/admin/staff/:id` | Employment details, certification list with expiration indicators, schedule view, time record history, performance notes |
 | Certification Dashboard | `/admin/certifications` | Grid: staff names × certification types. Green (current), Yellow (expiring in 90 days), Red (expired or missing). Drill down to renew. **Certifications CSV download** (Track D30): up to 500 `staff_certifications` rows with **`staff_display_name`**, facility-scoped when a facility is selected. |
 | Schedule Builder | `/admin/schedules` | Hub lists schedule **week** rows (`schedules`). **Schedule weeks CSV** (Track D33): up to 500 `schedules` rows, facility-scoped when a facility is selected. **Week detail** (Track D35): `/admin/schedules/:id` read-only **`shift_assignments`** list + CSV (up to 500); full 7-day grid and drag-drop remain future work. |
@@ -426,7 +426,9 @@ Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
 
 ### Track D — staff roster CSV (shipped)
 
-**D29:** **`/admin/staff`** — **Download roster CSV** queries up to **500** **`staff`** rows (`deleted_at` null), **RFC-style** CSV. Scope matches the directory list: **filters by selected facility** when the facility id is valid; otherwise **no facility filter** (RLS still applies). **No** `ssn_last_four` or `date_of_birth` columns in the file. **No** new DDL.
+**D29:** **`/admin/staff`** — **Download roster CSV** queries **`staff`** rows (`deleted_at` null), **RFC-style** CSV. Scope matches the directory list: **filters by selected facility** when the facility id is valid; otherwise **no facility filter** (RLS still applies). **No** `ssn_last_four` or `date_of_birth` columns in the file. **No** new DDL.
+
+**D80:** Same hub — **Download roster CSV** exports only **`staff`** rows that match the current **hub filters** (search, role, status, certification — same rules as the visible list); **`staff-roster-YYYY-MM-DD_filtered.csv`** when any filter is non-default; **`staff-roster-YYYY-MM-DD.csv`** when all filters are default. **No** new DDL.
 
 ### Track D — certifications matrix CSV (shipped)
 
