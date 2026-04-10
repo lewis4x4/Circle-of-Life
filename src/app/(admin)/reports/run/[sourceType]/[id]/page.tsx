@@ -6,13 +6,18 @@ import { useParams } from "next/navigation";
 import { Building2 } from "lucide-react";
 
 import { AdminFacilityScopeDropdown } from "@/components/common/admin-facility-scope-dropdown";
+import { ReportRunResult } from "@/components/reports/report-run-result";
 import { ReportsHubNav } from "@/components/reports/reports-hub-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
+import {
+  buildReportPrintHtml,
+  detailRowsToCsv,
+  summaryRowsToCsv,
+} from "@/lib/reports/metric-presentation";
 import { loadReportsRoleContext } from "@/lib/reports/auth";
 import { executeReportTemplate, type ReportExecutionResult } from "@/lib/reports/executors";
 import { resolveReportTemplateIdBySlug } from "@/lib/reports/resolve-template-id";
@@ -20,15 +25,10 @@ import { PHASE1_TEMPLATE_SEED } from "@/lib/reports/templates";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
-function rowsToCsv(rows: Record<string, string | number | null>[]): string {
-  if (rows.length === 0) return "";
-  const headers = Object.keys(rows[0]);
-  const escape = (value: string) => (/[",\n\r]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value);
-  const lines = [
-    headers.join(","),
-    ...rows.map((row) => headers.map((key) => escape(String(row[key] ?? ""))).join(",")),
-  ];
-  return lines.join("\n");
+function buildFullCsv(result: ReportExecutionResult): string {
+  const summaryPart = summaryRowsToCsv(result.summary);
+  if (result.rows.length === 0) return summaryPart;
+  return `${summaryPart}\n\n${detailRowsToCsv(result.rows)}`;
 }
 
 export default function ReportRunPage() {
@@ -53,6 +53,13 @@ export default function ReportRunPage() {
     () => PHASE1_TEMPLATE_SEED.find((item) => item.slug === sourceId),
     [sourceId],
   );
+
+  const scopeLabel = useMemo(() => {
+    if (scopeFacilityId === null) return "All facilities";
+    return (
+      facilityOptions.find((f) => f.id === scopeFacilityId)?.name ?? "Selected facility"
+    );
+  }, [scopeFacilityId, facilityOptions]);
 
   useEffect(() => {
     void (async () => {
@@ -151,7 +158,7 @@ export default function ReportRunPage() {
 
   const onExportCsv = useCallback(async () => {
     if (!result || !orgId || !lastRunId) return;
-    const csv = rowsToCsv(result.rows);
+    const csv = buildFullCsv(result);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -171,20 +178,34 @@ export default function ReportRunPage() {
 
   const onPrint = useCallback(async () => {
     if (!result || !orgId || !lastRunId) return;
-    const html = `<!doctype html><html><head><meta charset="utf-8"/><title>${sourceId}</title>
-      <style>body{font-family:system-ui;padding:16px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ddd;padding:8px}</style>
-      </head><body><h1>${template?.name ?? sourceId}</h1>
-      <table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>
-      ${result.summary.map((row) => `<tr><td>${row.key}</td><td>${row.value ?? "—"}</td></tr>`).join("")}
-      </tbody></table></body></html>`;
-    const popup = window.open("", "_blank", "noopener,noreferrer");
-    if (!popup) {
-      setError("Pop-up blocked. Allow pop-ups to print.");
+    const reportTitle = template?.name ?? sourceId;
+    const html = buildReportPrintHtml({
+      reportTitle,
+      templateLabel: template?.name ?? sourceId,
+      scopeLabel,
+      summary: result.summary,
+      footnotes: result.footnotes,
+    });
+    const w = window.open("", "_blank", "noopener,noreferrer");
+    if (!w) {
+      setError("Pop-up blocked. Allow pop-ups for this site to print or save as PDF.");
       return;
     }
-    popup.document.write(html);
-    popup.document.close();
-    popup.print();
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    const trigger = () => {
+      try {
+        w.print();
+      } catch {
+        /* ignore */
+      }
+    };
+    if (w.document.readyState === "complete") {
+      setTimeout(trigger, 0);
+    } else {
+      w.addEventListener("load", () => setTimeout(trigger, 0));
+    }
 
     await supabase.from("report_exports").insert({
       organization_id: orgId,
@@ -192,7 +213,7 @@ export default function ReportRunPage() {
       export_format: "pdf",
       file_name: `report-${sourceId}.pdf`,
     });
-  }, [lastRunId, orgId, result, sourceId, supabase, template?.name]);
+  }, [lastRunId, orgId, result, scopeLabel, sourceId, supabase, template?.name]);
 
   return (
     <div className="space-y-6">
@@ -216,72 +237,102 @@ export default function ReportRunPage() {
         </div>
       </div>
 
-      {error && <p className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-600 dark:text-rose-400 font-medium">{error}</p>}
+      {error && (
+        <p className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-medium text-rose-600 dark:text-rose-400">
+          {error}
+        </p>
+      )}
 
-      <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-slate-200 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-3xl shadow-sm relative overflow-visible mb-6 z-10 w-full transition-all">
-          <div className="mb-6">
-            <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white">Execution</h3>
-            <p className="text-sm font-mono text-slate-500 dark:text-slate-400">Set scope and run now. Every run is recorded in report history.</p>
+      <div className="glass-panel relative z-10 mb-6 w-full overflow-visible rounded-[2rem] border border-slate-200 bg-white/40 p-6 shadow-sm backdrop-blur-3xl transition-all dark:border-white/5 dark:bg-black/20 sm:p-8">
+        <div className="mb-6">
+          <h3 className="font-display text-xl font-semibold text-slate-900 dark:text-white">
+            Execution
+          </h3>
+          <p className="font-mono text-sm text-slate-500 dark:text-slate-400">
+            Set scope and run now. Every run is recorded in report history.
+          </p>
+        </div>
+        <div className="space-y-6">
+          <div className="grid max-w-lg gap-2">
+            <Label
+              htmlFor="report-facility-scope"
+              className="flex items-center gap-2 text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500 dark:text-slate-400"
+            >
+              <Building2 className="h-3.5 w-3.5 text-indigo-500" aria-hidden />
+              Facility scope
+            </Label>
+            <p
+              id="report-facility-scope-hint"
+              className="text-xs leading-relaxed text-slate-600 dark:text-slate-400"
+            >
+              Run for one site or across all facilities in your organization. When the header has a
+              single facility selected, this scope starts aligned with it—you can switch to
+              organization-wide anytime.
+            </p>
+            <AdminFacilityScopeDropdown
+              id="report-facility-scope"
+              describedBy="report-facility-scope-hint"
+              value={scopeFacilityId}
+              onChange={setScopeFacilityId}
+              facilities={facilityOptions}
+              loading={facilitiesLoading}
+              loadFailed={facilitiesLoadFailed}
+              onRetry={() => void loadFacilityOptions()}
+              disabled={running}
+              triggerClassName="rounded-2xl border-slate-200 bg-white/70 py-3 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-black/30"
+            />
           </div>
-          <div className="space-y-6">
-            <div className="grid gap-2 max-w-lg">
-              <Label
-                htmlFor="report-facility-scope"
-                className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-slate-500 dark:text-slate-400 font-bold"
-              >
-                <Building2 className="h-3.5 w-3.5 text-indigo-500" aria-hidden />
-                Facility scope
-              </Label>
-              <p id="report-facility-scope-hint" className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Run for one site or across all facilities in your organization. When the header has a single facility
-                selected, this scope starts aligned with it—you can switch to organization-wide anytime.
-              </p>
-              <AdminFacilityScopeDropdown
-                id="report-facility-scope"
-                describedBy="report-facility-scope-hint"
-                value={scopeFacilityId}
-                onChange={setScopeFacilityId}
-                facilities={facilityOptions}
-                loading={facilitiesLoading}
-                loadFailed={facilitiesLoadFailed}
-                onRetry={() => void loadFacilityOptions()}
-                disabled={running}
-                triggerClassName="rounded-2xl border-slate-200 dark:border-white/10 bg-white/70 dark:bg-black/30 backdrop-blur-xl shadow-sm py-3"
-              />
-            </div>
-            <div className="flex flex-wrap gap-3 mt-4">
-              <Button className="rounded-full font-mono uppercase tracking-widest text-[10px] h-10 hover:-translate-y-0.5 transition-transform shadow-lg px-8 bg-indigo-600 hover:bg-indigo-700 text-white border-0" onClick={() => void onRun()} disabled={running || !orgId}>
-                {running ? "Running..." : "Run report"}
-              </Button>
-              <Button variant="secondary" className="rounded-full font-mono uppercase tracking-widest text-[10px] h-10 hover:-translate-y-0.5 transition-transform shadow-sm px-6 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-white border border-slate-200 dark:border-white/10" onClick={() => void onExportCsv()} disabled={!result}>
-                Download CSV
-              </Button>
-              <Button variant="outline" className="rounded-full font-mono uppercase tracking-widest text-[10px] h-10 hover:-translate-y-0.5 transition-transform shadow-sm px-6 border border-slate-300 dark:border-white/10 bg-transparent hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300" onClick={() => void onPrint()} disabled={!result}>
-                Print / PDF
-              </Button>
-            </div>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Button
+              className="h-10 rounded-full border-0 bg-indigo-600 px-8 font-mono text-[10px] font-semibold uppercase tracking-widest text-white shadow-lg hover:-translate-y-0.5 hover:bg-indigo-700"
+              onClick={() => void onRun()}
+              disabled={running || !orgId}
+            >
+              {running ? "Running..." : "Run report"}
+            </Button>
+            <Button
+              variant="secondary"
+              className="h-10 rounded-full border border-slate-200 bg-slate-100 px-6 font-mono text-[10px] uppercase tracking-widest text-slate-900 shadow-sm hover:-translate-y-0.5 hover:bg-slate-200 dark:border-white/10 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
+              onClick={() => void onExportCsv()}
+              disabled={!result}
+            >
+              Download CSV
+            </Button>
+            <Button
+              variant="outline"
+              className="h-10 rounded-full border border-slate-300 bg-transparent px-6 font-mono text-[10px] uppercase tracking-widest text-slate-700 hover:-translate-y-0.5 hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10"
+              onClick={() => void onPrint()}
+              disabled={!result}
+            >
+              Print / PDF
+            </Button>
           </div>
+        </div>
       </div>
 
       {result && (
-        <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-slate-200 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-3xl shadow-sm relative overflow-visible z-10 w-full transition-all">
+        <div className="glass-panel relative z-10 w-full overflow-visible rounded-[2rem] border border-slate-200 bg-white/40 p-6 shadow-sm backdrop-blur-3xl transition-all dark:border-white/5 dark:bg-black/20 sm:p-8">
           <div className="mb-6">
-            <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white">Run result preview</h3>
+            <h3 className="font-display text-xl font-semibold text-slate-900 dark:text-white">
+              Run result
+            </h3>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+              Scope: <span className="font-medium text-slate-800 dark:text-slate-200">{scopeLabel}</span>
+            </p>
           </div>
-            <MotionList className="space-y-3">
-                {result.summary.map((row) => (
-                  <MotionItem key={row.key}>
-                    <div className="p-4 rounded-xl glass-panel border border-slate-200 dark:border-white/5 bg-white/60 dark:bg-slate-900/40 w-full flex items-center justify-between gap-6 backdrop-blur-xl shadow-sm">
-                       <span className="font-mono text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                           {row.key}
-                       </span>
-                       <span className="font-bold font-mono text-slate-900 dark:text-slate-100 text-sm">
-                           {row.value == null ? "—" : String(row.value)}
-                       </span>
-                    </div>
-                  </MotionItem>
+          <ReportRunResult summary={result.summary} detailRows={result.rows} />
+          {result.footnotes && result.footnotes.length > 0 && (
+            <div className="mt-8 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-white/5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Notes
+              </p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600 dark:text-slate-300">
+                {result.footnotes.map((f, i) => (
+                  <li key={i}>{f}</li>
                 ))}
-            </MotionList>
+              </ul>
+            </div>
+          )}
         </div>
       )}
     </div>
