@@ -59,7 +59,8 @@ async function main() {
       name,
       "-e",
       "POSTGRES_HOST_AUTH_METHOD=trust",
-      "postgres:16-alpine",
+      // pgvector required for migration 126 (Knowledge Base embeddings)
+      "pgvector/pgvector:pg16",
     ],
     { stdio: "pipe" },
   );

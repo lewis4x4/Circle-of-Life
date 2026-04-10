@@ -12,6 +12,9 @@
 | `emar-missed-dose-check` | no | `POST` — opens **`exec_alerts`** for overdue scheduled eMAR rows. Auth: **`x-cron-secret`** = `EMAR_MISSED_DOSE_SECRET`. |
 | `exec-alert-evaluator` | no | `POST { "organization_id" }` — inserts **`exec_alerts`** from live KPI thresholds. Auth: **`x-cron-secret`** = `EXEC_ALERT_EVALUATOR_SECRET`. |
 | `process-referral-hl7-inbound` | no | `POST { "organization_id"?, "limit"? }` — minimal **MSH** parse for **`referral_hl7_inbound`** rows in **`pending`** → **`processed`** / **`failed`**; sets **`message_control_id`**, **`trigger_event`**, **`parse_error`**. Does **not** create **`referral_leads`**. Auth: **`x-cron-secret`** = `PROCESS_REFERRAL_HL7_INBOUND_SECRET`. |
+| `ingest` | yes | `POST` multipart (`file`, `title`, optional `audience`/`status`) or JSON `{ "document_id" }` re-index. KB ingestion (extract → chunk → embed → **`documents`** / **`chunks`**). Roles: **owner**, **org_admin**, **facility_admin**. Secrets: **`OPENAI_API_KEY`**, **`ANTHROPIC_API_KEY`** (summary). |
+| `knowledge-agent` | yes | `POST { "message", "conversation_id"?, "workspace_id"? }` — Claude tool loop + **`retrieve_evidence`** RPC; SSE response. **`workspace_id`** defaults to caller org. Secrets: **`OPENAI_API_KEY`**, **`ANTHROPIC_API_KEY`**. |
+| `document-admin` | yes | `POST { "action": "update" \| "delete", "document_id", ... }` — metadata updates or soft-delete + storage remove. Roles: **owner**, **org_admin** only. |
 
 ## `generate-monthly-invoices` — request body
 
@@ -69,6 +72,8 @@ Do **not** send `facility_id` and `organization_id` together.
 - `PROCESS_REFERRAL_HL7_INBOUND_SECRET` — required for `process-referral-hl7-inbound`.
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically.
+
+**Knowledge Base (`ingest`, `knowledge-agent`):** set **`OPENAI_API_KEY`** and **`ANTHROPIC_API_KEY`** in **Edge Functions → Secrets** (same names). Requires DB migration **`126_knowledge_base.sql`** (pgvector + **`documents`** / **`chunks`** + RPCs).
 
 ### Scheduling (monthly invoice generation)
 
@@ -134,4 +139,7 @@ supabase functions deploy ar-aging-check --project-ref manfqmasfqppukpobpld
 supabase functions deploy generate-emar-schedule --project-ref manfqmasfqppukpobpld
 supabase functions deploy emar-missed-dose-check --project-ref manfqmasfqppukpobpld
 supabase functions deploy exec-alert-evaluator --project-ref manfqmasfqppukpobpld
+supabase functions deploy ingest --project-ref manfqmasfqppukpobpld
+supabase functions deploy knowledge-agent --project-ref manfqmasfqppukpobpld
+supabase functions deploy document-admin --project-ref manfqmasfqppukpobpld
 ```

@@ -55,6 +55,9 @@ yarn-error.log*
 
 # supabase CLI
 supabase/.temp/
+# Deno npm resolution for Edge Functions (local `deno check` / `deno install`)
+supabase/functions/node_modules/
+supabase/functions/deno.lock
 
 # Local IDE / agent plans (optional; keep out of shared repo unless explicitly curated)
 .cursor/plans/

@@ -30,7 +30,7 @@ export function withTiming(fn: string): {
   const start = Date.now();
   return {
     log(entry) {
-      slog({ fn, elapsed_ms: Date.now() - start, ...entry });
+      slog({ fn, elapsed_ms: Date.now() - start, ...entry } as LogEntry);
     },
     elapsed: () => Date.now() - start,
   };

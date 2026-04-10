@@ -403,6 +403,15 @@ verify_jwt = false
 [functions."process-referral-hl7-inbound"]
 verify_jwt = false
 
+[functions.ingest]
+verify_jwt = true
+
+[functions."knowledge-agent"]
+verify_jwt = true
+
+[functions."document-admin"]
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54327
