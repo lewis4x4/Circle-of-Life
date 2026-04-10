@@ -58,6 +58,13 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
+  /** Route group `(admin)` omits `admin` from the path; `/dietary` would bypass shell URL expectations. */
+  async redirects() {
+    return [
+      { source: "/dietary", destination: "/admin/dietary", permanent: true },
+      { source: "/dietary/:path*", destination: "/admin/dietary/:path*", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

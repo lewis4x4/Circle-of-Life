@@ -514,6 +514,16 @@
 
 ---
 
+**D54:** **Module 14 — Dietary** ([14-dietary-nutrition.md](./14-dietary-nutrition.md)) — **canonical `/admin/dietary` URL** (redirect stray `/dietary`).
+
+**Slice:** **`next.config.ts`** `redirects` — **`/dietary`** and **`/dietary/:path*`** → **`/admin/dietary`** (permanent). Route-group `(admin)` otherwise exposes Module 14 at a non-shell path. **No** migration.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-10T00-03-44-597Z-track-d-d54-dietary-canonical-path-redirect.json` (`npm run segment:gates -- --segment "track-d-d54-dietary-canonical-path-redirect"`)
+
+**Mission alignment:** **pass** — aligns URLs with admin shell contract; no clinical automation.
+
+---
+
 ## Track D — plan (remaining)
 
 **Segments D1–D10:** Closed in repo with gate artifacts above. This completes the **Phase 6 Core visibility / workflow** slices we prioritized for COL (transport, training, dietary, referrals, reputation), plus **D10** org mileage rate.
@@ -532,6 +542,6 @@
 
 **Authoritative README narrative:** [README.md](./README.md) — section **Track D — Phase 6 completion pass**.
 
-**Next segment:** Record as **D54+** in this file when a new bounded slice ships; use migration **`120+`** only when DDL is required ([README.md](./README.md) next free migration).
+**Next segment:** Record as **D55+** in this file when a new bounded slice ships; use migration **`120+`** only when DDL is required ([README.md](./README.md) next free migration).
 
 **Prioritized Enhanced plan (D11+ options, order, checklists):** [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md).
