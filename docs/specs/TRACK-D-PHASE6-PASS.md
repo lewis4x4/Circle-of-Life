@@ -564,6 +564,16 @@
 
 ---
 
+**D59 (2026-04-10):** **Module 13 — Payroll** ([13-payroll-integration.md](./13-payroll-integration.md)) — **flat CSV** export preset on batch detail.
+
+**Slice:** **`/admin/payroll/[id]`** — **`Download CSV (flat)`** alongside existing full CSV: parsed **`hours`** / **`miles`** from line **`payload`** for **`time_record_hours`** and **`mileage_reimbursement`**; **`src/lib/payroll/payroll-export-csv.ts`**. **No** migration.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-10T00-17-48-135Z-track-d-d59-payroll-export-flat-csv.json` (`npm run segment:gates -- --segment "track-d-d59-payroll-export-flat-csv" --ui`)
+
+**Mission alignment:** **pass** — easier vendor handoff without changing pay rules in-app.
+
+---
+
 ## Track D — plan (remaining)
 
 **Segments D1–D10:** Closed in repo with gate artifacts above. This completes the **Phase 6 Core visibility / workflow** slices we prioritized for COL (transport, training, dietary, referrals, reputation), plus **D10** org mileage rate.
@@ -573,7 +583,7 @@
 | Module | Backlog |
 |--------|---------|
 | **12** | ~~Storage certificate PDF uploads~~ (migration `115` + training hub); ~~org-wide hub list~~ (D20); ~~demonstrations **CSV**~~ (D21); ~~`training_programs` + `staff_training_completions` hub + CSV~~ (D38); ~~**log completion** form~~ (D39); ~~completion **PDF** + `117` storage RLS~~ (D40); ~~**inservice** session + attendee DDL~~ (D41 / `118`); ~~inservice **hub** + CSV + **new session** form~~ (D42); ~~attendee→**`staff_training_completions`** (catalog program on save)~~ (D43); Baya/API, automated assignment, scheduled `training_compliance_snapshots` |
-| **13** | ~~Mileage → `payroll_export_lines`~~ (D17); ~~generic **CSV** download on batch~~ (D18); ~~**batches list CSV** on hub~~ (D26); ~~approved **`time_records`** → lines~~ (D58); vendor-specific serializers |
+| **13** | ~~Mileage → `payroll_export_lines`~~ (D17); ~~generic **CSV** download on batch~~ (D18); ~~**batches list CSV** on hub~~ (D26); ~~approved **`time_records`** → lines~~ (D58); ~~**flat** CSV (hours/miles columns)~~ (D59); vendor-specific branded serializers |
 | **14** | ~~Read-only diet + med panel~~ (D13); ~~**diet orders CSV** on hub~~ (D23); ~~read-only **liquid vs thickened-fluid** advisory on clinical review~~ (D50); ~~read-only **solid oral vs texture-modified food** (IDDSI 3–6)~~ (D51–D52); ~~hint callouts show IDDSI food/fluid labels~~ (D53); full Edge med–texture automation (pending clinical rules); meal production; vendor API; full menu cycle |
 | **15** | ~~Week calendar + mileage approval queue~~ (D14, D15); ~~**transport requests CSV** on hub~~ (D24); ~~**mileage logs CSV** on approvals~~ (D25); ~~full month grid~~ (D56); ~~calendar **`.ics` export**~~ (D57); external calendar **live sync** |
 | **22** | ~~Minimal **MSH** queue processor~~ (D12); ~~manual **Draft lead** from HL7~~ (D16); ~~**HL7 queue CSV**~~ (D22); ~~**pipeline leads CSV** on hub~~ (D27); MLLP, full ADT parse, auto-**`referral_leads`** |
@@ -582,6 +592,6 @@
 
 **Authoritative README narrative:** [README.md](./README.md) — section **Track D — Phase 6 completion pass**.
 
-**Next segment:** Record as **D59+** in this file when a new bounded slice ships; use migration **`120+`** only when DDL is required ([README.md](./README.md) next free migration).
+**Next segment:** Record as **D60+** in this file when a new bounded slice ships; use migration **`120+`** only when DDL is required ([README.md](./README.md) next free migration).
 
 **Prioritized Enhanced plan (D11+ options, order, checklists):** [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md).

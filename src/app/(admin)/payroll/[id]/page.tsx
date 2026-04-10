@@ -8,7 +8,12 @@ import { format } from "date-fns";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
-import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
+import { triggerCsvDownload } from "@/lib/csv-export";
+import {
+  buildPayrollLinesCsvFlat,
+  buildPayrollLinesCsvGeneric,
+  type PayrollExportLineRow,
+} from "@/lib/payroll/payroll-export-csv";
 import { payPeriodClockBoundsUtc } from "@/lib/payroll/pay-period-bounds";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -28,29 +33,14 @@ type LineWithStaff = {
   staff: { first_name: string | null; last_name: string | null } | null;
 };
 
-function buildPayrollLinesCsv(lines: LineWithStaff[]): string {
-  const header = [
-    "idempotency_key",
-    "staff_first_name",
-    "staff_last_name",
-    "line_kind",
-    "amount_cents",
-    "payload_json",
-  ].join(",");
-  const body = lines.map((line) => {
-    const fn = line.staff?.first_name ?? "";
-    const ln = line.staff?.last_name ?? "";
-    const payloadJson = JSON.stringify(line.payload ?? {});
-    return [
-      csvEscapeCell(line.idempotency_key),
-      csvEscapeCell(fn),
-      csvEscapeCell(ln),
-      csvEscapeCell(line.line_kind),
-      csvEscapeCell(String(line.amount_cents ?? "")),
-      csvEscapeCell(payloadJson),
-    ].join(",");
-  });
-  return [header, ...body].join("\r\n");
+function toExportRows(lines: LineWithStaff[]): PayrollExportLineRow[] {
+  return lines.map((line) => ({
+    ...line,
+    payload:
+      line.payload && typeof line.payload === "object" && !Array.isArray(line.payload)
+        ? (line.payload as Record<string, unknown>)
+        : null,
+  }));
 }
 
 function formatCents(cents: number | null) {
@@ -461,24 +451,44 @@ export default function AdminPayrollBatchDetailPage() {
             <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <CardTitle className="text-lg">Export lines ({lines.length})</CardTitle>
-                <CardDescription>Rows written for the external payroll handoff.</CardDescription>
+                <CardDescription>
+                  Full export includes JSON payload per row. Flat export adds parsed hours (time lines) and miles
+                  (mileage) columns without a JSON field.
+                </CardDescription>
               </div>
               {lines.length > 0 && batch && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="shrink-0 self-start"
-                  onClick={() => {
-                    const csv = buildPayrollLinesCsv(lines);
-                    const safeProv = batch.provider.replace(/[^a-zA-Z0-9._-]+/g, "_");
-                    triggerCsvDownload(
-                      `payroll-export_${batch.period_start}_${batch.period_end}_${safeProv}.csv`,
-                      csv,
-                    );
-                  }}
-                >
-                  Download CSV
-                </Button>
+                <div className="flex flex-wrap gap-2 self-start">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="shrink-0"
+                    onClick={() => {
+                      const csv = buildPayrollLinesCsvGeneric(toExportRows(lines));
+                      const safeProv = batch.provider.replace(/[^a-zA-Z0-9._-]+/g, "_");
+                      triggerCsvDownload(
+                        `payroll-export_${batch.period_start}_${batch.period_end}_${safeProv}.csv`,
+                        csv,
+                      );
+                    }}
+                  >
+                    Download CSV (full)
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="shrink-0"
+                    onClick={() => {
+                      const csv = buildPayrollLinesCsvFlat(toExportRows(lines));
+                      const safeProv = batch.provider.replace(/[^a-zA-Z0-9._-]+/g, "_");
+                      triggerCsvDownload(
+                        `payroll-export-flat_${batch.period_start}_${batch.period_end}_${safeProv}.csv`,
+                        csv,
+                      );
+                    }}
+                  >
+                    Download CSV (flat)
+                  </Button>
+                </div>
               )}
             </CardHeader>
             <CardContent>
