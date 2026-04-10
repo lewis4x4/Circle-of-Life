@@ -2,6 +2,7 @@
 
 This folder defines **roles, gate order, and playbooks** for the autonomous segment + gate workflow.
 
+- **`../docs/Autonomous.md`** — autonomous loop continuity (**BOOT** / **FIND** / **RECORD**) between sessions.
 - **`registry.yaml`** — canonical gate order, `north_star_mission`, and per-role metadata.
 - **`playbooks/`** — human-readable instructions for each agent role (used by people and coding agents).
 - **`templates/`** — copy/paste structures for handoffs and local gate notes.

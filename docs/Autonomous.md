@@ -369,12 +369,37 @@ One **BOOT → FIND → … → RECORD** pass is **one round**, not a finished l
 
 ---
 
+## RECORD — session 2026-04-09 (loop round 1: `agents/registry.yaml` + `agents/README.md`)
+
+| Field | Value |
+|-------|--------|
+| **BOOT** | [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./specs/TRACK-D-ENHANCED-BACKLOG-PLAN.md), [README.md](./specs/README.md), `git log` @**fa544ad**. |
+| **FIND** | **D85+** clinical-gated. **Unblocked:** [registry.yaml](../agents/registry.yaml) and [agents/README.md](../agents/README.md) had no pointer to **`docs/Autonomous.md`**. |
+| **BUILD** | Comment in **`registry.yaml`**; first bullet in **`agents/README.md`**. |
+| **Mission alignment** | **pass** — registry entrypoints match documented loop discipline. |
+| **Gate artifact** | `test-results/agent-gates/2026-04-10T13-19-19-170Z-loop-agents-registry-readme-autonomous.json` |
+| **Deferred** | **D85+** until clinical sign-off. |
+
+---
+
+## RECORD — session 2026-04-09 (loop round 2: BOOT → FIND — exit)
+
+| Field | Value |
+|-------|--------|
+| **BOOT** | `grep -r Autonomous agents/` (playbooks complete from **fa544ad**); **`docs/specs`** migration drift grep. |
+| **FIND** | **D85+** gated; no further **`agents/*`** file needs an **Autonomous** link; **`docs/specs`** has no stale **`001–11x`** / **`119+`** DDL hints. **No** additional bounded segment without repeating prior work. |
+| **BUILD** | *(none)* |
+| **Mission alignment** | **pass** — second pass satisfies **LOOP** checklist steps 4–6. |
+| **Gate artifact** | `test-results/agent-gates/2026-04-10T13-19-19-170Z-loop-agents-registry-readme-autonomous.json` (session gate covers doc edits for rounds 1–2) |
+
+---
+
 ## RECORD — loop exit (optional)
 
 | Field | Value |
 |-------|--------|
-| **date** | **2026-04-10** |
-| **reason** | **D85+** still **clinical / pharmacy** gated. **This session:** (1) LOOP contract **4288b30**; (2) round 2 shipped remaining playbook **See also** links; **third BOOT/FIND** found no further unlinked playbooks / no migration drift — loop complete per checklist steps 4–6. |
+| **date** | **2026-04-09** |
+| **reason** | **D85+** still **clinical / pharmacy** gated. **2026-04-10 (earlier):** LOOP contract **4288b30**; remaining playbook **See also** links (**fa544ad**); third BOOT/FIND — no further playbook/migration drift. **This session (2026-04-09):** **`agents/registry.yaml`** + **`agents/README.md`** → **`docs/Autonomous.md`**; second BOOT/FIND — no further unblocked slice (migration grep clean). |
 | **next_human_action** | Remote **`001`–`120`** parity; COL clinical sign-off for **D85+**; Track A UAT / Pro–BAA–PITR per owner schedule. |
 
 ---

@@ -3,6 +3,8 @@
 # Segment IDs for `npm run segment:gates -- --segment "<id>" [--ui]` are free-form labels
 # (artifact filename under test-results/agent-gates/). They are NOT the same as agent ids below.
 # Example Phase 1 UI + hygiene sign-off: phase1-acceptance
+#
+# Autonomous loop (BOOT / FIND / RECORD between sessions): docs/Autonomous.md
 
 north_star_mission: >
   Build Haven, a unified operations platform for assisted living facilities, home health, and
