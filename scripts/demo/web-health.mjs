@@ -31,8 +31,9 @@ const REDIRECT_PROBES = [
   { path: "/admin/staff", expected: "/login?next=%2Fadmin%2Fstaff", shell: "admin" },
   { path: "/admin/incidents", expected: "/login?next=%2Fadmin%2Fincidents", shell: "admin" },
   { path: "/admin/executive", expected: "/login?next=%2Fadmin%2Fexecutive", shell: "admin" },
-  { path: "/finance", expected: "/login?next=%2Ffinance", shell: "admin" },
-  { path: "/vendors", expected: "/login?next=%2Fvendors", shell: "admin" },
+  // Short aliases /finance and /vendors 308 to /admin/*; probe canonical paths (same auth as other admin shells).
+  { path: "/admin/finance", expected: "/login?next=%2Fadmin%2Ffinance", shell: "admin" },
+  { path: "/admin/vendors", expected: "/login?next=%2Fadmin%2Fvendors", shell: "admin" },
   { path: "/caregiver", expected: "/login?next=%2Fcaregiver", shell: "caregiver" },
   { path: "/caregiver/tasks", expected: "/login?next=%2Fcaregiver%2Ftasks", shell: "caregiver" },
   { path: "/caregiver/meds", expected: "/login?next=%2Fcaregiver%2Fmeds", shell: "caregiver" },
