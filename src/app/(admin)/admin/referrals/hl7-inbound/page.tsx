@@ -71,6 +71,7 @@ export default function AdminReferralsHl7InboundPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [creatingLeadId, setCreatingLeadId] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -181,6 +182,24 @@ export default function AdminReferralsHl7InboundPage() {
       }
     } finally {
       setCreatingLeadId(null);
+    }
+  }
+
+  async function copyRawMessage(id: string, raw: string | null) {
+    const text = raw ?? "";
+    if (!text.trim()) {
+      setError("Nothing to copy.");
+      return;
+    }
+    setError(null);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedMessageId(id);
+      window.setTimeout(() => {
+        setCopiedMessageId((c) => (c === id ? null : c));
+      }, 2000);
+    } catch {
+      setError("Could not copy to clipboard.");
     }
   }
 
@@ -305,13 +324,20 @@ export default function AdminReferralsHl7InboundPage() {
                                    <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Trigger</span>
                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5"><Activity className="w-3.5 h-3.5 text-slate-400" /> {row.trigger_event ?? "—"}</span>
                                 </div>
-                                <div className="flex flex-col">
+                                <div className="flex flex-col gap-1.5">
                                    <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Preview</span>
                                    <div className="bg-slate-50 dark:bg-slate-900/40 p-2 rounded-lg border border-slate-100 dark:border-white/5 overflow-hidden">
                                      <p className="text-xs font-mono text-slate-600 dark:text-slate-400 truncate max-w-full leading-tight">
                                        {previewRaw(row.raw_message)}
                                      </p>
                                    </div>
+                                   <button
+                                     type="button"
+                                     className="self-start text-[10px] font-bold uppercase tracking-widest text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 disabled:opacity-50"
+                                     onClick={() => void copyRawMessage(row.id, row.raw_message)}
+                                   >
+                                     {copiedMessageId === row.id ? "Copied" : "Copy raw"}
+                                   </button>
                                 </div>
                                 <div className="flex flex-col sm:justify-center">
                                    <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Lead</span>
