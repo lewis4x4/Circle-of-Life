@@ -12,3 +12,10 @@ a8f62351936c752c9383622dff0a0e21bd71511f:src/lib/reports/executors/index.ts:gene
 95a0338b431fb47ee55ab6da88dda13770808f35:src/lib/reports/executors/index.ts:generic-api-key:143
 95a0338b431fb47ee55ab6da88dda13770808f35:src/lib/reports/executors/index.ts:generic-api-key:242
 95a0338b431fb47ee55ab6da88dda13770808f35:src/lib/reports/executors/index.ts:generic-api-key:505
+
+# 17b5984 — metricKey rename still matches generic-api-key on `{ metricKey: "…", value: … }` (false positive)
+17b59846bc87c6f13b34621f2c7a9ace56819bb8:src/lib/reports/executors/index.ts:generic-api-key:141
+17b59846bc87c6f13b34621f2c7a9ace56819bb8:src/lib/reports/executors/index.ts:generic-api-key:142
+17b59846bc87c6f13b34621f2c7a9ace56819bb8:src/lib/reports/executors/index.ts:generic-api-key:143
+17b59846bc87c6f13b34621f2c7a9ace56819bb8:src/lib/reports/executors/index.ts:generic-api-key:242
+17b59846bc87c6f13b34621f2c7a9ace56819bb8:src/lib/reports/executors/index.ts:generic-api-key:505

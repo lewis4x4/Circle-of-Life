@@ -89,13 +89,26 @@ From `npm run segment:gates` (see `CODEX.md`): hygiene, security scan, ESLint, m
 
 ---
 
+## RECORD — round 2026-04-10 (loop: migration 120 + README parity)
+
+| Field | Value |
+|-------|--------|
+| **BOOT** | README, TRACK-A, TRACK-D backlog, CODEX, `git log` / `git status`. |
+| **FIND** | **D85+** still clinical-gated. **Unblocked:** untracked **`120_col_multi_facility_demo_seed.sql`** — README already claimed **`001`–`120`** but file was not on `main`. |
+| **BUILD** | Add migration **`120`**; fix README §closeout step 2 (**`001`–`120`**, apply **`120`** remote); extend **`.gitleaksignore`** for commit **`17b5984`** (`metricKey` false positives). |
+| **Mission alignment** | **pass** — multi-facility demo data supports pilot testing across COL sites under existing RLS. |
+| **Gate artifact** | `test-results/agent-gates/2026-04-10T02-30-35-126Z-loop-migration-120-col-multi-facility-seed.json` |
+| **Deferred** | **D85+** automation; owner: `supabase db push` through **`120`** on target project. |
+
+---
+
 ## RECORD — loop exit (optional)
 
 | Field | Value |
 |-------|--------|
-| **date** | *(fill when stopping a multi-round session)* |
-| **reason** | *(e.g. no unblocked segments; owner only; gates blocked)* |
-| **next_human_action** | *(e.g. clinical sign-off for D85+)* |
+| **date** | **2026-04-10** (after migration **120** segment) |
+| **reason** | **FIND** next named backlog item remains **D85+** (Module 14 Edge/cron cross-check) — **clinical / pharmacy sign-off** required before implementation. No additional agent-only segment queued in-repo beyond doc/gitleaks/migration **120** this round. |
+| **next_human_action** | Owner: **`supabase db push`** (or CI) until remote matches **001–120**. COL: clinical rules sign-off for **D85+** when ready. |
 
 ---
 
