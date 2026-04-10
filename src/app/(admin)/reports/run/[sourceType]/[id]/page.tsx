@@ -3,11 +3,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { Building2, ChevronDown, Loader2 } from "lucide-react";
 
 import { ReportsHubNav } from "@/components/reports/reports-hub-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
 import { loadReportsRoleContext } from "@/lib/reports/auth";
 import { executeReportTemplate, type ReportExecutionResult } from "@/lib/reports/executors";
 import { resolveReportTemplateIdBySlug } from "@/lib/reports/resolve-template-id";
@@ -27,14 +31,21 @@ function rowsToCsv(rows: Record<string, string | number | null>[]): string {
   return lines.join("\n");
 }
 
+const ORG_WIDE_VALUE = "org";
+
 export default function ReportRunPage() {
   const supabase = createClient();
   const params = useParams<{ sourceType: string; id: string }>();
+  const selectedFacilityId = useFacilityStore((s) => s.selectedFacilityId);
+  const storeFacilities = useFacilityStore((s) => s.availableFacilities);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<ReportExecutionResult | null>(null);
   const [lastRunId, setLastRunId] = useState<string | null>(null);
-  const [facilityId, setFacilityId] = useState("");
+  /** `org` = organization-wide; otherwise a facility UUID from the dropdown */
+  const [scopeFacilityId, setScopeFacilityId] = useState<string>(ORG_WIDE_VALUE);
+  const [facilityOptions, setFacilityOptions] = useState<{ id: string; name: string }[]>([]);
+  const [facilitiesLoading, setFacilitiesLoading] = useState(true);
   const [orgId, setOrgId] = useState<string | null>(null);
 
   const sourceType = params.sourceType ?? "template";
@@ -52,19 +63,50 @@ export default function ReportRunPage() {
     })();
   }, [supabase]);
 
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      setFacilitiesLoading(true);
+      try {
+        const fromStore = storeFacilities.length > 0 ? storeFacilities : null;
+        const list = fromStore ?? (await fetchAdminFacilityOptions());
+        if (!cancelled) setFacilityOptions(list.map((f) => ({ id: f.id, name: f.name })));
+      } catch {
+        if (!cancelled) setFacilityOptions([]);
+      } finally {
+        if (!cancelled) setFacilitiesLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [storeFacilities]);
+
+  useEffect(() => {
+    if (selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId)) {
+      setScopeFacilityId(selectedFacilityId);
+    }
+  }, [selectedFacilityId]);
+
+  useEffect(() => {
+    if (facilitiesLoading) return;
+    if (
+      scopeFacilityId !== ORG_WIDE_VALUE &&
+      !facilityOptions.some((f) => f.id === scopeFacilityId)
+    ) {
+      setScopeFacilityId(ORG_WIDE_VALUE);
+    }
+  }, [facilitiesLoading, facilityOptions, scopeFacilityId]);
+
   const onRun = useCallback(async () => {
     if (!orgId) return;
     setRunning(true);
     setError(null);
     try {
-      const trimmedFacility = facilityId.trim();
-      if (trimmedFacility && !isValidFacilityIdForQuery(trimmedFacility)) {
-        throw new Error(
-          "Optional facility scope must be a valid facility UUID, or leave the field empty for organization-wide scope.",
-        );
-      }
-
-      const scopedFacilityId = trimmedFacility ? trimmedFacility : null;
+      const scopedFacilityId =
+        scopeFacilityId !== ORG_WIDE_VALUE && isValidFacilityIdForQuery(scopeFacilityId)
+          ? scopeFacilityId
+          : null;
 
       const resolved = await resolveReportTemplateIdBySlug(supabase, sourceId, orgId);
       if ("error" in resolved) throw new Error(resolved.error);
@@ -106,7 +148,7 @@ export default function ReportRunPage() {
     } finally {
       setRunning(false);
     }
-  }, [facilityId, orgId, sourceId, sourceType, supabase]);
+  }, [orgId, scopeFacilityId, sourceId, sourceType, supabase]);
 
   const onExportCsv = useCallback(async () => {
     if (!result || !orgId || !lastRunId) return;
@@ -180,17 +222,46 @@ export default function ReportRunPage() {
             <p className="text-sm font-mono text-slate-500 dark:text-slate-400">Set scope and run now. Every run is recorded in report history.</p>
           </div>
           <div className="space-y-6">
-            <div className="grid gap-2 max-w-md">
-              <label htmlFor="facility-id" className="text-[10px] font-mono uppercase tracking-widest text-slate-500 dark:text-slate-400 font-bold">
-                Optional facility scope (UUID)
-              </label>
-              <input
-                id="facility-id"
-                value={facilityId}
-                onChange={(event) => setFacilityId(event.target.value)}
-                className="h-12 w-full rounded-full border border-slate-200 dark:border-white/10 bg-white/40 dark:bg-black/20 px-4 py-2 text-sm backdrop-blur-xl shadow-sm focus-visible:ring-indigo-500 focus-visible:outline-none focus:ring-2 appearance-none font-mono"
-                placeholder="Leave empty for organization scope"
-              />
+            <div className="grid gap-2 max-w-lg">
+              <Label
+                htmlFor="report-facility-scope"
+                className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-slate-500 dark:text-slate-400 font-bold"
+              >
+                <Building2 className="h-3.5 w-3.5 text-indigo-500" aria-hidden />
+                Facility scope
+              </Label>
+              <p id="report-facility-scope-hint" className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Run for one site or across all facilities in your organization. When the header has a single facility
+                selected, this scope starts aligned with it—you can switch to organization-wide anytime.
+              </p>
+              <div className="relative">
+                <select
+                  id="report-facility-scope"
+                  aria-describedby="report-facility-scope-hint"
+                  value={scopeFacilityId}
+                  disabled={facilitiesLoading}
+                  onChange={(e) => setScopeFacilityId(e.target.value)}
+                  className={cn(
+                    "h-12 w-full appearance-none rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-black/30 pl-4 pr-11 text-sm text-slate-900 dark:text-slate-100 shadow-sm backdrop-blur-xl",
+                    "focus-visible:border-indigo-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40",
+                    "disabled:cursor-not-allowed disabled:opacity-60",
+                  )}
+                >
+                  <option value={ORG_WIDE_VALUE}>All facilities (organization-wide)</option>
+                  {facilityOptions.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.name}
+                    </option>
+                  ))}
+                </select>
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  {facilitiesLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 opacity-70" aria-hidden />
+                  )}
+                </span>
+              </div>
             </div>
             <div className="flex flex-wrap gap-3 mt-4">
               <Button className="rounded-full font-mono uppercase tracking-widest text-[10px] h-10 hover:-translate-y-0.5 transition-transform shadow-lg px-8 bg-indigo-600 hover:bg-indigo-700 text-white border-0" onClick={() => void onRun()} disabled={running || !orgId}>
