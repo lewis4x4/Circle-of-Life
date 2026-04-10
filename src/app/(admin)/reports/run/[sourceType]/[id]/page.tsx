@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Building2, ChevronDown, Loader2 } from "lucide-react";
+import { Building2 } from "lucide-react";
 
+import { AdminFacilityScopeDropdown } from "@/components/common/admin-facility-scope-dropdown";
 import { ReportsHubNav } from "@/components/reports/reports-hub-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -18,7 +19,6 @@ import { resolveReportTemplateIdBySlug } from "@/lib/reports/resolve-template-id
 import { PHASE1_TEMPLATE_SEED } from "@/lib/reports/templates";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
-import { cn } from "@/lib/utils";
 
 function rowsToCsv(rows: Record<string, string | number | null>[]): string {
   if (rows.length === 0) return "";
@@ -31,8 +31,6 @@ function rowsToCsv(rows: Record<string, string | number | null>[]): string {
   return lines.join("\n");
 }
 
-const ORG_WIDE_VALUE = "org";
-
 export default function ReportRunPage() {
   const supabase = createClient();
   const params = useParams<{ sourceType: string; id: string }>();
@@ -42,10 +40,11 @@ export default function ReportRunPage() {
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<ReportExecutionResult | null>(null);
   const [lastRunId, setLastRunId] = useState<string | null>(null);
-  /** `org` = organization-wide; otherwise a facility UUID from the dropdown */
-  const [scopeFacilityId, setScopeFacilityId] = useState<string>(ORG_WIDE_VALUE);
+  /** `null` = organization-wide; otherwise a facility UUID */
+  const [scopeFacilityId, setScopeFacilityId] = useState<string | null>(null);
   const [facilityOptions, setFacilityOptions] = useState<{ id: string; name: string }[]>([]);
   const [facilitiesLoading, setFacilitiesLoading] = useState(true);
+  const [facilitiesLoadFailed, setFacilitiesLoadFailed] = useState(false);
   const [orgId, setOrgId] = useState<string | null>(null);
 
   const sourceType = params.sourceType ?? "template";
@@ -63,24 +62,24 @@ export default function ReportRunPage() {
     })();
   }, [supabase]);
 
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      setFacilitiesLoading(true);
-      try {
-        const fromStore = storeFacilities.length > 0 ? storeFacilities : null;
-        const list = fromStore ?? (await fetchAdminFacilityOptions());
-        if (!cancelled) setFacilityOptions(list.map((f) => ({ id: f.id, name: f.name })));
-      } catch {
-        if (!cancelled) setFacilityOptions([]);
-      } finally {
-        if (!cancelled) setFacilitiesLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+  const loadFacilityOptions = useCallback(async () => {
+    setFacilitiesLoading(true);
+    setFacilitiesLoadFailed(false);
+    try {
+      const fromStore = storeFacilities.length > 0 ? storeFacilities : null;
+      const list = fromStore ?? (await fetchAdminFacilityOptions());
+      setFacilityOptions(list.map((f) => ({ id: f.id, name: f.name })));
+    } catch {
+      setFacilityOptions([]);
+      setFacilitiesLoadFailed(true);
+    } finally {
+      setFacilitiesLoading(false);
+    }
   }, [storeFacilities]);
+
+  useEffect(() => {
+    void loadFacilityOptions();
+  }, [loadFacilityOptions]);
 
   useEffect(() => {
     if (selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId)) {
@@ -91,10 +90,10 @@ export default function ReportRunPage() {
   useEffect(() => {
     if (facilitiesLoading) return;
     if (
-      scopeFacilityId !== ORG_WIDE_VALUE &&
+      scopeFacilityId !== null &&
       !facilityOptions.some((f) => f.id === scopeFacilityId)
     ) {
-      setScopeFacilityId(ORG_WIDE_VALUE);
+      setScopeFacilityId(null);
     }
   }, [facilitiesLoading, facilityOptions, scopeFacilityId]);
 
@@ -104,7 +103,7 @@ export default function ReportRunPage() {
     setError(null);
     try {
       const scopedFacilityId =
-        scopeFacilityId !== ORG_WIDE_VALUE && isValidFacilityIdForQuery(scopeFacilityId)
+        scopeFacilityId !== null && isValidFacilityIdForQuery(scopeFacilityId)
           ? scopeFacilityId
           : null;
 
@@ -208,7 +207,10 @@ export default function ReportRunPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Link href="/admin/reports/templates" className={cn(buttonVariants({ variant: "outline" }))}>
+          <Link
+            href="/admin/reports/templates"
+            className={buttonVariants({ variant: "outline" })}
+          >
             Back to templates
           </Link>
         </div>
@@ -234,34 +236,18 @@ export default function ReportRunPage() {
                 Run for one site or across all facilities in your organization. When the header has a single facility
                 selected, this scope starts aligned with it—you can switch to organization-wide anytime.
               </p>
-              <div className="relative">
-                <select
-                  id="report-facility-scope"
-                  aria-describedby="report-facility-scope-hint"
-                  value={scopeFacilityId}
-                  disabled={facilitiesLoading}
-                  onChange={(e) => setScopeFacilityId(e.target.value)}
-                  className={cn(
-                    "h-12 w-full appearance-none rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-black/30 pl-4 pr-11 text-sm text-slate-900 dark:text-slate-100 shadow-sm backdrop-blur-xl",
-                    "focus-visible:border-indigo-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40",
-                    "disabled:cursor-not-allowed disabled:opacity-60",
-                  )}
-                >
-                  <option value={ORG_WIDE_VALUE}>All facilities (organization-wide)</option>
-                  {facilityOptions.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.name}
-                    </option>
-                  ))}
-                </select>
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                  {facilitiesLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 opacity-70" aria-hidden />
-                  )}
-                </span>
-              </div>
+              <AdminFacilityScopeDropdown
+                id="report-facility-scope"
+                describedBy="report-facility-scope-hint"
+                value={scopeFacilityId}
+                onChange={setScopeFacilityId}
+                facilities={facilityOptions}
+                loading={facilitiesLoading}
+                loadFailed={facilitiesLoadFailed}
+                onRetry={() => void loadFacilityOptions()}
+                disabled={running}
+                triggerClassName="rounded-2xl border-slate-200 dark:border-white/10 bg-white/70 dark:bg-black/30 backdrop-blur-xl shadow-sm py-3"
+              />
             </div>
             <div className="flex flex-wrap gap-3 mt-4">
               <Button className="rounded-full font-mono uppercase tracking-widest text-[10px] h-10 hover:-translate-y-0.5 transition-transform shadow-lg px-8 bg-indigo-600 hover:bg-indigo-700 text-white border-0" onClick={() => void onRun()} disabled={running || !orgId}>

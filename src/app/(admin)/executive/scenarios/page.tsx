@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
 
 import { ExecutiveHubNav } from "../executive-hub-nav";
+import { AdminFacilityScopeDropdown } from "@/components/common/admin-facility-scope-dropdown";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,7 +32,7 @@ export default function ExecutiveScenariosPage() {
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [scopeFacilityId, setScopeFacilityId] = useState<string>("org");
+  const [scopeFacilityId, setScopeFacilityId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [canUse, setCanUse] = useState(false);
 
@@ -91,7 +92,9 @@ export default function ExecutiveScenariosPage() {
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Sign in required.");
       const facilityId =
-        scopeFacilityId !== "org" && isValidFacilityIdForQuery(scopeFacilityId) ? scopeFacilityId : null;
+        scopeFacilityId !== null && isValidFacilityIdForQuery(scopeFacilityId)
+          ? scopeFacilityId
+          : null;
       const { error: insErr } = await supabase.from("exec_scenarios").insert({
         organization_id: ctx.ctx.organizationId,
         facility_id: facilityId,
@@ -103,7 +106,7 @@ export default function ExecutiveScenariosPage() {
       if (insErr) throw insErr;
       setName("");
       setDescription("");
-      setScopeFacilityId("org");
+      setScopeFacilityId(null);
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not create scenario.");
@@ -117,6 +120,16 @@ export default function ExecutiveScenariosPage() {
       setScopeFacilityId(selectedFacilityId);
     }
   }, [selectedFacilityId]);
+
+  useEffect(() => {
+    if (loading) return;
+    if (
+      scopeFacilityId !== null &&
+      !facilityNames.some((f) => f.id === scopeFacilityId)
+    ) {
+      setScopeFacilityId(null);
+    }
+  }, [loading, facilityNames, scopeFacilityId]);
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -187,22 +200,16 @@ export default function ExecutiveScenariosPage() {
                   </div>
                   <div className="space-y-1.5 focus-within:text-indigo-600 dark:focus-within:text-indigo-400">
                     <Label htmlFor="sc-scope" className="text-xs uppercase tracking-widest font-bold text-slate-500 inherit-text">Scope</Label>
-                    <select
+                    <AdminFacilityScopeDropdown
                       id="sc-scope"
+                      aria-label="Scenario scope"
                       value={scopeFacilityId}
-                      onChange={(e) => setScopeFacilityId(e.target.value)}
-                      className={cn(
-                        "h-12 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-black/20 px-3 text-sm outline-none appearance-none",
-                        "focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-500/50 leading-tight"
-                      )}
-                    >
-                      <option value="org">Organization (all facilities)</option>
-                      {facilityNames.map((f) => (
-                        <option key={f.id} value={f.id}>
-                          {f.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={setScopeFacilityId}
+                      facilities={facilityNames}
+                      loading={loading}
+                      disabled={saving}
+                      triggerClassName="rounded-xl border-slate-200 dark:border-white/10 bg-white/70 dark:bg-black/20"
+                    />
                   </div>
                   <Button type="submit" disabled={saving || !name.trim()} className="w-full h-12 rounded-xl font-bold tracking-widest uppercase text-[10px] bg-indigo-600 hover:bg-indigo-700 text-white shadow mt-2">
                     {saving ? (
