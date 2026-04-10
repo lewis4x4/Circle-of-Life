@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { Users, AlertCircle, Clock, FileWarning, CalendarPlus, Activity, Download } from "lucide-react";
@@ -113,31 +113,35 @@ export default function AdminStaffingConsolePage() {
     void load();
   }, [load]);
 
+  const snapshotIdsInOrder = useMemo(() => snapshots.map((s) => s.id), [snapshots]);
+
   const exportStaffingSnapshotsCsv = useCallback(async () => {
     setExportingCsv(true);
     setCsvExportError(null);
     try {
-      let q = supabase
-        .from("staffing_ratio_snapshots" as never)
-        .select("*")
-        .order("snapshot_at", { ascending: false })
-        .limit(500);
-
-      if (isValidFacilityIdForQuery(selectedFacilityId)) {
-        q = q.eq("facility_id", selectedFacilityId);
+      const stamp = format(new Date(), "yyyy-MM-dd");
+      if (snapshotIdsInOrder.length === 0) {
+        triggerCsvDownload(`staffing-ratio-snapshots-${stamp}.csv`, buildStaffingSnapshotsCsv([]));
+        return;
       }
 
-      const res = await q;
+      const res = await supabase
+        .from("staffing_ratio_snapshots" as never)
+        .select("*")
+        .in("id", snapshotIdsInOrder)
+        .order("snapshot_at", { ascending: false });
       if (res.error) throw res.error;
-      const list = (res.data ?? []) as StaffingSnapshotCsvRow[];
+      const raw = (res.data ?? []) as StaffingSnapshotCsvRow[];
+      const order = new Map(snapshotIdsInOrder.map((id, i) => [id, i]));
+      const list = raw.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
       const csv = buildStaffingSnapshotsCsv(list);
-      triggerCsvDownload(`staffing-ratio-snapshots-${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
+      triggerCsvDownload(`staffing-ratio-snapshots-${stamp}.csv`, csv);
     } catch (e) {
       setCsvExportError(e instanceof Error ? e.message : "Failed to export staffing snapshots.");
     } finally {
       setExportingCsv(false);
     }
-  }, [supabase, selectedFacilityId]);
+  }, [supabase, snapshotIdsInOrder]);
 
   if (isLoading) {
     return (

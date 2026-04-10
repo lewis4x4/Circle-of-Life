@@ -414,7 +414,7 @@ Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
 | Schedule Builder | `/admin/schedules` | Hub lists schedule **week** rows (`schedules`). **Schedule weeks CSV** (Track D33): full-row export for **`schedules`** visible in the hub (same facility scope; list loads up to **120** rows). **Hub filter scope** (Track D82): export matches **search** and **status** when any are non-default (`_filtered` filename suffix). **Week detail** (Track D35): `/admin/schedules/:id` read-only **`shift_assignments`** list + CSV (up to 500); full 7-day grid and drag-drop remain future work. |
 | Time Records | `/admin/time-records` | Table: staff, date, clock in, clock out, hours, overtime, approved. **Bulk approve** (Track D60): approves every loaded punch that has **clock out** and **not approved** (same **150**-row window as the list; facility required). **Time records CSV** (Track D31): up to 500 `time_records` rows with **`staff_display_name`**, facility-scoped when a facility is selected. **CSV approval scope** (Track D79): export applies the same **approval** filter as the hub (**All** / **Approved** / **Not approved**); search is list-only. |
 | Shift swap queue | `/admin/shift-swaps` | List of **`shift_swap_requests`** for scheduling oversight (requesting → covering staff labels). **CSV** (Track D36): full rows with display names for the loaded hub list (up to **500**). **Hub filter scope** (Track D83): export matches **search** and **status** when any are non-default (`_filtered` filename suffix). **Approve / deny** for **pending** rows (Track D37): sets `approved_*` or `denied_reason`; facility-scoped when a facility is selected. |
-| Staffing Dashboard | `/admin/staffing` | Real-time ratio display per shift, historical ratio chart, alert log. **Ratio snapshots CSV** (Track D32): up to 500 `staffing_ratio_snapshots` rows, facility-scoped when a facility is selected (`staff_detail` as JSON in column `staff_detail_json`). |
+| Staffing Dashboard | `/admin/staffing` | Real-time ratio display per shift, historical ratio chart, alert log. **Ratio snapshots CSV** (Track D32): full rows for snapshots **loaded by the hub** (same facility scope as the live query; **10** most recent). **CSV loaded batch** (Track D84): export uses those ids only—not a separate 500-row pull (`staff_detail` as JSON in column `staff_detail_json`). |
 
 ### Mobile (Staff)
 
@@ -446,7 +446,9 @@ Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
 
 ### Track D — staffing ratio snapshots CSV (shipped)
 
-**D32:** **`/admin/staffing`** — **Download snapshots CSV** queries up to **500** **`staffing_ratio_snapshots`** rows, **RFC-style** CSV; **`staff_detail`** serialized as **`staff_detail_json`**. Scope matches snapshot history (facility filter when valid). Mock gap/warning cards unchanged. **No** new DDL.
+**D32:** **`/admin/staffing`** — **Download snapshots CSV** queries **`staffing_ratio_snapshots`** rows, **RFC-style** CSV; **`staff_detail`** serialized as **`staff_detail_json`**. Scope matches snapshot history (facility filter when valid). Mock gap/warning cards unchanged. **No** new DDL.
+
+**D84:** Same hub — **Download snapshots CSV** exports only rows whose ids match the **loaded hub batch** (same **10**-row window as `fetchSnapshotsFromSupabase`), in hub order—**not** a separate **500**-row query. **No** new DDL.
 
 ### Track D — schedule weeks CSV (shipped)
 

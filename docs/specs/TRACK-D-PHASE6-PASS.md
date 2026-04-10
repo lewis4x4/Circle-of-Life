@@ -814,6 +814,16 @@
 
 ---
 
+**D84 (2026-04-10):** **Module 11 — Staffing** ([11-staff-management.md](./11-staff-management.md)) — **staffing snapshots CSV matches loaded hub batch**.
+
+**Slice:** **`/admin/staffing`** — **Snapshots CSV** exports **`staffing_ratio_snapshots`** rows whose ids match the **same loaded batch** as the hub (**10** newest, facility-scoped when valid), in hub order—**not** a separate **500**-row query. **`staff_detail_json`** unchanged. Mock cards unchanged. **No** migration.
+
+**Gate artifact:** `test-results/agent-gates/2026-04-10T01-31-53-970Z-track-d-d84-staffing-snapshots-csv-loaded-scope.json` (`npm run segment:gates -- --segment "track-d-d84-staffing-snapshots-csv-loaded-scope" --ui`)
+
+**Mission alignment:** **pass** — ratio exports match the hub’s loaded history without changing snapshot capture or RLS.
+
+---
+
 ## Track D — plan (remaining)
 
 **Segments D1–D10:** Closed in repo with gate artifacts above. This completes the **Phase 6 Core visibility / workflow** slices we prioritized for COL (transport, training, dietary, referrals, reputation), plus **D10** org mileage rate.
@@ -828,10 +838,10 @@
 | **15** | ~~Week calendar + mileage approval queue~~ (D14, D15); ~~**transport requests CSV** on hub~~ (D24); ~~**hub status filter + CSV scope**~~ (D76); ~~**mileage logs CSV** on approvals~~ (D25); ~~**mileage CSV pending/approved scope**~~ (D78); ~~full month grid~~ (D56); ~~calendar **`.ics` export**~~ (D57); ~~request detail **Google + Outlook** one-way compose links~~ (D61, D62); ~~request detail **single-trip `.ics`**~~ (D63); ~~calendar **`?date=`** deep link + request **View on calendar**~~ (D66); external calendar **live sync** |
 | **22** | ~~Minimal **MSH** queue processor~~ (D12); ~~manual **Draft lead** from HL7~~ (D16); ~~**HL7 queue CSV**~~ (D22); ~~**pipeline leads CSV** on hub~~ (D27); ~~**pipeline status filter + CSV**~~ (D70); ~~**pipeline search** (client-side)~~ (D72); ~~**Copy raw** on inbound queue~~ (D65); ~~**status filter** on inbound queue~~ (D67); ~~**CSV export respects status filter**~~ (D68); ~~**queue search** (client-side)~~ (D71); MLLP, full ADT parse, auto-**`referral_leads`** |
 | **23** | ~~**Replies CSV** export on hub~~ (D19); ~~**replies CSV** **status** scope~~ (D75); ~~**accounts CSV** on hub~~ (D28); ~~Google OAuth **connect** + **`119`** token table~~ (D44); ~~**manual** Google review import~~ (D45); ~~**cron** Google review import~~ (D46); ~~**Yelp Fusion** manual import~~ (D47); ~~**Google** reply post~~ (D48); ~~**Yelp** reply post (Partner API)~~ (D49) |
-| **11** | ~~**Staff roster CSV** on `/admin/staff`~~ (D29); ~~**staff roster CSV hub filter scope**~~ (D80); ~~**Certifications CSV** on `/admin/certifications`~~ (D30); ~~**certifications CSV hub filter scope**~~ (D81); ~~**Time records CSV** on `/admin/time-records`~~ (D31); ~~**time records CSV approval scope**~~ (D79); ~~**Staffing snapshots CSV** on `/admin/staffing`~~ (D32); ~~**Schedule weeks CSV** on `/admin/schedules`~~ (D33); ~~**schedule weeks CSV hub filter scope**~~ (D82); ~~**Schedule week detail + shift assignments CSV**~~ (D35); ~~**Shift swap requests hub + CSV**~~ (D36); ~~**shift swap CSV hub filter scope**~~ (D83); ~~**Shift swap approve/deny**~~ (D37); ~~**Bulk approve** pending time punches~~ (D60); full scheduling builder UX depth |
+| **11** | ~~**Staff roster CSV** on `/admin/staff`~~ (D29); ~~**staff roster CSV hub filter scope**~~ (D80); ~~**Certifications CSV** on `/admin/certifications`~~ (D30); ~~**certifications CSV hub filter scope**~~ (D81); ~~**Time records CSV** on `/admin/time-records`~~ (D31); ~~**time records CSV approval scope**~~ (D79); ~~**Staffing snapshots CSV** on `/admin/staffing`~~ (D32); ~~**staffing snapshots CSV loaded batch scope**~~ (D84); ~~**Schedule weeks CSV** on `/admin/schedules`~~ (D33); ~~**schedule weeks CSV hub filter scope**~~ (D82); ~~**Schedule week detail + shift assignments CSV**~~ (D35); ~~**Shift swap requests hub + CSV**~~ (D36); ~~**shift swap CSV hub filter scope**~~ (D83); ~~**Shift swap approve/deny**~~ (D37); ~~**Bulk approve** pending time punches~~ (D60); full scheduling builder UX depth |
 
 **Authoritative README narrative:** [README.md](./README.md) — section **Track D — Phase 6 completion pass**.
 
-**Next segment:** Record as **D84+** in this file when a new bounded slice ships; use migration **`120+`** only when DDL is required ([README.md](./README.md) next free migration).
+**Next segment:** Record as **D85+** in this file when a new bounded slice ships; use migration **`120+`** only when DDL is required ([README.md](./README.md) next free migration).
 
 **Prioritized Enhanced plan (D11+ options, order, checklists):** [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md).
