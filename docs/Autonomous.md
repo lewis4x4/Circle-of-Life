@@ -206,12 +206,25 @@ From `npm run segment:gates` (see `CODEX.md`): hygiene, security scan, ESLint, m
 
 ---
 
+## RECORD — round 2026-04-10 (loop: AGENTS table → agent-gates runbook)
+
+| Field | Value |
+|-------|--------|
+| **BOOT** | [AGENTS.md](../AGENTS.md) resource table vs [agent-gates-runbook.md](./agent-gates-runbook.md), `git status` clean @**88101b3**. |
+| **FIND** | **D85+** clinical-gated. **Unblocked:** **AGENTS** listed gate runner + artifacts but not the **runbook** path (operators already have runbook → **Autonomous** from **88101b3**). |
+| **BUILD** | [AGENTS.md](../AGENTS.md) — one row before **Gate report schema**. |
+| **Mission alignment** | **pass** — index matches **Cursor rule** / **CODEX** gate references. |
+| **Gate artifact** | `test-results/agent-gates/2026-04-10T12-21-05-094Z-loop-agents-table-gates-runbook.json` |
+| **Deferred** | **D85+** until clinical sign-off. |
+
+---
+
 ## RECORD — loop exit (optional)
 
 | Field | Value |
 |-------|--------|
 | **date** | **2026-04-10** |
-| **reason** | **D85+** still **clinical / pharmacy** gated. This loop linked **`docs/Autonomous.md`** from **`docs/agent-gates-runbook.md`**; no Module 14 automation without COL sign-off. |
+| **reason** | **D85+** still **clinical / pharmacy** gated. This loop added **`docs/agent-gates-runbook.md`** to the **AGENTS** resource table; no Module 14 automation without COL sign-off. |
 | **next_human_action** | Remote **`001`–`120`** parity; COL clinical sign-off for **D85+**; Track A UAT / Pro–BAA–PITR per owner schedule. |
 
 ---

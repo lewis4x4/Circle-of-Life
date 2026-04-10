@@ -41,6 +41,7 @@ Mission alignment (`pass` | `risk` | `fail`) must be recorded in every segment h
 | **Frontend route contract** | `docs/specs/FRONTEND-CONTRACT.md` |
 | **Agent registry** | `agents/registry.yaml` |
 | **Agent playbooks** | `agents/playbooks/` |
+| **Agent gates runbook** (`npm run segment:gates`) | `docs/agent-gates-runbook.md` |
 | Gate report schema | `agents/schemas/gate-report.schema.json` |
 | Segment gate runner | `scripts/agent-gates/run-segment-gates.mjs` |
 | Gate JSON artifacts | `test-results/agent-gates/` |
