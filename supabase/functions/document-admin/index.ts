@@ -159,6 +159,35 @@ Deno.serve(async (req) => {
         });
       }
 
+      case "regenerate_markdown": {
+        // Trigger the ingest function's regenerate_markdown path
+        const ingestUrl = `${SUPABASE_URL}/functions/v1/ingest`;
+        const authHeader = req.headers.get("authorization") ?? "";
+        const ingestRes = await fetch(ingestUrl, {
+          method: "POST",
+          headers: {
+            "Authorization": authHeader,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ document_id, action: "regenerate_markdown" }),
+          signal: AbortSignal.timeout(180_000),
+        });
+
+        const ingestResult = await ingestRes.json();
+        if (!ingestRes.ok) {
+          t.log({ event: "regenerate_failed", outcome: "error", error_message: ingestResult.error });
+          return new Response(JSON.stringify(ingestResult), {
+            status: ingestRes.status,
+            headers: { ...getCorsHeaders(origin), "Content-Type": "application/json" },
+          });
+        }
+
+        t.log({ event: "regenerate_ok", outcome: "success", document_id });
+        return new Response(JSON.stringify(ingestResult), {
+          headers: { ...getCorsHeaders(origin), "Content-Type": "application/json" },
+        });
+      }
+
       default:
         return jsonResponse({ error: `Unknown action: ${action ?? "missing"}` }, 400, origin);
     }

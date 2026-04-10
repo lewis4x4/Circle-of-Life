@@ -1,25 +1,141 @@
 /**
- * Knowledge Base — document ingestion (chunk, embed, summarize).
- * POST multipart (file upload) or JSON `{ document_id }` (re-index).
+ * Knowledge Base — document ingestion with Markdown IR pipeline.
+ * POST multipart (file upload) or JSON { document_id } (re-index)
+ *      or JSON { document_id, action: "regenerate_markdown" } (re-convert from storage).
  * Auth: user JWT. Roles: owner, org_admin, facility_admin.
+ *
+ * Pipeline: upload → type-specific extraction → Markdown conversion → semantic chunk → embed → summarize → audit
  */
 import { Buffer } from "node:buffer";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import mammoth from "npm:mammoth@1.8.0";
 import pdfParse from "npm:pdf-parse@1.1.1";
 import XLSX from "npm:xlsx@0.18.5";
+import TurndownService from "npm:turndown@7.2.0";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
 
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
 const CHUNK_TARGET_TOKENS = 512;
 const CHUNK_OVERLAP_TOKENS = 50;
 const SECTION_CHUNK_TARGET = 2000;
-const MAX_FILE_SIZE = 50 * 1024 * 1024;
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 const EMBEDDING_MODEL = "text-embedding-3-small";
+const LLM_MD_MODEL = "claude-haiku-4-5-20251001";
+const LLM_VISION_MODEL = "claude-sonnet-4-5-20250514";
+const LLM_MD_MAX_CHARS_PER_PASS = 24_000; // ~6k tokens input
+const SCANNED_PDF_MIN_CHARS = 50;
+const SCANNED_PDF_MIN_ALPHA_RATIO = 0.3;
 
 const UPLOAD_ROLES = ["owner", "org_admin", "facility_admin"] as const;
 
-async function extractText(buffer: ArrayBuffer, kind: string): Promise<string> {
+const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+// ---------------------------------------------------------------------------
+// Turndown instance (HTML → Markdown)
+// ---------------------------------------------------------------------------
+const turndown = new TurndownService({
+  headingStyle: "atx",
+  bulletListMarker: "-",
+  codeBlockStyle: "fenced",
+});
+
+// ---------------------------------------------------------------------------
+// HTML table → Markdown table (string-based, no DOM APIs — Deno-safe)
+// Pre-processes HTML to convert <table> blocks before passing to Turndown.
+// ---------------------------------------------------------------------------
+function htmlTablesToMarkdown(html: string): string {
+  return html.replace(/<table[\s\S]*?<\/table>/gi, (tableHtml) => {
+    const rows: string[][] = [];
+
+    // Extract each <tr> block
+    const trMatches = tableHtml.match(/<tr[\s\S]*?<\/tr>/gi) || [];
+    for (const tr of trMatches) {
+      const cells: string[] = [];
+      // Match both <td> and <th> cells
+      const cellMatches = tr.match(/<(?:td|th)[\s\S]*?<\/(?:td|th)>/gi) || [];
+      for (const cell of cellMatches) {
+        // Strip HTML tags, normalize whitespace
+        const text = cell
+          .replace(/<[^>]*>/g, "")
+          .replace(/&amp;/g, "&")
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">")
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/&nbsp;/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+          .replace(/\|/g, "\\|");
+        cells.push(text);
+      }
+      if (cells.length > 0) rows.push(cells);
+    }
+
+    if (rows.length === 0) return "";
+
+    // Normalize column count
+    const maxCols = Math.max(...rows.map((r) => r.length));
+    const normalized = rows.map((r) => {
+      while (r.length < maxCols) r.push("");
+      return r;
+    });
+
+    // Build Markdown table
+    const header = `| ${normalized[0]!.join(" | ")} |`;
+    const separator = `| ${normalized[0]!.map(() => "---").join(" | ")} |`;
+    const body = normalized
+      .slice(1)
+      .map((r) => `| ${r.join(" | ")} |`)
+      .join("\n");
+    return `\n\n${header}\n${separator}\n${body}\n\n`;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// File type detection
+// ---------------------------------------------------------------------------
+type FileKind = "pdf" | "docx" | "spreadsheet" | "markdown" | "text";
+
+function fileKindFromMime(mime: string): FileKind {
+  if (mime === "application/pdf") return "pdf";
+  if (mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return "docx";
+  if (mime.includes("spreadsheet") || mime.includes("excel") || mime === "text/csv") return "spreadsheet";
+  if (mime === "text/markdown" || mime === "text/x-markdown") return "markdown";
+  return "text";
+}
+
+function verifyFileType(header: Uint8Array, kind: FileKind): boolean {
+  const isPdf = header[0] === 0x25 && header[1] === 0x50 && header[2] === 0x44 && header[3] === 0x46;
+  const isZip = header[0] === 0x50 && header[1] === 0x4b && header[2] === 0x03 && header[3] === 0x04;
+  const isOle = header[0] === 0xd0 && header[1] === 0xcf && header[2] === 0x11 && header[3] === 0xe0;
+  switch (kind) {
+    case "pdf": return isPdf;
+    case "docx": return isZip;
+    case "spreadsheet": return isZip || isOle;
+    default: return true;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Scanned PDF detection
+// ---------------------------------------------------------------------------
+function isScannedPdf(rawText: string): boolean {
+  if (!rawText || rawText.trim().length < SCANNED_PDF_MIN_CHARS) return true;
+  const alphaCount = rawText.replace(/[^a-zA-Z0-9]/g, "").length;
+  if (rawText.length > 0 && alphaCount / rawText.length < SCANNED_PDF_MIN_ALPHA_RATIO) return true;
+  return false;
+}
+
+// ---------------------------------------------------------------------------
+// Raw text extraction (fallback / pre-Markdown)
+// ---------------------------------------------------------------------------
+async function extractRawText(buffer: ArrayBuffer, kind: FileKind): Promise<string> {
   switch (kind) {
     case "pdf": {
       const parsed = await pdfParse(Buffer.from(buffer));
@@ -34,15 +150,293 @@ async function extractText(buffer: ArrayBuffer, kind: string): Promise<string> {
       return wb.SheetNames.map((name) => {
         const csv = XLSX.utils.sheet_to_csv(wb.Sheets[name], { blankrows: false }).trim();
         return csv ? `Sheet: ${name}\n${csv}` : "";
-      })
-        .filter(Boolean)
-        .join("\n\n");
+      }).filter(Boolean).join("\n\n");
     }
     default:
       return new TextDecoder().decode(buffer);
   }
 }
 
+// ---------------------------------------------------------------------------
+// Markdown conversion — per file type
+// ---------------------------------------------------------------------------
+
+/**
+ * DOCX → Markdown via mammoth (HTML) → turndown.
+ * Preserves headings, bold, italic, lists, tables.
+ */
+async function docxToMarkdown(buffer: ArrayBuffer): Promise<{ markdown: string; method: string }> {
+  const result = await mammoth.convertToHtml({ buffer: Buffer.from(buffer) });
+  const html = result.value ?? "";
+  if (!html.trim()) return { markdown: "", method: "mammoth_html_turndown" };
+
+  // Pre-process: convert HTML tables to Markdown tables (string-based, no DOM)
+  const htmlWithMdTables = htmlTablesToMarkdown(html);
+  // Then let Turndown handle everything else (headings, lists, bold, italic, links)
+  let md = turndown.turndown(htmlWithMdTables);
+  // Normalize excessive blank lines
+  md = md.replace(/\n{3,}/g, "\n\n").trim();
+  return { markdown: md, method: "mammoth_html_turndown" };
+}
+
+/**
+ * Text-based PDF → raw text → LLM structuring to Markdown.
+ * Sends extracted text to Claude Haiku to detect and apply heading levels,
+ * tables, lists, and emphasis.
+ */
+async function textPdfToMarkdown(rawText: string, title: string): Promise<{ markdown: string; method: string }> {
+  if (rawText.length <= LLM_MD_MAX_CHARS_PER_PASS) {
+    const md = await llmTextToMarkdown(rawText, title);
+    return { markdown: md, method: "llm_text_to_md" };
+  }
+
+  // Split long documents into page-ish chunks and process in sequence
+  const pages = splitTextForBatching(rawText, LLM_MD_MAX_CHARS_PER_PASS);
+  const parts: string[] = [];
+  for (let i = 0; i < pages.length; i++) {
+    const md = await llmTextToMarkdown(pages[i]!, `${title} (section ${i + 1}/${pages.length})`);
+    parts.push(md);
+  }
+  return { markdown: parts.join("\n\n"), method: "llm_text_to_md" };
+}
+
+/**
+ * Scanned PDF → send PDF bytes to Claude vision → Markdown.
+ * Uses the Anthropic document content type for native PDF reading.
+ */
+async function scannedPdfToMarkdown(buffer: ArrayBuffer, title: string): Promise<{ markdown: string; method: string }> {
+  const pdfBase64 = Buffer.from(buffer).toString("base64");
+
+  // Process in a single call if under ~25 pages. Claude handles multi-page PDFs natively.
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: LLM_VISION_MODEL,
+      max_tokens: 16384,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "document",
+              source: {
+                type: "base64",
+                media_type: "application/pdf",
+                data: pdfBase64,
+              },
+            },
+            {
+              type: "text",
+              text: `Extract ALL text content from this PDF document and convert it to clean, well-structured Markdown.
+
+Rules:
+- Preserve ALL content verbatim — do not summarize, rephrase, or omit anything
+- Detect and apply heading levels (# ## ###) based on the document structure
+- Convert any tabular data into Markdown tables with proper headers and alignment
+- Preserve bullet/numbered lists with correct nesting
+- Mark bold (**text**) and italic (*text*) where apparent in the original
+- If the document contains forms, represent form fields as: **Field Name:** [value or blank]
+- For checkboxes, use: - [x] checked or - [ ] unchecked
+- If structure is ambiguous, prefer flat paragraphs over wrong headings
+- Do not add any commentary, meta-text, or descriptions of the document
+- Do not wrap the output in a code block
+
+Document title for context: "${title}"`,
+            },
+          ],
+        },
+      ],
+    }),
+    signal: AbortSignal.timeout(180_000), // 3 min for large scanned docs
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Vision PDF extraction failed (${res.status}): ${errText}`);
+  }
+
+  const data = await res.json();
+  const markdown = data.content?.[0]?.text?.trim() ?? "";
+  return { markdown, method: "llm_vision_pdf" };
+}
+
+/**
+ * Spreadsheet → Markdown tables (programmatic, no LLM).
+ */
+function spreadsheetToMarkdown(buffer: ArrayBuffer): { markdown: string; method: string } {
+  const wb = XLSX.read(Buffer.from(buffer), { type: "buffer" });
+  const sheets: string[] = [];
+
+  for (const name of wb.SheetNames) {
+    const sheet = wb.Sheets[name];
+    const json = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as unknown[][];
+    if (!json.length) continue;
+
+    // Find the first non-empty row as header
+    let headerIdx = 0;
+    while (headerIdx < json.length && (!json[headerIdx] || json[headerIdx]!.every((c) => c === null || c === undefined || c === ""))) {
+      headerIdx++;
+    }
+    if (headerIdx >= json.length) continue;
+
+    const headers = json[headerIdx]!.map((h) => String(h ?? "").replace(/\|/g, "\\|").replace(/\n/g, " "));
+    const colCount = headers.length;
+    if (colCount === 0) continue;
+
+    const separator = headers.map(() => "---");
+    const dataRows = json.slice(headerIdx + 1).filter((row) => row && row.some((c) => c !== null && c !== undefined && c !== ""));
+
+    const rows = dataRows.map((row) => {
+      const cells: string[] = [];
+      for (let i = 0; i < colCount; i++) {
+        cells.push(String(row[i] ?? "").replace(/\|/g, "\\|").replace(/\n/g, " "));
+      }
+      return `| ${cells.join(" | ")} |`;
+    });
+
+    sheets.push(
+      `## Sheet: ${name}\n\n| ${headers.join(" | ")} |\n| ${separator.join(" | ")} |\n${rows.join("\n")}`
+    );
+  }
+
+  return { markdown: sheets.join("\n\n---\n\n") || "", method: "xlsx_programmatic" };
+}
+
+// ---------------------------------------------------------------------------
+// LLM helper: text → Markdown (for text-based PDFs and plain text)
+// ---------------------------------------------------------------------------
+async function llmTextToMarkdown(text: string, title: string): Promise<string> {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: LLM_MD_MODEL,
+      max_tokens: 8192,
+      messages: [
+        {
+          role: "user",
+          content: `Convert this extracted document text into clean, well-structured Markdown.
+
+Rules:
+- Preserve ALL content verbatim — do not summarize, rephrase, or omit anything
+- Detect and apply heading levels (# ## ###) based on the document structure
+- Convert any tabular data into Markdown tables with proper headers and alignment
+- Preserve bullet/numbered lists with correct nesting
+- Mark bold (**text**) and italic (*text*) where apparent
+- If the document contains forms, represent form fields as: **Field Name:** [value or blank]
+- For checkboxes, use: - [x] checked or - [ ] unchecked
+- If structure is ambiguous, prefer flat paragraphs over wrong headings
+- Do not add any commentary, meta-text, or descriptions of the document
+- Do not wrap the output in a code block
+
+Document title: "${title}"
+
+---
+${text}`,
+        },
+      ],
+    }),
+    signal: AbortSignal.timeout(60_000),
+  });
+
+  if (!res.ok) {
+    // Fallback: return raw text if LLM fails (still better than nothing)
+    console.error(`LLM markdown conversion failed (${res.status}), falling back to raw text`);
+    return text;
+  }
+  const data = await res.json();
+  return data.content?.[0]?.text?.trim() ?? text;
+}
+
+function splitTextForBatching(text: string, maxChars: number): string[] {
+  const chunks: string[] = [];
+  // Try to split on page-break patterns first
+  const pageBreaks = text.split(/\f|\n{4,}|(?=\n[A-Z][A-Z\s:]{10,}\n)/);
+
+  let current = "";
+  for (const segment of pageBreaks) {
+    if (current.length + segment.length > maxChars && current.trim()) {
+      chunks.push(current.trim());
+      // Keep last 200 chars as overlap for context continuity
+      current = current.slice(-200) + segment;
+    } else {
+      current += segment;
+    }
+  }
+  if (current.trim()) chunks.push(current.trim());
+
+  // If no natural breaks were found, force-split
+  if (chunks.length <= 1 && text.length > maxChars) {
+    const forced: string[] = [];
+    for (let i = 0; i < text.length; i += maxChars - 200) {
+      forced.push(text.slice(i, i + maxChars));
+    }
+    return forced;
+  }
+  return chunks;
+}
+
+// ---------------------------------------------------------------------------
+// Master conversion dispatcher
+// ---------------------------------------------------------------------------
+async function convertToMarkdown(
+  buffer: ArrayBuffer,
+  kind: FileKind,
+  title: string,
+  rawText: string,
+): Promise<{ markdown: string; rawText: string; method: string }> {
+  switch (kind) {
+    case "docx": {
+      const { markdown, method } = await docxToMarkdown(buffer);
+      // rawText from mammoth extractRawText is still useful for FTS
+      return { markdown, rawText, method };
+    }
+    case "pdf": {
+      if (isScannedPdf(rawText)) {
+        // Scanned PDF: use Claude vision on the PDF bytes directly
+        const { markdown, method } = await scannedPdfToMarkdown(buffer, title);
+        // For scanned PDFs, the markdown IS the raw text (no text was extractable)
+        const effectiveRawText = rawText.trim().length < SCANNED_PDF_MIN_CHARS ? markdown : rawText;
+        return { markdown, rawText: effectiveRawText, method };
+      }
+      // Text-based PDF: structure the extracted text into Markdown via LLM
+      const { markdown, method } = await textPdfToMarkdown(rawText, title);
+      return { markdown, rawText, method };
+    }
+    case "spreadsheet": {
+      const { markdown, method } = spreadsheetToMarkdown(buffer);
+      return { markdown, rawText, method };
+    }
+    case "markdown": {
+      // Already Markdown — pass through, use as both raw and markdown
+      const text = new TextDecoder().decode(buffer);
+      return { markdown: text, rawText: text, method: "passthrough_md" };
+    }
+    case "text":
+    default: {
+      const text = new TextDecoder().decode(buffer);
+      // For plain text > 500 chars, try LLM structuring; otherwise pass through
+      if (text.trim().length > 500) {
+        const md = await llmTextToMarkdown(text, title);
+        return { markdown: md, rawText: text, method: "llm_text_to_md" };
+      }
+      return { markdown: text, rawText: text, method: "passthrough_text" };
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Semantic chunking (operates on Markdown input)
+// ---------------------------------------------------------------------------
 interface ChunkResult {
   content: string;
   tokenCount: number;
@@ -56,20 +450,23 @@ function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
 }
 
-function semanticChunk(text: string): ChunkResult[] {
+function semanticChunk(markdown: string): ChunkResult[] {
   const sections: ChunkResult[] = [];
   const paragraphs: ChunkResult[] = [];
-  const paras = text.split(/\n\n+/).filter((p) => p.trim());
+
+  // Split on double-newlines but preserve Markdown tables and lists as units
+  const blocks = splitMarkdownBlocks(markdown);
 
   let currentSection = "";
   let currentSectionTitle: string | null = null;
   let currentSectionTokens = 0;
 
-  for (const para of paras) {
-    const paraTokens = estimateTokens(para);
-    const isHeading = /^#{1,3}\s/.test(para) || /^[A-Z][A-Z\s:]{3,}$/.test(para.trim());
+  for (const block of blocks) {
+    const blockTokens = estimateTokens(block);
+    const isHeading = /^#{1,3}\s/.test(block);
 
     if (isHeading) {
+      // Flush current section
       if (currentSection.trim()) {
         sections.push({
           content: currentSection.trim(),
@@ -80,14 +477,14 @@ function semanticChunk(text: string): ChunkResult[] {
           parentIndex: null,
         });
       }
-      currentSectionTitle = para.replace(/^#+\s*/, "").trim();
-      currentSection = para + "\n\n";
-      currentSectionTokens = paraTokens;
+      currentSectionTitle = block.replace(/^#+\s*/, "").trim();
+      currentSection = block + "\n\n";
+      currentSectionTokens = blockTokens;
       continue;
     }
 
-    currentSection += para + "\n\n";
-    currentSectionTokens += paraTokens;
+    currentSection += block + "\n\n";
+    currentSectionTokens += blockTokens;
 
     if (currentSectionTokens > SECTION_CHUNK_TARGET) {
       sections.push({
@@ -114,15 +511,20 @@ function semanticChunk(text: string): ChunkResult[] {
     });
   }
 
+  // Sub-chunk sections into paragraph-level chunks
   for (let si = 0; si < sections.length; si++) {
-    const section = sections[si];
-    const sectionParas = section.content.split(/\n\n+/).filter((p) => p.trim());
+    const section = sections[si]!;
+    const sectionBlocks = splitMarkdownBlocks(section.content);
     let buf = "";
     let bufferTokens = 0;
 
-    for (const p of sectionParas) {
-      const pTokens = estimateTokens(p);
-      if (bufferTokens + pTokens > CHUNK_TARGET_TOKENS && buf.trim()) {
+    for (const b of sectionBlocks) {
+      const bTokens = estimateTokens(b);
+
+      // Never split a Markdown table or list across chunks
+      const isAtomicBlock = b.startsWith("|") || /^[-*+]\s/.test(b) || /^\d+\.\s/.test(b);
+
+      if (bufferTokens + bTokens > CHUNK_TARGET_TOKENS && buf.trim() && !isAtomicBlock) {
         paragraphs.push({
           content: buf.trim(),
           tokenCount: bufferTokens,
@@ -132,11 +534,11 @@ function semanticChunk(text: string): ChunkResult[] {
           parentIndex: si,
         });
         const overlapChars = CHUNK_OVERLAP_TOKENS * 4;
-        buf = buf.slice(-overlapChars) + "\n\n" + p;
+        buf = buf.slice(-overlapChars) + "\n\n" + b;
         bufferTokens = estimateTokens(buf);
       } else {
-        buf += (buf ? "\n\n" : "") + p;
-        bufferTokens += pTokens;
+        buf += (buf ? "\n\n" : "") + b;
+        bufferTokens += bTokens;
       }
     }
 
@@ -155,6 +557,58 @@ function semanticChunk(text: string): ChunkResult[] {
   return [...sections, ...paragraphs];
 }
 
+/**
+ * Split Markdown into blocks, keeping tables and multi-line list items intact.
+ */
+function splitMarkdownBlocks(text: string): string[] {
+  const lines = text.split("\n");
+  const blocks: string[] = [];
+  let current = "";
+  let inTable = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Detect table boundaries
+    if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+      if (!inTable && current.trim()) {
+        blocks.push(current.trim());
+        current = "";
+      }
+      inTable = true;
+      current += (current ? "\n" : "") + line;
+      continue;
+    }
+
+    if (inTable) {
+      // End of table
+      blocks.push(current.trim());
+      current = "";
+      inTable = false;
+    }
+
+    // Empty line = block boundary (unless in table)
+    if (trimmed === "") {
+      if (current.trim()) {
+        blocks.push(current.trim());
+        current = "";
+      }
+      continue;
+    }
+
+    current += (current ? "\n" : "") + line;
+  }
+
+  if (current.trim()) {
+    blocks.push(current.trim());
+  }
+
+  return blocks.filter(Boolean);
+}
+
+// ---------------------------------------------------------------------------
+// Embeddings
+// ---------------------------------------------------------------------------
 async function generateEmbeddings(texts: string[]): Promise<number[][]> {
   const batchSize = 20;
   const all: number[][] = [];
@@ -163,7 +617,7 @@ async function generateEmbeddings(texts: string[]): Promise<number[][]> {
     const res = await fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${Deno.env.get("OPENAI_API_KEY")}`,
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ model: EMBEDDING_MODEL, input: batch }),
@@ -176,17 +630,20 @@ async function generateEmbeddings(texts: string[]): Promise<number[][]> {
   return all;
 }
 
+// ---------------------------------------------------------------------------
+// Summary generation
+// ---------------------------------------------------------------------------
 async function generateSummary(text: string, title: string): Promise<string | null> {
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        "x-api-key": Deno.env.get("ANTHROPIC_API_KEY")!,
+        "x-api-key": ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model: LLM_MD_MODEL,
         max_tokens: 300,
         messages: [
           {
@@ -205,23 +662,9 @@ async function generateSummary(text: string, title: string): Promise<string | nu
   }
 }
 
-function verifyFileType(header: Uint8Array, kind: string): boolean {
-  const isPdf = header[0] === 0x25 && header[1] === 0x50 && header[2] === 0x44 && header[3] === 0x46;
-  const isZip = header[0] === 0x50 && header[1] === 0x4b && header[2] === 0x03 && header[3] === 0x04;
-  const isOle = header[0] === 0xd0 && header[1] === 0xcf && header[2] === 0x11 && header[3] === 0xe0;
-  switch (kind) {
-    case "pdf":
-      return isPdf;
-    case "docx":
-      return isZip;
-    case "spreadsheet":
-      return isZip || isOle;
-    default:
-      return true;
-  }
-}
-
-/** Haven: facility_admin uploads go to pending_review; owner/org_admin can publish by default. */
+// ---------------------------------------------------------------------------
+// Governance
+// ---------------------------------------------------------------------------
 function resolveGovernance(
   role: string,
   reqAudience?: string,
@@ -236,18 +679,24 @@ function resolveGovernance(
   };
 }
 
+// ---------------------------------------------------------------------------
+// Ingest pipeline (chunk → embed → store → summarize)
+// ---------------------------------------------------------------------------
 async function ingestDocument(
-  admin: any, // Edge: KB tables not in generated client schema yet
+  admin: any,
   documentId: string,
+  markdownText: string,
   rawText: string,
   title: string,
   workspaceId: string,
 ): Promise<number> {
-  const chunks = semanticChunk(rawText);
+  // Chunk the MARKDOWN, not raw text
+  const chunks = semanticChunk(markdownText);
   const embeddings = await generateEmbeddings(chunks.map((c) => c.content));
   const sectionChunks = chunks.filter((c) => c.type === "section");
   const paraChunks = chunks.filter((c) => c.type === "paragraph");
 
+  // Clear existing chunks for re-index
   await admin.from("chunks").delete().eq("document_id", documentId);
 
   const sectionRows = sectionChunks.map((chunk, i) => ({
@@ -255,7 +704,7 @@ async function ingestDocument(
     workspace_id: workspaceId,
     chunk_index: i,
     content: chunk.content,
-    content_stripped: chunk.content.replace(/[#*_~`>]/g, "").replace(/\s+/g, " ").trim(),
+    content_stripped: chunk.content.replace(/[#*_~`>|\-\[\]]/g, "").replace(/\s+/g, " ").trim(),
     token_count: chunk.tokenCount,
     chunk_type: "section",
     section_title: chunk.sectionTitle,
@@ -280,7 +729,7 @@ async function ingestDocument(
     workspace_id: workspaceId,
     chunk_index: embeddingOffset + i,
     content: chunk.content,
-    content_stripped: chunk.content.replace(/[#*_~`>]/g, "").replace(/\s+/g, " ").trim(),
+    content_stripped: chunk.content.replace(/[#*_~`>|\-\[\]]/g, "").replace(/\s+/g, " ").trim(),
     token_count: chunk.tokenCount,
     chunk_type: "paragraph",
     section_title: chunk.sectionTitle,
@@ -294,7 +743,8 @@ async function ingestDocument(
     if (error) throw new Error(`Paragraph insert: ${error.message}`);
   }
 
-  const summary = await generateSummary(rawText, title);
+  // Summarize from markdown (better quality than raw text)
+  const summary = await generateSummary(markdownText, title);
   await admin
     .from("documents")
     .update({
@@ -307,16 +757,9 @@ async function ingestDocument(
   return chunks.length;
 }
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-function fileKindFromMime(mime: string): string {
-  if (mime === "application/pdf") return "pdf";
-  if (mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return "docx";
-  if (mime.includes("spreadsheet") || mime.includes("excel") || mime === "text/csv") return "spreadsheet";
-  return "text";
-}
-
+// ---------------------------------------------------------------------------
+// HTTP handler
+// ---------------------------------------------------------------------------
 Deno.serve(async (req) => {
   const t = withTiming("ingest");
   const origin = req.headers.get("origin");
@@ -330,6 +773,7 @@ Deno.serve(async (req) => {
 
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+  // Auth
   const authHeader = req.headers.get("authorization") ?? "";
   const token = authHeader.replace("Bearer ", "");
   const {
@@ -362,8 +806,11 @@ Deno.serve(async (req) => {
   const contentType = req.headers.get("content-type") ?? "";
 
   try {
+    // -----------------------------------------------------------------------
+    // PATH 1: JSON — re-index or regenerate_markdown
+    // -----------------------------------------------------------------------
     if (contentType.includes("application/json")) {
-      const body = (await req.json()) as { document_id?: string };
+      const body = (await req.json()) as { document_id?: string; action?: string };
       const document_id = body.document_id;
       if (!document_id) {
         return jsonResponse({ error: "document_id required" }, 400, origin);
@@ -376,18 +823,71 @@ Deno.serve(async (req) => {
       if (doc.workspace_id !== orgId) {
         return jsonResponse({ error: "Forbidden" }, 403, origin);
       }
-      if (!doc.raw_text) {
-        return jsonResponse({ error: "No raw_text to re-index" }, 400, origin);
+
+      // ACTION: regenerate_markdown — re-download from storage, re-convert, re-ingest
+      if (body.action === "regenerate_markdown") {
+        const meta = doc.metadata as { storage_path?: string; storage_bucket?: string; upload_kind?: string; original_filename?: string } | null;
+        if (!meta?.storage_path) {
+          return jsonResponse({ error: "No storage file to regenerate from" }, 400, origin);
+        }
+
+        const { data: fileData, error: dlErr } = await admin.storage
+          .from(meta.storage_bucket || "documents")
+          .download(meta.storage_path);
+        if (dlErr || !fileData) {
+          return jsonResponse({ error: `Storage download failed: ${dlErr?.message}` }, 500, origin);
+        }
+
+        const buffer = await fileData.arrayBuffer();
+        const kind = (meta.upload_kind as FileKind) || "text";
+        const rawText = await extractRawText(buffer, kind);
+        const { markdown, method } = await convertToMarkdown(buffer, kind, doc.title, rawText);
+
+        if (!markdown.trim()) {
+          return jsonResponse({ error: "Markdown conversion produced empty result" }, 400, origin);
+        }
+
+        // Update document with new markdown
+        await admin.from("documents").update({
+          raw_text: rawText || doc.raw_text,
+          markdown_text: markdown,
+          conversion_method: method,
+          updated_at: new Date().toISOString(),
+        }).eq("id", document_id);
+
+        // Re-ingest with new markdown
+        const chunkCount = await ingestDocument(admin, doc.id, markdown, rawText || doc.raw_text, doc.title, doc.workspace_id);
+
+        await admin.from("document_audit_events").insert({
+          actor_user_id: user.id,
+          document_id: doc.id,
+          document_title_snapshot: doc.title,
+          event_type: "markdown_regenerated",
+          metadata: { chunk_count: chunkCount, conversion_method: method },
+        });
+
+        t.log({ event: "regenerate_md_ok", outcome: "success", document_id: doc.id, chunks: chunkCount, method });
+        return new Response(JSON.stringify({
+          success: true, document_id: doc.id, chunks: chunkCount, conversion_method: method,
+        }), {
+          headers: { ...getCorsHeaders(origin), "Content-Type": "application/json" },
+        });
       }
 
-      const chunkCount = await ingestDocument(admin, doc.id, doc.raw_text, doc.title, doc.workspace_id);
+      // DEFAULT ACTION: re-index from stored markdown_text (or fall back to raw_text)
+      const textForChunking = doc.markdown_text || doc.raw_text;
+      if (!textForChunking) {
+        return jsonResponse({ error: "No text to re-index (no markdown_text or raw_text)" }, 400, origin);
+      }
+
+      const chunkCount = await ingestDocument(admin, doc.id, textForChunking, doc.raw_text || textForChunking, doc.title, doc.workspace_id);
 
       await admin.from("document_audit_events").insert({
         actor_user_id: user.id,
         document_id: doc.id,
         document_title_snapshot: doc.title,
         event_type: "reindexed",
-        metadata: { chunk_count: chunkCount },
+        metadata: { chunk_count: chunkCount, source: doc.markdown_text ? "markdown_text" : "raw_text" },
       });
 
       t.log({ event: "reindex_ok", outcome: "success", document_id: doc.id, chunks: chunkCount });
@@ -396,6 +896,9 @@ Deno.serve(async (req) => {
       });
     }
 
+    // -----------------------------------------------------------------------
+    // PATH 2: Multipart — new file upload
+    // -----------------------------------------------------------------------
     if (contentType.includes("multipart/form-data")) {
       const formData = await req.formData();
       const file = formData.get("file") as File | null;
@@ -422,11 +925,38 @@ Deno.serve(async (req) => {
 
       const gov = resolveGovernance(userRole, audience, status);
 
-      const rawText = await extractText(fileBuffer, kind);
-      if (!rawText.trim()) {
+      // Step 1: Extract raw text (for FTS fallback)
+      const rawTextPre = await extractRawText(fileBuffer, kind);
+
+      // Step 2: Convert to Markdown IR
+      let markdown: string;
+      let conversionMethod: string;
+      try {
+        const result = await convertToMarkdown(fileBuffer, kind, title, rawTextPre);
+        markdown = result.markdown;
+        conversionMethod = result.method;
+        // Update rawText if scanned PDF provided better text
+        var rawText = result.rawText;
+      } catch (convErr: unknown) {
+        // If Markdown conversion fails, fall back to raw text
+        const msg = convErr instanceof Error ? convErr.message : String(convErr);
+        console.error(`Markdown conversion failed, falling back to raw text: ${msg}`);
+        markdown = rawTextPre;
+        rawText = rawTextPre;
+        conversionMethod = "fallback_raw";
+      }
+
+      if (!markdown.trim() && !rawText.trim()) {
         return jsonResponse({ error: "No text extracted from file" }, 400, origin);
       }
 
+      // If markdown is empty but raw text exists, use raw text as markdown
+      if (!markdown.trim()) {
+        markdown = rawText;
+        conversionMethod = "fallback_raw";
+      }
+
+      // Step 3: Upload original file to storage
       const storagePath = `kb/${workspaceId}/${crypto.randomUUID()}-${file.name}`;
       const { error: storageErr } = await admin.storage
         .from("documents")
@@ -449,6 +979,7 @@ Deno.serve(async (req) => {
         metadata.storage_path = storagePath;
       }
 
+      // Step 4: Insert document record with both raw_text and markdown_text
       const { data: doc, error: docInsertErr } = await admin
         .from("documents")
         .insert({
@@ -457,6 +988,8 @@ Deno.serve(async (req) => {
           source: "manual_upload",
           mime_type: file.type,
           raw_text: rawText,
+          markdown_text: markdown,
+          conversion_method: conversionMethod,
           audience: gov.audience,
           status: gov.status,
           uploaded_by: user.id,
@@ -469,9 +1002,10 @@ Deno.serve(async (req) => {
         return jsonResponse({ error: `Insert failed: ${docInsertErr?.message}` }, 500, origin);
       }
 
+      // Step 5: Ingest — chunk markdown → embed → summarize
       let chunkCount = 0;
       try {
-        chunkCount = await ingestDocument(admin, doc.id, rawText, doc.title, doc.workspace_id);
+        chunkCount = await ingestDocument(admin, doc.id, markdown, rawText, doc.title, doc.workspace_id);
       } catch (ingestErr: unknown) {
         const msg = ingestErr instanceof Error ? ingestErr.message : String(ingestErr);
         await admin.from("documents").update({ status: "ingest_failed" }).eq("id", doc.id);
@@ -486,12 +1020,18 @@ Deno.serve(async (req) => {
         return jsonResponse({ error: `Ingestion failed: ${msg}` }, 500, origin);
       }
 
+      // Step 6: Audit + analytics
       await admin.from("document_audit_events").insert({
         actor_user_id: user.id,
         document_id: doc.id,
         document_title_snapshot: doc.title,
         event_type: "uploaded",
-        metadata: { chunk_count: chunkCount, file_type: kind, file_size: file.size },
+        metadata: {
+          chunk_count: chunkCount,
+          file_type: kind,
+          file_size: file.size,
+          conversion_method: conversionMethod,
+        },
       });
 
       await admin.from("kb_analytics_events").insert({
@@ -499,10 +1039,16 @@ Deno.serve(async (req) => {
         event_type: "doc_uploaded",
         user_id: user.id,
         document_id: doc.id,
-        metadata: { chunk_count: chunkCount },
+        metadata: { chunk_count: chunkCount, conversion_method: conversionMethod },
       });
 
-      t.log({ event: "upload_ok", outcome: "success", document_id: doc.id, chunks: chunkCount });
+      t.log({
+        event: "upload_ok",
+        outcome: "success",
+        document_id: doc.id,
+        chunks: chunkCount,
+        conversion_method: conversionMethod,
+      });
       return new Response(
         JSON.stringify({
           success: true,
@@ -511,6 +1057,7 @@ Deno.serve(async (req) => {
           chunks: chunkCount,
           status: gov.status,
           audience: gov.audience,
+          conversion_method: conversionMethod,
         }),
         {
           headers: { ...getCorsHeaders(origin), "Content-Type": "application/json" },

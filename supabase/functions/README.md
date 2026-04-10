@@ -12,9 +12,9 @@
 | `emar-missed-dose-check` | no | `POST` — opens **`exec_alerts`** for overdue scheduled eMAR rows. Auth: **`x-cron-secret`** = `EMAR_MISSED_DOSE_SECRET`. |
 | `exec-alert-evaluator` | no | `POST { "organization_id" }` — inserts **`exec_alerts`** from live KPI thresholds. Auth: **`x-cron-secret`** = `EXEC_ALERT_EVALUATOR_SECRET`. |
 | `process-referral-hl7-inbound` | no | `POST { "organization_id"?, "limit"? }` — minimal **MSH** parse for **`referral_hl7_inbound`** rows in **`pending`** → **`processed`** / **`failed`**; sets **`message_control_id`**, **`trigger_event`**, **`parse_error`**. Does **not** create **`referral_leads`**. Auth: **`x-cron-secret`** = `PROCESS_REFERRAL_HL7_INBOUND_SECRET`. |
-| `ingest` | yes | `POST` multipart (`file`, `title`, optional `audience`/`status`) or JSON `{ "document_id" }` re-index. KB ingestion (extract → chunk → embed → **`documents`** / **`chunks`**). Roles: **owner**, **org_admin**, **facility_admin**. Secrets: **`OPENAI_API_KEY`**, **`ANTHROPIC_API_KEY`** (summary). |
+| `ingest` | yes | `POST` multipart (`file`, …) or JSON `{ "document_id" }` re-index or `{ "document_id", "action": "regenerate_markdown" }` (re-download from storage, re-convert). Pipeline: extract → **Markdown IR** (`markdown_text`) → chunk → embed. Roles: **owner**, **org_admin**, **facility_admin**. Secrets: **`OPENAI_API_KEY`**, **`ANTHROPIC_API_KEY`** (Markdown conversion + summary + scanned PDF vision). |
 | `knowledge-agent` | yes | `POST { "message", "conversation_id"?, "workspace_id"? }` — Claude tool loop + **`retrieve_evidence`** RPC; SSE response. **`workspace_id`** defaults to caller org. Secrets: **`OPENAI_API_KEY`**, **`ANTHROPIC_API_KEY`**. |
-| `document-admin` | yes | `POST { "action": "update" \| "delete", "document_id", ... }` — metadata updates or soft-delete + storage remove. Roles: **owner**, **org_admin** only. |
+| `document-admin` | yes | `POST { "action": "update" \| "delete" \| "regenerate_markdown", "document_id", ... }` — metadata updates, soft-delete + storage remove, or **`regenerate_markdown`** (proxies to **`ingest`**). Roles: **owner**, **org_admin** only. |
 
 ## `generate-monthly-invoices` — request body
 
@@ -73,7 +73,7 @@ Do **not** send `facility_id` and `organization_id` together.
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically.
 
-**Knowledge Base (`ingest`, `knowledge-agent`):** set **`OPENAI_API_KEY`** and **`ANTHROPIC_API_KEY`** in **Edge Functions → Secrets** (same names). Apply migrations **`126_knowledge_base.sql`** then **`130_kb_security_and_schema_reconciliation.sql`** (pgvector + KB tables + RPCs). KB RPCs (`retrieve_evidence`, `log_knowledge_gap`, `increment_usage`) are **`EXECUTE` for `service_role` only** — clients must call these via Edge Functions (JWT verified), not direct PostgREST.
+**Knowledge Base (`ingest`, `knowledge-agent`):** set **`OPENAI_API_KEY`** and **`ANTHROPIC_API_KEY`** in **Edge Functions → Secrets** (same names). Apply migrations **`126_knowledge_base.sql`**, **`130_kb_security_and_schema_reconciliation.sql`**, and **`132_kb_markdown_column.sql`** (`documents.markdown_text`, `conversion_method`). KB RPCs (`retrieve_evidence`, `log_knowledge_gap`, `increment_usage`) are **`EXECUTE` for `service_role` only** — clients must call these via Edge Functions (JWT verified), not direct PostgREST.
 
 ### Scheduling (monthly invoice generation)
 

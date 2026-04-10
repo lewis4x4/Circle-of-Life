@@ -2992,9 +2992,11 @@ export type Database = {
           audience: string
           classification_updated_at: string | null
           classification_updated_by: string | null
+          conversion_method: string | null
           created_at: string
           deleted_at: string | null
           id: string
+          markdown_text: string | null
           metadata: Json | null
           mime_type: string | null
           raw_text: string | null
@@ -3017,9 +3019,11 @@ export type Database = {
           audience?: string
           classification_updated_at?: string | null
           classification_updated_by?: string | null
+          conversion_method?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
+          markdown_text?: string | null
           metadata?: Json | null
           mime_type?: string | null
           raw_text?: string | null
@@ -3042,9 +3046,11 @@ export type Database = {
           audience?: string
           classification_updated_at?: string | null
           classification_updated_by?: string | null
+          conversion_method?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
+          markdown_text?: string | null
           metadata?: Json | null
           mime_type?: string | null
           raw_text?: string | null
