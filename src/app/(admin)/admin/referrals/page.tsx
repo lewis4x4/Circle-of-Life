@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { ClipboardList, Download, UserPlus, ArrowRight } from "lucide-react";
+import { ClipboardList, Download, Search, UserPlus, ArrowRight } from "lucide-react";
 
 import { ReferralsHubNav } from "./referrals-hub-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
@@ -21,7 +22,15 @@ type ReferralLeadStatus = Database["public"]["Enums"]["referral_lead_status"];
 
 type LeadRow = Pick<
   Database["public"]["Tables"]["referral_leads"]["Row"],
-  "id" | "first_name" | "last_name" | "status" | "updated_at"
+  | "id"
+  | "first_name"
+  | "last_name"
+  | "status"
+  | "updated_at"
+  | "email"
+  | "phone"
+  | "external_reference"
+  | "notes"
 > & {
   referral_sources: { name: string } | null;
 };
@@ -120,11 +129,34 @@ export default function AdminReferralsHubPage() {
   const [hl7Counts, setHl7Counts] = useState({ pending: 0, failed: 0 });
   const [exportingCsv, setExportingCsv] = useState(false);
   const [statusFilter, setStatusFilter] = useState<"all" | ReferralLeadStatus>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const filteredRows = useMemo(() => {
     if (statusFilter === "all") return rows;
     return rows.filter((r) => r.status === statusFilter);
   }, [rows, statusFilter]);
+
+  const displayRows = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return filteredRows;
+    return filteredRows.filter((r) => {
+      const hay = [
+        r.first_name,
+        r.last_name,
+        r.email,
+        r.phone,
+        r.external_reference,
+        r.notes,
+        r.referral_sources?.name,
+        r.id,
+        r.status,
+      ]
+        .filter((s): s is string => typeof s === "string" && s.length > 0)
+        .join("\n")
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }, [filteredRows, searchQuery]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -140,7 +172,9 @@ export default function AdminReferralsHubPage() {
     try {
       const { data: list, error: listErr } = await supabase
         .from("referral_leads")
-        .select("id, first_name, last_name, status, updated_at, referral_sources(name)")
+        .select(
+          "id, first_name, last_name, status, updated_at, email, phone, external_reference, notes, referral_sources(name)",
+        )
         .eq("facility_id", selectedFacilityId)
         .is("deleted_at", null)
         .order("updated_at", { ascending: false })
@@ -355,13 +389,45 @@ export default function AdminReferralsHubPage() {
 
       {/* ─── CASE ROSTER (GLASS ROWS) ─── */}
       <div className="space-y-6">
-        <div className="flex flex-col gap-3 border-b border-slate-200/50 dark:border-white/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-3">
-            <ClipboardList className="h-5 w-5 text-indigo-500" />
-            <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white tracking-tight">
-              Pipeline Leads
-            </h3>
-            {!noFacility ? (
+        <div className="flex flex-col gap-3 border-b border-slate-200/50 dark:border-white/10 pb-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <ClipboardList className="h-5 w-5 text-indigo-500" />
+              <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white tracking-tight">
+                Pipeline Leads
+              </h3>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={noFacility || exportingCsv}
+              className="h-10 shrink-0 gap-2 rounded-full text-[10px] font-bold uppercase tracking-widest sm:self-start"
+              title={
+                (statusFilter === "all"
+                  ? "Export up to 500 leads (all statuses), most recently updated first."
+                  : `Export up to 500 ${statusFilter.replace(/_/g, " ")} leads, most recently updated first.`) +
+                " Search does not narrow the CSV."
+              }
+              onClick={() => void exportReferralLeadsCsv()}
+            >
+              <Download className="h-4 w-4" aria-hidden />
+              {exportingCsv ? "Preparing…" : "Download leads CSV"}
+            </Button>
+          </div>
+          {!noFacility ? (
+            <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+              <label className="flex min-w-0 max-w-full flex-1 items-center gap-2 sm:max-w-md">
+                <Search className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+                <Input
+                  type="search"
+                  placeholder="Search name, phone, email, source, external ref…"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="h-9 rounded-lg border-slate-200 bg-white text-sm dark:border-white/10 dark:bg-white/5"
+                  aria-label="Filter pipeline by text"
+                />
+              </label>
               <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400">Status</span>
                 <select
@@ -379,29 +445,21 @@ export default function AdminReferralsHubPage() {
                   ))}
                 </select>
               </label>
-            ) : null}
-            {!noFacility && rows.length > 0 ? (
-              <p className="text-[10px] font-mono tracking-widest text-slate-400 uppercase">
-                Showing {filteredRows.length} of {rows.length} · Most recent first
-              </p>
-            ) : null}
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={noFacility || exportingCsv}
-            className="h-10 shrink-0 gap-2 rounded-full text-[10px] font-bold uppercase tracking-widest"
-            title={
-              statusFilter === "all"
-                ? "Export up to 500 leads (all statuses), most recently updated first."
-                : `Export up to 500 ${statusFilter.replace(/_/g, " ")} leads, most recently updated first.`
-            }
-            onClick={() => void exportReferralLeadsCsv()}
-          >
-            <Download className="h-4 w-4" aria-hidden />
-            {exportingCsv ? "Preparing…" : "Download leads CSV"}
-          </Button>
+              {rows.length > 0 ? (
+                <p className="text-[10px] font-mono tracking-widest text-slate-400 uppercase">
+                  {searchQuery.trim() ? (
+                    <>
+                      Showing {displayRows.length} of {filteredRows.length} · Search
+                    </>
+                  ) : (
+                    <>
+                      Showing {filteredRows.length} of {rows.length} · Most recent first
+                    </>
+                  )}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         {loadError ? (
@@ -435,9 +493,13 @@ export default function AdminReferralsHubPage() {
                <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
                  No leads match this status filter.
                </div>
+             ) : displayRows.length === 0 ? (
+               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
+                 No leads match this search.
+               </div>
              ) : (
                 <MotionList className="space-y-4">
-                  {filteredRows.map((r) => {
+                  {displayRows.map((r) => {
                     const isNew = r.status.includes('new');
                     
                     return (

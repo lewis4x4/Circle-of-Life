@@ -29,7 +29,7 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 
 - `/admin`
 - `/admin/search` (Phase 3.5 platform search index UI)
-- `/admin/referrals` (Phase 4 Module 1 hub — `01-referral-inquiry.md`; Phase 6 **pipeline status filter + CSV** — `22-referral-crm.md` **D70**)
+- `/admin/referrals` (Phase 4 Module 1 hub — `01-referral-inquiry.md`; Phase 6 **pipeline status filter + CSV** — `22-referral-crm.md` **D70**; **pipeline search** — **D72**)
 - `/admin/referrals/new`
 - `/admin/referrals/[id]`
 - `/admin/referrals/sources`

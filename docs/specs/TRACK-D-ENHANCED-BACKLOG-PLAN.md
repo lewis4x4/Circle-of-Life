@@ -151,7 +151,9 @@
 
 **~~Recommended next segment — D71~~** **DONE (2026-04-10)** — Module **22:** **`/admin/referrals/hl7-inbound`** — **queue search** (client-side) — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D72+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
+**~~Recommended next segment — D72~~** **DONE (2026-04-10)** — Module **22:** **`/admin/referrals`** — **pipeline search** (client-side) — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D73+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
 
 ---
 
