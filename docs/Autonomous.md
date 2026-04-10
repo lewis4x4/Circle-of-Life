@@ -219,12 +219,25 @@ From `npm run segment:gates` (see `CODEX.md`): hygiene, security scan, ESLint, m
 
 ---
 
+## RECORD — round 2026-04-10 (loop: AdminShell Haven brand → marketing home)
+
+| Field | Value |
+|-------|--------|
+| **BOOT** | [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./specs/TRACK-D-ENHANCED-BACKLOG-PLAN.md), `git log`, HEAD **`078e2fe`**. |
+| **FIND** | **D85+** clinical-gated. **Already shipped:** [AdminShell.tsx](../src/components/layout/AdminShell.tsx) — Haven logo + wordmark link to **`/`** (marketing home); commit **`078e2fe`**. |
+| **BUILD** | *(none — RECORD bridges product work into this log)* |
+| **Mission alignment** | **pass** — staff can return to the public Haven home from the admin shell without changing clinical scope. |
+| **Gate artifact** | Product: `test-results/agent-gates/2026-04-10T12-23-34-140Z-fix-admin-haven-brand-home.json` — this RECORD: `test-results/agent-gates/2026-04-10T12-31-04-140Z-loop-autonomous-record-haven-brand-home-078e2fe.json` |
+| **Deferred** | **D85+** Edge/cron med–texture automation until clinical sign-off. |
+
+---
+
 ## RECORD — loop exit (optional)
 
 | Field | Value |
 |-------|--------|
 | **date** | **2026-04-10** |
-| **reason** | **D85+** still **clinical / pharmacy** gated. This loop added **`docs/agent-gates-runbook.md`** to the **AGENTS** resource table; no Module 14 automation without COL sign-off. |
+| **reason** | **D85+** still **clinical / pharmacy** gated. Loop log updated for **078e2fe** (admin header brand → **`/`**). |
 | **next_human_action** | Remote **`001`–`120`** parity; COL clinical sign-off for **D85+**; Track A UAT / Pro–BAA–PITR per owner schedule. |
 
 ---
