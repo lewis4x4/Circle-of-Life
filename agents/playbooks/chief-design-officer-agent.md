@@ -12,3 +12,7 @@ Guard **external-quality UI**: layout, typography, obvious broken states, and cr
 
 - Always pass **`--ui`** to `segment:gates` when visual or navigation behavior changed.
 - Update `.agents/design-review-runner.mjs` routes/selectors when new critical screens ship.
+
+## See also
+
+- `docs/Autonomous.md` — autonomous loop continuity (BOOT / FIND / RECORD) between sessions.

@@ -12,3 +12,7 @@ Enforced by `scripts/check-migration-order.mjs` (default dir: `supabase/migratio
 ## Override
 
 Set `MIGRATIONS_DIR` to point at another folder if the project adopts a different layout.
+
+## See also
+
+- `docs/Autonomous.md` — autonomous loop continuity (BOOT / FIND / RECORD) between sessions.

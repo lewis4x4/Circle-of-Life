@@ -310,13 +310,16 @@ From `npm run segment:gates` (see `CODEX.md`): hygiene, security scan, ESLint, m
 
 ---
 
-## RECORD — loop exit (optional)
+## RECORD — round 2026-04-10 (loop round 2: remaining playbooks → Autonomous.md)
 
 | Field | Value |
 |-------|--------|
-| **date** | **2026-04-10** |
-| **reason** | **D85+** still **clinical / pharmacy** gated. This loop linked **`docs/Autonomous.md`** from **`agents/playbooks/qa-agent.md`**. |
-| **next_human_action** | Remote **`001`–`120`** parity; COL clinical sign-off for **D85+**; Track A UAT / Pro–BAA–PITR per owner schedule. |
+| **BOOT** | After **4288b30** (LOOP contract commit): `git log`, grep `agents/playbooks/**/*.md` for **`Autonomous`**. |
+| **FIND** | **D85+** clinical-gated. **Unblocked:** six playbooks still had no **`docs/Autonomous.md`** **See also** (migration, release, security, chaos, performance, CDO). |
+| **BUILD** | **See also** added to: `migration-integrity-agent.md`, `release-gate-agent.md`, `security-rls-agent.md`, `testing-simulation-agent.md`, `performance-agent.md`, `chief-design-officer-agent.md`. |
+| **Mission alignment** | **pass** — registry playbooks align with session loop discipline. |
+| **Gate artifact** | `test-results/agent-gates/2026-04-10T12-55-48-565Z-loop-remaining-playbooks-autonomous-ref.json` |
+| **Deferred** | **D85+** until clinical sign-off. |
 
 ---
 
@@ -351,6 +354,28 @@ One **BOOT → FIND → … → RECORD** pass is **one round**, not a finished l
 | 6 | If work exists → go to step 3 for the new segment. If **no** work → **RECORD — loop exit** and stop |
 
 **Stopping after step 3 without step 4–6 is an incomplete run** unless you immediately continue in the same chat with BOOT step 4.
+
+---
+
+## RECORD — round 2026-04-10 (loop round 3: BOOT → FIND — no further segment)
+
+| Field | Value |
+|-------|--------|
+| **BOOT** | Same source-of-truth table + `git log`; confirm **`4288b30`** + pending round 2 commit. |
+| **FIND** | **D85+** clinical-gated. **`agents/playbooks/*.md`:** all **8** files reference **`docs/Autonomous.md`**. **`docs/specs`:** no **`001–11x`** / **`119+`** migration drift. No additional bounded segment without repeating work. |
+| **BUILD** | *(none)* |
+| **Mission alignment** | **pass** — second BOOT/FIND after round 2 **RECORD** satisfied; third pass clears exit. |
+| **Gate artifact** | `test-results/agent-gates/2026-04-10T12-57-03-076Z-loop-autonomous-multi-round-session.json` (session gate after round 2–3 doc edits) |
+
+---
+
+## RECORD — loop exit (optional)
+
+| Field | Value |
+|-------|--------|
+| **date** | **2026-04-10** |
+| **reason** | **D85+** still **clinical / pharmacy** gated. **This session:** (1) LOOP contract **4288b30**; (2) round 2 shipped remaining playbook **See also** links; **third BOOT/FIND** found no further unlinked playbooks / no migration drift — loop complete per checklist steps 4–6. |
+| **next_human_action** | Remote **`001`–`120`** parity; COL clinical sign-off for **D85+**; Track A UAT / Pro–BAA–PITR per owner schedule. |
 
 ---
 

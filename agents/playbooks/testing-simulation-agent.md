@@ -12,3 +12,7 @@ Exercise **pure logic** paths: concurrency, malformed input, boundaries, recover
 
 - **FAIL** — blocking.
 - **ADVISORY** — visible risk debt; does not fail the gate by default.
+
+## See also
+
+- `docs/Autonomous.md` — autonomous loop continuity (BOOT / FIND / RECORD) between sessions.

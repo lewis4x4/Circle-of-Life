@@ -11,3 +11,7 @@ Root `npm run build` must succeed; investigate sudden build-time or chunk-size s
 ## Advisories
 
 Flag N+1 query patterns, unbounded lists, or missing loading states in the handoff when relevant.
+
+## See also
+
+- `docs/Autonomous.md` — autonomous loop continuity (BOOT / FIND / RECORD) between sessions.

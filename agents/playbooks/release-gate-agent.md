@@ -13,3 +13,7 @@ Aggregate **GO / NO-GO** from the deterministic runner output.
 ## After GO
 
 Stage **only** segment files, one atomic commit, push, then start the next segment.
+
+## See also
+
+- `docs/Autonomous.md` — autonomous loop continuity (BOOT / FIND / RECORD) between sessions.
