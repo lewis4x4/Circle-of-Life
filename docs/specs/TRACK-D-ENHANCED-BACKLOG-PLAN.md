@@ -159,7 +159,9 @@
 
 **~~Recommended next segment — D75~~** **DONE (2026-04-10)** — Module **23:** **`/admin/reputation`** — **replies CSV status scope** — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D76+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
+**~~Recommended next segment — D76~~** **DONE (2026-04-10)** — Module **15:** **`/admin/transportation`** — **status filter + transport CSV scope** — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D77+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
 
 ---
 

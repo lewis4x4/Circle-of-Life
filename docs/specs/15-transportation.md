@@ -67,6 +67,8 @@ Transportation involves two distinct workflows at COL:
 
 **Shipped (Track D24):** **`/admin/transportation`** — **Download transport CSV** queries up to **500** **`resident_transport_requests`** rows for the **selected facility** (**`residents(first_name, last_name)`** join), RFC-style CSV of scheduling fields and staff/vehicle UUIDs. **No** new DDL.
 
+**Shipped (Track D76):** Same hub — **Status** filter (**All** / **`transport_request_status`**) on loaded upcoming trips (**25** cap); **Showing N of M**; **Download transport CSV** applies **`.eq("status", …)`** when not **All** (up to **500**); filename **`resident-transport-requests-YYYY-MM-DD_<status>.csv`** when filtered.
+
 **Shipped (Track D25):** **`/admin/transportation/mileage-approvals`** — **Download mileage CSV** queries up to **500** **`mileage_logs`** rows for the **selected facility** (**`staff`**, **`residents`** joins), RFC-style CSV (amounts in cents, approval and payroll-export IDs). **No** new DDL.
 
 - MVR (motor vehicle record) annual pull workflow with automated reminder.

@@ -43,6 +43,17 @@ type TransportRequestExportRow = Database["public"]["Tables"]["resident_transpor
   residents: { first_name: string; last_name: string } | null;
 };
 
+type TransportRequestStatus = Database["public"]["Enums"]["transport_request_status"];
+
+const TRANSPORT_STATUS_FILTERS: { value: "all" | TransportRequestStatus; label: string }[] = [
+  { value: "all", label: "All statuses" },
+  { value: "requested", label: "Requested" },
+  { value: "scheduled", label: "Scheduled" },
+  { value: "in_progress", label: "In progress" },
+  { value: "completed", label: "Completed" },
+  { value: "cancelled", label: "Cancelled" },
+];
+
 function buildTransportRequestsCsv(rows: TransportRequestExportRow[]): string {
   const header = [
     "id",
@@ -183,6 +194,9 @@ export default function AdminTransportationHubPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
+  const [transportStatusFilter, setTransportStatusFilter] = useState<
+    "all" | TransportRequestStatus
+  >("all");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -257,24 +271,30 @@ export default function AdminTransportationHubPage() {
     setExportingCsv(true);
     setError(null);
     try {
-      const { data, error: qErr } = await supabase
+      let q = supabase
         .from("resident_transport_requests")
         .select("*, residents(first_name, last_name)")
         .eq("facility_id", selectedFacilityId)
-        .is("deleted_at", null)
+        .is("deleted_at", null);
+      if (transportStatusFilter !== "all") {
+        q = q.eq("status", transportStatusFilter);
+      }
+      const { data, error: qErr } = await q
         .order("updated_at", { ascending: false })
         .limit(500);
       if (qErr) throw qErr;
       const rows = (data ?? []) as TransportRequestExportRow[];
       const csv = buildTransportRequestsCsv(rows);
       const stamp = format(new Date(), "yyyy-MM-dd");
-      triggerCsvDownload(`resident-transport-requests-${stamp}.csv`, csv);
+      const scope =
+        transportStatusFilter === "all" ? "" : `_${transportStatusFilter}`;
+      triggerCsvDownload(`resident-transport-requests-${stamp}${scope}.csv`, csv);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to export transport requests.");
     } finally {
       setExportingCsv(false);
     }
-  }, [supabase, selectedFacilityId]);
+  }, [supabase, selectedFacilityId, transportStatusFilter]);
 
   const driverAlerts = useMemo((): DriverAlert[] => {
     const out: DriverAlert[] = [];
@@ -335,9 +355,14 @@ export default function AdminTransportationHubPage() {
 
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
 
+  const filteredTransportRequests = useMemo(() => {
+    if (transportStatusFilter === "all") return transportRequests;
+    return transportRequests.filter((r) => r.status === transportStatusFilter);
+  }, [transportRequests, transportStatusFilter]);
+
   const upcomingByDay = useMemo(() => {
     const groups: { dateStr: string; rows: TransportRequestRow[] }[] = [];
-    for (const row of transportRequests) {
+    for (const row of filteredTransportRequests) {
       const d = row.appointment_date;
       if (!d) continue;
       const last = groups[groups.length - 1];
@@ -348,7 +373,7 @@ export default function AdminTransportationHubPage() {
       }
     }
     return groups;
-  }, [transportRequests]);
+  }, [filteredTransportRequests]);
 
   const hasCriticalAlerts = driverAlerts.some(a => a.daysUntil <= 14) || vehicleAlerts.some(a => a.daysUntil <= 14);
 
@@ -452,9 +477,33 @@ export default function AdminTransportationHubPage() {
               </h3>
               <p className="mt-2 text-sm font-medium text-slate-500 dark:text-slate-400">
                 Appointments on or after today. Open a row to assign a vehicle, driver, and complete.
+                {transportRequests.length > 0 && (
+                  <span className="block mt-1 text-xs">
+                    Showing {filteredTransportRequests.length} of {transportRequests.length} loaded trip
+                    {transportRequests.length === 1 ? "" : "s"}
+                    {transportStatusFilter !== "all" ? ` (${formatEnum(transportStatusFilter)})` : ""}.
+                  </span>
+                )}
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 items-center">
+              <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                <span className="whitespace-nowrap font-bold uppercase tracking-widest">Status</span>
+                <select
+                  className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-white/15 dark:bg-white/5 dark:text-slate-100"
+                  value={transportStatusFilter}
+                  onChange={(e) =>
+                    setTransportStatusFilter(e.target.value as "all" | TransportRequestStatus)
+                  }
+                  aria-label="Filter upcoming trips by status"
+                >
+                  {TRANSPORT_STATUS_FILTERS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <Button
                 type="button"
                 variant="outline"
@@ -489,6 +538,11 @@ export default function AdminTransportationHubPage() {
             <div className="p-16 text-center text-slate-500 bg-white/50 dark:bg-white/[0.02] rounded-[2.5rem] border border-dashed border-slate-200 dark:border-white/10 mx-2">
                <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No scheduled trips</p>
               <p className="text-sm opacity-80 mt-1">No upcoming transport requests on file.</p>
+            </div>
+          ) : filteredTransportRequests.length === 0 ? (
+            <div className="p-16 text-center text-slate-500 bg-white/50 dark:bg-white/[0.02] rounded-[2.5rem] border border-dashed border-slate-200 dark:border-white/10 mx-2">
+              <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No trips match this status</p>
+              <p className="text-sm opacity-80 mt-1">Try &quot;All statuses&quot; or another filter.</p>
             </div>
           ) : (
             <div className="space-y-12">
