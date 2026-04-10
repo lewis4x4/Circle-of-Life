@@ -1,0 +1,299 @@
+/**
+ * GET /api/admin/users — List users with filtering and pagination.
+ * POST /api/admin/users — Create new user.
+ */
+
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { canManageUser, ROLE_HIERARCHY } from "@/lib/rbac";
+import { listUsersQuerySchema, createUserSchema } from "@/lib/validation/user-management";
+import { adminInviteUser, adminCreateUser } from "@/lib/supabase/admin-client";
+import { writeUserAuditEntry } from "@/lib/audit/user-management-audit";
+
+// ── GET: List Users ───────────────────────────────────────────────
+
+export async function GET(request: NextRequest) {
+  // Auth
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: sessionErr,
+  } = await supabase.auth.getUser();
+  if (sessionErr || !user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  // Get actor profile
+  const admin = createServiceRoleClient();
+  const { data: actor, error: profileErr } = await admin
+    .from("user_profiles")
+    .select("id, organization_id, app_role")
+    .eq("id", user.id)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (profileErr || !actor) {
+    return NextResponse.json({ error: "Profile not found" }, { status: 403 });
+  }
+
+  const allowedRoles = new Set(["owner", "org_admin", "facility_admin", "manager"]);
+  if (!allowedRoles.has(actor.app_role)) {
+    return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+  }
+
+  // Parse query params
+  const url = new URL(request.url);
+  const rawParams: Record<string, string | string[]> = {};
+  url.searchParams.forEach((value, key) => {
+    const existing = rawParams[key];
+    if (existing) {
+      rawParams[key] = Array.isArray(existing) ? [...existing, value] : [existing, value];
+    } else {
+      rawParams[key] = value;
+    }
+  });
+
+  const parsed = listUsersQuerySchema.safeParse(rawParams);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Invalid query parameters", details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
+
+  const { page, page_size, search, role, facility_id, status, sort_by, sort_order } = parsed.data;
+  const offset = (page - 1) * page_size;
+
+  // Build query
+  let query = admin
+    .from("user_profiles")
+    .select(
+      "id, email, full_name, phone, app_role, job_title, avatar_url, is_active, last_login_at, manager_user_id, created_at, updated_at, deleted_at",
+      { count: "exact" },
+    )
+    .eq("organization_id", actor.organization_id);
+
+  // Status filter
+  if (status === "active") {
+    query = query.eq("is_active", true).is("deleted_at", null);
+  } else if (status === "inactive") {
+    query = query.eq("is_active", false).is("deleted_at", null);
+  } else {
+    // "deleted" — show soft-deleted (owner/org_admin only)
+    if (!["owner", "org_admin"].includes(actor.app_role)) {
+      return NextResponse.json({ error: "Cannot view deleted users" }, { status: 403 });
+    }
+    query = query.not("deleted_at", "is", null);
+  }
+
+  if (search) {
+    query = query.or(`email.ilike.%${search}%,full_name.ilike.%${search}%,phone.ilike.%${search}%`);
+  }
+  if (role) {
+    query = query.eq("app_role", role);
+  }
+
+  // Sort
+  query = query.order(sort_by, { ascending: sort_order === "asc" });
+  query = query.range(offset, offset + page_size - 1);
+
+  const { data: users, count, error: queryErr } = await query;
+  if (queryErr) {
+    return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+  }
+
+  // Fetch facility access for each user
+  const userIds = (users ?? []).map((u) => u.id);
+  let facilityMap: Record<string, Array<{ facility_id: string; facility_name: string; is_primary: boolean }>> = {};
+  if (userIds.length > 0) {
+    const { data: accessRows } = await admin
+      .from("user_facility_access")
+      .select("user_id, facility_id, is_primary, facilities(name)")
+      .in("user_id", userIds)
+      .is("revoked_at", null);
+
+    if (accessRows) {
+      for (const row of accessRows) {
+        if (!facilityMap[row.user_id]) facilityMap[row.user_id] = [];
+        facilityMap[row.user_id].push({
+          facility_id: row.facility_id,
+          facility_name: (row.facilities as unknown as { name: string })?.name ?? "",
+          is_primary: row.is_primary,
+        });
+      }
+    }
+  }
+
+  const data = (users ?? []).map((u) => ({
+    ...u,
+    facilities: facilityMap[u.id] ?? [],
+  }));
+
+  return NextResponse.json({
+    data,
+    pagination: {
+      total: count ?? 0,
+      page,
+      page_size,
+      total_pages: Math.ceil((count ?? 0) / page_size),
+      has_next: offset + page_size < (count ?? 0),
+    },
+  });
+}
+
+// ── POST: Create User ─────────────────────────────────────────────
+
+export async function POST(request: NextRequest) {
+  // Auth
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: sessionErr,
+  } = await supabase.auth.getUser();
+  if (sessionErr || !user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  // Parse body
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const parsed = createUserSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Validation error", details: parsed.error.flatten() },
+      { status: 422 },
+    );
+  }
+  const data = parsed.data;
+
+  // Get actor profile
+  const admin = createServiceRoleClient();
+  const { data: actor, error: profileErr } = await admin
+    .from("user_profiles")
+    .select("id, organization_id, app_role")
+    .eq("id", user.id)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (profileErr || !actor) {
+    return NextResponse.json({ error: "Profile not found" }, { status: 403 });
+  }
+
+  // Role hierarchy check
+  const createAllowedRoles = new Set(["owner", "org_admin", "facility_admin"]);
+  if (!createAllowedRoles.has(actor.app_role)) {
+    return NextResponse.json({ error: "Insufficient permissions to create users" }, { status: 403 });
+  }
+
+  if (!canManageUser(actor.app_role, data.app_role)) {
+    return NextResponse.json(
+      { error: "Cannot assign a role at or above your own level" },
+      { status: 403 },
+    );
+  }
+
+  // Check email uniqueness
+  const { data: existing } = await admin
+    .from("user_profiles")
+    .select("id")
+    .eq("email", data.email)
+    .maybeSingle();
+  if (existing) {
+    return NextResponse.json({ error: "Email already in use" }, { status: 409 });
+  }
+
+  // Verify facilities belong to actor's org and are accessible
+  const facilityIds = data.facilities.map((f) => f.facility_id);
+  const { data: facilities } = await admin
+    .from("facilities")
+    .select("id")
+    .eq("organization_id", actor.organization_id)
+    .in("id", facilityIds)
+    .is("deleted_at", null);
+  if ((facilities ?? []).length !== facilityIds.length) {
+    return NextResponse.json({ error: "One or more facilities not found or inaccessible" }, { status: 400 });
+  }
+
+  // Create auth user
+  let authUserId: string;
+  let temporaryPassword: string | undefined;
+  try {
+    if (data.send_invite) {
+      const result = await adminInviteUser(data.email, {
+        app_role: data.app_role,
+        organization_id: actor.organization_id,
+      });
+      authUserId = result.id;
+    } else {
+      const result = await adminCreateUser(data.email, {
+        app_role: data.app_role,
+        organization_id: actor.organization_id,
+        email_confirm: true,
+      });
+      authUserId = result.user.id;
+      temporaryPassword = result.temporary_password;
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Auth API failure";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+
+  // Create user_profiles record
+  const { data: profile, error: insertErr } = await admin
+    .from("user_profiles")
+    .insert({
+      id: authUserId,
+      organization_id: actor.organization_id,
+      email: data.email,
+      full_name: data.full_name,
+      phone: data.phone ?? null,
+      app_role: data.app_role,
+      job_title: data.job_title ?? null,
+      avatar_url: data.avatar_url ?? null,
+      manager_user_id: data.manager_user_id ?? null,
+      is_active: true,
+    })
+    .select()
+    .single();
+  if (insertErr) {
+    return NextResponse.json({ error: "Failed to create profile" }, { status: 500 });
+  }
+
+  // Create facility access entries
+  const accessRows = data.facilities.map((f) => ({
+    user_id: authUserId,
+    facility_id: f.facility_id,
+    organization_id: actor.organization_id,
+    is_primary: f.is_primary,
+    granted_by: actor.id,
+  }));
+  const { error: accessErr } = await admin.from("user_facility_access").insert(accessRows);
+  if (accessErr) {
+    return NextResponse.json({ error: "Failed to assign facility access" }, { status: 500 });
+  }
+
+  // Audit
+  await writeUserAuditEntry({
+    organizationId: actor.organization_id,
+    actingUserId: actor.id,
+    targetUserId: authUserId,
+    action: "create",
+    changes: {
+      before: {},
+      after: { email: data.email, full_name: data.full_name, app_role: data.app_role, facilities: facilityIds },
+    },
+  });
+
+  return NextResponse.json(
+    {
+      data: profile,
+      invitation_sent: data.send_invite,
+      ...(temporaryPassword && { temporary_password: temporaryPassword }),
+    },
+    { status: 201 },
+  );
+}

@@ -31,6 +31,7 @@ const ADMIN_SHELL_SEGMENTS = [
   "/executive",
   "/search",
   "/reports",
+  "/admin/settings/users",
 ] as const;
 
 export function isAdminShellPath(pathname: string): boolean {
@@ -52,7 +53,7 @@ export function adminShellAccessRedirect(request: NextRequest, user: User | null
   }
 
   const role = getAppRoleFromClaims(user);
-  if (role === "caregiver") {
+  if (role === "caregiver" || role === "housekeeper") {
     return NextResponse.redirect(new URL("/caregiver", nextUrl.origin));
   }
   if (role === "family") {

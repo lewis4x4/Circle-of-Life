@@ -204,6 +204,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         { key: "training", href: "/admin/training", label: "Training hub", enabled: true, icon: GraduationCap },
         { key: "time-records", href: "/admin/time-records", label: "Time records", enabled: true, icon: Clock },
         { key: "payroll", href: "/admin/payroll", label: "Payroll integrations", enabled: true, icon: Banknote },
+        { key: "users", href: "/admin/settings/users", label: "User Management", enabled: true, icon: Users },
       ]
     },
     {
