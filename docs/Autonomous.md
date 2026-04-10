@@ -154,12 +154,25 @@ From `npm run segment:gates` (see `CODEX.md`): hygiene, security scan, ESLint, m
 
 ---
 
+## RECORD — round 2026-04-10 (loop: AGENTS.md Track D migration 120)
+
+| Field | Value |
+|-------|--------|
+| **BOOT** | `AGENTS.md` Step 4 vs [README.md](./specs/README.md) migration **120**, `git status` clean @**aa2a7dd**. |
+| **FIND** | **D85+** clinical-gated. **Unblocked:** Step 4 shipped list ended at **D84** without **migration `120`** multi-facility demo seed. |
+| **BUILD** | [AGENTS.md](../AGENTS.md) — one clause before **D85+** plan pointer. |
+| **Mission alignment** | **pass** — agent entrypoint reflects repo DDL used for multi-site pilot prep. |
+| **Gate artifact** | `test-results/agent-gates/2026-04-10T12-13-10-640Z-loop-agents-track-d-migration-120.json` |
+| **Deferred** | **D85+** until clinical sign-off. |
+
+---
+
 ## RECORD — loop exit (optional)
 
 | Field | Value |
 |-------|--------|
 | **date** | **2026-04-10** |
-| **reason** | **D85+** still **clinical / pharmacy** gated. This loop shipped one doc footnote (**`121+`**); no further agent segment identified without owner/clinical input. |
+| **reason** | **D85+** still **clinical / pharmacy** gated. This loop synced **AGENTS.md** with migration **`120`**; no Module 14 Edge automation without COL sign-off. |
 | **next_human_action** | Remote **`001`–`120`** parity; COL clinical sign-off for **D85+**; Track A UAT / Pro–BAA–PITR per owner schedule. |
 
 ---
