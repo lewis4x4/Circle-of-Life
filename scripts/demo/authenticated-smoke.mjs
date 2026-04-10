@@ -2,9 +2,9 @@
 /**
  * Authenticated smoke test harness (Track A — supports PH1-A01 + PH1-A04).
  *
- * Logs in as each pilot role, verifies the probe route loads, then checks
- * cross-shell denial: wrong roles cannot stay on another shell's routes
- * (see admin-shell / caregiver-shell / family-shell).
+ * Logs in as each pilot role (owner, facility_admin, caregiver, family per seed runbook),
+ * verifies the probe route loads, then checks cross-shell denial: wrong roles cannot stay
+ * on another shell's routes (see admin-shell / caregiver-shell / family-shell).
  * For `/admin` shell users, asserts `data-testid="admin-facility-filter-trigger"` is visible (PH1-P04).
  *
  * Usage:
@@ -22,11 +22,17 @@ const password = process.env.PHASE1_DEMO_PASSWORD ?? "HavenDemo2026!";
 
 const PILOT_USERS = [
   {
+    email: "milton@circleoflifealf.com",
+    role: "owner",
+    shell: "/admin",
+    probe: "/admin/residents",
+    crossShellDenial: [{ from: "/caregiver", expectPathPrefix: "/admin" }],
+  },
+  {
     email: "jessica@circleoflifealf.com",
     role: "facility_admin",
     shell: "/admin",
     probe: "/admin/residents",
-    /** After login, hitting this path must redirect away from caregiver shell. */
     crossShellDenial: [{ from: "/caregiver", expectPathPrefix: "/admin" }],
   },
   {
