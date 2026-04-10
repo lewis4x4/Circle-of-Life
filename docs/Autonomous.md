@@ -258,12 +258,25 @@ From `npm run segment:gates` (see `CODEX.md`): hygiene, security scan, ESLint, m
 
 ---
 
+## RECORD — round 2026-04-10 (loop: Cursor segment-gates rule → Autonomous.md)
+
+| Field | Value |
+|-------|--------|
+| **BOOT** | [`.cursor/rules/segment-gates-cursor.mdc`](../.cursor/rules/segment-gates-cursor.mdc), `git status` clean @**e5417eb**. |
+| **FIND** | **D85+** clinical-gated. **Unblocked:** Cursor **always-apply** gate rule had no **`docs/Autonomous.md`** pointer (BOOT / FIND / RECORD). |
+| **BUILD** | One bullet at end of [segment-gates-cursor.mdc](../.cursor/rules/segment-gates-cursor.mdc). |
+| **Mission alignment** | **pass** — agents reading Cursor rules first still reach loop continuity. |
+| **Gate artifact** | `test-results/agent-gates/2026-04-10T12-40-38-094Z-loop-cursor-rule-autonomous-ref.json` |
+| **Deferred** | **D85+** until clinical sign-off. |
+
+---
+
 ## RECORD — loop exit (optional)
 
 | Field | Value |
 |-------|--------|
 | **date** | **2026-04-10** |
-| **reason** | **D85+** still **clinical / pharmacy** gated. **FIND** pass: no additional doc/code slice identified beyond **`e2f2eed`** baseline. |
+| **reason** | **D85+** still **clinical / pharmacy** gated. This loop linked **`docs/Autonomous.md`** from **`.cursor/rules/segment-gates-cursor.mdc`**. |
 | **next_human_action** | Remote **`001`–`120`** parity; COL clinical sign-off for **D85+**; Track A UAT / Pro–BAA–PITR per owner schedule. |
 
 ---

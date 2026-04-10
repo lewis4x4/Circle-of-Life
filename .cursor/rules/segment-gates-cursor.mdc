@@ -10,3 +10,4 @@ alwaysApply: true
 - Treat **`test-results/agent-gates/*.json`** as proof of gate execution. Do not call work “done” without a PASS artifact when gates apply.
 - Use **conventional commits** (`feat:`, `fix:`, `chore:`). Follow playbooks under `agents/playbooks/` and handoff template `agents/templates/segment-handoff.md`.
 - Prefer **`AGENTS.md`** and **`CODEX.md`** for stack-specific commands; this repo uses **npm** (not Bun) for the same script contract.
+- **Loop continuity** (BOOT / FIND / RECORD between sessions): **`docs/Autonomous.md`**.
