@@ -5,6 +5,7 @@
  * Logs in as each pilot role, verifies the probe route loads, then checks
  * cross-shell denial: wrong roles cannot stay on another shell's routes
  * (see admin-shell / caregiver-shell / family-shell).
+ * For `/admin` shell users, asserts `data-testid="admin-facility-filter-trigger"` is visible (PH1-P04).
  *
  * Usage:
  *   BASE_URL=http://127.0.0.1:3000 npm run demo:auth-smoke:real
@@ -65,6 +66,8 @@ async function testUser(browser, user) {
     role: user.role,
     login_ok: false,
     shell_route_ok: false,
+    /** `true` | `false` when admin shell; `null` for caregiver/family. */
+    admin_facility_filter_ok: null,
     cross_shell_ok: null,
     cross_shell_probes: [],
     shell_url: null,
@@ -92,6 +95,13 @@ async function testUser(browser, user) {
     );
 
     result.shell_route_ok = page.url().includes(user.probe) || page.url().includes(user.shell);
+
+    if (user.shell === "/admin") {
+      result.admin_facility_filter_ok = await page
+        .getByTestId("admin-facility-filter-trigger")
+        .isVisible()
+        .catch(() => false);
+    }
 
     const probes = user.crossShellDenial ?? [];
     if (probes.length === 0) {
@@ -143,8 +153,15 @@ async function run() {
       all_login_ok: results.every((r) => r.login_ok),
       all_shell_ok: results.every((r) => r.shell_route_ok),
       all_cross_shell_ok: results.every((r) => r.cross_shell_ok !== false),
+      all_admin_facility_filter_ok: results.every(
+        (r) => r.admin_facility_filter_ok !== false,
+      ),
       pass: results.every(
-        (r) => r.login_ok && r.shell_route_ok && r.cross_shell_ok !== false,
+        (r) =>
+          r.login_ok &&
+          r.shell_route_ok &&
+          r.cross_shell_ok !== false &&
+          r.admin_facility_filter_ok !== false,
       ),
     },
   };
