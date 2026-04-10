@@ -148,17 +148,19 @@ export default function ReportsOverviewPage() {
         secondaryClass="bg-slate-900/10"
       />
       
-      <div className="relative z-10 space-y-6">
+      <div className="relative z-10 space-y-6 max-w-7xl mx-auto px-4 sm:px-6 xl:px-0">
         <ReportsHubNav />
-        <div className="flex items-center gap-3">
-          <Layers className="h-8 w-8 text-slate-600 dark:text-slate-300" aria-hidden />
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Reporting Hub</h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+          <div className="space-y-2">
+            <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+              <Layers className="h-10 w-10 text-indigo-500" strokeWidth={1.5} />
+              Reporting Hub
+            </h1>
+            <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl text-balance">
               Template-first reporting with scheduling, packs, and audited exports.
             </p>
           </div>
-        </div>
+        </header>
 
       {error && (
          <div className="glass-panel rounded-2xl border border-rose-500/20 bg-rose-500/10 p-6 text-sm text-rose-600 dark:text-rose-400 font-medium tracking-wide flex items-center gap-4">

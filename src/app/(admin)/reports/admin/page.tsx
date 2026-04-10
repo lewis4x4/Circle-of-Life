@@ -98,46 +98,57 @@ export default function ReportsGovernancePage() {
                <p className="text-sm opacity-80 mt-1 font-mono tracking-wide">Contact support to provision your organization&apos;s templates.</p>
              </div>
           ) : (
-            <MotionList className="space-y-4">
-                {rows.map((row) => (
-                  <MotionItem key={row.id}>
-                    <div className="p-6 rounded-[1.5rem] glass-panel group transition-all duration-300 hover:scale-[1.01] cursor-default border border-slate-200 dark:border-white/5 bg-white/80 dark:bg-white/[0.03] w-full flex flex-col xl:flex-row xl:items-center justify-between gap-6 backdrop-blur-xl shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20">
-                        <div className="flex flex-col min-w-[300px] gap-1 shrink-0">
-                           <span className="font-bold text-slate-900 dark:text-slate-100 uppercase text-sm tracking-wide">
-                              {row.name}
-                           </span>
-                           <span className="text-[10px] font-mono tracking-widest text-slate-500 dark:text-slate-400">
-                              Slug: <span className="font-semibold text-purple-600 dark:text-purple-400">{row.slug}</span>
-                           </span>
-                        </div>
-
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full items-center">
-                           <div className="flex flex-col gap-2 md:col-span-2">
-                              <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Directives</span>
-                              <div className="flex flex-wrap gap-2">
-                                {row.official_template ? (
-                                  <Badge className="bg-purple-50 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800 uppercase tracking-widest font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full">Official</Badge>
-                                ) : (
-                                  <Badge className="bg-slate-100 text-slate-700 dark:bg-black/40 dark:text-slate-300 border border-slate-200 dark:border-white/10 uppercase tracking-widest font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full">Custom</Badge>
-                                )}
-                                {row.locked_definition && (
-                                  <Badge className="bg-amber-50 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800 uppercase tracking-widest font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full">Locked</Badge>
-                                )}
-                              </div>
-                           </div>
-                           <div className="flex flex-col gap-2 align-left md:text-left">
-                              <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Status</span>
-                              <span className="font-mono text-[11px] font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest">{row.status}</span>
-                           </div>
-                           <div className="flex flex-col gap-2 align-right text-left md:text-right">
-                              <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Last Updated</span>
-                              <span className="font-mono text-[11px] font-medium text-slate-600 dark:text-slate-400 tracking-wide">{new Date(row.updated_at).toLocaleString()}</span>
-                           </div>
-                        </div>
-                    </div>
-                  </MotionItem>
-                ))}
-            </MotionList>
+            <>
+              <div className="hidden xl:grid grid-cols-[300px_1fr] gap-6 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10 text-left mt-6">
+                 <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Template</div>
+                 <div className="grid grid-cols-4 gap-6 w-full items-center">
+                    <div className="col-span-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Directives</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Status</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Last Updated</div>
+                 </div>
+              </div>
+              
+              <MotionList className="space-y-4 relative z-10 mt-4">
+                  {rows.map((row) => (
+                    <MotionItem key={row.id}>
+                      <div className="p-6 rounded-[1.5rem] glass-panel group transition-all duration-300 hover:scale-[1.01] cursor-default border border-slate-200 dark:border-white/5 bg-white/80 dark:bg-white/[0.03] w-full flex flex-col xl:flex-row xl:items-center justify-between gap-6 backdrop-blur-xl shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20">
+                          <div className="flex flex-col min-w-[300px] gap-1 shrink-0">
+                             <span className="font-bold text-slate-900 dark:text-slate-100 uppercase text-sm tracking-wide">
+                                {row.name}
+                             </span>
+                             <span className="text-[10px] font-mono tracking-widest text-slate-500 dark:text-slate-400">
+                                Slug: <span className="font-semibold text-purple-600 dark:text-purple-400">{row.slug}</span>
+                             </span>
+                          </div>
+  
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full items-center">
+                             <div className="flex flex-col gap-2 md:col-span-2">
+                                <span className="xl:hidden text-[9px] uppercase font-mono tracking-widest text-slate-400 mb-0.5">Directives</span>
+                                <div className="flex flex-wrap gap-2">
+                                  {row.official_template ? (
+                                    <Badge className="bg-purple-50 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800 uppercase tracking-widest font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full">Official</Badge>
+                                  ) : (
+                                    <Badge className="bg-slate-100 text-slate-700 dark:bg-black/40 dark:text-slate-300 border border-slate-200 dark:border-white/10 uppercase tracking-widest font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full">Custom</Badge>
+                                  )}
+                                  {row.locked_definition && (
+                                    <Badge className="bg-amber-50 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800 uppercase tracking-widest font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full">Locked</Badge>
+                                  )}
+                                </div>
+                             </div>
+                             <div className="flex flex-col gap-2 align-left md:text-left">
+                                <span className="xl:hidden text-[9px] uppercase font-mono tracking-widest text-slate-400 mb-0.5">Status</span>
+                                <span className="font-mono text-[11px] font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest">{row.status}</span>
+                             </div>
+                             <div className="flex flex-col gap-2 align-right text-left md:text-right">
+                                <span className="xl:hidden text-[9px] uppercase font-mono tracking-widest text-slate-400 mb-0.5">Last Updated</span>
+                                <span className="font-mono text-[11px] font-medium text-slate-600 dark:text-slate-400 tracking-wide">{new Date(row.updated_at).toLocaleString()}</span>
+                             </div>
+                          </div>
+                      </div>
+                    </MotionItem>
+                  ))}
+              </MotionList>
+            </>
           )}
       </div>
       </div>

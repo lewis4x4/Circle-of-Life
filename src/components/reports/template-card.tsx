@@ -45,7 +45,7 @@ export function TemplateCard(props: Props) {
         ))}
       </div>
 
-      <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-white/5 mt-auto">
+      <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-200 dark:border-white/5 mt-auto">
         <Link href={`/admin/reports/templates/${props.slug}`} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-white/50 dark:bg-white/5 font-mono uppercase tracking-widest text-[10px] w-full border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white")}>
           Preview
         </Link>
