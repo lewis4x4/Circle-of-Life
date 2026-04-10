@@ -9,6 +9,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
+import { payPeriodClockBoundsUtc } from "@/lib/payroll/pay-period-bounds";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -16,6 +17,7 @@ import { cn } from "@/lib/utils";
 
 type BatchRow = Database["public"]["Tables"]["payroll_export_batches"]["Row"];
 type MileageRow = Database["public"]["Tables"]["mileage_logs"]["Row"];
+type TimeRecordRow = Database["public"]["Tables"]["time_records"]["Row"];
 
 type LineWithStaff = {
   id: string;
@@ -66,10 +68,12 @@ export default function AdminPayrollBatchDetailPage() {
   const [batch, setBatch] = useState<BatchRow | null>(null);
   const [lines, setLines] = useState<LineWithStaff[]>([]);
   const [eligibleMileage, setEligibleMileage] = useState<MileageRow[]>([]);
+  const [eligibleTimeRecords, setEligibleTimeRecords] = useState<TimeRecordRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [importSummary, setImportSummary] = useState<string | null>(null);
+  const [timeImportSummary, setTimeImportSummary] = useState<string | null>(null);
 
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
 
@@ -77,10 +81,12 @@ export default function AdminPayrollBatchDetailPage() {
     setLoading(true);
     setError(null);
     setImportSummary(null);
+    setTimeImportSummary(null);
     if (!batchId || !facilityReady || !selectedFacilityId) {
       setBatch(null);
       setLines([]);
       setEligibleMileage([]);
+      setEligibleTimeRecords([]);
       setLoading(false);
       return;
     }
@@ -97,11 +103,12 @@ export default function AdminPayrollBatchDetailPage() {
         setBatch(null);
         setLines([]);
         setEligibleMileage([]);
+        setEligibleTimeRecords([]);
         return;
       }
       setBatch(b);
 
-        const { data: lineRows, error: lErr } = await supabase
+      const { data: lineRows, error: lErr } = await supabase
         .from("payroll_export_lines")
         .select("id, line_kind, amount_cents, idempotency_key, payload, staff(first_name, last_name)")
         .eq("batch_id", batchId)
@@ -122,11 +129,38 @@ export default function AdminPayrollBatchDetailPage() {
         .order("trip_date", { ascending: false });
       if (mErr) throw mErr;
       setEligibleMileage(mileageRows ?? []);
+
+      const { startIso, endIso } = payPeriodClockBoundsUtc(b.period_start, b.period_end);
+
+      const { data: trRows, error: trErr } = await supabase
+        .from("time_records")
+        .select("*")
+        .eq("facility_id", b.facility_id)
+        .is("deleted_at", null)
+        .eq("approved", true)
+        .not("approved_at", "is", null)
+        .gte("clock_in", startIso)
+        .lte("clock_in", endIso)
+        .order("clock_in", { ascending: true });
+      if (trErr) throw trErr;
+
+      const { data: trKeyRows, error: trKeyErr } = await supabase
+        .from("payroll_export_lines")
+        .select("idempotency_key")
+        .is("deleted_at", null)
+        .like("idempotency_key", "time_record:%");
+      if (trKeyErr) throw trKeyErr;
+
+      const exportedTimeIds = new Set(
+        (trKeyRows ?? []).map((r) => r.idempotency_key.replace(/^time_record:/, "")),
+      );
+      setEligibleTimeRecords((trRows ?? []).filter((tr) => !exportedTimeIds.has(tr.id)));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load batch.");
       setBatch(null);
       setLines([]);
       setEligibleMileage([]);
+      setEligibleTimeRecords([]);
     } finally {
       setLoading(false);
     }
@@ -210,6 +244,76 @@ export default function AdminPayrollBatchDetailPage() {
       if (skippedOtherBatch > 0)
         parts.push(`${skippedOtherBatch} skipped (already exported in another batch).`);
       setImportSummary(parts.join(" "));
+
+      await load();
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Import failed.");
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  async function importTimeRecords() {
+    if (!batch || batch.status !== "draft" || !facilityReady) return;
+    setImporting(true);
+    setError(null);
+    setTimeImportSummary(null);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Sign in required.");
+
+      let added = 0;
+      let skippedOtherBatch = 0;
+
+      for (const tr of eligibleTimeRecords) {
+        const idempotencyKey = `time_record:${tr.id}`;
+
+        const { data: existing, error: exErr } = await supabase
+          .from("payroll_export_lines")
+          .select("id, batch_id")
+          .eq("idempotency_key", idempotencyKey)
+          .maybeSingle();
+        if (exErr) throw exErr;
+
+        if (existing) {
+          if (existing.batch_id !== batch.id) skippedOtherBatch += 1;
+          continue;
+        }
+
+        const payload = {
+          time_record_id: tr.id,
+          clock_in: tr.clock_in,
+          clock_out: tr.clock_out,
+          regular_hours: tr.regular_hours,
+          actual_hours: tr.actual_hours,
+          overtime_hours: tr.overtime_hours,
+          break_minutes: tr.break_minutes,
+        };
+
+        const { error: insErr } = await supabase.from("payroll_export_lines").insert({
+          organization_id: batch.organization_id,
+          batch_id: batch.id,
+          staff_id: tr.staff_id,
+          line_kind: "time_record_hours",
+          amount_cents: null,
+          payload,
+          time_record_id: tr.id,
+          idempotency_key: idempotencyKey,
+          created_by: user.id,
+        });
+
+        if (insErr) throw insErr;
+
+        added += 1;
+      }
+
+      const parts = [`${added} line(s) added.`];
+      if (skippedOtherBatch > 0)
+        parts.push(`${skippedOtherBatch} skipped (idempotency key already used in another batch).`);
+      setTimeImportSummary(parts.join(" "));
 
       await load();
       router.refresh();
@@ -314,6 +418,40 @@ export default function AdminPayrollBatchDetailPage() {
                   disabled={importing || eligibleMileage.length === 0}
                 >
                   {importing ? "Importing…" : "Import mileage into batch"}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {batch.status === "draft" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Approved time records</CardTitle>
+                <CardDescription>
+                  Imports approved punches whose <strong>clock-in</strong> falls in this pay period (
+                  <span className="font-mono text-xs">America/New_York</span> bounds) and are not already on an export
+                  line. Idempotency <code className="text-xs">time_record:{"{id}"}</code>. Amount is left to the vendor;
+                  hours are in <span className="font-mono text-xs">payload_json</span>.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm">
+                  <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
+                    {eligibleTimeRecords.length}
+                  </span>{" "}
+                  eligible punch(es) in range.
+                </p>
+                {timeImportSummary && (
+                  <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
+                    {timeImportSummary}
+                  </p>
+                )}
+                <Button
+                  type="button"
+                  onClick={() => void importTimeRecords()}
+                  disabled={importing || eligibleTimeRecords.length === 0}
+                >
+                  {importing ? "Importing…" : "Import time records into batch"}
                 </Button>
               </CardContent>
             </Card>

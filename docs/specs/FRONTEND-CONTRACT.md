@@ -100,7 +100,7 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 - `/admin/time-records`
 - `/admin/payroll` (Phase 6 — `13-payroll-integration.md`)
 - `/admin/payroll/new`
-- `/admin/payroll/[id]`
+- `/admin/payroll/[id]` (import mileage + **approved time records** into lines — Track D17 + D58)
 - `/admin/staffing`
 - `/admin/billing/rates`
 - `/admin/residents/[id]/billing`

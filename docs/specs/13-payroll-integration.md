@@ -34,7 +34,9 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 
 **Shipped (Track D26):** **`/admin/payroll`** — **Download batches CSV** queries up to **500** **`payroll_export_batches`** rows for the **selected facility** (metadata: period, provider, status, notes, audit columns). Batch **line** CSV remains on **`/admin/payroll/[id]`** (D18). **No** new DDL.
 
-- Worker that materializes lines from approved `time_records`; provider-specific serializers beyond generic CSV.
+**Shipped (Track D58):** **`/admin/payroll/[id]`** (draft batches) — **Import approved `time_records`** into **`payroll_export_lines`** with **`line_kind`** = **`time_record_hours`**, **`time_record_id`** set, **`amount_cents`** null (vendor applies rates), **`payload`** = clock times + hour fields; idempotency **`time_record:{time_record_id}`**; **`clock_in`** filtered to pay period using **`America/New_York`** wall bounds (`src/lib/payroll/pay-period-bounds.ts`). Skips rows already present on any non-deleted export line with that idempotency key.
+
+- Provider-specific serializers beyond generic CSV (defer).
 
 ---
 

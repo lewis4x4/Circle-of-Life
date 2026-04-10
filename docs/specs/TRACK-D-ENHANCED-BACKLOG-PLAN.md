@@ -16,7 +16,7 @@
 | Module | Backlog item | Effort | Risk | Dependencies | Notes |
 |--------|----------------|--------|------|--------------|--------|
 | **15** | ~~**Org-level mileage reimbursement rate**~~ | — | — | — | **Shipped D10** — table `organization_transport_settings` (`114`), `/admin/transportation/settings`, `getOrganizationMileageRateCents`; fallback in `mileage-defaults.ts`. |
-| **13** | ~~**Payroll batch mileage lines**~~ (`payroll_export_lines` from approved `mileage_logs`) | — | — | — | **Shipped D17** — `/admin/payroll/[id]` import; idempotency `mileage:{log_id}`. |
+| **13** | ~~**Payroll batch mileage lines**~~ (`payroll_export_lines` from approved `mileage_logs`) | — | — | — | **Shipped D17** — `/admin/payroll/[id]` import; idempotency `mileage:{log_id}`. ~~**Approved time records**~~ — **D58** — idempotency `time_record:{id}`. |
 | **15** | ~~Payroll mileage **approval** UX (`mileage_logs.approved_at` flow)~~ | — | — | — | **Shipped D15** — `/admin/transportation/mileage-approvals`. |
 | **15** | ~~**Calendar** view for transport requests~~ | — | — | — | **Shipped D14 + D56 + D57** — `/admin/transportation/calendar` (week + month grid + **`.ics`** export). |
 | **22** | ~~**HL7 processor** (minimal **MSH** parse → **`processed`** / **`failed`**)~~ | — | — | — | **Shipped D12** — Edge **`process-referral-hl7-inbound`**; no auto-**`referral_leads`**. |
@@ -123,7 +123,9 @@
 
 **~~Recommended next segment — D57~~** **DONE (2026-04-10)** — Module **15:** **`/admin/transportation/calendar`** **`.ics` download** (loaded window) — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D58+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
+**~~Recommended next segment — D58~~** **DONE (2026-04-10)** — Module **13:** **`/admin/payroll/[id]`** import **`time_records`** → **`payroll_export_lines`** — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D59+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
 
 ---
 
