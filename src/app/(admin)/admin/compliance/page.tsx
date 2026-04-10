@@ -3,13 +3,23 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, ClipboardList, FileWarning, Shield } from "lucide-react";
+import {
+  AlertTriangle,
+  ClipboardList,
+  FileWarning,
+  Shield,
+  TrendingUp,
+  Zap,
+  Flame,
+  BarChart3,
+} from "lucide-react";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { fetchComplianceDashboardSnapshot } from "@/lib/compliance-dashboard-snapshot";
-import { buttonVariants } from "@/components/ui/button";
+import { getComplianceScore, getLatestScan } from "@/lib/compliance-scan";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
@@ -27,6 +37,13 @@ type DefRow = {
   submission_due_date: string | null;
 };
 
+type EmergencyItem = {
+  id: string;
+  title: string;
+  next_due_date: string;
+  overdue: boolean;
+};
+
 export default function AdminCompliancePage() {
   const { selectedFacilityId } = useFacilityStore();
   const supabase = createClient();
@@ -35,6 +52,10 @@ export default function AdminCompliancePage() {
   const [snapshot, setSnapshot] = useState<Awaited<ReturnType<typeof fetchComplianceDashboardSnapshot>> | null>(null);
   const [defRows, setDefRows] = useState<DefRow[]>([]);
   const [defLoading, setDefLoading] = useState(true);
+
+  // Enhanced tier state
+  const [complianceScore, setComplianceScore] = useState<{ percentage: number; passed: number; total: number } | null>(null);
+  const [emergencyItems, setEmergencyItems] = useState<EmergencyItem[]>([]);
 
   const loadSnapshot = useCallback(async () => {
     setSnapLoading(true);
@@ -105,6 +126,33 @@ export default function AdminCompliancePage() {
     setDefLoading(false);
   }, [supabase, selectedFacilityId]);
 
+  const loadEnhancedData = useCallback(async () => {
+    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
+      setComplianceScore(null);
+      setEmergencyItems([]);
+      return;
+    }
+
+    try {
+      // Load compliance score
+      const score = await getComplianceScore(selectedFacilityId);
+      setComplianceScore(score);
+
+      // Load emergency items
+      const { data: emergencyData } = await supabase
+        .from("emergency_checklist_items")
+        .select("id, title, next_due_date")
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .order("next_due_date", { ascending: true })
+        .limit(5);
+
+      setEmergencyItems((emergencyData as EmergencyItem[]) || []);
+    } catch (e) {
+      console.error("Failed to load enhanced data:", e);
+    }
+  }, [selectedFacilityId, supabase]);
+
   useEffect(() => {
     void loadSnapshot();
   }, [loadSnapshot]);
@@ -113,12 +161,29 @@ export default function AdminCompliancePage() {
     void loadDeficiencies();
   }, [loadDeficiencies]);
 
+  useEffect(() => {
+    void loadEnhancedData();
+  }, [loadEnhancedData]);
+
   const facilityReady = !!(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
+
+  const daysUntilDue = (dueDate: string) => {
+    const today = new Date();
+    const due = new Date(dueDate);
+    const diffTime = due.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full pb-12">
-      <AmbientMatrix hasCriticals={(snapshot?.openDeficiencies ?? 0) > 0 || (snapshot?.overdueAssessments ?? 0) > 0} 
-        primaryClass="bg-indigo-500/10" 
+      <AmbientMatrix
+        hasCriticals={
+          (snapshot?.openDeficiencies ?? 0) > 0 ||
+          (snapshot?.overdueAssessments ?? 0) > 0 ||
+          emergencyItems.some((e) => e.overdue)
+        }
+        primaryClass="bg-indigo-500/10"
         secondaryClass="bg-red-500/5"
       />
 
@@ -127,14 +192,11 @@ export default function AdminCompliancePage() {
           <div>
             <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 08 / Quality & Risk</p>
             <h1 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
-              Compliance {((snapshot?.openDeficiencies ?? 0) > 0) && <PulseDot colorClass="bg-amber-500" />}
+              Compliance {(emergencyItems.some((e) => e.overdue) || (complianceScore?.percentage ?? 100) < 75) && <PulseDot colorClass="bg-rose-500" />}
             </h1>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Link
-              href="/admin/compliance/audit-export"
-              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "glass-panel bg-white/50 dark:bg-zinc-900/40 text-[10px] uppercase tracking-widest font-mono text-slate-700 dark:text-slate-300")}
-            >
+            <Link href="/admin/compliance/audit-export" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "glass-panel bg-white/50 dark:bg-zinc-900/40 text-[10px] uppercase tracking-widest font-mono text-slate-700 dark:text-slate-300")}>
               Audit log export
             </Link>
             <Link href="/admin/compliance/policies" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "glass-panel bg-white/50 dark:bg-zinc-900/40 text-[10px] uppercase tracking-widest font-mono text-slate-700 dark:text-slate-300")}>
@@ -146,6 +208,19 @@ export default function AdminCompliancePage() {
             <Link href="/admin/certifications" className={cn(buttonVariants({ variant: "secondary", size: "sm" }), "text-[10px] uppercase tracking-widest font-mono glass-panel bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50")}>
               Certifications
             </Link>
+            {/* Enhanced tier links */}
+            <Link href="/admin/compliance/rules" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "glass-panel bg-indigo-50/30 dark:bg-indigo-900/20 text-[10px] uppercase tracking-widest font-mono text-indigo-700 dark:text-indigo-300")}>
+              Compliance Rules
+            </Link>
+            <Link href="/admin/compliance/scan" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "glass-panel bg-indigo-50/30 dark:bg-indigo-900/20 text-[10px] uppercase tracking-widest font-mono text-indigo-700 dark:text-indigo-300")}>
+              Run Scan
+            </Link>
+            <Link href="/admin/compliance/deficiencies/analysis" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "glass-panel bg-indigo-50/30 dark:bg-indigo-900/20 text-[10px] uppercase tracking-widest font-mono text-indigo-700 dark:text-indigo-300")}>
+              Analysis
+            </Link>
+            <Link href="/admin/compliance/emergency-preparedness" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "glass-panel bg-orange-50/30 dark:bg-orange-950/20 text-[10px] uppercase tracking-widest font-mono text-orange-700 dark:text-orange-300")}>
+              Emergency Prep
+            </Link>
           </div>
         </div>
 
@@ -153,7 +228,7 @@ export default function AdminCompliancePage() {
           <div className="rounded-[2rem] glass-panel bg-amber-50/40 dark:bg-amber-950/20 p-8 border border-amber-200/50 dark:border-amber-900/50 backdrop-blur-md">
             <h3 className="text-lg font-display font-semibold text-amber-900 dark:text-amber-300 mb-2">Select a facility</h3>
             <p className="text-sm font-medium text-amber-700 dark:text-amber-500">
-              Choose a facility in the header to load compliance metrics for that site.
+              Choose a facility in header to load compliance metrics for that site.
             </p>
           </div>
         ) : null}
@@ -164,155 +239,272 @@ export default function AdminCompliancePage() {
           </p>
         ) : null}
 
-      <KineticGrid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" staggerMs={60}>
-        <div className="h-[140px]">
-          <Tile
-            title="Overdue assessments"
-            value={snapLoading ? null : snapshot?.overdueAssessments ?? 0}
-            href="/admin/assessments/overdue"
-            hoverColor="red"
-          />
-        </div>
-        <div className="h-[140px]">
-          <Tile
-            title="Overdue care plan reviews"
-            value={snapLoading ? null : snapshot?.overdueCarePlanReviews ?? 0}
-            href="/admin/care-plans/reviews-due"
-            hoverColor="orange"
-          />
-        </div>
-        <div className="h-[140px]">
-          <Tile
-            title="Incident follow-ups past due"
-            value={snapLoading ? null : snapshot?.openIncidentFollowupsPastDue ?? 0}
-            href="/admin/incidents"
-            hoverColor="red"
-          />
-        </div>
-        <div className="h-[140px]">
-          <Tile
-            title="Active infections"
-            value={snapLoading ? null : snapshot?.activeInfections ?? 0}
-            href="/admin/infection-control"
-            hoverColor="red"
-            badge={
-              !snapLoading && snapshot && snapshot.activeOutbreaks > 0 ? (
-                <PulseDot colorClass="bg-rose-500" />
-              ) : null
-            }
-          />
-        </div>
-        <div className="h-[140px]">
-          <Tile
-            title="Certs expiring (30d)"
-            value={snapLoading ? null : snapshot?.expiringCertifications30d ?? 0}
-            href="/admin/certifications"
-            hoverColor="amber"
-          />
-        </div>
-        <div className="h-[140px]">
-          <Tile
-            title="Open deficiencies"
-            value={snapLoading ? null : snapshot?.openDeficiencies ?? 0}
-            href="/admin/compliance/deficiencies/new"
-            hoverColor="red"
-          />
-        </div>
-      </KineticGrid>
-
-      <div className="space-y-4">
-        <div className="flex items-center gap-3">
-          <FileWarning className="h-6 w-6 text-indigo-500 drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
-          <h2 className="text-xl font-display font-semibold tracking-tight text-slate-800 dark:text-slate-100">Open Deficiencies</h2>
-        </div>
-        <p className="text-sm font-mono text-slate-500 mb-6">Survey citations that still need correction or verification.</p>
-
-        {!facilityReady ? (
-          <p className="text-sm text-slate-500">Select a facility to list deficiencies.</p>
-        ) : defLoading ? (
-          <p className="text-sm font-mono text-slate-500">Loading…</p>
-        ) : defRows.length === 0 ? (
-          <div className="p-8 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md max-w-xl mx-auto mt-8">
-             <p className="font-medium">All Clear</p>
-             <p className="text-sm opacity-80 mt-1">No open deficiencies for this facility.</p>
+        <KineticGrid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" staggerMs={60}>
+          <div className="h-[140px]">
+            <Tile
+              title="Overdue assessments"
+              value={snapLoading ? null : snapshot?.overdueAssessments ?? 0}
+              href="/admin/assessments/overdue"
+              hoverColor="red"
+            />
           </div>
-        ) : (
-          <MotionList className="space-y-3">
-            {defRows.map((row) => (
-              <MotionItem key={row.id} className="p-4 rounded-2xl glass-panel group transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/40 dark:border-white/5 bg-white/50 dark:bg-slate-900/30">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800/80 flex flex-col items-center justify-center border border-slate-200 dark:border-slate-700/50 flex-shrink-0">
-                      <span className="text-[10px] uppercase font-mono tracking-widest text-slate-400">Tag</span>
-                      <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{row.tag_number}</span>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="font-mono text-[9px] uppercase tracking-widest shadow-sm bg-white dark:bg-black/40">Severity {row.severity}</Badge>
-                        <span className="text-[10px] font-mono tracking-widest text-slate-400 uppercase">{row.status.replace(/_/g, " ")}</span>
+          <div className="h-[140px]">
+            <Tile
+              title="Overdue care plan reviews"
+              value={snapLoading ? null : snapshot?.overdueCarePlanReviews ?? 0}
+              href="/admin/care-plans/reviews-due"
+              hoverColor="orange"
+            />
+          </div>
+          <div className="h-[140px]">
+            <Tile
+              title="Incident follow-ups past due"
+              value={snapLoading ? null : snapshot?.openIncidentFollowupsPastDue ?? 0}
+              href="/admin/incidents"
+              hoverColor="red"
+            />
+          </div>
+          <div className="h-[140px]">
+            <Tile
+              title="Active infections"
+              value={snapLoading ? null : snapshot?.activeInfections ?? 0}
+              href="/admin/infection-control"
+              hoverColor="red"
+              badge={
+                !snapLoading && snapshot && snapshot.activeOutbreaks > 0 ? (
+                  <PulseDot colorClass="bg-rose-500" />
+                ) : null
+              }
+            />
+          </div>
+          <div className="h-[140px]">
+            <Tile
+              title="Certs expiring (30d)"
+              value={snapLoading ? null : snapshot?.expiringCertifications30d ?? 0}
+              href="/admin/certifications"
+              hoverColor="amber"
+            />
+          </div>
+          <div className="h-[140px]">
+            <Tile
+              title="Open deficiencies"
+              value={snapLoading ? null : snapshot?.openDeficiencies ?? 0}
+              href="/admin/compliance/deficiencies/new"
+              hoverColor="red"
+            />
+          </div>
+        </KineticGrid>
+
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <FileWarning className="h-6 w-6 text-indigo-500 drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
+            <h2 className="text-xl font-display font-semibold tracking-tight text-slate-800 dark:text-slate-100">Open Deficiencies</h2>
+          </div>
+          <p className="text-sm font-mono text-slate-500 mb-6">Survey citations that still need correction or verification.</p>
+
+          {!facilityReady ? (
+            <p className="text-sm text-slate-500">Select a facility to list deficiencies.</p>
+          ) : defLoading ? (
+            <p className="text-sm font-mono text-slate-500">Loading…</p>
+          ) : defRows.length === 0 ? (
+            <div className="p-8 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md max-w-xl mx-auto mt-8">
+               <p className="font-medium">All Clear</p>
+               <p className="text-sm opacity-80 mt-1">No open deficiencies for this facility.</p>
+            </div>
+          ) : (
+            <MotionList className="space-y-3">
+              {defRows.map((row) => (
+                <MotionItem key={row.id} className="p-4 rounded-2xl glass-panel group transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/40 dark:border-white/5 bg-white/50 dark:bg-slate-900/30">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800/80 flex flex-col items-center justify-center border border-slate-200 dark:border-slate-700/50 flex-shrink-0">
+                        <span className="text-[10px] uppercase font-mono tracking-widest text-slate-400">Tag</span>
+                        <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{row.tag_number}</span>
                       </div>
-                      <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">POC Due: {row.submission_due_date ?? "—"}</span>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="font-mono text-[9px] uppercase tracking-widest shadow-sm bg-white dark:bg-black/40">Severity {row.severity}</Badge>
+                          <span className="text-[10px] font-mono tracking-widest text-slate-400 uppercase">{row.status.replace(/_/g, " ")}</span>
+                        </div>
+                        <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">POC Due: {row.submission_due_date ?? "—"}</span>
+                      </div>
+                    </div>
+
+                    <Link
+                      href={`/admin/compliance/deficiencies/${row.id}`}
+                      className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full sm:w-auto font-mono text-[10px] uppercase tracking-widest shadow-none bg-transparent border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 group-hover:border-indigo-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400")}
+                    >
+                      Manage Finding
+                    </Link>
+                  </div>
+                </MotionItem>
+              ))}
+            </MotionList>
+          )}
+        </div>
+
+        {/* Enhanced Tier: Compliance Score */}
+        {complianceScore && (
+          <div className="rounded-3xl glass-panel p-6 border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/30">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <TrendingUp className="h-6 w-6 text-indigo-500" />
+                <div>
+                  <h2 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100">Compliance Score</h2>
+                  <p className="text-sm text-slate-500">Based on latest rule-based scan</p>
+                </div>
+              </div>
+              <Link href="/admin/compliance/scan" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "glass-panel bg-indigo-50/30 dark:bg-indigo-900/20 text-[10px] uppercase tracking-widest font-mono text-indigo-700 dark:text-indigo-300")}>
+                Run New Scan
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-6 rounded-xl bg-slate-50 dark:bg-slate-900/30 text-center">
+                <p className="text-5xl font-bold text-slate-900 dark:text-slate-100">
+                  {complianceScore.percentage}%
+                </p>
+                <p className="text-xs text-slate-500 mt-2 uppercase">Pass Rate</p>
+              </div>
+              <div className="p-6 rounded-xl bg-slate-50 dark:bg-slate-900/30 text-center">
+                <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+                  {complianceScore.passed}
+                </p>
+                <p className="text-xs text-slate-500 mt-2 uppercase">Rules Passing</p>
+              </div>
+              <div className="p-6 rounded-xl bg-slate-50 dark:bg-slate-900/30 text-center">
+                <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+                  {complianceScore.total}
+                </p>
+                <p className="text-xs text-slate-500 mt-2 uppercase">Total Rules</p>
+              </div>
+            </div>
+            <Link href="/admin/compliance/rules" className="mt-4 inline-block text-center w-full">
+              <Button variant="outline" className="w-full">
+                <BarChart3 className="mr-2 h-4 w-4" />
+                View All Rules & Details
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {/* Enhanced Tier: Emergency Preparedness */}
+        {emergencyItems.length > 0 && (
+          <div className="rounded-3xl glass-panel p-6 border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/30">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-3 rounded-lg ${
+                  emergencyItems.some((e) => e.overdue)
+                    ? "bg-rose-100"
+                    : "bg-slate-100"
+                }`}>
+                  {emergencyItems.some((e) => e.overdue) ? (
+                    <Flame className="h-6 w-6 text-rose-600" />
+                  ) : (
+                    <Zap className="h-6 w-6 text-slate-600" />
+                  )}
+                </div>
+                <div>
+                  <h2 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100">Emergency Preparedness</h2>
+                  <p className="text-sm text-slate-500">Next required drills and checks</p>
+                </div>
+              </div>
+              <Link href="/admin/compliance/emergency-preparedness" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "glass-panel bg-orange-50/30 dark:bg-orange-950/20 text-[10px] uppercase tracking-widest font-mono text-orange-700 dark:text-orange-300")}>
+                Manage Checklist
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {emergencyItems.map((item) => {
+                const daysUntil = daysUntilDue(item.next_due_date);
+                const isOverdue = daysUntil < 0;
+                const isDueSoon = daysUntil >= 0 && daysUntil <= 7;
+                return (
+                  <div
+                    key={item.id}
+                    className={`p-4 rounded-xl border ${
+                      isOverdue
+                        ? "border-rose-500 bg-rose-50"
+                        : isDueSoon
+                          ? "border-amber-500 bg-amber-50"
+                          : "border-slate-200 bg-white"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <Shield className="h-5 w-5 text-slate-500" />
+                        <div>
+                          <p className="font-medium text-slate-900 dark:text-slate-100">{item.title}</p>
+                          <p className={`text-xs ${
+                            isOverdue
+                              ? "text-rose-600 font-semibold"
+                              : isDueSoon
+                                ? "text-amber-600"
+                                : "text-slate-500"
+                          }`}>
+                            {isOverdue
+                              ? `Overdue by ${Math.abs(daysUntil)} days`
+                              : isDueSoon
+                                ? `Due in ${daysUntil} day${daysUntil !== 1 ? "s" : ""}`
+                                : `Due in ${daysUntil} day${daysUntil !== 1 ? "s" : ""}`}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  
-                  <Link
-                    href={`/admin/compliance/deficiencies/${row.id}`}
-                    className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full sm:w-auto font-mono text-[10px] uppercase tracking-widest shadow-none bg-transparent border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 group-hover:border-indigo-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400")}
-                  >
-                    Manage Finding
-                  </Link>
-                </div>
-              </MotionItem>
-            ))}
-          </MotionList>
+                );
+              })}
+            </div>
+          </div>
         )}
-      </div>
 
-      <div className="grid gap-5 md:grid-cols-2 mt-8">
-        <div className="rounded-3xl glass-panel p-6 border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/30">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
-              <Shield className="h-5 w-5" />
+        {/* Survey Mode and Quick Links */}
+        <div className="grid gap-5 md:grid-cols-2 mt-8">
+          <div className="rounded-3xl glass-panel p-6 border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/30">
+            <div className="flex items-center gap-3 mb-4">
+              <Shield className="h-6 w-6 text-indigo-500" />
+              <div>
+                <h3 className="text-lg font-display font-semibold text-slate-800 dark:text-slate-200">Survey visit mode</h3>
+                <p className="text-xs font-medium text-slate-500 mb-4">Use bar below header to activate logging while a regulator is on site.</p>
+                <div className="bg-white/60 dark:bg-black/30 p-4 rounded-xl border border-white/40 dark:border-white/5 font-mono text-sm text-slate-700 dark:text-slate-300">
+                   {snapLoading ? "—" : snapshot?.surveyVisitActive ? <span className="text-emerald-600 dark:text-emerald-400 font-bold">● Session active for this facility.</span> : "No active session."}
+                </div>
+              </div>
             </div>
-            <h3 className="text-lg font-display font-semibold text-slate-800 dark:text-slate-200">Survey visit mode</h3>
           </div>
-          <p className="text-xs font-medium text-slate-500 mb-4">Use the bar below the header to activate logging while a regulator is on site.</p>
-          <div className="bg-white/60 dark:bg-black/30 p-4 rounded-xl border border-white/40 dark:border-white/5 font-mono text-sm text-slate-700 dark:text-slate-300">
-             {snapLoading ? "—" : snapshot?.surveyVisitActive ? <span className="text-emerald-600 dark:text-emerald-400 font-bold">● Session active for this facility.</span> : "No active session."}
+          <div className="rounded-3xl glass-panel p-6 border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/30">
+            <div className="flex items-center gap-3 mb-4">
+              <ClipboardList className="h-6 w-6 text-emerald-500" />
+              <div>
+                <h3 className="text-lg font-display font-semibold text-slate-800 dark:text-slate-200">Quick Links</h3>
+              </div>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Link href="/admin/compliance/policies" className="group flex items-center justify-between p-3 rounded-xl hover:bg-white/60 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-white/10">
+                <span className="font-medium text-sm text-slate-700 dark:text-slate-300">Policy library</span>
+                <span className="text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">→</span>
+              </Link>
+              <Link href="/admin/compliance/deficiencies/new" className="group flex items-center justify-between p-3 rounded-xl hover:bg-white/60 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-white/10">
+                <span className="font-medium text-sm text-slate-700 dark:text-slate-300">Enter survey deficiencies</span>
+                <span className="text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">→</span>
+              </Link>
+              <Link href="/admin/incidents" className="group flex items-center justify-between p-3 rounded-xl hover:bg-white/60 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-white/10">
+                <span className="font-medium text-sm text-slate-700 dark:text-slate-300">Incidents & follow-ups</span>
+                <span className="text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">→</span>
+              </Link>
+              {/* Enhanced tier links */}
+              <Link href="/admin/compliance/deficiencies/analysis" className="group flex items-center justify-between p-3 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-colors border border-transparent hover:border-indigo-500 dark:hover:border-white/10">
+                <span className="font-medium text-sm text-indigo-700 dark:text-indigo-300">Deficiency analysis</span>
+                <span className="text-slate-400 group-hover:text-white dark:group-hover:text-white transition-colors">→</span>
+              </Link>
+            </div>
           </div>
         </div>
 
-        <div className="rounded-3xl glass-panel p-6 border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/30">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
-              <ClipboardList className="h-5 w-5" />
-            </div>
-            <h3 className="text-lg font-display font-semibold text-slate-800 dark:text-slate-200">Quick Links</h3>
-          </div>
-          <div className="flex flex-col gap-3">
-            <Link href="/admin/compliance/policies" className="group flex items-center justify-between p-3 rounded-xl hover:bg-white/60 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-white/10">
-              <span className="font-medium text-sm text-slate-700 dark:text-slate-300">Policy library</span>
-              <span className="text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">→</span>
-            </Link>
-            <Link href="/admin/compliance/deficiencies/new" className="group flex items-center justify-between p-3 rounded-xl hover:bg-white/60 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-white/10">
-              <span className="font-medium text-sm text-slate-700 dark:text-slate-300">Enter survey deficiencies</span>
-              <span className="text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">→</span>
-            </Link>
-            <Link href="/admin/incidents" className="group flex items-center justify-between p-3 rounded-xl hover:bg-white/60 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-white/10">
-              <span className="font-medium text-sm text-slate-700 dark:text-slate-300">Incidents & follow-ups</span>
-              <span className="text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">→</span>
-            </Link>
-          </div>
+        <div className="mt-8 flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-800 dark:border-amber-500/20 dark:bg-amber-950/30">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+          <p className="font-mono text-[11px] uppercase tracking-wider leading-relaxed">
+            Tiles aggregate live operational data. Enhanced scoring and emergency preparedness features provide proactive compliance monitoring.
+          </p>
         </div>
-      </div>
-
-      <div className="mt-8 flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-800 dark:border-amber-500/20 dark:bg-amber-950/30 dark:text-amber-200">
-        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
-        <p className="font-mono text-[11px] uppercase tracking-wider leading-relaxed">
-          Tiles aggregate live operational data. Trends and enhanced scoring are out of scope for Core — focus on
-          accurate counts and traceable deficiency workflows.
-        </p>
-      </div>
       </div>
     </div>
   );
@@ -335,8 +527,8 @@ function Tile({
 
   return (
     <Link href={href} className="block h-full group focus-visible:outline-none">
-      <V2Card 
-        hoverColor={hoverColor} 
+      <V2Card
+        hoverColor={hoverColor}
         className={cn("h-full flex flex-col justify-between", isDanger ? "border-red-500/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]" : "")}
       >
         <MonolithicWatermark value={value ?? 0} className={cn("opacity-50", isDanger ? "text-red-500/5" : "text-slate-500/5 dark:text-white/5")} />
