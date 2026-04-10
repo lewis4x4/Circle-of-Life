@@ -18,7 +18,7 @@
 | **15** | ~~**Org-level mileage reimbursement rate**~~ | — | — | — | **Shipped D10** — table `organization_transport_settings` (`114`), `/admin/transportation/settings`, `getOrganizationMileageRateCents`; fallback in `mileage-defaults.ts`. |
 | **13** | ~~**Payroll batch mileage lines**~~ (`payroll_export_lines` from approved `mileage_logs`) | — | — | — | **Shipped D17** — `/admin/payroll/[id]` import; idempotency `mileage:{log_id}`. |
 | **15** | ~~Payroll mileage **approval** UX (`mileage_logs.approved_at` flow)~~ | — | — | — | **Shipped D15** — `/admin/transportation/mileage-approvals`. |
-| **15** | ~~**Calendar** view for transport requests~~ | — | — | — | **Shipped D14** — `/admin/transportation/calendar`. |
+| **15** | ~~**Calendar** view for transport requests~~ | — | — | — | **Shipped D14 + D56** — `/admin/transportation/calendar` (week strip + month grid). |
 | **22** | ~~**HL7 processor** (minimal **MSH** parse → **`processed`** / **`failed`**)~~ | — | — | — | **Shipped D12** — Edge **`process-referral-hl7-inbound`**; no auto-**`referral_leads`**. |
 | **22** | MLLP listener / hospital feed | High | High | Infra, VPN, partners | Not a single segment; defer. |
 | **23** | ~~**Google OAuth connect** (Business Profile scope; server token store `119`)~~ | — | — | — | **Shipped D44** — `/admin/reputation/integrations` + OAuth routes. |
@@ -119,7 +119,9 @@
 
 **~~Recommended next segment — D55~~** **DONE (2026-04-10)** — **Platform:** **`next.config.ts`** permanent **`/<segment>` → `/admin/<segment>`** for all `(admin)` hub roots that mirror **`/admin/<segment>`** (extends D54) — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D56+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
+**~~Recommended next segment — D56~~** **DONE (2026-04-10)** — Module **15:** **`/admin/transportation/calendar`** **month grid** (Week/Month toggle) — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D57+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
 
 ---
 

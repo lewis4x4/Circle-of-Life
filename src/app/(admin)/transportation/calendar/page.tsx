@@ -3,13 +3,17 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  addMonths,
   addWeeks,
   eachDayOfInterval,
+  endOfMonth,
   endOfWeek,
   format,
   isSameDay,
+  isSameMonth,
   parseISO,
   startOfDay,
+  startOfMonth,
   startOfWeek,
 } from "date-fns";
 import { ArrowLeft, Bus, CalendarDays, ChevronLeft, ChevronRight, Clock, MapPin } from "lucide-react";
@@ -25,6 +29,10 @@ import { MotionItem, MotionList } from "@/components/ui/motion-list";
 
 /** US-style week strip (Sunday start) — aligns with operator expectations in Florida. */
 const WEEK_STARTS_ON = 0 as const;
+
+const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+
+type CalendarViewMode = "week" | "month";
 
 type TransportRequestRow = Database["public"]["Tables"]["resident_transport_requests"]["Row"] & {
   residents: { first_name: string; last_name: string } | null;
@@ -46,7 +54,9 @@ function formatAppointmentTime(t: string | null): string {
 export default function TransportationWeekCalendarPage() {
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
+  const [viewMode, setViewMode] = useState<CalendarViewMode>("week");
   const [weekAnchor, setWeekAnchor] = useState(() => startOfDay(new Date()));
+  const [monthAnchor, setMonthAnchor] = useState(() => startOfMonth(startOfDay(new Date())));
   const [selectedDay, setSelectedDay] = useState(() => startOfDay(new Date()));
   const [rows, setRows] = useState<TransportRequestRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,10 +71,29 @@ export default function TransportationWeekCalendarPage() {
     [weekAnchor],
   );
 
+  const monthStart = useMemo(() => startOfMonth(monthAnchor), [monthAnchor]);
+  const monthEnd = useMemo(() => endOfMonth(monthAnchor), [monthAnchor]);
+  const monthCalendarStart = useMemo(
+    () => startOfWeek(monthStart, { weekStartsOn: WEEK_STARTS_ON }),
+    [monthStart],
+  );
+  const monthCalendarEnd = useMemo(
+    () => endOfWeek(monthEnd, { weekStartsOn: WEEK_STARTS_ON }),
+    [monthEnd],
+  );
+
   const weekDays = useMemo(
     () => eachDayOfInterval({ start: weekStart, end: weekEnd }),
     [weekStart, weekEnd],
   );
+
+  const monthGridDays = useMemo(
+    () => eachDayOfInterval({ start: monthCalendarStart, end: monthCalendarEnd }),
+    [monthCalendarStart, monthCalendarEnd],
+  );
+
+  const rangeStart = viewMode === "week" ? weekStart : monthCalendarStart;
+  const rangeEnd = viewMode === "week" ? weekEnd : monthCalendarEnd;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -74,8 +103,8 @@ export default function TransportationWeekCalendarPage() {
       setLoading(false);
       return;
     }
-    const from = format(weekStart, "yyyy-MM-dd");
-    const to = format(weekEnd, "yyyy-MM-dd");
+    const from = format(rangeStart, "yyyy-MM-dd");
+    const to = format(rangeEnd, "yyyy-MM-dd");
     try {
       const { data, error: qErr } = await supabase
         .from("resident_transport_requests")
@@ -86,7 +115,7 @@ export default function TransportationWeekCalendarPage() {
         .lte("appointment_date", to)
         .order("appointment_date", { ascending: true })
         .order("appointment_time", { ascending: true })
-        .limit(150);
+        .limit(viewMode === "month" ? 500 : 150);
       if (qErr) throw qErr;
       setRows((data ?? []) as TransportRequestRow[]);
     } catch (e) {
@@ -95,11 +124,21 @@ export default function TransportationWeekCalendarPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, selectedFacilityId, weekStart, weekEnd]);
+  }, [supabase, selectedFacilityId, rangeStart, rangeEnd, viewMode]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  /** Keep agenda day inside the visible month grid when the anchor month changes. */
+  useEffect(() => {
+    if (viewMode !== "month") return;
+    setSelectedDay((sd) => {
+      const t = sd.getTime();
+      if (t >= monthCalendarStart.getTime() && t <= monthCalendarEnd.getTime()) return sd;
+      return monthStart;
+    });
+  }, [viewMode, monthAnchor, monthCalendarStart, monthCalendarEnd, monthStart]);
 
   const countsByDate = useMemo(() => {
     const m = new Map<string, number>();
@@ -132,6 +171,30 @@ export default function TransportationWeekCalendarPage() {
     setSelectedDay(t);
   };
 
+  const goPrevMonth = () => setMonthAnchor((d) => addMonths(d, -1));
+  const goNextMonth = () => setMonthAnchor((d) => addMonths(d, 1));
+  const goThisMonth = () => {
+    const t = startOfDay(new Date());
+    setMonthAnchor(startOfMonth(t));
+    setSelectedDay(t);
+  };
+
+  const selectDay = (day: Date) => {
+    setSelectedDay(day);
+    if (viewMode === "month" && !isSameMonth(day, monthStart)) {
+      setMonthAnchor(startOfMonth(day));
+    }
+  };
+
+  const setCalendarView = (mode: CalendarViewMode) => {
+    setViewMode(mode);
+    if (mode === "month") {
+      setMonthAnchor(startOfMonth(selectedDay));
+    } else {
+      setWeekAnchor(selectedDay);
+    }
+  };
+
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <AmbientMatrix hasCriticals={false} primaryClass="bg-indigo-700/10" secondaryClass="bg-slate-900/10" />
@@ -140,27 +203,54 @@ export default function TransportationWeekCalendarPage() {
         <div className="flex flex-col gap-4 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
-              SYS: Module 15 — Week view
+              SYS: Module 15 — {viewMode === "week" ? "Week" : "Month"} view
             </div>
             <h1 className="font-display text-3xl md:text-4xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
               <CalendarDays className="h-8 w-8 text-indigo-600 dark:text-indigo-400 shrink-0" />
-              Transport week
+              Transport calendar
             </h1>
             <p className="mt-1 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl text-sm">
-              Seven-day strip with trip counts; agenda for the selected day. Same data as the hub, scoped to this
-              calendar week.
+              {viewMode === "week"
+                ? "Seven-day strip with trip counts; agenda for the selected day. Same data as the hub, scoped to this calendar week."
+                : "Full-month grid (Sunday-start) with trip counts; padding days outside the month are muted. Agenda uses the selected day."}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <div className="flex rounded-full border border-slate-200 bg-slate-50/80 p-0.5 dark:border-white/10 dark:bg-white/[0.04]">
+              <button
+                type="button"
+                onClick={() => setCalendarView("week")}
+                className={cn(
+                  "h-10 rounded-full px-4 text-[10px] font-bold uppercase tracking-widest transition-colors",
+                  viewMode === "week"
+                    ? "bg-white text-indigo-700 shadow-sm dark:bg-white/10 dark:text-indigo-300"
+                    : "text-slate-500 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-zinc-200",
+                )}
+              >
+                Week
+              </button>
+              <button
+                type="button"
+                onClick={() => setCalendarView("month")}
+                className={cn(
+                  "h-10 rounded-full px-4 text-[10px] font-bold uppercase tracking-widest transition-colors",
+                  viewMode === "month"
+                    ? "bg-white text-indigo-700 shadow-sm dark:bg-white/10 dark:text-indigo-300"
+                    : "text-slate-500 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-zinc-200",
+                )}
+              >
+                Month
+              </button>
+            </div>
             <button
               type="button"
-              onClick={goThisWeek}
+              onClick={viewMode === "week" ? goThisWeek : goThisMonth}
               className={cn(
                 buttonVariants({ variant: "outline", size: "default" }),
                 "h-11 rounded-full text-[10px] font-bold uppercase tracking-widest",
               )}
             >
-              This week
+              {viewMode === "week" ? "This week" : "This month"}
             </button>
             <Link
               href="/admin/transportation"
@@ -193,26 +283,28 @@ export default function TransportationWeekCalendarPage() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={goPrevWeek}
+                  onClick={viewMode === "week" ? goPrevWeek : goPrevMonth}
                   className={cn(
                     buttonVariants({ variant: "outline", size: "icon" }),
                     "h-10 w-10 rounded-full shrink-0",
                   )}
-                  aria-label="Previous week"
+                  aria-label={viewMode === "week" ? "Previous week" : "Previous month"}
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
-                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 min-w-[12rem] text-center">
-                  {format(weekStart, "MMM d")} – {format(weekEnd, "MMM d, yyyy")}
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 min-w-[12rem] text-center md:min-w-[16rem]">
+                  {viewMode === "week"
+                    ? `${format(weekStart, "MMM d")} – ${format(weekEnd, "MMM d, yyyy")}`
+                    : format(monthStart, "MMMM yyyy")}
                 </p>
                 <button
                   type="button"
-                  onClick={goNextWeek}
+                  onClick={viewMode === "week" ? goNextWeek : goNextMonth}
                   className={cn(
                     buttonVariants({ variant: "outline", size: "icon" }),
                     "h-10 w-10 rounded-full shrink-0",
                   )}
-                  aria-label="Next week"
+                  aria-label={viewMode === "week" ? "Next week" : "Next month"}
                 >
                   <ChevronRight className="h-5 w-5" />
                 </button>
@@ -225,43 +317,94 @@ export default function TransportationWeekCalendarPage() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-              {weekDays.map((day) => {
-                const key = format(day, "yyyy-MM-dd");
-                const n = countsByDate.get(key) ?? 0;
-                const selected = isSameDay(day, selectedDay);
-                const today = isSameDay(day, new Date());
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setSelectedDay(day)}
-                    className={cn(
-                      "rounded-2xl border p-2 sm:p-3 text-center transition-colors tap-responsive min-h-[4.5rem] sm:min-h-[5.5rem] flex flex-col items-center justify-center gap-0.5",
-                      selected
-                        ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-500/15 dark:border-indigo-400/50 shadow-sm"
-                        : "border-slate-200/80 bg-white/60 dark:bg-white/[0.03] dark:border-white/10 hover:border-indigo-300 dark:hover:border-indigo-500/30",
-                      today && !selected && "ring-1 ring-slate-300 dark:ring-white/20",
-                    )}
-                  >
-                    <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                      {format(day, "EEE")}
-                    </span>
-                    <span className="text-lg sm:text-xl font-display font-semibold text-slate-900 dark:text-white">
-                      {format(day, "d")}
-                    </span>
-                    <span
+            {viewMode === "week" ? (
+              <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+                {weekDays.map((day) => {
+                  const key = format(day, "yyyy-MM-dd");
+                  const n = countsByDate.get(key) ?? 0;
+                  const selected = isSameDay(day, selectedDay);
+                  const today = isSameDay(day, new Date());
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => selectDay(day)}
                       className={cn(
-                        "text-[9px] sm:text-[10px] font-bold tabular-nums",
-                        n > 0 ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400",
+                        "rounded-2xl border p-2 sm:p-3 text-center transition-colors tap-responsive min-h-[4.5rem] sm:min-h-[5.5rem] flex flex-col items-center justify-center gap-0.5",
+                        selected
+                          ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-500/15 dark:border-indigo-400/50 shadow-sm"
+                          : "border-slate-200/80 bg-white/60 dark:bg-white/[0.03] dark:border-white/10 hover:border-indigo-300 dark:hover:border-indigo-500/30",
+                        today && !selected && "ring-1 ring-slate-300 dark:ring-white/20",
                       )}
                     >
-                      {n} trip{n === 1 ? "" : "s"}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+                      <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        {format(day, "EEE")}
+                      </span>
+                      <span className="text-lg sm:text-xl font-display font-semibold text-slate-900 dark:text-white">
+                        {format(day, "d")}
+                      </span>
+                      <span
+                        className={cn(
+                          "text-[9px] sm:text-[10px] font-bold tabular-nums",
+                          n > 0 ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400",
+                        )}
+                      >
+                        {n} trip{n === 1 ? "" : "s"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="grid grid-cols-7 gap-1 px-0.5">
+                  {WEEKDAY_LABELS.map((label) => (
+                    <div
+                      key={label}
+                      className="py-1 text-center text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+                    >
+                      {label}
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+                  {monthGridDays.map((day) => {
+                    const key = format(day, "yyyy-MM-dd");
+                    const n = countsByDate.get(key) ?? 0;
+                    const selected = isSameDay(day, selectedDay);
+                    const today = isSameDay(day, new Date());
+                    const inMonth = isSameMonth(day, monthStart);
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => selectDay(day)}
+                        className={cn(
+                          "rounded-2xl border p-1.5 sm:p-2.5 text-center transition-colors tap-responsive min-h-[3.75rem] sm:min-h-[4.5rem] flex flex-col items-center justify-center gap-0.5",
+                          !inMonth && "opacity-45",
+                          selected
+                            ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-500/15 dark:border-indigo-400/50 shadow-sm"
+                            : "border-slate-200/80 bg-white/60 dark:bg-white/[0.03] dark:border-white/10 hover:border-indigo-300 dark:hover:border-indigo-500/30",
+                          today && !selected && "ring-1 ring-slate-300 dark:ring-white/20",
+                        )}
+                      >
+                        <span className="text-base sm:text-lg font-display font-semibold text-slate-900 dark:text-white">
+                          {format(day, "d")}
+                        </span>
+                        <span
+                          className={cn(
+                            "text-[8px] sm:text-[9px] font-bold tabular-nums leading-tight",
+                            n > 0 ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400",
+                          )}
+                        >
+                          {n > 0 ? `${n} trip${n === 1 ? "" : "s"}` : "—"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <div className="glass-panel rounded-[2rem] border border-slate-200/60 bg-white/60 p-6 md:p-8 dark:border-white/5 dark:bg-white/[0.015]">
               <h2 className="text-[12px] font-bold uppercase tracking-widest text-slate-600 dark:text-slate-400 mb-6 px-1">
