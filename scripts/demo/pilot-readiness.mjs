@@ -1,8 +1,16 @@
 #!/usr/bin/env node
+/**
+ * Bundled local Track A probes (app should be running for web-* steps).
+ *
+ * Optional: set PILOT_READINESS_AUTH_SMOKE_REAL=1 to also run
+ * `scripts/demo/authenticated-smoke.mjs` (Playwright — owner + facility_admin +
+ * caregiver + family; PH1-A04 / PH1-P04). Requires dev server / BASE_URL reachable.
+ */
 import { spawnSync } from "node:child_process";
 import process from "node:process";
 
 const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:3000";
+const includeAuthSmokeReal = process.env.PILOT_READINESS_AUTH_SMOKE_REAL === "1";
 
 function run(label, command, args, env = {}) {
   const result = spawnSync(command, args, {
@@ -34,9 +42,20 @@ const steps = [
   run("ops-status", "node", ["scripts/demo/phase1-ops-status.mjs"]),
 ];
 
+if (includeAuthSmokeReal) {
+  steps.push(
+    run("auth-smoke-real", "node", ["scripts/demo/authenticated-smoke.mjs"], {
+      BASE_URL: baseUrl,
+    }),
+  );
+}
+
+const authSmokeRealStep = steps.find((s) => s.label === "auth-smoke-real");
+
 const output = {
   checked_at: new Date().toISOString(),
   base_url: baseUrl,
+  pilot_readiness_auth_smoke_real: includeAuthSmokeReal,
   steps: steps.map(({ label, pass, exit_code, result }) => ({
     label,
     pass,
@@ -50,6 +69,7 @@ const output = {
     pilot_login_ok: steps[2].result?.verdict?.pilot_login_ok ?? false,
     ops_migrations_aligned: steps[3].result?.verdict?.remote_alignment_ok ?? false,
     ops_functions_ok: steps[3].result?.verdict?.functions_ok ?? false,
+    auth_smoke_real_ok: authSmokeRealStep ? authSmokeRealStep.pass : null,
     all_local_pass: steps[0].pass && steps[1].pass,
     all_pass: steps.every((s) => s.pass),
   },
@@ -57,5 +77,8 @@ const output = {
 
 console.log(JSON.stringify(output, null, 2));
 
-const localPass = output.verdict.all_local_pass;
+const localPass =
+  output.verdict.all_local_pass &&
+  (authSmokeRealStep === undefined || authSmokeRealStep.pass);
+
 process.exit(localPass ? 0 : 1);

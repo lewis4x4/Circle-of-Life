@@ -151,7 +151,7 @@ flowchart LR
 | Migration + functions + auth summary | `npm run demo:ops-status` |
 | Local shell + login smoke (app must be running) | `BASE_URL=http://127.0.0.1:3001 npm run demo:web-health` then `… demo:auth-smoke` |
 | Authenticated role smoke (after A1 fix) | `BASE_URL=http://127.0.0.1:3001 npm run demo:auth-smoke:real` |
-| All local checks bundled | `BASE_URL=http://127.0.0.1:3001 npm run demo:pilot-readiness` |
+| All local checks bundled | `BASE_URL=http://127.0.0.1:3001 npm run demo:pilot-readiness` — optional **`PILOT_READINESS_AUTH_SMOKE_REAL=1`** appends Playwright **`demo:auth-smoke:real`** (four pilot roles; PH1-A04 / PH1-P04) |
 | Full ops sequence | [PHASE1-OPS-VERIFICATION-RUNBOOK.md](./PHASE1-OPS-VERIFICATION-RUNBOOK.md) |
 | Gate proof after repo changes | `npm run segment:gates -- --segment "<id>"` (+ `--ui` when UI/routes change) |
 
