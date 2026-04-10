@@ -133,7 +133,9 @@
 
 **~~Recommended next segment — D62~~** **DONE (2026-04-10)** — Module **15:** same route — **Outlook on the web** compose deeplink (alongside Google) — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D63+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
+**~~Recommended next segment — D63~~** **DONE (2026-04-10)** — Module **15:** same route — **Download `.ics`** (single trip; `buildTransportRequestsIcs`; Apple Calendar handoff) — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D64+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
 
 ---
 

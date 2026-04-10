@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { triggerFileDownload } from "@/lib/csv-export";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { DEFAULT_MILEAGE_RATE_CENTS } from "@/lib/transport/mileage-defaults";
 import { formatCentsPerMileUsd, getOrganizationMileageRateCents } from "@/lib/transport/org-mileage-rate";
@@ -26,6 +27,7 @@ import {
   isCredentialDateValid,
   wheelchairVehicleError,
 } from "@/lib/transport/transport-request-validation";
+import { buildTransportRequestsIcs } from "@/lib/transportation/transport-requests-ics";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -368,6 +370,35 @@ export default function EditResidentTransportRequestPage() {
     };
   }, [row, appointmentDate, appointmentTime, destinationName, destinationAddress, purpose, notes]);
 
+  const downloadTripIcs = useCallback(() => {
+    if (!row || !appointmentDate) return;
+    const at = normalizeTimeForDb(appointmentTime);
+    const ics = buildTransportRequestsIcs(
+      [
+        {
+          id: row.id,
+          appointment_date: appointmentDate,
+          appointment_time: at,
+          destination_name: destinationName,
+          purpose,
+          status,
+          destination_address: destinationAddress.trim() || null,
+          residents: row.residents,
+        },
+      ],
+      "Haven transport (one trip)",
+    );
+    triggerFileDownload(`haven-transport-${row.id}.ics`, ics, "text/calendar;charset=utf-8");
+  }, [
+    row,
+    appointmentDate,
+    appointmentTime,
+    destinationName,
+    destinationAddress,
+    purpose,
+    status,
+  ]);
+
   if (!facilityReady) {
     return (
       <div className="mx-auto max-w-xl p-6">
@@ -464,9 +495,17 @@ export default function EditResidentTransportRequestPage() {
                 >
                   Outlook
                 </a>
+                <span className="text-slate-400"> · </span>
+                <button
+                  type="button"
+                  onClick={() => downloadTripIcs()}
+                  className="inline bg-transparent p-0 font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  Download .ics
+                </button>
                 <span className="text-slate-500">
                   {" "}
-                  — opens in a new tab; one-way add, not a live sync.
+                  — one-way handoff, not a live sync. Use .ics for Apple Calendar.
                 </span>
               </p>
             ) : null}
