@@ -115,33 +115,6 @@ export default function AdminSchedulesPage() {
     void load();
   }, [load]);
 
-  const exportSchedulesCsv = useCallback(async () => {
-    setExportingCsv(true);
-    setError(null);
-    try {
-      let q = supabase
-        .from("schedules" as never)
-        .select("*")
-        .is("deleted_at", null)
-        .order("week_start_date", { ascending: false })
-        .limit(500);
-
-      if (isValidFacilityIdForQuery(selectedFacilityId)) {
-        q = q.eq("facility_id", selectedFacilityId);
-      }
-
-      const res = (await q) as unknown as QueryResult<ScheduleCsvRow>;
-      if (res.error) throw res.error;
-      const list = res.data ?? [];
-      const csv = buildSchedulesCsv(list);
-      triggerCsvDownload(`schedule-weeks-${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to export schedule weeks.");
-    } finally {
-      setExportingCsv(false);
-    }
-  }, [supabase, selectedFacilityId]);
-
   const filteredRows = useMemo(() => {
     const q = search.trim().toLowerCase();
     return rows.filter((row) => {
@@ -153,6 +126,39 @@ export default function AdminSchedulesPage() {
       return matchesSearch && matchesStatus;
     });
   }, [rows, search, status]);
+
+  const exportSchedulesCsv = useCallback(async () => {
+    setExportingCsv(true);
+    setError(null);
+    try {
+      const ids = filteredRows.map((r) => r.id);
+      const hubFiltersDefault =
+        search.trim() === "" && status === DEFAULT_FILTERS.status;
+      const scope = hubFiltersDefault ? "" : "_filtered";
+      const stamp = format(new Date(), "yyyy-MM-dd");
+
+      if (ids.length === 0) {
+        triggerCsvDownload(`schedule-weeks-${stamp}${scope}.csv`, buildSchedulesCsv([]));
+        return;
+      }
+
+      const res = (await supabase
+        .from("schedules" as never)
+        .select("*")
+        .in("id", ids)
+        .is("deleted_at", null)) as unknown as QueryResult<ScheduleCsvRow>;
+      if (res.error) throw res.error;
+      const raw = res.data ?? [];
+      const order = new Map(ids.map((id, i) => [id, i]));
+      const list = raw.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+      const csv = buildSchedulesCsv(list);
+      triggerCsvDownload(`schedule-weeks-${stamp}${scope}.csv`, csv);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to export schedule weeks.");
+    } finally {
+      setExportingCsv(false);
+    }
+  }, [supabase, filteredRows, search, status]);
 
   const listEmptyCopy = useMemo(
     () =>

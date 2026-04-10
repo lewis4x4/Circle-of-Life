@@ -171,7 +171,9 @@
 
 **~~Recommended next segment — D81~~** **DONE (2026-04-10)** — Module **11:** **`/admin/certifications`** — **certifications CSV matches hub filters** — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D82+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
+**~~Recommended next segment — D82~~** **DONE (2026-04-10)** — Module **11:** **`/admin/schedules`** — **schedule weeks CSV matches hub filters** — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
+
+**Recommended next segment — D83+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
 
 ---
 
