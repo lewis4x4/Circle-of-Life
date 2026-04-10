@@ -13,7 +13,7 @@ Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs 
 | **Engineering baseline** | **PASS** — lint, build, migration replay, secrets, audit, segment gates; see §G and [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) |
 | **Track C — workflow hardening (repo)** | **PASS** — Edge automation + runbooks: [TRACK-C-WORKFLOW-HARDENING.md](./TRACK-C-WORKFLOW-HARDENING.md); evidence rows **PH1-TC1–TC5** in [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md); **§B–§E checklist rows** still owner UAT on target |
 | **Known gap waivers (§F)** | **PARTIALLY REMEDIATED** — W-RCA-01 / W-COLL-01 / W-BILL-EF-01 closed in repo; **W-ADMIN-01** remains — [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) |
-| **Environment / remote migrations** | **VERIFY** — Repo **001–111** (2026-04-09); owner keeps **remote** aligned; see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
+| **Environment / remote migrations** | **VERIFY** — Repo **001–120** (reconciled **2026-04-10**); owner keeps **remote** aligned; see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
 | **§A — login → correct shell (pilot roles)** | **PASS (owner, 2026-04-09)** — owner, facility_admin, caregiver, family; see [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) **PH1-A01** |
 | **RLS matrix (target)** | **PASS (owner, 2026-04-09)** — single-facility pilot; [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) |
 | **Full product acceptance** (§B–§E depth, PH1-A04 guards, Pro/BAA/PITR) | **NOT COMPLETE** — [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) |

@@ -104,7 +104,7 @@ Because no real JWT session could be established for the required roles, scenari
 ## Notes
 
 - Helpers live in schema **`haven`** (`haven.organization_id()`, `haven.accessible_facility_ids()`, `haven.app_role()`) — see migrations `004_haven_rls_helpers.sql` and table-specific policies.
-- **Remote migrations:** repo **001–111** on 2026-04-09 ([PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md)). Include **finance** tables when re-validating after major billing migrations.
+- **Remote migrations:** repo **001–120** (reconciled **2026-04-10**; [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md)). Include **finance** tables when re-validating after major billing migrations.
 - **Canonical auth check:** `npm run demo:auth-check` — if pilot login fails, pause RLS re-validation until [PHASE1-AUTH-DEBUG-HANDOFF.md](./PHASE1-AUTH-DEBUG-HANDOFF.md) is closed again.
 - **Scope:** **Single-facility** pilot PASS recorded **2026-04-09**. **Re-execute RLS-02** when a second in-org facility is on target.
 - Mission alignment should return **fail** if any role can see out-of-scope clinical or billing data after this sign-off; treat regressions as incidents.

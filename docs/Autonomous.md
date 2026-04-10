@@ -17,7 +17,7 @@
 
 ---
 
-## FIND — next roadmap item (2026-04-09 session)
+## FIND — next roadmap item (2026-04-10 session)
 
 **Authoritative “next” line** in [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./specs/TRACK-D-ENHANCED-BACKLOG-PLAN.md):
 
@@ -115,12 +115,25 @@ From `npm run segment:gates` (see `CODEX.md`): hygiene, security scan, ESLint, m
 
 ---
 
+## RECORD — round 2026-04-10 (loop: Phase 1 docs migration sequence 120)
+
+| Field | Value |
+|-------|--------|
+| **BOOT** | README, TRACK-D backlog, `Autonomous.md`, `git log` / `git status`. |
+| **FIND** | **D85+** still clinical-gated. **Unblocked:** Phase 1 sign-off docs still said repo **001–111** while [README.md](./specs/README.md) / [PHASE1-ENV-CONFIRMATION.md](./specs/PHASE1-ENV-CONFIRMATION.md) are **001–120**. |
+| **BUILD** | [PHASE1-CLOSURE-RECORD.md](./specs/PHASE1-CLOSURE-RECORD.md), [PHASE1-ACCEPTANCE-CHECKLIST.md](./specs/PHASE1-ACCEPTANCE-CHECKLIST.md), [PHASE1-PHASE2-OFFICIAL-SIGNOFF-REVIEW.md](./specs/PHASE1-PHASE2-OFFICIAL-SIGNOFF-REVIEW.md), [PHASE1-RLS-VALIDATION-RECORD.md](./specs/PHASE1-RLS-VALIDATION-RECORD.md) — **001–120** wording. |
+| **Mission alignment** | **pass** — acceptance and RLS records match canonical migration list for auditability. |
+| **Gate artifact** | `test-results/agent-gates/2026-04-10T11-33-53-828Z-loop-phase1-docs-migration-120-parity.json` |
+| **Deferred** | **D85+**; owner remote parity through **`120`**. |
+
+---
+
 ## RECORD — loop exit (optional)
 
 | Field | Value |
 |-------|--------|
-| **date** | **2026-04-09** (this loop: PH1-P02 doc parity + **RECORD** below) |
-| **reason** | **FIND** next named Enhanced item remains **D85+** — **clinical / pharmacy sign-off** before Edge/cron med–texture automation. Second **FIND** pass: no other stale **001–119** / **`119`** migration refs in `docs/` beyond PH1-P02 (fixed this session). |
+| **date** | **2026-04-10** (Phase 1 doc parity: **001–111** → **001–120** in closure / checklist / signoff / RLS notes) |
+| **reason** | **D85+** still **clinical / pharmacy** gated. **FIND** pass: no remaining **001–111** repo refs in `docs/` after this segment. |
 | **next_human_action** | Owner: **`supabase db push`** until remote matches **001–120**; COL: clinical sign-off for **D85+** when ready. |
 
 ---

@@ -6,7 +6,7 @@
 
 **Do not overstate:** This document must distinguish **automated/repo verification** from **live UAT + RLS + production compliance**.
 
-**Last updated:** 2026-04-09 — pilot **login + shell routing** + **RLS matrix (owner sign-off, single-facility pilot)**; **full** Phase 1 acceptance still pending §B–§E UAT depth, PH1-A04, Pro/BAA/PITR, waiver review. Repo migrations **001–111**.
+**Last updated:** 2026-04-09 — pilot **login + shell routing** + **RLS matrix (owner sign-off, single-facility pilot)**; **full** Phase 1 acceptance still pending §B–§E UAT depth, PH1-A04, Pro/BAA/PITR, waiver review. Repo migrations **001–120** (see [README.md](./README.md); doc parity **2026-04-10**).
 
 ---
 
@@ -17,7 +17,7 @@
 | **Engineering baseline** (lint, build, migration replay, secrets, audit, segment gates) | **PASS** — see § Gate evidence (includes **Track C** `track-c-workflow-hardening` gate, 2026-04-09) |
 | **Track C — workflow hardening** (Edge Functions + docs) | **PASS (repo)** — [TRACK-C-WORKFLOW-HARDENING.md](./TRACK-C-WORKFLOW-HARDENING.md); owner deploy + cron + UAT depth still required |
 | **Target `.env` / Supabase project alignment** | **PASS (owner)** — Brian Lewis confirmed active project **`manfqmasfqppukpobpld`**. See [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) and [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) **PH1-P01**. |
-| **Remote migrations aligned** | **VERIFY** — Repo **001–111**; owner maintains `supabase migration list` parity on target |
+| **Remote migrations aligned** | **VERIFY** — Repo **001–120**; owner maintains `supabase migration list` parity on target |
 | **Seeded users + pilot login / correct shell** | **PASS (owner)** — 2026-04-09: `owner`, `facility_admin`, `caregiver`, `family` demo users reach `/admin`, `/admin`, `/caregiver`, `/family` respectively (after hosted Auth fix + migrations **`110`–`111`**). See [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md). |
 | **Checklist §A (routing)** / **§B–§E (depth UAT)** | **§A PASS** for pilot shells / **§B–§E PENDING** — [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) |
 | **RLS matrix** | **PASS (owner, single-facility pilot)** — [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md); **RLS-02** deferred until second facility on target |
