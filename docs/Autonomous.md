@@ -322,26 +322,35 @@ From `npm run segment:gates` (see `CODEX.md`): hygiene, security scan, ESLint, m
 
 ## LOOP — restart (must not “just stop”)
 
-**Failure mode (2026-04-10):** After COMMIT/PUSH/RECORD, the run **ended** instead of continuing the loop. **LOOP is not optional documentation** — it means either start another full **BOOT → FIND → … → RECORD** cycle in the **same session**, or **explicitly stop with a recorded reason** (see below).
+### What counts as a “loop” (non-negotiable)
+
+One **BOOT → FIND → … → RECORD** pass is **one round**, not a finished loop.
+
+- **Finished loop (same session):** After **RECORD** for round *N*, you **must** run **BOOT** again and **FIND** again before stopping. That second pass is **round *N+1***. Only after **FIND** in round *N+1* may you either ship more work, or write **RECORD — loop exit** if nothing shippable remains.
+- **Incomplete run:** Ending the session right after a single **RECORD** without a **second BOOT + FIND**, and without updating **RECORD — loop exit**, is **not** a loop—it is a stopped mid-loop.
+
+**Failure mode (2026-04-10):** Agents treated “RECORD” as session end. **RECORD ends a round, not the loop.**
 
 ### When to continue vs stop
 
 | Situation | Action |
 |-----------|--------|
-| **FIND** returns an **agent-executable** bounded segment (spec exists, no owner waiver needed) | **Immediately** LOOP: go to **BOOT** again and ship that segment (one commit per segment per `CODEX.md`). |
-| **FIND** returns **D85+** or similar **blocked** on owner/clinical sign-off | Do **not** ship the blocked automation. **LOOP** by selecting the **next unblocked** item: e.g. doc/parity, tooling, spec clarification, Track A prep scripts, or a **prep** slice that does not violate the blocker — or **STOP** only after recording **why** in this file under **RECORD — loop exit**. |
-| **No work** left that fits repo rules | **STOP** with **RECORD — loop exit**: `reason`, `next_human_action`, `date`. |
+| **FIND** returns an **agent-executable** bounded segment (spec exists, no owner waiver needed) | **PLAN → BUILD → REVIEW → FIX → COMMIT → RECORD** (one commit per segment per `CODEX.md`), then **BOOT** again (next round). |
+| **FIND** returns **D85+** or similar **blocked** on owner/clinical sign-off | Do **not** ship that automation. **FIND** again for a **different** unblocked slice (doc/parity, tooling, spec clarification, prep). |
+| **Second FIND** (after prior **RECORD**) finds **nothing** shippable | **RECORD — loop exit** (`date`, `reason`, `next_human_action`), then stop. |
 
-### LOOP checklist (same session)
+### LOOP checklist (same session) — run every time
 
-After **RECORD** for round *N*:
+| # | Do this |
+|---|--------|
+| 1 | **BOOT** (source-of-truth table + `git log`) |
+| 2 | **FIND** |
+| 3 | If work exists → **PLAN → BUILD → REVIEW → FIX → COMMIT → RECORD** |
+| 4 | **BOOT again** — *required*; do not stop here |
+| 5 | **FIND again** |
+| 6 | If work exists → go to step 3 for the new segment. If **no** work → **RECORD — loop exit** and stop |
 
-1. **BOOT** again (same four files + `git log -15`).  
-2. **FIND** again — is there a **different** next item that is shippable today?  
-3. If yes → **PLAN → BUILD → REVIEW → FIX → COMMIT → RECORD** (round *N+1*).  
-4. If no → **RECORD — loop exit** (one short paragraph), then stop.  
-
-**Stopping without a loop exit note is considered an incomplete run.**
+**Stopping after step 3 without step 4–6 is an incomplete run** unless you immediately continue in the same chat with BOOT step 4.
 
 ---
 
