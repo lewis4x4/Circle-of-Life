@@ -61,6 +61,52 @@ export function flatMilesFromPayload(lineKind: string, payload: Record<string, u
  * Flat columns for vendors that do not ingest JSON — hours and miles extracted from `payload` where possible.
  * Track D59.
  */
+function amountUsdFromCents(cents: number | null): string {
+  if (cents === null || Number.isNaN(cents)) return "";
+  return (cents / 100).toFixed(2);
+}
+
+/**
+ * Pay period + USD columns for spreadsheet / vendor imports that do not use raw cents (Track D64).
+ * ADP/Gusto-proprietary column layouts remain out of scope.
+ */
+export function buildPayrollLinesCsvVendorHandoff(
+  lines: PayrollExportLineRow[],
+  batch: { period_start: string; period_end: string },
+): string {
+  const header = [
+    "period_start",
+    "period_end",
+    "idempotency_key",
+    "staff_first_name",
+    "staff_last_name",
+    "line_kind",
+    "hours",
+    "miles",
+    "amount_usd",
+  ].join(",");
+  const body = lines.map((line) => {
+    const fn = line.staff?.first_name ?? "";
+    const ln = line.staff?.last_name ?? "";
+    const p =
+      line.payload && typeof line.payload === "object" ? (line.payload as Record<string, unknown>) : null;
+    const hours = line.line_kind === "time_record_hours" ? flatHoursFromPayload(p) : "";
+    const miles = flatMilesFromPayload(line.line_kind, p);
+    return [
+      csvEscapeCell(batch.period_start),
+      csvEscapeCell(batch.period_end),
+      csvEscapeCell(line.idempotency_key),
+      csvEscapeCell(fn),
+      csvEscapeCell(ln),
+      csvEscapeCell(line.line_kind),
+      csvEscapeCell(hours),
+      csvEscapeCell(miles),
+      csvEscapeCell(amountUsdFromCents(line.amount_cents)),
+    ].join(",");
+  });
+  return [header, ...body].join("\r\n");
+}
+
 export function buildPayrollLinesCsvFlat(lines: PayrollExportLineRow[]): string {
   const header = [
     "idempotency_key",

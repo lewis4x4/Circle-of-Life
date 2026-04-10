@@ -36,9 +36,11 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 
 **Shipped (Track D58):** **`/admin/payroll/[id]`** (draft batches) — **Import approved `time_records`** into **`payroll_export_lines`** with **`line_kind`** = **`time_record_hours`**, **`time_record_id`** set, **`amount_cents`** null (vendor applies rates), **`payload`** = clock times + hour fields; idempotency **`time_record:{time_record_id}`**; **`clock_in`** filtered to pay period using **`America/New_York`** wall bounds (`src/lib/payroll/pay-period-bounds.ts`). Skips rows already present on any non-deleted export line with that idempotency key.
 
-**Shipped (Track D59):** Same route — second download **`Download CSV (flat)`**: columns **`hours`** (from **`time_record_hours`** payload: **`actual_hours`** else **`regular_hours` + `overtime_hours`**) and **`miles`** (from **`mileage_reimbursement`** payload), plus idempotency, staff name, **`line_kind`**, **`amount_cents`**. Implemented in **`src/lib/payroll/payroll-export-csv.ts`**. Vendor-specific branded formats (ADP/Gusto templates) remain defer.
+**Shipped (Track D59):** Same route — second download **`Download CSV (flat)`**: columns **`hours`** (from **`time_record_hours`** payload: **`actual_hours`** else **`regular_hours` + `overtime_hours`**) and **`miles`** (from **`mileage_reimbursement`** payload), plus idempotency, staff name, **`line_kind`**, **`amount_cents`**. Implemented in **`src/lib/payroll/payroll-export-csv.ts`**.
 
-- Provider-specific branded serializers (defer).
+**Shipped (Track D64):** Same route — third download **`Download CSV (vendor handoff)`**: **`period_start`**, **`period_end`**, idempotency, staff names, **`line_kind`**, **`hours`**, **`miles`**, **`amount_usd`** (two decimal places from **`amount_cents`**). **`buildPayrollLinesCsvVendorHandoff`**. ADP/Gusto **exact** proprietary templates remain defer.
+
+- Provider-specific proprietary column layouts (defer).
 
 ---
 

@@ -12,6 +12,7 @@ import { triggerCsvDownload } from "@/lib/csv-export";
 import {
   buildPayrollLinesCsvFlat,
   buildPayrollLinesCsvGeneric,
+  buildPayrollLinesCsvVendorHandoff,
   type PayrollExportLineRow,
 } from "@/lib/payroll/payroll-export-csv";
 import { payPeriodClockBoundsUtc } from "@/lib/payroll/pay-period-bounds";
@@ -453,7 +454,8 @@ export default function AdminPayrollBatchDetailPage() {
                 <CardTitle className="text-lg">Export lines ({lines.length})</CardTitle>
                 <CardDescription>
                   Full export includes JSON payload per row. Flat export adds parsed hours (time lines) and miles
-                  (mileage) columns without a JSON field.
+                  (mileage) columns without a JSON field. Vendor handoff adds pay-period columns and{' '}
+                  <span className="font-mono text-xs">amount_usd</span> (not ADP/Gusto proprietary layouts).
                 </CardDescription>
               </div>
               {lines.length > 0 && batch && (
@@ -487,6 +489,24 @@ export default function AdminPayrollBatchDetailPage() {
                     }}
                   >
                     Download CSV (flat)
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="shrink-0"
+                    onClick={() => {
+                      const csv = buildPayrollLinesCsvVendorHandoff(toExportRows(lines), {
+                        period_start: batch.period_start,
+                        period_end: batch.period_end,
+                      });
+                      const safeProv = batch.provider.replace(/[^a-zA-Z0-9._-]+/g, "_");
+                      triggerCsvDownload(
+                        `payroll-export-vendor-handoff_${batch.period_start}_${batch.period_end}_${safeProv}.csv`,
+                        csv,
+                      );
+                    }}
+                  >
+                    Download CSV (vendor handoff)
                   </Button>
                 </div>
               )}
