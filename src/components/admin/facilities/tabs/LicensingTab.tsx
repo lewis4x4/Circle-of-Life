@@ -51,36 +51,36 @@ export function LicensingTab({ facilityId }: LicensingTabProps) {
 
   return (
     <div className="space-y-8">
-      <section className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
+      <section className="rounded-[2rem] border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
+        <h3 className="font-display text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
           <Shield className="h-5 w-5 text-teal-600" />
           AHCA licensing
         </h3>
         <div className="grid gap-4 sm:grid-cols-2 text-sm">
           <div>
-            <p className="text-muted-foreground">License number</p>
+            <p className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">License number</p>
             <p className="font-medium">
               {licenseNum ?? "—"}
               {licensePending && <PendingBadge />}
             </p>
           </div>
           <div>
-            <p className="text-muted-foreground">License authority</p>
+            <p className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">License authority</p>
             <p className="font-medium">{facility.license_authority ?? "—"}</p>
           </div>
           <div>
-            <p className="text-muted-foreground">Last survey result</p>
+            <p className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">Last survey result</p>
             <p className="font-medium">{facility.last_survey_result ?? "—"}</p>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           Use Document Vault for license PDFs. Enter definitive license numbers here when received from COL.
         </p>
       </section>
 
-      <section className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
-        <h3 className="text-lg font-semibold">Care services offered</h3>
-        <p className="text-sm text-muted-foreground">
+      <section className="rounded-[2rem] border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
+        <h3 className="font-display text-xl font-semibold text-slate-900 dark:text-white">Care services offered</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           COL uses <strong>Enhanced ALF Services</strong> — avoid legacy unit marketing labels in compliance-facing
           outputs (see Haven verification checklist).
         </p>
@@ -104,25 +104,25 @@ export function LicensingTab({ facilityId }: LicensingTabProps) {
           type="button"
           onClick={() => void saveCareServices()}
           disabled={isUpdating}
-          className="rounded-lg bg-teal-600 px-4 py-2 text-sm text-white disabled:opacity-50"
+          className="rounded-[1.5rem] bg-teal-600 px-4 py-2 text-sm text-white disabled:opacity-50"
         >
           {isUpdating ? "Saving…" : "Save care services"}
         </button>
       </section>
 
-      <section className="rounded-lg border border-gray-200 bg-white p-6">
-        <h3 className="text-lg font-semibold mb-4">Survey history</h3>
+      <section className="rounded-[2rem] border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 shadow-sm backdrop-blur-2xl">
+        <h3 className="font-display text-xl font-semibold text-slate-900 dark:text-white mb-4">Survey history</h3>
         {surveysLoading ? (
           <Loader2 className="h-6 w-6 animate-spin text-teal-500" />
         ) : surveys.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No survey records yet.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">No survey records yet.</p>
         ) : (
           <ul className="divide-y">
             {surveys.map((s) => (
               <li key={s.id} className="py-3 flex justify-between gap-4 text-sm">
                 <div>
                   <p className="font-medium">{s.survey_date}</p>
-                  <p className="text-muted-foreground">
+                  <p className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">
                     {s.survey_type} — {s.result}
                   </p>
                 </div>
@@ -135,7 +135,7 @@ export function LicensingTab({ facilityId }: LicensingTabProps) {
         )}
       </section>
 
-      <section className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-muted-foreground">
+      <section className="rounded-[2rem] border border-dashed border-slate-300/50 dark:border-white/20 bg-slate-50/50 dark:bg-white/[0.02] p-4 text-sm text-slate-500 dark:text-slate-400">
         Compliance calendar (fire drills, elopement drills) will tie to operational thresholds and scheduling in a
         follow-up pass.
       </section>

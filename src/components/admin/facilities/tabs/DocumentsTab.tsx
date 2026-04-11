@@ -63,7 +63,7 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
   return (
     <div className="space-y-6">
       {/* Upload Section */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
+      <div className="rounded-[2rem] border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
         <h3 className="font-semibold flex items-center gap-2">
           <Upload className="h-5 w-5 text-teal-500" />
           Upload Document
@@ -77,7 +77,7 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
               ref={fileInputRef}
               type="file"
               onChange={handleFileSelect}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:px-3 file:py-2 file:border file:border-gray-300 file:rounded-lg file:text-sm file:font-medium file:bg-gray-50 hover:file:bg-gray-100"
+              className="block w-full text-sm text-gray-500 file:mr-4 file:px-3 file:py-2 file:border file:border-gray-300 file:rounded-lg file:text-sm file:font-medium file:bg-slate-50/50 dark:bg-white/5 hover:file:bg-gray-100"
             />
             {selectedFile && <p className="mt-2 text-sm text-teal-600">{selectedFile.name}</p>}
           </div>
@@ -131,7 +131,7 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
             className={`px-3 py-1 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
               categoryFilter === ""
                 ? "bg-teal-100 text-teal-700"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                : "bg-gray-100 text-slate-700 dark:text-slate-300 hover:bg-gray-200"
             }`}
           >
             All
@@ -141,7 +141,7 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
               key={cat}
               onClick={() => setCategoryFilter(cat)}
               className={`px-3 py-1 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
-                categoryFilter === cat ? "bg-teal-100 text-teal-700" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                categoryFilter === cat ? "bg-teal-100 text-teal-700" : "bg-gray-100 text-slate-700 dark:text-slate-300 hover:bg-gray-200"
               }`}
             >
               {cat}
@@ -152,25 +152,25 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
 
       {/* Documents Grid */}
       {filteredDocuments.length === 0 ? (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
-          <FileText className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
-          <p className="text-muted-foreground">No documents uploaded</p>
+        <div className="rounded-lg border border-slate-200/50 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 p-8 text-center">
+          <FileText className="h-8 w-8 mx-auto mb-3 text-slate-500 dark:text-slate-400" />
+          <p className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">No documents uploaded</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredDocuments.map((doc) => (
-            <div key={doc.id} className="rounded-lg border border-gray-200 bg-white p-4 space-y-3 hover:shadow-md transition-shadow">
+            <div key={doc.id} className="rounded-lg border border-slate-200/50 dark:border-white/10 bg-white p-4 space-y-3 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-start gap-2 flex-1 min-w-0">
                   <FileText className="h-5 w-5 text-teal-500 flex-shrink-0 mt-0.5" />
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-sm truncate">{doc.name}</p>
-                    <span className="inline-block mt-1 px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium">
+                    <span className="inline-block mt-1 px-2 py-1 bg-gray-100 text-slate-700 dark:text-slate-300 rounded text-xs font-medium">
                       {doc.category}
                     </span>
                   </div>
                 </div>
-                <button className="text-muted-foreground hover:text-red-600 transition-colors p-1 flex-shrink-0">
+                <button className="text-slate-500 dark:text-slate-400 hover:text-red-600 transition-colors p-1 flex-shrink-0">
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
@@ -181,7 +181,7 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
                 </div>
               )}
 
-              <div className="text-xs text-muted-foreground space-y-1 border-t border-gray-100 pt-2">
+              <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1 border-t border-slate-200/40 dark:border-white/5 pt-2">
                 <p>Uploaded: {new Date(doc.uploaded_at).toLocaleDateString()}</p>
                 <p>By: {doc.uploaded_by}</p>
               </div>

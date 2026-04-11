@@ -51,12 +51,12 @@ export function ThresholdsTab({ facilityId }: ThresholdsTabProps) {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-slate-500 dark:text-slate-400">
         Yellow / red thresholds drive compliance-style alerts. Values are numeric (days, counts, or % — see type).
       </p>
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-lg border border-slate-200/50 dark:border-white/10 bg-white">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 text-left">
+          <thead className="bg-slate-50/50 dark:bg-white/5 text-left">
             <tr>
               <th className="px-3 py-2">Type</th>
               <th className="px-3 py-2">Yellow</th>
@@ -102,7 +102,7 @@ export function ThresholdsTab({ facilityId }: ThresholdsTabProps) {
         type="button"
         onClick={() => void onSave()}
         disabled={isSaving || local.length === 0}
-        className="rounded-lg bg-teal-600 px-6 py-2 text-white disabled:opacity-50"
+        className="rounded-[1.5rem] bg-teal-600 px-6 py-2 text-white disabled:opacity-50"
       >
         {isSaving ? "Saving…" : "Save thresholds"}
       </button>

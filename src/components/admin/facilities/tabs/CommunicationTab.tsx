@@ -88,7 +88,7 @@ export function CommunicationTab({ facilityId }: CommunicationTabProps) {
 
   return (
     <form onSubmit={onSave} className="space-y-8">
-      <section className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
+      <section className="rounded-[2rem] border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
         <h3 className="font-semibold">Visitation</h3>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-sm">
@@ -128,7 +128,7 @@ export function CommunicationTab({ facilityId }: CommunicationTabProps) {
         </label>
       </section>
 
-      <section className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
+      <section className="rounded-[2rem] border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
         <h3 className="font-semibold">Family notifications</h3>
         <label className="flex items-center gap-2 text-sm">
           <input
@@ -157,7 +157,7 @@ export function CommunicationTab({ facilityId }: CommunicationTabProps) {
       </section>
 
       {canMarketing && (
-        <section className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
+        <section className="rounded-[2rem] border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
           <h3 className="font-semibold">Online presence (owner / org_admin)</h3>
           <label className="text-sm block">
             Google Business Profile URL
@@ -189,14 +189,14 @@ export function CommunicationTab({ facilityId }: CommunicationTabProps) {
       )}
 
       {!capabilities?.can_edit && (
-        <p className="text-sm text-muted-foreground">You do not have permission to edit communication settings.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">You do not have permission to edit communication settings.</p>
       )}
 
       {capabilities?.can_edit && (
         <button
           type="submit"
           disabled={isSaving}
-          className="rounded-lg bg-teal-600 px-6 py-2 text-white disabled:opacity-50"
+          className="rounded-[1.5rem] bg-teal-600 px-6 py-2 text-white disabled:opacity-50"
         >
           {isSaving ? "Saving…" : "Save communication settings"}
         </button>

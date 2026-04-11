@@ -97,7 +97,7 @@ export function AuditTab({ facilityId }: AuditTabProps) {
       <div className="flex items-center justify-between gap-4">
         <button
           onClick={() => setFilterOpen(!filterOpen)}
-          className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+          className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-slate-50/50 dark:bg-white/5 transition-colors text-sm font-medium"
         >
           <Filter className="h-4 w-4" />
           Filters
@@ -105,7 +105,7 @@ export function AuditTab({ facilityId }: AuditTabProps) {
 
         <button
           onClick={handleExport}
-          className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+          className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-slate-50/50 dark:bg-white/5 transition-colors text-sm font-medium"
         >
           <Download className="h-4 w-4" />
           Export CSV
@@ -114,7 +114,7 @@ export function AuditTab({ facilityId }: AuditTabProps) {
 
       {/* Filter Panel */}
       {filterOpen && (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 space-y-4">
+        <div className="rounded-lg border border-slate-200/50 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 p-6 space-y-4">
           <h3 className="font-semibold">Filter Audit Log</h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
@@ -175,25 +175,25 @@ export function AuditTab({ facilityId }: AuditTabProps) {
 
       {/* Audit Table */}
       {entries.length === 0 ? (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
-          <p className="text-muted-foreground">No audit log entries</p>
+        <div className="rounded-lg border border-slate-200/50 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 p-8 text-center">
+          <p className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">No audit log entries</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Timestamp</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">User</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Table</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Field</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Old Value</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">New Value</th>
+              <tr className="border-b border-slate-200/50 dark:border-white/10 bg-slate-50/50 dark:bg-white/5">
+                <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Timestamp</th>
+                <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-400">User</th>
+                <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Table</th>
+                <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Field</th>
+                <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Old Value</th>
+                <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-400">New Value</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {entries.map((entry) => (
-                <tr key={entry.id} className="hover:bg-gray-50">
+                <tr key={entry.id} className="hover:bg-slate-50/50 dark:bg-white/5">
                   <td className="px-4 py-3 font-medium">
                     {new Date(entry.timestamp).toLocaleString("en-US", {
                       month: "short",
@@ -202,21 +202,21 @@ export function AuditTab({ facilityId }: AuditTabProps) {
                       minute: "2-digit",
                     })}
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">{entry.user}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{entry.table_name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{entry.field_name}</td>
+                  <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{entry.user}</td>
+                  <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{entry.table_name}</td>
+                  <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{entry.field_name}</td>
                   <td className="px-4 py-3 font-mono text-xs">
                     {entry.old_value ? (
-                      <code className="bg-gray-100 px-2 py-1 rounded text-gray-700">{entry.old_value}</code>
+                      <code className="bg-gray-100 px-2 py-1 rounded text-slate-700 dark:text-slate-300">{entry.old_value}</code>
                     ) : (
-                      <span className="text-muted-foreground">—</span>
+                      <span className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs">
                     {entry.new_value ? (
-                      <code className="bg-gray-100 px-2 py-1 rounded text-gray-700">{entry.new_value}</code>
+                      <code className="bg-gray-100 px-2 py-1 rounded text-slate-700 dark:text-slate-300">{entry.new_value}</code>
                     ) : (
-                      <span className="text-muted-foreground">—</span>
+                      <span className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">—</span>
                     )}
                   </td>
                 </tr>
@@ -228,7 +228,7 @@ export function AuditTab({ facilityId }: AuditTabProps) {
 
       {/* Pagination */}
       {total > 0 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
           <span>{total} entries</span>
           <div className="flex items-center gap-2">
             <button

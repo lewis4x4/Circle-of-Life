@@ -70,7 +70,7 @@ export function EmergencyTab({ facilityId }: EmergencyTabProps) {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           County and vendor emergency numbers for this site. Owner/org_admin can add entries.
         </p>
         <button
@@ -84,10 +84,10 @@ export function EmergencyTab({ facilityId }: EmergencyTabProps) {
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="rounded-lg border border-gray-200 bg-white p-4 space-y-3">
+        <form onSubmit={handleSubmit} className="rounded-lg border border-slate-200/50 dark:border-white/10 bg-white p-4 space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="text-sm">
-              <span className="text-muted-foreground">Category</span>
+              <span className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">Category</span>
               <select
                 className="mt-1 w-full rounded border px-2 py-2"
                 value={form.contact_category}
@@ -103,7 +103,7 @@ export function EmergencyTab({ facilityId }: EmergencyTabProps) {
               </select>
             </label>
             <label className="text-sm">
-              <span className="text-muted-foreground">Name / label</span>
+              <span className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">Name / label</span>
               <input
                 className="mt-1 w-full rounded border px-2 py-2"
                 value={form.contact_name}
@@ -112,7 +112,7 @@ export function EmergencyTab({ facilityId }: EmergencyTabProps) {
               />
             </label>
             <label className="text-sm">
-              <span className="text-muted-foreground">Primary phone</span>
+              <span className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">Primary phone</span>
               <input
                 className="mt-1 w-full rounded border px-2 py-2"
                 value={form.phone_primary}
@@ -121,7 +121,7 @@ export function EmergencyTab({ facilityId }: EmergencyTabProps) {
               />
             </label>
             <label className="text-sm">
-              <span className="text-muted-foreground">Secondary phone</span>
+              <span className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">Secondary phone</span>
               <input
                 className="mt-1 w-full rounded border px-2 py-2"
                 value={form.phone_secondary ?? ""}
@@ -132,7 +132,7 @@ export function EmergencyTab({ facilityId }: EmergencyTabProps) {
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-teal-600 px-4 py-2 text-sm text-white disabled:opacity-50"
+            className="rounded-[1.5rem] bg-teal-600 px-4 py-2 text-sm text-white disabled:opacity-50"
           >
             {saving ? "Saving…" : "Save contact"}
           </button>
@@ -141,8 +141,8 @@ export function EmergencyTab({ facilityId }: EmergencyTabProps) {
 
       <div className="space-y-6">
         {Object.entries(grouped).map(([cat, list]) => (
-          <div key={cat} className="rounded-lg border border-gray-200 bg-white overflow-hidden">
-            <div className="bg-gray-50 px-4 py-2 text-sm font-semibold text-gray-800">
+          <div key={cat} className="rounded-[2rem] border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 overflow-hidden shadow-sm backdrop-blur-2xl">
+            <div className="bg-slate-50/50 dark:bg-white/5 px-4 py-2 text-sm font-semibold text-slate-800 dark:text-slate-200">
               {CONTACT_CATEGORY_LABELS[cat as keyof typeof CONTACT_CATEGORY_LABELS] ?? cat}
             </div>
             <ul className="divide-y">
@@ -150,9 +150,9 @@ export function EmergencyTab({ facilityId }: EmergencyTabProps) {
                 <li key={c.id} className="px-4 py-3 flex flex-wrap gap-2 justify-between">
                   <div>
                     <p className="font-medium">{c.contact_name}</p>
-                    <p className="text-sm text-muted-foreground">{c.phone_primary}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{c.phone_primary}</p>
                     {c.phone_secondary && (
-                      <p className="text-xs text-muted-foreground">Alt: {c.phone_secondary}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Alt: {c.phone_secondary}</p>
                     )}
                   </div>
                 </li>

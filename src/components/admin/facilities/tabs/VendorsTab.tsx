@@ -26,7 +26,7 @@ export function VendorsTab({ facilityId }: VendorsTabProps) {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-slate-500 dark:text-slate-400">
         Vendors linked to this facility via vendor assignments. Manage contracts in{" "}
         <Link href="/admin/vendors" className="text-teal-600 underline">
           Vendors &amp; AP
@@ -34,17 +34,17 @@ export function VendorsTab({ facilityId }: VendorsTabProps) {
         .
       </p>
       {rows.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-muted-foreground">
+        <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-slate-500 dark:text-slate-400">
           <Truck className="h-10 w-10 mx-auto mb-2 opacity-40" />
           No vendors linked to this facility yet.
         </div>
       ) : (
-        <ul className="divide-y rounded-lg border border-gray-200 bg-white">
+        <ul className="divide-y rounded-lg border border-slate-200/50 dark:border-white/10 bg-white">
           {rows.map((r) => (
             <li key={r.id} className="px-4 py-3 flex flex-wrap justify-between gap-2">
               <div>
                 <p className="font-medium">{r.vendor?.name ?? "Unknown vendor"}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   {r.vendor?.category} · {r.vendor?.status}
                   {r.is_primary && (
                     <span className="ml-2 rounded bg-teal-100 px-1.5 py-0.5 text-teal-900">Primary</span>

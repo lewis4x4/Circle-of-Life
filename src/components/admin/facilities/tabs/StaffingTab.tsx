@@ -26,24 +26,24 @@ export function StaffingTab({ facilityId }: StaffingTabProps) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-3">
+      <div className="rounded-lg border border-slate-200/50 dark:border-white/10 bg-white p-6 space-y-3">
         <h3 className="font-semibold flex items-center gap-2">
           <Users className="h-5 w-5 text-teal-600" />
           Key roles
         </h3>
         <div className="text-sm grid gap-2 sm:grid-cols-2">
           <div>
-            <p className="text-muted-foreground">Administrator (recorded)</p>
+            <p className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">Administrator (recorded)</p>
             <p className="font-medium">{facility.administrator_name ?? "—"}</p>
           </div>
           <div>
-            <p className="text-muted-foreground">Ratio rule set</p>
+            <p className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">Ratio rule set</p>
             <p className="font-medium font-mono text-xs break-all">
               {facility.facility_ratio_rule_set_id ?? "—"}
             </p>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           Detailed staffing ratios, schedules, and certifications live in Workforce hubs.
         </p>
       </div>

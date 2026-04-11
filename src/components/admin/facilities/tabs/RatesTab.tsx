@@ -86,7 +86,7 @@ export function RatesTab({ facilityId }: RatesTabProps) {
 
       {/* Add Rate Form */}
       {showAddForm && (
-        <form onSubmit={handleAddRate} className="rounded-lg border border-gray-200 bg-gray-50 p-6 space-y-4">
+        <form onSubmit={handleAddRate} className="rounded-lg border border-slate-200/50 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 p-6 space-y-4">
           <h3 className="font-semibold">New Rate</h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
@@ -136,7 +136,7 @@ export function RatesTab({ facilityId }: RatesTabProps) {
             <button
               type="button"
               onClick={() => setShowAddForm(false)}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-slate-50/50 dark:bg-white/5 transition-colors text-sm font-medium"
             >
               Cancel
             </button>
@@ -146,20 +146,20 @@ export function RatesTab({ facilityId }: RatesTabProps) {
 
       {/* Rates Table */}
       {Object.keys(ratesByType).length === 0 ? (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
-          <p className="text-muted-foreground">No rates configured</p>
+        <div className="rounded-lg border border-slate-200/50 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 p-8 text-center">
+          <p className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">No rates configured</p>
         </div>
       ) : (
         <div className="space-y-4">
           {Object.entries(ratesByType).map(([roomType, typeRates]) => (
-            <div key={roomType} className="rounded-lg border border-gray-200 overflow-hidden">
+            <div key={roomType} className="rounded-lg border border-slate-200/50 dark:border-white/10 overflow-hidden">
               <button
                 onClick={() => setExpandedType(expandedType === roomType ? null : roomType)}
-                className="w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 transition-colors flex items-center justify-between"
+                className="w-full px-6 py-4 bg-slate-50/50 dark:bg-white/5 hover:bg-gray-100 transition-colors flex items-center justify-between"
               >
                 <span className="font-medium">{RATE_TYPE_LABELS[roomType as keyof typeof RATE_TYPE_LABELS] ?? roomType}</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">${typeRates[0]?.amount_usd?.toFixed(2) ?? "0.00"}</span>
+                  <span className="text-sm text-slate-500 dark:text-slate-400">${typeRates[0]?.amount_usd?.toFixed(2) ?? "0.00"}</span>
                   <ChevronDown
                     className={`h-4 w-4 transition-transform ${expandedType === roomType ? "rotate-180" : ""}`}
                   />
@@ -171,7 +171,7 @@ export function RatesTab({ facilityId }: RatesTabProps) {
                   {typeRates.map((rate) => (
                     <div key={rate.id} className="px-6 py-3 flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
                       <div className="space-y-1">
-                        <span className="text-muted-foreground">
+                        <span className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">
                           Effective{" "}
                           {new Date(rate.effective_from).toLocaleDateString("en-US", {
                             month: "short",

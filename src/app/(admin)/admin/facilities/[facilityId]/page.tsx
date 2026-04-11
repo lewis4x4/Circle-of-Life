@@ -24,6 +24,7 @@ import {
   FACILITY_TAB_LABELS,
   type FacilityTab,
 } from "@/lib/admin/facilities/facility-constants";
+import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 
 const TABS = FACILITY_TABS.map((id) => ({
   id,
@@ -108,23 +109,26 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
   };
 
   return (
-    <div className="space-y-6 p-6">
-      <Link
-        href="/admin/facilities"
-        className="inline-flex items-center gap-2 text-teal-600 hover:text-teal-700 transition-colors"
-      >
+    <>
+      <AmbientMatrix hasCriticals={false} primaryClass="bg-teal-700/5" secondaryClass="bg-slate-900/5" />
+      <div className="space-y-6 pt-4 p-6 relative z-10 max-w-7xl mx-auto">
+        <Link
+          href="/admin/facilities"
+          className="inline-flex items-center gap-2 text-[10px] font-mono tracking-widest uppercase font-bold text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300 transition-colors"
+        >
         <ArrowLeft className="h-4 w-4" />
         Back to Facilities
       </Link>
 
       <FacilityHeader facility={facility} />
 
-      <div className="border-b border-gray-200 overflow-x-auto">
+      <div className="border-b border-slate-200/50 dark:border-white/10 overflow-x-auto relative">
         <FacilityTabNav activeTab={activeTab} onTabChange={onTabChange} tabs={TABS} />
       </div>
 
       <div className="pt-4">{renderTabContent()}</div>
     </div>
+    </>
   );
 }
 
