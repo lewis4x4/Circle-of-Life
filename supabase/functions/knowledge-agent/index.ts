@@ -149,7 +149,7 @@ How to think:
 
 Hard rules:
 - All tools are READ-ONLY. No mutations.
-- Never invent data. If a tool returns no results, say so and suggest next steps.
+- Never invent data. If semantic_kb_search returns no rows, say clearly that nothing matched the knowledge base and tell the user they can upload PDFs and documents under **Admin → Knowledge → Knowledge admin** (\`/admin/knowledge/admin\`) so answers can cite real policies. Do not leave the reply blank.
 - Cite sources inline when drawing from semantic_kb_search results.
 - Use markdown formatting when it helps readability.
 - CRITICAL: Respect role-based access. You only see documents the user's role permits.`;
@@ -388,6 +388,18 @@ Deno.serve(async (req) => {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
+      const logInsertError = (context: string, error: { message: string } | null) => {
+        if (error) {
+          t.log({
+            event: "chat_messages_insert_failed",
+            outcome: "error",
+            trace_id: traceId,
+            context,
+            error_message: error.message,
+          });
+        }
+      };
+
       try {
         controller.enqueue(
           encoder.encode(
@@ -408,10 +420,7 @@ Deno.serve(async (req) => {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ sources: result.sources })}\n\n`));
         }
 
-        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-        controller.close();
-
-        void admin.from("chat_messages").insert([
+        const { error: insertErr } = await admin.from("chat_messages").insert([
           {
             conversation_id: conversationId,
             workspace_id: workspaceId,
@@ -438,24 +447,42 @@ Deno.serve(async (req) => {
             trace_id: traceId,
           },
         ]);
+        logInsertError("success_path", insertErr);
 
-        void admin.rpc("increment_usage", {
+        const { error: usageErr } = await admin.rpc("increment_usage", {
           p_user_id: user.id,
           p_workspace_id: workspaceId,
           p_tokens_in: result.tokensIn,
           p_tokens_out: result.tokensOut,
         });
+        if (usageErr) {
+          t.log({
+            event: "increment_usage_failed",
+            outcome: "error",
+            trace_id: traceId,
+            error_message: usageErr.message,
+          });
+        }
 
         if (result.sources.length === 0) {
-          void admin.rpc("log_knowledge_gap", {
+          const { error: gapErr } = await admin.rpc("log_knowledge_gap", {
             p_workspace_id: workspaceId,
             p_user_id: user.id,
             p_question: message,
             p_trace_id: traceId,
           });
+          if (gapErr) {
+            t.log({
+              event: "log_knowledge_gap_failed",
+              outcome: "error",
+              trace_id: traceId,
+              error_message: gapErr.message,
+            });
+          }
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ kb_empty: true })}\n\n`));
         }
 
-        void admin.from("kb_analytics_events").insert({
+        const { error: analyticsErr } = await admin.from("kb_analytics_events").insert({
           workspace_id: workspaceId,
           event_type: "chat_query",
           user_id: user.id,
@@ -467,16 +494,24 @@ Deno.serve(async (req) => {
             tokens_out: result.tokensOut,
           },
         });
+        if (analyticsErr) {
+          t.log({
+            event: "kb_analytics_insert_failed",
+            outcome: "error",
+            trace_id: traceId,
+            error_message: analyticsErr.message,
+          });
+        }
+
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        controller.close();
 
         t.log({ event: "chat_ok", outcome: "success", trace_id: traceId });
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: msg })}\n\n`));
-        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-        controller.close();
-        t.log({ event: "chat_error", outcome: "error", error_message: msg });
 
-        void admin.from("chat_messages").insert([
+        const { error: insertErr } = await admin.from("chat_messages").insert([
           {
             conversation_id: conversationId,
             workspace_id: workspaceId,
@@ -494,6 +529,11 @@ Deno.serve(async (req) => {
             trace_id: traceId,
           },
         ]);
+        logInsertError("error_path", insertErr);
+
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        controller.close();
+        t.log({ event: "chat_error", outcome: "error", error_message: msg });
       }
     },
   });

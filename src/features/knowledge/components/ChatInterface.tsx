@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Loader2, StopCircle, Paperclip } from "lucide-react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import Link from "next/link";
+import { Send, Loader2, StopCircle, Paperclip, BookOpen } from "lucide-react";
 import { ChatMessage } from "./ChatMessage";
 import { SuggestedPrompts } from "./SuggestedPrompts";
 import { useKnowledgeStream } from "../hooks/useKnowledgeStream";
@@ -16,7 +17,8 @@ interface ChatInterfaceProps {
   workspaceId: string | null;
   workspaceLoading: boolean;
   workspaceError: string | null;
-  onStreamFinished?: () => void;
+  /** Pass conversation id when the thread was just created so messages reload correctly */
+  onStreamFinished?: (conversationIdForReload?: string | null) => void;
 }
 
 export function ChatInterface({
@@ -30,17 +32,14 @@ export function ChatInterface({
   onStreamFinished,
 }: ChatInterfaceProps) {
   const [input, setInput] = useState("");
-  const { state, text, sources, meta, error, send, reset } = useKnowledgeStream(workspaceId);
+  const { state, text, sources, meta, error, pendingUserMessage, kbEmpty, send, reset } =
+    useKnowledgeStream(workspaceId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [existingMessages, text, scrollToBottom]);
 
   const handleSend = useCallback(
     async (message?: string) => {
@@ -54,16 +53,13 @@ export function ChatInterface({
   );
 
   useEffect(() => {
-    if (state === "done" && meta?.conversation_id && !conversationId) {
-      onConversationCreated(meta.conversation_id);
+    if (state !== "done") return;
+    const conv = meta?.conversation_id;
+    if (conv && !conversationId) {
+      onConversationCreated(conv);
     }
-  }, [state, meta, conversationId, onConversationCreated]);
-
-  useEffect(() => {
-    if (state === "done" && conversationId) {
-      onStreamFinished?.();
-    }
-  }, [state, conversationId, onStreamFinished]);
+    onStreamFinished?.(conv ?? conversationId ?? undefined);
+  }, [state, meta, conversationId, onConversationCreated, onStreamFinished]);
 
   useEffect(() => {
     reset();
@@ -77,7 +73,28 @@ export function ChatInterface({
   };
 
   const isActive = state === "connecting" || state === "streaming";
+  const showOptimisticUser =
+    !!pendingUserMessage &&
+    !existingMessages.some((m) => m.role === "user" && m.content === pendingUserMessage);
+  const lastMsg = useMemo(
+    () => (existingMessages.length ? existingMessages[existingMessages.length - 1] : null),
+    [existingMessages],
+  );
+  const lastMsgSources = lastMsg?.sources as unknown;
+  const lastMsgHasKbSources = Array.isArray(lastMsgSources) && lastMsgSources.length > 0;
+  /** Edge SSE kb_empty; after reload, newest assistant row has no cited sources (not an error response). */
+  const showKbUploadHint =
+    (state === "done" && kbEmpty) ||
+    (!isActive &&
+      !messagesLoading &&
+      lastMsg?.role === "assistant" &&
+      !String(lastMsg.content).startsWith("Error:") &&
+      !lastMsgHasKbSources);
   const hasNoContent = existingMessages.length === 0 && !isActive && !text;
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [existingMessages, text, showKbUploadHint, scrollToBottom]);
   /** Welcome / suggested prompts only when no thread is selected — never when viewing history */
   const showWelcome =
     conversationId == null &&
@@ -127,19 +144,53 @@ export function ChatInterface({
                 />
               ))}
 
-            {!showThreadLoader && isActive && text && (
-              <ChatMessage
-                role="assistant"
-                content={text}
-                sources={sources}
-                isStreaming={state === "streaming"}
-              />
+            {!showThreadLoader && showOptimisticUser && (
+              <ChatMessage role="user" content={pendingUserMessage!} />
             )}
 
-            {!showThreadLoader && state === "connecting" && (
+            {!showThreadLoader && isActive && (
+              <>
+                {text ? (
+                  <ChatMessage
+                    role="assistant"
+                    content={text}
+                    sources={sources}
+                    isStreaming={state === "streaming"}
+                  />
+                ) : (
+                  <div className="flex gap-3">
+                    <div className="rounded-2xl bg-zinc-800/90 px-4 py-3 ring-1 ring-zinc-700/80">
+                      <Loader2 className="h-5 w-5 animate-spin text-indigo-400" aria-hidden />
+                    </div>
+                    <span className="self-center text-sm text-zinc-500">Generating answer…</span>
+                  </div>
+                )}
+              </>
+            )}
+
+            {!showThreadLoader && state === "connecting" && !showOptimisticUser && (
               <div className="flex gap-3">
                 <div className="rounded-2xl bg-zinc-800/90 px-4 py-3 ring-1 ring-zinc-700/80">
                   <Loader2 className="h-5 w-5 animate-spin text-indigo-400" />
+                </div>
+              </div>
+            )}
+
+            {!showThreadLoader && showKbUploadHint && (
+              <div className="flex gap-3 rounded-xl border border-amber-800/50 bg-amber-950/35 px-4 py-3 text-sm text-amber-100">
+                <BookOpen className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" aria-hidden />
+                <div>
+                  <p className="font-medium text-amber-50">No matching documents in the knowledge base yet</p>
+                  <p className="mt-1 text-amber-100/90">
+                    Upload policies and handbooks in{" "}
+                    <Link
+                      href="/admin/knowledge/admin"
+                      className="font-medium text-amber-300 underline underline-offset-2 hover:text-amber-200"
+                    >
+                      Knowledge admin
+                    </Link>{" "}
+                    so answers can cite your real materials.
+                  </p>
                 </div>
               </div>
             )}

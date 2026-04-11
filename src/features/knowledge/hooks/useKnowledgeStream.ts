@@ -27,6 +27,9 @@ export function useKnowledgeStream(workspaceId: string | null) {
   const [sources, setSources] = useState<KBSource[]>([]);
   const [meta, setMeta] = useState<StreamMeta | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** Shown immediately while streaming; cleared in reset() or overwritten on next send */
+  const [pendingUserMessage, setPendingUserMessage] = useState<string | null>(null);
+  const [kbEmpty, setKbEmpty] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -51,6 +54,8 @@ export function useKnowledgeStream(workspaceId: string | null) {
       setSources([]);
       setMeta(null);
       setError(null);
+      setKbEmpty(false);
+      setPendingUserMessage(message.trim());
 
       try {
         const res = await sendChatMessage(message, {
@@ -77,6 +82,9 @@ export function useKnowledgeStream(workspaceId: string | null) {
               break;
             case "sources":
               setSources(event.sources!);
+              break;
+            case "kb_empty":
+              setKbEmpty(true);
               break;
             case "error":
               setError(event.error!);
@@ -107,7 +115,9 @@ export function useKnowledgeStream(workspaceId: string | null) {
     setSources([]);
     setMeta(null);
     setError(null);
+    setPendingUserMessage(null);
+    setKbEmpty(false);
   }, []);
 
-  return { state, text, sources, meta, error, send, reset };
+  return { state, text, sources, meta, error, pendingUserMessage, kbEmpty, send, reset };
 }

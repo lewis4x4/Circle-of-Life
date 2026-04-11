@@ -64,11 +64,13 @@ export function ChatPage() {
     [deleteConversation, activeConversationId],
   );
 
-  const handleStreamFinished = useCallback(() => {
-    if (activeConversationId) {
-      void loadMessages(activeConversationId);
-    }
-  }, [activeConversationId, loadMessages]);
+  const handleStreamFinished = useCallback(
+    (conversationIdForReload?: string | null) => {
+      const id = conversationIdForReload ?? activeConversationId;
+      if (id) void loadMessages(id);
+    },
+    [activeConversationId, loadMessages],
+  );
 
   return (
     <div className="-mx-6 -mt-6 mb-0 flex min-h-0 max-h-[calc(100dvh-7.5rem)] h-[calc(100dvh-7.5rem)] flex-1 lg:-mx-10">

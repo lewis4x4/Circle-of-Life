@@ -1,7 +1,7 @@
 import type { KBSource, StreamMeta } from "./types";
 
 export interface StreamEvent {
-  type: "meta" | "text" | "sources" | "error" | "done";
+  type: "meta" | "text" | "sources" | "error" | "done" | "kb_empty";
   meta?: StreamMeta;
   text?: string;
   sources?: KBSource[];
@@ -16,6 +16,7 @@ export function parseSSELine(line: string): StreamEvent | null {
   try {
     const event = JSON.parse(payload) as Record<string, unknown>;
     if (event.meta) return { type: "meta", meta: event.meta as StreamMeta };
+    if (event.kb_empty === true) return { type: "kb_empty" };
     if (event.text) return { type: "text", text: event.text as string };
     if (event.sources) return { type: "sources", sources: event.sources as KBSource[] };
     if (event.error) return { type: "error", error: event.error as string };
