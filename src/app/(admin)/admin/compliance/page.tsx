@@ -20,7 +20,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { fetchComplianceDashboardSnapshot } from "@/lib/compliance-dashboard-snapshot";
-import { getComplianceScore, getLatestScan } from "@/lib/compliance-scan";
+import { getComplianceScore, getEmergencyChecklistPreview } from "@/lib/compliance-scan";
 import {
   getPendingReminders,
   dismissReminder,
@@ -50,6 +50,13 @@ type EmergencyItem = {
   title: string;
   next_due_date: string;
   overdue: boolean;
+};
+
+type DeficiencyListRow = Pick<DefRow, "id" | "tag_number" | "severity" | "status">;
+type PlanOfCorrectionRow = {
+  deficiency_id: string;
+  submission_due_date: string | null;
+  status: string;
 };
 
 export default function AdminCompliancePage() {
@@ -102,7 +109,8 @@ export default function AdminCompliancePage() {
       return;
     }
 
-    const ids = data.map((d) => d.id);
+    const deficiencies = data as DeficiencyListRow[];
+    const ids = deficiencies.map((deficiency) => deficiency.id);
     if (ids.length === 0) {
       setDefRows([]);
       setDefLoading(false);
@@ -117,19 +125,19 @@ export default function AdminCompliancePage() {
       .in("status", ["draft", "submitted", "accepted"]);
 
     const dueByDef = new Map<string, string>();
-    for (const p of pocs ?? []) {
-      if (p.submission_due_date && !dueByDef.has(p.deficiency_id)) {
-        dueByDef.set(p.deficiency_id, p.submission_due_date);
+    for (const poc of (pocs ?? []) as PlanOfCorrectionRow[]) {
+      if (poc.submission_due_date && !dueByDef.has(poc.deficiency_id)) {
+        dueByDef.set(poc.deficiency_id, poc.submission_due_date);
       }
     }
 
     setDefRows(
-      data.map((d) => ({
-        id: d.id,
-        tag_number: d.tag_number,
-        severity: d.severity,
-        status: d.status,
-        submission_due_date: dueByDef.get(d.id) ?? null,
+      deficiencies.map((deficiency) => ({
+        id: deficiency.id,
+        tag_number: deficiency.tag_number,
+        severity: deficiency.severity,
+        status: deficiency.status,
+        submission_due_date: dueByDef.get(deficiency.id) ?? null,
       })),
     );
     setDefLoading(false);
@@ -161,20 +169,11 @@ export default function AdminCompliancePage() {
       const score = await getComplianceScore(selectedFacilityId);
       setComplianceScore(score);
 
-      // Load emergency items
-      const { data: emergencyData } = await (supabase as any)
-        .from("emergency_checklist_items")
-        .select("id, title, next_due_date")
-        .eq("facility_id", selectedFacilityId)
-        .is("deleted_at", null)
-        .order("next_due_date", { ascending: true })
-        .limit(5);
-
-      setEmergencyItems((emergencyData as EmergencyItem[]) || []);
+      setEmergencyItems(await getEmergencyChecklistPreview(selectedFacilityId));
     } catch (e) {
       console.error("Failed to load enhanced data:", e);
     }
-  }, [selectedFacilityId, supabase]);
+  }, [selectedFacilityId]);
 
   useEffect(() => {
     void loadSnapshot();

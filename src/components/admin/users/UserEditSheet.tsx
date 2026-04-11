@@ -313,7 +313,7 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
                           by {entry.acting_user.full_name} ({entry.acting_user.email})
                         </div>
                         {entry.reason && (
-                          <div className="text-xs italic text-muted-foreground">"{entry.reason}"</div>
+                          <div className="text-xs italic text-muted-foreground">&quot;{entry.reason}&quot;</div>
                         )}
                       </div>
                     ))

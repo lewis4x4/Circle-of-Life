@@ -10,9 +10,40 @@ import {
   requireAdminApiActor,
 } from "@/lib/admin/api-auth";
 import { canManageUser } from "@/lib/rbac";
+import type { Database } from "@/types/database";
 import { listUsersQuerySchema, createUserSchema } from "@/lib/validation/user-management";
 import { adminInviteUser, adminCreateUser } from "@/lib/supabase/admin-client";
 import { writeUserAuditEntry } from "@/lib/audit/user-management-audit";
+
+type UserProfileRow = Pick<
+  Database["public"]["Tables"]["user_profiles"]["Row"],
+  | "id"
+  | "email"
+  | "full_name"
+  | "phone"
+  | "app_role"
+  | "job_title"
+  | "avatar_url"
+  | "is_active"
+  | "last_login_at"
+  | "manager_user_id"
+  | "created_at"
+  | "updated_at"
+  | "deleted_at"
+>;
+
+type UserProfileInsert = Database["public"]["Tables"]["user_profiles"]["Insert"];
+
+type UserFacilityAccessWithName = Pick<
+  Database["public"]["Tables"]["user_facility_access"]["Row"],
+  "user_id" | "facility_id" | "is_primary"
+> & {
+  facilities: { name: string | null } | null;
+};
+
+type UserWithFacilities = UserProfileRow & {
+  facilities: Array<{ facility_id: string; facility_name: string; is_primary: boolean }>;
+};
 
 // ── GET: List Users ───────────────────────────────────────────────
 
@@ -70,8 +101,7 @@ export async function GET(request: NextRequest) {
 
   const scopedFacilityIds = facility_id.length > 0 ? facility_id : orgWideScope ? [] : actorFacilityIds;
 
-  // Build query — new columns (job_title, manager_user_id) not yet in generated types
-  let query: any = admin
+  let query = admin
     .from("user_profiles")
     .select(
       "id, email, full_name, phone, app_role, job_title, avatar_url, is_active, last_login_at, manager_user_id, created_at, updated_at, deleted_at",
@@ -131,14 +161,17 @@ export async function GET(request: NextRequest) {
   query = query.order(sort_by, { ascending: sort_order === "asc" });
   query = query.range(offset, offset + page_size - 1);
 
-  const { data: users, count, error: queryErr } = await query;
+  const queryResult = await query;
+  const users = (queryResult.data ?? []) as UserProfileRow[];
+  const count = queryResult.count ?? 0;
+  const queryErr = queryResult.error;
   if (queryErr) {
     return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
   }
 
   // Fetch facility access for each user
-  const userIds = (users ?? []).map((u: any) => u.id);
-  let facilityMap: Record<string, Array<{ facility_id: string; facility_name: string; is_primary: boolean }>> = {};
+  const userIds = users.map((user) => user.id);
+  const facilityMap: Record<string, Array<{ facility_id: string; facility_name: string; is_primary: boolean }>> = {};
   if (userIds.length > 0) {
     let accessQuery = admin
       .from("user_facility_access")
@@ -150,33 +183,32 @@ export async function GET(request: NextRequest) {
       accessQuery = accessQuery.in("facility_id", scopedFacilityIds);
     }
 
-    const { data: accessRows } = await accessQuery;
+    const accessQueryResult = await accessQuery;
+    const accessRows = (accessQueryResult.data ?? []) as UserFacilityAccessWithName[];
 
-    if (accessRows) {
-      for (const row of accessRows) {
-        if (!facilityMap[row.user_id]) facilityMap[row.user_id] = [];
-        facilityMap[row.user_id].push({
-          facility_id: row.facility_id,
-          facility_name: (row.facilities as unknown as { name: string })?.name ?? "",
-          is_primary: row.is_primary,
-        });
-      }
+    for (const row of accessRows) {
+      if (!facilityMap[row.user_id]) facilityMap[row.user_id] = [];
+      facilityMap[row.user_id].push({
+        facility_id: row.facility_id,
+        facility_name: row.facilities?.name ?? "",
+        is_primary: row.is_primary,
+      });
     }
   }
 
-  const data = (users ?? []).map((u: any) => ({
-    ...u,
-    facilities: facilityMap[u.id] ?? [],
+  const data: UserWithFacilities[] = users.map((user) => ({
+    ...user,
+    facilities: facilityMap[user.id] ?? [],
   }));
 
   return NextResponse.json({
     data,
     pagination: {
-      total: count ?? 0,
+      total: count,
       page,
       page_size,
-      total_pages: Math.ceil((count ?? 0) / page_size),
-      has_next: offset + page_size < (count ?? 0),
+      total_pages: Math.ceil(count / page_size),
+      has_next: offset + page_size < count,
     },
   });
 }
@@ -272,21 +304,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 
-  // Create user_profiles record — new columns need as any
+  const profileInsert: UserProfileInsert = {
+    id: authUserId,
+    organization_id: actor.organization_id!,
+    email: data.email,
+    full_name: data.full_name,
+    phone: data.phone ?? null,
+    app_role: data.app_role,
+    job_title: data.job_title ?? null,
+    avatar_url: data.avatar_url ?? null,
+    manager_user_id: data.manager_user_id ?? null,
+    is_active: true,
+  };
+
   const { data: profile, error: insertErr } = await admin
     .from("user_profiles")
-    .insert({
-      id: authUserId,
-      organization_id: actor.organization_id!,
-      email: data.email,
-      full_name: data.full_name,
-      phone: data.phone ?? null,
-      app_role: data.app_role as any,
-      job_title: data.job_title ?? null,
-      avatar_url: data.avatar_url ?? null,
-      manager_user_id: data.manager_user_id ?? null,
-      is_active: true,
-    } as any)
+    .insert(profileInsert)
     .select()
     .single();
   if (insertErr) {

@@ -12,6 +12,7 @@ import {
   requireAdminApiActor,
 } from "@/lib/admin/api-auth";
 import { canManageUser } from "@/lib/rbac";
+import type { Database } from "@/types/database";
 import { updateUserSchema, deleteUserSchema } from "@/lib/validation/user-management";
 import { adminUpdateUserRole, adminDisableUser } from "@/lib/supabase/admin-client";
 import { writeUserAuditEntry } from "@/lib/audit/user-management-audit";
@@ -19,6 +20,36 @@ import { writeUserAuditEntry } from "@/lib/audit/user-management-audit";
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
+
+type UserDetailRow = Pick<
+  Database["public"]["Tables"]["user_profiles"]["Row"],
+  | "id"
+  | "organization_id"
+  | "email"
+  | "full_name"
+  | "phone"
+  | "app_role"
+  | "job_title"
+  | "avatar_url"
+  | "is_active"
+  | "last_login_at"
+  | "manager_user_id"
+  | "created_at"
+  | "updated_at"
+  | "deleted_at"
+>;
+
+type UserUpdateTargetRow = Pick<
+  Database["public"]["Tables"]["user_profiles"]["Row"],
+  "id" | "organization_id" | "email" | "full_name" | "phone" | "app_role" | "job_title" | "is_active" | "manager_user_id"
+>;
+
+type UserFacilityAccessDetailRow = Pick<
+  Database["public"]["Tables"]["user_facility_access"]["Row"],
+  "id" | "facility_id" | "is_primary" | "granted_at" | "granted_by" | "revoked_at" | "revoked_by"
+> & {
+  facilities: { name: string | null } | null;
+};
 
 // ── GET: User Detail ──────────────────────────────────────────────
 
@@ -35,11 +66,13 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  const { data: profile, error } = await admin
+  const profileResult = await admin
     .from("user_profiles")
     .select("id, organization_id, email, full_name, phone, app_role, job_title, avatar_url, is_active, last_login_at, manager_user_id, created_at, updated_at, deleted_at")
     .eq("id", id)
-    .maybeSingle() as any;
+    .maybeSingle();
+  const profile = profileResult.data as UserDetailRow | null;
+  const error = profileResult.error;
   if (error || !profile) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
@@ -48,11 +81,12 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   }
 
   // Facility access
-  const { data: facilities } = await admin
+  const facilitiesResult = await admin
     .from("user_facility_access")
     .select("id, facility_id, is_primary, granted_at, granted_by, revoked_at, revoked_by, facilities(name)")
     .eq("user_id", id)
     .order("granted_at", { ascending: false });
+  const facilities = (facilitiesResult.data ?? []) as UserFacilityAccessDetailRow[];
 
   const actorFacilityIds = actorHasOrgWideFacilityScope(actor)
     ? null
@@ -60,20 +94,20 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   const visibleFacilities =
     actorFacilityIds == null
       ? facilities ?? []
-      : (facilities ?? []).filter((facility) => actorFacilityIds.includes(facility.facility_id));
+      : facilities.filter((facility) => actorFacilityIds.includes(facility.facility_id));
 
   return NextResponse.json({
     data: {
       ...profile,
-      facilities: visibleFacilities.map((f: any) => ({
-        id: f.id,
-        facility_id: f.facility_id,
-        facility_name: f.facilities?.name ?? "",
-        is_primary: f.is_primary,
-        granted_at: f.granted_at,
-        granted_by: f.granted_by,
-        revoked_at: f.revoked_at,
-        revoked_by: f.revoked_by,
+      facilities: visibleFacilities.map((facility) => ({
+        id: facility.id,
+        facility_id: facility.facility_id,
+        facility_name: facility.facilities?.name ?? "",
+        is_primary: facility.is_primary,
+        granted_at: facility.granted_at,
+        granted_by: facility.granted_by,
+        revoked_at: facility.revoked_at,
+        revoked_by: facility.revoked_by,
       })),
     },
   });
@@ -113,11 +147,13 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
   const admin = actor.admin;
 
   // Fetch target — new columns not yet in generated types
-  const { data: target, error: targetErr } = await admin
+  const targetResult = await admin
     .from("user_profiles")
     .select("id, organization_id, email, full_name, phone, app_role, job_title, is_active, manager_user_id")
     .eq("id", id)
-    .maybeSingle() as any;
+    .maybeSingle();
+  const target = targetResult.data as UserUpdateTargetRow | null;
+  const targetErr = targetResult.error;
   if (targetErr || !target) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }

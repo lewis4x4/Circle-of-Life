@@ -41,6 +41,218 @@ export type ComplianceScanSummary = {
   results: ComplianceScanResult[];
 };
 
+export type EmergencyChecklistPreviewItem = {
+  id: string;
+  title: string;
+  next_due_date: string;
+  overdue: boolean;
+};
+
+type ComplianceRuleExecutionRow = {
+  passed: boolean;
+  non_compliant_count: number | null;
+};
+
+type UntypedInsertBuilder = {
+  insert(values: unknown): {
+    select(): {
+      single(): Promise<{ data: unknown; error: { message: string } | null }>;
+    };
+  };
+};
+
+type UntypedUpdateBuilder = {
+  update(values: unknown): {
+    eq(column: string, value: string): Promise<{ error: { message: string } | null }>;
+  };
+};
+
+async function fetchEnabledComplianceRules(
+  facilityId: string,
+  organizationId: string,
+  supabase: ReturnType<typeof createClient>,
+): Promise<ComplianceRule[]> {
+  const { data, error } = await supabase
+    .from("compliance_rules" as never)
+    .select("*")
+    .or(`facility_id.eq.${facilityId},facility_id.is.null`)
+    .eq("enabled", true)
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null);
+
+  if (error) {
+    throw new Error(`Failed to fetch compliance rules: ${error.message}`);
+  }
+
+  return (data ?? []) as unknown as ComplianceRule[];
+}
+
+async function createComplianceScanRecord(
+  facilityId: string,
+  organizationId: string,
+  userId: string,
+  totalRulesChecked: number,
+  supabase: ReturnType<typeof createClient>,
+): Promise<ComplianceScan> {
+  const complianceScansTable = supabase.from("compliance_scans" as never) as unknown as UntypedInsertBuilder;
+  const { data, error } = await complianceScansTable.insert({
+    facility_id: facilityId,
+    organization_id: organizationId,
+    scanned_by: userId,
+    total_rules_checked: totalRulesChecked,
+    rules_passed: 0,
+    rules_failed: 0,
+  })
+    .select()
+    .single();
+
+  if (error || !data) {
+    throw new Error(`Failed to create compliance scan: ${error?.message ?? "No scan created"}`);
+  }
+
+  return data as unknown as ComplianceScan;
+}
+
+async function updateComplianceScanCounts(
+  scanId: string,
+  rulesPassed: number,
+  rulesFailed: number,
+  supabase: ReturnType<typeof createClient>,
+) {
+  const complianceScansTable = supabase.from("compliance_scans" as never) as unknown as UntypedUpdateBuilder;
+  const { error } = await complianceScansTable.update({
+    rules_passed: rulesPassed,
+    rules_failed: rulesFailed,
+  })
+    .eq("id", scanId);
+
+  if (error) {
+    throw new Error(`Failed to update scan results: ${error.message}`);
+  }
+}
+
+async function executeComplianceRule(
+  ruleId: string,
+  facilityId: string,
+  supabase: ReturnType<typeof createClient>,
+): Promise<ComplianceRuleExecutionRow> {
+  const { data, error } = await supabase.rpc("execute_compliance_rule" as never, {
+    p_rule_id: ruleId,
+    p_facility_id: facilityId,
+  } as never);
+
+  if (error) {
+    throw new Error(`Failed to execute rule ${ruleId}: ${error.message}`);
+  }
+
+  const rows = (data ?? []) as unknown as ComplianceRuleExecutionRow[];
+  if (rows.length === 0) {
+    throw new Error(`No result returned for rule ${ruleId}`);
+  }
+
+  return rows[0];
+}
+
+async function insertComplianceScanResult(
+  result: Omit<ComplianceScanResult, "id">,
+  supabase: ReturnType<typeof createClient>,
+): Promise<ComplianceScanResult> {
+  const complianceScanResultsTable =
+    supabase.from("compliance_scan_results" as never) as unknown as UntypedInsertBuilder;
+  const { data, error } = await complianceScanResultsTable.insert(result)
+    .select()
+    .single();
+
+  if (error || !data) {
+    throw new Error(`Failed to create scan result for rule ${result.tag_number}`);
+  }
+
+  return data as unknown as ComplianceScanResult;
+}
+
+async function fetchComplianceScans(
+  facilityId: string,
+  limit: number,
+  supabase: ReturnType<typeof createClient>,
+): Promise<ComplianceScan[]> {
+  const { data, error } = await supabase
+    .from("compliance_scans" as never)
+    .select("*")
+    .eq("facility_id", facilityId)
+    .order("scanned_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(`Failed to fetch scan history: ${error.message}`);
+  }
+
+  return (data ?? []) as unknown as ComplianceScan[];
+}
+
+async function fetchLatestComplianceScan(
+  facilityId: string,
+  supabase: ReturnType<typeof createClient>,
+): Promise<ComplianceScan | null> {
+  const { data, error } = await supabase
+    .from("compliance_scans" as never)
+    .select("*")
+    .eq("facility_id", facilityId)
+    .order("scanned_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data as unknown as ComplianceScan;
+}
+
+async function fetchComplianceScanResults(
+  scanId: string,
+  supabase: ReturnType<typeof createClient>,
+): Promise<ComplianceScanResult[]> {
+  const { data, error } = await supabase
+    .from("compliance_scan_results" as never)
+    .select("*")
+    .eq("scan_id", scanId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    return [];
+  }
+
+  return (data ?? []) as unknown as ComplianceScanResult[];
+}
+
+export async function getEmergencyChecklistPreview(
+  facilityId: string,
+  limit: number = 5,
+): Promise<EmergencyChecklistPreviewItem[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("emergency_checklist_items" as never)
+    .select("id, title, next_due_date")
+    .eq("facility_id", facilityId)
+    .is("deleted_at", null)
+    .order("next_due_date", { ascending: true })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(`Failed to fetch emergency checklist items: ${error.message}`);
+  }
+
+  const todayIso = new Date().toISOString();
+  return ((data ?? []) as Array<{
+    id: string;
+    title: string;
+    next_due_date: string;
+  }>).map((item) => ({
+    ...item,
+    overdue: item.next_due_date < todayIso,
+  }));
+}
+
 /**
  * Execute a compliance scan for a facility.
  * Runs all enabled compliance rules and stores results.
@@ -68,39 +280,20 @@ export async function runComplianceScan(
   const organizationId = facility.organization_id;
 
   // 2. Fetch all enabled rules for this facility
-  const { data: rules, error: rulesError } = await (supabase as any)
-    .from("compliance_rules")
-    .select("*")
-    .or(`facility_id.eq.${facilityId},facility_id.is.null`)
-    .eq("enabled", true)
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null);
-
-  if (rulesError) {
-    throw new Error(`Failed to fetch compliance rules: ${rulesError.message}`);
-  }
+  const rules = await fetchEnabledComplianceRules(facilityId, organizationId, supabase);
 
   if (!rules || rules.length === 0) {
     return null;
   }
 
   // 3. Create the scan record
-  const { data: scan, error: scanError } = await (supabase as any)
-    .from("compliance_scans")
-    .insert({
-      facility_id: facilityId,
-      organization_id: organizationId,
-      scanned_by: userId,
-      total_rules_checked: rules.length,
-      rules_passed: 0, // Will be updated as we evaluate rules
-      rules_failed: 0, // Will be updated as we evaluate rules
-    })
-    .select()
-    .single();
-
-  if (scanError || !scan) {
-    throw new Error(`Failed to create compliance scan: ${scanError?.message}`);
-  }
+  const scan = await createComplianceScanRecord(
+    facilityId,
+    organizationId,
+    userId,
+    rules.length,
+    supabase,
+  );
 
   const scanId = scan.id;
   const results: ComplianceScanResult[] = [];
@@ -131,17 +324,7 @@ export async function runComplianceScan(
   }
 
   // 5. Update the scan with final counts
-  const { error: updateError } = await (supabase as any)
-    .from("compliance_scans")
-    .update({
-      rules_passed: passedCount,
-      rules_failed: failedCount,
-    })
-    .eq("id", scanId);
-
-  if (updateError) {
-    throw new Error(`Failed to update scan results: ${updateError.message}`);
-  }
+  await updateComplianceScanCounts(scanId, passedCount, failedCount, supabase);
 
   return {
     scan,
@@ -164,27 +347,15 @@ async function evaluateRule(
   supabase: ReturnType<typeof createClient>,
 ): Promise<ComplianceScanResult> {
   try {
-    // Execute the rule via server-side RPC for safe SQL execution
-    const { data: result, error } = await (supabase as any).rpc("execute_compliance_rule", {
-      p_rule_id: rule.id,
-      p_facility_id: facilityId,
-    });
-
-    if (error) {
-      console.error(`Rule execution failed for ${rule.tag_number}:`, error);
-      throw new Error(`Failed to execute rule ${rule.tag_number}: ${error.message}`);
-    }
-
-    if (!result || result.length === 0) {
-      throw new Error(`No result returned for rule ${rule.tag_number}`);
-    }
-
-    const { passed, non_compliant_count } = result[0];
+    const { passed, non_compliant_count } = await executeComplianceRule(
+      rule.id,
+      facilityId,
+      supabase,
+    );
 
     // Store the scan result
-    const { data: scanResult } = await (supabase as any)
-      .from("compliance_scan_results")
-      .insert({
+    return await insertComplianceScanResult(
+      {
         scan_id: scanId,
         facility_id: facilityId,
         organization_id: organizationId,
@@ -197,15 +368,9 @@ async function evaluateRule(
           rule_title: rule.tag_title,
           executed_at: new Date().toISOString(),
         },
-      })
-      .select()
-      .single();
-
-    if (!scanResult) {
-      throw new Error(`Failed to create scan result for rule ${rule.tag_number}`);
-    }
-
-    return scanResult;
+      },
+      supabase,
+    );
   } catch (e) {
     // Log the error but don't fail the entire scan
     console.error(`Error evaluating rule ${rule.tag_number}:`, e);
@@ -221,19 +386,7 @@ export async function getScanHistory(
   limit: number = 10,
 ): Promise<ComplianceScan[]> {
   const supabase = createClient();
-
-  const { data, error } = await (supabase as any)
-    .from("compliance_scans")
-    .select("*")
-    .eq("facility_id", facilityId)
-    .order("scanned_at", { ascending: false })
-    .limit(limit);
-
-  if (error) {
-    throw new Error(`Failed to fetch scan history: ${error.message}`);
-  }
-
-  return (data as ComplianceScan[]) ?? [];
+  return fetchComplianceScans(facilityId, limit, supabase);
 }
 
 /**
@@ -243,35 +396,14 @@ export async function getLatestScan(
   facilityId: string,
 ): Promise<ComplianceScanSummary | null> {
   const supabase = createClient();
-
-  const { data: scan, error: scanError } = await (supabase as any)
-    .from("compliance_scans")
-    .select("*")
-    .eq("facility_id", facilityId)
-    .order("scanned_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (scanError || !scan) {
+  const scan = await fetchLatestComplianceScan(facilityId, supabase);
+  if (!scan) {
     return null;
-  }
-
-  const { data: results, error: resultsError } = await (supabase as any)
-    .from("compliance_scan_results")
-    .select("*")
-    .eq("scan_id", scan.id)
-    .order("created_at", { ascending: true });
-
-  if (resultsError || !results) {
-    return {
-      scan,
-      results: [],
-    };
   }
 
   return {
     scan,
-    results: results as ComplianceScanResult[],
+    results: await fetchComplianceScanResults(scan.id, supabase),
   };
 }
 

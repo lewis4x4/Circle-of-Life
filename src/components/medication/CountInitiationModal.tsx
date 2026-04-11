@@ -27,6 +27,23 @@ type MedRow = {
   room?: string | null;
 };
 
+type ResidentMedicationQueryRow = {
+  id: string;
+  medication_name: string;
+  resident_id: string;
+  residents: {
+    first_name: string | null;
+    last_name: string | null;
+    bed_id: string | null;
+    beds: {
+      room_id: string | null;
+      rooms: {
+        room_number: string | null;
+      } | null;
+    } | null;
+  } | null;
+};
+
 type LineState = {
   med: MedRow;
   expected: number;
@@ -126,7 +143,7 @@ export function CountInitiationModal({
 
       if (medRes.error) throw medRes.error;
 
-      const meds = (medRes.data ?? []).map((row: any) => ({
+      const meds = ((medRes.data ?? []) as ResidentMedicationQueryRow[]).map((row) => ({
         id: row.id,
         medication_name: row.medication_name,
         resident_id: row.resident_id,
@@ -443,7 +460,7 @@ export function CountInitiationModal({
               </div>
 
               <p className="text-xs text-zinc-500">
-                This verifies the incoming staff member's credentials without switching sessions.
+                This verifies the incoming staff member&apos;s credentials without switching sessions.
               </p>
             </div>
 

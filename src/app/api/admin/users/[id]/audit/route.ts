@@ -4,11 +4,17 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { actorCanAccessTargetUser, requireAdminApiActor } from "@/lib/admin/api-auth";
+import type { Database } from "@/types/database";
 import { auditLogQuerySchema } from "@/lib/validation/user-management";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
+
+type UserManagementAuditRow = Pick<
+  Database["public"]["Tables"]["user_management_audit_log"]["Row"],
+  "id" | "acting_user_id" | "target_user_id" | "action" | "resource_type" | "changes" | "reason" | "created_at"
+>;
 
 export async function GET(request: NextRequest, ctx: RouteContext) {
   const auth = await requireAdminApiActor({
@@ -63,13 +69,16 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
 
   query = query.order("created_at" as never, { ascending: false }).range(offset, offset + page_size - 1);
 
-  const { data: entries, count, error: queryErr } = await query as any;
+  const queryResult = await query;
+  const entries = (queryResult.data ?? []) as UserManagementAuditRow[];
+  const count = queryResult.count ?? 0;
+  const queryErr = queryResult.error;
   if (queryErr) {
     return NextResponse.json({ error: "Failed to fetch audit log" }, { status: 500 });
   }
 
   // Enrich acting_user info
-  const actorIds = [...new Set((entries ?? [] as any[]).map((e: any) => e.acting_user_id))];
+  const actorIds = [...new Set(entries.map((entry) => entry.acting_user_id))];
   const actorMap: Record<string, { email: string; full_name: string }> = {};
   if (actorIds.length > 0) {
     const { data: actorProfiles } = await admin
@@ -81,19 +90,19 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
     }
   }
 
-  const data = (entries ?? [] as any[]).map((e: any) => ({
-    ...e,
-    acting_user: actorMap[e.acting_user_id] ?? { email: "unknown", full_name: "Unknown" },
+  const data = entries.map((entry) => ({
+    ...entry,
+    acting_user: actorMap[entry.acting_user_id] ?? { email: "unknown", full_name: "Unknown" },
   }));
 
   return NextResponse.json({
     data,
     pagination: {
-      total: count ?? 0,
+      total: count,
       page,
       page_size,
-      total_pages: Math.ceil((count ?? 0) / page_size),
-      has_next: offset + page_size < (count ?? 0),
+      total_pages: Math.ceil(count / page_size),
+      has_next: offset + page_size < count,
     },
   });
 }
