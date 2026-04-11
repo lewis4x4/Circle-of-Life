@@ -475,6 +475,25 @@ Deno.serve(async (req) => {
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
         controller.close();
         t.log({ event: "chat_error", outcome: "error", error_message: msg });
+
+        void admin.from("chat_messages").insert([
+          {
+            conversation_id: conversationId,
+            workspace_id: workspaceId,
+            user_id: user.id,
+            role: "user",
+            content: message,
+            trace_id: traceId,
+          },
+          {
+            conversation_id: conversationId,
+            workspace_id: workspaceId,
+            user_id: user.id,
+            role: "assistant",
+            content: `Error: ${msg}`,
+            trace_id: traceId,
+          },
+        ]);
       }
     },
   });

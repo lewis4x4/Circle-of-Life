@@ -70,7 +70,8 @@ export function ChatInterface({
   };
 
   const isActive = state === "connecting" || state === "streaming";
-  const showEmpty = existingMessages.length === 0 && state === "idle";
+  const hasNoContent = existingMessages.length === 0 && !isActive && !text;
+  const showEmpty = hasNoContent && state !== "error";
   const inputDisabled = !workspaceId || workspaceLoading;
 
   return (
@@ -119,6 +120,14 @@ export function ChatInterface({
             {error && (
               <div className="rounded-xl border border-red-800/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
                 {error}
+              </div>
+            )}
+
+            {existingMessages.length === 0 && !isActive && !error && !text && conversationId && (
+              <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                <p className="text-sm text-zinc-500">
+                  No messages in this conversation yet. Type a question below to get started.
+                </p>
               </div>
             )}
 
