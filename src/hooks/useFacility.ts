@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import type { FacilityDetailRow, FacilityRow } from "@/types/facility";
 
 function normalizeFacilityDetail(raw: Record<string, unknown>): FacilityDetailRow {
-  const f = raw as FacilityDetailRow & { license_number?: string | null };
+  const f = raw as unknown as FacilityDetailRow & { license_number?: string | null };
   const entity = f.entity ?? null;
   const entityName =
     f.entity_name ??

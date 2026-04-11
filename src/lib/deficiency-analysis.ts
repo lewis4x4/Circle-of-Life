@@ -299,7 +299,7 @@ export async function getDeficiencySummary(
 
   const { data, error } = await supabase
     .from("survey_deficiencies")
-    .select("severity, status, corrected_at, verified_at")
+    .select("severity, status, survey_date, corrected_at, verified_at")
     .eq("facility_id", facilityId)
     .gte("survey_date", startDateStr)
     .is("deleted_at", null);

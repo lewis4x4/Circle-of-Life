@@ -54,7 +54,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   }
 
   // List contacts ordered by sort_order
-  const { data: contacts, error } = await admin
+  const { data: contacts, error } = await (admin as any)
     .from("facility_emergency_contacts")
     .select(
       "id, contact_category, contact_name, phone_primary, phone_secondary, address, distance_miles, drive_time_minutes, account_number, notes, sort_order, created_at, updated_at",
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
 
   try {
     // Create contact
-    const { data: contact, error: insertErr } = await admin
+    const { data: contact, error: insertErr } = await (admin as any)
       .from("facility_emergency_contacts")
       .insert({
         facility_id: facilityId,

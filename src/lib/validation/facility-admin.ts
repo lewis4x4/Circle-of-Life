@@ -171,7 +171,7 @@ export const buildingProfileSchema = z.object({
   kitchen_license_number: z.string().optional(),
   kitchen_license_expiration: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   last_kitchen_inspection_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  meal_times: z.record(z.string()).optional(),
+  meal_times: z.record(z.string(), z.string()).optional(),
   dietary_capabilities: z.array(z.string()).optional(),
   has_elevator: z.boolean().default(false),
   elevator_inspection_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),

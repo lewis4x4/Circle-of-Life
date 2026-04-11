@@ -9,6 +9,7 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import {
   runComplianceScan,
   getScanHistory,
+  type ComplianceScan,
   type ComplianceScanSummary,
 } from "@/lib/compliance-scan";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,7 @@ export default function ComplianceScanPage() {
   const supabase = createClient();
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<ComplianceScanSummary | null>(null);
-  const [history, setHistory] = useState<typeof runComplianceScan.returnType | null>(null);
+  const [history, setHistory] = useState<ComplianceScan[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const facilityReady = !!(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
@@ -209,7 +210,7 @@ export default function ComplianceScanPage() {
           </CardHeader>
           <CardContent>
             <ul className="space-y-2">
-              {history.map((scan) => {
+              {history.map((scan: ComplianceScan) => {
                 const percentage = Math.round((scan.rules_passed / scan.total_rules_checked) * 100);
                 return (
                   <li

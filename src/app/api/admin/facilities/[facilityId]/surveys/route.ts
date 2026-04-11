@@ -54,7 +54,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   }
 
   // List surveys ordered by survey_date desc
-  const { data: surveys, error } = await admin
+  const { data: surveys, error } = await (admin as any)
     .from("facility_survey_history")
     .select(
       "id, survey_date, survey_type, result, citation_count, citation_details, poc_submitted_date, poc_accepted_date, surveyor_names, document_id, notes, created_at, created_by, updated_at",
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
 
   // Verify document exists (if provided)
   if (data.document_id) {
-    const { data: doc } = await admin
+    const { data: doc } = await (admin as any)
       .from("facility_documents")
       .select("id")
       .eq("id", data.document_id)
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
 
   try {
     // Create survey
-    const { data: survey, error: insertErr } = await admin
+    const { data: survey, error: insertErr } = await (admin as any)
       .from("facility_survey_history")
       .insert({
         facility_id: facilityId,

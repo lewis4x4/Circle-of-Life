@@ -42,11 +42,11 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   const admin = actor.admin;
 
   // Fetch facility with entity details (migration 131 columns included)
-  const { data: facility, error } = await admin
+  const { data: facility, error } = await (admin as any)
     .from("facilities")
     .select(
       `id, name, phone, fax, email, address_line_1, address_line_2, city, state, zip, county,
-       organization_id, entity_id, administrator_name, current_administrator_id, total_licensed_beds,
+       organization_id, entity_id, administrator_name, total_licensed_beds,
        status, opening_date, care_services_offered, waitlist_count, target_occupancy_pct,
        pharmacy_vendor, last_survey_date, last_survey_result,
        license_number, license_authority, facility_ratio_rule_set_id,
@@ -82,14 +82,14 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   }
 
   // Bed census for header / overview
-  const { data: beds } = await admin
+  const { data: beds } = await (admin as any)
     .from("beds")
     .select("is_occupied")
     .eq("facility_id", facilityId);
 
   let occupancy_count = 0;
   const total_beds = beds?.length ?? 0;
-  for (const b of beds ?? []) {
+  for (const b of (beds ?? []) as { is_occupied: boolean }[]) {
     if (b.is_occupied) occupancy_count++;
   }
 

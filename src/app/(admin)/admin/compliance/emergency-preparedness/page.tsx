@@ -25,6 +25,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 type ChecklistItem = {
   id: string;
@@ -139,22 +154,6 @@ export default function EmergencyPreparednessPage() {
         throw new Error("Not authenticated");
       }
 
-      // Create completion record
-      const { error: completionError } = await (supabase as any)
-        .from("emergency_checklist_completions")
-        .insert({
-          checklist_item_id: completionDialog.itemId,
-          facility_id: selectedFacilityId!,
-          completed_by: user.id,
-          participants: completionDialog.participants.split(",").map((p) => p.trim()).filter(Boolean),
-          notes: completionDialog.notes || null,
-        });
-
-      if (completionError) {
-        throw new Error(completionError.message);
-      }
-
-      // Update the checklist item
       const { data: itemData } = await supabase
         .from("facilities")
         .select("organization_id")
@@ -166,6 +165,24 @@ export default function EmergencyPreparednessPage() {
       if (!organizationId) {
         throw new Error("Could not determine organization ID");
       }
+
+      // Create completion record
+      const { error: completionError } = await (supabase as any)
+        .from("emergency_checklist_completions")
+        .insert({
+          checklist_item_id: completionDialog.itemId,
+          facility_id: selectedFacilityId!,
+          organization_id: organizationId,
+          completed_by: user.id,
+          participants: completionDialog.participants.split(",").map((p) => p.trim()).filter(Boolean),
+          notes: completionDialog.notes || null,
+        });
+
+      if (completionError) {
+        throw new Error(completionError.message);
+      }
+
+      // Update the checklist item
 
       const item = items.find((i) => i.id === completionDialog.itemId);
       if (!item) return;
@@ -224,7 +241,7 @@ export default function EmergencyPreparednessPage() {
         .from("emergency_checklist_items")
         .insert({
           facility_id: selectedFacilityId!,
-          organization_id,
+          organization_id: organizationId,
           checklist_type: newItemDialog.type,
           title: newItemDialog.title,
           description: newItemDialog.description || null,

@@ -115,13 +115,13 @@ export default function NewComplianceRulePage() {
       }
 
       // Insert new rule
-      const { error: insertError } = await supabase.from("compliance_rules").insert({
+      const { error: insertError } = await (supabase as any).from("compliance_rules").insert({
         facility_id: facilityScoped ? selectedFacilityId : null,
         organization_id: facility.organization_id,
-        tag_number,
-        tag_title,
-        rule_description,
-        check_query,
+        tag_number: tagNumber,
+        tag_title: tagTitle,
+        rule_description: ruleDescription,
+        check_query: checkQuery,
         severity,
         enabled,
       });

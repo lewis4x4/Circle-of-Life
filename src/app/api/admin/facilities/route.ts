@@ -105,13 +105,13 @@ export async function GET(request: NextRequest) {
 
   if (facilityIds.length > 0) {
     // Get occupancy from beds
-    const { data: beds } = await admin
+    const { data: beds } = await (admin as any)
       .from("beds")
       .select("facility_id, is_occupied")
       .in("facility_id", facilityIds);
 
     if (beds) {
-      for (const bed of beds) {
+      for (const bed of beds as { facility_id: string; is_occupied: boolean }[]) {
         if (!statsMap[bed.facility_id]) {
           statsMap[bed.facility_id] = {
             occupancy_count: 0,
@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get alert counts
-    const { data: alerts } = await admin
+    const { data: alerts } = await (admin as any)
       .from("facility_operational_thresholds")
       .select("facility_id")
       .in("facility_id", facilityIds)

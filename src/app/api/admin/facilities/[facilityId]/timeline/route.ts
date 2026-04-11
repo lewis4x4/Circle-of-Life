@@ -54,7 +54,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   }
 
   // List events ordered by event_date desc
-  const { data: events, error } = await admin
+  const { data: events, error } = await (admin as any)
     .from("facility_timeline_events")
     .select("id, event_date, event_type, title, description, document_id, created_at, created_by")
     .eq("facility_id", facilityId)
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
 
   // Verify document exists (if provided)
   if (data.document_id) {
-    const { data: doc } = await admin
+    const { data: doc } = await (admin as any)
       .from("facility_documents")
       .select("id")
       .eq("id", data.document_id)
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
 
   try {
     // Create event
-    const { data: event, error: insertErr } = await admin
+    const { data: event, error: insertErr } = await (admin as any)
       .from("facility_timeline_events")
       .insert({
         facility_id: facilityId,

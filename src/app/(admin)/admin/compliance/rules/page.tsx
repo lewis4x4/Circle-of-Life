@@ -51,7 +51,7 @@ export default function ComplianceRulesPage() {
     setLoading(true);
     try {
       // Fetch rules
-      const { data: rulesData, error: rulesError } = await supabase
+      const { data: rulesData, error: rulesError } = await (supabase as any)
         .from("compliance_rules")
         .select("id, tag_number, tag_title, severity, enabled")
         .or(`facility_id.eq.${selectedFacilityId},facility_id.is.null`)
@@ -76,7 +76,7 @@ export default function ComplianceRulesPage() {
       setScore(scanResult);
 
       // Build rule summary with last result
-      const summary: RuleSummary[] = (rulesData || []).map((rule) => {
+      const summary: RuleSummary[] = (rulesData || []).map((rule: ComplianceRule) => {
         const lastResult = latestScan?.results.find((r) => r.rule_id === rule.id);
         return {
           id: rule.id,
@@ -87,7 +87,7 @@ export default function ComplianceRulesPage() {
           last_result: lastResult
             ? {
                 passed: lastResult.passed,
-                scanned_at: lastResult.created_at,
+                scanned_at: latestScan?.scan.scanned_at ?? "",
               }
             : undefined,
         };
@@ -113,7 +113,7 @@ export default function ComplianceRulesPage() {
 
       const result = await getComplianceScore(selectedFacilityId!);
       if (result) {
-        await supabase.from("compliance_scans").insert({
+        await (supabase as any).from("compliance_scans").insert({
           facility_id: selectedFacilityId!,
           organization_id: (await supabase.from("facilities").select("organization_id").eq("id", selectedFacilityId).maybeSingle())?.data?.organization_id || "",
           scanned_by: user.id,

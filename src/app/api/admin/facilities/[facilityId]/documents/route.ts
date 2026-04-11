@@ -7,7 +7,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { documentMetadataSchema } from "@/lib/validation/facility-admin";
-import { v4 as uuidv4 } from "uuid";
 
 interface RouteContext {
   params: Promise<{ facilityId: string }>;
@@ -55,7 +54,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   }
 
   // List documents ordered by uploaded_at desc
-  const { data: documents, error } = await admin
+  const { data: documents, error } = await (admin as any)
     .from("facility_documents")
     .select(
       "id, document_category, document_name, file_path, file_size_bytes, mime_type, expiration_date, alert_yellow_days, alert_red_days, notes, uploaded_at, uploaded_by, updated_at",
@@ -132,7 +131,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
     const documentMetadata = metadataParsed.data;
 
     // Upload file to Supabase Storage
-    const fileId = uuidv4();
+    const fileId = crypto.randomUUID();
     const storagePath = `${facilityId}/${fileId}/${file.name}`;
 
     const buffer = await file.arrayBuffer();
@@ -148,7 +147,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
     }
 
     // Create metadata record
-    const { data: docRecord, error: insertErr } = await admin
+    const { data: docRecord, error: insertErr } = await (admin as any)
       .from("facility_documents")
       .insert({
         facility_id: facilityId,

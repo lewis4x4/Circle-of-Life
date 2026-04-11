@@ -76,7 +76,7 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
   const { rate_type, active_only } = parsed.data;
 
   // Build query
-  let query = admin
+  let query = (admin as any)
     .from("rate_schedule_versions")
     .select(
       "id, facility_id, rate_type, amount_cents, effective_from, effective_to, rate_confirmed, approved_by, approved_at, notes, created_at",
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
     previousDate.setDate(previousDate.getDate() - 1);
     const effective_to = previousDate.toISOString().split("T")[0];
 
-    await admin
+    await (admin as any)
       .from("rate_schedule_versions")
       .update({ effective_to, updated_at: new Date().toISOString() })
       .eq("facility_id", facilityId)
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
       .is("deleted_at", null);
 
     // Create new rate
-    const { data: newRate, error: insertErr } = await admin
+    const { data: newRate, error: insertErr } = await (admin as any)
       .from("rate_schedule_versions")
       .insert({
         facility_id: facilityId,

@@ -54,7 +54,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   }
 
   // Fetch building profile
-  const { data: profile, error } = await admin
+  const { data: profile, error } = await (admin as any)
     .from("facility_building_profiles")
     .select("*")
     .eq("facility_id", facilityId)
@@ -116,7 +116,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
 
   try {
     // Fetch existing profile
-    const { data: existing } = await admin
+    const { data: existing } = await (admin as any)
       .from("facility_building_profiles")
       .select("id")
       .eq("facility_id", facilityId)
@@ -126,7 +126,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
 
     if (existing) {
       // Update existing
-      const { data: updated, error: updateErr } = await admin
+      const { data: updated, error: updateErr } = await (admin as any)
         .from("facility_building_profiles")
         .update({
           ...updates,
@@ -144,7 +144,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
       return NextResponse.json({ data: updated });
     } else {
       // Create new
-      const { data: created, error: insertErr } = await admin
+      const { data: created, error: insertErr } = await (admin as any)
         .from("facility_building_profiles")
         .insert({
           facility_id: facilityId,

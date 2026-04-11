@@ -75,7 +75,7 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
 
-  const { data: existing, error: fetchErr } = await admin
+  const { data: existing, error: fetchErr } = await (admin as any)
     .from("rate_schedule_versions")
     .select("id, facility_id, organization_id")
     .eq("id", rateId)
@@ -88,7 +88,7 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
     return NextResponse.json({ error: "Rate version not found" }, { status: 404 });
   }
 
-  const { data: updated, error: updErr } = await admin
+  const { data: updated, error: updErr } = await (admin as any)
     .from("rate_schedule_versions")
     .update({
       rate_confirmed: parsed.data.rate_confirmed,

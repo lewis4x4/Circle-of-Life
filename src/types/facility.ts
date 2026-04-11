@@ -64,10 +64,8 @@ export type RoomType = 'PRIVATE' | 'SEMI_PRIVATE';
 
 type BaseFacilityRow = Database['public']['Tables']['facilities']['Row'];
 
-/** Facility row extended with 5 new columns not yet in database.ts */
+/** Facility row extended with columns not yet in database.ts */
 export interface FacilityRow extends BaseFacilityRow {
-  /** Migration 138 — COL standard ALF license class (see `LicenseType.STANDARD_ALF`) */
-  alf_license_type?: string | null;
   /** JSONB — per-facility config overrides */
   facility_overrides: FacilityOverrides | null;
   /** Pharmacy vendor enum */
@@ -88,6 +86,12 @@ export interface FacilityRow extends BaseFacilityRow {
   entity_name?: string | null;
   /** Migration 131 — care services (never `memory_care`) */
   care_services_offered?: string[] | null;
+  /** Waitlist count (from detail/list API) */
+  waitlist_count?: number;
+  /** Most recent AHCA survey date */
+  last_survey_date?: string | null;
+  /** Most recent AHCA survey result */
+  last_survey_result?: string | null;
 }
 
 /** Optional fields returned by facility detail / list APIs */

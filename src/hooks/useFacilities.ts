@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import type { FacilityRow } from "@/types/facility";
 
 function normalizeListRow(raw: Record<string, unknown>): FacilityRow {
-  const f = raw as FacilityRow & {
+  const f = raw as unknown as FacilityRow & {
     occupancy_count?: number;
     total_beds?: number;
     occupancy_pct?: number;

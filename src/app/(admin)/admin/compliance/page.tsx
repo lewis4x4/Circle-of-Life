@@ -549,7 +549,7 @@ export default function AdminCompliancePage() {
                           </Link>
                         )}
                         <button
-                          onClick={() => dismissReminder(reminder.id, selectedFacilityId || "").then(setReminders(r => r.filter(x => x.id !== reminder.id)))}
+                          onClick={() => dismissReminder(reminder.id, selectedFacilityId || "").then(() => setReminders(r => r.filter(x => x.id !== reminder.id)))}
                           className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                           title="Dismiss reminder"
                         >

@@ -55,7 +55,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   }
 
   // List thresholds
-  const { data: thresholds, error } = await admin
+  const { data: thresholds, error } = await (admin as any)
     .from("facility_operational_thresholds")
     .select("id, threshold_type, yellow_threshold, red_threshold, notify_roles, enabled, created_at, updated_at")
     .eq("facility_id", facilityId);
@@ -128,7 +128,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
     for (const threshold of thresholds) {
       if (threshold.id) {
         // Update existing
-        const { data: updated, error: updateErr } = await admin
+        const { data: updated, error: updateErr } = await (admin as any)
           .from("facility_operational_thresholds")
           .update({
             yellow_threshold: threshold.yellow_threshold,
@@ -152,7 +152,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
         results.push(updated);
       } else {
         // Create new (upsert by threshold_type)
-        const { data: existing } = await admin
+        const { data: existing } = await (admin as any)
           .from("facility_operational_thresholds")
           .select("id")
           .eq("facility_id", facilityId)
@@ -161,7 +161,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
 
         if (existing) {
           // Update existing by type
-          const { data: updated, error: updateErr } = await admin
+          const { data: updated, error: updateErr } = await (admin as any)
             .from("facility_operational_thresholds")
             .update({
               yellow_threshold: threshold.yellow_threshold,
@@ -184,7 +184,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
           results.push(updated);
         } else {
           // Create new
-          const { data: created, error: insertErr } = await admin
+          const { data: created, error: insertErr } = await (admin as any)
             .from("facility_operational_thresholds")
             .insert({
               facility_id: facilityId,

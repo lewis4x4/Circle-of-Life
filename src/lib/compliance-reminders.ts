@@ -36,7 +36,7 @@ export async function getPendingReminders(
 ): Promise<ComplianceReminder[]> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("compliance_reminders")
     .select("*")
     .eq("facility_id", facilityId)
@@ -59,7 +59,7 @@ export async function getReminderCounts(
 ): Promise<ReminderCounts> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("compliance_reminders")
     .select("reminder_type")
     .eq("facility_id", facilityId)
@@ -131,7 +131,7 @@ export async function generateWeeklyDigest(
       .is("deleted_at", null)
       .in("status", ["draft", "submitted"])
       .lt("submission_due_date", new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()),
-    supabase
+    (supabase as any)
       .from("assessments")
       .select("id")
       .eq("facility_id", facilityId)
@@ -163,7 +163,7 @@ export async function generateWeeklyDigest(
 
   if (totalIssues === 0) {
     // No issues - create a positive weekly summary
-    const { data: result } = await supabase
+    const { data: result } = await (supabase as any)
       .from("compliance_reminders")
       .insert({
         facility_id: facilityId,
@@ -195,7 +195,7 @@ export async function generateWeeklyDigest(
     .filter(Boolean)
     .join(", ");
 
-  const { data: result } = await supabase
+  const { data: result } = await (supabase as any)
     .from("compliance_reminders")
     .insert({
       facility_id: facilityId,
@@ -237,7 +237,7 @@ export async function createOverdueReminder(
 ): Promise<ComplianceReminder | null> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("compliance_reminders")
     .insert({
       facility_id: facilityId,
@@ -273,7 +273,7 @@ export async function checkAndCreateOverdueReminders(
   const supabase = createClient();
 
   // Check if POC due reminders already exist
-  const { count: existingPocReminders } = await supabase
+  const { count: existingPocReminders } = await (supabase as any)
     .from("compliance_reminders")
     .select("*", { count: "exact", head: true })
     .eq("facility_id", facilityId)
@@ -305,7 +305,7 @@ export async function checkAndCreateOverdueReminders(
   }
 
   // Check for overdue assessments
-  const { count: existingAssessmentReminders } = await supabase
+  const { count: existingAssessmentReminders } = await (supabase as any)
     .from("compliance_reminders")
     .select("*", { count: "exact", head: true })
     .eq("facility_id", facilityId)
@@ -314,7 +314,7 @@ export async function checkAndCreateOverdueReminders(
     .is("deleted_at", null);
 
   if (existingAssessmentReminders === 0) {
-    const { data: assessments } = await supabase
+    const { data: assessments } = await (supabase as any)
       .from("assessments")
       .select("id")
       .eq("facility_id", facilityId)
@@ -335,7 +335,7 @@ export async function checkAndCreateOverdueReminders(
   }
 
   // Check for overdue care plan reviews
-  const { count: existingCarePlanReminders } = await supabase
+  const { count: existingCarePlanReminders } = await (supabase as any)
     .from("compliance_reminders")
     .select("*", { count: "exact", head: true })
     .eq("facility_id", facilityId)
@@ -365,7 +365,7 @@ export async function checkAndCreateOverdueReminders(
   }
 
   // Check for overdue policy acknowledgments
-  const { count: existingPolicyReminders } = await supabase
+  const { count: existingPolicyReminders } = await (supabase as any)
     .from("compliance_reminders")
     .select("*", { count: "exact", head: true })
     .eq("facility_id", facilityId)
@@ -398,7 +398,7 @@ export async function checkAndCreateOverdueReminders(
         let overdueCount = 0;
 
         for (const policy of policies) {
-          const dueDate = new Date(policy.published_at);
+          const dueDate = new Date(policy.published_at!);
           dueDate.setDate(dueDate.getDate() + (policy.acknowledgment_due_days || 10));
 
           if (dueDate < new Date()) {
@@ -430,7 +430,7 @@ export async function dismissReminder(
 ): Promise<boolean> {
   const supabase = createClient();
 
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("compliance_reminders")
     .update({
       status: "dismissed",
@@ -456,7 +456,7 @@ export async function markReminderSent(
 ): Promise<boolean> {
   const supabase = createClient();
 
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("compliance_reminders")
     .update({
       status: "sent",

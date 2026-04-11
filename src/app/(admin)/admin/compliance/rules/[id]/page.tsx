@@ -40,7 +40,7 @@ export default function ComplianceRuleDetailPage() {
 
     try {
       // Fetch rule
-      const { data: ruleData, error: ruleError } = await supabase
+      const { data: ruleData, error: ruleError } = await (supabase as any)
         .from("compliance_rules")
         .select("*")
         .eq("id", ruleId)
@@ -53,7 +53,7 @@ export default function ComplianceRuleDetailPage() {
       setRule(ruleData);
 
       // Fetch recent scan results for this rule
-      const { data: scansData } = await supabase
+      const { data: scansData } = await (supabase as any)
         .from("compliance_scans")
         .select("id")
         .order("scanned_at", { ascending: false })
@@ -66,9 +66,9 @@ export default function ComplianceRuleDetailPage() {
       }
 
       // Get results for each scan
-      const scanIds = scansData.map((s) => s.id);
+      const scanIds = scansData.map((s: { id: string }) => s.id);
 
-      const { data: resultsData, error: resultsError } = await supabase
+      const { data: resultsData, error: resultsError } = await (supabase as any)
         .from("compliance_scan_results")
         .select("*")
         .eq("rule_id", ruleId)

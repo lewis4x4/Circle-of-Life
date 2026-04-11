@@ -37,7 +37,7 @@ export function StatuteCitation({
     let cancelled = false;
     const run = async () => {
       const supabase = createClient();
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("fl_statutes")
         .select("statute_title, description")
         .eq("organization_id", resolvedOrgId)

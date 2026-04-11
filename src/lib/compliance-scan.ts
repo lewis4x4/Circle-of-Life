@@ -68,7 +68,7 @@ export async function runComplianceScan(
   const organizationId = facility.organization_id;
 
   // 2. Fetch all enabled rules for this facility
-  const { data: rules, error: rulesError } = await supabase
+  const { data: rules, error: rulesError } = await (supabase as any)
     .from("compliance_rules")
     .select("*")
     .or(`facility_id.eq.${facilityId},facility_id.is.null`)
@@ -85,7 +85,7 @@ export async function runComplianceScan(
   }
 
   // 3. Create the scan record
-  const { data: scan, error: scanError } = await supabase
+  const { data: scan, error: scanError } = await (supabase as any)
     .from("compliance_scans")
     .insert({
       facility_id: facilityId,
@@ -131,7 +131,7 @@ export async function runComplianceScan(
   }
 
   // 5. Update the scan with final counts
-  const { error: updateError } = await supabase
+  const { error: updateError } = await (supabase as any)
     .from("compliance_scans")
     .update({
       rules_passed: passedCount,
@@ -165,7 +165,7 @@ async function evaluateRule(
 ): Promise<ComplianceScanResult> {
   try {
     // Execute the rule via server-side RPC for safe SQL execution
-    const { data: result, error } = await supabase.rpc("execute_compliance_rule", {
+    const { data: result, error } = await (supabase as any).rpc("execute_compliance_rule", {
       p_rule_id: rule.id,
       p_facility_id: facilityId,
     });
@@ -182,7 +182,7 @@ async function evaluateRule(
     const { passed, non_compliant_count } = result[0];
 
     // Store the scan result
-    const { data: scanResult } = await supabase
+    const { data: scanResult } = await (supabase as any)
       .from("compliance_scan_results")
       .insert({
         scan_id: scanId,
@@ -222,7 +222,7 @@ export async function getScanHistory(
 ): Promise<ComplianceScan[]> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("compliance_scans")
     .select("*")
     .eq("facility_id", facilityId)
@@ -244,7 +244,7 @@ export async function getLatestScan(
 ): Promise<ComplianceScanSummary | null> {
   const supabase = createClient();
 
-  const { data: scan, error: scanError } = await supabase
+  const { data: scan, error: scanError } = await (supabase as any)
     .from("compliance_scans")
     .select("*")
     .eq("facility_id", facilityId)
@@ -256,7 +256,7 @@ export async function getLatestScan(
     return null;
   }
 
-  const { data: results, error: resultsError } = await supabase
+  const { data: results, error: resultsError } = await (supabase as any)
     .from("compliance_scan_results")
     .select("*")
     .eq("scan_id", scan.id)

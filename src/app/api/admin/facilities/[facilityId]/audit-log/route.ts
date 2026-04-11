@@ -83,7 +83,7 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
 
   try {
     // Build query
-    let query = admin
+    let query = (admin as any)
       .from("facility_audit_log")
       .select(
         "id, table_name, record_id, action, field_name, old_value, new_value, changed_by, changed_at, ip_address, user_agent",

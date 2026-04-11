@@ -57,7 +57,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   }
 
   // Fetch communication settings
-  const { data: settings, error } = await admin
+  const { data: settings, error } = await (admin as any)
     .from("facility_communication_settings")
     .select("*")
     .eq("facility_id", facilityId)
@@ -149,7 +149,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
 
   try {
     // Fetch existing settings
-    const { data: existing } = await admin
+    const { data: existing } = await (admin as any)
       .from("facility_communication_settings")
       .select("id")
       .eq("facility_id", facilityId)
@@ -159,7 +159,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
 
     if (existing) {
       // Update existing
-      const { data: updated, error: updateErr } = await admin
+      const { data: updated, error: updateErr } = await (admin as any)
         .from("facility_communication_settings")
         .update({
           ...(updates as Record<string, unknown>),
@@ -180,7 +180,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
       return NextResponse.json({ data: updated });
     } else {
       // Create new
-      const { data: created, error: insertErr } = await admin
+      const { data: created, error: insertErr } = await (admin as any)
         .from("facility_communication_settings")
         .insert({
           facility_id: facilityId,
