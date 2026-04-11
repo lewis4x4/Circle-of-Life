@@ -137,19 +137,43 @@ async function rerankResults(
   return results;
 }
 
+/**
+ * Chunk assistant text for SSE. Must include any trailing fragment that does not end in . ! ?
+ * (the old regex-only loop dropped that tail, so the UI sometimes showed nothing).
+ */
+function chunkTextForStream(text: string): string[] {
+  if (!text) return [];
+  const re = /[^.!?]+[.!?]+(?:\s|$)/g;
+  const parts: string[] = [];
+  let lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    parts.push(m[0]);
+    lastIndex = m.index + m[0].length;
+  }
+  if (lastIndex < text.length) {
+    const tail = text.slice(lastIndex);
+    if (tail.trim()) parts.push(tail);
+  }
+  return parts.length > 0 ? parts : [text];
+}
+
 function buildSystemPrompt(): string {
-  return `You are the knowledge assistant for Circle of Life assisted living facility. You answer questions by USING YOUR TOOLS — you have direct database access.
+  return `You are the knowledge assistant for Circle of Life assisted living facility. You answer questions by USING YOUR TOOLS.
+
+Scope — IMPORTANT:
+- Your only search tool is **semantic_kb_search**, which reads **uploaded policies/handbooks** in the Knowledge Base. It does **not** query live resident records, rooms, beds, eMAR, or census.
+- If the user asks for a **specific resident's room, unit, medications, or other live operational data**, say clearly that this chat cannot see that data and they should open **Residents / Daily operations** in Haven (or the appropriate module). Do not invent names, rooms, or clinical facts.
+- For policy/procedure questions, call **semantic_kb_search** and cite what you find.
 
 How to think:
 1. Read the question.
-2. Pick the right tool. For knowledge/policies/procedures → semantic_kb_search. For app-specific data → use the relevant tool.
-3. Call the tool. Read the result.
-4. If you need more info, call another tool.
-5. When you have enough, write a concise, direct answer.
+2. If it needs uploaded documents → semantic_kb_search.
+3. Call the tool, read the result, then answer in plain language (never an empty reply).
 
 Hard rules:
 - All tools are READ-ONLY. No mutations.
-- Never invent data. If semantic_kb_search returns no rows, say clearly that nothing matched the knowledge base and tell the user they can upload PDFs and documents under **Admin → Knowledge → Knowledge admin** (\`/admin/knowledge/admin\`) so answers can cite real policies. Do not leave the reply blank.
+- Never invent data. If semantic_kb_search returns no rows, say clearly that nothing matched the knowledge base and tell the user they can upload PDFs under **Admin → Knowledge → Knowledge admin** (\`/admin/knowledge/admin\`). Do not leave the reply blank.
 - Cite sources inline when drawing from semantic_kb_search results.
 - Use markdown formatting when it helps readability.
 - CRITICAL: Respect role-based access. You only see documents the user's role permits.`;
@@ -411,9 +435,15 @@ Deno.serve(async (req) => {
 
         const result = await runAgentLoop(message, history, admin, workspaceId, userRole, user.id);
 
-        const sentences = result.text.match(/[^.!?]+[.!?]+\s*/g) || [result.text];
-        for (const sentence of sentences) {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: sentence })}\n\n`));
+        const outgoing =
+          result.text.trim().length > 0
+            ? chunkTextForStream(result.text)
+            : [
+                "I did not get a text answer from the model. Please try again, or rephrase your question.",
+              ];
+        for (const chunk of outgoing) {
+          if (chunk.length === 0) continue;
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunk })}\n\n`));
         }
 
         if (result.sources.length > 0) {

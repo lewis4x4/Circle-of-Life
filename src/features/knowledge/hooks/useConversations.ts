@@ -11,12 +11,15 @@ export function useConversations() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("chat_conversations")
       .select("*")
-      .order("updated_at", { ascending: false })
+      .order("created_at", { ascending: false })
       .limit(50);
-    setConversations(data ?? []);
+    if (error) {
+      console.warn("[useConversations]", error.message);
+    }
+    setConversations(error ? [] : (data ?? []));
     setLoading(false);
   }, [supabase]);
 

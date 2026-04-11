@@ -17,7 +17,7 @@ export function parseSSELine(line: string): StreamEvent | null {
     const event = JSON.parse(payload) as Record<string, unknown>;
     if (event.meta) return { type: "meta", meta: event.meta as StreamMeta };
     if (event.kb_empty === true) return { type: "kb_empty" };
-    if (event.text) return { type: "text", text: event.text as string };
+    if (typeof event.text === "string") return { type: "text", text: event.text };
     if (event.sources) return { type: "sources", sources: event.sources as KBSource[] };
     if (event.error) return { type: "error", error: event.error as string };
   } catch {

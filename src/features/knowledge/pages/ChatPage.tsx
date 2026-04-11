@@ -19,13 +19,21 @@ export function ChatPage() {
   const loadMessages = useCallback(
     async (convId: string) => {
       setMessagesLoading(true);
-      const { data } = await supabase
-        .from("chat_messages")
-        .select("*")
-        .eq("conversation_id", convId)
-        .order("created_at", { ascending: true });
-      setMessages(data ?? []);
-      setMessagesLoading(false);
+      try {
+        const { data, error } = await supabase
+          .from("chat_messages")
+          .select("*")
+          .eq("conversation_id", convId)
+          .order("created_at", { ascending: true });
+        if (error) {
+          console.warn("[ChatPage] loadMessages", error.message);
+          setMessages([]);
+        } else {
+          setMessages(data ?? []);
+        }
+      } finally {
+        setMessagesLoading(false);
+      }
     },
     [supabase],
   );
