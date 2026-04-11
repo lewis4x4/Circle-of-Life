@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ArrowLeft, Save } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
@@ -209,13 +210,16 @@ export default function NewComplianceRulePage() {
                 </Label>
               </div>
               {usePreset && (
-                <Select value={selectedPreset} onValueChange={(v) => typeof v === 'number' && handlePresetChange(v)}>
+                <Select
+                  value={String(selectedPreset)}
+                  onValueChange={(v) => handlePresetChange(Number(v))}
+                >
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Select a tag" />
                   </SelectTrigger>
                   <SelectContent>
                     {PREDEFINED_RULES.map((preset, index) => (
-                      <SelectItem key={preset.tag_number} value={index}>
+                      <SelectItem key={preset.tag_number} value={String(index)}>
                         Tag {preset.tag_number}: {preset.tag_title}
                       </SelectItem>
                     ))}

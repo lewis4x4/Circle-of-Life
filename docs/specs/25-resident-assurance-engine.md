@@ -2,7 +2,7 @@
 
 **Module:** Resident Assurance Engine — resident observation, rounding, and assurance  
 **Dependencies:** [`00-foundation.md`](00-foundation.md), [`03-resident-profile.md`](03-resident-profile.md), [`04-daily-operations.md`](04-daily-operations.md), [`07-incident-reporting.md`](07-incident-reporting.md), [`11-staff-management.md`](11-staff-management.md), [`09-infection-control.md`](09-infection-control.md)  
-**Migrations:** `098_resident_assurance_schema.sql`, `099_resident_assurance_rls.sql`, `100_resident_assurance_audit.sql`, `101_resident_assurance_seed.sql`  
+**Migrations:** `098_resident_assurance_schema.sql`, `099_resident_assurance_rls.sql`, `100_resident_assurance_audit.sql`, `129_resident_assurance_seed.sql`  
 **Canonical routes:** [`FRONTEND-CONTRACT.md`](FRONTEND-CONTRACT.md) — `/admin/rounding`, `/admin/rounding/live`, `/admin/rounding/plans`, `/admin/rounding/plans/new`, `/admin/rounding/plans/[id]`, `/admin/rounding/reports`, `/caregiver/rounds`, `/caregiver/rounds/[residentId]`
 
 ---

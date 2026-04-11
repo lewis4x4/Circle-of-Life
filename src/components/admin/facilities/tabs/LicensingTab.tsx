@@ -81,8 +81,8 @@ export function LicensingTab({ facilityId }: LicensingTabProps) {
       <section className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
         <h3 className="text-lg font-semibold">Care services offered</h3>
         <p className="text-sm text-muted-foreground">
-          COL uses <strong>Enhanced ALF Services</strong> — never label as &quot;Memory Care&quot; in compliance-facing
-          outputs.
+          COL uses <strong>Enhanced ALF Services</strong> — avoid legacy unit marketing labels in compliance-facing
+          outputs (see Haven verification checklist).
         </p>
         <div className="flex flex-wrap gap-3">
           {CARE_SERVICES.map((s) => (

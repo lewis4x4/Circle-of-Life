@@ -41,6 +41,7 @@ import {
 
 import { BillingHubNav } from "../../billing-hub-nav";
 import { billingCurrency } from "../../billing-invoice-ledger";
+import { RateConfirmationBanner } from "@/components/billing/RateConfirmationBanner";
 
 export default function AdminInvoiceGeneratePage() {
   const supabase = useMemo(() => createClient(), []);
@@ -191,6 +192,7 @@ export default function AdminInvoiceGeneratePage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <BillingHubNav />
+      <RateConfirmationBanner facilityId={selectedFacilityId} />
 
       <div className="flex items-center gap-2">
         <Link

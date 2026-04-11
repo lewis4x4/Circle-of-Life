@@ -16336,6 +16336,10 @@ export const Constants = {
         "non_payment",
         "behavioral",
         "other",
+        "resident_voluntary",
+        "facility_with_cause",
+        "facility_immediate",
+        "medicaid_relocation",
       ],
       driver_credential_status: ["active", "suspended", "expired"],
       emar_status: [

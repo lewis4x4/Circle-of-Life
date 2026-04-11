@@ -4,8 +4,6 @@
  * Source: HAVEN-COL-TECHNICAL-HANDOFF.md §3 Org Chart Seed Data
  */
 
-import type { Database } from './database';
-
 // ─── Current DB enum values (11 existing in database.ts) ─────────────────────
 // cna, lpn, rn, administrator, activities_director, dietary_staff,
 // dietary_manager, maintenance, housekeeping, driver, other

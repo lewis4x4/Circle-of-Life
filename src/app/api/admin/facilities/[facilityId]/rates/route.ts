@@ -78,7 +78,9 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
   // Build query
   let query = admin
     .from("rate_schedule_versions")
-    .select("id, rate_type, amount_cents, effective_from, effective_to, approved_by, approved_at, notes, created_at")
+    .select(
+      "id, facility_id, rate_type, amount_cents, effective_from, effective_to, rate_confirmed, approved_by, approved_at, notes, created_at",
+    )
     .eq("facility_id", facilityId)
     .is("deleted_at", null)
     .order("effective_from", { ascending: false });
@@ -130,7 +132,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
     );
   }
 
-  const { rate_type, amount_cents, effective_from, notes } = parsed.data;
+  const { rate_type, amount_cents, effective_from, notes, rate_confirmed } = parsed.data;
 
   const admin = actor.admin;
 
@@ -172,6 +174,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
         effective_from,
         effective_to: null,
         notes: notes ?? null,
+        rate_confirmed: rate_confirmed ?? false,
         created_by: actor.id,
       } as Record<string, unknown>)
       .select()

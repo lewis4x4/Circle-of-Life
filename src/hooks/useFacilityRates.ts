@@ -11,6 +11,8 @@ interface RateEntry {
   amount_cents: number;
   amount_usd: number;
   effective_from: string;
+  effective_to: string | null;
+  rate_confirmed: boolean;
   created_at: string;
   approved_by?: string | null;
 }
@@ -24,6 +26,7 @@ interface CreateRatePayload {
   amount_cents: number;
   effective_from: string;
   notes?: string;
+  rate_confirmed?: boolean;
 }
 
 interface UseFacilityRatesReturn {
@@ -33,12 +36,15 @@ interface UseFacilityRatesReturn {
   createRate: (payload: CreateRatePayload) => Promise<RateEntry | null>;
   isCreating: boolean;
   refetch: () => Promise<void>;
+  confirmRate: (rateId: string) => Promise<boolean>;
+  isConfirming: boolean;
 }
 
 export function useFacilityRates(facilityId: string): UseFacilityRatesReturn {
   const [rates, setRates] = useState<RateEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
@@ -53,6 +59,8 @@ export function useFacilityRates(facilityId: string): UseFacilityRatesReturn {
       setRates(
         (json.data ?? []).map((rate) => ({
           ...rate,
+          effective_to: rate.effective_to ?? null,
+          rate_confirmed: Boolean(rate.rate_confirmed),
           rate_type_label:
             RATE_TYPE_LABELS[rate.rate_type as keyof typeof RATE_TYPE_LABELS] ?? rate.rate_type,
           amount_usd: rate.amount_cents / 100,
@@ -67,6 +75,31 @@ export function useFacilityRates(facilityId: string): UseFacilityRatesReturn {
       setIsLoading(false);
     }
   }, [facilityId]);
+
+  const confirmRate = useCallback(
+    async (rateId: string): Promise<boolean> => {
+      setIsConfirming(true);
+      setError(null);
+      try {
+        const res = await fetch(`/api/admin/facilities/${facilityId}/rates/${rateId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rate_confirmed: true }),
+        });
+        if (!res.ok) throw new Error("Failed to confirm rate");
+        await refetch();
+        return true;
+      } catch (err) {
+        console.error("[useFacilityRates] confirm error:", err);
+        const message = err instanceof Error ? err.message : "Failed to confirm rate";
+        setError(message);
+        return false;
+      } finally {
+        setIsConfirming(false);
+      }
+    },
+    [facilityId, refetch],
+  );
 
   const createRate = useCallback(
     async (payload: CreateRatePayload): Promise<RateEntry | null> => {
@@ -107,5 +140,7 @@ export function useFacilityRates(facilityId: string): UseFacilityRatesReturn {
     createRate,
     isCreating,
     refetch,
+    confirmRate,
+    isConfirming,
   };
 }

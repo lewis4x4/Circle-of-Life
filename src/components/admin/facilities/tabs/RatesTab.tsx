@@ -10,7 +10,8 @@ interface RatesTabProps {
 }
 
 export function RatesTab({ facilityId }: RatesTabProps) {
-  const { rates, isLoading, error, isCreating, createRate } = useFacilityRates(facilityId);
+  const { rates, isLoading, error, isCreating, createRate, confirmRate, isConfirming } =
+    useFacilityRates(facilityId);
   const [expandedType, setExpandedType] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState({ rate_type: "", amount: "", effective_from: "" });
@@ -48,6 +49,8 @@ export function RatesTab({ facilityId }: RatesTabProps) {
     );
   }
 
+  const pendingActiveRates = rates.filter((r) => r.effective_to == null && !r.rate_confirmed);
+
   // Group rates by room type
   const ratesByType = rates.reduce(
     (acc, rate) => {
@@ -62,6 +65,16 @@ export function RatesTab({ facilityId }: RatesTabProps) {
 
   return (
     <div className="space-y-6">
+      {pendingActiveRates.length > 0 && (
+        <div
+          role="status"
+          className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100"
+        >
+          <strong className="font-semibold">Rate pending client confirmation.</strong> One or more
+          active rate lines are not marked as confirmed — confirm with the responsible party before
+          invoicing.
+        </div>
+      )}
       {/* Add Rate Button */}
       <button
         onClick={() => setShowAddForm(!showAddForm)}
@@ -156,16 +169,35 @@ export function RatesTab({ facilityId }: RatesTabProps) {
               {expandedType === roomType && (
                 <div className="divide-y divide-gray-100">
                   {typeRates.map((rate) => (
-                    <div key={rate.id} className="px-6 py-3 flex justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        Effective{" "}
-                        {new Date(rate.effective_from).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </span>
-                      <span className="font-medium">${rate.amount_usd.toFixed(2)}</span>
+                    <div key={rate.id} className="px-6 py-3 flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+                      <div className="space-y-1">
+                        <span className="text-muted-foreground">
+                          Effective{" "}
+                          {new Date(rate.effective_from).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </span>
+                        {rate.effective_to == null && !rate.rate_confirmed && (
+                          <div className="text-xs font-medium text-amber-800 dark:text-amber-200">
+                            Unconfirmed
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium">${rate.amount_usd.toFixed(2)}</span>
+                        {rate.effective_to == null && !rate.rate_confirmed && (
+                          <button
+                            type="button"
+                            disabled={isConfirming}
+                            onClick={() => void confirmRate(rate.id)}
+                            className="rounded-md border border-teal-600 px-2 py-1 text-xs font-medium text-teal-700 hover:bg-teal-50 disabled:opacity-50 dark:border-teal-400 dark:text-teal-200 dark:hover:bg-teal-950"
+                          >
+                            Mark confirmed
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

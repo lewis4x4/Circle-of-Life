@@ -66,6 +66,8 @@ type BaseFacilityRow = Database['public']['Tables']['facilities']['Row'];
 
 /** Facility row extended with 5 new columns not yet in database.ts */
 export interface FacilityRow extends BaseFacilityRow {
+  /** Migration 138 — COL standard ALF license class (see `LicenseType.STANDARD_ALF`) */
+  alf_license_type?: string | null;
   /** JSONB — per-facility config overrides */
   facility_overrides: FacilityOverrides | null;
   /** Pharmacy vendor enum */

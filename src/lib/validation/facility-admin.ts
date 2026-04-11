@@ -76,9 +76,19 @@ export const createRateSchema = z.object({
   amount_cents: z.number().int().min(0),
   effective_from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   notes: z.string().optional(),
+  /** When false, billing surfaces “rate pending client confirmation.” */
+  rate_confirmed: z.boolean().optional(),
 }).strict();
 
 export type CreateRateInput = z.infer<typeof createRateSchema>;
+
+export const patchRateVersionSchema = z
+  .object({
+    rate_confirmed: z.boolean(),
+  })
+  .strict();
+
+export type PatchRateVersionInput = z.infer<typeof patchRateVersionSchema>;
 
 export const listRatesQuerySchema = z.object({
   rate_type: z.enum(RATE_TYPES).optional(),

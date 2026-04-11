@@ -35,6 +35,7 @@ import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { StatuteCitation } from "@/components/ui/StatuteCitation";
 
 type DefRow = {
   id: string;
@@ -220,6 +221,13 @@ export default function AdminCompliancePage() {
             <h1 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
               Compliance {(emergencyItems.some((e) => e.overdue) || (complianceScore?.percentage ?? 100) < 75) && <PulseDot colorClass="bg-rose-500" />}
             </h1>
+            <p className="mt-2 max-w-xl text-sm text-slate-600 dark:text-slate-400">
+              Incident reporting aligns with{" "}
+              <StatuteCitation statuteCode="59A-36.018" className="font-medium text-indigo-700 dark:text-indigo-300">
+                FAC 59A-36.018
+              </StatuteCitation>{" "}
+              (see statute tooltip).
+            </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Link href="/admin/compliance/audit-export" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "glass-panel bg-white/50 dark:bg-zinc-900/40 text-[10px] uppercase tracking-widest font-mono text-slate-700 dark:text-slate-300")}>
