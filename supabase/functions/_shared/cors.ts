@@ -8,10 +8,16 @@ export function getCorsHeaders(requestOrigin?: string | null): Record<string, st
     "Access-Control-Allow-Headers":
       "authorization, x-client-info, apikey, content-type, x-cron-secret, x-dispatch-secret",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
+    Vary: "Origin",
   };
 
   if (ALLOWED_ORIGINS.length === 0) {
-    return headers;
+    return requestOrigin
+      ? {
+          ...headers,
+          "Access-Control-Allow-Origin": requestOrigin,
+        }
+      : headers;
   }
 
   const origin = requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin) ? requestOrigin : ALLOWED_ORIGINS[0];
@@ -21,7 +27,7 @@ export function getCorsHeaders(requestOrigin?: string | null): Record<string, st
   };
 }
 
-/** Default headers omit Allow-Origin until CORS_ALLOWED_ORIGINS is configured. */
+/** When no allowlist is configured, reflect the request origin for browser clients. */
 export const corsHeaders = getCorsHeaders();
 
 export function jsonResponse(
