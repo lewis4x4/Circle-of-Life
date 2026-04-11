@@ -43,10 +43,17 @@ export function useFacility(facilityId: string): UseFacilityReturn {
       setError(null);
       try {
         const res = await fetch(`/api/admin/facilities/${facilityId}`);
+        const json = (await res.json()) as { data?: Record<string, unknown>; error?: string };
         if (!res.ok) {
-          throw new Error("Failed to fetch facility");
+          const msg =
+            typeof json.error === "string" && json.error.length > 0
+              ? json.error
+              : `Could not load facility (${res.status})`;
+          throw new Error(msg);
         }
-        const json = (await res.json()) as { data: Record<string, unknown> };
+        if (!json.data) {
+          throw new Error("Invalid response from facility API");
+        }
         const n = normalizeFacilityDetail(json.data);
         setFacility(n);
         return n;

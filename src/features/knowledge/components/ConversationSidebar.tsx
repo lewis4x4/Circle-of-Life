@@ -22,30 +22,30 @@ export function ConversationSidebar({
   onDelete,
 }: ConversationSidebarProps) {
   return (
-    <div className="flex flex-col h-full border-r border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50">
-      <div className="p-3 border-b border-slate-200 dark:border-zinc-800">
+    <div className="flex h-full min-h-0 w-full flex-col border-r border-zinc-800/90 bg-zinc-950/50">
+      <div className="shrink-0 border-b border-zinc-800/90 p-3">
         <button
           type="button"
           onClick={onNew}
-          className="flex items-center gap-2 w-full rounded-xl bg-indigo-600 text-white px-3 py-2.5 text-sm font-medium hover:bg-indigo-700 transition-colors"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-3 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-900/30 transition hover:bg-indigo-500"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="h-4 w-4" />
           New chat
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto p-2 space-y-1">
+      <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
         {loading && (
-          <div className="flex justify-center py-4">
-            <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />
+          <div className="flex justify-center py-6">
+            <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
           </div>
         )}
         {conversations.map((conv) => (
           <div
             key={conv.id}
-            className={`group flex items-center gap-2 rounded-lg px-3 py-2 cursor-pointer transition-colors ${
+            className={`group flex items-center gap-2 rounded-xl px-3 py-2.5 transition-colors ${
               activeId === conv.id
-                ? "bg-white dark:bg-zinc-800 shadow-sm border border-slate-200 dark:border-zinc-700"
-                : "hover:bg-white/60 dark:hover:bg-zinc-800/40"
+                ? "border border-indigo-500/40 bg-indigo-950/50 ring-1 ring-indigo-500/20"
+                : "cursor-pointer hover:bg-zinc-800/60"
             }`}
             onClick={() => onSelect(conv.id)}
             onKeyDown={(e) => {
@@ -56,20 +56,20 @@ export function ConversationSidebar({
             }}
             role="button"
             tabIndex={0}
+            aria-current={activeId === conv.id ? "true" : undefined}
           >
-            <MessageSquare className="w-4 h-4 text-slate-400 shrink-0" />
-            <span className="text-sm text-slate-700 dark:text-zinc-300 truncate flex-1">
-              {conv.title || "Untitled chat"}
-            </span>
+            <MessageSquare className="h-4 w-4 shrink-0 text-zinc-500" />
+            <span className="min-w-0 flex-1 truncate text-sm text-zinc-200">{conv.title || "Untitled chat"}</span>
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete(conv.id);
               }}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition-all"
+              className="shrink-0 rounded-md p-1.5 opacity-0 transition hover:bg-red-950/50 group-hover:opacity-100"
+              aria-label="Delete conversation"
             >
-              <Trash2 className="w-3.5 h-3.5 text-red-500" />
+              <Trash2 className="h-3.5 w-3.5 text-red-400" />
             </button>
           </div>
         ))}

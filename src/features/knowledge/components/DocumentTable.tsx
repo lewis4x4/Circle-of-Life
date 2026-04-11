@@ -29,40 +29,78 @@ const AUDIENCE_LABELS: Record<string, string> = {
 export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const filtered = documents.filter((d) => d.title.toLowerCase().includes(filter.toLowerCase()));
 
   const handleStatusChange = async (docId: string, status: DocumentStatus) => {
+    setActionError(null);
     setActionLoading(docId);
-    await adminUpdateDocument(docId, { status });
-    onRefresh();
-    setActionLoading(null);
+    try {
+      const result = await adminUpdateDocument(docId, { status });
+      if (!result.ok) {
+        setActionError(result.error);
+        return;
+      }
+      await onRefresh();
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const handleAudienceChange = async (docId: string, audience: DocumentAudience) => {
+    setActionError(null);
     setActionLoading(docId);
-    await adminUpdateDocument(docId, { audience });
-    onRefresh();
-    setActionLoading(null);
+    try {
+      const result = await adminUpdateDocument(docId, { audience });
+      if (!result.ok) {
+        setActionError(result.error);
+        return;
+      }
+      await onRefresh();
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const handleDelete = async (docId: string) => {
     if (!confirm("Delete this document? This removes it from the knowledge base.")) return;
+    setActionError(null);
     setActionLoading(docId);
-    await adminDeleteDocument(docId);
-    onRefresh();
-    setActionLoading(null);
+    try {
+      const result = await adminDeleteDocument(docId);
+      if (!result.ok) {
+        setActionError(result.error);
+        return;
+      }
+      await onRefresh();
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const handleReindex = async (docId: string) => {
+    setActionError(null);
     setActionLoading(docId);
-    await reindexDocument(docId);
-    onRefresh();
-    setActionLoading(null);
+    try {
+      const result = await reindexDocument(docId);
+      if (!result.ok) {
+        setActionError(result.error);
+        return;
+      }
+      await onRefresh();
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   return (
     <div className="space-y-3">
+      {actionError && (
+        <div className="rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-800 dark:text-red-200">
+          {actionError}
+        </div>
+      )}
       <input
         type="text"
         value={filter}

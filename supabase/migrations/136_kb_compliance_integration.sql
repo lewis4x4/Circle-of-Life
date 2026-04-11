@@ -21,7 +21,7 @@ CHECK (compliance_category IN (
     'medication_admin_policy',
     'dietary_policy',
     'emergency_prep_policy'
-  );
+  ));
 
 -- ============================================================
 -- REGULATORY REFERENCE COLUMNS TO public.documents
@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS compliance_knowledge_repository (
       'medication_admin_policy',
       'dietary_policy',
       'emergency_prep_policy'
-    ),
+    )),
   version text NOT NULL DEFAULT '1.0',
   is_active boolean NOT NULL DEFAULT true,
   effective_date date,
@@ -100,156 +100,32 @@ CREATE TABLE IF NOT EXISTS compliance_knowledge_repository (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_compliance_kb_category ON compliance_knowledge_repository(category, workspace_id);
-CREATE INDEX idx_compliance_kb_version ON compliance_knowledge_repository(workspace_id, effective_date DESC);
+CREATE INDEX IF NOT EXISTS idx_compliance_kb_category ON compliance_knowledge_repository(category, workspace_id);
+CREATE INDEX IF NOT EXISTS idx_compliance_kb_version ON compliance_knowledge_repository(workspace_id, effective_date DESC);
 
 -- ============================================================
 -- AUDIT TRIGGERS FOR COMPLIANCE CHANGES
 -- ============================================================
 
+DROP TRIGGER IF EXISTS tr_compliance_kb_category_set_updated_at ON compliance_knowledge_repository;
 CREATE TRIGGER tr_compliance_kb_category_set_updated_at
 BEFORE UPDATE ON compliance_knowledge_repository
   FOR EACH ROW
-  EXECUTE PROCEDURE public.set_updated_at();
+  EXECUTE PROCEDURE public.haven_set_updated_at();
 -- Log change
 
+DROP TRIGGER IF EXISTS tr_compliance_kb_audit_after_insert ON compliance_knowledge_repository;
 CREATE TRIGGER tr_compliance_kb_audit_after_insert
 AFTER INSERT ON compliance_knowledge_repository
   FOR EACH ROW
-  EXECUTE PROCEDURE public.capture_audit_log();
+  EXECUTE PROCEDURE public.haven_capture_audit_log();
 
+DROP TRIGGER IF EXISTS tr_compliance_kb_audit_after_update ON compliance_knowledge_repository;
 CREATE TRIGGER tr_compliance_kb_audit_after_update
 AFTER UPDATE ON compliance_knowledge_repository
   FOR EACH ROW
-  EXECUTE PROCEDURE public.capture_audit_log();
+  EXECUTE PROCEDURE public.haven_capture_audit_log();
 
 -- ============================================================
--- SEED DATA FOR COMPLIANCE RULES
+-- SEED DATA FOR COMPLIANCE RULES (deferred — will be loaded via admin UI or a follow-up seed migration)
 -- ============================================================
-
--- AHCA Tag 220: Personal Care
--- AHCA Tag 417: Adequate Care
--- AHCA Tag 502: Infection Control
--- AHCA Tag 201: Resident Rights
--- AHCA Tag 205: Grievance
--- AHCA Tag 309: Staffing
--- AHCA Tag 314: Staff Training
--- AHCA Tag 325: Background Screening
--- AHCA Tag 404: Resident Assessment
--- AHCA Tag 409: Care Plan Updates
--- AHCA Tag 501: Medication Admin
--- AHCA Tag 504: Medication Errors
--- AHCA Tag 601: Physical Plant
--- AHCA Tag 602: Emergency Prep
--- AHCA Tag 701: Dietary
--- AHCA Tag 504: SOP
--- AHCA Tag 601: Facility Policy
-
-INSERT INTO public.compliance_rules (organization_id, facility_id, tag_number, tag_title, rule_description, check_query, severity)
-SELECT
-  o.id,
-  '220',
-  'Personal Care',
-  'ADL care plans current; daily ADL logs present; daily logs present for assigned residents',
-  'serious';
-
-INSERT INTO public.documents (organization_id, title, source, audience, status, compliance_category)
-SELECT 'o.id',
-  'AHCA Regulations',
-  'ahca_regulation_220',
-  'content: AHCA Form 3020-2020 requires facilities to maintain up-to-date ADL care plans and daily logs for all residents. Non-compliance results in deficiencies or citations.',
-  'approved_by_admin': (SELECT id FROM auth.users WHERE app_role = 'owner' LIMIT 1),
-  'effective_date': CURRENT_DATE,
-  'compliance_category': 'ahca_regulation',
-  'regulation_version': '1.0';
-
-INSERT INTO public.compliance_rules (organization_id, facility_id, tag_number, tag_title, rule_description, check_query, severity)
-SELECT 'o.id',
-  '417',
-  'Adequate Care',
-  'PRN effectiveness documented; condition changes reported within 24 hours; daily ADL logs present for assigned residents.',
-  'serious';
-
-INSERT INTO public.compliance_rules (organization_id, facility_id, tag_number, tag_title, rule_description, check_query, severity)
-SELECT 'o.id,
-  '201',
-  'Resident Rights',
-  'Rights violations documented and addressed within 48 hours of discovery.',
-  'serious';
-
-INSERT INTO public.compliance_rules (organization_id, facility_id, tag_number, tag_title, rule_description, check_query, severity)
-SELECT 'o.id,
-  '205',
-  'Grievance',
-  'Grievances logged and resolved within 5 business days. Non-compliance results in deficiencies or citations.',
-  'standard';
-
-INSERT INTO public.compliance_rules (organization_id, facility_id, tag_number, tag_title, rule_description, check_query, severity)
-SELECT 'o.id,
-  '309',
-  'Staffing',
-  'Staffing ratios maintained per AHCA requirements. Minimum ratios for all shifts. Minimum staff for all shifts. Direct care staff to resident ratio >= 1:5 for all shifts. ',
-  'serious';
-
-INSERT INTO public.compliance_rules (organization_id, facility_id, tag_number, tag_title, rule_description, check_query, severity)
-SELECT 'o.id,
-  '314',
-  'Staff Training',
-  'All staff have required training documented. Monthly competency records current for all staff.',
-  'standard';
-
-INSERT INTO public.compliance_rules (organization_id, facility_id, tag_number, tag_title, rule_description, check_query, severity)
-SELECT 'o.id,
-  '325',
-  'Background Screening',
-  'All staff have completed background screenings within last 30 days. Criminal background checks completed for all staff.',
-  'immediate_jeopardy';
-
-INSERT INTO public.compliance_rules (organization_id, facility_id, tag_number, tag_title, rule_description, check_query, severity)
-SELECT 'o.id,
-  '404',
-  'Resident Assessment',
-  'PRN effectiveness documented. Condition changes reported within 24 hours. Daily ADL logs present for assigned residents.',
-  'serious';
-
-INSERT INTO public.compliance_rules (organization_id, facility_id, tag_number, tag_title, rule_description, check_query, severity)
-SELECT 'o.id,
-  '409',
-  'Care Plan Updates',
-  'Care plans reviewed and updated within 30 days.',
-  'serious';
-
-INSERT INTO public.compliance_rules (organization_id, facility_id, tag_number, tag_title, rule_description, check_query, severity)
-SELECT 'o.id,
-  '501',
-  'Medication Admin',
-  'Medication administration documented. Med orders managed and administered as per AHCA regulations.',
-  'serious';
-
-INSERT INTO public.compliance_rules (organization_id, facility_id, tag_number, tag_title, rule_description, check_query, severity)
-SELECT 'o.id,
-  '504',
-  'Medication Errors',
-  'Error rate below threshold (0.5% of all medication administrations). Medication error count in last 30 days must be below 0.5% of all administrations. ',
-  'immediate_jeopardy';
-
-INSERT INTO public.compliance_rules (organization_id, facility_id, tag_number, tag_title, rule_description, check_query, severity)
-SELECT 'o.id,
-  '601',
-  'Physical Plant',
-  'Facility maintenance items addressed within 30 days. Generator tests (monthly), fire drills (quarterly), evacuation drills (annually). All items addressed.',
-  'serious';
-
-INSERT INTO public.compliance_rules (organization_id, facility_id, tag_number, tag_title, rule_description, check_query, severity)
-SELECT 'o.id,
-  '602',
-  'Emergency Prep',
-  'Emergency preparedness checklist completed. All checklist items addressed within 30 days. Generator tests (monthly), fire drills (quarterly), evacuation drills (annually). All items addressed.',
-  'serious';
-
-INSERT INTO public.compliance_rules (organization_id, facility_id, tag_number, tag_title, rule_description, check_query, severity)
-SELECT 'o.id,
-  '701',
-  'Dietary',
-  'Dietary assessments and needs documented for residents with dietary requirements. Assessment done and needs documented for all residents with dietary restrictions. ',
-  'standard';

@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { Loader2, ArrowRight } from "lucide-react";
 
 import { getAppRoleFromClaims, isAdminEligibleAppRole, isOnboardingAppRole } from "@/lib/auth/app-role";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { loginSchema, type LoginFormData } from "@/lib/validation/auth";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 
@@ -80,7 +81,7 @@ export default function LoginPage() {
     if (isOnboardingAppRole(role)) return "/onboarding";
     if (role === "caregiver") return "/caregiver";
     if (role === "family") return "/family";
-    if (isAdminEligibleAppRole(role)) return "/admin";
+    if (isAdminEligibleAppRole(role)) return getDashboardRouteForRole(role);
     return null;
   }, [supabase]);
 

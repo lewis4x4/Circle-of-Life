@@ -1,13 +1,11 @@
 -- Track E — E3: ADL / LOC assessments (Module 02 handoff engine)
 
-CREATE TYPE loc_tier AS ENUM (
-  'none',
-  'l1',
-  'l2',
-  'l3'
-);
+DO $$ BEGIN
+  CREATE TYPE loc_tier AS ENUM ('none','l1','l2','l3');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TABLE adl_assessments (
+CREATE TABLE IF NOT EXISTS adl_assessments (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
   organization_id uuid NOT NULL REFERENCES organizations (id),
   facility_id uuid NOT NULL REFERENCES facilities (id),
@@ -58,11 +56,11 @@ CREATE TABLE adl_assessments (
   deleted_at timestamptz
 );
 
-CREATE INDEX idx_adl_assessments_resident ON adl_assessments (resident_id)
+CREATE INDEX IF NOT EXISTS idx_adl_assessments_resident ON adl_assessments (resident_id)
 WHERE
   deleted_at IS NULL;
 
-CREATE INDEX idx_adl_assessments_facility ON adl_assessments (facility_id, assessed_at DESC)
+CREATE INDEX IF NOT EXISTS idx_adl_assessments_facility ON adl_assessments (facility_id, assessed_at DESC)
 WHERE
   deleted_at IS NULL;
 
@@ -70,6 +68,7 @@ COMMENT ON TABLE adl_assessments IS 'ADL scoring + LOC tier + fee snapshot for a
 
 ALTER TABLE adl_assessments ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS adl_assessments_select ON adl_assessments;
 CREATE POLICY adl_assessments_select ON adl_assessments
   FOR SELECT
   USING (
@@ -79,6 +78,7 @@ CREATE POLICY adl_assessments_select ON adl_assessments
       SELECT
         haven.accessible_facility_ids ()));
 
+DROP POLICY IF EXISTS adl_assessments_insert ON adl_assessments;
 CREATE POLICY adl_assessments_insert ON adl_assessments
   FOR INSERT
   WITH CHECK (
@@ -88,6 +88,7 @@ CREATE POLICY adl_assessments_insert ON adl_assessments
         haven.accessible_facility_ids ())
     AND haven.app_role () IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
 
+DROP POLICY IF EXISTS adl_assessments_update ON adl_assessments;
 CREATE POLICY adl_assessments_update ON adl_assessments
   FOR UPDATE
   USING (
@@ -103,11 +104,13 @@ CREATE POLICY adl_assessments_update ON adl_assessments
       SELECT
         haven.accessible_facility_ids ()));
 
+DROP TRIGGER IF EXISTS tr_adl_assessments_set_updated_at ON adl_assessments;
 CREATE TRIGGER tr_adl_assessments_set_updated_at
   BEFORE UPDATE ON adl_assessments
   FOR EACH ROW
   EXECUTE PROCEDURE public.haven_set_updated_at ();
 
+DROP TRIGGER IF EXISTS tr_adl_assessments_audit ON adl_assessments;
 CREATE TRIGGER tr_adl_assessments_audit
   AFTER INSERT OR UPDATE OR DELETE ON adl_assessments
   FOR EACH ROW

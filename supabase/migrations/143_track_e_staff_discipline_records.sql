@@ -1,14 +1,11 @@
 -- Track E — E9: Staff discipline records (progressive discipline + policy snapshots)
 
-CREATE TYPE discipline_action AS ENUM (
-  'none',
-  'verbal_warning',
-  'written_warning',
-  'final_written_warning',
-  'termination'
-);
+DO $$ BEGIN
+  CREATE TYPE discipline_action AS ENUM ('none','verbal_warning','written_warning','final_written_warning','termination');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TABLE staff_discipline_records (
+CREATE TABLE IF NOT EXISTS staff_discipline_records (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
   organization_id uuid NOT NULL REFERENCES organizations (id),
   facility_id uuid NOT NULL REFERENCES facilities (id),
@@ -26,11 +23,11 @@ CREATE TABLE staff_discipline_records (
   deleted_at timestamptz
 );
 
-CREATE INDEX idx_staff_discipline_staff ON staff_discipline_records (staff_id, effective_date DESC)
+CREATE INDEX IF NOT EXISTS idx_staff_discipline_staff ON staff_discipline_records (staff_id, effective_date DESC)
 WHERE
   deleted_at IS NULL;
 
-CREATE INDEX idx_staff_discipline_facility ON staff_discipline_records (facility_id)
+CREATE INDEX IF NOT EXISTS idx_staff_discipline_facility ON staff_discipline_records (facility_id)
 WHERE
   deleted_at IS NULL;
 
@@ -38,6 +35,7 @@ COMMENT ON TABLE staff_discipline_records IS 'Progressive discipline log; pairs 
 
 ALTER TABLE staff_discipline_records ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS staff_discipline_select ON staff_discipline_records;
 CREATE POLICY staff_discipline_select ON staff_discipline_records
   FOR SELECT
   USING (
@@ -47,6 +45,7 @@ CREATE POLICY staff_discipline_select ON staff_discipline_records
       SELECT
         haven.accessible_facility_ids ()));
 
+DROP POLICY IF EXISTS staff_discipline_insert ON staff_discipline_records;
 CREATE POLICY staff_discipline_insert ON staff_discipline_records
   FOR INSERT
   WITH CHECK (
@@ -56,6 +55,7 @@ CREATE POLICY staff_discipline_insert ON staff_discipline_records
         haven.accessible_facility_ids ())
     AND haven.app_role () IN ('owner', 'org_admin', 'facility_admin'));
 
+DROP POLICY IF EXISTS staff_discipline_update ON staff_discipline_records;
 CREATE POLICY staff_discipline_update ON staff_discipline_records
   FOR UPDATE
   USING (
@@ -70,11 +70,13 @@ CREATE POLICY staff_discipline_update ON staff_discipline_records
       SELECT
         haven.accessible_facility_ids ()));
 
+DROP TRIGGER IF EXISTS tr_staff_discipline_set_updated_at ON staff_discipline_records;
 CREATE TRIGGER tr_staff_discipline_set_updated_at
   BEFORE UPDATE ON staff_discipline_records
   FOR EACH ROW
   EXECUTE PROCEDURE public.haven_set_updated_at ();
 
+DROP TRIGGER IF EXISTS tr_staff_discipline_audit ON staff_discipline_records;
 CREATE TRIGGER tr_staff_discipline_audit
   AFTER INSERT OR UPDATE OR DELETE ON staff_discipline_records
   FOR EACH ROW

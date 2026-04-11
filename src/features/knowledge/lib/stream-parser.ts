@@ -26,7 +26,10 @@ export function parseSSELine(line: string): StreamEvent | null {
 }
 
 export async function* streamSSE(response: Response): AsyncGenerator<StreamEvent> {
-  const reader = response.body!.getReader();
+  if (!response.body) {
+    throw new Error("No response body from knowledge agent");
+  }
+  const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
 

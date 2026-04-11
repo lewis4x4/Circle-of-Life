@@ -25,7 +25,7 @@ export function KnowledgeAdminPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("documents");
   const { workspaceId, loading: workspaceLoading } = useKbWorkspaceId();
   const { documents, loading: docsLoading, reload: reloadDocs } = useDocuments();
-  const { gaps, loading: gapsLoading, resolve: resolveGap } = useKnowledgeGaps();
+  const { gaps, loading: gapsLoading, resolve: resolveGap, resolveError } = useKnowledgeGaps();
   const { health, insights, loading: healthLoading } = useKBHealth();
 
   return (
@@ -65,7 +65,16 @@ export function KnowledgeAdminPage() {
         </div>
       )}
 
-      {activeTab === "gaps" && <KnowledgeGapsPanel gaps={gaps} loading={gapsLoading} onResolve={resolveGap} />}
+      {activeTab === "gaps" && (
+        <div className="space-y-3">
+          {resolveError && (
+            <div className="rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-800 dark:text-red-200">
+              {resolveError}
+            </div>
+          )}
+          <KnowledgeGapsPanel gaps={gaps} loading={gapsLoading} onResolve={resolveGap} />
+        </div>
+      )}
 
       {activeTab === "health" && <KBHealthPanel health={health} loading={healthLoading} />}
 

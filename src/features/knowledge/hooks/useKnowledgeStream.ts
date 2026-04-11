@@ -1,9 +1,25 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import type { KBSource, StreamMeta, StreamState } from "../lib/types";
 import { sendChatMessage } from "../lib/knowledge-api";
 import { streamSSE } from "../lib/stream-parser";
+
+async function readErrorHint(res: Response): Promise<string> {
+  try {
+    const text = await res.text();
+    if (!text) return `Request failed: ${res.status}`;
+    try {
+      const j = JSON.parse(text) as { error?: string };
+      if (typeof j.error === "string" && j.error.length > 0) return j.error;
+    } catch {
+      return text.slice(0, 300);
+    }
+  } catch {
+    /* ignore */
+  }
+  return `Request failed: ${res.status}`;
+}
 
 export function useKnowledgeStream(workspaceId: string | null) {
   const [state, setState] = useState<StreamState>("idle");
@@ -12,6 +28,12 @@ export function useKnowledgeStream(workspaceId: string | null) {
   const [meta, setMeta] = useState<StreamMeta | null>(null);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   const send = useCallback(
     async (message: string, conversationId?: string) => {
@@ -37,8 +59,8 @@ export function useKnowledgeStream(workspaceId: string | null) {
           signal: abortRef.current.signal,
         });
         if (!res.ok) {
-          await res.text();
-          setError(`Request failed: ${res.status}`);
+          const hint = await readErrorHint(res);
+          setError(hint);
           setState("error");
           return;
         }

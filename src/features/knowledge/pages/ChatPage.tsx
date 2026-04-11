@@ -71,8 +71,8 @@ export function ChatPage() {
   }, [activeConversationId, loadMessages]);
 
   return (
-    <div className="flex h-[calc(100vh-64px)]">
-      <div className="w-64 shrink-0 hidden md:block">
+    <div className="-mx-6 -mt-6 mb-0 flex min-h-0 max-h-[calc(100dvh-7.5rem)] h-[calc(100dvh-7.5rem)] flex-1 lg:-mx-10">
+      <div className="hidden h-full min-h-0 w-72 shrink-0 md:flex">
         <ConversationSidebar
           conversations={conversations}
           activeId={activeConversationId}
@@ -82,9 +82,11 @@ export function ChatPage() {
           onDelete={handleDeleteConversation}
         />
       </div>
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {messagesLoading && (
-          <div className="text-xs text-slate-400 px-4 py-1 border-b border-slate-200 dark:border-zinc-800">Loading messages…</div>
+          <div className="shrink-0 border-b border-zinc-800/80 px-4 py-1.5 text-xs text-zinc-500">
+            Loading messages…
+          </div>
         )}
         <ChatInterface
           conversationId={activeConversationId}

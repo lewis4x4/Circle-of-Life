@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { ThumbsUp, ThumbsDown, ChevronDown, ChevronUp, FileText } from "lucide-react";
 import type { KBSource } from "../lib/types";
 import { createClient } from "@/lib/supabase/client";
@@ -17,14 +17,27 @@ interface ChatMessageProps {
 export function ChatMessage({ id, role, content, sources, feedback, isStreaming }: ChatMessageProps) {
   const [currentFeedback, setCurrentFeedback] = useState(feedback);
   const [showSources, setShowSources] = useState(false);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
 
-  const handleFeedback = async (value: "positive" | "negative") => {
-    if (!id) return;
-    const supabase = createClient();
-    const newVal = currentFeedback === value ? null : value;
-    await supabase.from("chat_messages").update({ feedback: newVal }).eq("id", id);
-    setCurrentFeedback(newVal);
-  };
+  useEffect(() => {
+    setCurrentFeedback(feedback);
+  }, [feedback]);
+
+  const handleFeedback = useCallback(
+    async (value: "positive" | "negative") => {
+      if (!id) return;
+      setFeedbackError(null);
+      const supabase = createClient();
+      const newVal = currentFeedback === value ? null : value;
+      const { error } = await supabase.from("chat_messages").update({ feedback: newVal }).eq("id", id);
+      if (error) {
+        setFeedbackError(error.message);
+        return;
+      }
+      setCurrentFeedback(newVal);
+    },
+    [id, currentFeedback],
+  );
 
   return (
     <div className={`flex gap-3 ${role === "user" ? "justify-end" : "justify-start"}`}>
@@ -69,21 +82,26 @@ export function ChatMessage({ id, role, content, sources, feedback, isStreaming 
         )}
 
         {role === "assistant" && !isStreaming && id && (
-          <div className="flex gap-1 mt-2 pt-1">
-            <button
-              type="button"
-              onClick={() => void handleFeedback("positive")}
-              className={`p-1 rounded transition-colors ${currentFeedback === "positive" ? "text-green-500" : "text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300"}`}
-            >
-              <ThumbsUp className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => void handleFeedback("negative")}
-              className={`p-1 rounded transition-colors ${currentFeedback === "negative" ? "text-red-500" : "text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300"}`}
-            >
-              <ThumbsDown className="w-3.5 h-3.5" />
-            </button>
+          <div className="flex flex-col gap-1 mt-2 pt-1">
+            {feedbackError && (
+              <div className="text-[10px] text-amber-600 dark:text-amber-400">{feedbackError}</div>
+            )}
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={() => void handleFeedback("positive")}
+                className={`p-1 rounded transition-colors ${currentFeedback === "positive" ? "text-green-500" : "text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300"}`}
+              >
+                <ThumbsUp className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleFeedback("negative")}
+                className={`p-1 rounded transition-colors ${currentFeedback === "negative" ? "text-red-500" : "text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300"}`}
+              >
+                <ThumbsDown className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         )}
       </div>

@@ -1,34 +1,22 @@
 -- Track E — E6: Form 1823 entity + admission document checklist (18 types)
 
-CREATE TYPE form_1823_status AS ENUM (
-  'pending',
-  'received',
-  'expired',
-  'renewal_due'
-);
+DO $$ BEGIN
+  CREATE TYPE form_1823_status AS ENUM ('pending','received','expired','renewal_due');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE admission_document_type AS ENUM (
-  'form_1823',
-  'facesheet_demographics',
-  'photo_identification',
-  'insurance_financial_cards',
-  'admission_agreement',
-  'financial_agreement',
-  'resident_assessment',
-  'care_plan_acknowledgment',
-  'medication_list',
-  'advance_directives',
-  'tuberculosis_screening',
-  'dietary_evaluation',
-  'physician_orders',
-  'pet_addendum',
-  'privacy_practices_hipaa',
-  'resident_bill_of_rights',
-  'acknowledgment_of_risk',
-  'catheter_care'
-);
+DO $$ BEGIN
+  CREATE TYPE admission_document_type AS ENUM (
+    'form_1823','facesheet_demographics','photo_identification','insurance_financial_cards',
+    'admission_agreement','financial_agreement','resident_assessment','care_plan_acknowledgment',
+    'medication_list','advance_directives','tuberculosis_screening','dietary_evaluation',
+    'physician_orders','pet_addendum','privacy_practices_hipaa','resident_bill_of_rights',
+    'acknowledgment_of_risk','catheter_care'
+  );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TABLE form_1823_records (
+CREATE TABLE IF NOT EXISTS form_1823_records (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
   organization_id uuid NOT NULL REFERENCES organizations (id),
   facility_id uuid NOT NULL REFERENCES facilities (id),
@@ -44,11 +32,11 @@ CREATE TABLE form_1823_records (
   deleted_at timestamptz
 );
 
-CREATE INDEX idx_form_1823_resident ON form_1823_records (resident_id)
+CREATE INDEX IF NOT EXISTS idx_form_1823_resident ON form_1823_records (resident_id)
 WHERE
   deleted_at IS NULL;
 
-CREATE TABLE admission_document_checklist_items (
+CREATE TABLE IF NOT EXISTS admission_document_checklist_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
   organization_id uuid NOT NULL REFERENCES organizations (id),
   facility_id uuid NOT NULL REFERENCES facilities (id),
@@ -65,11 +53,11 @@ CREATE TABLE admission_document_checklist_items (
   deleted_at timestamptz
 );
 
-CREATE UNIQUE INDEX idx_admission_doc_checklist_unique ON admission_document_checklist_items (admission_case_id, document_type)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_admission_doc_checklist_unique ON admission_document_checklist_items (admission_case_id, document_type)
 WHERE
   deleted_at IS NULL;
 
-CREATE INDEX idx_admission_doc_checklist_case ON admission_document_checklist_items (admission_case_id)
+CREATE INDEX IF NOT EXISTS idx_admission_doc_checklist_case ON admission_document_checklist_items (admission_case_id)
 WHERE
   deleted_at IS NULL;
 
@@ -78,6 +66,7 @@ COMMENT ON TABLE admission_document_checklist_items IS 'Per-admission-case docum
 
 ALTER TABLE form_1823_records ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS form_1823_select ON form_1823_records;
 CREATE POLICY form_1823_select ON form_1823_records
   FOR SELECT
   USING (
@@ -87,6 +76,7 @@ CREATE POLICY form_1823_select ON form_1823_records
       SELECT
         haven.accessible_facility_ids ()));
 
+DROP POLICY IF EXISTS form_1823_insert ON form_1823_records;
 CREATE POLICY form_1823_insert ON form_1823_records
   FOR INSERT
   WITH CHECK (
@@ -96,6 +86,7 @@ CREATE POLICY form_1823_insert ON form_1823_records
         haven.accessible_facility_ids ())
     AND haven.app_role () IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
 
+DROP POLICY IF EXISTS form_1823_update ON form_1823_records;
 CREATE POLICY form_1823_update ON form_1823_records
   FOR UPDATE
   USING (
@@ -112,6 +103,7 @@ CREATE POLICY form_1823_update ON form_1823_records
 
 ALTER TABLE admission_document_checklist_items ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS admission_doc_checklist_select ON admission_document_checklist_items;
 CREATE POLICY admission_doc_checklist_select ON admission_document_checklist_items
   FOR SELECT
   USING (
@@ -121,6 +113,7 @@ CREATE POLICY admission_doc_checklist_select ON admission_document_checklist_ite
       SELECT
         haven.accessible_facility_ids ()));
 
+DROP POLICY IF EXISTS admission_doc_checklist_insert ON admission_document_checklist_items;
 CREATE POLICY admission_doc_checklist_insert ON admission_document_checklist_items
   FOR INSERT
   WITH CHECK (
@@ -129,6 +122,7 @@ CREATE POLICY admission_doc_checklist_insert ON admission_document_checklist_ite
       SELECT
         haven.accessible_facility_ids ()));
 
+DROP POLICY IF EXISTS admission_doc_checklist_update ON admission_document_checklist_items;
 CREATE POLICY admission_doc_checklist_update ON admission_document_checklist_items
   FOR UPDATE
   USING (
@@ -143,21 +137,25 @@ CREATE POLICY admission_doc_checklist_update ON admission_document_checklist_ite
       SELECT
         haven.accessible_facility_ids ()));
 
+DROP TRIGGER IF EXISTS tr_form_1823_set_updated_at ON form_1823_records;
 CREATE TRIGGER tr_form_1823_set_updated_at
   BEFORE UPDATE ON form_1823_records
   FOR EACH ROW
   EXECUTE PROCEDURE public.haven_set_updated_at ();
 
+DROP TRIGGER IF EXISTS tr_form_1823_audit ON form_1823_records;
 CREATE TRIGGER tr_form_1823_audit
   AFTER INSERT OR UPDATE OR DELETE ON form_1823_records
   FOR EACH ROW
   EXECUTE PROCEDURE public.haven_capture_audit_log ();
 
+DROP TRIGGER IF EXISTS tr_admission_doc_checklist_set_updated_at ON admission_document_checklist_items;
 CREATE TRIGGER tr_admission_doc_checklist_set_updated_at
   BEFORE UPDATE ON admission_document_checklist_items
   FOR EACH ROW
   EXECUTE PROCEDURE public.haven_set_updated_at ();
 
+DROP TRIGGER IF EXISTS tr_admission_doc_checklist_audit ON admission_document_checklist_items;
 CREATE TRIGGER tr_admission_doc_checklist_audit
   AFTER INSERT OR UPDATE OR DELETE ON admission_document_checklist_items
   FOR EACH ROW

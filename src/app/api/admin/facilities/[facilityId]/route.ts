@@ -41,29 +41,30 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   const { facilityId } = await ctx.params;
   const admin = actor.admin;
 
-  // Fetch facility with entity details (migration 131 columns included)
-  const { data: facility, error } = await (admin as any)
+  if (!actor.organization_id) {
+    return NextResponse.json({ error: "Profile has no organization context" }, { status: 403 });
+  }
+
+  // Select * keeps this route tolerant of schema drift (optional migration 131+ columns).
+  const { data: facility, error } = await admin
     .from("facilities")
-    .select(
-      `id, name, phone, fax, email, address_line_1, address_line_2, city, state, zip, county,
-       organization_id, entity_id, administrator_name, total_licensed_beds,
-       status, opening_date, care_services_offered, waitlist_count, target_occupancy_pct,
-       pharmacy_vendor, last_survey_date, last_survey_result,
-       license_number, license_authority, facility_ratio_rule_set_id,
-       created_at, updated_at, deleted_at`,
-    )
+    .select("*")
     .eq("id", facilityId)
-    .eq("organization_id", actor.organization_id!)
+    .eq("organization_id", actor.organization_id)
     .is("deleted_at", null)
     .maybeSingle();
 
-  if (error || !facility) {
+  if (error) {
+    console.error("[GET /api/admin/facilities/[facilityId]]", error.message);
+    return NextResponse.json({ error: error.message || "Database error loading facility" }, { status: 500 });
+  }
+  if (!facility) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
 
   const fac = facility as Record<string, unknown> & {
     entity_id?: string | null;
-    total_licensed_beds: number;
+    total_licensed_beds?: number;
     license_number?: string | null;
   };
 
@@ -76,7 +77,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
         "id, organization_id, entity_type, legal_name, dba_name, registered_agent_name, formation_date, sunbiz_document_number, created_at",
       )
       .eq("id", fac.entity_id)
-      .eq("organization_id", actor.organization_id!)
+      .eq("organization_id", actor.organization_id)
       .maybeSingle();
     entity = (ent ?? null) as Record<string, unknown> | null;
   }
@@ -106,7 +107,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
       occupancy_count,
       total_beds,
       current_occupancy: occupancy_count,
-      licensed_beds: fac.total_licensed_beds,
+      licensed_beds: fac.total_licensed_beds ?? 0,
       ahca_license_number: fac.license_number ?? null,
       ahca_license_expiration: null as string | null,
     },

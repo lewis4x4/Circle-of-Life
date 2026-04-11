@@ -1,6 +1,28 @@
 -- Track E — E11: Remaining FL statute seeds + module linkage for tooltips
+-- Ensure fl_statutes exists (migration 104 may not have created it due to schema drift)
+CREATE TABLE IF NOT EXISTS fl_statutes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id uuid NOT NULL REFERENCES organizations(id),
+  statute_code text NOT NULL,
+  statute_title text NOT NULL,
+  chapter text NOT NULL,
+  agency text NOT NULL DEFAULT 'AHCA',
+  description text,
+  category text NOT NULL CHECK (category IN (
+    'resident_rights','admission','care_delivery','medication',
+    'incident_reporting','infection_control','emergency_preparedness',
+    'staffing','dietary','maintenance','privacy_hipaa','grievance','other'
+  )),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  created_by uuid REFERENCES auth.users(id),
+  updated_by uuid REFERENCES auth.users(id),
+  deleted_at timestamptz
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_fl_statutes_code ON fl_statutes(organization_id, statute_code) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_fl_statutes_chapter ON fl_statutes(organization_id, chapter) WHERE deleted_at IS NULL;
 
-INSERT INTO fl_statutes (organization_id, statute_code, statute_title, chapter, agency, description, category, created_by)
+INSERT INTO fl_statutes (organization_id, statute_code, statute_title, chapter, agency, description, category)
 SELECT
   '00000000-0000-0000-0000-000000000001',
   '435.04',
@@ -8,8 +30,7 @@ SELECT
   '435',
   'DCF',
   'Fingerprinting and screening requirements for personnel in specified employment categories.',
-  'staffing',
-  '00000000-0000-0000-0000-000000000001'
+  'staffing'
 WHERE
   NOT EXISTS (
     SELECT
@@ -21,7 +42,7 @@ WHERE
       AND statute_code = '435.04'
       AND deleted_at IS NULL);
 
-INSERT INTO fl_statutes (organization_id, statute_code, statute_title, chapter, agency, description, category, created_by)
+INSERT INTO fl_statutes (organization_id, statute_code, statute_title, chapter, agency, description, category)
 SELECT
   '00000000-0000-0000-0000-000000000001',
   '408.809',
@@ -29,8 +50,7 @@ SELECT
   '408',
   'AHCA',
   'Agency-level screening obligations for licensed providers and direct care staff.',
-  'staffing',
-  '00000000-0000-0000-0000-000000000001'
+  'staffing'
 WHERE
   NOT EXISTS (
     SELECT
@@ -42,7 +62,7 @@ WHERE
       AND statute_code = '408.809'
       AND deleted_at IS NULL);
 
-CREATE TABLE fl_statute_module_links (
+CREATE TABLE IF NOT EXISTS fl_statute_module_links (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
   organization_id uuid NOT NULL REFERENCES organizations (id),
   statute_id uuid NOT NULL REFERENCES fl_statutes (id) ON DELETE CASCADE,
@@ -51,11 +71,11 @@ CREATE TABLE fl_statute_module_links (
   deleted_at timestamptz
 );
 
-CREATE UNIQUE INDEX idx_fl_statute_module_links_active ON fl_statute_module_links (statute_id, module_code)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_fl_statute_module_links_active ON fl_statute_module_links (statute_id, module_code)
 WHERE
   deleted_at IS NULL;
 
-CREATE INDEX idx_fl_statute_module_links_statute ON fl_statute_module_links (statute_id)
+CREATE INDEX IF NOT EXISTS idx_fl_statute_module_links_statute ON fl_statute_module_links (statute_id)
 WHERE
   deleted_at IS NULL;
 
@@ -63,18 +83,21 @@ COMMENT ON TABLE fl_statute_module_links IS 'Maps fl_statutes rows to Haven modu
 
 ALTER TABLE fl_statute_module_links ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS fl_statute_module_links_select ON fl_statute_module_links;
 CREATE POLICY fl_statute_module_links_select ON fl_statute_module_links
   FOR SELECT
   USING (
     organization_id = haven.organization_id ()
     AND deleted_at IS NULL);
 
+DROP POLICY IF EXISTS fl_statute_module_links_insert ON fl_statute_module_links;
 CREATE POLICY fl_statute_module_links_insert ON fl_statute_module_links
   FOR INSERT
   WITH CHECK (
     organization_id = haven.organization_id ()
     AND haven.app_role () IN ('owner', 'org_admin'));
 
+DROP POLICY IF EXISTS fl_statute_module_links_update ON fl_statute_module_links;
 CREATE POLICY fl_statute_module_links_update ON fl_statute_module_links
   FOR UPDATE
   USING (

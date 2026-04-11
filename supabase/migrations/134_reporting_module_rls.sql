@@ -1,4 +1,31 @@
 -- Module 26 - Reporting module RLS
+-- Idempotent: drop existing policies first (remote may have partial prior application)
+
+DROP POLICY IF EXISTS report_templates_select ON report_templates;
+DROP POLICY IF EXISTS report_templates_admin_write ON report_templates;
+DROP POLICY IF EXISTS report_template_versions_select ON report_template_versions;
+DROP POLICY IF EXISTS report_template_versions_admin_write ON report_template_versions;
+DROP POLICY IF EXISTS report_saved_views_select ON report_saved_views;
+DROP POLICY IF EXISTS report_saved_views_insert ON report_saved_views;
+DROP POLICY IF EXISTS report_saved_views_update ON report_saved_views;
+DROP POLICY IF EXISTS report_schedules_select ON report_schedules;
+DROP POLICY IF EXISTS report_schedules_write ON report_schedules;
+DROP POLICY IF EXISTS report_schedule_recipients_select ON report_schedule_recipients;
+DROP POLICY IF EXISTS report_schedule_recipients_write ON report_schedule_recipients;
+DROP POLICY IF EXISTS report_runs_select ON report_runs;
+DROP POLICY IF EXISTS report_runs_insert ON report_runs;
+DROP POLICY IF EXISTS report_exports_select ON report_exports;
+DROP POLICY IF EXISTS report_exports_insert ON report_exports;
+DROP POLICY IF EXISTS report_packs_select ON report_packs;
+DROP POLICY IF EXISTS report_packs_write ON report_packs;
+DROP POLICY IF EXISTS report_pack_items_select ON report_pack_items;
+DROP POLICY IF EXISTS report_pack_items_write ON report_pack_items;
+DROP POLICY IF EXISTS report_permissions_select ON report_permissions;
+DROP POLICY IF EXISTS report_permissions_write ON report_permissions;
+DROP POLICY IF EXISTS report_benchmarks_select ON report_benchmarks;
+DROP POLICY IF EXISTS report_benchmarks_write ON report_benchmarks;
+DROP POLICY IF EXISTS report_nlq_mappings_select ON report_nlq_mappings;
+DROP POLICY IF EXISTS report_nlq_mappings_write ON report_nlq_mappings;
 
 ALTER TABLE report_templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE report_template_versions ENABLE ROW LEVEL SECURITY;

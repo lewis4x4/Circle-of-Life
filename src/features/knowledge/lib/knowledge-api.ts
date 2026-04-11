@@ -15,6 +15,38 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   };
 }
 
+/** Result of non-streaming Edge Function calls (ingest, document-admin). */
+export type EdgeCallResult =
+  | { ok: true; data: unknown }
+  | { ok: false; error: string; status: number };
+
+async function postEdgeJson(path: string, init: RequestInit): Promise<EdgeCallResult> {
+  const base = getSupabaseUrl().replace(/\/$/, "");
+  if (!base) {
+    return { ok: false, error: "Missing NEXT_PUBLIC_SUPABASE_URL", status: 0 };
+  }
+  const res = await fetch(`${base}${path}`, init);
+  const text = await res.text();
+  let data: unknown = {};
+  if (text) {
+    try {
+      data = JSON.parse(text) as unknown;
+    } catch {
+      data = { error: text.slice(0, 400) };
+    }
+  }
+  const obj = data && typeof data === "object" ? (data as Record<string, unknown>) : null;
+  const bodyError = obj && typeof obj.error === "string" && obj.error.length > 0 ? obj.error : "";
+  if (!res.ok || bodyError) {
+    return {
+      ok: false,
+      error: bodyError || `Request failed (${res.status})`,
+      status: res.status,
+    };
+  }
+  return { ok: true, data };
+}
+
 export interface SendChatMessageOptions {
   conversationId?: string;
   /** Maps to KB `workspace_id` (COL organization UUID). */
@@ -23,8 +55,15 @@ export interface SendChatMessageOptions {
 }
 
 export async function sendChatMessage(message: string, options: SendChatMessageOptions): Promise<Response> {
+  const base = getSupabaseUrl().replace(/\/$/, "");
+  if (!base) {
+    return new Response(JSON.stringify({ error: "Missing NEXT_PUBLIC_SUPABASE_URL" }), {
+      status: 503,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
   const headers = await getAuthHeaders();
-  return fetch(`${getSupabaseUrl()}/functions/v1/knowledge-agent`, {
+  return fetch(`${base}/functions/v1/knowledge-agent`, {
     method: "POST",
     headers,
     body: JSON.stringify({
@@ -41,7 +80,11 @@ export async function uploadDocument(
   title: string,
   audience: string,
   workspaceId: string,
-): Promise<unknown> {
+): Promise<EdgeCallResult> {
+  const base = getSupabaseUrl().replace(/\/$/, "");
+  if (!base) {
+    return { ok: false, error: "Missing NEXT_PUBLIC_SUPABASE_URL", status: 0 };
+  }
   const supabase = createClient();
   const {
     data: { session },
@@ -52,40 +95,39 @@ export async function uploadDocument(
   formData.append("audience", audience);
   formData.append("workspace_id", workspaceId);
 
-  const res = await fetch(`${getSupabaseUrl()}/functions/v1/ingest`, {
+  return postEdgeJson("/functions/v1/ingest", {
     method: "POST",
     headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
     body: formData,
   });
-  return res.json();
 }
 
-export async function reindexDocument(documentId: string): Promise<unknown> {
+export async function reindexDocument(documentId: string): Promise<EdgeCallResult> {
   const headers = await getAuthHeaders();
-  const res = await fetch(`${getSupabaseUrl()}/functions/v1/ingest`, {
+  return postEdgeJson("/functions/v1/ingest", {
     method: "POST",
     headers,
     body: JSON.stringify({ document_id: documentId }),
   });
-  return res.json();
 }
 
-export async function adminUpdateDocument(documentId: string, updates: Record<string, unknown>): Promise<unknown> {
+export async function adminUpdateDocument(
+  documentId: string,
+  updates: Record<string, unknown>,
+): Promise<EdgeCallResult> {
   const headers = await getAuthHeaders();
-  const res = await fetch(`${getSupabaseUrl()}/functions/v1/document-admin`, {
+  return postEdgeJson("/functions/v1/document-admin", {
     method: "POST",
     headers,
     body: JSON.stringify({ action: "update", document_id: documentId, ...updates }),
   });
-  return res.json();
 }
 
-export async function adminDeleteDocument(documentId: string): Promise<unknown> {
+export async function adminDeleteDocument(documentId: string): Promise<EdgeCallResult> {
   const headers = await getAuthHeaders();
-  const res = await fetch(`${getSupabaseUrl()}/functions/v1/document-admin`, {
+  return postEdgeJson("/functions/v1/document-admin", {
     method: "POST",
     headers,
     body: JSON.stringify({ action: "delete", document_id: documentId }),
   });
-  return res.json();
 }

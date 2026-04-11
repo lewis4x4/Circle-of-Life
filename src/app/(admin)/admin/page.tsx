@@ -33,12 +33,8 @@ export default function AdminDashboardPage() {
       // Role-based routing via centralized config
       const config = getRoleDashboardConfig(role);
 
-      // Redirect roles that don't land on /admin
-      if (role === 'owner' || role === 'org_admin') {
-        router.replace(config.route);
-        return;
-      }
-      if (role === 'caregiver' || role === 'housekeeper' || role === 'family') {
+      // Non-admin shells only (owner/org_admin may open /admin for Triage Inbox — do not redirect)
+      if (role === "caregiver" || role === "housekeeper" || role === "family") {
         router.replace(config.route);
         return;
       }

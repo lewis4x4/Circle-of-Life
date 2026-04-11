@@ -3,7 +3,7 @@
 import React, { Suspense, useCallback } from "react";
 import { Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useFacility } from "@/hooks/useFacility";
 import { FacilityHeader } from "@/components/admin/facilities/FacilityHeader";
 import { FacilityTabNav } from "@/components/admin/facilities/FacilityTabNav";
@@ -32,12 +32,6 @@ const TABS = FACILITY_TABS.map((id) => ({
 
 function isFacilityTab(t: string | null): t is FacilityTab {
   return t != null && (FACILITY_TABS as readonly string[]).includes(t);
-}
-
-interface FacilityDetailPageProps {
-  params: {
-    facilityId: string;
-  };
 }
 
 function FacilityDetailInner({ facilityId }: { facilityId: string }) {
@@ -134,17 +128,45 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
   );
 }
 
-export default function FacilityDetailPage({ params }: FacilityDetailPageProps) {
-  const { facilityId } = params;
+/**
+ * Next.js App Router passes `params` as a Promise for server pages; client pages must read
+ * the dynamic segment via `useParams()` or facilityId is undefined and the detail API 404s.
+ */
+function FacilityRouteResolver() {
+  const params = useParams<{ facilityId: string }>();
+  const facilityId = params.facilityId;
+  const id = typeof facilityId === "string" ? facilityId : Array.isArray(facilityId) ? facilityId[0] : "";
+
+  if (!id) {
+    return (
+      <div className="space-y-6 p-6">
+        <Link
+          href="/admin/facilities"
+          className="inline-flex items-center gap-2 text-teal-600 hover:text-teal-700 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Facilities
+        </Link>
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+          Missing facility in the URL. Use Command → Facilities and select a site again.
+        </div>
+      </div>
+    );
+  }
+
+  return <FacilityDetailInner facilityId={id} />;
+}
+
+export default function FacilityDetailPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center min-h-[40vh]">
+        <div className="flex min-h-[40vh] items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
         </div>
       }
     >
-      <FacilityDetailInner facilityId={facilityId} />
+      <FacilityRouteResolver />
     </Suspense>
   );
 }

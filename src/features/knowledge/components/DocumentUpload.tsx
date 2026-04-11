@@ -56,8 +56,10 @@ export function DocumentUpload({ workspaceId, workspaceLoading, onSuccess }: Doc
     setSuccess(false);
 
     try {
-      const result = (await uploadDocument(file, title.trim(), audience, workspaceId)) as { error?: string };
-      if (result.error) throw new Error(result.error);
+      const result = await uploadDocument(file, title.trim(), audience, workspaceId);
+      if (!result.ok) {
+        throw new Error(result.error);
+      }
       setSuccess(true);
       setFile(null);
       setTitle("");

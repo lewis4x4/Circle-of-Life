@@ -1,10 +1,10 @@
 -- Track E — E10: Cross-module enum / column parity (handoff verification batch)
 
 -- ── Module 06 — Medication order method ──────────────────────────────────────
-CREATE TYPE medication_order_method AS ENUM (
-  'fax',
-  'call_in'
-);
+DO $$ BEGIN
+  CREATE TYPE medication_order_method AS ENUM ('fax','call_in');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 ALTER TABLE resident_medications
 ADD COLUMN IF NOT EXISTS order_method medication_order_method;
@@ -39,14 +39,10 @@ ADD CONSTRAINT medication_errors_grievance_category_chk CHECK (
 COMMENT ON COLUMN medication_errors.grievance_category IS 'AHCA grievance routing code (9-code set from handoff).';
 
 -- ── Module 22 — Referral CRM extensions ────────────────────────────────────
-CREATE TYPE referral_source_channel AS ENUM (
-  'social_media',
-  'radio',
-  'newspaper',
-  'friend',
-  'caring_com',
-  'other'
-);
+DO $$ BEGIN
+  CREATE TYPE referral_source_channel AS ENUM ('social_media','radio','newspaper','friend','caring_com','other');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 ALTER TABLE referral_sources
 ADD COLUMN IF NOT EXISTS source_channel referral_source_channel;
@@ -94,23 +90,14 @@ WHERE
   AND visiting_hours_end = '20:00'::time;
 
 -- ── Module 19 — Vendor category expansion (service-type granularity) ───────
-ALTER TYPE vendor_category
-ADD VALUE 'laundry';
-
-ALTER TYPE vendor_category
-ADD VALUE 'transportation';
-
-ALTER TYPE vendor_category
-ADD VALUE 'laboratory';
-
-ALTER TYPE vendor_category
-ADD VALUE 'utilities';
-
-ALTER TYPE vendor_category
-ADD VALUE 'security';
+ALTER TYPE vendor_category ADD VALUE IF NOT EXISTS 'laundry';
+ALTER TYPE vendor_category ADD VALUE IF NOT EXISTS 'transportation';
+ALTER TYPE vendor_category ADD VALUE IF NOT EXISTS 'laboratory';
+ALTER TYPE vendor_category ADD VALUE IF NOT EXISTS 'utilities';
+ALTER TYPE vendor_category ADD VALUE IF NOT EXISTS 'security';
 
 -- ── Module 21 — Resident rights reference copy for family portal ───────────
-CREATE TABLE family_portal_resident_rights_entries (
+CREATE TABLE IF NOT EXISTS family_portal_resident_rights_entries (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
   organization_id uuid NOT NULL REFERENCES organizations (id),
   sort_order integer NOT NULL,
@@ -122,7 +109,7 @@ CREATE TABLE family_portal_resident_rights_entries (
   deleted_at timestamptz
 );
 
-CREATE INDEX idx_fp_rights_org ON family_portal_resident_rights_entries (organization_id, sort_order)
+CREATE INDEX IF NOT EXISTS idx_fp_rights_org ON family_portal_resident_rights_entries (organization_id, sort_order)
 WHERE
   deleted_at IS NULL;
 
@@ -130,18 +117,21 @@ COMMENT ON TABLE family_portal_resident_rights_entries IS 'Twelve concise reside
 
 ALTER TABLE family_portal_resident_rights_entries ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS fp_rights_select ON family_portal_resident_rights_entries;
 CREATE POLICY fp_rights_select ON family_portal_resident_rights_entries
   FOR SELECT
   USING (
     organization_id = haven.organization_id ()
     AND deleted_at IS NULL);
 
+DROP POLICY IF EXISTS fp_rights_insert ON family_portal_resident_rights_entries;
 CREATE POLICY fp_rights_insert ON family_portal_resident_rights_entries
   FOR INSERT
   WITH CHECK (
     organization_id = haven.organization_id ()
     AND haven.app_role () IN ('owner', 'org_admin'));
 
+DROP POLICY IF EXISTS fp_rights_update ON family_portal_resident_rights_entries;
 CREATE POLICY fp_rights_update ON family_portal_resident_rights_entries
   FOR UPDATE
   USING (
@@ -150,6 +140,7 @@ CREATE POLICY fp_rights_update ON family_portal_resident_rights_entries
   WITH CHECK (
     organization_id = haven.organization_id ());
 
+DROP TRIGGER IF EXISTS tr_fp_rights_set_updated_at ON family_portal_resident_rights_entries;
 CREATE TRIGGER tr_fp_rights_set_updated_at
   BEFORE UPDATE ON family_portal_resident_rights_entries
   FOR EACH ROW

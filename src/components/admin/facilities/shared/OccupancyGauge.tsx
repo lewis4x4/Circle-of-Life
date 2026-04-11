@@ -72,7 +72,7 @@ export function OccupancyGauge({ occupied, total, size = "sm" }: OccupancyGaugeP
         <span className="text-sm font-medium">{occupied}/{total} beds</span>
         <span className="text-muted-foreground">{Math.round(percentage)}%</span>
       </div>
-      <div className="relative h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+      <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
         <div className={`h-full transition-all duration-500 ${colorClass}`} style={{ width: `${percentage}%` }} />
       </div>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Loader2, StopCircle } from "lucide-react";
+import { Send, Loader2, StopCircle, Paperclip } from "lucide-react";
 import { ChatMessage } from "./ChatMessage";
 import { SuggestedPrompts } from "./SuggestedPrompts";
 import { useKnowledgeStream } from "../hooks/useKnowledgeStream";
@@ -74,87 +74,112 @@ export function ChatInterface({
   const inputDisabled = !workspaceId || workspaceLoading;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="relative flex min-h-0 flex-1 flex-col bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(99,102,241,0.12),transparent)] dark:bg-[#050505]">
       {workspaceError && (
-        <div className="mx-4 mt-3 rounded-xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 px-4 py-2 text-sm text-amber-900 dark:text-amber-200">
+        <div className="shrink-0 border-b border-amber-900/50 bg-amber-950/40 px-4 py-2 text-sm text-amber-100">
           {workspaceError}
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {showEmpty && !workspaceLoading && workspaceId && <SuggestedPrompts onSelect={(p) => void handleSend(p)} />}
+      <div className="relative min-h-0 flex-1 overflow-y-auto">
+        {showEmpty && !workspaceLoading && workspaceId ? (
+          <div className="flex min-h-full flex-col items-center justify-center py-6">
+            <SuggestedPrompts onSelect={(p) => void handleSend(p)} />
+          </div>
+        ) : (
+          <div className="mx-auto max-w-3xl space-y-4 px-4 py-6">
+            {existingMessages.map((msg) => (
+              <ChatMessage
+                key={msg.id}
+                id={msg.id}
+                role={msg.role as "user" | "assistant"}
+                content={msg.content}
+                sources={msg.sources as unknown as KBSource[] | undefined}
+                feedback={msg.feedback}
+              />
+            ))}
 
-        {existingMessages.map((msg) => (
-          <ChatMessage
-            key={msg.id}
-            id={msg.id}
-            role={msg.role as "user" | "assistant"}
-            content={msg.content}
-            sources={msg.sources as unknown as KBSource[] | undefined}
-            feedback={msg.feedback}
-          />
-        ))}
+            {isActive && text && (
+              <ChatMessage
+                role="assistant"
+                content={text}
+                sources={sources}
+                isStreaming={state === "streaming"}
+              />
+            )}
 
-        {isActive && text && (
-          <ChatMessage
-            role="assistant"
-            content={text}
-            sources={sources}
-            isStreaming={state === "streaming"}
-          />
-        )}
+            {state === "connecting" && (
+              <div className="flex gap-3">
+                <div className="rounded-2xl bg-zinc-800/90 px-4 py-3 ring-1 ring-zinc-700/80">
+                  <Loader2 className="h-5 w-5 animate-spin text-indigo-400" />
+                </div>
+              </div>
+            )}
 
-        {state === "connecting" && (
-          <div className="flex gap-3">
-            <div className="bg-slate-100 dark:bg-zinc-800 rounded-2xl px-4 py-3">
-              <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
-            </div>
+            {error && (
+              <div className="rounded-xl border border-red-800/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+                {error}
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
           </div>
         )}
-
-        {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3 text-sm text-red-700 dark:text-red-300">
-            {error}
-          </div>
-        )}
-
-        <div ref={messagesEndRef} />
       </div>
 
-      <div className="border-t border-slate-200 dark:border-zinc-800 p-4 bg-white dark:bg-zinc-950">
-        <div className="flex gap-2 items-end max-w-3xl mx-auto">
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={
-              inputDisabled ? "Loading organization…" : "Ask about policies, procedures, compliance…"
-            }
-            rows={1}
-            disabled={inputDisabled}
-            className="flex-1 resize-none rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 px-4 py-3 text-sm text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-60"
-            style={{ minHeight: "44px", maxHeight: "120px" }}
-            onInput={(e) => {
-              const target = e.target as HTMLTextAreaElement;
-              target.style.height = "44px";
-              target.style.height = `${Math.min(target.scrollHeight, 120)}px`;
-            }}
-          />
-          <button
-            type="button"
-            onClick={() => (isActive ? reset() : void handleSend())}
-            disabled={(!isActive && !input.trim()) || inputDisabled}
-            className={`shrink-0 rounded-xl p-3 transition-colors ${
-              isActive
-                ? "bg-red-500 text-white hover:bg-red-600"
-                : input.trim()
-                  ? "bg-indigo-600 text-white hover:bg-indigo-700"
-                  : "bg-slate-100 dark:bg-zinc-800 text-slate-400 cursor-not-allowed"
-            }`}
-          >
-            {isActive ? <StopCircle className="w-5 h-5" /> : <Send className="w-5 h-5" />}
-          </button>
+      <div className="shrink-0 border-t border-zinc-800/90 bg-zinc-950/95 px-4 py-4 backdrop-blur-md pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="mx-auto w-full max-w-4xl">
+          <div className="flex items-end gap-1 rounded-2xl border border-zinc-700/90 bg-zinc-900/90 p-2 pl-3 shadow-[0_-4px_24px_rgba(0,0,0,0.35)] ring-1 ring-white/5">
+            <button
+              type="button"
+              disabled
+              className="mb-1 shrink-0 rounded-lg p-2.5 text-zinc-600"
+              title="Attachments are not available yet"
+              aria-disabled="true"
+            >
+              <Paperclip className="h-5 w-5" />
+            </button>
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={
+                inputDisabled ? "Loading organization…" : "Ask about policies, procedures, compliance…"
+              }
+              rows={1}
+              disabled={inputDisabled}
+              className="max-h-36 min-h-[52px] flex-1 resize-none border-0 bg-transparent py-3.5 text-[15px] leading-relaxed text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-0 disabled:opacity-50"
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = "52px";
+                target.style.height = `${Math.min(Math.max(target.scrollHeight, 52), 144)}px`;
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => (isActive ? reset() : void handleSend())}
+              disabled={(!isActive && !input.trim()) || inputDisabled}
+              className={`mb-1 shrink-0 rounded-xl p-3 transition-colors ${
+                isActive
+                  ? "bg-red-600 text-white hover:bg-red-500"
+                  : input.trim()
+                    ? "bg-indigo-600 text-white hover:bg-indigo-500"
+                    : "cursor-not-allowed bg-zinc-800 text-zinc-600"
+              }`}
+              aria-label={isActive ? "Stop generating" : "Send message"}
+            >
+              {isActive ? <StopCircle className="h-5 w-5" /> : <Send className="h-5 w-5" />}
+            </button>
+          </div>
+          <p className="mt-2.5 text-center text-xs text-zinc-500">
+            Press <kbd className="rounded border border-zinc-700 bg-zinc-800 px-1.5 py-0.5 font-mono text-[10px] text-zinc-400">Enter</kbd>{" "}
+            to send ·{" "}
+            <kbd className="rounded border border-zinc-700 bg-zinc-800 px-1.5 py-0.5 font-mono text-[10px] text-zinc-400">
+              Shift+Enter
+            </kbd>{" "}
+            for a new line
+          </p>
         </div>
       </div>
     </div>
