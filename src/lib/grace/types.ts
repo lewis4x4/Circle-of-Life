@@ -144,6 +144,15 @@ export interface GraceUndoToastState {
   expires_at: number;
 }
 
+/** How a quick action behaves when clicked */
+export type GraceTemplateAction =
+  /** Only focus the composer (e.g. open-ended ask) */
+  | "focus_only"
+  /** Send phrase through knowledge-agent (live data + KB) */
+  | "send_knowledge"
+  /** Run grace-orchestrator to possibly dispatch a structured flow */
+  | "route_flow";
+
 export interface GraceTemplate {
   id: string;
   title: string;
@@ -151,7 +160,11 @@ export interface GraceTemplate {
   icon: ComponentType<{ className?: string }>;
   roles: string[];
   type: "knowledge" | "flow";
+  /** Full question or prompt; may include {facilityName} replaced client-side */
   phrase: string;
   flow_slug?: string;
+  /** @deprecated Prefer `action`; kept for older call sites */
   knowledge_only?: boolean;
+  /** Quick action behavior; if omitted, inferred from `flow_slug` */
+  action?: GraceTemplateAction;
 }
