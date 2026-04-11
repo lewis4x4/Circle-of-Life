@@ -162,7 +162,7 @@ export default function AdminCompliancePage() {
       setComplianceScore(score);
 
       // Load emergency items
-      const { data: emergencyData } = await supabase
+      const { data: emergencyData } = await (supabase as any)
         .from("emergency_checklist_items")
         .select("id, title, next_due_date")
         .eq("facility_id", selectedFacilityId)

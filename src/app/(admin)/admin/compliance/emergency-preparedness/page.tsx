@@ -92,7 +92,7 @@ export default function EmergencyPreparednessPage() {
     setError(null);
 
     try {
-      const { data, error: fetchError } = await supabase
+      const { data, error: fetchError } = await (supabase as any)
         .from("emergency_checklist_items")
         .select("*")
         .eq("facility_id", selectedFacilityId!)
@@ -140,7 +140,7 @@ export default function EmergencyPreparednessPage() {
       }
 
       // Create completion record
-      const { error: completionError } = await supabase
+      const { error: completionError } = await (supabase as any)
         .from("emergency_checklist_completions")
         .insert({
           checklist_item_id: completionDialog.itemId,
@@ -173,7 +173,7 @@ export default function EmergencyPreparednessPage() {
       const nextDueDate = new Date();
       nextDueDate.setDate(nextDueDate.getDate() + item.frequency_days);
 
-      const { error: updateError } = await supabase
+      const { error: updateError } = await (supabase as any)
         .from("emergency_checklist_items")
         .update({
           last_completed_at: new Date().toISOString(),
@@ -220,7 +220,7 @@ export default function EmergencyPreparednessPage() {
       const nextDueDate = new Date();
       nextDueDate.setDate(nextDueDate.getDate() + newItemDialog.frequency);
 
-      const { error: insertError } = await supabase
+      const { error: insertError } = await (supabase as any)
         .from("emergency_checklist_items")
         .insert({
           facility_id: selectedFacilityId!,
