@@ -18,6 +18,7 @@ export function useSearchAuditStream(organizationId: string | null) {
   const [entries, setEntries] = useState<SearchAuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statsNow, setStatsNow] = useState(() => Date.now());
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   // Load initial page
@@ -45,7 +46,9 @@ export function useSearchAuditStream(organizationId: string | null) {
   useEffect(() => {
     if (!organizationId) return;
 
-    loadInitial();
+    const initTimer = window.setTimeout(() => {
+      void loadInitial();
+    }, 0);
 
     const channel = supabase
       .channel(`search-audit-${organizationId}`)
@@ -67,19 +70,27 @@ export function useSearchAuditStream(organizationId: string | null) {
     channelRef.current = channel;
 
     return () => {
+      window.clearTimeout(initTimer);
       channel.unsubscribe();
       channelRef.current = null;
     };
   }, [supabase, organizationId, loadInitial]);
 
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setStatsNow(Date.now());
+    }, 60_000);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
   // Stats derived from current entries
   const stats = useMemo(() => {
-    const now = Date.now();
     const last5min = entries.filter(
-      (e) => now - new Date(e.created_at).getTime() < 5 * 60 * 1000,
+      (e) => statsNow - new Date(e.created_at).getTime() < 5 * 60 * 1000,
     );
     const last1hr = entries.filter(
-      (e) => now - new Date(e.created_at).getTime() < 60 * 60 * 1000,
+      (e) => statsNow - new Date(e.created_at).getTime() < 60 * 60 * 1000,
     );
 
     const toolCounts: Record<string, number> = {};
@@ -105,7 +116,7 @@ export function useSearchAuditStream(organizationId: string | null) {
       roleCounts,
       avgDuration,
     };
-  }, [entries]);
+  }, [entries, statsNow]);
 
   return { entries, stats, loading, error, reload: loadInitial };
 }

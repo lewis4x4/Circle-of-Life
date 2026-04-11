@@ -5,8 +5,12 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import {
+  actorCanAccessTargetUser,
+  actorHasOrgWideFacilityScope,
+  listActorAccessibleFacilityIds,
+  requireAdminApiActor,
+} from "@/lib/admin/api-auth";
 import { canManageUser } from "@/lib/rbac";
 import { updateUserSchema, deleteUserSchema } from "@/lib/validation/user-management";
 import { adminUpdateUserRole, adminDisableUser } from "@/lib/supabase/admin-client";
@@ -16,34 +20,20 @@ interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
-// ── Helper: authenticate + get actor ──────────────────────────────
-
-async function getActor() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) return null;
-
-  const admin = createServiceRoleClient();
-  const { data: profile } = await admin
-    .from("user_profiles")
-    .select("id, organization_id, app_role")
-    .eq("id", user.id)
-    .is("deleted_at", null)
-    .maybeSingle();
-  return profile ? { ...profile, admin } : null;
-}
-
 // ── GET: User Detail ──────────────────────────────────────────────
 
 export async function GET(_request: NextRequest, ctx: RouteContext) {
-  const actor = await getActor();
-  if (!actor) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const auth = await requireAdminApiActor({
+    allowedRoles: ["owner", "org_admin", "facility_admin", "manager"],
+  });
+  if ("response" in auth) return auth.response;
+  const { actor } = auth;
 
   const { id } = await ctx.params;
   const admin = actor.admin;
+  if (!(await actorCanAccessTargetUser(actor, id))) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
 
   const { data: profile, error } = await admin
     .from("user_profiles")
@@ -64,10 +54,18 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
     .eq("user_id", id)
     .order("granted_at", { ascending: false });
 
+  const actorFacilityIds = actorHasOrgWideFacilityScope(actor)
+    ? null
+    : await listActorAccessibleFacilityIds(actor);
+  const visibleFacilities =
+    actorFacilityIds == null
+      ? facilities ?? []
+      : (facilities ?? []).filter((facility) => actorFacilityIds.includes(facility.facility_id));
+
   return NextResponse.json({
     data: {
       ...profile,
-      facilities: (facilities ?? []).map((f: any) => ({
+      facilities: visibleFacilities.map((f: any) => ({
         id: f.id,
         facility_id: f.facility_id,
         facility_name: f.facilities?.name ?? "",
@@ -84,10 +82,16 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
 // ── PATCH: Update User ────────────────────────────────────────────
 
 export async function PATCH(request: NextRequest, ctx: RouteContext) {
-  const actor = await getActor();
-  if (!actor) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const auth = await requireAdminApiActor({
+    allowedRoles: ["owner", "org_admin", "facility_admin", "manager"],
+  });
+  if ("response" in auth) return auth.response;
+  const { actor } = auth;
 
   const { id } = await ctx.params;
+  if (!(await actorCanAccessTargetUser(actor, id))) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
 
   // Cannot modify self's role/status (but can edit own profile fields)
   let body;
@@ -212,12 +216,18 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
 // ── DELETE: Soft-Delete User ──────────────────────────────────────
 
 export async function DELETE(request: NextRequest, ctx: RouteContext) {
-  const actor = await getActor();
-  if (!actor) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const auth = await requireAdminApiActor({
+    allowedRoles: ["owner", "org_admin", "facility_admin", "manager"],
+  });
+  if ("response" in auth) return auth.response;
+  const { actor } = auth;
 
   const { id } = await ctx.params;
   if (actor.id === id) {
     return NextResponse.json({ error: "Cannot delete yourself" }, { status: 422 });
+  }
+  if (!(await actorCanAccessTargetUser(actor, id))) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
   const admin = actor.admin;

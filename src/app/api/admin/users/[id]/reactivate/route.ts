@@ -3,8 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { requireAdminApiActor } from "@/lib/admin/api-auth";
 import { reactivateUserSchema } from "@/lib/validation/user-management";
 import { adminEnableUser } from "@/lib/supabase/admin-client";
 import { writeUserAuditEntry } from "@/lib/audit/user-management-audit";
@@ -14,32 +13,12 @@ interface RouteContext {
 }
 
 export async function POST(request: NextRequest, ctx: RouteContext) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: sessionErr,
-  } = await supabase.auth.getUser();
-  if (sessionErr || !user) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
-
-  const admin = createServiceRoleClient();
-
-  // Actor profile
-  const { data: actor } = await admin
-    .from("user_profiles")
-    .select("id, organization_id, app_role")
-    .eq("id", user.id)
-    .is("deleted_at", null)
-    .maybeSingle();
-  if (!actor) {
-    return NextResponse.json({ error: "Profile not found" }, { status: 403 });
-  }
-
-  const allowedRoles = new Set(["owner", "org_admin"]);
-  if (!allowedRoles.has(actor.app_role)) {
-    return NextResponse.json({ error: "Only org admins can reactivate users" }, { status: 403 });
-  }
+  const auth = await requireAdminApiActor({
+    allowedRoles: ["owner", "org_admin"],
+  });
+  if ("response" in auth) return auth.response;
+  const { actor } = auth;
+  const admin = actor.admin;
 
   const { id: targetUserId } = await ctx.params;
 

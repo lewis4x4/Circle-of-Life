@@ -59,6 +59,16 @@ export const createUserSchema = z
       .min(1, "At least one facility is required"),
     send_invite: z.boolean().default(true),
   })
+  .superRefine((data, ctx) => {
+    const primaryCount = data.facilities.filter((facility) => facility.is_primary).length;
+    if (primaryCount !== 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Exactly one primary facility is required",
+        path: ["facilities"],
+      });
+    }
+  })
   .strict();
 
 // ── Update User (PATCH body) ──────────────────────────────────────

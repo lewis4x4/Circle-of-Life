@@ -75,7 +75,8 @@ export async function graceSpeak(text: string, voice = "alloy"): Promise<void> {
   if (!text.trim()) return;
   cancelGraceSpeech();
   const accessToken = await requireAccessToken();
-  const base = (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
+  const client = createClient();
+  const base = client.supabaseUrl.replace(/\/$/, "");
   const res = await fetch(`${base}/functions/v1/grace-tts`, {
     method: "POST",
     headers: {

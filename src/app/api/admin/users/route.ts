@@ -4,8 +4,11 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import {
+  actorHasOrgWideFacilityScope,
+  listActorAccessibleFacilityIds,
+  requireAdminApiActor,
+} from "@/lib/admin/api-auth";
 import { canManageUser } from "@/lib/rbac";
 import { listUsersQuerySchema, createUserSchema } from "@/lib/validation/user-management";
 import { adminInviteUser, adminCreateUser } from "@/lib/supabase/admin-client";
@@ -14,32 +17,14 @@ import { writeUserAuditEntry } from "@/lib/audit/user-management-audit";
 // ── GET: List Users ───────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  // Auth
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: sessionErr,
-  } = await supabase.auth.getUser();
-  if (sessionErr || !user) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const auth = await requireAdminApiActor({
+    allowedRoles: ["owner", "org_admin", "facility_admin", "manager"],
+  });
+  if ("response" in auth) {
+    return auth.response;
   }
-
-  // Get actor profile
-  const admin = createServiceRoleClient();
-  const { data: actor, error: profileErr } = await admin
-    .from("user_profiles")
-    .select("id, organization_id, app_role")
-    .eq("id", user.id)
-    .is("deleted_at", null)
-    .maybeSingle();
-  if (profileErr || !actor) {
-    return NextResponse.json({ error: "Profile not found" }, { status: 403 });
-  }
-
-  const allowedRoles = new Set(["owner", "org_admin", "facility_admin", "manager"]);
-  if (!allowedRoles.has(actor.app_role)) {
-    return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
-  }
+  const { actor } = auth;
+  const admin = actor.admin;
 
   // Parse query params
   const url = new URL(request.url);
@@ -63,6 +48,27 @@ export async function GET(request: NextRequest) {
 
   const { page, page_size, search, role, facility_id, status, sort_by, sort_order } = parsed.data;
   const offset = (page - 1) * page_size;
+  const actorFacilityIds = await listActorAccessibleFacilityIds(actor);
+  const orgWideScope = actorHasOrgWideFacilityScope(actor);
+
+  if (!orgWideScope && actorFacilityIds.length === 0) {
+    return NextResponse.json({
+      data: [],
+      pagination: {
+        total: 0,
+        page,
+        page_size,
+        total_pages: 0,
+        has_next: false,
+      },
+    });
+  }
+
+  if (!orgWideScope && facility_id.some((id) => !actorFacilityIds.includes(id))) {
+    return NextResponse.json({ error: "One or more facilities are outside your scope" }, { status: 403 });
+  }
+
+  const scopedFacilityIds = facility_id.length > 0 ? facility_id : orgWideScope ? [] : actorFacilityIds;
 
   // Build query — new columns (job_title, manager_user_id) not yet in generated types
   let query: any = admin
@@ -93,6 +99,34 @@ export async function GET(request: NextRequest) {
     query = query.eq("app_role", role);
   }
 
+  if (scopedFacilityIds.length > 0) {
+    const { data: scopedAccessRows, error: scopedAccessError } = await admin
+      .from("user_facility_access")
+      .select("user_id")
+      .in("facility_id", scopedFacilityIds)
+      .is("revoked_at", null);
+
+    if (scopedAccessError) {
+      return NextResponse.json({ error: "Failed to resolve user scope" }, { status: 500 });
+    }
+
+    const scopedUserIds = Array.from(new Set((scopedAccessRows ?? []).map((row) => row.user_id)));
+    if (scopedUserIds.length === 0) {
+      return NextResponse.json({
+        data: [],
+        pagination: {
+          total: 0,
+          page,
+          page_size,
+          total_pages: 0,
+          has_next: false,
+        },
+      });
+    }
+
+    query = query.in("id", scopedUserIds);
+  }
+
   // Sort
   query = query.order(sort_by, { ascending: sort_order === "asc" });
   query = query.range(offset, offset + page_size - 1);
@@ -106,11 +140,17 @@ export async function GET(request: NextRequest) {
   const userIds = (users ?? []).map((u: any) => u.id);
   let facilityMap: Record<string, Array<{ facility_id: string; facility_name: string; is_primary: boolean }>> = {};
   if (userIds.length > 0) {
-    const { data: accessRows } = await admin
+    let accessQuery = admin
       .from("user_facility_access")
       .select("user_id, facility_id, is_primary, facilities(name)")
       .in("user_id", userIds)
       .is("revoked_at", null);
+
+    if (scopedFacilityIds.length > 0) {
+      accessQuery = accessQuery.in("facility_id", scopedFacilityIds);
+    }
+
+    const { data: accessRows } = await accessQuery;
 
     if (accessRows) {
       for (const row of accessRows) {
@@ -144,15 +184,13 @@ export async function GET(request: NextRequest) {
 // ── POST: Create User ─────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  // Auth
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: sessionErr,
-  } = await supabase.auth.getUser();
-  if (sessionErr || !user) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const auth = await requireAdminApiActor({
+    allowedRoles: ["owner", "org_admin", "facility_admin"],
+  });
+  if ("response" in auth) {
+    return auth.response;
   }
+  const { actor } = auth;
 
   // Parse body
   let body;
@@ -171,23 +209,7 @@ export async function POST(request: NextRequest) {
   }
   const data = parsed.data;
 
-  // Get actor profile
-  const admin = createServiceRoleClient();
-  const { data: actor, error: profileErr } = await admin
-    .from("user_profiles")
-    .select("id, organization_id, app_role")
-    .eq("id", user.id)
-    .is("deleted_at", null)
-    .maybeSingle();
-  if (profileErr || !actor) {
-    return NextResponse.json({ error: "Profile not found" }, { status: 403 });
-  }
-
-  // Role hierarchy check
-  const createAllowedRoles = new Set(["owner", "org_admin", "facility_admin"]);
-  if (!createAllowedRoles.has(actor.app_role)) {
-    return NextResponse.json({ error: "Insufficient permissions to create users" }, { status: 403 });
-  }
+  const admin = actor.admin;
 
   if (!canManageUser(actor.app_role, data.app_role)) {
     return NextResponse.json(
@@ -208,6 +230,14 @@ export async function POST(request: NextRequest) {
 
   // Verify facilities belong to actor's org and are accessible
   const facilityIds = data.facilities.map((f) => f.facility_id);
+  const actorFacilityIds = await listActorAccessibleFacilityIds(actor);
+  if (
+    !actorHasOrgWideFacilityScope(actor) &&
+    facilityIds.some((facilityId) => !actorFacilityIds.includes(facilityId))
+  ) {
+    return NextResponse.json({ error: "Cannot assign facilities outside your scope" }, { status: 403 });
+  }
+
   const { data: facilities } = await admin
     .from("facilities")
     .select("id")

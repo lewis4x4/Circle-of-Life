@@ -3,34 +3,18 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { listActorAccessibleFacilityIds, requireAdminApiActor } from "@/lib/admin/api-auth";
 import { listFacilitiesQuerySchema } from "@/lib/validation/facility-admin";
 
 // ── GET: List Facilities ──────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  // Auth
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: sessionErr,
-  } = await supabase.auth.getUser();
-  if (sessionErr || !user) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const auth = await requireAdminApiActor();
+  if ("response" in auth) {
+    return auth.response;
   }
-
-  // Get actor profile
-  const admin = createServiceRoleClient();
-  const { data: actor, error: profileErr } = await admin
-    .from("user_profiles")
-    .select("id, organization_id, app_role")
-    .eq("id", user.id)
-    .is("deleted_at", null)
-    .maybeSingle();
-  if (profileErr || !actor) {
-    return NextResponse.json({ error: "Profile not found" }, { status: 403 });
-  }
+  const { actor } = auth;
+  const admin = actor.admin;
 
   // Parse query params
   const url = new URL(request.url);
@@ -64,6 +48,20 @@ export async function GET(request: NextRequest) {
     )
     .eq("organization_id", actor.organization_id!)
     .is("deleted_at", null);
+
+  const accessibleFacilityIds = await listActorAccessibleFacilityIds(actor);
+  if (accessibleFacilityIds.length === 0) {
+    return NextResponse.json({
+      facilities: [],
+      total: 0,
+      page,
+      has_next: false,
+    });
+  }
+
+  if (!["owner", "org_admin"].includes(actor.app_role)) {
+    query = query.in("id", accessibleFacilityIds);
+  }
 
   // Status filter
   if (status && status !== "all") {

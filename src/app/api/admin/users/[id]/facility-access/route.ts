@@ -4,8 +4,12 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import {
+  actorCanAccessTargetUser,
+  actorHasOrgWideFacilityScope,
+  listActorAccessibleFacilityIds,
+  requireAdminApiActor,
+} from "@/lib/admin/api-auth";
 import { canManageUser } from "@/lib/rbac";
 import { grantFacilityAccessSchema } from "@/lib/validation/user-management";
 import { writeUserAuditEntry } from "@/lib/audit/user-management-audit";
@@ -14,29 +18,14 @@ interface RouteContext {
   params: Promise<{ id: string; facilityId?: string }>;
 }
 
-async function getActor() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) return null;
-
-  const admin = createServiceRoleClient();
-  const { data: profile } = await admin
-    .from("user_profiles")
-    .select("id, organization_id, app_role")
-    .eq("id", user.id)
-    .is("deleted_at", null)
-    .maybeSingle();
-  return profile ? { ...profile, admin } : null;
-}
-
 // ── POST: Grant Facility Access ───────────────────────────────────
 
 export async function POST(request: NextRequest, ctx: RouteContext) {
-  const actor = await getActor();
-  if (!actor) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const auth = await requireAdminApiActor({
+    allowedRoles: ["owner", "org_admin", "facility_admin", "manager"],
+  });
+  if ("response" in auth) return auth.response;
+  const { actor } = auth;
 
   const { id: targetUserId } = await ctx.params;
 
@@ -57,6 +46,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
   const { facility_id, is_primary } = parsed.data;
 
   const admin = actor.admin;
+  const actorFacilityIds = await listActorAccessibleFacilityIds(actor);
 
   // Verify target user exists and belongs to same org
   const { data: target } = await admin
@@ -68,11 +58,17 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
   if (!target || target.organization_id !== actor.organization_id!) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
-
-  // Actor must be able to manage target
-  const grantRoles = new Set(["owner", "org_admin", "facility_admin", "manager"]);
-  if (!grantRoles.has(actor.app_role)) {
-    return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+  if (!canManageUser(actor.app_role, target.app_role)) {
+    return NextResponse.json({ error: "Cannot modify this user" }, { status: 403 });
+  }
+  if (!(await actorCanAccessTargetUser(actor, targetUserId))) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+  if (
+    !actorHasOrgWideFacilityScope(actor) &&
+    !actorFacilityIds.includes(facility_id)
+  ) {
+    return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
 
   // Verify facility belongs to org
@@ -146,8 +142,11 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
 // ── DELETE: Revoke Facility Access ────────────────────────────────
 
 export async function DELETE(request: NextRequest, ctx: RouteContext) {
-  const actor = await getActor();
-  if (!actor) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const auth = await requireAdminApiActor({
+    allowedRoles: ["owner", "org_admin", "facility_admin", "manager"],
+  });
+  if ("response" in auth) return auth.response;
+  const { actor } = auth;
 
   const { id: targetUserId, facilityId } = await ctx.params;
   if (!facilityId) {
@@ -155,10 +154,28 @@ export async function DELETE(request: NextRequest, ctx: RouteContext) {
   }
 
   const admin = actor.admin;
+  const actorFacilityIds = await listActorAccessibleFacilityIds(actor);
+  if (
+    !actorHasOrgWideFacilityScope(actor) &&
+    !actorFacilityIds.includes(facilityId)
+  ) {
+    return NextResponse.json({ error: "Access grant not found" }, { status: 404 });
+  }
 
-  const revokeRoles = new Set(["owner", "org_admin", "facility_admin", "manager"]);
-  if (!revokeRoles.has(actor.app_role)) {
-    return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+  const { data: target } = await admin
+    .from("user_profiles")
+    .select("id, organization_id, app_role")
+    .eq("id", targetUserId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (!target || target.organization_id !== actor.organization_id) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+  if (!canManageUser(actor.app_role, target.app_role)) {
+    return NextResponse.json({ error: "Cannot modify this user" }, { status: 403 });
+  }
+  if (!(await actorCanAccessTargetUser(actor, targetUserId))) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
   // Find the active access row

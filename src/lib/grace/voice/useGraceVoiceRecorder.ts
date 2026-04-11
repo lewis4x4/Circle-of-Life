@@ -139,7 +139,8 @@ async function requireAccessToken(): Promise<string> {
 
 export async function transcribeGraceAudio(audio: Blob): Promise<string> {
   const accessToken = await requireAccessToken();
-  const base = (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
+  const client = createClient();
+  const base = client.supabaseUrl.replace(/\/$/, "");
   const form = new FormData();
   form.append("audio", audio, "grace-input.webm");
   const res = await fetch(`${base}/functions/v1/grace-transcribe`, {

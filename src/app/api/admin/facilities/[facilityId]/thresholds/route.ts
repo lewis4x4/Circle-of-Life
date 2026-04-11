@@ -4,8 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
 import { thresholdSchema } from "@/lib/validation/facility-admin";
 import { z } from "zod";
 
@@ -13,34 +12,18 @@ interface RouteContext {
   params: Promise<{ facilityId: string }>;
 }
 
-// ── Helper: authenticate + get actor ──────────────────────────────
-
-async function getActor() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) return null;
-
-  const admin = createServiceRoleClient();
-  const { data: profile } = await admin
-    .from("user_profiles")
-    .select("id, organization_id, app_role")
-    .eq("id", user.id)
-    .is("deleted_at", null)
-    .maybeSingle();
-  return profile ? { ...profile, admin } : null;
-}
-
 // ── GET: List Thresholds ──────────────────────────────────────────
 
 export async function GET(_request: NextRequest, ctx: RouteContext) {
-  const actor = await getActor();
-  if (!actor) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const auth = await requireAdminApiActor();
+  if ("response" in auth) return auth.response;
+  const { actor } = auth;
 
   const { facilityId } = await ctx.params;
   const admin = actor.admin;
+  if (!(await actorCanAccessFacility(actor, facilityId))) {
+    return NextResponse.json({ error: "Facility not found" }, { status: 404 });
+  }
 
   // Verify facility exists and belongs to org
   const { data: facility } = await admin
@@ -72,14 +55,15 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
 // ── PUT: Bulk Upsert Thresholds ───────────────────────────────────
 
 export async function PUT(request: NextRequest, ctx: RouteContext) {
-  const actor = await getActor();
-  if (!actor) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const auth = await requireAdminApiActor({
+    allowedRoles: ["owner", "org_admin"],
+  });
+  if ("response" in auth) return auth.response;
+  const { actor } = auth;
 
   const { facilityId } = await ctx.params;
-
-  // Authorization: owner/org_admin only
-  if (!["owner", "org_admin"].includes(actor.app_role)) {
-    return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+  if (!(await actorCanAccessFacility(actor, facilityId))) {
+    return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
 
   // Parse body

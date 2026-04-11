@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
@@ -14,40 +14,47 @@ type Props = {
 export function RateConfirmationBanner({ facilityId }: Props) {
   const [show, setShow] = useState(false);
 
-  const load = useCallback(
-    async (signal?: AbortSignal) => {
-      if (!isValidFacilityIdForQuery(facilityId)) {
-        setShow(false);
-        return;
-      }
-      try {
-        const res = await fetch(`/api/admin/facilities/${facilityId}/rates?active_only=true`, {
-          signal,
-        });
-        if (!res.ok) {
-          setShow(false);
-          return;
-        }
-        const json = (await res.json()) as {
-          data: { effective_to: string | null; rate_confirmed?: boolean }[];
-        };
-        const pending = (json.data ?? []).some(
-          (r) => r.effective_to == null && r.rate_confirmed === false,
-        );
-        setShow(pending);
-      } catch (e) {
-        if (e instanceof DOMException && e.name === "AbortError") return;
-        setShow(false);
-      }
-    },
-    [facilityId],
-  );
-
   useEffect(() => {
+    if (!isValidFacilityIdForQuery(facilityId)) {
+      const resetTimer = window.setTimeout(() => {
+        setShow(false);
+      }, 0);
+
+      return () => window.clearTimeout(resetTimer);
+    }
+
+    let disposed = false;
     const ac = new AbortController();
-    void load(ac.signal);
-    return () => ac.abort();
-  }, [load]);
+    const loadTimer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const res = await fetch(`/api/admin/facilities/${facilityId}/rates?active_only=true`, {
+            signal: ac.signal,
+          });
+          if (!res.ok) {
+            if (!disposed) setShow(false);
+            return;
+          }
+          const json = (await res.json()) as {
+            data: { effective_to: string | null; rate_confirmed?: boolean }[];
+          };
+          const pending = (json.data ?? []).some(
+            (rate) => rate.effective_to == null && rate.rate_confirmed === false,
+          );
+          if (!disposed) setShow(pending);
+        } catch (error) {
+          if (error instanceof DOMException && error.name === "AbortError") return;
+          if (!disposed) setShow(false);
+        }
+      })();
+    }, 0);
+
+    return () => {
+      disposed = true;
+      window.clearTimeout(loadTimer);
+      ac.abort();
+    };
+  }, [facilityId]);
 
   if (!show) return null;
 
