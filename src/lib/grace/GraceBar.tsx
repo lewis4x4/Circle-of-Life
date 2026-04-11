@@ -386,6 +386,10 @@ export function GraceBar() {
                 onClick={() => {
                   if (state.narrationEnabled) cancelGraceSpeech();
                   setNarrationEnabled(!state.narrationEnabled);
+                  // Add visual feedback for button click
+                  const btn = document.querySelector('[aria-label="Disable narration"], [aria-label="Enable narration"]') as HTMLButtonElement;
+                  btn?.style.transform = "scale(0.95)";
+                  setTimeout(() => btn.style.transform = "", 150);
                 }}
                 title={state.narrationEnabled ? "Disable narration" : "Enable narration"}
                 aria-label={state.narrationEnabled ? "Disable narration" : "Enable narration"}
@@ -398,6 +402,10 @@ export function GraceBar() {
                 onClick={() => {
                   knowledgeCancel();
                   cancelGraceSpeech();
+                  // Add visual feedback for button click
+                  const btn = document.querySelector('[aria-label="Stop response"]') as HTMLButtonElement;
+                  if (btn) btn.style.transform = "scale(0.95)";
+                  setTimeout(() => btn.style.transform = "", 150);
                 }}
                 title="Stop response"
                 aria-label="Stop response"
