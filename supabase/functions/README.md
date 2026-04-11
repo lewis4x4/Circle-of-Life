@@ -16,6 +16,12 @@
 | `knowledge-agent` | yes | `POST { "message", "conversation_id"?, "workspace_id"? }` — Claude tool loop + **`retrieve_evidence`** RPC; SSE response. **`workspace_id`** defaults to caller org. Secrets: **`OPENAI_API_KEY`**, **`ANTHROPIC_API_KEY`**. |
 | `document-admin` | yes | `POST { "action": "update" \| "delete" \| "regenerate_markdown", "document_id", ... }` — metadata updates, soft-delete + storage remove, or **`regenerate_markdown`** (proxies to **`ingest`**). Roles: **owner**, **org_admin** only. |
 | `facility-expiration-scanner` | no | `POST` — scans **`facility_documents`** with **`expiration_date`**; returns yellow/red findings using per-row alert day windows. Auth: **`x-cron-secret`** = **`FACILITY_EXPIRATION_SCANNER_SECRET`**. Schedule daily (e.g. 06:00 America/New_York). Requires migration **`131_facility_admin_portal.sql`**. |
+| `grace-orchestrator` | yes | `POST { "text", "conversation_id"?, "input_mode"?, "route"? }` — Grace companion classifier + response. Routes to knowledge stream or flow initiation. Auth: user JWT. Secrets: **`ANTHROPIC_API_KEY`**. Requires migrations **`147`**, **`148`**. |
+| `grace-execute-flow-step` | yes | `POST { "flow_id", "conversation_id", "idempotency_key", "slots", ... }` — executes a Grace flow step (log daily note, report incident, schedule assessment). Auth: user JWT. Idempotent per `(org, user, idempotency_key)`. |
+| `grace-undo-flow-run` | yes | `POST { "run_id" }` — undoes a Grace flow run within the 60-second window. Auth: user JWT (must own the run). |
+| `grace-transcribe` | yes | `POST` multipart (audio file) — speech-to-text for Grace voice input. Auth: user JWT. Secrets: **`OPENAI_API_KEY`**. |
+| `grace-tts` | yes | `POST { "text" }` — text-to-speech for Grace narration. Auth: user JWT. Secrets: **`OPENAI_API_KEY`**. |
+| `grace-redteam-nightly` | no | `POST` — nightly red-team safety evaluation of Grace flows. Auth: **`x-cron-secret`** = **`GRACE_REDTEAM_SECRET`**. |
 
 ## `generate-monthly-invoices` — request body
 
@@ -72,6 +78,7 @@ Do **not** send `facility_id` and `organization_id` together.
 - `EXEC_ALERT_EVALUATOR_SECRET` — required for `exec-alert-evaluator`.
 - `PROCESS_REFERRAL_HL7_INBOUND_SECRET` — required for `process-referral-hl7-inbound`.
 - `FACILITY_EXPIRATION_SCANNER_SECRET` — required for `facility-expiration-scanner` (header `x-cron-secret`).
+- `GRACE_REDTEAM_SECRET` — required for `grace-redteam-nightly` (header `x-cron-secret`).
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically.
 
@@ -144,4 +151,12 @@ supabase functions deploy exec-alert-evaluator --project-ref manfqmasfqppukpobpl
 supabase functions deploy ingest --project-ref manfqmasfqppukpobpld
 supabase functions deploy knowledge-agent --project-ref manfqmasfqppukpobpld
 supabase functions deploy document-admin --project-ref manfqmasfqppukpobpld
+supabase functions deploy facility-expiration-scanner --project-ref manfqmasfqppukpobpld
+supabase functions deploy process-referral-hl7-inbound --project-ref manfqmasfqppukpobpld
+supabase functions deploy grace-orchestrator --project-ref manfqmasfqppukpobpld
+supabase functions deploy grace-execute-flow-step --project-ref manfqmasfqppukpobpld
+supabase functions deploy grace-undo-flow-run --project-ref manfqmasfqppukpobpld
+supabase functions deploy grace-transcribe --project-ref manfqmasfqppukpobpld
+supabase functions deploy grace-tts --project-ref manfqmasfqppukpobpld
+supabase functions deploy grace-redteam-nightly --project-ref manfqmasfqppukpobpld
 ```
