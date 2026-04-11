@@ -5,6 +5,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
+import { redactString, redactValue } from "../_shared/redact-pii.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -34,7 +35,9 @@ type ToolContext = {
   workspaceId: string;
   userRole: string;
   userId: string;
+  userEmail: string | null;
   accessibleFacilityIds: string[];
+  route?: string;
 };
 
 type ResidentLookupRow = {
@@ -262,6 +265,76 @@ function getAvailableToolsForRole(userRole: string): ToolDefinition[] {
   return TOOL_REGISTRY.filter((tool) => TIER_ALLOWED_ROLES[tool.tier]?.has(userRole));
 }
 
+async function applyPolicyOverrides(
+  admin: any,
+  workspaceId: string,
+  userRole: string,
+  tools: ToolDefinition[],
+): Promise<ToolDefinition[]> {
+  const { data, error } = await admin
+    .from("search_tool_policies")
+    .select("tool_name, enabled")
+    .eq("organization_id", workspaceId)
+    .eq("app_role", userRole);
+
+  if (error || !data || data.length === 0) return [];
+
+  const enabledByTool = new Map<string, boolean>();
+  for (const row of data as Array<{ tool_name: string; enabled: boolean }>) {
+    enabledByTool.set(row.tool_name, row.enabled);
+  }
+
+  return tools.filter((tool) => enabledByTool.get(tool.name) === true);
+}
+
+function countToolResults(result: unknown): number {
+  if (Array.isArray(result)) return result.length;
+  if (!result || typeof result !== "object") return 0;
+  const record = result as Record<string, unknown>;
+  if (typeof record.count === "number") return record.count;
+  if (Array.isArray(record.residents)) return record.residents.length;
+  if (Array.isArray(record.batches)) return record.batches.length;
+  if (Array.isArray(record.lines)) return record.lines.length;
+  if (Array.isArray(record.staff_matches)) return record.staff_matches.length;
+  if (record.sections && typeof record.sections === "object") {
+    return Object.values(record.sections as Record<string, unknown>).reduce((sum: number, value) => {
+      return sum + (Array.isArray(value) ? value.length : 0);
+    }, 0);
+  }
+  return 0;
+}
+
+async function logSearchAudit(
+  ctx: ToolContext,
+  toolName: string,
+  toolTier: ToolTier,
+  input: Record<string, unknown>,
+  result: unknown,
+  durationMs: number,
+) {
+  try {
+    await ctx.admin.from("search_audit_log").insert({
+      organization_id: ctx.workspaceId,
+      facility_id: null,
+      user_id: ctx.userId,
+      user_email: ctx.userEmail,
+      app_role: ctx.userRole,
+      tool_name: toolName,
+      tool_tier: toolTier,
+      query_text:
+        typeof input.query === "string"
+          ? sanitizeSearchQuery(input.query)
+          : typeof input.name === "string"
+            ? sanitizeSearchQuery(input.name)
+            : null,
+      results_count: countToolResults(result),
+      duration_ms: durationMs,
+    });
+  } catch {
+    // Non-blocking: audit logging should not break operator search.
+  }
+}
+
 function sanitizeSearchQuery(value: unknown): string {
   return String(value ?? "")
     .replace(/[,%()]/g, " ")
@@ -403,11 +476,15 @@ async function fetchResidentMatches(
 async function fetchResidentNameMap(ctx: ToolContext, residentIds: string[]): Promise<Record<string, string>> {
   const ids = uniq(residentIds);
   if (ids.length === 0) return {};
-  const { data } = await ctx.admin
+  let req = ctx.admin
     .from("residents")
     .select("id,first_name,last_name,preferred_name")
     .eq("organization_id", ctx.workspaceId)
     .in("id", ids);
+  if (ctx.accessibleFacilityIds.length > 0) {
+    req = req.in("facility_id", ctx.accessibleFacilityIds);
+  }
+  const { data } = await req;
   return Object.fromEntries(
     (data ?? []).map((row: NamedResidentRow) => [row.id, formatResidentName(row)]),
   );
@@ -1237,15 +1314,29 @@ function chunkTextForStream(text: string): string[] {
 }
 
 function buildSystemPrompt(userRole: string, tools: ToolDefinition[]): string {
+  return buildSystemPromptWithEvidence(userRole, tools, null, undefined);
+}
+
+function buildSystemPromptWithEvidence(
+  userRole: string,
+  tools: ToolDefinition[],
+  preloadedEvidence: string | null,
+  route: string | undefined,
+): string {
   return `You are the role-governed Haven knowledge assistant for Circle of Life.
 
 ${buildToolAccessSummary(userRole, tools)}
 
+${route ? `Current operator route: ${route}` : ""}
+
+${preloadedEvidence ? `Pre-loaded evidence:\n${preloadedEvidence}\n` : ""}
+
 How to think:
-1. Decide which tool fits the question.
-2. Use live-data tools for resident, medication, daily-ops, incident, census, staff, compliance, billing, or payroll questions.
-3. Use \`semantic_kb_search\` for uploaded policies, handbooks, SOPs, and compliance reference documents.
-4. Read the tool result carefully and answer directly in plain language.
+1. Read the user question.
+2. Check the pre-loaded evidence first. If it already answers the question, answer directly without calling more tools.
+3. Use live-data tools for resident, medication, daily-ops, incident, census, staff, compliance, billing, or payroll questions.
+4. Use \`semantic_kb_search\` for uploaded policies, handbooks, SOPs, and compliance reference documents.
+5. Read each tool result carefully and answer directly in plain language.
 
 Hard rules:
 - All tools are READ-ONLY. Never mutate data.
@@ -1255,6 +1346,46 @@ Hard rules:
 - Live operational answers can cite the tool and the returned records in plain language; do not fabricate a document citation.
 - If \`semantic_kb_search\` returns no rows, tell the user to upload documents under **Admin → Knowledge → Knowledge admin** (\`/admin/knowledge/admin\`).
 - Keep responses concise and operationally useful.`;
+}
+
+async function preloadKnowledgeEvidence(
+  question: string,
+  ctx: ToolContext,
+): Promise<{
+  evidenceText: string | null;
+  sources: {
+    title: string;
+    excerpt: string;
+    confidence: number;
+    section_title: string | null;
+  }[];
+}> {
+  const raw = await executeTool("semantic_kb_search", { query: question, limit: 4 }, ctx);
+  if (!Array.isArray(raw) || raw.length === 0) {
+    return { evidenceText: null, sources: [] };
+  }
+
+  const rows = raw as {
+    source_title: string;
+    excerpt: string;
+    confidence: number;
+    section_title: string | null;
+  }[];
+
+  const sources = rows.map((row) => ({
+    title: row.source_title,
+    excerpt: row.excerpt,
+    confidence: row.confidence,
+    section_title: row.section_title,
+  }));
+
+  const evidenceText = rows
+    .map((row, index) =>
+      `${index + 1}. ${row.source_title}${row.section_title ? ` — ${row.section_title}` : ""}\n${row.excerpt}`,
+    )
+    .join("\n\n");
+
+  return { evidenceText, sources };
 }
 
 async function runAgentLoop(
@@ -1287,6 +1418,10 @@ async function runAgentLoop(
     confidence: number;
     section_title: string | null;
   }[] = [];
+  const preloadedEvidence = tools.some((tool) => tool.name === "semantic_kb_search")
+    ? await preloadKnowledgeEvidence(question, ctx)
+    : { evidenceText: null, sources: [] };
+  sources.push(...preloadedEvidence.sources);
 
   const messages: Array<{ role: string; content: unknown }> = [
     ...conversationHistory.slice(-MAX_HISTORY),
@@ -1311,7 +1446,11 @@ async function runAgentLoop(
       body: JSON.stringify({
         model,
         max_tokens: 4096,
-        system: [{ type: "text", text: buildSystemPrompt(ctx.userRole, tools), cache_control: { type: "ephemeral" } }],
+        system: [{
+          type: "text",
+          text: buildSystemPromptWithEvidence(ctx.userRole, tools, preloadedEvidence.evidenceText, ctx.route),
+          cache_control: { type: "ephemeral" },
+        }],
         tools: withToolCache(tools),
         messages,
       }),
@@ -1350,7 +1489,19 @@ async function runAgentLoop(
 
         toolsUsed.push(block.name!);
         if (block.name === "semantic_kb_search") kbSearchUsed = true;
+        const toolStartedAt = Date.now();
         const toolResult = await executeTool(block.name!, block.input ?? {}, ctx);
+        const toolDef = TOOL_REGISTRY.find((tool) => tool.name === block.name);
+        if (toolDef) {
+          await logSearchAudit(
+            ctx,
+            toolDef.name,
+            toolDef.tier,
+            block.input ?? {},
+            toolResult,
+            Date.now() - toolStartedAt,
+          );
+        }
 
         if (block.name === "semantic_kb_search" && Array.isArray(toolResult)) {
           sources.push(
@@ -1427,14 +1578,14 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Profile has no organization" }, 403, origin);
   }
 
-  let body: { message?: string; conversation_id?: string; workspace_id?: string };
+  let body: { message?: string; conversation_id?: string; workspace_id?: string; grace?: boolean; route?: string };
   try {
     body = (await req.json()) as typeof body;
   } catch {
     return jsonResponse({ error: "Invalid JSON" }, 400, origin);
   }
 
-  const { message, conversation_id, workspace_id: bodyWorkspaceId } = body;
+  const { message, conversation_id, workspace_id: bodyWorkspaceId, grace, route } = body;
 
   if (!message?.trim()) {
     return jsonResponse({ error: "Message required" }, 400, origin);
@@ -1443,24 +1594,46 @@ Deno.serve(async (req) => {
   const workspaceId = bodyWorkspaceId && bodyWorkspaceId === orgId ? bodyWorkspaceId : orgId;
   const traceId = crypto.randomUUID();
   const accessibleFacilityIds = await resolveAccessibleFacilityIds(admin, workspaceId, user.id, userRole);
-  const availableTools = getAvailableToolsForRole(userRole);
+  const availableTools = await applyPolicyOverrides(
+    admin,
+    workspaceId,
+    userRole,
+    getAvailableToolsForRole(userRole),
+  );
   const toolContext: ToolContext = {
     admin,
     workspaceId,
     userRole,
     userId: user.id,
+    userEmail: user.email ?? null,
     accessibleFacilityIds,
+    route,
   };
+
+  const conversationTable = grace ? "grace_conversations" : "chat_conversations";
+  const messageTable = grace ? "grace_messages" : "chat_messages";
+  const usageRpc = grace ? "grace_increment_usage" : "increment_usage";
+  const assistantRole = grace ? "grace" : "assistant";
 
   let conversationId = conversation_id;
   if (!conversationId) {
     const { data: conv, error: convErr } = await admin
-      .from("chat_conversations")
-      .insert({
-        workspace_id: workspaceId,
-        user_id: user.id,
-        title: message.slice(0, 100),
-      })
+      .from(conversationTable)
+      .insert(
+        grace
+          ? {
+            organization_id: workspaceId,
+            user_id: user.id,
+            input_mode: "text",
+            route_at_start: route ?? null,
+            metadata: {},
+          }
+          : {
+            workspace_id: workspaceId,
+            user_id: user.id,
+            title: message.slice(0, 100),
+          },
+      )
       .select("id")
       .single();
     if (convErr || !conv?.id) {
@@ -1470,19 +1643,24 @@ Deno.serve(async (req) => {
     conversationId = conv.id;
   } else {
     const { data: existingConv, error: convLookupErr } = await admin
-      .from("chat_conversations")
-      .select("id, user_id, workspace_id")
+      .from(conversationTable)
+      .select(grace ? "id, user_id, organization_id" : "id, user_id, workspace_id")
       .eq("id", conversationId)
       .maybeSingle();
+    const existingConversation = existingConv as
+      | { id: string; user_id: string; organization_id: string }
+      | { id: string; user_id: string; workspace_id: string };
     if (convLookupErr || !existingConv) {
       t.log({ event: "conv_not_found", outcome: "blocked", conversation_id: conversationId });
       return jsonResponse({ error: "Conversation not found" }, 404, origin);
     }
-    if (existingConv.user_id !== user.id) {
+    if (existingConversation.user_id !== user.id) {
       t.log({ event: "conv_forbidden_user", outcome: "blocked", conversation_id: conversationId });
       return jsonResponse({ error: "Forbidden" }, 403, origin);
     }
-    if (existingConv.workspace_id !== workspaceId) {
+    if ((grace
+      ? (existingConversation as { organization_id: string }).organization_id
+      : (existingConversation as { workspace_id: string }).workspace_id) !== workspaceId) {
       t.log({ event: "conv_forbidden_org", outcome: "blocked", conversation_id: conversationId });
       return jsonResponse({ error: "Forbidden" }, 403, origin);
     }
@@ -1491,12 +1669,15 @@ Deno.serve(async (req) => {
   let history: { role: string; content: unknown }[] = [];
   if (conversationId) {
     const { data: msgs } = await admin
-      .from("chat_messages")
+      .from(messageTable)
       .select("role, content")
       .eq("conversation_id", conversationId)
       .order("created_at", { ascending: true })
       .limit(MAX_HISTORY);
-    history = (msgs ?? []).map((m: { role: string; content: string }) => ({ role: m.role, content: m.content }));
+    history = (msgs ?? []).map((m: { role: string; content: string }) => ({
+      role: m.role === "user" ? "user" : "assistant",
+      content: m.content,
+    }));
   }
 
   const encoder = new TextEncoder();
@@ -1540,16 +1721,41 @@ Deno.serve(async (req) => {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ sources: result.sources })}\n\n`));
         }
 
-        const { error: insertErr } = await admin.from("chat_messages").insert([
-          {
+        const userMessageBase = grace
+          ? {
+            conversation_id: conversationId,
+            organization_id: workspaceId,
+            user_id: user.id,
+            role: "user",
+            content: redactString(message),
+          }
+          : {
             conversation_id: conversationId,
             workspace_id: workspaceId,
             user_id: user.id,
             role: "user",
             content: message,
             trace_id: traceId,
-          },
-          {
+          };
+        const assistantMessageBase = grace
+          ? {
+            conversation_id: conversationId,
+            organization_id: workspaceId,
+            user_id: user.id,
+            role: assistantRole,
+            content: redactString(result.text),
+            sources: result.sources.length > 0 ? redactValue(result.sources) : null,
+            classifier_output: redactValue({
+              model: result.model,
+              tools_used: result.toolsUsed,
+              iterations: result.toolsUsed.length,
+            }),
+            tokens_in: result.tokensIn,
+            tokens_out: result.tokensOut,
+            model: result.model,
+            trace_id: traceId,
+          }
+          : {
             conversation_id: conversationId,
             workspace_id: workspaceId,
             user_id: user.id,
@@ -1565,16 +1771,28 @@ Deno.serve(async (req) => {
             tokens_out: result.tokensOut,
             model: result.model,
             trace_id: traceId,
-          },
+          };
+
+        const { error: insertErr } = await admin.from(messageTable).insert([
+          userMessageBase,
+          assistantMessageBase,
         ]);
         logInsertError("success_path", insertErr);
 
-        const { error: usageErr } = await admin.rpc("increment_usage", {
-          p_user_id: user.id,
-          p_workspace_id: workspaceId,
-          p_tokens_in: result.tokensIn,
-          p_tokens_out: result.tokensOut,
-        });
+        const usageArgs = grace
+          ? {
+            p_user_id: user.id,
+            p_organization_id: workspaceId,
+            p_tokens_in: result.tokensIn,
+            p_tokens_out: result.tokensOut,
+          }
+          : {
+            p_user_id: user.id,
+            p_workspace_id: workspaceId,
+            p_tokens_in: result.tokensIn,
+            p_tokens_out: result.tokensOut,
+          };
+        const { error: usageErr } = await admin.rpc(usageRpc, usageArgs);
         if (usageErr) {
           t.log({
             event: "increment_usage_failed",
@@ -1631,23 +1849,40 @@ Deno.serve(async (req) => {
         const msg = err instanceof Error ? err.message : String(err);
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: msg })}\n\n`));
 
-        const { error: insertErr } = await admin.from("chat_messages").insert([
-          {
-            conversation_id: conversationId,
-            workspace_id: workspaceId,
-            user_id: user.id,
-            role: "user",
-            content: message,
-            trace_id: traceId,
-          },
-          {
-            conversation_id: conversationId,
-            workspace_id: workspaceId,
-            user_id: user.id,
-            role: "assistant",
-            content: `Error: ${msg}`,
-            trace_id: traceId,
-          },
+        const { error: insertErr } = await admin.from(messageTable).insert([
+          grace
+            ? {
+              conversation_id: conversationId,
+              organization_id: workspaceId,
+              user_id: user.id,
+              role: "user",
+              content: redactString(message),
+            }
+            : {
+              conversation_id: conversationId,
+              workspace_id: workspaceId,
+              user_id: user.id,
+              role: "user",
+              content: message,
+              trace_id: traceId,
+            },
+          grace
+            ? {
+              conversation_id: conversationId,
+              organization_id: workspaceId,
+              user_id: user.id,
+              role: assistantRole,
+              content: `Error: ${redactString(msg)}`,
+              trace_id: traceId,
+            }
+            : {
+              conversation_id: conversationId,
+              workspace_id: workspaceId,
+              user_id: user.id,
+              role: "assistant",
+              content: `Error: ${msg}`,
+              trace_id: traceId,
+            },
         ]);
         logInsertError("error_path", insertErr);
 

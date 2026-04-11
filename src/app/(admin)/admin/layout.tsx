@@ -1,5 +1,6 @@
 import { AdminShell } from "@/components/layout/AdminShell";
 import { HavenAuthProvider } from "@/contexts/haven-auth-context";
+import { GraceShell } from "@/lib/grace/GraceShell";
 
 export default function AdminLayout({
   children,
@@ -8,7 +9,10 @@ export default function AdminLayout({
 }) {
   return (
     <HavenAuthProvider>
-      <AdminShell>{children}</AdminShell>
+      <AdminShell>
+        {children}
+        <GraceShell />
+      </AdminShell>
     </HavenAuthProvider>
   );
 }
