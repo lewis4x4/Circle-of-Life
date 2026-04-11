@@ -91,6 +91,7 @@ export function ChatPage() {
         <ChatInterface
           conversationId={activeConversationId}
           existingMessages={messages}
+          messagesLoading={messagesLoading}
           onConversationCreated={handleConversationCreated}
           workspaceId={workspaceId}
           workspaceLoading={workspaceLoading}

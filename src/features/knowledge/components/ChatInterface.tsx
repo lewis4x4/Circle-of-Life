@@ -10,6 +10,8 @@ import type { ChatMessageRow, KBSource } from "../lib/types";
 interface ChatInterfaceProps {
   conversationId: string | null;
   existingMessages: ChatMessageRow[];
+  /** True while fetching thread messages for the selected conversation */
+  messagesLoading?: boolean;
   onConversationCreated: (id: string) => void;
   workspaceId: string | null;
   workspaceLoading: boolean;
@@ -20,6 +22,7 @@ interface ChatInterfaceProps {
 export function ChatInterface({
   conversationId,
   existingMessages,
+  messagesLoading = false,
   onConversationCreated,
   workspaceId,
   workspaceLoading,
@@ -62,6 +65,10 @@ export function ChatInterface({
     }
   }, [state, conversationId, onStreamFinished]);
 
+  useEffect(() => {
+    reset();
+  }, [conversationId, reset]);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -71,8 +78,15 @@ export function ChatInterface({
 
   const isActive = state === "connecting" || state === "streaming";
   const hasNoContent = existingMessages.length === 0 && !isActive && !text;
-  const showEmpty = hasNoContent && state !== "error";
+  /** Welcome / suggested prompts only when no thread is selected — never when viewing history */
+  const showWelcome =
+    conversationId == null &&
+    hasNoContent &&
+    state !== "error" &&
+    !workspaceLoading &&
+    !!workspaceId;
   const inputDisabled = !workspaceId || workspaceLoading;
+  const showThreadLoader = !!conversationId && messagesLoading && existingMessages.length === 0;
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(99,102,241,0.12),transparent)] dark:bg-[#050505]">
@@ -83,24 +97,37 @@ export function ChatInterface({
       )}
 
       <div className="relative min-h-0 flex-1 overflow-y-auto">
-        {showEmpty && !workspaceLoading && workspaceId ? (
-          <div className="flex min-h-full flex-col items-center justify-center py-6">
+        {showWelcome ? (
+          <div className="flex min-h-[min(100%,360px)] flex-col items-center justify-center py-6">
             <SuggestedPrompts onSelect={(p) => void handleSend(p)} />
           </div>
+        ) : conversationId == null && workspaceLoading ? (
+          <div className="flex min-h-[min(100%,280px)] flex-col items-center justify-center gap-3 py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-indigo-400" aria-hidden />
+            <p className="text-sm text-zinc-500">Loading organization…</p>
+          </div>
         ) : (
-          <div className="mx-auto max-w-3xl space-y-4 px-4 py-6">
-            {existingMessages.map((msg) => (
-              <ChatMessage
-                key={msg.id}
-                id={msg.id}
-                role={msg.role as "user" | "assistant"}
-                content={msg.content}
-                sources={msg.sources as unknown as KBSource[] | undefined}
-                feedback={msg.feedback}
-              />
-            ))}
+          <div className="mx-auto flex min-h-full min-h-[min(100%,240px)] max-w-3xl flex-col space-y-4 px-4 py-6">
+            {showThreadLoader && (
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-indigo-400" aria-hidden />
+                <p className="text-sm text-zinc-500">Loading conversation…</p>
+              </div>
+            )}
 
-            {isActive && text && (
+            {!showThreadLoader &&
+              existingMessages.map((msg) => (
+                <ChatMessage
+                  key={msg.id}
+                  id={msg.id}
+                  role={msg.role as "user" | "assistant"}
+                  content={msg.content}
+                  sources={msg.sources as unknown as KBSource[] | undefined}
+                  feedback={msg.feedback}
+                />
+              ))}
+
+            {!showThreadLoader && isActive && text && (
               <ChatMessage
                 role="assistant"
                 content={text}
@@ -109,7 +136,7 @@ export function ChatInterface({
               />
             )}
 
-            {state === "connecting" && (
+            {!showThreadLoader && state === "connecting" && (
               <div className="flex gap-3">
                 <div className="rounded-2xl bg-zinc-800/90 px-4 py-3 ring-1 ring-zinc-700/80">
                   <Loader2 className="h-5 w-5 animate-spin text-indigo-400" />
@@ -117,19 +144,25 @@ export function ChatInterface({
               </div>
             )}
 
-            {error && (
+            {!showThreadLoader && error && (
               <div className="rounded-xl border border-red-800/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
                 {error}
               </div>
             )}
 
-            {existingMessages.length === 0 && !isActive && !error && !text && conversationId && (
-              <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-                <p className="text-sm text-zinc-500">
-                  No messages in this conversation yet. Type a question below to get started.
-                </p>
-              </div>
-            )}
+            {!showThreadLoader &&
+              existingMessages.length === 0 &&
+              !isActive &&
+              !error &&
+              !text &&
+              !!conversationId &&
+              !messagesLoading && (
+                <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                  <p className="text-sm text-zinc-400">
+                    No messages in this conversation yet. Type a question below to get started.
+                  </p>
+                </div>
+              )}
 
             <div ref={messagesEndRef} />
           </div>
