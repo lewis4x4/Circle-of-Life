@@ -19,9 +19,10 @@ import {
 import { adlTypeLabel, assistanceLabel } from "@/lib/caregiver/adl-form-options";
 
 import { AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
+import { BehaviorLogModal, ConditionLogModal, GeneralNoteModal } from "@/components/admin/resident-log-modals";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -118,6 +119,9 @@ export default function AdminResidentDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [detail, setDetail] = useState<ResidentDetailView | null>(null);
+  const [behaviorModalOpen, setBehaviorModalOpen] = useState(false);
+  const [conditionModalOpen, setConditionModalOpen] = useState(false);
+  const [generalNoteModalOpen, setGeneralNoteModalOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -148,6 +152,11 @@ export default function AdminResidentDetailPage() {
   }, [residentId, selectedFacilityId]);
 
   useEffect(() => {
+    void load();
+  }, [load]);
+
+  // Refresh feed after logging via modal
+  const onAfterLog = useCallback(() => {
     void load();
   }, [load]);
 
@@ -220,6 +229,37 @@ export default function AdminResidentDetailPage() {
             </Link>
           ))}
         </div>
+      </div>
+
+      {/* ─── TOP ACTION BAR ────────────────────────────────────────────────────── */}
+      <div className="flex gap-3 pb-2">
+        <Button
+          type="button"
+          onClick={() => setBehaviorModalOpen(true)}
+          className="h-12 flex-1 bg-gradient-to-r from-violet-600 to-violet-500 text-white hover:from-violet-500 hover:to-violet-400 shadow-lg shadow-violet-500/20 font-medium text-sm sm:text-base"
+        >
+          <Brain className="mr-2 h-5 w-5" />
+          <span className="hidden sm:inline">Log Behavior</span>
+          <span className="sm:hidden">Behavior</span>
+        </Button>
+        <Button
+          type="button"
+          onClick={() => setConditionModalOpen(true)}
+          className="h-12 flex-1 bg-gradient-to-r from-rose-700 to-rose-600 text-white hover:from-rose-600 hover:to-rose-500 shadow-lg shadow-rose-500/20 font-medium text-sm sm:text-base"
+        >
+          <Stethoscope className="mr-2 h-5 w-5" />
+          <span className="hidden sm:inline">Log Condition</span>
+          <span className="sm:hidden">Condition</span>
+        </Button>
+        <Button
+          type="button"
+          onClick={() => setGeneralNoteModalOpen(true)}
+          className="h-12 flex-1 bg-gradient-to-r from-teal-600 to-teal-500 text-white hover:from-teal-500 hover:to-teal-400 shadow-lg shadow-teal-500/20 font-medium text-sm sm:text-base"
+        >
+          <FileText className="mr-2 h-5 w-5" />
+          <span className="hidden sm:inline">General Note</span>
+          <span className="sm:hidden">Note</span>
+        </Button>
       </div>
 
       {/* COCKPIT 3-COLUMN GRID */}
@@ -336,37 +376,6 @@ export default function AdminResidentDetailPage() {
                     })
                  )}
                </div>
-               
-               {/* Quick Action Bar — same logging flows as caregiver tablet (RLS applies) */}
-               <div className="shrink-0 p-3 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex gap-2">
-                 <Link
-                   href={`/caregiver/resident/${residentId}/behavior`}
-                   className={cn(
-                     buttonVariants({ variant: "outline", size: "sm" }),
-                     "text-xs flex-1 inline-flex items-center justify-center gap-1",
-                   )}
-                 >
-                   <Brain className="w-3.5 h-3.5" /> Log Behavior
-                 </Link>
-                 <Link
-                   href={`/caregiver/resident/${residentId}/condition-change`}
-                   className={cn(
-                     buttonVariants({ variant: "outline", size: "sm" }),
-                     "text-xs flex-1 inline-flex items-center justify-center gap-1",
-                   )}
-                 >
-                   <Stethoscope className="w-3.5 h-3.5" /> Log Condition
-                 </Link>
-                 <Link
-                   href={`/caregiver/resident/${residentId}/log`}
-                   className={cn(
-                     buttonVariants({ variant: "default", size: "sm" }),
-                     "text-xs flex-1 inline-flex items-center justify-center gap-1",
-                   )}
-                 >
-                   <FileText className="w-3.5 h-3.5" /> General Note
-                 </Link>
-               </div>
              </CardContent>
           </Card>
         </div>
@@ -420,6 +429,29 @@ export default function AdminResidentDetailPage() {
         </div>
 
       </div>
+
+      {/* ─── LOGGING MODALS ──────────────────────────────────────────────────────── */}
+      <BehaviorLogModal
+        open={behaviorModalOpen}
+        onOpenChange={setBehaviorModalOpen}
+        residentId={residentId}
+        residentName={detail?.fullName ?? "Resident"}
+        onSuccess={onAfterLog}
+      />
+      <ConditionLogModal
+        open={conditionModalOpen}
+        onOpenChange={setConditionModalOpen}
+        residentId={residentId}
+        residentName={detail?.fullName ?? "Resident"}
+        onSuccess={onAfterLog}
+      />
+      <GeneralNoteModal
+        open={generalNoteModalOpen}
+        onOpenChange={setGeneralNoteModalOpen}
+        residentId={residentId}
+        residentName={detail?.fullName ?? "Resident"}
+        onSuccess={onAfterLog}
+      />
     </div>
   );
 }

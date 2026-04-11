@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ClipboardCheck, CalendarClock, UserSquare2, ShieldAlert } from "lucide-react";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -15,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { CarePlanDiffModal } from "@/components/care-plans/care-plan-diff-modal";
 
 // Types
 type AssessmentRow = {
@@ -106,6 +108,8 @@ export default function ClinicalDeskPage() {
   const [carePlans, setCarePlans] = useState<CarePlanRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [diffCarePlanId, setDiffCarePlanId] = useState<string | null>(null);
+  const router = useRouter();
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -298,7 +302,12 @@ export default function ClinicalDeskPage() {
                             <Link href={`/admin/residents/${p.residentId}/care-plan`} className={cn(buttonVariants({ variant: "default", size: "sm" }), "h-10 rounded-full px-6 font-bold uppercase tracking-widest text-[10px] bg-indigo-600 hover:bg-indigo-700 shadow-md tap-responsive text-white")}>
                               Review & Sign
                             </Link>
-                            <Button variant="outline" size="sm" className="h-10 rounded-full px-6 font-bold uppercase tracking-widest text-[10px] shadow-sm tap-responsive border-slate-200 dark:border-white/10 dark:text-zinc-300">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setDiffCarePlanId(p.id)}
+                              className="h-10 rounded-full px-6 font-bold uppercase tracking-widest text-[10px] shadow-sm tap-responsive border-slate-200 dark:border-white/10 dark:text-zinc-300"
+                            >
                               View Diff
                             </Button>
                           </div>
@@ -313,6 +322,18 @@ export default function ClinicalDeskPage() {
         </div>
 
       </div>
+
+      {/* Care Plan Diff Modal */}
+      <CarePlanDiffModal
+        carePlanId={diffCarePlanId}
+        onClose={() => setDiffCarePlanId(null)}
+        onContinueToReview={(carePlanId) => {
+          const plan = carePlans.find((p) => p.id === carePlanId);
+          if (plan) {
+            router.push(`/admin/residents/${plan.residentId}/care-plan`);
+          }
+        }}
+      />
     </div>
   );
 }

@@ -11,13 +11,22 @@ import {
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants, Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { SignaturePad } from "@/components/ui/signature-pad";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const STATUS_RANK: Record<string, number> = {
   active: 0,
@@ -77,6 +86,10 @@ export default function AdminResidentCarePlanPage() {
   const [notFound, setNotFound] = useState(false);
   const [noPlan, setNoPlan] = useState(false);
   const [loaded, setLoaded] = useState<LoadedState | null>(null);
+  const [signingOpen, setSigningOpen] = useState(false);
+  const [signatureData, setSignatureData] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -162,6 +175,34 @@ export default function AdminResidentCarePlanPage() {
   }, [load]);
 
   const groupedItems = useMemo(() => groupByCategory(loaded?.items ?? []), [loaded?.items]);
+
+  const handleApprove = async () => {
+    if (!signatureData || !plan?.id) return;
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      const res = await fetch(`/api/care-plans/${plan.id}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ signature: signatureData }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to approve care plan");
+      }
+
+      // Reload the page to show updated status
+      await load();
+      setSigningOpen(false);
+      setSignatureData(null);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Failed to approve care plan");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -272,6 +313,16 @@ export default function AdminResidentCarePlanPage() {
                       Review: {reviewState.label}
                     </Badge>
                   ) : null}
+                  {/* Review & Sign button - only show for draft or under_review plans */}
+                  {plan?.status && (plan.status === "draft" || plan.status === "under_review") && (
+                    <button
+                      type="button"
+                      onClick={() => setSigningOpen(true)}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold uppercase tracking-widest transition-colors shadow-sm"
+                    >
+                      Review & Sign
+                    </button>
+                  )}
                 </div>
               </div>
               
@@ -399,6 +450,72 @@ export default function AdminResidentCarePlanPage() {
           </div>
         )}
       </div>
+
+      {/* Signing Dialog */}
+      <Dialog open={signingOpen} onOpenChange={setSigningOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Approve Care Plan</DialogTitle>
+            <DialogDescription>
+              Sign to approve this care plan and mark it as active. This action will be logged.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {submitError && (
+              <div className="p-3 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 rounded-xl text-sm text-rose-800 dark:text-rose-300">
+                {submitError}
+              </div>
+            )}
+
+            <div className="bg-slate-50 dark:bg-slate-900/30 rounded-xl p-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500 dark:text-slate-400">Resident:</span>
+                <span className="font-medium text-slate-900 dark:text-slate-100">{residentName}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500 dark:text-slate-400">Version:</span>
+                <span className="font-medium text-slate-900 dark:text-slate-100">v{plan?.version ?? "—"}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500 dark:text-slate-400">Effective:</span>
+                <span className="font-medium text-slate-900 dark:text-slate-100">{formatDate(plan?.effective_date ?? null)}</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-3">
+                Digital Signature <span className="text-rose-500">*</span>
+              </label>
+              <SignaturePad
+                onSignatureChange={setSignatureData}
+                height={150}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSigningOpen(false);
+                setSignatureData(null);
+                setSubmitError(null);
+              }}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleApprove}
+              disabled={!signatureData || isSubmitting}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              {isSubmitting ? "Approving..." : "Confirm & Approve"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

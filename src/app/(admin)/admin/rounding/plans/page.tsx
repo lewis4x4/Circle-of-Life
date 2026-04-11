@@ -10,6 +10,8 @@ import {
   Plus,
   RefreshCw,
   Settings2,
+  Filter,
+  X,
 } from "lucide-react";
 
 import { RoundingHubNav } from "../rounding-hub-nav";
@@ -34,6 +36,8 @@ type PlanRow = {
   resident_observation_plan_rules?: { id: string }[];
 };
 
+type FilterType = "all" | "active" | "paused" | "manual" | "clinical_order" | "admission_default" | "family_request" | "survey_visit";
+
 function displayName(person?: { first_name: string | null; last_name: string | null; preferred_name: string | null } | null) {
   return [person?.preferred_name ?? person?.first_name ?? null, person?.last_name ?? null].filter(Boolean).join(" ");
 }
@@ -56,6 +60,7 @@ export default function AdminRoundingPlansPage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [plans, setPlans] = useState<PlanRow[]>(() => (isDemoMode() ? DEMO_PLANS : []));
+  const [filter, setFilter] = useState<FilterType>("all");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -115,7 +120,30 @@ export default function AdminRoundingPlansPage() {
   }
 
   const activeCount = plans.filter((p) => p.status === "active").length;
+  const pausedCount = plans.filter((p) => p.status === "paused").length;
   const totalRules = plans.reduce((sum, p) => sum + (p.resident_observation_plan_rules?.length ?? 0), 0);
+
+  // Apply filter
+  const filteredPlans = useMemo(() => {
+    if (filter === "all") return plans;
+    if (filter === "active") return plans.filter((p) => p.status === "active");
+    if (filter === "paused") return plans.filter((p) => p.status === "paused");
+    return plans.filter((p) => p.source_type === filter);
+  }, [plans, filter]);
+
+  const filterLabel = useMemo(() => {
+    const labels: Record<FilterType, string> = {
+      all: "All Plans",
+      active: "Active Plans",
+      paused: "Paused Plans",
+      manual: "Manual Plans",
+      clinical_order: "Clinical Orders",
+      admission_default: "Admission Defaults",
+      family_request: "Family Requests",
+      survey_visit: "Survey Visits",
+    };
+    return labels[filter];
+  }, [filter]);
 
   const sourceTypeLabel: Record<string, string> = {
     clinical_order: "Clinical Order",
@@ -124,6 +152,12 @@ export default function AdminRoundingPlansPage() {
     survey_visit: "Survey Visit",
     manual: "Manual",
   };
+
+  function setFilterAndScroll(type: FilterType) {
+    setFilter(type);
+    // Scroll to the plans section
+    document.getElementById("plans-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -147,31 +181,61 @@ export default function AdminRoundingPlansPage() {
           </div>
         </header>
 
+        {/* Clickable metric cards */}
         <KineticGrid className="grid-cols-1 gap-4 sm:grid-cols-3" staggerMs={50}>
-          <div className="h-[90px]">
-            <V2Card hoverColor="indigo" className="border-indigo-500/20">
+          <button
+            onClick={() => setFilterAndScroll("active")}
+            className="h-[90px] text-left group"
+          >
+            <V2Card hoverColor="indigo" className={cn(
+              "border-indigo-500/20 transition-all duration-300",
+              filter === "active" && "ring-2 ring-indigo-500 ring-offset-2 ring-offset-background"
+            )}>
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-indigo-400">Active Plans</h3>
-                <p className="text-2xl font-mono tracking-tighter text-indigo-400 pb-1">{activeCount}</p>
+                <h3 className="text-[10px] font-mono tracking-widest uppercase text-indigo-400 flex items-center gap-2">
+                  Active Plans
+                  <Filter className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+                </h3>
+                <p className="text-2xl font-mono tracking-tighter text-indigo-400 pb-1 group-hover:text-indigo-300 transition-colors">{activeCount}</p>
               </div>
             </V2Card>
-          </div>
-          <div className="h-[90px]">
-            <V2Card hoverColor="cyan" className="border-cyan-500/20">
+          </button>
+
+          <button
+            onClick={() => setFilterAndScroll("all")}
+            className="h-[90px] text-left group"
+          >
+            <V2Card hoverColor="cyan" className={cn(
+              "border-cyan-500/20 transition-all duration-300",
+              filter === "all" && "ring-2 ring-cyan-500 ring-offset-2 ring-offset-background"
+            )}>
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-cyan-400">Total Rules</h3>
-                <p className="text-2xl font-mono tracking-tighter text-cyan-400 pb-1">{totalRules}</p>
+                <h3 className="text-[10px] font-mono tracking-widest uppercase text-cyan-400 flex items-center gap-2">
+                  Total Rules
+                  <Filter className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+                </h3>
+                <p className="text-2xl font-mono tracking-tighter text-cyan-400 pb-1 group-hover:text-cyan-300 transition-colors">{totalRules}</p>
               </div>
             </V2Card>
-          </div>
-          <div className="h-[90px]">
-            <V2Card hoverColor="emerald" className="border-emerald-500/20">
+          </button>
+
+          <button
+            onClick={() => setFilterAndScroll("all")}
+            className="h-[90px] text-left group"
+          >
+            <V2Card hoverColor="emerald" className={cn(
+              "border-emerald-500/20 transition-all duration-300",
+              filter === "all" && "ring-2 ring-emerald-500 ring-offset-2 ring-offset-background"
+            )}>
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-emerald-400">Total Plans</h3>
-                <p className="text-2xl font-mono tracking-tighter text-emerald-400 pb-1">{plans.length}</p>
+                <h3 className="text-[10px] font-mono tracking-widest uppercase text-emerald-400 flex items-center gap-2">
+                  Total Plans
+                  <Filter className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+                </h3>
+                <p className="text-2xl font-mono tracking-tighter text-emerald-400 pb-1 group-hover:text-emerald-300 transition-colors">{plans.length}</p>
               </div>
             </V2Card>
-          </div>
+          </button>
         </KineticGrid>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -202,67 +266,140 @@ export default function AdminRoundingPlansPage() {
           </Link>
         </div>
 
-        <KineticGrid className="grid-cols-1 md:grid-cols-2 gap-4" staggerMs={40} baseDelayMs={150}>
-          {plans.map((plan) => (
-            <Link key={plan.id} href={`/admin/rounding/plans/${plan.id}`} className="block group">
-              <div className={cn(
-                "relative overflow-hidden rounded-[14px] border p-5 transition-all duration-300 h-full",
-                "bg-white/5 backdrop-blur-md dark:bg-[#0A0A0A]/50",
-                "dark:border-slate-800/80 dark:hover:border-slate-600/80",
-                plan.status === "active" ? "border-indigo-500/20" : "border-slate-700/30 opacity-70",
-              )}>
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <ClipboardList aria-hidden className="h-4 w-4 text-indigo-400 shrink-0" />
-                    <span className="font-medium text-slate-100 truncate">
-                      {displayName(plan.residents) || "Resident"}
-                    </span>
-                    {(plan.residents as PlanRow["residents"] & { room_number?: string | null })?.room_number && (
+        {/* Plans section with filter */}
+        <div id="plans-section">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-display font-medium text-slate-900 dark:text-slate-100">{filterLabel}</h3>
+            {filter !== "all" && (
+              <button
+                onClick={() => setFilter("all")}
+                className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-1 transition-colors"
+              >
+                <X className="h-3 w-3" />
+                Clear filter
+              </button>
+            )}
+          </div>
+
+          {/* Quick filter pills */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            <FilterChip
+              label="Active"
+              count={activeCount}
+              active={filter === "active"}
+              onClick={() => setFilter("active")}
+            />
+            <FilterChip
+              label="Paused"
+              count={pausedCount}
+              active={filter === "paused"}
+              onClick={() => setFilter("paused")}
+            />
+            <FilterChip
+              label="Clinical Orders"
+              count={plans.filter((p) => p.source_type === "clinical_order").length}
+              active={filter === "clinical_order"}
+              onClick={() => setFilter("clinical_order")}
+            />
+            <FilterChip
+              label="Admission Default"
+              count={plans.filter((p) => p.source_type === "admission_default").length}
+              active={filter === "admission_default"}
+              onClick={() => setFilter("admission_default")}
+            />
+            <FilterChip
+              label="Family Request"
+              count={plans.filter((p) => p.source_type === "family_request").length}
+              active={filter === "family_request"}
+              onClick={() => setFilter("family_request")}
+            />
+          </div>
+
+          <KineticGrid className="grid-cols-1 md:grid-cols-2 gap-4" staggerMs={40} baseDelayMs={150}>
+            {filteredPlans.map((plan) => (
+              <Link key={plan.id} href={`/admin/rounding/plans/${plan.id}`} className="block group">
+                <div className={cn(
+                  "relative overflow-hidden rounded-[14px] border p-5 transition-all duration-300 h-full",
+                  "bg-white/5 backdrop-blur-md dark:bg-[#0A0A0A]/50",
+                  "dark:border-slate-800/80 dark:hover:border-slate-600/80",
+                  plan.status === "active" ? "border-indigo-500/20" : "border-slate-700/30 opacity-70",
+                )}>
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <ClipboardList aria-hidden className="h-4 w-4 text-indigo-400 shrink-0" />
+                      <span className="font-medium text-slate-100 truncate">
+                        {displayName(plan.residents) || "Resident"}
+                      </span>
+                      {(plan.residents as PlanRow["residents"] & { room_number?: string | null })?.room_number && (
                       <span className="text-[10px] font-mono tracking-wider text-slate-500 bg-slate-800/50 px-1.5 py-0.5 rounded shrink-0">
                         RM {(plan.residents as PlanRow["residents"] & { room_number?: string | null })?.room_number}
                       </span>
-                    )}
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge variant={plan.status === "active" ? "default" : "outline"} className="text-[10px]">
+                        {plan.status === "active" && <PulseDot colorClass="bg-emerald-400" className="mr-1" />}
+                        {plan.status}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Badge variant={plan.status === "active" ? "default" : "outline"} className="text-[10px]">
-                      {plan.status === "active" && <PulseDot colorClass="bg-emerald-400" className="mr-1" />}
-                      {plan.status}
-                    </Badge>
+
+                  {plan.rationale && (
+                    <p className="text-xs text-slate-400 leading-relaxed mb-3 line-clamp-2">{plan.rationale}</p>
+                  )}
+
+                  <div className="flex items-center gap-4 text-[10px] font-mono uppercase tracking-wider text-slate-500">
+                    <span className="flex items-center gap-1">
+                      <Settings2 aria-hidden className="h-3 w-3" />
+                      {sourceTypeLabel[plan.source_type] ?? plan.source_type}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <CalendarDays aria-hidden className="h-3 w-3" />
+                      {new Date(plan.effective_from).toLocaleDateString()}
+                    </span>
+                    <span>{plan.resident_observation_plan_rules?.length ?? 0} rules</span>
                   </div>
                 </div>
+              </Link>
+            ))}
 
-                {plan.rationale && (
-                  <p className="text-xs text-slate-400 leading-relaxed mb-3 line-clamp-2">{plan.rationale}</p>
+            {filteredPlans.length === 0 && (
+              <div className="col-span-full rounded-[14px] border border-slate-800/50 bg-slate-900/30 p-12 text-center">
+                <ClipboardList aria-hidden className="mx-auto h-8 w-8 text-slate-600 mb-3" />
+                <p className="text-sm text-slate-400">No plans match the current filter.</p>
+                {filter !== "all" && (
+                  <button
+                    onClick={() => setFilter("all")}
+                    className="text-xs text-slate-500 hover:text-slate-300 mt-2 underline"
+                  >
+                    Clear filter to see all plans
+                  </button>
                 )}
-
-                <div className="flex items-center gap-4 text-[10px] font-mono uppercase tracking-wider text-slate-500">
-                  <span className="flex items-center gap-1">
-                    <Settings2 aria-hidden className="h-3 w-3" />
-                    {sourceTypeLabel[plan.source_type] ?? plan.source_type}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <CalendarDays aria-hidden className="h-3 w-3" />
-                    {new Date(plan.effective_from).toLocaleDateString()}
-                  </span>
-                  <span>{plan.resident_observation_plan_rules?.length ?? 0} rules</span>
-                </div>
               </div>
-            </Link>
-          ))}
-
-          {plans.length === 0 && (
-            <div className="col-span-full rounded-[14px] border border-slate-800/50 bg-slate-900/30 p-12 text-center">
-              <ClipboardList aria-hidden className="mx-auto h-8 w-8 text-slate-600 mb-3" />
-              <p className="text-sm text-slate-400">No observation plans found.</p>
-              <p className="text-xs text-slate-600 mt-1">Create a plan to start generating rounding tasks.</p>
-            </div>
-          )}
-        </KineticGrid>
+            )}
+          </KineticGrid>
+        </div>
 
         <div className="block md:hidden pt-2">
           <RoundingHubNav />
         </div>
       </div>
     </div>
+  );
+}
+
+function FilterChip({ label, count, active, onClick }: { label: string; count: number; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
+        active
+          ? "bg-indigo-600 text-white border-indigo-600"
+          : "bg-slate-800/50 text-slate-400 border-slate-700 hover:bg-slate-700/50 hover:text-slate-300"
+      )}
+    >
+      {label} ({count})
+    </button>
   );
 }

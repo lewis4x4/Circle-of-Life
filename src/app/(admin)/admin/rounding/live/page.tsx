@@ -10,6 +10,8 @@ import {
   Play,
   RefreshCw,
   UserRound,
+  Filter,
+  X,
 } from "lucide-react";
 
 import { RoundingHubNav } from "../rounding-hub-nav";
@@ -35,6 +37,8 @@ type LiveTaskRow = {
   shift_assignments?: { shift_type: string | null } | null;
 };
 
+type StatusFilter = "all" | "critical" | "overdue" | "pending" | "completed" | "late";
+
 function displayName(person?: { first_name: string | null; last_name: string | null; preferred_name: string | null } | null) {
   return [person?.preferred_name ?? person?.first_name ?? null, person?.last_name ?? null].filter(Boolean).join(" ");
 }
@@ -52,16 +56,16 @@ const DEMO_TASKS: LiveTaskRow[] = [
 
 function statusConfig(status: string) {
   if (status === "critically_overdue" || status === "missed")
-    return { label: "Critical", icon: AlertTriangle, color: "text-rose-400", bg: "bg-rose-500/10 border-rose-500/30", badgeVariant: "destructive" as const, pulse: true };
+    return { label: "Critical", icon: AlertTriangle, color: "text-rose-400", bg: "bg-rose-500/10 border-rose-500/30", badgeVariant: "destructive" as const, pulse: true, filterGroup: "critical" as StatusFilter };
   if (status === "overdue")
-    return { label: "Overdue", icon: Clock3, color: "text-amber-400", bg: "bg-amber-500/10 border-amber-500/30", badgeVariant: "outline" as const, pulse: true };
+    return { label: "Overdue", icon: Clock3, color: "text-amber-400", bg: "bg-amber-500/10 border-amber-500/30", badgeVariant: "outline" as const, pulse: true, filterGroup: "overdue" as StatusFilter };
   if (status === "completed_on_time")
-    return { label: "On time", icon: CheckCircle2, color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/30", badgeVariant: "outline" as const, pulse: false };
+    return { label: "On time", icon: CheckCircle2, color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/30", badgeVariant: "outline" as const, pulse: false, filterGroup: "completed" as StatusFilter };
   if (status === "completed_late")
-    return { label: "Late", icon: Clock, color: "text-orange-400", bg: "bg-orange-500/10 border-orange-500/30", badgeVariant: "outline" as const, pulse: false };
+    return { label: "Late", icon: Clock, color: "text-orange-400", bg: "bg-orange-500/10 border-orange-500/30", badgeVariant: "outline" as const, pulse: false, filterGroup: "late" as StatusFilter };
   if (status === "excused")
-    return { label: "Excused", icon: UserRound, color: "text-slate-400", bg: "bg-slate-500/10 border-slate-500/30", badgeVariant: "outline" as const, pulse: false };
-  return { label: "Pending", icon: Eye, color: "text-cyan-400", bg: "bg-cyan-500/10 border-cyan-500/30", badgeVariant: "outline" as const, pulse: false };
+    return { label: "Excused", icon: UserRound, color: "text-slate-400", bg: "bg-slate-500/10 border-slate-500/30", badgeVariant: "outline" as const, pulse: false, filterGroup: "all" as StatusFilter };
+  return { label: "Pending", icon: Eye, color: "text-cyan-400", bg: "bg-cyan-500/10 border-cyan-500/30", badgeVariant: "outline" as const, pulse: false, filterGroup: "pending" as StatusFilter };
 }
 
 function formatDueLabel(value: string) {
@@ -95,6 +99,7 @@ export default function AdminRoundingLivePage() {
   const supabase = useMemo(() => createClient(), []);
   const [, setLoading] = useState(true);
   const [tasks, setTasks] = useState<LiveTaskRow[]>(DEMO_TASKS);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   // Drawer state
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -140,6 +145,27 @@ export default function AdminRoundingLivePage() {
     [tasks],
   );
 
+  // Apply status filter
+  const filteredTasks = useMemo(() => {
+    if (statusFilter === "all") return sorted;
+    if (statusFilter === "critical") {
+      return sorted.filter((t) => t.status === "critically_overdue" || t.status === "missed");
+    }
+    if (statusFilter === "overdue") {
+      return sorted.filter((t) => t.status === "overdue");
+    }
+    if (statusFilter === "pending") {
+      return sorted.filter((t) => isActionable(t.status) && t.status !== "overdue" && t.status !== "critically_overdue" && t.status !== "missed");
+    }
+    if (statusFilter === "completed") {
+      return sorted.filter((t) => t.status === "completed_on_time");
+    }
+    if (statusFilter === "late") {
+      return sorted.filter((t) => t.status === "completed_late");
+    }
+    return sorted;
+  }, [sorted, statusFilter]);
+
   const actionableQueue = useMemo(
     () => sorted.filter((t) => isActionable(t.status)),
     [sorted],
@@ -149,6 +175,7 @@ export default function AdminRoundingLivePage() {
   const overdueCount = sorted.filter((t) => t.status === "overdue").length;
   const pendingCount = sorted.filter((t) => isActionable(t.status) && t.status !== "overdue" && t.status !== "critically_overdue" && t.status !== "missed").length;
   const completedCount = sorted.filter((t) => t.status.startsWith("completed")).length;
+  const lateCount = sorted.filter((t) => t.status === "completed_late").length;
   const hasCriticals = criticalCount > 0;
 
   function openSingleCheck(task: LiveTaskRow) {
@@ -216,12 +243,88 @@ export default function AdminRoundingLivePage() {
           </div>
         </header>
 
+        {/* Clickable stat cards */}
         <KineticGrid className="grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" staggerMs={50}>
-          <QuickStat label="Critical" value={String(criticalCount)} color={hasCriticals ? "rose" : "emerald"} pulse={hasCriticals} />
-          <QuickStat label="Overdue" value={String(overdueCount)} color={overdueCount > 0 ? "amber" : "emerald"} pulse={overdueCount > 0} />
-          <QuickStat label="Pending" value={String(pendingCount)} color="cyan" />
-          <QuickStat label="Completed" value={String(completedCount)} color="emerald" />
+          <StatCard
+            label="Critical"
+            value={String(criticalCount)}
+            color={hasCriticals ? "rose" : "emerald"}
+            pulse={hasCriticals}
+            active={statusFilter === "critical"}
+            onClick={() => setStatusFilter(statusFilter === "critical" ? "all" : "critical")}
+          />
+          <StatCard
+            label="Overdue"
+            value={String(overdueCount)}
+            color={overdueCount > 0 ? "amber" : "emerald"}
+            pulse={overdueCount > 0}
+            active={statusFilter === "overdue"}
+            onClick={() => setStatusFilter(statusFilter === "overdue" ? "all" : "overdue")}
+          />
+          <StatCard
+            label="Pending"
+            value={String(pendingCount)}
+            color="cyan"
+            active={statusFilter === "pending"}
+            onClick={() => setStatusFilter(statusFilter === "pending" ? "all" : "pending")}
+          />
+          <StatCard
+            label="Completed"
+            value={String(completedCount)}
+            color="emerald"
+            active={statusFilter === "completed" || statusFilter === "late"}
+            onClick={() => setStatusFilter(statusFilter === "completed" ? "all" : "completed")}
+          />
         </KineticGrid>
+
+        {/* Status filter pills */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-mono text-slate-500 uppercase tracking-wider">Filter:</span>
+          <StatusFilterChip
+            label="Critical"
+            count={criticalCount}
+            active={statusFilter === "critical"}
+            onClick={() => setStatusFilter(statusFilter === "critical" ? "all" : "critical")}
+            color="rose"
+          />
+          <StatusFilterChip
+            label="Overdue"
+            count={overdueCount}
+            active={statusFilter === "overdue"}
+            onClick={() => setStatusFilter(statusFilter === "overdue" ? "all" : "overdue")}
+            color="amber"
+          />
+          <StatusFilterChip
+            label="Pending"
+            count={pendingCount}
+            active={statusFilter === "pending"}
+            onClick={() => setStatusFilter(statusFilter === "pending" ? "all" : "pending")}
+            color="cyan"
+          />
+          <StatusFilterChip
+            label="On Time"
+            count={completedCount - lateCount}
+            active={statusFilter === "completed"}
+            onClick={() => setStatusFilter(statusFilter === "completed" ? "all" : "completed")}
+            color="emerald"
+          />
+          <StatusFilterChip
+            label="Late"
+            count={lateCount}
+            active={statusFilter === "late"}
+            onClick={() => setStatusFilter(statusFilter === "late" ? "all" : "late")}
+            color="orange"
+          />
+          {statusFilter !== "all" && (
+            <button
+              onClick={() => setStatusFilter("all")}
+              className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-1 transition-colors ml-auto"
+            >
+              <X className="h-3 w-3" />
+              Clear filter
+            </button>
+          )}
+        </div>
 
         {/* Primary actions */}
         <div className="flex flex-wrap items-center gap-3">
@@ -251,7 +354,7 @@ export default function AdminRoundingLivePage() {
 
         {/* Task list */}
         <MotionList className="grid grid-cols-1 gap-4">
-          {sorted.map((task) => {
+          {filteredTasks.map((task) => {
             const cfg = statusConfig(task.status);
             const Icon = cfg.icon;
             const canCheck = isActionable(task.status);
@@ -319,11 +422,21 @@ export default function AdminRoundingLivePage() {
             );
           })}
 
-          {sorted.length === 0 && (
+          {filteredTasks.length === 0 && (
             <div className="rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] p-16 text-center backdrop-blur-3xl shadow-sm">
               <Eye aria-hidden className="mx-auto h-12 w-12 text-slate-300 dark:text-white/10 mb-4" />
               <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">All Clear</p>
-              <p className="text-sm font-medium text-slate-500 dark:text-zinc-500 mt-1">No rounding tasks found for the current scope.</p>
+              <p className="text-sm font-medium text-slate-500 dark:text-zinc-500 mt-1">
+                {statusFilter === "all" ? "No rounding tasks found for the current scope." : `No tasks match the ${statusFilter} filter.`}
+              </p>
+              {statusFilter !== "all" && (
+                <button
+                  onClick={() => setStatusFilter("all")}
+                  className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline mt-2"
+                >
+                  Clear filter
+                </button>
+              )}
             </div>
           )}
         </MotionList>
@@ -346,26 +459,61 @@ export default function AdminRoundingLivePage() {
   );
 }
 
-function QuickStat({ label, value, color, pulse }: { label: string; value: string; color: string; pulse?: boolean }) {
+function StatCard({ label, value, color, pulse, active, onClick }: { label: string; value: string; color: string; pulse?: boolean; active?: boolean; onClick: () => void }) {
   const colorClasses = {
-    rose: { border: "border-rose-500/20", text: "text-rose-400", sparkline: "text-rose-500" },
-    amber: { border: "border-amber-500/20", text: "text-amber-400", sparkline: "text-amber-500" },
-    cyan: { border: "border-cyan-500/20", text: "text-cyan-400", sparkline: "text-cyan-500" },
-    emerald: { border: "border-emerald-500/20", text: "text-emerald-400", sparkline: "text-emerald-500" },
-  }[color] ?? { border: "", text: "text-slate-400", sparkline: "text-slate-500" };
+    rose: { border: "border-rose-500/20", text: "text-rose-400", sparkline: "text-rose-500", ring: "ring-rose-500" },
+    amber: { border: "border-amber-500/20", text: "text-amber-400", sparkline: "text-amber-500", ring: "ring-amber-500" },
+    cyan: { border: "border-cyan-500/20", text: "text-cyan-400", sparkline: "text-cyan-500", ring: "ring-cyan-500" },
+    emerald: { border: "border-emerald-500/20", text: "text-emerald-400", sparkline: "text-emerald-500", ring: "ring-emerald-500" },
+    orange: { border: "border-orange-500/20", text: "text-orange-400", sparkline: "text-orange-500", ring: "ring-orange-500" },
+  }[color] ?? { border: "", text: "text-slate-400", sparkline: "text-slate-500", ring: "ring-slate-500" };
 
   return (
     <div className="h-[100px]">
-      <V2Card hoverColor={color} className={colorClasses.border}>
-        <Sparkline colorClass={colorClasses.sparkline} variant={1} />
-        <div className="relative z-10 flex flex-col h-full justify-between">
-          <h3 className={cn("text-[10px] font-mono tracking-widest uppercase flex items-center gap-2", colorClasses.text)}>
-            {label}
-            {pulse && <PulseDot colorClass={colorClasses.text.replace("text-", "bg-")} />}
-          </h3>
-          <p className={cn("text-2xl font-mono tracking-tighter pb-1", colorClasses.text)}>{value}</p>
-        </div>
-      </V2Card>
+      <button
+        onClick={onClick}
+        className="w-full h-full text-left transition-transform active:scale-[0.98]"
+      >
+        <V2Card hoverColor={color} className={cn(
+          colorClasses.border,
+          "transition-all duration-300",
+          active && `ring-2 ${colorClasses.ring} ring-offset-2 ring-offset-background`
+        )}>
+          <Sparkline colorClass={colorClasses.sparkline} variant={1} />
+          <div className="relative z-10 flex flex-col h-full justify-between">
+            <h3 className={cn("text-[10px] font-mono tracking-widest uppercase flex items-center gap-2", colorClasses.text)}>
+              {label}
+              {pulse && <PulseDot colorClass={colorClasses.text.replace("text-", "bg-")} />}
+              <Filter className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+            </h3>
+            <p className={cn("text-2xl font-mono tracking-tighter pb-1", colorClasses.text)}>{value}</p>
+          </div>
+        </V2Card>
+      </button>
     </div>
+  );
+}
+
+function StatusFilterChip({ label, count, active, onClick, color }: { label: string; count: number; active: boolean; onClick: () => void; color: "rose" | "amber" | "cyan" | "emerald" | "orange" }) {
+  const colorClasses: Record<typeof color, string> = {
+    rose: "border-rose-500/30 text-rose-400 hover:bg-rose-500/10",
+    amber: "border-amber-500/30 text-amber-400 hover:bg-amber-500/10",
+    cyan: "border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10",
+    emerald: "border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10",
+    orange: "border-orange-500/30 text-orange-400 hover:bg-orange-500/10",
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "px-3 py-1.5 rounded-full text-xs font-medium transition-all border flex items-center gap-2",
+        active
+          ? "bg-slate-800 text-white border-slate-600"
+          : `bg-slate-800/30 text-slate-400 hover:text-slate-200 ${colorClasses[color]}`
+      )}
+    >
+      {label} <span className="opacity-70">({count})</span>
+    </button>
   );
 }

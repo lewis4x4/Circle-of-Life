@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, UserPlus } from "lucide-react";
+import { ArrowLeft, Loader2, UserPlus, AlertTriangle } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -166,12 +166,37 @@ export default function AdminNewResidentPage() {
         </Link>
       </div>
 
+      {/* Deprecation Notice */}
+      <div className="rounded-2xl border border-amber-200/80 bg-amber-50/80 dark:bg-amber-950/30 dark:border-amber-800/50 p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="shrink-0">
+          <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center border border-amber-200 dark:border-amber-800">
+            <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+          </div>
+        </div>
+        <div className="flex-1 space-y-2">
+          <h3 className="font-semibold text-slate-900 dark:text-slate-100">Direct resident creation is deprecated</h3>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            This form bypasses the proper intake workflow. Residents should be created through the
+            <Link href="/admin/admissions/new" className="text-amber-700 dark:text-amber-400 font-medium underline underline-offset-2 mx-1">
+              Admissions flow
+            </Link>
+            to ensure proper documentation and data consistency.
+          </p>
+        </div>
+        <Link
+          href="/admin/admissions/new"
+          className="inline-flex items-center justify-center rounded-lg border border-amber-300 dark:border-amber-700 bg-background px-4 py-2 text-sm font-medium hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors shrink-0"
+        >
+          Go to Admissions
+        </Link>
+      </div>
+
       <div className="flex items-center gap-2">
         <UserPlus className="h-6 w-6 text-slate-500" />
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Add resident</h1>
+          <h1 className="font-display text-2xl font-semibold tracking-tight">Add resident (override)</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Create a resident record for the selected facility. Required fields match the core census profile.
+            Administrative override for emergency cases or data migration.
           </p>
         </div>
       </div>
@@ -267,14 +292,14 @@ export default function AdminNewResidentPage() {
               </div>
             )}
 
-            <Button type="submit" disabled={submitting || !facilityReady}>
+            <Button type="submit" disabled={submitting || !facilityReady} variant="secondary">
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Saving…
                 </>
               ) : (
-                "Create resident"
+                "Create resident (override)"
               )}
             </Button>
           </form>

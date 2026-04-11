@@ -26,7 +26,9 @@ async function requireUserAccessToken(): Promise<string> {
 
   const nowSeconds = Math.floor(Date.now() / 1000);
   const expiresAt = session.expires_at ?? 0;
-  if (expiresAt && expiresAt < nowSeconds + 30) {
+
+  // Refresh if token is expiring within 60 seconds OR if expiresAt is missing/invalid
+  if (!expiresAt || expiresAt < nowSeconds + 60) {
     const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
     if (refreshError || !refreshed.session?.access_token) {
       throw new Error("Grace: session expired and refresh failed. Please sign in again.");

@@ -89,12 +89,33 @@ export function useGraceVoiceRecorder(): GraceVoiceRecorderApi {
   };
 }
 
-async function requireAccessToken() {
+async function requireAccessToken(): Promise<string> {
   const supabase = createClient();
   const {
     data: { session },
+    error,
   } = await supabase.auth.getSession();
-  return session?.access_token ?? "";
+
+  if (error) {
+    throw new Error(`Grace transcription auth: ${error.message}`);
+  }
+  if (!session?.access_token) {
+    throw new Error("Grace: not signed in. Please reload the page and sign in again.");
+  }
+
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const expiresAt = session.expires_at ?? 0;
+
+  // Refresh if token is expiring within 60 seconds OR if expiresAt is missing/invalid
+  if (!expiresAt || expiresAt < nowSeconds + 60) {
+    const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+    if (refreshError || !refreshed.session?.access_token) {
+      throw new Error("Grace: session expired and refresh failed. Please sign in again.");
+    }
+    return refreshed.session.access_token;
+  }
+
+  return session.access_token;
 }
 
 export async function transcribeGraceAudio(audio: Blob): Promise<string> {

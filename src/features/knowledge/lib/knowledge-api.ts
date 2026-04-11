@@ -8,9 +8,36 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   const supabase = createClient();
   const {
     data: { session },
+    error,
   } = await supabase.auth.getSession();
+
+  if (error) {
+    return {
+      Authorization: "",
+      "Content-Type": "application/json",
+    };
+  }
+  if (!session?.access_token) {
+    return {
+      Authorization: "",
+      "Content-Type": "application/json",
+    };
+  }
+
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const expiresAt = session.expires_at ?? 0;
+
+  // Refresh if token is expiring within 60 seconds OR if expiresAt is missing/invalid
+  let accessToken = session.access_token;
+  if (!expiresAt || expiresAt < nowSeconds + 60) {
+    const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+    if (!refreshError && refreshed.session?.access_token) {
+      accessToken = refreshed.session.access_token;
+    }
+  }
+
   return {
-    Authorization: `Bearer ${session?.access_token ?? ""}`,
+    Authorization: `Bearer ${accessToken}`,
     "Content-Type": "application/json",
   };
 }

@@ -3,9 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, UserPlus, ArrowLeft } from "lucide-react";
 
-import { AdmissionsHubNav } from "../admissions-hub-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,23 +14,61 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 
+const GENDERS = [
+  { value: "female", label: "Female" },
+  { value: "male", label: "Male" },
+  { value: "other", label: "Other" },
+  { value: "prefer_not_to_say", label: "Prefer not to say" },
+] as const;
+
+type ResidentOption = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  status: string;
+};
+
+type LeadOption = {
+  id: string;
+  first_name: string;
+  last_name: string;
+};
+
+type BedOption = {
+  id: string;
+  bed_label: string;
+};
+
 export default function AdminAdmissionsNewPage() {
   const router = useRouter();
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
 
+  // Form state
   const [residentId, setResidentId] = useState("");
   const [referralLeadId, setReferralLeadId] = useState("");
   const [bedId, setBedId] = useState("");
   const [targetMoveIn, setTargetMoveIn] = useState("");
   const [notes, setNotes] = useState("");
 
-  const [residents, setResidents] = useState<{ id: string; first_name: string; last_name: string; status: string }[]>([]);
-  const [leads, setLeads] = useState<{ id: string; first_name: string; last_name: string }[]>([]);
-  const [beds, setBeds] = useState<{ id: string; bed_label: string }[]>([]);
+  // Toggle for creating new resident
+  const [isCreatingResident, setIsCreatingResident] = useState(false);
+
+  // New resident form
+  const [newFirstName, setNewFirstName] = useState("");
+  const [newLastName, setNewLastName] = useState("");
+  const [newDob, setNewDob] = useState("");
+  const [newGender, setNewGender] = useState("female");
+
+  // Loading states
   const [loadingRefs, setLoadingRefs] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Data lists
+  const [residents, setResidents] = useState<ResidentOption[]>([]);
+  const [leads, setLeads] = useState<LeadOption[]>([]);
+  const [beds, setBeds] = useState<BedOption[]>([]);
 
   const loadRefs = useCallback(async () => {
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
@@ -67,9 +104,9 @@ export default function AdminAdmissionsNewPage() {
         .order("bed_label"),
     ]);
 
-    setResidents((res.data ?? []) as typeof residents);
-    setLeads((ld.data ?? []) as typeof leads);
-    setBeds((bd.data ?? []) as typeof beds);
+    setResidents((res.data ?? []) as ResidentOption[]);
+    setLeads((ld.data ?? []) as LeadOption[]);
+    setBeds((bd.data ?? []) as BedOption[]);
     setLoadingRefs(false);
   }, [supabase, selectedFacilityId]);
 
@@ -77,15 +114,18 @@ export default function AdminAdmissionsNewPage() {
     void loadRefs();
   }, [loadRefs]);
 
+  // When toggling resident creation, clear/restore selection
+  useEffect(() => {
+    if (isCreatingResident) {
+      setResidentId("");
+    }
+  }, [isCreatingResident]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
       setError("Select a facility in the header.");
-      return;
-    }
-    if (!residentId) {
-      setError("Choose a resident.");
       return;
     }
 
@@ -110,10 +150,56 @@ export default function AdminAdmissionsNewPage() {
         return;
       }
 
+      let finalResidentId = residentId;
+
+      // Create new resident if needed
+      if (isCreatingResident) {
+        const fn = newFirstName.trim();
+        const ln = newLastName.trim();
+        if (!fn || !ln) {
+          setError("First and last name are required for new resident.");
+          setSubmitting(false);
+          return;
+        }
+        if (!newDob) {
+          setError("Date of birth is required for new resident.");
+          setSubmitting(false);
+          return;
+        }
+
+        const { data: newRes, error: newResErr } = await supabase
+          .from("residents")
+          .insert({
+            facility_id: selectedFacilityId,
+            organization_id: fac.organization_id,
+            first_name: fn,
+            last_name: ln,
+            date_of_birth: newDob,
+            gender: newGender as "female" | "male" | "other" | "prefer_not_to_say",
+            status: "inquiry",
+            created_by: user.id,
+            updated_by: user.id,
+          })
+          .select("id")
+          .single();
+
+        if (newResErr) {
+          setError(newResErr.message);
+          setSubmitting(false);
+          return;
+        }
+        finalResidentId = newRes.id;
+      } else if (!residentId) {
+        setError("Select an existing resident or create a new one.");
+        setSubmitting(false);
+        return;
+      }
+
+      // Create admission case
       const payload = {
         organization_id: fac.organization_id,
         facility_id: selectedFacilityId,
-        resident_id: residentId,
+        resident_id: finalResidentId,
         referral_lead_id: referralLeadId || null,
         bed_id: bedId || null,
         target_move_in_date: targetMoveIn || null,
@@ -140,27 +226,28 @@ export default function AdminAdmissionsNewPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex items-center gap-4">
+        <Link
+          href="/admin/admissions"
+          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "p-2")}
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
         <div>
           <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
             New admission case
           </h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-            Opens a workflow row for a resident in inquiry or pending admission.
+            Start the intake workflow for a resident.
           </p>
         </div>
-        <Link href="/admin/admissions" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-          Back to pipeline
-        </Link>
       </div>
-
-      <AdmissionsHubNav />
 
       <Card className="border-slate-200/80 shadow-soft dark:border-slate-800">
         <CardHeader>
-          <CardTitle className="font-display text-lg">Case</CardTitle>
+          <CardTitle className="font-display text-lg">Resident</CardTitle>
           <p className="text-sm text-slate-600 dark:text-slate-300">
-            Creates <code className="text-xs">admission_cases</code> for the facility selected in the header.
+            Select an existing resident in inquiry status, or create a new one.
           </p>
         </CardHeader>
         <CardContent>
@@ -168,34 +255,119 @@ export default function AdminAdmissionsNewPage() {
             <p className="text-sm text-amber-800 dark:text-amber-200">Select a facility in the header to continue.</p>
           ) : (
             <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="adm-resident">Resident</Label>
-                <select
-                  id="adm-resident"
-                  value={residentId}
-                  onChange={(e) => setResidentId(e.target.value)}
-                  disabled={loadingRefs}
-                  required
-                  className="flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
-                >
-                  <option value="">— Select —</option>
-                  {residents.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.last_name}, {r.first_name} ({r.status})
-                    </option>
-                  ))}
-                </select>
-                {residents.length === 0 && !loadingRefs ? (
-                  <p className="text-xs text-slate-600 dark:text-slate-400">
-                    No inquiry or pending-admission residents. Add a{" "}
-                    <Link href="/admin/residents/new" className="underline underline-offset-2">
-                      new resident
-                    </Link>{" "}
-                    or update status on an existing profile.
-                  </p>
-                ) : null}
+              {/* Resident Selection Toggle */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsCreatingResident(false)}
+                    className={cn(
+                      "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                      !isCreatingResident
+                        ? "bg-indigo-600 text-white"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                    )}
+                  >
+                    Select existing
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsCreatingResident(true)}
+                    className={cn(
+                      "px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2",
+                      isCreatingResident
+                        ? "bg-indigo-600 text-white"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                    )}
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    Create new
+                  </button>
+                </div>
+
+                {!isCreatingResident ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="adm-resident">Resident</Label>
+                    <select
+                      id="adm-resident"
+                      value={residentId}
+                      onChange={(e) => setResidentId(e.target.value)}
+                      disabled={loadingRefs}
+                      required
+                      className="flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+                    >
+                      <option value="">— Select —</option>
+                      {residents.map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.last_name}, {r.first_name} ({r.status})
+                        </option>
+                      ))}
+                    </select>
+                    {residents.length === 0 && !loadingRefs ? (
+                      <p className="text-xs text-slate-600 dark:text-slate-400">
+                        No inquiry or pending-admission residents. Create a new resident instead.
+                      </p>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="space-y-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="new-first">First name</Label>
+                        <Input
+                          id="new-first"
+                          value={newFirstName}
+                          onChange={(e) => setNewFirstName(e.target.value)}
+                          placeholder="Jane"
+                          required={isCreatingResident}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-last">Last name</Label>
+                        <Input
+                          id="new-last"
+                          value={newLastName}
+                          onChange={(e) => setNewLastName(e.target.value)}
+                          placeholder="Smith"
+                          required={isCreatingResident}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="new-dob">Date of birth</Label>
+                        <Input
+                          id="new-dob"
+                          type="date"
+                          value={newDob}
+                          onChange={(e) => setNewDob(e.target.value)}
+                          required={isCreatingResident}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-gender">Gender</Label>
+                        <select
+                          id="new-gender"
+                          value={newGender}
+                          onChange={(e) => setNewGender(e.target.value)}
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm dark:bg-input/30"
+                        >
+                          {GENDERS.map((g) => (
+                            <option key={g.value} value={g.value}>
+                              {g.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      New resident will be created with status <span className="font-mono">inquiry</span>. Additional details can be added on the resident profile.
+                    </p>
+                  </div>
+                )}
               </div>
 
+              {/* Optional fields */}
               <div className="space-y-2">
                 <Label htmlFor="adm-lead">Referral lead (optional)</Label>
                 <select
@@ -252,7 +424,8 @@ export default function AdminAdmissionsNewPage() {
                   {error}
                 </p>
               ) : null}
-              <Button type="submit" disabled={submitting || residents.length === 0}>
+
+              <Button type="submit" disabled={submitting || (isCreatingResident ? false : residents.length === 0)}>
                 {submitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

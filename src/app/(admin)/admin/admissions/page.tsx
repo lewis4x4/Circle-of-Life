@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { ClipboardList, Home, ArrowRight } from "lucide-react";
+import { UserPlus, Home, DoorOpen, MessageCircle, ArrowRight, Plus } from "lucide-react";
 
-import { AdmissionsHubNav } from "./admissions-hub-nav";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
@@ -14,9 +13,38 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 
+// Types for each section
+type LeadRow = Pick<
+  Database["public"]["Tables"]["referral_leads"]["Row"],
+  "id" | "first_name" | "last_name" | "status" | "updated_at"
+> & {
+  referral_sources: { name: string } | null;
+};
+
 type CaseRow = Pick<
   Database["public"]["Tables"]["admission_cases"]["Row"],
   "id" | "status" | "updated_at" | "target_move_in_date"
+> & {
+  residents: { first_name: string; last_name: string } | null;
+};
+
+type DischargeRow = Pick<
+  Database["public"]["Tables"]["discharge_med_reconciliation"]["Row"],
+  "id" | "status" | "updated_at"
+> & {
+  residents: { first_name: string; last_name: string } | null;
+};
+
+type TriageRow = Pick<
+  Database["public"]["Tables"]["family_message_triage_items"]["Row"],
+  "id" | "updated_at" | "matched_keywords"
+> & {
+  residents: { first_name: string; last_name: string } | null;
+};
+
+type ConferenceRow = Pick<
+  Database["public"]["Tables"]["family_care_conference_sessions"]["Row"],
+  "id" | "scheduled_start" | "updated_at"
 > & {
   residents: { first_name: string; last_name: string } | null;
 };
@@ -25,64 +53,245 @@ function formatStatus(s: string) {
   return s.replace(/_/g, " ");
 }
 
+function formatRelative(date: string | null): string {
+  if (!date) return "—";
+  const d = new Date(date);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+// Section component for lifecycle stages
+function LifecycleSection({
+  title,
+  color,
+  icon: Icon,
+  metrics,
+  allHref,
+  children,
+}: {
+  title: string;
+  color: "emerald" | "indigo" | "rose" | "amber";
+  icon: React.ElementType;
+  metrics: { label: string; value: number | string }[];
+  allHref: string;
+  children: React.ReactNode;
+}) {
+  const hoverGradient = {
+    emerald: "from-emerald-500/10 via-emerald-500/0",
+    indigo: "from-indigo-500/10 via-indigo-500/0",
+    rose: "from-rose-500/10 via-rose-500/0",
+    amber: "from-amber-500/10 via-amber-500/0",
+  }[color];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between border-b border-slate-200/50 dark:border-white/10 pb-3">
+        <div className="flex items-center gap-2">
+          <Icon className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+          <h3 className="text-lg font-display font-medium text-slate-900 dark:text-white tracking-tight">
+            {title}
+          </h3>
+        </div>
+        <Link
+          href={allHref}
+          className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+        >
+          View all →
+        </Link>
+      </div>
+
+      {/* Metrics row */}
+      <div className="flex gap-3 flex-wrap">
+        {metrics.map((m) => (
+          <div
+            key={m.label}
+            className="px-4 py-2 rounded-full bg-white/60 dark:bg-white/5 border border-slate-200 dark:border-white/10 backdrop-blur-sm"
+          >
+            <span className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-zinc-500 mr-2">{m.label}</span>
+            <span className="text-sm font-semibold text-slate-900 dark:text-white">{m.value}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2rem] bg-white/60 dark:bg-white/[0.015] shadow-sm backdrop-blur-3xl overflow-hidden p-4 md:p-6 relative">
+        <div className={cn(
+          "absolute top-0 right-0 w-48 h-48 rounded-full blur-[60px] -mr-12 -mt-12 pointer-events-none opacity-50",
+          `bg-${color}-500/10`
+        )} />
+        <div className="relative z-10">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminAdmissionsHubPage() {
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [rows, setRows] = useState<CaseRow[]>([]);
-  const [counts, setCounts] = useState({
-    pending: 0,
-    reserved: 0,
-    moveIn: 0,
-    cancelled: 0,
-  });
+
+  // Referrals
+  const [referrals, setReferrals] = useState<LeadRow[]>([]);
+  const [referralCounts, setReferralCounts] = useState({ new: 0, pipeline: 0, converted: 0, attention: 0 });
+
+  // Admissions
+  const [admissions, setAdmissions] = useState<CaseRow[]>([]);
+  const [admissionCounts, setAdmissionCounts] = useState({ pending: 0, reserved: 0, moveIn: 0, cancelled: 0 });
+
+  // Discharges
+  const [discharges, setDischarges] = useState<DischargeRow[]>([]);
+  const [dischargeCounts, setDischargeCounts] = useState({ draft: 0, review: 0, complete: 0, cancelled: 0 });
+
+  // Family Connections
+  const [triage, setTriage] = useState<TriageRow[]>([]);
+  const [conferences, setConferences] = useState<ConferenceRow[]>([]);
+  const [familyCounts, setFamilyCounts] = useState({ triage: 0, conferences: 0, consents: 0 });
 
   const load = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
-      setRows([]);
-      setCounts({ pending: 0, reserved: 0, moveIn: 0, cancelled: 0 });
+      setReferrals([]);
+      setAdmissions([]);
+      setDischarges([]);
+      setTriage([]);
+      setConferences([]);
+      setReferralCounts({ new: 0, pipeline: 0, converted: 0, attention: 0 });
+      setAdmissionCounts({ pending: 0, reserved: 0, moveIn: 0, cancelled: 0 });
+      setDischargeCounts({ draft: 0, review: 0, complete: 0, cancelled: 0 });
+      setFamilyCounts({ triage: 0, conferences: 0, consents: 0 });
       setLoading(false);
       return;
     }
 
     try {
-      const { data: list, error: listErr } = await supabase
-        .from("admission_cases")
-        .select("id, status, updated_at, target_move_in_date, residents(first_name, last_name)")
-        .eq("facility_id", selectedFacilityId)
-        .is("deleted_at", null)
-        .order("updated_at", { ascending: false })
-        .limit(50);
-
-      if (listErr) throw listErr;
-      setRows((list ?? []) as CaseRow[]);
-
-      const base = () =>
+      const [
+        refList,
+        admList,
+        disList,
+        triList,
+        confList,
+        // Counts
+        cRefNew,
+        cRefPipe,
+        cRefConv,
+        cRefAtt,
+        cAdmPend,
+        cAdmRes,
+        cAdmMove,
+        cAdmCan,
+        cDisDraft,
+        cDisRev,
+        cDisComp,
+        cDisCan,
+        cFamTriage,
+        cFamConf,
+        cFamCons,
+      ] = await Promise.all([
+        // Lists (limit 5 each for preview)
+        supabase
+          .from("referral_leads")
+          .select("id, first_name, last_name, status, updated_at, referral_sources(name)")
+          .eq("facility_id", selectedFacilityId)
+          .is("deleted_at", null)
+          .not("status", "in", "(converted,lost,merged)")
+          .order("updated_at", { ascending: false })
+          .limit(5),
         supabase
           .from("admission_cases")
-          .select("id", { count: "exact", head: true })
+          .select("id, status, updated_at, target_move_in_date, residents(first_name, last_name)")
           .eq("facility_id", selectedFacilityId)
-          .is("deleted_at", null);
-
-      const [cPend, cRes, cMove, cCan] = await Promise.all([
-        base().eq("status", "pending_clearance"),
-        base().eq("status", "bed_reserved"),
-        base().eq("status", "move_in"),
-        base().eq("status", "cancelled"),
+          .is("deleted_at", null)
+          .not("status", "eq", "cancelled")
+          .order("updated_at", { ascending: false })
+          .limit(5),
+        supabase
+          .from("discharge_med_reconciliation")
+          .select("id, status, updated_at, residents(first_name, last_name)")
+          .eq("facility_id", selectedFacilityId)
+          .is("deleted_at", null)
+          .not("status", "eq", "cancelled")
+          .order("updated_at", { ascending: false })
+          .limit(5),
+        supabase
+          .from("family_message_triage_items")
+          .select("id, updated_at, matched_keywords, residents(first_name, last_name)")
+          .eq("facility_id", selectedFacilityId)
+          .is("deleted_at", null)
+          .in("triage_status", ["pending_review", "in_review"])
+          .order("updated_at", { ascending: false })
+          .limit(3),
+        supabase
+          .from("family_care_conference_sessions")
+          .select("id, scheduled_start, updated_at, residents(first_name, last_name)")
+          .eq("facility_id", selectedFacilityId)
+          .is("deleted_at", null)
+          .gte("scheduled_start", new Date().toISOString())
+          .order("scheduled_start", { ascending: true })
+          .limit(3),
+        // Referral counts
+        supabase.from("referral_leads").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).eq("status", "new"),
+        supabase.from("referral_leads").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).not("status", "in", "(converted,lost,merged)"),
+        supabase.from("referral_leads").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).eq("status", "converted"),
+        supabase.from("referral_leads").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).in("status", ["new", "contacted"]),
+        // Admission counts
+        supabase.from("admission_cases").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).eq("status", "pending_clearance"),
+        supabase.from("admission_cases").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).eq("status", "bed_reserved"),
+        supabase.from("admission_cases").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).eq("status", "move_in"),
+        supabase.from("admission_cases").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).eq("status", "cancelled"),
+        // Discharge counts
+        supabase.from("discharge_med_reconciliation").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).eq("status", "draft"),
+        supabase.from("discharge_med_reconciliation").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).eq("status", "pharmacist_review"),
+        supabase.from("discharge_med_reconciliation").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).eq("status", "complete"),
+        supabase.from("discharge_med_reconciliation").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).eq("status", "cancelled"),
+        // Family counts
+        supabase.from("family_message_triage_items").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).in("triage_status", ["pending_review", "in_review"]),
+        supabase.from("family_care_conference_sessions").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).gte("scheduled_start", new Date().toISOString()),
+        supabase.from("family_consent_records").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null),
       ]);
 
-      setCounts({
-        pending: cPend.count ?? 0,
-        reserved: cRes.count ?? 0,
-        moveIn: cMove.count ?? 0,
-        cancelled: cCan.count ?? 0,
+      setReferrals((refList.data ?? []) as LeadRow[]);
+      setAdmissions((admList.data ?? []) as CaseRow[]);
+      setDischarges((disList.data ?? []) as DischargeRow[]);
+      setTriage((triList.data ?? []) as TriageRow[]);
+      setConferences((confList.data ?? []) as ConferenceRow[]);
+
+      setReferralCounts({
+        new: (cRefNew.count ?? 0) as number,
+        pipeline: (cRefPipe.count ?? 0) as number,
+        converted: (cRefConv.count ?? 0) as number,
+        attention: (cRefAtt.count ?? 0) as number,
+      });
+      setAdmissionCounts({
+        pending: (cAdmPend.count ?? 0) as number,
+        reserved: (cAdmRes.count ?? 0) as number,
+        moveIn: (cAdmMove.count ?? 0) as number,
+        cancelled: (cAdmCan.count ?? 0) as number,
+      });
+      setDischargeCounts({
+        draft: (cDisDraft.count ?? 0) as number,
+        review: (cDisRev.count ?? 0) as number,
+        complete: (cDisComp.count ?? 0) as number,
+        cancelled: (cDisCan.count ?? 0) as number,
+      });
+      setFamilyCounts({
+        triage: (cFamTriage.count ?? 0) as number,
+        conferences: (cFamConf.count ?? 0) as number,
+        consents: (cFamCons.count ?? 0) as number,
       });
     } catch (e) {
-      setLoadError(e instanceof Error ? e.message : "Could not load admission cases.");
-      setRows([]);
+      setLoadError(e instanceof Error ? e.message : "Could not load data.");
     } finally {
       setLoading(false);
     }
@@ -95,193 +304,333 @@ export default function AdminAdmissionsHubPage() {
   const noFacility = !selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-10 pb-12 w-full">
-      
-      {/* ─── MOONSHOT HEADER ─── */}
-      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
-         <div className="space-y-2">
-           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
-               SYS: Pipeline
-           </div>
-           <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-              Admissions
-           </h1>
-           <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400">
-             Clearance, bed reservation, and move-in tracking.
-           </p>
-         </div>
-         <div className="hidden md:block">
-           <AdmissionsHubNav />
-         </div>
+    <div className="mx-auto max-w-6xl space-y-10 pb-12 w-full">
+      {/* ─── HEADER ─── */}
+      <div className="bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
+            SYS: Lifecycle
+          </div>
+          <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white">
+            Admissions
+          </h1>
+          <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400">
+            Manage the complete resident journey — referrals, admissions, discharges, and family connections.
+          </p>
+        </div>
       </div>
 
       {noFacility ? (
         <div className="rounded-[1.5rem] border border-amber-500/20 bg-amber-500/5 p-6 text-sm text-amber-700 dark:text-amber-400 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm">
-           <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 border border-amber-500/30">
-              <span className="font-bold">!</span>
-           </div>
-           Select a facility in the header to load admission cases.
+          <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 border border-amber-500/30">
+            <span className="font-bold">!</span>
+          </div>
+          Select a facility in the header to load lifecycle data.
         </div>
       ) : null}
 
-      {/* ─── METRIC PILLARS ─── */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 pt-4">
-        <div className="h-[180px]">
-           <V2Card hoverColor="rose" className="border-rose-500/20 shadow-[0_8px_30px_rgba(244,63,94,0.05)]">
-             <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-widest uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2">
-                 Pending Clearance
-               </h3>
-               <p className="text-6xl font-display font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
-                 {noFacility ? "—" : loading ? "—" : counts.pending}
-               </p>
-             </div>
-           </V2Card>
-        </div>
-        <div className="h-[180px]">
-           <V2Card hoverColor="amber" className="border-amber-500/20 shadow-[0_8px_30px_rgba(245,158,11,0.05)]">
-             <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-widest uppercase text-amber-600 dark:text-amber-500 flex items-center gap-2">
-                 Bed Reserved
-               </h3>
-               <p className="text-6xl font-display font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
-                 {noFacility ? "—" : loading ? "—" : counts.reserved}
-               </p>
-             </div>
-           </V2Card>
-        </div>
-        <div className="h-[180px]">
-           <V2Card hoverColor="emerald" className="border-emerald-500/20 shadow-[0_8px_30px_rgba(16,185,129,0.05)]">
-             <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
-                 Move-In Ready
-               </h3>
-               <p className="text-6xl font-display font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
-                 {noFacility ? "—" : loading ? "—" : counts.moveIn}
-               </p>
-             </div>
-           </V2Card>
-        </div>
-        <div className="h-[180px]">
-           <V2Card hoverColor="slate" className="border-slate-500/20 shadow-sm">
-             <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-widest uppercase text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                 Cancelled
-               </h3>
-               <p className="text-6xl font-display font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
-                 {noFacility ? "—" : loading ? "—" : counts.cancelled}
-               </p>
-             </div>
-           </V2Card>
-        </div>
-      </div>
-
-      <div className="h-[120px]">
-        <V2Card href="/admin/admissions/new" hoverColor="indigo" className="border-indigo-500/20 pb-0">
-          <div className="flex items-center gap-6 h-full absolute inset-0 px-8">
-            <div className="rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 p-4 border border-indigo-100 dark:border-indigo-500/20">
-              <Home className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+      {/* ─── QUICK ACTIONS ─── */}
+      <div className="grid gap-4 sm:grid-cols-3 pt-2">
+        <V2Card href="/admin/referrals/new" hoverColor="emerald" className="border-emerald-500/20 pb-0">
+          <div className="flex items-center gap-4 h-full absolute inset-0 px-6">
+            <div className="rounded-xl bg-emerald-50 dark:bg-emerald-500/10 p-3 border border-emerald-100 dark:border-emerald-500/20 shrink-0">
+              <Plus className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <div>
-              <h3 className="font-display text-xl lg:text-2xl font-medium tracking-tight text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                New Admission Case
+            <div className="min-w-0 flex-1">
+              <h3 className="font-display text-base font-semibold tracking-tight text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
+                New Referral
               </h3>
-              <p className="text-sm text-slate-500 dark:text-zinc-400 tracking-wide mt-1">Link a resident prospect to clearance and bed planning.</p>
+              <p className="text-xs text-slate-500 dark:text-zinc-400 truncate">Add an inquiry to the pipeline</p>
             </div>
-            <ArrowRight className="h-6 w-6 text-slate-300 dark:text-slate-700 ml-auto group-hover:text-indigo-500 transition-colors group-hover:translate-x-2 duration-300" />
+          </div>
+        </V2Card>
+
+        <V2Card href="/admin/admissions/new" hoverColor="indigo" className="border-indigo-500/20 pb-0">
+          <div className="flex items-center gap-4 h-full absolute inset-0 px-6">
+            <div className="rounded-xl bg-indigo-50 dark:bg-indigo-500/10 p-3 border border-indigo-100 dark:border-indigo-500/20 shrink-0">
+              <Home className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-display text-base font-semibold tracking-tight text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
+                Start Admission
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-zinc-400 truncate">Begin the intake workflow</p>
+            </div>
+          </div>
+        </V2Card>
+
+        <V2Card href="/admin/discharge/new" hoverColor="rose" className="border-rose-500/20 pb-0">
+          <div className="flex items-center gap-4 h-full absolute inset-0 px-6">
+            <div className="rounded-xl bg-rose-50 dark:bg-rose-500/10 p-3 border border-rose-100 dark:border-rose-500/20 shrink-0">
+              <DoorOpen className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-display text-base font-semibold tracking-tight text-slate-900 dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors truncate">
+                Process Discharge
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-zinc-400 truncate">Medication reconciliation</p>
+            </div>
           </div>
         </V2Card>
       </div>
 
-      {/* ─── CASE ROSTER (GLASS ROWS) ─── */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-3 border-b border-slate-200/50 dark:border-white/10 pb-4">
-          <ClipboardList className="h-5 w-5 text-indigo-500" />
-          <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white tracking-tight">
-            Active Cases
-          </h3>
+      {loadError ? (
+        <div className="rounded-[1.5rem] border border-rose-500/20 bg-rose-500/5 p-6 text-sm text-rose-700 dark:text-rose-400">
+          {loadError}
         </div>
+      ) : null}
 
-        {loadError ? (
-           <p className="text-sm text-rose-600 dark:text-rose-400" role="alert">{loadError}</p>
-        ) : null}
+      {/* ─── REFERRALS SECTION ─── */}
+      <LifecycleSection
+        title="Referrals"
+        color="emerald"
+        icon={UserPlus}
+        allHref="/admin/referrals"
+        metrics={[
+          { label: "New", value: noFacility ? "—" : loading ? "—" : referralCounts.new },
+          { label: "Active Pipeline", value: noFacility ? "—" : loading ? "—" : referralCounts.pipeline },
+          { label: "Converted", value: noFacility ? "—" : loading ? "—" : referralCounts.converted },
+        ]}
+      >
+        {noFacility ? (
+          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500">Select a facility to view referrals.</p>
+        ) : loading ? (
+          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500">Loading...</p>
+        ) : referrals.length === 0 ? (
+          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
+            No active leads. <Link href="/admin/referrals/new" className="underline text-emerald-600 dark:text-emerald-400">Create a referral</Link> to get started.
+          </p>
+        ) : (
+          <MotionList className="space-y-3">
+            {referrals.map((r) => {
+              const isNew = r.status === "new";
+              return (
+                <MotionItem key={r.id}>
+                  <Link
+                    href={`/admin/referrals/${r.id}`}
+                    className="flex items-center gap-3 p-4 rounded-[1.5rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 hover:border-emerald-200 dark:hover:border-emerald-500/30 transition-all duration-300 w-full cursor-pointer group"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
+                      {isNew ? <PulseDot colorClass="bg-emerald-500" /> : <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-slate-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                          {r.first_name} {r.last_name}
+                        </span>
+                        <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+                          {formatStatus(r.status)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-zinc-500 mt-0.5">
+                        {r.referral_sources?.name ?? "No source"} · {formatRelative(r.updated_at)}
+                      </p>
+                    </div>
+                  </Link>
+                </MotionItem>
+              );
+            })}
+          </MotionList>
+        )}
+      </LifecycleSection>
 
-        <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-2xl backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative">
-           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
+      {/* ─── ADMISSIONS SECTION ─── */}
+      <LifecycleSection
+        title="Admissions"
+        color="indigo"
+        icon={Home}
+        allHref="/admin/admissions"
+        metrics={[
+          { label: "Pending", value: noFacility ? "—" : loading ? "—" : admissionCounts.pending },
+          { label: "Bed Reserved", value: noFacility ? "—" : loading ? "—" : admissionCounts.reserved },
+          { label: "Move-In Ready", value: noFacility ? "—" : loading ? "—" : admissionCounts.moveIn },
+        ]}
+      >
+        {noFacility ? (
+          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500">Select a facility to view admissions.</p>
+        ) : loading ? (
+          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500">Loading...</p>
+        ) : admissions.length === 0 ? (
+          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
+            No active cases. <Link href="/admin/admissions/new" className="underline text-indigo-600 dark:text-indigo-400">Start an admission</Link>.
+          </p>
+        ) : (
+          <MotionList className="space-y-3">
+            {admissions.map((r) => {
+              const isPending = r.status === "pending_clearance";
+              return (
+                <MotionItem key={r.id}>
+                  <Link
+                    href={`/admin/admissions/${r.id}`}
+                    className="flex items-center gap-3 p-4 rounded-[1.5rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 w-full cursor-pointer group"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
+                      {isPending ? <PulseDot colorClass="bg-rose-500" /> : <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                          {r.residents ? `${r.residents.first_name} ${r.residents.last_name}` : "Unlinked case"}
+                        </span>
+                        <span className={cn(
+                          "text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full border",
+                          isPending
+                            ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
+                            : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                        )}>
+                          {formatStatus(r.status)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-zinc-500 mt-0.5">
+                        {r.target_move_in_date ? `Target: ${r.target_move_in_date}` : "No date set"} · {formatRelative(r.updated_at)}
+                      </p>
+                    </div>
+                  </Link>
+                </MotionItem>
+              );
+            })}
+          </MotionList>
+        )}
+      </LifecycleSection>
 
-           <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
-             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Resident</div>
-             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Status</div>
-             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Target Move-in</div>
-             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Updated</div>
-           </div>
+      {/* ─── DISCHARGES SECTION ─── */}
+      <LifecycleSection
+        title="Discharges"
+        color="rose"
+        icon={DoorOpen}
+        allHref="/admin/discharge"
+        metrics={[
+          { label: "Draft", value: noFacility ? "—" : loading ? "—" : dischargeCounts.draft },
+          { label: "In Review", value: noFacility ? "—" : loading ? "—" : dischargeCounts.review },
+          { label: "Complete", value: noFacility ? "—" : loading ? "—" : dischargeCounts.complete },
+        ]}
+      >
+        {noFacility ? (
+          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500">Select a facility to view discharges.</p>
+        ) : loading ? (
+          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500">Loading...</p>
+        ) : discharges.length === 0 ? (
+          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
+            No active reconciliations. <Link href="/admin/discharge/new" className="underline text-rose-600 dark:text-rose-400">Start a discharge</Link>.
+          </p>
+        ) : (
+          <MotionList className="space-y-3">
+            {discharges.map((r) => {
+              const isDraft = r.status === "draft";
+              return (
+                <MotionItem key={r.id}>
+                  <Link
+                    href={`/admin/discharge/${r.id}`}
+                    className="flex items-center gap-3 p-4 rounded-[1.5rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 hover:border-rose-200 dark:hover:border-rose-500/30 transition-all duration-300 w-full cursor-pointer group"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
+                      {isDraft ? <PulseDot colorClass="bg-rose-500" /> : <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-slate-900 dark:text-white truncate group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
+                          {r.residents ? `${r.residents.first_name} ${r.residents.last_name}` : "Unlinked reconciliation"}
+                        </span>
+                        <span className={cn(
+                          "text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full border",
+                          isDraft
+                            ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
+                            : r.status === "pharmacist_review"
+                              ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                              : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                        )}>
+                          {formatStatus(r.status)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-zinc-500 mt-0.5">
+                        Updated {formatRelative(r.updated_at)}
+                      </p>
+                    </div>
+                  </Link>
+                </MotionItem>
+              );
+            })}
+          </MotionList>
+        )}
+      </LifecycleSection>
 
-           <div className="space-y-4 mt-6 relative z-10">
-             {noFacility ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500">
-                 Select a facility to view cases.
-               </div>
-             ) : loading ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500">
-                 Loading queue...
-               </div>
-             ) : rows.length === 0 ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
-                 No cases yet. Start with <strong>New admission case</strong>.
-               </div>
-             ) : (
-                <MotionList className="space-y-4">
-                  {rows.map((r) => {
-                    const isPending = r.status.includes('pending');
-                    
-                    return (
-                      <MotionItem key={r.id}>
-                        <Link
-                          href={`/admin/admissions/${r.id}`}
-                          className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-4 items-center p-6 rounded-[1.8rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 w-full cursor-pointer outline-none hover:shadow-lg dark:hover:bg-white/[0.05]"
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                              {isPending ? <PulseDot colorClass="bg-rose-500" /> : <div className="w-2 h-2 rounded-full bg-indigo-500" />}
-                            </div>
-                            <span className="font-semibold text-xl text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors tracking-tight font-display">
-                               {r.residents ? `${r.residents.first_name} ${r.residents.last_name}` : "—"}
-                            </span>
-                          </div>
-                          
-                          <div className="flex flex-row justify-between lg:justify-start items-center">
-                            <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Status</span>
-                            <span className={cn(
-                              "text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded-full border shadow-inner",
-                              isPending ? "bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400"
-                            )}>
-                              {formatStatus(r.status)}
-                            </span>
-                          </div>
-                          
-                          <div className="flex flex-row justify-between lg:justify-end items-center">
-                            <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Target</span>
-                            <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 truncate">
-                              {r.target_move_in_date ?? "—"}
-                            </span>
-                          </div>
-
-                          <div className="flex flex-row justify-between lg:justify-end items-center">
-                            <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Updated</span>
-                            <span className="text-[11px] font-mono tracking-wide text-slate-500 dark:text-zinc-500">
-                              {new Date(r.updated_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
-                            </span>
-                          </div>
-                        </Link>
-                      </MotionItem>
-                    )
-                  })}
-                </MotionList>
-             )}
-           </div>
-        </div>
-      </div>
-      
+      {/* ─── FAMILY CONNECTIONS SECTION ─── */}
+      <LifecycleSection
+        title="Family Connections"
+        color="amber"
+        icon={MessageCircle}
+        allHref="/admin/family-portal"
+        metrics={[
+          { label: "Triage Alerts", value: noFacility ? "—" : loading ? "—" : familyCounts.triage },
+          { label: "Upcoming Conferences", value: noFacility ? "—" : loading ? "—" : familyCounts.conferences },
+          { label: "Consents", value: noFacility ? "—" : loading ? "—" : familyCounts.consents },
+        ]}
+      >
+        {noFacility ? (
+          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500">Select a facility to view family connections.</p>
+        ) : loading ? (
+          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500">Loading...</p>
+        ) : triage.length === 0 && conferences.length === 0 ? (
+          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
+            No items needing attention. View <Link href="/admin/family-messages" className="underline text-amber-600 dark:text-amber-400">direct messages</Link> for all conversations.
+          </p>
+        ) : (
+          <MotionList className="space-y-3">
+            {/* Triage alerts first */}
+            {triage.map((t) => (
+              <MotionItem key={`triage-${t.id}`}>
+                <Link
+                  href="/admin/family-portal"
+                  className="flex items-center gap-3 p-4 rounded-[1.5rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 hover:border-rose-200 dark:hover:border-rose-500/30 transition-all duration-300 w-full cursor-pointer group"
+                >
+                  <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 flex items-center justify-center shrink-0">
+                    <PulseDot colorClass="bg-rose-500" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-slate-900 dark:text-white truncate group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
+                        {t.residents ? `${t.residents.first_name} ${t.residents.last_name}` : "Unknown resident"}
+                      </span>
+                      <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 border-rose-500/20">
+                        Triage Alert
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-zinc-500 mt-0.5 truncate">
+                      {t.matched_keywords?.join(", ") ?? "Keywords detected"} · {formatRelative(t.updated_at)}
+                    </p>
+                  </div>
+                </Link>
+              </MotionItem>
+            ))}
+            {/* Upcoming conferences */}
+            {conferences.map((c) => (
+              <MotionItem key={`conf-${c.id}`}>
+                <Link
+                  href="/admin/family-portal"
+                  className="flex items-center gap-3 p-4 rounded-[1.5rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 w-full cursor-pointer group"
+                >
+                  <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 flex items-center justify-center shrink-0">
+                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                        {c.residents ? `${c.residents.first_name} ${c.residents.last_name}` : "Unknown resident"}
+                      </span>
+                      <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 border-indigo-500/20">
+                        Conference
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-zinc-500 mt-0.5">
+                      {c.scheduled_start ? new Date(c.scheduled_start).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "No date"} · {formatRelative(c.updated_at)}
+                    </p>
+                  </div>
+                </Link>
+              </MotionItem>
+            ))}
+          </MotionList>
+        )}
+      </LifecycleSection>
     </div>
   );
 }
