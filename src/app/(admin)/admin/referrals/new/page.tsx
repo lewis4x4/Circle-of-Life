@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 
 import { ReferralsHubNav } from "../referrals-hub-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -14,6 +14,14 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
+
+const SOURCE_TYPES = [
+  { value: "hospital", label: "Hospital" },
+  { value: "agency", label: "Agency" },
+  { value: "family", label: "Family" },
+  { value: "web", label: "Web" },
+  { value: "other", label: "Other" },
+] as const;
 
 export default function AdminReferralsNewPage() {
   const router = useRouter();
@@ -29,6 +37,12 @@ export default function AdminReferralsNewPage() {
   const [loadingSources, setLoadingSources] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showAddSource, setShowAddSource] = useState(false);
+  const [newSourceName, setNewSourceName] = useState("");
+  const [newSourceType, setNewSourceType] = useState<string>("hospital");
+  const [newSourceFacilityOnly, setNewSourceFacilityOnly] = useState(false);
+  const [creatingSource, setCreatingSource] = useState(false);
+  const [sourceError, setSourceError] = useState<string | null>(null);
 
   const loadSources = useCallback(async () => {
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
@@ -63,6 +77,71 @@ export default function AdminReferralsNewPage() {
   useEffect(() => {
     void loadSources();
   }, [loadSources]);
+
+  async function handleCreateSource() {
+    setSourceError(null);
+
+    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
+      setSourceError("Select a facility in the header before adding a referral source.");
+      return;
+    }
+
+    const trimmedName = newSourceName.trim();
+    if (!trimmedName) {
+      setSourceError("Source name is required.");
+      return;
+    }
+
+    setCreatingSource(true);
+    try {
+      const { data: fac, error: facErr } = await supabase
+        .from("facilities")
+        .select("organization_id")
+        .eq("id", selectedFacilityId)
+        .is("deleted_at", null)
+        .maybeSingle();
+
+      if (facErr || !fac?.organization_id) {
+        setSourceError("Could not resolve organization for this facility.");
+        return;
+      }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user?.id) {
+        setSourceError("You must be signed in.");
+        return;
+      }
+
+      const { data: inserted, error: insErr } = await supabase
+        .from("referral_sources")
+        .insert({
+          organization_id: fac.organization_id,
+          facility_id: newSourceFacilityOnly ? selectedFacilityId : null,
+          name: trimmedName,
+          source_type: newSourceType,
+          is_active: true,
+          created_by: user.id,
+        })
+        .select("id")
+        .single();
+
+      if (insErr || !inserted?.id) {
+        setSourceError(insErr?.message ?? "Could not create referral source.");
+        return;
+      }
+
+      await loadSources();
+      setReferralSourceId(inserted.id);
+      setNewSourceName("");
+      setNewSourceType("hospital");
+      setNewSourceFacilityOnly(false);
+      setShowAddSource(false);
+    } finally {
+      setCreatingSource(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -205,17 +284,98 @@ export default function AdminReferralsNewPage() {
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-slate-600 dark:text-slate-400">
-                  Add or manage channels on{" "}
+                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 dark:text-slate-400">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSourceError(null);
+                      setShowAddSource((current) => !current);
+                    }}
+                    className="inline-flex items-center gap-1 font-medium text-slate-900 underline underline-offset-2 dark:text-slate-100"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Add a new referral source here
+                  </button>
+                  <span className="text-slate-400">or</span>
                   <Link href="/admin/referrals/sources" className="underline underline-offset-2">
-                    Referral sources
+                    manage all referral sources
                   </Link>
-                  .
-                </p>
+                </div>
+                {showAddSource ? (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/40">
+                    <div className="space-y-4">
+                      <div className="grid gap-4 sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+                        <div className="space-y-2">
+                          <Label htmlFor="new-ref-source-name">New source name</Label>
+                          <Input
+                            id="new-ref-source-name"
+                            value={newSourceName}
+                            onChange={(e) => setNewSourceName(e.target.value)}
+                            placeholder="Hospital, agency, website, family contact, etc."
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="new-ref-source-type">Type</Label>
+                          <select
+                            id="new-ref-source-type"
+                            value={newSourceType}
+                            onChange={(e) => setNewSourceType(e.target.value)}
+                            className="flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+                          >
+                            {SOURCE_TYPES.map((type) => (
+                              <option key={type.value} value={type.value}>
+                                {type.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                        <input
+                          type="checkbox"
+                          checked={newSourceFacilityOnly}
+                          onChange={(e) => setNewSourceFacilityOnly(e.target.checked)}
+                        />
+                        Only use this source for the currently selected facility
+                      </label>
+                      {sourceError ? (
+                        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+                          {sourceError}
+                        </p>
+                      ) : null}
+                      <div className="flex flex-wrap gap-2">
+                        <Button type="button" size="sm" disabled={creatingSource} onClick={() => void handleCreateSource()}>
+                          {creatingSource ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Adding…
+                            </>
+                          ) : (
+                            "Add source and select it"
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setShowAddSource(false);
+                            setSourceError(null);
+                            setNewSourceName("");
+                            setNewSourceType("hospital");
+                            setNewSourceFacilityOnly(false);
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
               </div>
-              <div className="rounded-lg border border-amber-200/80 bg-amber-50/50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
-                <code className="text-xs">pii_access_tier</code> defaults to <code className="text-xs">standard_ops</code>; column-level
-                filtering for minimum necessary is enforced in app layers per spec.
+              <div className="rounded-lg border border-slate-200/80 bg-slate-50/80 px-4 py-3 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300">
+                Contact details entered here are stored with the lead and shown according to each user&apos;s role and facility access.
               </div>
               {error ? (
                 <p className="text-sm text-red-600 dark:text-red-400" role="alert">
