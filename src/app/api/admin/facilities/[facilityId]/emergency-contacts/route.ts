@@ -135,9 +135,9 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
         notes: data.notes ?? null,
         sort_order: data.sort_order,
         created_by: actor.id,
-      } as any)
+      } as Record<string, unknown>)
       .select()
-      .single() as any;
+      .single();
 
     if (insertErr) {
       return NextResponse.json({ error: "Failed to create contact" }, { status: 500 });

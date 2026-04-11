@@ -3,8 +3,27 @@
 import { useState, useCallback, useEffect } from "react";
 import type { FacilityRow } from "@/types/facility";
 
+function normalizeListRow(raw: Record<string, unknown>): FacilityRow {
+  const f = raw as FacilityRow & {
+    occupancy_count?: number;
+    total_beds?: number;
+    occupancy_pct?: number;
+  };
+  const occ = f.occupancy_count ?? 0;
+  const beds = f.total_beds ?? f.total_licensed_beds ?? 0;
+  const pctFromApi = f.occupancy_pct;
+  const occupancy_pct =
+    pctFromApi != null && pctFromApi > 1 ? pctFromApi / 100 : (pctFromApi ?? null);
+  return {
+    ...f,
+    current_occupancy: occ,
+    licensed_beds: beds,
+    occupancy_pct,
+  } as FacilityRow;
+}
+
 interface FacilitiesResponse {
-  facilities: FacilityRow[];
+  facilities: Record<string, unknown>[];
   total: number;
   page: number;
   has_next: boolean;
@@ -61,7 +80,7 @@ export function useFacilities(options: UseFacilitiesOptions = {}): UseFacilities
         throw new Error("Failed to fetch facilities");
       }
       const json = (await res.json()) as FacilitiesResponse;
-      setFacilities(json.facilities ?? []);
+      setFacilities((json.facilities ?? []).map((row) => normalizeListRow(row)));
       setPagination({
         total: json.total ?? 0,
         page: json.page ?? page,

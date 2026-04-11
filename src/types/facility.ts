@@ -70,10 +70,34 @@ export interface FacilityRow extends BaseFacilityRow {
   facility_overrides: FacilityOverrides | null;
   /** Pharmacy vendor enum */
   pharmacy_vendor: PharmacyVendor | null;
-  /** Current occupancy percentage (0.00–1.00) */
+  /** Current occupancy percentage (0.00–1.00) — list API may send 0–100; normalize in hooks */
   occupancy_pct: number | null;
   /** AHCA license number — PENDING: Brian obtaining from client */
   ahca_license_number: string | null;
   /** AHCA license expiration date — PENDING: Brian obtaining from client */
   ahca_license_expiration: string | null;
+  /** List API: occupied bed count */
+  occupancy_count?: number;
+  total_beds?: number;
+  /** UI alias for census */
+  current_occupancy?: number;
+  licensed_beds?: number;
+  /** Legal entity display (detail API) */
+  entity_name?: string | null;
+  /** Migration 131 — care services (never `memory_care`) */
+  care_services_offered?: string[] | null;
 }
+
+/** Optional fields returned by facility detail / list APIs */
+export interface FacilityApiExtensions {
+  entity?: { id: string; legal_name: string | null; dba_name: string | null } | null;
+  entity_name?: string | null;
+  occupancy_count?: number;
+  total_beds?: number;
+  /** Duplicate of occupancy_count for legacy UI */
+  current_occupancy?: number;
+  /** Duplicate of total_licensed_beds for legacy UI */
+  licensed_beds?: number;
+}
+
+export type FacilityDetailRow = FacilityRow & FacilityApiExtensions;

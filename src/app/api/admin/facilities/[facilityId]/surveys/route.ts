@@ -149,9 +149,9 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
         document_id: data.document_id ?? null,
         notes: data.notes ?? null,
         created_by: actor.id,
-      } as any)
+      } as Record<string, unknown>)
       .select()
-      .single() as any;
+      .single();
 
     if (insertErr) {
       return NextResponse.json({ error: "Failed to create survey" }, { status: 500 });

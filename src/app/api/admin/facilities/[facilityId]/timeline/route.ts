@@ -142,9 +142,9 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
         description: data.description ?? null,
         document_id: data.document_id ?? null,
         created_by: actor.id,
-      } as any)
+      } as Record<string, unknown>)
       .select()
-      .single() as any;
+      .single();
 
     if (insertErr) {
       return NextResponse.json({ error: "Failed to create timeline event" }, { status: 500 });

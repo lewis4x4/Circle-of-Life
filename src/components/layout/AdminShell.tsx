@@ -52,7 +52,8 @@ import {
   Stethoscope,
   Building2,
   ShieldCheck,
-  Zap
+  Zap,
+  Hotel,
 } from "lucide-react";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
@@ -156,6 +157,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         { key: "dashboard", href: "/admin", label: "Triage Inbox", enabled: true, icon: LayoutDashboard },
         { key: "executive", href: "/admin/executive", label: "Executive summary", enabled: true, icon: BarChart3 },
         { key: "reports", href: "/admin/reports", label: "Reports hub", enabled: true, icon: FileText },
+        { key: "facilities", href: "/admin/facilities", label: "Facilities", enabled: true, icon: Hotel },
       ]
     },
     {

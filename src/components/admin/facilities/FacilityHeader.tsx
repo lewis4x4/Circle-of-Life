@@ -8,8 +8,9 @@ interface FacilityHeaderProps {
 }
 
 export function FacilityHeader({ facility }: FacilityHeaderProps) {
-  const occupiedBeds = facility.current_occupancy ?? 0;
-  const licensedBeds = facility.licensed_beds ?? 0;
+  const occupiedBeds = facility.occupancy_count ?? facility.current_occupancy ?? 0;
+  const licensedBeds =
+    facility.total_beds ?? facility.licensed_beds ?? facility.total_licensed_beds ?? 0;
   const occupancyPercent = licensedBeds > 0 ? Math.round((occupiedBeds / licensedBeds) * 100) : 0;
 
   // Determine status badge color
@@ -18,9 +19,12 @@ export function FacilityHeader({ facility }: FacilityHeaderProps) {
   if (facility.status === "inactive") {
     statusColor = "bg-gray-100 text-gray-800";
     statusText = "Inactive";
-  } else if (facility.status === "pending") {
-    statusColor = "bg-blue-100 text-blue-800";
-    statusText = "Pending";
+  } else if (facility.status === "under_renovation") {
+    statusColor = "bg-amber-100 text-amber-900";
+    statusText = "Under renovation";
+  } else if (facility.status === "archived") {
+    statusColor = "bg-slate-100 text-slate-800";
+    statusText = "Archived";
   }
 
   return (

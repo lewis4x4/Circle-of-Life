@@ -28,8 +28,9 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
     );
   }
 
-  const occupiedBeds = facility.current_occupancy ?? 0;
-  const licensedBeds = facility.licensed_beds ?? 0;
+  const occupiedBeds = facility.occupancy_count ?? facility.current_occupancy ?? 0;
+  const licensedBeds =
+    facility.total_beds ?? facility.licensed_beds ?? facility.total_licensed_beds ?? 0;
 
   return (
     <div className="space-y-6">
@@ -69,7 +70,7 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Administrator</p>
                 <p className="mt-1 text-sm font-medium text-gray-900">{facility.administrator_name ?? "N/A"}</p>
-                <p className="text-xs text-muted-foreground">{facility.administrator_phone ?? "No phone"}</p>
+                <p className="text-xs text-muted-foreground">{facility.phone ?? "No phone"}</p>
               </div>
             </div>
 

@@ -76,7 +76,7 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
   const { rate_type, active_only } = parsed.data;
 
   // Build query
-  let query: any = admin
+  let query = admin
     .from("rate_schedule_versions")
     .select("id, rate_type, amount_cents, effective_from, effective_to, approved_by, approved_at, notes, created_at")
     .eq("facility_id", facilityId)
@@ -173,9 +173,9 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
         effective_to: null,
         notes: notes ?? null,
         created_by: actor.id,
-      } as any)
+      } as Record<string, unknown>)
       .select()
-      .single() as any;
+      .single();
 
     if (insertErr) {
       return NextResponse.json({ error: "Failed to create rate" }, { status: 500 });

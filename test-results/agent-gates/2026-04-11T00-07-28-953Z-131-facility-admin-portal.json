@@ -1,0 +1,130 @@
+{
+  "segment": "131-facility-admin-portal",
+  "timestamp": "2026-04-11T00:07:28.953Z",
+  "verdict": "FAIL",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-env-example.mjs",
+      "duration_ms": 27,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "status": "passed",
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "duration_ms": 95,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "status": "failed",
+      "command": "npm run audit:ci",
+      "duration_ms": 769,
+      "stdout": "# npm audit report\n\nnext  16.0.0-beta.0 - 16.2.2\nSeverity: high\nNext.js has a Denial of Service with Server Components - https://github.com/advisories/GHSA-q4gf-8mx6-v5v3\nfix available via `npm audit fix --force`\nWill install next@16.2.3, which is outside the stated dependency range\nnode_modules/next\n\n1 high severity vulnerability\n\nTo address all issues, run:\n  npm audit fix --force\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "status": "passed",
+      "command": "npm run secrets:gitleaks",
+      "duration_ms": 5799,
+      "stdout": "[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n\u001b[90m12:07AM\u001b[0m \u001b[32mINF\u001b[0m 401 commits scanned.\n\u001b[90m12:07AM\u001b[0m \u001b[32mINF\u001b[0m scan completed in 4.15s\n\u001b[90m12:07AM\u001b[0m \u001b[32mINF\u001b[0m no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "status": "failed",
+      "command": "npm run lint",
+      "duration_ms": 9059,
+      "stdout": "\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/admin/assistant-dashboard/page.tsx\n  8:49  warning  'Clock' is defined but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/admin/compliance/deficiencies/analysis/page.tsx\n   23:3   warning  'LineChart' is defined but never used              @typescript-eslint/no-unused-vars\n   24:3   warning  'Line' is defined but never used                   @typescript-eslint/no-unused-vars\n   43:10  warning  'MotionList' is defined but never used             @typescript-eslint/no-unused-vars\n   43:22  warning  'MotionItem' is defined but never used             @typescript-eslint/no-unused-vars\n   54:52  error    Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any\n   59:26  error    Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any\n   75:9   warning  'supabase' is assigned a value but never used      @typescript-eslint/no-unused-vars\n  138:9   warning  'uniqueMonths' is assigned a value but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/admin/compliance/emergency-preparedness/page.tsx\n    3:8   warning  'Link' is defined but never used                           @typescript-eslint/no-unused-vars\n   11:3   warning  'ArrowRight' is defined but never used                     @typescript-eslint/no-unused-vars\n   13:3   warning  'Users' is defined but never used                          @typescript-eslint/no-unused-vars\n   15:3   warning  'History' is defined but never used                        @typescript-eslint/no-unused-vars\n   27:10  warning  'Switch' is defined but never used                         @typescript-eslint/no-unused-vars\n  118:9   warning  'openCompletionDialog' is assigned a value but never used  @typescript-eslint/no-unused-vars\n  306:12  error    'Dialog' is not defined                                    react/jsx-no-undef\n  310:14  error    'DialogTrigger' is not defined                             react/jsx-no-undef\n  316:14  error    'DialogContent' is not defined                             react/jsx-no-undef\n  317:16  error    'DialogHeader' is not defined                              react/jsx-no-undef\n  318:18  error    'DialogTitle' is not defined                               react/jsx-no-undef\n  319:18  error    'DialogDescription' is not defined                         react/jsx-no-undef\n  326:20  error    'Select' is not defined                                    react/jsx-no-undef\n  330:22  error    'SelectTrigger' is not defined                             react/jsx-no-undef\n  331:24  error    'SelectValue' is not defined                               react/jsx-no-undef\n  333:22  error    'SelectContent' is not defined                             react/jsx-no-undef\n  335:26  error    'SelectItem' is not defined                                react/jsx-no-undef\n  506:24  error    'Dialog' is not defined                                    react/jsx-no-undef\n  510:26  error    'DialogTrigger' is not defined                             react/jsx-no-undef\n  516:26  error    'DialogContent' is not defined                             react/jsx-no-undef\n  517:28  error    'DialogHeader' is not defined                              react/jsx-no-undef\n  518:30  error    'DialogTitle' is not defined                               react/jsx-no-undef\n  519:30  error    'DialogDescription' is not defined                         react/jsx-no-undef\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/admin/compliance/page.tsx\n  23:30  warning  'getLatestScan' is defined but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/admin/compliance/rules/[id]/page.tsx\n  9:31  warning  'getScanHistory' is defined but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/admin/compliance/rules/new/page.tsx\n  148:10  error  'Link' is not defined  react/jsx-no-undef\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/admin/compliance/rules/page.tsx\n   13:8  warning  'ComplianceRule' is defined but never used    @typescript-eslint/no-unused-vars\n  106:9  warning  'runScan' is assigned a value but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/admin/coordinator-dashboard/page.tsx\n  8:86  warning  'AlertCircle' is defined but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/admin/nurse-dashboard/page.tsx\n  8:10  warning  'createClient' is defined but never used  @typescript-eslint/no-unused-vars\n  9:54  warning  'Clock' is defined but never used         @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/incidents/new/page.tsx\n  71:9  warning  'router' is assigned a value but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/api/admin/facilities/[facilityId]/audit-log/route.ts\n  86:16  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/api/admin/facilities/[facilityId]/building-profile/route.ts\n   61:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  135:14  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  138:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  155:14  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  157:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/api/admin/facilities/[facilityId]/documents/route.ts\n  166:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  168:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/api/admin/facilities/[facilityId]/emergency-contacts/route.ts\n  138:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  140:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/api/admin/facilities/[facilityId]/rates/route.ts\n   79:14  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  176:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  178:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/api/admin/facilities/[facilityId]/surveys/route.ts\n  152:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  154:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/api/admin/facilities/[facilityId]/thresholds/route.ts\n  126:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  140:16  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  144:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  173:18  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  176:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  199:18  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  201:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/api/admin/facilities/[facilityId]/timeline/route.ts\n  145:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  147:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/api/admin/facilities/route.ts\n   59:14  error  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any\n   95:50  error  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any\n   96:7   error  'statsMap' is never reassigned. Use 'const' instead  prefer-const\n  161:41  error  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/api/admin/users/[id]/audit/route.ts\n   84:68  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n   90:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n   90:65  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  102:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  102:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/api/admin/users/[id]/facility-access/route.ts\n  9:10  warning  'canManageUser' is defined but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/api/admin/users/[id]/route.ts\n   52:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n   70:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  116:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/api/admin/users/route.ts\n   64:42  warning  'facility_id' is assigned a value but never used        @typescript-eslint/no-unused-vars\n   68:14  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any\n  106:41  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any\n  107:7   error    'facilityMap' is never reassigned. Use 'const' instead  prefer-const\n  127:38  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any\n  254:34  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any\n  259:10  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/components/admin/users/FacilityAccessManager.tsx\n  10:11  warning  'Facility' is defined but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/components/admin/users/UserEditSheet.tsx\n  317:81  error  `\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities\n  317:96  error  `\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/components/admin/users/UserRowActions.tsx\n  7:10  warning  'ROLE_LABELS' is defined but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/lib/admin-assistant/dashboard-brief.ts\n  28:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  59:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  59:62  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  67:32  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  68:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  69:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  70:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/lib/audit/user-management-audit.ts\n  41:8  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/lib/compliance-reminders.ts\n  271:3  warning  'createdById' is defined but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/lib/coordinator/dashboard-brief.ts\n  25:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  72:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  72:62  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  78:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  78:67  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  85:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  86:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  87:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  88:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  89:41  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  90:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/lib/deficiency-analysis.ts\n  260:15  warning  '_' is defined but never used                   @typescript-eslint/no-unused-vars\n  266:28  warning  'tag_title' is assigned a value but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/lib/dietary/dashboard-brief.ts\n  31:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  67:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  67:69  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  76:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  85:32  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  86:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  87:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  88:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/lib/housekeeper/dashboard-brief.ts\n  31:9   warning  'todayStart' is assigned a value but never used  @typescript-eslint/no-unused-vars\n  44:35  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any\n  57:34  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/lib/nurse/medication-brief.ts\n  29:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  72:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  73:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  74:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  76:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  77:53  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  78:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n  79:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/types/staff.ts\n  7:15  warning  'Database' is defined but never used  @typescript-eslint/no-unused-vars\n\n✖ 131 problems (101 errors, 30 warnings)\n  2 errors and 0 warnings potentially fixable with the `--fix` option.\n\n",
+      "stderr": "[BABEL] Note: The code generator has deoptimised the styling of /Users/brianlewis/Circle of Life/Circle-of-Life/src/types/database.ts as it exceeds the max of 500KB.\n"
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "status": "failed",
+      "command": "npm run migrations:check",
+      "duration_ms": 110,
+      "stdout": "",
+      "stderr": "[migrations:check] FAIL: duplicate migration numeric prefix detected\n"
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": false,
+      "status": "failed",
+      "command": "npm run migrations:verify:pg",
+      "duration_ms": 14201,
+      "stdout": "",
+      "stderr": "[migrations:verify:pg] FAIL at 102_phase1_staff_seed.sql\n ERROR:  null value in column \"facility_id\" of relation \"staff\" violates not-null constraint\nDETAIL:  Failing row contains (1e36c77d-7fe5-4c2b-833f-3f92a97976b7, null, null, 00000000-0000-0000-0000-000000000001, Milton, Smith, null, null, null, 386-984-0798, null, null, null, null, null, null, null, null, null, null, owner, active, 2014-01-01, null, null, null, null, t, f, 40, null, null, 2026-04-11 00:07:58.609169+00, 2026-04-11 00:07:58.609169+00, 00000000-0000-0000-0000-000000000001, null, null, f).\n\n[migrations:verify:pg] container logs:\n The files belonging to this database system will be owned by user \"postgres\".\nThis user must also own the server process.\n\nThe database cluster will be initialized with locale \"en_US.utf8\".\nThe default database encoding has accordingly been set to \"UTF8\".\nThe default text search configuration will be set to \"english\".\n\nData page checksums are disabled.\n\nfixing permissions on existing directory /var/lib/postgresql/data ... ok\ncreating subdirectories ... ok\nselecting dynamic shared memory implementation ... posix\nselecting default max_connections ... 100\nselecting default shared_buffers ... 128MB\nselecting default time zone ... Etc/UTC\ncreating configuration files ... ok\nrunning bootstrap script ... ok\nperforming post-bootstrap initialization ... ok\nsyncing data to disk ... ok\n\n\nSuccess. You can now start the database server using:\n\n    pg_ctl -D /var/lib/postgresql/data -l logfile start\n\nwaiting for server to start....2026-04-11 00:07:46.049 UTC [54] LOG:  starting PostgreSQL 16.13 (Debian 16.13-1.pgdg12+1) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit\n2026-04-11 00:07:46.054 UTC [54] LOG:  listening on Unix socket \"/var/run/postgresql/.s.PGSQL.5432\"\n2026-04-11 00:07:46.058 UTC [57] LOG:  database system was shut down at 2026-04-11 00:07:45 UTC\n2026-04-11 00:07:46.062 UTC [54] LOG:  database system is ready to accept connections\n done\nserver started\n\n/usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*\n\n2026-04-11 00:07:46.201 UTC [54] LOG:  received fast shutdown request\nwaiting for server to shut down....2026-04-11 00:07:46.203 UTC [54] LOG:  aborting any active transactions\n2026-04-11 00:07:46.204 UTC [54] LOG:  background worker \"logical replication launcher\" (PID 60) exited with exit code 1\n2026-04-11 00:07:46.205 UTC [55] LOG:  shutting down\n2026-04-11 00:07:46.206 UTC [55] LOG:  checkpoint starting: shutdown immediate\n2026-04-11 00:07:46.213 UTC [55] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.002 s, sync=0.001 s, total=0.009 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB; lsn=0/14EA210, redo lsn=0/14EA210\n2026-04-11 00:07:46.216 UTC [54] LOG:  database system is shut down\n done\nserver stopped\n\nPostgreSQL init process complete; ready for start up.\n\n\n"
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "status": "failed",
+      "command": "npm run build",
+      "duration_ms": 204,
+      "stdout": "",
+      "stderr": "[migrations:check] FAIL: duplicate migration numeric prefix detected\n"
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": true,
+      "status": "passed",
+      "command": "npm run stress:test",
+      "duration_ms": 224,
+      "stdout": "PASS\tstress: suite loaded\nPASS\tstress: Number.parseInt rejects garbage\nPASS\tstress: parallel microtasks both ran\nADVISORY\tstress: add ALF/home-care workflow simulations when resident and census models exist\n",
+      "stderr": ""
+    },
+    {
+      "id": "cdo.design-review",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run design:review",
+      "stdout": "skipped (pass --ui to enable)"
+    },
+    {
+      "id": "cdo.a11y-axe",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run a11y:routes",
+      "stdout": "skipped (pass --ui to enable; omit --no-a11y)"
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 5,
+    "skipped": 3,
+    "blocking_failures": [
+      "hygiene.npm-audit",
+      "qa.eslint",
+      "qa.migration-sequence",
+      "qa.root-build"
+    ]
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/agent-gates/2026-04-11T00-07-28-953Z-131-facility-admin-portal.json"
+  ]
+}

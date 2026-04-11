@@ -15,6 +15,7 @@
 | `ingest` | yes | `POST` multipart (`file`, …) or JSON `{ "document_id" }` re-index or `{ "document_id", "action": "regenerate_markdown" }` (re-download from storage, re-convert). Pipeline: extract → **Markdown IR** (`markdown_text`) → chunk → embed. Roles: **owner**, **org_admin**, **facility_admin**. Secrets: **`OPENAI_API_KEY`**, **`ANTHROPIC_API_KEY`** (Markdown conversion + summary + scanned PDF vision). |
 | `knowledge-agent` | yes | `POST { "message", "conversation_id"?, "workspace_id"? }` — Claude tool loop + **`retrieve_evidence`** RPC; SSE response. **`workspace_id`** defaults to caller org. Secrets: **`OPENAI_API_KEY`**, **`ANTHROPIC_API_KEY`**. |
 | `document-admin` | yes | `POST { "action": "update" \| "delete" \| "regenerate_markdown", "document_id", ... }` — metadata updates, soft-delete + storage remove, or **`regenerate_markdown`** (proxies to **`ingest`**). Roles: **owner**, **org_admin** only. |
+| `facility-expiration-scanner` | no | `POST` — scans **`facility_documents`** with **`expiration_date`**; returns yellow/red findings using per-row alert day windows. Auth: **`x-cron-secret`** = **`FACILITY_EXPIRATION_SCANNER_SECRET`**. Schedule daily (e.g. 06:00 America/New_York). Requires migration **`131_facility_admin_portal.sql`**. |
 
 ## `generate-monthly-invoices` — request body
 
@@ -70,6 +71,7 @@ Do **not** send `facility_id` and `organization_id` together.
 - `EMAR_MISSED_DOSE_SECRET` — required for `emar-missed-dose-check`.
 - `EXEC_ALERT_EVALUATOR_SECRET` — required for `exec-alert-evaluator`.
 - `PROCESS_REFERRAL_HL7_INBOUND_SECRET` — required for `process-referral-hl7-inbound`.
+- `FACILITY_EXPIRATION_SCANNER_SECRET` — required for `facility-expiration-scanner` (header `x-cron-secret`).
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically.
 

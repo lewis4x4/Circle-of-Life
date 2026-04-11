@@ -1,45 +1,74 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import type { FacilityRow } from "@/types/facility";
+import type { FacilityDetailRow, FacilityRow } from "@/types/facility";
+
+function normalizeFacilityDetail(raw: Record<string, unknown>): FacilityDetailRow {
+  const f = raw as FacilityDetailRow & { license_number?: string | null };
+  const entity = f.entity ?? null;
+  const entityName =
+    f.entity_name ??
+    entity?.legal_name ??
+    entity?.dba_name ??
+    null;
+  const occ = f.occupancy_count ?? f.current_occupancy ?? 0;
+  const beds = f.total_beds ?? f.licensed_beds ?? f.total_licensed_beds ?? 0;
+  return {
+    ...f,
+    entity_name: entityName,
+    current_occupancy: occ,
+    licensed_beds: beds,
+    ahca_license_number: f.ahca_license_number ?? f.license_number ?? null,
+  } as FacilityDetailRow;
+}
 
 interface UseFacilityReturn {
-  facility: FacilityRow | null;
+  facility: FacilityDetailRow | null;
   isLoading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
-  updateFacility: (updates: Partial<FacilityRow>) => Promise<FacilityRow | null>;
+  updateFacility: (updates: Partial<FacilityRow>) => Promise<FacilityDetailRow | null>;
   isUpdating: boolean;
 }
 
 export function useFacility(facilityId: string): UseFacilityReturn {
-  const [facility, setFacility] = useState<FacilityRow | null>(null);
+  const [facility, setFacility] = useState<FacilityDetailRow | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const refetch = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/admin/facilities/${facilityId}`);
-      if (!res.ok) {
-        throw new Error("Failed to fetch facility");
+  const loadDetail = useCallback(
+    async (showLoading: boolean): Promise<FacilityDetailRow | null> => {
+      if (showLoading) setIsLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(`/api/admin/facilities/${facilityId}`);
+        if (!res.ok) {
+          throw new Error("Failed to fetch facility");
+        }
+        const json = (await res.json()) as { data: Record<string, unknown> };
+        const n = normalizeFacilityDetail(json.data);
+        setFacility(n);
+        return n;
+      } catch (err) {
+        console.error("[useFacility] fetch error:", err);
+        const message = err instanceof Error ? err.message : "Failed to fetch facility";
+        setError(message);
+        setFacility(null);
+        return null;
+      } finally {
+        if (showLoading) setIsLoading(false);
       }
-      const json = (await res.json()) as { data: FacilityRow };
-      setFacility(json.data);
-    } catch (err) {
-      console.error("[useFacility] fetch error:", err);
-      const message = err instanceof Error ? err.message : "Failed to fetch facility";
-      setError(message);
-      setFacility(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [facilityId]);
+    },
+    [facilityId],
+  );
+
+  const refetch = useCallback(async () => {
+    await loadDetail(true);
+  }, [loadDetail]);
 
   const updateFacility = useCallback(
-    async (updates: Partial<FacilityRow>): Promise<FacilityRow | null> => {
+    async (updates: Partial<FacilityRow>): Promise<FacilityDetailRow | null> => {
       setIsUpdating(true);
       setError(null);
       try {
@@ -51,9 +80,7 @@ export function useFacility(facilityId: string): UseFacilityReturn {
         if (!res.ok) {
           throw new Error("Failed to update facility");
         }
-        const json = (await res.json()) as { data: FacilityRow };
-        setFacility(json.data);
-        return json.data;
+        return await loadDetail(false);
       } catch (err) {
         console.error("[useFacility] update error:", err);
         const message = err instanceof Error ? err.message : "Failed to update facility";
@@ -63,12 +90,12 @@ export function useFacility(facilityId: string): UseFacilityReturn {
         setIsUpdating(false);
       }
     },
-    [facilityId],
+    [facilityId, loadDetail],
   );
 
   useEffect(() => {
-    refetch();
-  }, [refetch]);
+    void loadDetail(true);
+  }, [loadDetail]);
 
   return {
     facility,

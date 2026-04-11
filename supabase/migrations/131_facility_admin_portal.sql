@@ -784,7 +784,7 @@ BEGIN
   -- ── SHARED VENDOR CONTACTS (all facilities) ────────────────────────────────
   -- These are corporate-level vendors used across facilities
   INSERT INTO facility_emergency_contacts (facility_id, organization_id, contact_category, contact_name, phone_primary, phone_secondary, sort_order)
-  SELECT f.id, v_org_id, cat, name, phone1, phone2, srt
+  SELECT f.id, v_org_id, cat, v.contact_label, phone1, phone2, srt
   FROM facilities f
   CROSS JOIN (VALUES
     ('electric_maintenance', 'Rainbolt Tech — Micah', '386-623-5801', '386-867-7878', 20),
@@ -795,13 +795,13 @@ BEGIN
     ('other', 'Caribbean Fire & Security (Sprinkler) — Michael Vidal', '239-280-8925', NULL, 25),
     ('other', 'Sam Santiago Sprinkler System', '386-266-7385', NULL, 26),
     ('generator_service', 'ACF Generator Service', '813-621-9671', NULL, 27)
-  ) AS v(cat, name, phone1, phone2, srt)
+  ) AS v(cat, contact_label, phone1, phone2, srt)
   WHERE f.organization_id = v_org_id
     AND f.id IN (v_oakridge_id, v_homewood_id, v_rising_oaks_id, v_plantation_id, v_grande_cypress_id);
 
   -- ── TRANSPORT VENDORS (all facilities) ─────────────────────────────────────
   INSERT INTO facility_emergency_contacts (facility_id, organization_id, contact_category, contact_name, phone_primary, sort_order)
-  SELECT f.id, v_org_id, 'transport', name, phone, srt
+  SELECT f.id, v_org_id, 'transport', v.contact_label, v.phone_num, srt
   FROM facilities f
   CROSS JOIN (VALUES
     ('Alternative Transport — Kathy', '386-209-2770', 30),
@@ -809,7 +809,7 @@ BEGIN
     ('Parrish Medivan — Hanah', '386-361-0712', 32),
     ('Peeler Transport — Carlene', '386-365-8999', 33),
     ('D''s Transport — Lavern', '912-266-2633', 34)
-  ) AS v(name, phone, srt)
+  ) AS v(contact_label, phone_num, srt)
   WHERE f.organization_id = v_org_id
     AND f.id IN (v_oakridge_id, v_homewood_id, v_rising_oaks_id, v_plantation_id, v_grande_cypress_id);
 

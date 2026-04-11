@@ -123,7 +123,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
 
   try {
     const now = new Date().toISOString();
-    const results: any[] = [];
+    const results: unknown[] = [];
 
     for (const threshold of thresholds) {
       if (threshold.id) {
@@ -137,11 +137,11 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
             enabled: threshold.enabled,
             updated_at: now,
             updated_by: actor.id,
-          } as any)
+          } as Record<string, unknown>)
           .eq("id", threshold.id)
           .eq("facility_id", facilityId)
           .select()
-          .single() as any;
+          .single();
 
         if (updateErr) {
           return NextResponse.json(
@@ -170,10 +170,10 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
               enabled: threshold.enabled,
               updated_at: now,
               updated_by: actor.id,
-            } as any)
+            } as Record<string, unknown>)
             .eq("id", existing.id)
             .select()
-            .single() as any;
+            .single();
 
           if (updateErr) {
             return NextResponse.json(
@@ -196,9 +196,9 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
               enabled: threshold.enabled,
               created_by: actor.id,
               updated_by: actor.id,
-            } as any)
+            } as Record<string, unknown>)
             .select()
-            .single() as any;
+            .single();
 
           if (insertErr) {
             return NextResponse.json(

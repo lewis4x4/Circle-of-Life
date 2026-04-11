@@ -55,8 +55,8 @@ export async function GET(request: NextRequest) {
   const { page, page_size, search, status, county, sort_by, sort_order } = parsed.data;
   const offset = (page - 1) * page_size;
 
-  // Build query - new columns not yet in generated types, use as any
-  let query: any = admin
+  // Build query (Supabase client infers chain type)
+  let query = admin
     .from("facilities")
     .select(
       "id, name, phone, email, address_line_1, city, state, zip, county, total_licensed_beds, status, created_at, organization_id",
@@ -80,8 +80,10 @@ export async function GET(request: NextRequest) {
     query = query.or(`name.ilike.%${search}%,city.ilike.%${search}%`);
   }
 
-  // Sort
-  query = query.order(sort_by, { ascending: sort_order === "asc" });
+  // Sort (occupancy_pct is computed post-fetch, not a DB column)
+  const sortByDb =
+    sort_by === "occupancy_pct" ? ("name" as const) : (sort_by as "name" | "total_licensed_beds" | "created_at");
+  query = query.order(sortByDb, { ascending: sort_order === "asc" });
   query = query.range(offset, offset + page_size - 1);
 
   const { data: facilities, count, error: queryErr } = await query;
@@ -90,8 +92,8 @@ export async function GET(request: NextRequest) {
   }
 
   // Fetch occupancy stats and alerts for each facility
-  const facilityIds = (facilities ?? []).map((f: any) => f.id);
-  let statsMap: Record<
+  const facilityIds = (facilities ?? []).map((f) => f.id);
+  const statsMap: Record<
     string,
     {
       occupancy_count: number;
@@ -156,15 +158,26 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const data = (facilities ?? []).map((f: any) => ({
-    ...f,
-    ...(statsMap[f.id] || {
-      occupancy_count: 0,
-      total_beds: f.total_licensed_beds || 0,
-      occupancy_pct: 0,
-      alert_count: 0,
-    }),
-  }));
+  let data = (facilities ?? []).map((f) => {
+    const row = f as { id: string; total_licensed_beds?: number };
+    return {
+      ...row,
+      ...(statsMap[row.id] || {
+        occupancy_count: 0,
+        total_beds: row.total_licensed_beds || 0,
+        occupancy_pct: 0,
+        alert_count: 0,
+      }),
+    };
+  });
+
+  if (sort_by === "occupancy_pct") {
+    data = [...data].sort((a, b) => {
+      const pa = a.occupancy_pct ?? 0;
+      const pb = b.occupancy_pct ?? 0;
+      return sort_order === "asc" ? pa - pb : pb - pa;
+    });
+  }
 
   return NextResponse.json({
     facilities: data,

@@ -61,14 +61,21 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
     .from("facility_communication_settings")
     .select("*")
     .eq("facility_id", facilityId)
-    .maybeSingle() as any;
+    .maybeSingle();
 
   if (error) {
     return NextResponse.json({ error: "Failed to fetch communication settings" }, { status: 500 });
   }
 
+  const canEditMarketing = ["owner", "org_admin"].includes(actor.app_role);
+  const canEdit = ["owner", "org_admin", "facility_admin"].includes(actor.app_role);
+
   return NextResponse.json({
     data: settings,
+    capabilities: {
+      can_edit: canEdit,
+      can_edit_marketing: canEditMarketing,
+    },
   });
 }
 
@@ -114,13 +121,14 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
     ];
 
     // Filter updates to only allowed fields
-    const filteredUpdates: Record<string, any> = {};
+    const filteredUpdates: Record<string, unknown> = {};
+    const u = updates as Record<string, unknown>;
     for (const key of allowedFields) {
-      if (key in updates) {
-        filteredUpdates[key] = (updates as any)[key];
+      if (key in u) {
+        filteredUpdates[key] = u[key];
       }
     }
-    updates = filteredUpdates as any;
+    updates = filteredUpdates as typeof updates;
   } else if (!["owner", "org_admin"].includes(actor.app_role)) {
     return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
   }
@@ -154,13 +162,13 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
       const { data: updated, error: updateErr } = await admin
         .from("facility_communication_settings")
         .update({
-          ...updates,
+          ...(updates as Record<string, unknown>),
           updated_at: now,
           updated_by: actor.id,
-        } as any)
+        } as Record<string, unknown>)
         .eq("facility_id", facilityId)
         .select()
-        .single() as any;
+        .single();
 
       if (updateErr) {
         return NextResponse.json(
@@ -177,12 +185,12 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
         .insert({
           facility_id: facilityId,
           organization_id: actor.organization_id!,
-          ...updates,
+          ...(updates as Record<string, unknown>),
           created_by: actor.id,
           updated_by: actor.id,
-        } as any)
+        } as Record<string, unknown>)
         .select()
-        .single() as any;
+        .single();
 
       if (insertErr) {
         return NextResponse.json(

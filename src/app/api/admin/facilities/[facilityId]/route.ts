@@ -41,37 +41,74 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   const { facilityId } = await ctx.params;
   const admin = actor.admin;
 
-  // Fetch facility with entity details
+  // Fetch facility with entity details (migration 131 columns included)
   const { data: facility, error } = await admin
     .from("facilities")
     .select(
       `id, name, phone, fax, email, address_line_1, address_line_2, city, state, zip, county,
-       organization_id, administrator_name, current_administrator_id, total_licensed_beds,
+       organization_id, entity_id, administrator_name, current_administrator_id, total_licensed_beds,
        status, opening_date, care_services_offered, waitlist_count, target_occupancy_pct,
-       pharmacy_vendor, last_survey_date, last_survey_result, created_at, updated_at, deleted_at`,
+       pharmacy_vendor, last_survey_date, last_survey_result,
+       license_number, license_authority, facility_ratio_rule_set_id,
+       created_at, updated_at, deleted_at`,
     )
     .eq("id", facilityId)
     .eq("organization_id", actor.organization_id!)
     .is("deleted_at", null)
-    .maybeSingle() as any;
+    .maybeSingle();
 
   if (error || !facility) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
 
-  // Fetch associated entity (registered owner/operator)
-  const { data: entity } = await admin
-    .from("entities")
-    .select(
-      "id, organization_id, entity_type, legal_name, dba_name, registered_agent_name, formation_date, sunbiz_document_number, created_at",
-    )
-    .eq("organization_id", actor.organization_id!)
-    .maybeSingle() as any;
+  const fac = facility as Record<string, unknown> & {
+    entity_id?: string | null;
+    total_licensed_beds: number;
+    license_number?: string | null;
+  };
+
+  // Associated entity (must match facility.entity_id, not org-wide first row)
+  let entity: Record<string, unknown> | null = null;
+  if (fac.entity_id) {
+    const { data: ent } = await admin
+      .from("entities")
+      .select(
+        "id, organization_id, entity_type, legal_name, dba_name, registered_agent_name, formation_date, sunbiz_document_number, created_at",
+      )
+      .eq("id", fac.entity_id)
+      .eq("organization_id", actor.organization_id!)
+      .maybeSingle();
+    entity = (ent ?? null) as Record<string, unknown> | null;
+  }
+
+  // Bed census for header / overview
+  const { data: beds } = await admin
+    .from("beds")
+    .select("is_occupied")
+    .eq("facility_id", facilityId);
+
+  let occupancy_count = 0;
+  const total_beds = beds?.length ?? 0;
+  for (const b of beds ?? []) {
+    if (b.is_occupied) occupancy_count++;
+  }
+
+  const entityName =
+    (entity?.legal_name as string | undefined) ??
+    (entity?.dba_name as string | undefined) ??
+    null;
 
   return NextResponse.json({
     data: {
-      ...facility,
-      entity: entity || null,
+      ...fac,
+      entity: entity ?? null,
+      entity_name: entityName,
+      occupancy_count,
+      total_beds,
+      current_occupancy: occupancy_count,
+      licensed_beds: fac.total_licensed_beds,
+      ahca_license_number: fac.license_number ?? null,
+      ahca_license_expiration: null as string | null,
     },
   });
 }
@@ -147,10 +184,10 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
 
   const { data: updated, error: updateErr } = await admin
     .from("facilities")
-    .update(updatePayload as any)
+    .update(updatePayload as Record<string, unknown>)
     .eq("id", facilityId)
     .select()
-    .single() as any;
+    .single();
   if (updateErr) {
     return NextResponse.json({ error: "Failed to update facility" }, { status: 500 });
   }

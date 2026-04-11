@@ -58,7 +58,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
     .from("facility_building_profiles")
     .select("*")
     .eq("facility_id", facilityId)
-    .maybeSingle() as any;
+    .maybeSingle();
 
   if (error) {
     return NextResponse.json({ error: "Failed to fetch building profile" }, { status: 500 });
@@ -132,10 +132,10 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
           ...updates,
           updated_at: now,
           updated_by: actor.id,
-        } as any)
+        } as Record<string, unknown>)
         .eq("facility_id", facilityId)
         .select()
-        .single() as any;
+        .single();
 
       if (updateErr) {
         return NextResponse.json({ error: "Failed to update building profile" }, { status: 500 });
@@ -152,9 +152,9 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
           ...updates,
           created_by: actor.id,
           updated_by: actor.id,
-        } as any)
+        } as Record<string, unknown>)
         .select()
-        .single() as any;
+        .single();
 
       if (insertErr) {
         return NextResponse.json({ error: "Failed to create building profile" }, { status: 500 });

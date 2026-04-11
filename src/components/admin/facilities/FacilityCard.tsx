@@ -14,8 +14,8 @@ interface FacilityCardProps {
 }
 
 export function FacilityCard({ facility, redAlertCount = 0, yellowAlertCount = 0 }: FacilityCardProps) {
-  const occupiedBeds = facility.current_occupancy ?? 0;
-  const licensedBeds = facility.licensed_beds ?? 0;
+  const occupiedBeds = facility.occupancy_count ?? facility.current_occupancy ?? 0;
+  const licensedBeds = facility.total_beds ?? facility.licensed_beds ?? facility.total_licensed_beds ?? 0;
   const administratorName = facility.administrator_name ?? "Unassigned";
   const city = facility.city ?? "";
   const county = facility.county ?? "";

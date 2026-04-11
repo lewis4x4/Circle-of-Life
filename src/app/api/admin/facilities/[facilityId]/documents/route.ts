@@ -163,9 +163,9 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
         alert_red_days: documentMetadata.alert_red_days,
         notes: documentMetadata.notes ?? null,
         uploaded_by: actor.id,
-      } as any)
+      } as Record<string, unknown>)
       .select()
-      .single() as any;
+      .single();
 
     if (insertErr) {
       console.error("[document-upload] Insert error:", insertErr);
