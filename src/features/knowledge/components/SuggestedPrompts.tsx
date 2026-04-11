@@ -8,10 +8,10 @@ interface SuggestedPromptsProps {
 }
 
 const PROMPTS = [
+  { icon: HelpCircle, label: "Residents", text: "What room is Elmer Price in?" },
+  { icon: ClipboardList, label: "Operations", text: "Show me today's census and available beds." },
   { icon: BookOpen, label: "Policies", text: "What are our medication administration policies?" },
-  { icon: Shield, label: "Compliance", text: "What AHCA regulations apply to infection control?" },
-  { icon: HelpCircle, label: "Procedures", text: "What is the procedure for a new resident admission?" },
-  { icon: ClipboardList, label: "Training", text: "What training is required for new staff members?" },
+  { icon: Shield, label: "Compliance", text: "Show recent AHCA survey deficiencies and plans of correction." },
 ];
 
 export function SuggestedPrompts({ onSelect }: SuggestedPromptsProps) {
@@ -29,7 +29,7 @@ export function SuggestedPrompts({ onSelect }: SuggestedPromptsProps) {
             Knowledge Base
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-zinc-400">
-            Ask anything about Florida ALF policies, procedures, compliance, and day-to-day operations.
+            Ask about residents, daily operations, medications, incidents, compliance, and uploaded policies.
           </p>
         </div>
       </div>

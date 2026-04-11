@@ -16,34 +16,529 @@ const MAX_HISTORY = 12;
 const SOFT_CAP_TOKENS = 50_000;
 const HARD_CAP_TOKENS = 150_000;
 
-const TOOL_DEFINITIONS = [
+type ToolTier = "kb_documents" | "clinical" | "operational" | "financial" | "payroll";
+
+type ToolDefinition = {
+  name: string;
+  description: string;
+  input_schema: {
+    type: "object";
+    properties: Record<string, unknown>;
+    required?: string[];
+  };
+  tier: ToolTier;
+};
+
+type ToolContext = {
+  admin: any; // KB tables not in generated client schema yet
+  workspaceId: string;
+  userRole: string;
+  userId: string;
+  accessibleFacilityIds: string[];
+};
+
+type ResidentLookupRow = {
+  id: string;
+  facility_id: string;
+  bed_id: string | null;
+  first_name: string;
+  last_name: string;
+  preferred_name: string | null;
+  status: string;
+  acuity_level: string | null;
+  admission_date: string | null;
+  primary_diagnosis: string | null;
+  diagnosis_list: string[] | null;
+  diet_order: string | null;
+  code_status: string;
+  fall_risk_level: string | null;
+  assistive_device: string | null;
+  ambulatory: boolean;
+  wandering_risk: boolean;
+  elopement_risk: boolean;
+  primary_payer: string | null;
+  monthly_base_rate: number | null;
+  monthly_care_surcharge: number | null;
+  monthly_total_rate: number | null;
+};
+
+type NamedResidentRow = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  preferred_name: string | null;
+};
+
+const ALL_APP_ROLES = [
+  "owner",
+  "org_admin",
+  "facility_admin",
+  "manager",
+  "admin_assistant",
+  "coordinator",
+  "nurse",
+  "caregiver",
+  "dietary",
+  "housekeeper",
+  "maintenance_role",
+  "family",
+  "broker",
+] as const;
+
+const FINANCIAL_ROLES = new Set<string>(["owner", "org_admin", "facility_admin"]);
+
+const TIER_ALLOWED_ROLES: Record<ToolTier, Set<string>> = {
+  kb_documents: new Set<string>(ALL_APP_ROLES),
+  clinical: new Set<string>([
+    "owner",
+    "org_admin",
+    "facility_admin",
+    "manager",
+    "coordinator",
+    "nurse",
+    "caregiver",
+  ]),
+  operational: new Set<string>([
+    "owner",
+    "org_admin",
+    "facility_admin",
+    "manager",
+    "coordinator",
+    "admin_assistant",
+    "nurse",
+  ]),
+  financial: FINANCIAL_ROLES,
+  payroll: FINANCIAL_ROLES,
+};
+
+const TOOL_REGISTRY: ToolDefinition[] = [
   {
     name: "semantic_kb_search",
     description:
-      "Search the knowledge base for documents, policies, procedures, and operational data. Use for any question about company knowledge.",
+      "Search uploaded knowledge-base documents such as handbooks, policies, procedures, and compliance references.",
     input_schema: {
       type: "object",
       properties: {
         query: { type: "string", description: "Natural language search query" },
+        limit: { type: "number", description: "Optional result limit" },
       },
       required: ["query"],
     },
+    tier: "kb_documents",
+  },
+  {
+    name: "resident_lookup",
+    description:
+      "Look up residents by name, room, status, diagnosis, or diet. Returns room and unit details plus current clinical context.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Resident name, room, or clinical search term" },
+        limit: { type: "number", description: "Optional result limit" },
+      },
+      required: ["query"],
+    },
+    tier: "clinical",
+  },
+  {
+    name: "daily_ops_search",
+    description:
+      "Search daily logs, ADL records, behavioral logs, condition changes, and shift handoffs for recent operational context.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Resident name or operational search term" },
+        limit: { type: "number", description: "Optional per-section result limit" },
+      },
+      required: ["query"],
+    },
+    tier: "clinical",
+  },
+  {
+    name: "medication_search",
+    description:
+      "Look up active medications, recent eMAR administrations, and medication errors for a resident or medication name.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Resident name or medication search term" },
+        limit: { type: "number", description: "Optional per-section result limit" },
+      },
+      required: ["query"],
+    },
+    tier: "clinical",
+  },
+  {
+    name: "staff_directory",
+    description:
+      "Search the staff roster by name, role, or facility. Returns staff profile details and current certifications.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Staff name, role, or roster search term" },
+        limit: { type: "number", description: "Optional result limit" },
+      },
+      required: ["query"],
+    },
+    tier: "operational",
+  },
+  {
+    name: "incident_search",
+    description:
+      "Search incidents and follow-up tasks by resident, type, severity, location, or status.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Resident name or incident search term" },
+        limit: { type: "number", description: "Optional result limit" },
+      },
+      required: ["query"],
+    },
+    tier: "clinical",
+  },
+  {
+    name: "compliance_search",
+    description:
+      "Search survey visits, deficiencies, and plans of correction for compliance status and remediation work.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Agency, tag, deficiency, or plan-of-correction search term" },
+        limit: { type: "number", description: "Optional per-section result limit" },
+      },
+      required: ["query"],
+    },
+    tier: "operational",
+  },
+  {
+    name: "census_snapshot",
+    description:
+      "Get the latest census, occupancy, and bed availability snapshot for accessible facilities.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Optional facility or census question" },
+      },
+    },
+    tier: "clinical",
+  },
+  {
+    name: "billing_search",
+    description:
+      "Search invoices, payments, and collection activities for resident billing and accounts receivable questions.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Resident name, invoice number, payer, or billing search term" },
+        limit: { type: "number", description: "Optional per-section result limit" },
+      },
+      required: ["query"],
+    },
+    tier: "financial",
+  },
+  {
+    name: "payroll_search",
+    description:
+      "Search payroll export batches and lines by staff, period, provider, or line kind.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Staff name, provider, status, or payroll search term" },
+        limit: { type: "number", description: "Optional per-section result limit" },
+      },
+      required: ["query"],
+    },
+    tier: "payroll",
   },
 ];
 
-const CACHED_TOOLS = TOOL_DEFINITIONS.map((t, i) =>
-  i === TOOL_DEFINITIONS.length - 1 ? { ...t, cache_control: { type: "ephemeral" } } : t,
-);
+function withToolCache(tools: ToolDefinition[]) {
+  return tools.map((tool, idx) =>
+    idx === tools.length - 1 ? { ...tool, cache_control: { type: "ephemeral" } } : tool,
+  );
+}
+
+function getAvailableToolsForRole(userRole: string): ToolDefinition[] {
+  return TOOL_REGISTRY.filter((tool) => TIER_ALLOWED_ROLES[tool.tier]?.has(userRole));
+}
+
+function sanitizeSearchQuery(value: unknown): string {
+  return String(value ?? "")
+    .replace(/[,%()]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getSearchTokens(value: unknown): string[] {
+  const clean = sanitizeSearchQuery(value);
+  if (!clean) return [];
+  const tokens = clean
+    .split(" ")
+    .map((token) => token.trim())
+    .filter((token) => token.length > 1)
+    .slice(0, 4);
+  return tokens.length > 0 ? tokens : [clean];
+}
+
+function buildOrFilter(columns: string[], value: unknown): string | null {
+  const tokens = getSearchTokens(value);
+  if (tokens.length === 0) return null;
+  return tokens
+    .flatMap((token) => columns.map((column) => `${column}.ilike.%${token}%`))
+    .join(",");
+}
+
+function getRequestedLimit(input: Record<string, unknown>, fallback = 8, max = 20): number {
+  const raw = Number(input.limit);
+  if (!Number.isFinite(raw)) return fallback;
+  return Math.min(Math.max(Math.floor(raw), 1), max);
+}
+
+function formatResidentName(row: { first_name: string; last_name: string; preferred_name?: string | null }): string {
+  if (row.preferred_name && row.preferred_name.trim().length > 0) {
+    return `${row.preferred_name} (${row.first_name} ${row.last_name})`;
+  }
+  return `${row.first_name} ${row.last_name}`;
+}
+
+function uniq<T>(values: T[]): T[] {
+  return [...new Set(values)];
+}
+
+async function resolveAccessibleFacilityIds(
+  admin: any,
+  workspaceId: string,
+  userId: string,
+  userRole: string,
+): Promise<string[]> {
+  if (userRole === "owner" || userRole === "org_admin") {
+    const { data } = await admin
+      .from("facilities")
+      .select("id")
+      .eq("organization_id", workspaceId)
+      .is("deleted_at", null);
+    return uniq((data ?? []).map((row: { id: string }) => row.id));
+  }
+
+  const { data } = await admin
+    .from("user_facility_access")
+    .select("facility_id")
+    .eq("organization_id", workspaceId)
+    .eq("user_id", userId)
+    .is("revoked_at", null);
+
+  return uniq((data ?? []).map((row: { facility_id: string }) => row.facility_id));
+}
+
+async function fetchResidentMatches(
+  ctx: ToolContext,
+  query: string,
+  limit = 8,
+): Promise<ResidentLookupRow[]> {
+  if (ctx.accessibleFacilityIds.length === 0) return [];
+
+  const select =
+    "id,facility_id,bed_id,first_name,last_name,preferred_name,status,acuity_level,admission_date,primary_diagnosis,diagnosis_list,diet_order,code_status,fall_risk_level,assistive_device,ambulatory,wandering_risk,elopement_risk,primary_payer,monthly_base_rate,monthly_care_surcharge,monthly_total_rate";
+  const filters = buildOrFilter(
+    ["first_name", "last_name", "preferred_name", "primary_diagnosis", "diet_order"],
+    query,
+  );
+
+  let req = ctx.admin
+    .from("residents")
+    .select(select)
+    .eq("organization_id", ctx.workspaceId)
+    .in("facility_id", ctx.accessibleFacilityIds)
+    .is("deleted_at", null)
+    .limit(limit);
+
+  if (filters) req = req.or(filters);
+
+  let { data } = await req;
+  const direct = (data ?? []) as ResidentLookupRow[];
+  if (direct.length > 0 || !query) return direct;
+
+  const roomFilter = buildOrFilter(["room_number"], query);
+  if (!roomFilter) return [];
+
+  const { data: rooms } = await ctx.admin
+    .from("rooms")
+    .select("id")
+    .eq("organization_id", ctx.workspaceId)
+    .in("facility_id", ctx.accessibleFacilityIds)
+    .is("deleted_at", null)
+    .or(roomFilter)
+    .limit(limit);
+
+  const roomIds = uniq((rooms ?? []).map((row: { id: string }) => row.id));
+  if (roomIds.length === 0) return [];
+
+  const { data: beds } = await ctx.admin
+    .from("beds")
+    .select("current_resident_id")
+    .eq("organization_id", ctx.workspaceId)
+    .in("facility_id", ctx.accessibleFacilityIds)
+    .is("deleted_at", null)
+    .in("room_id", roomIds);
+
+  const residentIds = uniq(
+    (beds ?? [])
+      .map((row: { current_resident_id: string | null }) => row.current_resident_id)
+      .filter(Boolean) as string[],
+  );
+  if (residentIds.length === 0) return [];
+
+  const { data: roomResidents } = await ctx.admin
+    .from("residents")
+    .select(select)
+    .eq("organization_id", ctx.workspaceId)
+    .in("facility_id", ctx.accessibleFacilityIds)
+    .is("deleted_at", null)
+    .in("id", residentIds)
+    .limit(limit);
+
+  return (roomResidents ?? []) as ResidentLookupRow[];
+}
+
+async function fetchResidentNameMap(ctx: ToolContext, residentIds: string[]): Promise<Record<string, string>> {
+  const ids = uniq(residentIds);
+  if (ids.length === 0) return {};
+  const { data } = await ctx.admin
+    .from("residents")
+    .select("id,first_name,last_name,preferred_name")
+    .eq("organization_id", ctx.workspaceId)
+    .in("id", ids);
+  return Object.fromEntries(
+    (data ?? []).map((row: NamedResidentRow) => [row.id, formatResidentName(row)]),
+  );
+}
+
+async function fetchStaffNameMap(
+  ctx: ToolContext,
+  staffIds: string[],
+): Promise<Record<string, string>> {
+  const ids = uniq(staffIds);
+  if (ids.length === 0) return {};
+  const { data } = await ctx.admin
+    .from("staff")
+    .select("id,first_name,last_name,preferred_name")
+    .eq("organization_id", ctx.workspaceId)
+    .in("id", ids);
+  return Object.fromEntries(
+    ((data ?? []) as Array<{ id: string; first_name: string; last_name: string; preferred_name: string | null }>).map(
+      (row) => [row.id, formatResidentName(row)],
+    ),
+  );
+}
+
+async function buildResidentLookupCards(ctx: ToolContext, residents: ResidentLookupRow[]) {
+  const bedIds = uniq(residents.map((row) => row.bed_id).filter(Boolean) as string[]);
+  const bedsById = new Map<string, { bed_label: string; room_id: string }>();
+  const roomsById = new Map<string, { room_number: string; unit_id: string | null }>();
+  const unitsById = new Map<string, { name: string }>();
+
+  if (bedIds.length > 0) {
+    const { data: beds } = await ctx.admin
+      .from("beds")
+      .select("id,bed_label,room_id")
+      .eq("organization_id", ctx.workspaceId)
+      .is("deleted_at", null)
+      .in("id", bedIds);
+    for (const bed of beds ?? []) {
+      bedsById.set(bed.id, bed);
+    }
+  }
+
+  const roomIds = uniq(Array.from(bedsById.values()).map((row) => row.room_id));
+  if (roomIds.length > 0) {
+    const { data: rooms } = await ctx.admin
+      .from("rooms")
+      .select("id,room_number,unit_id")
+      .eq("organization_id", ctx.workspaceId)
+      .is("deleted_at", null)
+      .in("id", roomIds);
+    for (const room of rooms ?? []) {
+      roomsById.set(room.id, room);
+    }
+  }
+
+  const unitIds = uniq(
+    Array.from(roomsById.values())
+      .map((row) => row.unit_id)
+      .filter(Boolean) as string[],
+  );
+  if (unitIds.length > 0) {
+    const { data: units } = await ctx.admin
+      .from("units")
+      .select("id,name")
+      .eq("organization_id", ctx.workspaceId)
+      .is("deleted_at", null)
+      .in("id", unitIds);
+    for (const unit of units ?? []) {
+      unitsById.set(unit.id, unit);
+    }
+  }
+
+  return residents.map((resident) => {
+    const bed = resident.bed_id ? bedsById.get(resident.bed_id) : null;
+    const room = bed ? roomsById.get(bed.room_id) : null;
+    const unit = room?.unit_id ? unitsById.get(room.unit_id) : null;
+    const card: Record<string, unknown> = {
+      resident_id: resident.id,
+      resident_name: formatResidentName(resident),
+      status: resident.status,
+      acuity_level: resident.acuity_level,
+      admission_date: resident.admission_date,
+      primary_diagnosis: resident.primary_diagnosis,
+      diagnosis_list: resident.diagnosis_list,
+      diet_order: resident.diet_order,
+      code_status: resident.code_status,
+      fall_risk_level: resident.fall_risk_level,
+      assistive_device: resident.assistive_device,
+      ambulatory: resident.ambulatory,
+      wandering_risk: resident.wandering_risk,
+      elopement_risk: resident.elopement_risk,
+      room_number: room?.room_number ?? null,
+      bed_label: bed?.bed_label ?? null,
+      unit_name: unit?.name ?? null,
+    };
+
+    if (FINANCIAL_ROLES.has(ctx.userRole)) {
+      card.primary_payer = resident.primary_payer;
+      card.monthly_base_rate_cents = resident.monthly_base_rate;
+      card.monthly_care_surcharge_cents = resident.monthly_care_surcharge;
+      card.monthly_total_rate_cents = resident.monthly_total_rate;
+    }
+
+    return card;
+  });
+}
+
+function buildToolAccessSummary(userRole: string, tools: ToolDefinition[]): string {
+  const visible = tools.map((tool) => `- \`${tool.name}\`: ${tool.description}`).join("\n");
+  const blocked = (Object.keys(TIER_ALLOWED_ROLES) as ToolTier[])
+    .filter((tier) => !TIER_ALLOWED_ROLES[tier].has(userRole))
+    .map((tier) => `\`${tier}\``)
+    .join(", ");
+
+  return `Current user role: \`${userRole}\`
+
+Available tools for this user:
+${visible}
+
+Restricted data tiers for this user: ${blocked || "none"}.`;
+}
 
 async function executeTool(
   name: string,
   input: Record<string, unknown>,
-  admin: any, // KB tables not in generated client schema yet
-  workspaceId: string,
-  userRole: string,
+  ctx: ToolContext,
 ): Promise<unknown> {
+  const { admin, workspaceId, userRole } = ctx;
   switch (name) {
     case "semantic_kb_search": {
+      const query = sanitizeSearchQuery(input.query);
+      if (!query) return { error: "Query is required" };
       const embRes = await fetch("https://api.openai.com/v1/embeddings", {
         method: "POST",
         headers: {
@@ -52,7 +547,7 @@ async function executeTool(
         },
         body: JSON.stringify({
           model: "text-embedding-3-small",
-          input: input.query as string,
+          input: query,
         }),
         signal: AbortSignal.timeout(60_000),
       });
@@ -68,9 +563,9 @@ async function executeTool(
 
       const { data, error } = await admin.rpc("retrieve_evidence", {
         query_embedding: `[${embedding.join(",")}]`,
-        keyword_query: input.query as string,
+        keyword_query: query,
         user_role: userRole,
-        match_count: 8,
+        match_count: getRequestedLimit(input, 8, 12),
         semantic_threshold: 0.45,
         p_workspace_id: workspaceId,
       });
@@ -85,10 +580,593 @@ async function executeTool(
       }[];
 
       if (rows.length > 3) {
-        return await rerankResults(rows, input.query as string);
+        return await rerankResults(rows, query);
       }
 
       return rows;
+    }
+    case "resident_lookup": {
+      const query = sanitizeSearchQuery(input.query);
+      if (!query) return { error: "Query is required" };
+      const residents = await fetchResidentMatches(ctx, query, getRequestedLimit(input, 8, 12));
+      const cards = await buildResidentLookupCards(ctx, residents);
+      return {
+        result_type: "resident_lookup",
+        count: cards.length,
+        residents: cards,
+      };
+    }
+    case "daily_ops_search": {
+      if (ctx.accessibleFacilityIds.length === 0) {
+        return { result_type: "daily_ops_search", count: 0, sections: {} };
+      }
+      const query = sanitizeSearchQuery(input.query);
+      if (!query) return { error: "Query is required" };
+      const limit = getRequestedLimit(input, 6, 12);
+      const residentMatches = await fetchResidentMatches(ctx, query, Math.min(limit, 8));
+      const residentIds = residentMatches.map((row) => row.id);
+      const residentNames = await fetchResidentNameMap(ctx, residentIds);
+      const dailyFilter = buildOrFilter(["general_notes", "behavior_notes", "mood"], query);
+      const adlFilter = buildOrFilter(["adl_type", "notes", "refusal_reason"], query);
+      const behaviorFilter = buildOrFilter(["behavior", "behavior_type", "notes"], query);
+      const conditionFilter = buildOrFilter(["change_type", "description", "severity"], query);
+      const handoffFilter = buildOrFilter(["outgoing_notes", "incoming_notes"], query);
+
+      let dailyReq = admin
+        .from("daily_logs")
+        .select("id,resident_id,log_date,shift,mood,general_notes,behavior_notes,sleep_quality")
+        .eq("organization_id", workspaceId)
+        .in("facility_id", ctx.accessibleFacilityIds)
+        .is("deleted_at", null)
+        .order("log_date", { ascending: false })
+        .limit(limit);
+      if (residentIds.length > 0) dailyReq = dailyReq.in("resident_id", residentIds);
+      else if (dailyFilter) dailyReq = dailyReq.or(dailyFilter);
+
+      let adlReq = admin
+        .from("adl_logs")
+        .select("id,resident_id,log_date,log_time,shift,adl_type,assistance_level,refused,refusal_reason,notes")
+        .eq("organization_id", workspaceId)
+        .in("facility_id", ctx.accessibleFacilityIds)
+        .is("deleted_at", null)
+        .order("log_date", { ascending: false })
+        .limit(limit);
+      if (residentIds.length > 0) adlReq = adlReq.in("resident_id", residentIds);
+      else if (adlFilter) adlReq = adlReq.or(adlFilter);
+
+      let behaviorReq = admin
+        .from("behavioral_logs")
+        .select("id,resident_id,occurred_at,shift,behavior_type,behavior,notes,injury_occurred")
+        .eq("organization_id", workspaceId)
+        .in("facility_id", ctx.accessibleFacilityIds)
+        .is("deleted_at", null)
+        .order("occurred_at", { ascending: false })
+        .limit(limit);
+      if (residentIds.length > 0) behaviorReq = behaviorReq.in("resident_id", residentIds);
+      else if (behaviorFilter) behaviorReq = behaviorReq.or(behaviorFilter);
+
+      let conditionReq = admin
+        .from("condition_changes")
+        .select("id,resident_id,reported_at,shift,change_type,severity,description,resolution_notes")
+        .eq("organization_id", workspaceId)
+        .in("facility_id", ctx.accessibleFacilityIds)
+        .is("deleted_at", null)
+        .order("reported_at", { ascending: false })
+        .limit(limit);
+      if (residentIds.length > 0) conditionReq = conditionReq.in("resident_id", residentIds);
+      else if (conditionFilter) conditionReq = conditionReq.or(conditionFilter);
+
+      let handoffReq = admin
+        .from("shift_handoffs")
+        .select("id,handoff_date,outgoing_shift,incoming_shift,outgoing_notes,incoming_notes,unit_id")
+        .eq("organization_id", workspaceId)
+        .in("facility_id", ctx.accessibleFacilityIds)
+        .is("deleted_at", null)
+        .order("handoff_date", { ascending: false })
+        .limit(limit);
+      if (handoffFilter) handoffReq = handoffReq.or(handoffFilter);
+
+      const [dailyLogs, adlLogs, behavioralLogs, conditionChanges, handoffs] = await Promise.all([
+        dailyReq,
+        adlReq,
+        behaviorReq,
+        conditionReq,
+        handoffReq,
+      ]);
+
+      return {
+        result_type: "daily_ops_search",
+        resident_matches: await buildResidentLookupCards(ctx, residentMatches),
+        sections: {
+          daily_logs: (dailyLogs.data ?? []).map((row: Record<string, unknown>) => ({
+            ...row,
+            resident_name: row.resident_id ? residentNames[String(row.resident_id)] ?? null : null,
+          })),
+          adl_logs: (adlLogs.data ?? []).map((row: Record<string, unknown>) => ({
+            ...row,
+            resident_name: row.resident_id ? residentNames[String(row.resident_id)] ?? null : null,
+          })),
+          behavioral_logs: (behavioralLogs.data ?? []).map((row: Record<string, unknown>) => ({
+            ...row,
+            resident_name: row.resident_id ? residentNames[String(row.resident_id)] ?? null : null,
+          })),
+          condition_changes: (conditionChanges.data ?? []).map((row: Record<string, unknown>) => ({
+            ...row,
+            resident_name: row.resident_id ? residentNames[String(row.resident_id)] ?? null : null,
+          })),
+          shift_handoffs: handoffs.data ?? [],
+        },
+      };
+    }
+    case "medication_search": {
+      if (ctx.accessibleFacilityIds.length === 0) {
+        return { result_type: "medication_search", count: 0 };
+      }
+      const query = sanitizeSearchQuery(input.query);
+      if (!query) return { error: "Query is required" };
+      const limit = getRequestedLimit(input, 6, 12);
+      const residentMatches = await fetchResidentMatches(ctx, query, Math.min(limit, 8));
+      const residentIds = residentMatches.map((row) => row.id);
+      const medicationFilter = buildOrFilter(["medication_name", "generic_name", "indication"], query);
+
+      let medsReq = admin
+        .from("resident_medications")
+        .select(
+          "id,resident_id,medication_name,generic_name,route,frequency,frequency_detail,status,start_date,end_date,instructions,scheduled_times,pharmacy_name,prescriber_name,prn_reason",
+        )
+        .eq("organization_id", workspaceId)
+        .in("facility_id", ctx.accessibleFacilityIds)
+        .is("deleted_at", null)
+        .order("start_date", { ascending: false })
+        .limit(limit);
+      if (residentIds.length > 0) medsReq = medsReq.in("resident_id", residentIds);
+      else if (medicationFilter) medsReq = medsReq.or(medicationFilter);
+
+      const medsRes = await medsReq;
+      const medicationRows = medsRes.data ?? [];
+      const medResidentIds = uniq([
+        ...residentIds,
+        ...medicationRows.map((row: { resident_id: string }) => row.resident_id),
+      ]);
+      const medIds = uniq(medicationRows.map((row: { id: string }) => row.id));
+      const residentNames = await fetchResidentNameMap(ctx, medResidentIds);
+
+      let emarReq = admin
+        .from("emar_records")
+        .select(
+          "id,resident_id,resident_medication_id,scheduled_time,actual_time,status,is_prn,notes,prn_reason_given,prn_effectiveness_result",
+        )
+        .eq("organization_id", workspaceId)
+        .in("facility_id", ctx.accessibleFacilityIds)
+        .is("deleted_at", null)
+        .order("scheduled_time", { ascending: false })
+        .limit(limit);
+      if (medResidentIds.length > 0) emarReq = emarReq.in("resident_id", medResidentIds);
+
+      let errorReq = admin
+        .from("medication_errors")
+        .select(
+          "id,resident_id,resident_medication_id,occurred_at,error_type,severity,description,immediate_actions,root_cause,reviewed_at",
+        )
+        .eq("organization_id", workspaceId)
+        .in("facility_id", ctx.accessibleFacilityIds)
+        .is("deleted_at", null)
+        .order("occurred_at", { ascending: false })
+        .limit(limit);
+      if (medResidentIds.length > 0) errorReq = errorReq.in("resident_id", medResidentIds);
+
+      const [emarRes, errorRes] = await Promise.all([emarReq, errorReq]);
+
+      return {
+        result_type: "medication_search",
+        resident_matches: await buildResidentLookupCards(ctx, residentMatches),
+        active_medications: medicationRows.map((row: Record<string, unknown>) => ({
+          ...row,
+          resident_name: residentNames[String(row.resident_id)] ?? null,
+        })),
+        recent_emar: (emarRes.data ?? []).map((row: Record<string, unknown>) => ({
+          ...row,
+          resident_name: residentNames[String(row.resident_id)] ?? null,
+        })),
+        medication_errors: (errorRes.data ?? []).map((row: Record<string, unknown>) => ({
+          ...row,
+          resident_name: residentNames[String(row.resident_id)] ?? null,
+        })),
+        resident_medication_ids: medIds,
+      };
+    }
+    case "staff_directory": {
+      if (ctx.accessibleFacilityIds.length === 0) {
+        return { result_type: "staff_directory", count: 0, staff: [] };
+      }
+      const query = sanitizeSearchQuery(input.query);
+      if (!query) return { error: "Query is required" };
+      const limit = getRequestedLimit(input, 8, 12);
+      const filter = buildOrFilter(["first_name", "last_name", "preferred_name", "staff_role", "employment_status"], query);
+      let staffReq = admin
+        .from("staff")
+        .select(
+          "id,facility_id,first_name,last_name,preferred_name,staff_role,employment_status,hire_date,is_full_time,email,phone,hourly_rate",
+        )
+        .eq("organization_id", workspaceId)
+        .in("facility_id", ctx.accessibleFacilityIds)
+        .is("deleted_at", null)
+        .order("last_name", { ascending: true })
+        .limit(limit);
+      if (filter) staffReq = staffReq.or(filter);
+
+      const { data: staffRows } = await staffReq;
+      const staffIds = uniq((staffRows ?? []).map((row: { id: string }) => row.id));
+      let certRows: Record<string, unknown>[] = [];
+      if (staffIds.length > 0) {
+        const { data } = await admin
+          .from("staff_certifications")
+          .select("id,staff_id,certification_name,certification_type,expiration_date,status")
+          .eq("organization_id", workspaceId)
+          .in("facility_id", ctx.accessibleFacilityIds)
+          .is("deleted_at", null)
+          .in("staff_id", staffIds)
+          .order("expiration_date", { ascending: true })
+          .limit(limit * 3);
+        certRows = (data ?? []) as Record<string, unknown>[];
+      }
+      const certsByStaff = new Map<string, Record<string, unknown>[]>();
+      for (const cert of certRows) {
+        const staffId = String(cert.staff_id);
+        const arr = certsByStaff.get(staffId) ?? [];
+        arr.push(cert);
+        certsByStaff.set(staffId, arr);
+      }
+
+      return {
+        result_type: "staff_directory",
+        count: (staffRows ?? []).length,
+        staff: (staffRows ?? []).map((row: Record<string, unknown>) => {
+          const out: Record<string, unknown> = {
+            staff_id: row.id,
+            staff_name: formatResidentName({
+              first_name: String(row.first_name),
+              last_name: String(row.last_name),
+              preferred_name: (row.preferred_name as string | null) ?? null,
+            }),
+            staff_role: row.staff_role,
+            employment_status: row.employment_status,
+            hire_date: row.hire_date,
+            is_full_time: row.is_full_time,
+            email: row.email,
+            phone: row.phone,
+            certifications: certsByStaff.get(String(row.id)) ?? [],
+          };
+          if (FINANCIAL_ROLES.has(ctx.userRole)) {
+            out.hourly_rate_cents = row.hourly_rate;
+          }
+          return out;
+        }),
+      };
+    }
+    case "incident_search": {
+      if (ctx.accessibleFacilityIds.length === 0) {
+        return { result_type: "incident_search", count: 0 };
+      }
+      const query = sanitizeSearchQuery(input.query);
+      if (!query) return { error: "Query is required" };
+      const limit = getRequestedLimit(input, 6, 12);
+      const residentMatches = await fetchResidentMatches(ctx, query, Math.min(limit, 8));
+      const residentIds = residentMatches.map((row) => row.id);
+      const incidentFilter = buildOrFilter(
+        ["incident_number", "description", "location_description", "severity", "status", "category"],
+        query,
+      );
+
+      let incidentReq = admin
+        .from("incidents")
+        .select(
+          "id,incident_number,resident_id,occurred_at,category,severity,status,location_description,description,immediate_actions,resolution_notes",
+        )
+        .eq("organization_id", workspaceId)
+        .in("facility_id", ctx.accessibleFacilityIds)
+        .is("deleted_at", null)
+        .order("occurred_at", { ascending: false })
+        .limit(limit);
+      if (residentIds.length > 0) incidentReq = incidentReq.in("resident_id", residentIds);
+      else if (incidentFilter) incidentReq = incidentReq.or(incidentFilter);
+
+      const { data: incidentRows } = await incidentReq;
+      const incidents = (incidentRows ?? []) as Array<{ id: string; resident_id: string | null } & Record<string, unknown>>;
+      const incidentIds = uniq(incidents.map((row) => row.id));
+      const allResidentIds = uniq([
+        ...residentIds,
+        ...incidents.map((row) => row.resident_id).filter(Boolean) as string[],
+      ]);
+      const residentNames = await fetchResidentNameMap(ctx, allResidentIds);
+
+      let followups: Record<string, unknown>[] = [];
+      if (incidentIds.length > 0) {
+        const { data } = await admin
+          .from("incident_followups")
+          .select("id,incident_id,task_type,description,due_at,completed_at,completion_notes,resident_id")
+          .eq("organization_id", workspaceId)
+          .in("facility_id", ctx.accessibleFacilityIds)
+          .is("deleted_at", null)
+          .in("incident_id", incidentIds)
+          .order("due_at", { ascending: false })
+          .limit(limit * 2);
+        followups = (data ?? []) as Record<string, unknown>[];
+      }
+
+      return {
+        result_type: "incident_search",
+        resident_matches: await buildResidentLookupCards(ctx, residentMatches),
+        incidents: incidents.map((row) => ({
+          ...row,
+          resident_name: row.resident_id ? residentNames[row.resident_id] ?? null : null,
+        })),
+        followups: followups.map((row) => ({
+          ...row,
+          resident_name: row.resident_id ? residentNames[String(row.resident_id)] ?? null : null,
+        })),
+      };
+    }
+    case "compliance_search": {
+      if (ctx.accessibleFacilityIds.length === 0) {
+        return { result_type: "compliance_search", count: 0 };
+      }
+      const query = sanitizeSearchQuery(input.query);
+      if (!query) return { error: "Query is required" };
+      const limit = getRequestedLimit(input, 5, 10);
+      const visitFilter = buildOrFilter(["agency", "visit_type", "notes"], query);
+      const deficiencyFilter = buildOrFilter(
+        ["tag_number", "tag_description", "description", "status", "regulatory_rule_citation"],
+        query,
+      );
+      const pocFilter = buildOrFilter(["corrective_action", "responsible_party", "status", "policy_changes"], query);
+
+      let visitsReq = admin
+        .from("compliance_survey_visits")
+        .select("id,visit_date,agency,visit_type,notes,facility_id")
+        .eq("organization_id", workspaceId)
+        .in("facility_id", ctx.accessibleFacilityIds)
+        .is("deleted_at", null)
+        .order("visit_date", { ascending: false })
+        .limit(limit);
+      if (visitFilter) visitsReq = visitsReq.or(visitFilter);
+
+      let deficienciesReq = admin
+        .from("survey_deficiencies")
+        .select(
+          "id,survey_date,survey_type,surveyor_agency,tag_number,tag_description,description,severity,status,regulatory_rule_citation,facility_id",
+        )
+        .eq("organization_id", workspaceId)
+        .in("facility_id", ctx.accessibleFacilityIds)
+        .is("deleted_at", null)
+        .order("survey_date", { ascending: false })
+        .limit(limit);
+      if (deficiencyFilter) deficienciesReq = deficienciesReq.or(deficiencyFilter);
+
+      let plansReq = admin
+        .from("plans_of_correction")
+        .select(
+          "id,deficiency_id,status,corrective_action,responsible_party,submission_due_date,completion_target_date,reviewer_notes,facility_id",
+        )
+        .eq("organization_id", workspaceId)
+        .in("facility_id", ctx.accessibleFacilityIds)
+        .is("deleted_at", null)
+        .order("submission_due_date", { ascending: false })
+        .limit(limit);
+      if (pocFilter) plansReq = plansReq.or(pocFilter);
+
+      const [visits, deficiencies, plans] = await Promise.all([visitsReq, deficienciesReq, plansReq]);
+
+      return {
+        result_type: "compliance_search",
+        survey_visits: visits.data ?? [],
+        deficiencies: deficiencies.data ?? [],
+        plans_of_correction: plans.data ?? [],
+      };
+    }
+    case "census_snapshot": {
+      if (ctx.accessibleFacilityIds.length === 0) {
+        return { result_type: "census_snapshot", snapshots: [], bed_status: [] };
+      }
+      const { data: facilities } = await admin
+        .from("facilities")
+        .select("id,name")
+        .eq("organization_id", workspaceId)
+        .in("id", ctx.accessibleFacilityIds)
+        .is("deleted_at", null);
+      const facilityNameMap = Object.fromEntries(
+        (facilities ?? []).map((row: { id: string; name: string }) => [row.id, row.name]),
+      );
+
+      const { data: censusRows } = await admin
+        .from("census_daily_log")
+        .select(
+          "id,facility_id,log_date,total_licensed_beds,occupied_beds,available_beds,hold_beds,maintenance_beds,occupancy_rate,admissions_today,discharges_today",
+        )
+        .eq("organization_id", workspaceId)
+        .in("facility_id", ctx.accessibleFacilityIds)
+        .order("log_date", { ascending: false })
+        .limit(50);
+
+      const latestByFacility = new Map<string, Record<string, unknown>>();
+      for (const row of censusRows ?? []) {
+        if (!latestByFacility.has(row.facility_id)) {
+          latestByFacility.set(row.facility_id, {
+            ...row,
+            facility_name: facilityNameMap[row.facility_id] ?? row.facility_id,
+          });
+        }
+      }
+
+      const { data: beds } = await admin
+        .from("beds")
+        .select("facility_id,status")
+        .eq("organization_id", workspaceId)
+        .in("facility_id", ctx.accessibleFacilityIds)
+        .is("deleted_at", null);
+
+      const bedSummary = new Map<string, Record<string, number>>();
+      for (const row of beds ?? []) {
+        const current = bedSummary.get(row.facility_id) ?? {};
+        current[row.status] = (current[row.status] ?? 0) + 1;
+        bedSummary.set(row.facility_id, current);
+      }
+
+      return {
+        result_type: "census_snapshot",
+        snapshots: Array.from(latestByFacility.values()),
+        bed_status: Array.from(bedSummary.entries()).map(([facilityId, counts]) => ({
+          facility_id: facilityId,
+          facility_name: facilityNameMap[facilityId] ?? facilityId,
+          counts,
+        })),
+      };
+    }
+    case "billing_search": {
+      if (ctx.accessibleFacilityIds.length === 0) {
+        return { result_type: "billing_search", count: 0 };
+      }
+      const query = sanitizeSearchQuery(input.query);
+      if (!query) return { error: "Query is required" };
+      const limit = getRequestedLimit(input, 6, 12);
+      const residentMatches = await fetchResidentMatches(ctx, query, Math.min(limit, 8));
+      const residentIds = residentMatches.map((row) => row.id);
+      const invoiceFilter = buildOrFilter(["invoice_number", "payer_name", "status", "notes"], query);
+      const paymentFilter = buildOrFilter(["payer_name", "reference_number", "notes"], query);
+      const activityFilter = buildOrFilter(["activity_type", "description", "outcome"], query);
+
+      let invoicesReq = admin
+        .from("invoices")
+        .select(
+          "id,resident_id,invoice_number,status,invoice_date,due_date,period_start,period_end,payer_name,payer_type,balance_due,amount_paid,total",
+        )
+        .eq("organization_id", workspaceId)
+        .in("facility_id", ctx.accessibleFacilityIds)
+        .is("deleted_at", null)
+        .order("invoice_date", { ascending: false })
+        .limit(limit);
+      if (residentIds.length > 0) invoicesReq = invoicesReq.in("resident_id", residentIds);
+      else if (invoiceFilter) invoicesReq = invoicesReq.or(invoiceFilter);
+
+      let paymentsReq = admin
+        .from("payments")
+        .select(
+          "id,resident_id,invoice_id,payment_date,payment_method,payer_name,payer_type,amount,reference_number,deposited,refunded",
+        )
+        .eq("organization_id", workspaceId)
+        .in("facility_id", ctx.accessibleFacilityIds)
+        .is("deleted_at", null)
+        .order("payment_date", { ascending: false })
+        .limit(limit);
+      if (residentIds.length > 0) paymentsReq = paymentsReq.in("resident_id", residentIds);
+      else if (paymentFilter) paymentsReq = paymentsReq.or(paymentFilter);
+
+      let activitiesReq = admin
+        .from("collection_activities")
+        .select(
+          "id,resident_id,invoice_id,activity_date,activity_type,description,outcome,follow_up_date,follow_up_notes",
+        )
+        .eq("organization_id", workspaceId)
+        .in("facility_id", ctx.accessibleFacilityIds)
+        .is("deleted_at", null)
+        .order("activity_date", { ascending: false })
+        .limit(limit);
+      if (residentIds.length > 0) activitiesReq = activitiesReq.in("resident_id", residentIds);
+      else if (activityFilter) activitiesReq = activitiesReq.or(activityFilter);
+
+      const [invoiceRes, paymentRes, activityRes] = await Promise.all([invoicesReq, paymentsReq, activitiesReq]);
+      const allResidentIds = uniq([
+        ...residentIds,
+        ...((invoiceRes.data ?? []).map((row: { resident_id: string }) => row.resident_id)),
+        ...((paymentRes.data ?? []).map((row: { resident_id: string }) => row.resident_id)),
+        ...((activityRes.data ?? []).map((row: { resident_id: string }) => row.resident_id)),
+      ]);
+      const residentNames = await fetchResidentNameMap(ctx, allResidentIds);
+
+      return {
+        result_type: "billing_search",
+        resident_matches: await buildResidentLookupCards(ctx, residentMatches),
+        invoices: (invoiceRes.data ?? []).map((row: Record<string, unknown>) => ({
+          ...row,
+          resident_name: residentNames[String(row.resident_id)] ?? null,
+        })),
+        payments: (paymentRes.data ?? []).map((row: Record<string, unknown>) => ({
+          ...row,
+          resident_name: residentNames[String(row.resident_id)] ?? null,
+        })),
+        collection_activities: (activityRes.data ?? []).map((row: Record<string, unknown>) => ({
+          ...row,
+          resident_name: residentNames[String(row.resident_id)] ?? null,
+        })),
+      };
+    }
+    case "payroll_search": {
+      if (ctx.accessibleFacilityIds.length === 0) {
+        return { result_type: "payroll_search", count: 0 };
+      }
+      const query = sanitizeSearchQuery(input.query);
+      if (!query) return { error: "Query is required" };
+      const limit = getRequestedLimit(input, 6, 12);
+      const staffFilter = buildOrFilter(["first_name", "last_name", "preferred_name"], query);
+      let staffReq = admin
+        .from("staff")
+        .select("id,first_name,last_name,preferred_name")
+        .eq("organization_id", workspaceId)
+        .in("facility_id", ctx.accessibleFacilityIds)
+        .is("deleted_at", null)
+        .limit(limit);
+      if (staffFilter) staffReq = staffReq.or(staffFilter);
+      const { data: staffRows } = await staffReq;
+      const staffIds = uniq((staffRows ?? []).map((row: { id: string }) => row.id));
+      const staffNames = Object.fromEntries(
+        ((staffRows ?? []) as Array<{ id: string; first_name: string; last_name: string; preferred_name: string | null }>).map(
+          (row) => [row.id, formatResidentName(row)],
+        ),
+      );
+
+      const batchFilter = buildOrFilter(["provider", "status", "notes"], query);
+      let batchesReq = admin
+        .from("payroll_export_batches")
+        .select("id,facility_id,period_start,period_end,provider,status,notes,created_at")
+        .eq("organization_id", workspaceId)
+        .in("facility_id", ctx.accessibleFacilityIds)
+        .is("deleted_at", null)
+        .order("period_end", { ascending: false })
+        .limit(limit);
+      if (batchFilter) batchesReq = batchesReq.or(batchFilter);
+
+      let linesReq = admin
+        .from("payroll_export_lines")
+        .select("id,batch_id,staff_id,line_kind,amount_cents,payload,created_at")
+        .eq("organization_id", workspaceId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (staffIds.length > 0) linesReq = linesReq.in("staff_id", staffIds);
+      else {
+        const lineFilter = buildOrFilter(["line_kind"], query);
+        if (lineFilter) linesReq = linesReq.or(lineFilter);
+      }
+
+      const [batchRes, lineRes] = await Promise.all([batchesReq, linesReq]);
+      const lineStaffIds = uniq(
+        ((lineRes.data ?? []) as Array<{ staff_id: string }>).map((row) => row.staff_id),
+      );
+      const missingStaffIds = lineStaffIds.filter((id: string) => !staffNames[id]);
+      const extraStaffNames = await fetchStaffNameMap(ctx, missingStaffIds);
+
+      return {
+        result_type: "payroll_search",
+        staff_matches: ((staffRows ?? []) as Array<{ id: string }>).map((row) => ({
+          staff_id: row.id,
+          staff_name: staffNames[row.id],
+        })),
+        batches: batchRes.data ?? [],
+        lines: (lineRes.data ?? []).map((row: Record<string, unknown>) => ({
+          ...row,
+          staff_name: staffNames[String(row.staff_id)] ?? extraStaffNames[String(row.staff_id)] ?? null,
+        })),
+      };
     }
     default:
       return { error: `Unknown tool: ${name}` };
@@ -158,34 +1236,32 @@ function chunkTextForStream(text: string): string[] {
   return parts.length > 0 ? parts : [text];
 }
 
-function buildSystemPrompt(): string {
-  return `You are the knowledge assistant for Circle of Life assisted living facility. You answer questions by USING YOUR TOOLS.
+function buildSystemPrompt(userRole: string, tools: ToolDefinition[]): string {
+  return `You are the role-governed Haven knowledge assistant for Circle of Life.
 
-Scope — IMPORTANT:
-- Your only search tool is **semantic_kb_search**, which reads **uploaded policies/handbooks** in the Knowledge Base. It does **not** query live resident records, rooms, beds, eMAR, or census.
-- If the user asks for a **specific resident's room, unit, medications, or other live operational data**, say clearly that this chat cannot see that data and they should open **Residents / Daily operations** in Haven (or the appropriate module). Do not invent names, rooms, or clinical facts.
-- For policy/procedure questions, call **semantic_kb_search** and cite what you find.
+${buildToolAccessSummary(userRole, tools)}
 
 How to think:
-1. Read the question.
-2. If it needs uploaded documents → semantic_kb_search.
-3. Call the tool, read the result, then answer in plain language (never an empty reply).
+1. Decide which tool fits the question.
+2. Use live-data tools for resident, medication, daily-ops, incident, census, staff, compliance, billing, or payroll questions.
+3. Use \`semantic_kb_search\` for uploaded policies, handbooks, SOPs, and compliance reference documents.
+4. Read the tool result carefully and answer directly in plain language.
 
 Hard rules:
-- All tools are READ-ONLY. No mutations.
-- Never invent data. If semantic_kb_search returns no rows, say clearly that nothing matched the knowledge base and tell the user they can upload PDFs under **Admin → Knowledge → Knowledge admin** (\`/admin/knowledge/admin\`). Do not leave the reply blank.
-- Cite sources inline when drawing from semantic_kb_search results.
-- Use markdown formatting when it helps readability.
-- CRITICAL: Respect role-based access. You only see documents the user's role permits.`;
+- All tools are READ-ONLY. Never mutate data.
+- Never invent data. If the needed data is not available from your allowed tools, say so clearly.
+- Do not reveal or infer data from blocked tiers. If the user asks for financial or payroll data and those tools are unavailable to this role, say you do not have access.
+- Cite sources inline when drawing from \`semantic_kb_search\` results.
+- Live operational answers can cite the tool and the returned records in plain language; do not fabricate a document citation.
+- If \`semantic_kb_search\` returns no rows, tell the user to upload documents under **Admin → Knowledge → Knowledge admin** (\`/admin/knowledge/admin\`).
+- Keep responses concise and operationally useful.`;
 }
 
 async function runAgentLoop(
   question: string,
   conversationHistory: { role: string; content: unknown }[],
-  admin: any, // KB tables not in generated client schema yet
-  workspaceId: string,
-  userRole: string,
-  _userId: string,
+  ctx: ToolContext,
+  tools: ToolDefinition[],
 ): Promise<{
   text: string;
   sources: {
@@ -198,11 +1274,13 @@ async function runAgentLoop(
   tokensIn: number;
   tokensOut: number;
   model: string;
+  kbSearchMiss: boolean;
 }> {
   let totalTokensIn = 0;
   let totalTokensOut = 0;
   let model = MODEL_FULL;
   const toolsUsed: string[] = [];
+  let kbSearchUsed = false;
   const sources: {
     title: string;
     excerpt: string;
@@ -233,8 +1311,8 @@ async function runAgentLoop(
       body: JSON.stringify({
         model,
         max_tokens: 4096,
-        system: [{ type: "text", text: buildSystemPrompt(), cache_control: { type: "ephemeral" } }],
-        tools: CACHED_TOOLS,
+        system: [{ type: "text", text: buildSystemPrompt(ctx.userRole, tools), cache_control: { type: "ephemeral" } }],
+        tools: withToolCache(tools),
         messages,
       }),
       signal: AbortSignal.timeout(120_000),
@@ -258,6 +1336,7 @@ async function runAgentLoop(
         tokensIn: totalTokensIn,
         tokensOut: totalTokensOut,
         model,
+        kbSearchMiss: kbSearchUsed && sources.length === 0,
       };
     }
 
@@ -270,7 +1349,8 @@ async function runAgentLoop(
         if (block.type !== "tool_use") continue;
 
         toolsUsed.push(block.name!);
-        const toolResult = await executeTool(block.name!, block.input ?? {}, admin, workspaceId, userRole);
+        if (block.name === "semantic_kb_search") kbSearchUsed = true;
+        const toolResult = await executeTool(block.name!, block.input ?? {}, ctx);
 
         if (block.name === "semantic_kb_search" && Array.isArray(toolResult)) {
           sources.push(
@@ -307,6 +1387,7 @@ async function runAgentLoop(
     tokensIn: totalTokensIn,
     tokensOut: totalTokensOut,
     model,
+    kbSearchMiss: kbSearchUsed && sources.length === 0,
   };
 }
 
@@ -361,6 +1442,15 @@ Deno.serve(async (req) => {
 
   const workspaceId = bodyWorkspaceId && bodyWorkspaceId === orgId ? bodyWorkspaceId : orgId;
   const traceId = crypto.randomUUID();
+  const accessibleFacilityIds = await resolveAccessibleFacilityIds(admin, workspaceId, user.id, userRole);
+  const availableTools = getAvailableToolsForRole(userRole);
+  const toolContext: ToolContext = {
+    admin,
+    workspaceId,
+    userRole,
+    userId: user.id,
+    accessibleFacilityIds,
+  };
 
   let conversationId = conversation_id;
   if (!conversationId) {
@@ -433,7 +1523,7 @@ Deno.serve(async (req) => {
           ),
         );
 
-        const result = await runAgentLoop(message, history, admin, workspaceId, userRole, user.id);
+        const result = await runAgentLoop(message, history, toolContext, availableTools);
 
         const outgoing =
           result.text.trim().length > 0
@@ -494,7 +1584,7 @@ Deno.serve(async (req) => {
           });
         }
 
-        if (result.sources.length === 0) {
+        if (result.kbSearchMiss) {
           const { error: gapErr } = await admin.rpc("log_knowledge_gap", {
             p_workspace_id: workspaceId,
             p_user_id: user.id,

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Send, Loader2, StopCircle, Paperclip, BookOpen } from "lucide-react";
 import { ChatMessage } from "./ChatMessage";
@@ -76,20 +76,7 @@ export function ChatInterface({
   const showOptimisticUser =
     !!pendingUserMessage &&
     !existingMessages.some((m) => m.role === "user" && m.content === pendingUserMessage);
-  const lastMsg = useMemo(
-    () => (existingMessages.length ? existingMessages[existingMessages.length - 1] : null),
-    [existingMessages],
-  );
-  const lastMsgSources = lastMsg?.sources as unknown;
-  const lastMsgHasKbSources = Array.isArray(lastMsgSources) && lastMsgSources.length > 0;
-  /** Edge SSE kb_empty; after reload, newest assistant row has no cited sources (not an error response). */
-  const showKbUploadHint =
-    (state === "done" && kbEmpty) ||
-    (!isActive &&
-      !messagesLoading &&
-      lastMsg?.role === "assistant" &&
-      !String(lastMsg.content).startsWith("Error:") &&
-      !lastMsgHasKbSources);
+  const showKbUploadHint = state === "done" && kbEmpty;
   const hasNoContent = existingMessages.length === 0 && !isActive && !text;
 
   useEffect(() => {
@@ -182,14 +169,15 @@ export function ChatInterface({
                 <div>
                   <p className="font-medium text-amber-50">No matching documents in the knowledge base yet</p>
                   <p className="mt-1 text-amber-100/90">
-                    Upload policies and handbooks in{" "}
+                    Live resident and operations questions can still work, but document-based answers need uploaded materials.
+                    Add policies and handbooks in{" "}
                     <Link
                       href="/admin/knowledge/admin"
                       className="font-medium text-amber-300 underline underline-offset-2 hover:text-amber-200"
                     >
                       Knowledge admin
                     </Link>{" "}
-                    so answers can cite your real materials.
+                    so the agent can cite your real materials.
                   </p>
                 </div>
               </div>
@@ -210,7 +198,7 @@ export function ChatInterface({
               !messagesLoading && (
                 <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
                   <p className="text-sm text-zinc-400">
-                    No messages in this conversation yet. Type a question below to get started.
+                    No messages in this conversation yet. Ask about residents, meds, census, incidents, compliance, or uploaded policies.
                   </p>
                 </div>
               )}
@@ -238,7 +226,7 @@ export function ChatInterface({
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={
-                inputDisabled ? "Loading organization…" : "Ask about policies, procedures, compliance…"
+                inputDisabled ? "Loading organization…" : "Ask about residents, meds, census, incidents, policies…"
               }
               rows={1}
               disabled={inputDisabled}
