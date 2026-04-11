@@ -222,7 +222,7 @@ export default function DeficienciesAnalysisPage() {
                 </V2Card>
                 <V2Card className="p-4 text-center">
                   <p className="text-3xl font-bold text-rose-600 dark:text-rose-400">
-                    {summary.bySeverity?.['serious'] ?? 0 + summary.bySeverity?.['immediate_jeopardy'] ?? 0}
+                    {(summary.bySeverity['serious'] || 0) + (summary.bySeverity['immediate_jeopardy'] || 0)}
                   </p>
                   <p className="text-xs text-slate-500 uppercase mt-1">Serious/Critical</p>
                 </V2Card>
