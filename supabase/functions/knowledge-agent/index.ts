@@ -9,7 +9,7 @@ import { withTiming } from "../_shared/structured-log.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
-const MODEL_FULL = "claude-sonnet-4-5-20250514";
+const MODEL_FULL = "claude-sonnet-4-6";
 const MODEL_REDUCED = "claude-haiku-4-5-20251001";
 const MAX_ITERATIONS = 6;
 const MAX_HISTORY = 12;
