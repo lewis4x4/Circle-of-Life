@@ -75,3 +75,14 @@ After demo:
 
 1. `npm run demo:reset`
 2. Verify no rows remain for demo organization id.
+
+## Circle of Life pilot org (`00000000-0000-0000-0000-000000000001`)
+
+Production-style demo rows for the **COL** organization ship as **SQL migrations** (not `demo:seed` scripts), so they replay with `supabase db push` and CI Docker migration verify:
+
+| Migration | Contents |
+|-----------|----------|
+| `151_seed_col_executive_metrics.sql` | `exec_metric_definitions` (5 KPI codes), `exec_metric_snapshots` (synthetic history), `exec_alerts` (watchlist) |
+| `152_seed_col_payroll_and_assurance_facilities.sql` | `payroll_export_batches` / `payroll_export_lines` (exported March 2026 per facility), Resident Assurance templates + post-fall watch protocols for facilities **002–005** |
+
+Oakridge Resident Assurance observation plans remain in `129_resident_assurance_seed.sql`. Multi-facility vertical slice data remains in `120_col_multi_facility_demo_seed.sql`.
