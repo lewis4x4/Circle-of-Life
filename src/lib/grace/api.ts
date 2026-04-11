@@ -17,6 +17,18 @@ async function requireUserAccessToken(): Promise<string> {
     data: { session },
     error,
   } = await supabase.auth.getSession();
+
+  // Debug logging
+  console.log("[Grace Auth Debug]", {
+    hasError: !!error,
+    errorMessage: error?.message,
+    hasSession: !!session,
+    hasAccessToken: !!session?.access_token,
+    expiresAt: session?.expires_at,
+    nowSeconds: Math.floor(Date.now() / 1000),
+    userId: session?.user?.id,
+  });
+
   if (error) {
     throw new Error(`Grace auth: ${error.message}`);
   }
@@ -29,13 +41,21 @@ async function requireUserAccessToken(): Promise<string> {
 
   // Refresh if token is expiring within 60 seconds OR if expiresAt is missing/invalid
   if (!expiresAt || expiresAt < nowSeconds + 60) {
+    console.log("[Grace Auth Debug] Attempting token refresh...", { expiresAt, nowSeconds });
     const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+    console.log("[Grace Auth Debug] Refresh result", {
+      hasError: !!refreshError,
+      errorMessage: refreshError?.message,
+      hasNewSession: !!refreshed.session,
+      hasNewToken: !!refreshed.session?.access_token,
+    });
     if (refreshError || !refreshed.session?.access_token) {
       throw new Error("Grace: session expired and refresh failed. Please sign in again.");
     }
     return refreshed.session.access_token;
   }
 
+  console.log("[Grace Auth Debug] Returning valid token", { userId: session.user.id });
   return session.access_token;
 }
 

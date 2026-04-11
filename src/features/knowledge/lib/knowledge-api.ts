@@ -11,6 +11,17 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
     error,
   } = await supabase.auth.getSession();
 
+  // Debug logging
+  console.log("[Knowledge API Auth Debug]", {
+    hasError: !!error,
+    errorMessage: error?.message,
+    hasSession: !!session,
+    hasAccessToken: !!session?.access_token,
+    expiresAt: session?.expires_at,
+    nowSeconds: Math.floor(Date.now() / 1000),
+    userId: session?.user?.id,
+  });
+
   if (error) {
     return {
       Authorization: "",
@@ -30,11 +41,23 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   // Refresh if token is expiring within 60 seconds OR if expiresAt is missing/invalid
   let accessToken = session.access_token;
   if (!expiresAt || expiresAt < nowSeconds + 60) {
+    console.log("[Knowledge API Auth Debug] Attempting token refresh...", { expiresAt, nowSeconds });
     const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+    console.log("[Knowledge API Auth Debug] Refresh result", {
+      hasError: !!refreshError,
+      errorMessage: refreshError?.message,
+      hasNewSession: !!refreshed.session,
+      hasNewToken: !!refreshed.session?.access_token,
+    });
     if (!refreshError && refreshed.session?.access_token) {
       accessToken = refreshed.session.access_token;
     }
   }
+
+  console.log("[Knowledge API Auth Debug] Returning auth headers", {
+    hasAccessToken: !!accessToken,
+    userId: session?.user?.id,
+  });
 
   return {
     Authorization: `Bearer ${accessToken}`,
