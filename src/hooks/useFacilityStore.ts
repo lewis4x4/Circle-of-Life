@@ -8,9 +8,14 @@ export interface Facility {
   name: string;
 }
 
+/** In-memory only; not persisted — used to skip redundant fetches within SPA session */
+export const FACILITY_LIST_TTL_MS = 5 * 60 * 1000;
+
 interface FacilityState {
   selectedFacilityId: string | null;
   availableFacilities: Facility[];
+  /** Epoch ms when `availableFacilities` was last set from network */
+  facilitiesFetchedAt: number | null;
   setSelectedFacility: (id: string | null) => void;
   setAvailableFacilities: (facilities: Facility[]) => void;
 }
@@ -20,8 +25,10 @@ export const useFacilityStore = create<FacilityState>()(
     (set) => ({
       selectedFacilityId: null,
       availableFacilities: [],
+      facilitiesFetchedAt: null,
       setSelectedFacility: (id) => set({ selectedFacilityId: id }),
-      setAvailableFacilities: (facilities) => set({ availableFacilities: facilities }),
+      setAvailableFacilities: (facilities) =>
+        set({ availableFacilities: facilities, facilitiesFetchedAt: Date.now() }),
     }),
     {
       name: "haven-facility-storage",

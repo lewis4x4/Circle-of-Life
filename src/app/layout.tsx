@@ -1,21 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Outfit, Lora } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 
 const interSans = Inter({
   variable: "--font-inter",
-  subsets: ["latin"],
-});
-
-const outfitDisplay = Outfit({
-  variable: "--font-outfit",
-  subsets: ["latin"],
-});
-
-const loraSerif = Lora({
-  variable: "--font-lora",
   subsets: ["latin"],
 });
 
@@ -46,7 +36,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${interSans.variable} ${outfitDisplay.variable} ${loraSerif.variable} h-full antialiased`}
+      className={`${interSans.variable} h-full antialiased`}
     >
       <body className="min-h-full font-sans">
         <ThemeProvider

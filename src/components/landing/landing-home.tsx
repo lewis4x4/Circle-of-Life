@@ -9,7 +9,7 @@ import {
   useScroll,
   useSpring,
   useTransform,
-} from "motion/react";
+} from "framer-motion";
 import { useTheme } from "next-themes";
 import {
   Activity,

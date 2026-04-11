@@ -227,7 +227,6 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              {/* @ts-expect-error Lucide icon className */}
               <Icon className="h-3.5 w-3.5" />
               {label}
             </button>

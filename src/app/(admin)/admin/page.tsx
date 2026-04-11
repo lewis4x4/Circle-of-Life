@@ -5,10 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, Clock, ShieldAlert, Pill, FileWarning, CheckCircle2, UserCog, HeartPulse, Activity, Zap, Users, DoorOpen, type LucideIcon } from "lucide-react";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminDashboardSnapshot, type AdminDashboardSnapshot } from "@/lib/admin-dashboard-snapshot";
-import { createClient } from "@/lib/supabase/client";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
+import { useDashboardSnapshotCache } from "@/stores/dashboard-snapshot-cache";
 import { cn } from "@/lib/utils";
 
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
@@ -17,28 +18,43 @@ import { MotionCard } from "@/components/ui/motion-card";
 export default function AdminDashboardPage() {
   const router = useRouter();
   const { selectedFacilityId } = useFacilityStore();
+  const { appRole, loading: authLoading } = useHavenAuth();
+  const getFreshSnapshot = useDashboardSnapshotCache((s) => s.getFresh);
+  const setSnapshotCache = useDashboardSnapshotCache((s) => s.setEntry);
   const [snapshot, setSnapshot] = useState<AdminDashboardSnapshot | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setIsLoading(true);
+    if (authLoading) return;
+
     setError(null);
-    try {
-      const supabase = createClient();
-      const { data: sessionData } = await supabase.auth.getSession();
+    const config = getRoleDashboardConfig(appRole);
 
-      const role = (sessionData.session?.user?.app_metadata?.app_role as string) || "facility_admin";
+    if (appRole === "caregiver" || appRole === "housekeeper" || appRole === "family") {
+      router.replace(config.route);
+      setIsLoading(false);
+      return;
+    }
 
-      // Role-based routing via centralized config
-      const config = getRoleDashboardConfig(role);
-
-      // Non-admin shells only (owner/org_admin may open /admin for Triage Inbox — do not redirect)
-      if (role === "caregiver" || role === "housekeeper" || role === "family") {
-        router.replace(config.route);
-        return;
+    const cached = getFreshSnapshot(selectedFacilityId);
+    if (cached) {
+      setSnapshot(cached);
+      setIsLoading(false);
+      try {
+        const data = await fetchAdminDashboardSnapshot(selectedFacilityId);
+        setSnapshotCache(selectedFacilityId, data);
+        setSnapshot(data);
+      } catch {
+        /* keep showing cached snapshot */
       }
+      return;
+    }
+
+    setIsLoading(true);
+    try {
       const data = await fetchAdminDashboardSnapshot(selectedFacilityId);
+      setSnapshotCache(selectedFacilityId, data);
       setSnapshot(data);
     } catch (e) {
       setSnapshot(null);
@@ -46,7 +62,7 @@ export default function AdminDashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedFacilityId, router]);
+  }, [selectedFacilityId, router, authLoading, appRole, getFreshSnapshot, setSnapshotCache]);
 
   useEffect(() => {
     void load();

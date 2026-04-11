@@ -55,6 +55,16 @@ if (isProd) {
 }
 
 const nextConfig: NextConfig = {
+  experimental: {
+    optimizePackageImports: [
+      "lucide-react",
+      "recharts",
+      "date-fns",
+      "framer-motion",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-select",
+    ],
+  },
   turbopack: {
     root: path.resolve(__dirname),
   },

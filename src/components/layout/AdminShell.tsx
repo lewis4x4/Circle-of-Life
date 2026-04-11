@@ -58,7 +58,8 @@ import {
   BrainCircuit,
   MessageSquare,
 } from "lucide-react";
-import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { FACILITY_LIST_TTL_MS, useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -84,7 +85,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   const [facilitiesLoading, setFacilitiesLoading] = useState(true);
   const [facilitiesLoadFailed, setFacilitiesLoadFailed] = useState(false);
-  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
+  const { email: sessionEmail } = useHavenAuth();
   const [signingOut, setSigningOut] = useState(false);
 
   const handleSignOut = useCallback(async () => {
@@ -99,28 +100,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     }
   }, [router]);
 
-  useEffect(() => {
-    const supabase = createClient();
-    let cancelled = false;
-    void (async () => {
-      try {
-        const { data } = await supabase.auth.getSession();
-        if (!cancelled) setSessionEmail(data.session?.user?.email ?? null);
-      } catch (err) {
-        console.warn("[AdminShell] getSession failed", err);
-        if (!cancelled) setSessionEmail(null);
-      }
-    })();
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!cancelled) setSessionEmail(session?.user?.email ?? null);
-    });
-    return () => {
-      cancelled = true;
-      sub.subscription.unsubscribe();
-    };
-  }, []);
-
   const refreshFacilities = useCallback(async () => {
+    const st = useFacilityStore.getState();
+    if (
+      st.facilitiesFetchedAt != null &&
+      st.availableFacilities.length > 0 &&
+      Date.now() - st.facilitiesFetchedAt < FACILITY_LIST_TTL_MS
+    ) {
+      setFacilitiesLoading(false);
+      setFacilitiesLoadFailed(false);
+      return;
+    }
+
     setFacilitiesLoading(true);
     setFacilitiesLoadFailed(false);
     try {
