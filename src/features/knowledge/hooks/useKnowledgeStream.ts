@@ -1,0 +1,91 @@
+"use client";
+
+import { useState, useCallback, useRef } from "react";
+import type { KBSource, StreamMeta, StreamState } from "../lib/types";
+import { sendChatMessage } from "../lib/knowledge-api";
+import { streamSSE } from "../lib/stream-parser";
+
+export function useKnowledgeStream(workspaceId: string | null) {
+  const [state, setState] = useState<StreamState>("idle");
+  const [text, setText] = useState("");
+  const [sources, setSources] = useState<KBSource[]>([]);
+  const [meta, setMeta] = useState<StreamMeta | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const send = useCallback(
+    async (message: string, conversationId?: string) => {
+      if (!workspaceId) {
+        setError("Missing organization context.");
+        setState("error");
+        return;
+      }
+
+      abortRef.current?.abort();
+      abortRef.current = new AbortController();
+
+      setState("connecting");
+      setText("");
+      setSources([]);
+      setMeta(null);
+      setError(null);
+
+      try {
+        const res = await sendChatMessage(message, {
+          conversationId,
+          workspaceId,
+          signal: abortRef.current.signal,
+        });
+        if (!res.ok) {
+          await res.text();
+          setError(`Request failed: ${res.status}`);
+          setState("error");
+          return;
+        }
+
+        setState("streaming");
+
+        for await (const event of streamSSE(res)) {
+          switch (event.type) {
+            case "meta":
+              setMeta(event.meta!);
+              break;
+            case "text":
+              setText((prev) => prev + event.text!);
+              break;
+            case "sources":
+              setSources(event.sources!);
+              break;
+            case "error":
+              setError(event.error!);
+              setState("error");
+              return;
+            case "done":
+              setState("done");
+              return;
+          }
+        }
+
+        setState("done");
+      } catch (err: unknown) {
+        const e = err as { name?: string; message?: string };
+        if (e.name !== "AbortError") {
+          setError(e.message ?? "Request failed");
+          setState("error");
+        }
+      }
+    },
+    [workspaceId],
+  );
+
+  const reset = useCallback(() => {
+    abortRef.current?.abort();
+    setState("idle");
+    setText("");
+    setSources([]);
+    setMeta(null);
+    setError(null);
+  }, []);
+
+  return { state, text, sources, meta, error, send, reset };
+}

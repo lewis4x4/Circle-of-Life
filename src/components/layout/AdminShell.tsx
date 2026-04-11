@@ -54,6 +54,9 @@ import {
   ShieldCheck,
   Zap,
   Hotel,
+  BookOpen,
+  BrainCircuit,
+  MessageSquare,
 } from "lucide-react";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
@@ -193,6 +196,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         { key: "compliance", href: "/admin/compliance", label: "Compliance & Safety", enabled: true, icon: Scale },
         { key: "quality", href: "/admin/quality", label: "Quality Metrics", enabled: true, icon: LineChart },
         { key: "reputation", href: "/admin/reputation", label: "Reputation tracker", enabled: true, icon: Star },
+      ]
+    },
+    {
+      group: "Knowledge",
+      icon: BrainCircuit,
+      items: [
+        { key: "kb-chat", href: "/admin/knowledge", label: "Ask Knowledge Base", enabled: true, icon: MessageSquare },
+        { key: "kb-admin", href: "/admin/knowledge/admin", label: "KB Admin", enabled: true, icon: BookOpen },
       ]
     },
     {
