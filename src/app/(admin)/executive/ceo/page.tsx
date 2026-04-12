@@ -6,7 +6,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, TrendingUp, TrendingDown, AlertTriangle, Shield, Users, Building, Minus } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, AlertTriangle, Shield, Users, Building, Minus, Brain } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ComposedChart, Line, Area, AreaChart, Legend, RadarChart, Radar, PolarGrid, PolarAngleAxis,
@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import { useExecRoleKpis } from "@/hooks/useExecRoleKpis";
 
 // ── PILL TABS (custom set — CEO View is a local button, not a Link, since we're already on this page) ──
-const CEO_TABS = ["CEO View", "Alerts", "Reports", "Benchmarks", "NLQ"];
+const CEO_TABS = ["CEO View", "Alerts", "Reports", "Benchmarks", "Haven Insight"];
 
 // ── SHARED STYLES ──
 const TH = "text-left text-[10px] font-mono uppercase tracking-wider text-slate-400 px-3 py-2";
@@ -253,14 +253,18 @@ export default function CeoDashboardPage() {
             </Panel>
           )}
 
-          {/* ═══ NLQ (placeholder) ═══ */}
-          {tab === "NLQ" && (
+          {/* ═══ HAVEN INSIGHT ═══ */}
+          {tab === "Haven Insight" && (
             <Panel className="min-h-[300px] flex items-center justify-center">
-              <div className="text-center">
-                <p className="text-lg font-semibold text-slate-300">Natural Language Query</p>
-                <p className="text-sm text-slate-500 mt-2">Ask questions about your portfolio in plain English.</p>
-                <div className="mt-4 px-6 py-3 rounded-xl border border-white/10 bg-white/[0.02] text-sm text-slate-400 italic">&quot;What is our occupancy trend for Cedar Park over the last 6 months?&quot;</div>
-                <p className="text-xs text-slate-600 mt-4">Coming soon — powered by Haven AI</p>
+              <div className="text-center space-y-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500/20 to-indigo-600/20 border border-violet-500/20 flex items-center justify-center mx-auto">
+                  <Brain className="w-7 h-7 text-violet-400" />
+                </div>
+                <p className="text-lg font-semibold text-white">Haven Insight</p>
+                <p className="text-sm text-slate-400 max-w-md">Ask questions about your portfolio in plain English and get AI-powered answers from your live data.</p>
+                <Link href="/admin/executive/nlq" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-semibold hover:from-violet-500 hover:to-indigo-500 transition-all shadow-lg shadow-violet-500/20">
+                  <Brain className="w-4 h-4" /> Open Haven Insight
+                </Link>
               </div>
             </Panel>
           )}

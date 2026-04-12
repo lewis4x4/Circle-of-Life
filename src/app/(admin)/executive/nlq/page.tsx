@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Executive NLQ (Natural Language Query) — Chat Interface
+ * Haven Insight — AI-powered executive Q&A
  *
  * Executives can ask questions about their ALF portfolio in plain English
  * and get AI-powered answers from Haven data.
@@ -146,7 +146,7 @@ export default function ExecutiveNlqPage() {
       <div className="relative min-h-[calc(100vh-64px)] w-full flex items-center justify-center">
         <AmbientMatrix />
         <div className="text-center p-12">
-          <p className="text-amber-400 text-sm font-medium">NLQ is available to organization owners and org admins.</p>
+          <p className="text-amber-400 text-sm font-medium">Haven Insight is available to organization owners and org admins.</p>
         </div>
       </div>
     );
@@ -167,7 +167,7 @@ export default function ExecutiveNlqPage() {
               <Brain className="w-5 h-5 text-white" />
             </div>
             <div>
-              <TitleH1>Executive Intelligence NLQ</TitleH1>
+              <TitleH1>Haven Insight</TitleH1>
               <Subtitle>Ask questions about your portfolio in plain English</Subtitle>
             </div>
           </div>

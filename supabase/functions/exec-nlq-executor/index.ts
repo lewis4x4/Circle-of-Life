@@ -34,6 +34,10 @@ const ALLOWED_ROLES = ["owner", "org_admin"];
 type RequestBody = {
   question?: string;
   session_id?: string;
+  route?: string;         // current pathname
+  module?: string;        // human-readable module name
+  facility_id?: string;   // selected facility from header
+  role?: string;          // app_role of the user
 };
 
 type FacilityRow = {
@@ -105,6 +109,8 @@ function buildSystemPrompt(
   portfolioKpi: ExecKpiPayload,
   alerts: AlertRow[],
   nameMap: Record<string, string>,
+  moduleAddon?: string | null,
+  userRole?: string | null,
 ): string {
   const today = new Date().toISOString().slice(0, 10);
 
@@ -165,7 +171,35 @@ INSTRUCTIONS:
 - Never fabricate data — only reference the numbers provided above.
 - Reference specific facilities by name when relevant.
 - Format dollar amounts with $ signs and commas.
-- When comparing facilities, use a brief table if helpful.`;
+- When comparing facilities, use a brief table if helpful.
+${moduleAddon ? `\nCONTEXT FOCUS:\n${moduleAddon}\n` : ""}${userRole ? `\nThe user's role is: ${userRole}. Adjust your language and focus accordingly.` : ""}`;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Module context addon                                              */
+/* ------------------------------------------------------------------ */
+
+const MODULE_ADDONS: Record<string, string> = {
+  "CEO Command Center":
+    "You are advising the CEO. Prioritize portfolio-wide health, growth vectors, strategic risks. Lead with the most actionable insight.",
+  "CFO Financial Center":
+    "You are advising the CFO. Prioritize revenue, AR aging, cash flow, labor economics. Use financial terminology.",
+  "COO Operations Center":
+    "You are advising the COO. Prioritize staffing, work orders, incidents, satisfaction, operational readiness.",
+  "Billing & Collections":
+    "Focus on invoices, payments, AR aging buckets, and collection performance.",
+  "Resident Management":
+    "Focus on census, care plans, assessments, and clinical status.",
+  "Incident Management":
+    "Focus on open incidents, severity trends, and root cause patterns.",
+  "Compliance & Survey Readiness":
+    "Focus on deficiencies, plans of correction, and survey readiness.",
+  "Staff Management":
+    "Focus on headcount, certifications, staffing ratios, and scheduling.",
+};
+
+function getModuleAddon(module: string): string {
+  return MODULE_ADDONS[module] ?? "";
 }
 
 /* ------------------------------------------------------------------ */
@@ -210,6 +244,11 @@ Deno.serve(async (req) => {
   } catch {
     return jsonResponse({ error: "Invalid JSON body" }, 400, origin);
   }
+
+  const routeContext = body.route ?? null;
+  const moduleContext = body.module ?? null;
+  const selectedFacilityId = body.facility_id ?? null;
+  const userRole = body.role ?? null;
 
   const question = typeof body.question === "string" ? body.question.trim() : "";
   if (!question) {
@@ -296,7 +335,14 @@ Deno.serve(async (req) => {
   }
 
   // --- Build system prompt and call Anthropic ---
-  const systemPrompt = buildSystemPrompt(perFacility, portfolioKpi, alerts, nameMap);
+  const systemPrompt = buildSystemPrompt(
+    perFacility,
+    portfolioKpi,
+    alerts,
+    nameMap,
+    moduleContext ? getModuleAddon(moduleContext) : null,
+    userRole,
+  );
 
   let anthropicJson: Record<string, unknown>;
   try {
