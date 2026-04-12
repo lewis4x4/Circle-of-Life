@@ -167,6 +167,7 @@ function TopNavigation({ activeTab, onTabChange }: TopNavigationProps) {
 
 /** Pill tabs that should navigate to a different route instead of calling onTabChange */
 const PILL_LINKS: Record<string, string> = {
+  "Overview": "/admin/executive",
   "CEO View": "/admin/executive/ceo",
   "CFO View": "/admin/executive/cfo",
   "COO View": "/admin/executive/coo",
