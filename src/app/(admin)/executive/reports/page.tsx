@@ -301,17 +301,12 @@ export default function ExecutiveSavedReportsPage() {
       w.document.write(html);
       w.document.close();
       w.focus();
-      const trigger = () => {
-        try {
-          w.print();
-        } catch {
-          /* ignore */
-        }
-      };
+      const trigger = () => { try { w.print(); } catch { /* ignore */ } };
       if (w.document.readyState === "complete") {
         setTimeout(trigger, 0);
       } else {
-        w.addEventListener("load", () => setTimeout(trigger, 0));
+        const onLoad = () => { setTimeout(trigger, 0); w.removeEventListener("load", onLoad); };
+        w.addEventListener("load", onLoad);
       }
       await persistLastGenerated(report.id);
     } catch (e) {
@@ -343,7 +338,7 @@ export default function ExecutiveSavedReportsPage() {
       w.focus();
       const trigger = () => { try { w.print(); } catch { /* ignore */ } };
       if (w.document.readyState === "complete") setTimeout(trigger, 0);
-      else w.addEventListener("load", () => setTimeout(trigger, 0));
+      else { const h = () => { setTimeout(trigger, 0); w.removeEventListener("load", h); }; w.addEventListener("load", h); }
       await persistLastGenerated(report.id);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Enhanced report failed.");
