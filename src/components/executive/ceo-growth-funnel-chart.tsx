@@ -56,7 +56,7 @@ const PRESET_STAGE_COLORS: Record<string, MoonshotColor> = {
 
 // ── CUSTOM TOOLTIP ──
 
-interface CustomTooltipProps extends TooltipContentProps<number, string> {}
+type CustomTooltipProps = Partial<TooltipContentProps<number, string>>;
 
 function CustomTooltip({ active, payload }: CustomTooltipProps) {
   if (active && payload && payload.length > 0) {

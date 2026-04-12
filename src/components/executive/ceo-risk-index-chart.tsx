@@ -76,7 +76,7 @@ export function getRiskLevel(
 
 // ── CUSTOM TOOLTIP ──
 
-interface CustomTooltipProps extends TooltipContentProps<number, string> {}
+type CustomTooltipProps = Partial<TooltipContentProps<number, string>>;
 
 function CustomTooltip({ active, payload }: CustomTooltipProps) {
   if (active && payload && payload.length > 0) {
@@ -217,7 +217,8 @@ export function CeoRiskIndexChart({
             radius={[4, 4, 0, 0]}
             barSize={40}
             cursor={onFacilityClick ? "pointer" : "default"}
-            onClick={(data) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onClick={(data: any) => {
               if (onFacilityClick) {
                 const facility = enrichedData.find(
                   (item) => item.facility === data.facility
