@@ -28,7 +28,7 @@ export function VendorsTab({ facilityId }: VendorsTabProps) {
     <div className="space-y-4">
       <p className="text-sm text-slate-500 dark:text-slate-400">
         Vendors linked to this facility via vendor assignments. Manage contracts in{" "}
-        <Link href="/admin/vendors" className="text-teal-600 underline">
+        <Link href="/admin/vendors" className="text-teal-400 underline">
           Vendors &amp; AP
         </Link>
         .
@@ -47,7 +47,7 @@ export function VendorsTab({ facilityId }: VendorsTabProps) {
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   {r.vendor?.category} · {r.vendor?.status}
                   {r.is_primary && (
-                    <span className="ml-2 rounded bg-teal-100 px-1.5 py-0.5 text-teal-900">Primary</span>
+                    <span className="ml-2 rounded bg-teal-500/100/20 px-1.5 py-0.5 text-teal-300">Primary</span>
                   )}
                 </p>
                 {r.vendor?.primary_contact_phone && (
@@ -57,7 +57,7 @@ export function VendorsTab({ facilityId }: VendorsTabProps) {
               {r.vendor?.id && (
                 <Link
                   href={`/admin/vendors/${r.vendor.id}`}
-                  className="text-sm text-teal-600 hover:underline self-center"
+                  className="text-sm text-teal-400 hover:underline self-center"
                 >
                   View vendor
                 </Link>

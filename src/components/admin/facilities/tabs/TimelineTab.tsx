@@ -161,7 +161,7 @@ export function TimelineTab({ facilityId }: TimelineTabProps) {
       <ol className="relative border-l border-slate-200/50 dark:border-white/10 ml-3 space-y-6">
         {filtered.map((ev) => (
           <li key={ev.id} className="ml-6">
-            <span className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border border-white bg-teal-500" />
+            <span className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border border-white bg-teal-500/100" />
             <time className="text-xs text-slate-500 dark:text-slate-400">{ev.event_date}</time>
             <h4 className="font-semibold">{ev.title}</h4>
             <p className="text-xs text-slate-500 dark:text-slate-400">{TYPE_LABEL[ev.event_type] ?? ev.event_type}</p>

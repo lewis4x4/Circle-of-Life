@@ -192,7 +192,7 @@ export function RatesTab({ facilityId }: RatesTabProps) {
                             type="button"
                             disabled={isConfirming}
                             onClick={() => void confirmRate(rate.id)}
-                            className="rounded-md border border-teal-600 px-2 py-1 text-xs font-medium text-teal-700 hover:bg-teal-50 disabled:opacity-50 dark:border-teal-400 dark:text-teal-200 dark:hover:bg-teal-950"
+                            className="rounded-md border border-teal-600 px-2 py-1 text-xs font-medium text-teal-700 hover:bg-teal-500/10 disabled:opacity-50 dark:border-teal-400 dark:text-teal-200 dark:hover:bg-teal-950"
                           >
                             Mark confirmed
                           </button>
