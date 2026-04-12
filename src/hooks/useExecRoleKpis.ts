@@ -33,6 +33,7 @@ const DEMO_KPI_PAYLOAD: ExecKpiPayload = {
   compliance: { openSurveyDeficiencies: 2 },
   workforce: { certificationsExpiring30d: 5 },
   infection: { activeOutbreaks: 0 },
+  residentAssurance: { overdueTasksCount: 0, missedRate: 0, openExceptions: 0, activeWatchCount: 0 },
 };
 
 const DEMO_FACILITIES: ExecRoleKpiData["facilities"] = [

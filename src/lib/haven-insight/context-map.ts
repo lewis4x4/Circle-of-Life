@@ -229,6 +229,23 @@ const ROUTE_CONTEXTS: Array<{ prefix: string; context: ModuleContext }> = [
     },
   },
   {
+    prefix: "/admin/rounding",
+    context: {
+      module: "Resident Assurance & Safety Rounding",
+      perspective: "resident safety, observation compliance, watch protocols, early-warning signals",
+      suggestedQuestions: [
+        "Which residents are on active observation plans?",
+        "How many observation tasks are overdue right now?",
+        "Are there any escalated safety concerns?",
+        "What's our observation compliance rate this shift?",
+        "Show me residents with active watch protocols.",
+        "Which residents triggered exceptions in the last 24 hours?",
+      ],
+      kpiDomains: ["clinical", "residentAssurance"],
+      systemPromptAddon: "The user is in Resident Assurance & Safety Rounding. Focus on observation task compliance, overdue/missed checks, watch protocol status, exception severity, and resident safety scores. Reference Florida AHCA post-fall monitoring requirements when relevant. Patient safety is the top priority.",
+    },
+  },
+  {
     prefix: "/admin/training",
     context: {
       module: "Training & Competency",
@@ -442,6 +459,12 @@ export function generateDynamicSuggestions(
     }
     if (kpis.financial.totalBalanceDueCents > 5_000_000) {
       base.unshift("Our AR is over $50K — what's the breakdown?");
+    }
+    if (kpis.residentAssurance.overdueTasksCount > 0) {
+      base.unshift(`${kpis.residentAssurance.overdueTasksCount} observation tasks overdue — which residents?`);
+    }
+    if (kpis.residentAssurance.activeWatchCount > 0) {
+      base.unshift(`${kpis.residentAssurance.activeWatchCount} active watch protocols — status update?`);
     }
   }
 
