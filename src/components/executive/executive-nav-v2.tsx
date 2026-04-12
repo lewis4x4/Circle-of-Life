@@ -80,11 +80,13 @@ export interface ExecutiveNavV2Props {
   /** Currently active top nav tab ID */
   activeTopNav?: string;
   /** Currently active pill menu tab */
-  activePillMenu?: PillMenuTab;
+  activePillMenu?: string;
   /** Callback when top nav tab changes */
   onTopNavChange?: (tabId: string) => void;
   /** Callback when pill menu tab changes */
-  onPillMenuChange?: (tab: PillMenuTab) => void;
+  onPillMenuChange?: (tab: string) => void;
+  /** Custom pill tabs override (per-role tab set) */
+  customPillTabs?: string[];
   /** Show/hide top navigation */
   showTopNav?: boolean;
   /** Show/hide pill menu */
@@ -101,14 +103,16 @@ export function ExecutiveNavV2({
   activePillMenu = "CEO View",
   onTopNavChange,
   onPillMenuChange,
+  customPillTabs,
   showTopNav = true,
   showPillMenu = true,
   className,
 }: ExecutiveNavV2Props) {
+  const tabs = customPillTabs ?? (pillMenuTabs as unknown as string[]);
   return (
     <div className={cn("flex flex-col gap-0", className)}>
       {showTopNav && <TopNavigation activeTab={activeTopNav} onTabChange={onTopNavChange} />}
-      {showPillMenu && <PillMenu activeTab={activePillMenu} onTabChange={onPillMenuChange} />}
+      {showPillMenu && <PillMenu activeTab={activePillMenu} onTabChange={onPillMenuChange} tabs={tabs} />}
     </div>
   );
 }
@@ -162,14 +166,15 @@ function TopNavigation({ activeTab, onTabChange }: TopNavigationProps) {
 // ── PILL MENU COMPONENT ──
 
 interface PillMenuProps {
-  activeTab: PillMenuTab;
-  onTabChange?: (tab: PillMenuTab) => void;
+  activeTab: string;
+  onTabChange?: (tab: string) => void;
+  tabs: string[];
 }
 
-function PillMenu({ activeTab, onTabChange }: PillMenuProps) {
+function PillMenu({ activeTab, onTabChange, tabs }: PillMenuProps) {
   return (
     <div className="flex flex-wrap items-center bg-white/[0.03] border border-white/5 rounded-full px-1 py-1 gap-1">
-      {pillMenuTabs.map((tab) => (
+      {tabs.map((tab) => (
         <button
           key={tab}
           onClick={() => onTabChange?.(tab)}
