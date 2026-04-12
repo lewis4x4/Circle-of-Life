@@ -244,7 +244,7 @@ export default function CooDashboardPage() {
           <ExecutiveNavV2
             showTopNav={false}
             activeTopNav="clinical"
-            activePillMenu="COO View"
+            activePillMenu={tab}
             onPillMenuChange={setTab}
             customPillTabs={COO_TABS}
           />
