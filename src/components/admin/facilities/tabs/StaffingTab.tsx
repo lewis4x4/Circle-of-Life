@@ -28,7 +28,7 @@ export function StaffingTab({ facilityId }: StaffingTabProps) {
     <div className="space-y-6">
       <div className="rounded-lg border border-slate-200/50 dark:border-white/10 bg-white p-6 space-y-3">
         <h3 className="font-semibold flex items-center gap-2">
-          <Users className="h-5 w-5 text-teal-600" />
+          <Users className="h-5 w-5 text-teal-400" />
           Key roles
         </h3>
         <div className="text-sm grid gap-2 sm:grid-cols-2">
@@ -51,19 +51,19 @@ export function StaffingTab({ facilityId }: StaffingTabProps) {
       <div className="flex flex-wrap gap-3">
         <Link
           href="/admin/staff"
-          className="rounded-lg border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-medium text-teal-900 hover:bg-teal-100"
+          className="rounded-lg border border-teal-500/20 bg-teal-500/10 px-4 py-2 text-sm font-medium text-teal-300 hover:bg-teal-500/100/20"
         >
           Staff roster
         </Link>
         <Link
           href="/admin/staffing"
-          className="rounded-lg border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-medium text-teal-900 hover:bg-teal-100"
+          className="rounded-lg border border-teal-500/20 bg-teal-500/10 px-4 py-2 text-sm font-medium text-teal-300 hover:bg-teal-500/100/20"
         >
           Staffing alerts
         </Link>
         <Link
           href="/admin/schedules"
-          className="rounded-lg border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-medium text-teal-900 hover:bg-teal-100"
+          className="rounded-lg border border-teal-500/20 bg-teal-500/10 px-4 py-2 text-sm font-medium text-teal-300 hover:bg-teal-500/100/20"
         >
           Schedules
         </Link>

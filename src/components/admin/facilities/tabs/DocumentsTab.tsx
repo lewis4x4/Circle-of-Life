@@ -79,7 +79,7 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
               onChange={handleFileSelect}
               className="block w-full text-sm text-gray-500 file:mr-4 file:px-3 file:py-2 file:border file:border-gray-300 file:rounded-lg file:text-sm file:font-medium file:bg-slate-50/50 dark:bg-white/5 hover:file:bg-gray-100"
             />
-            {selectedFile && <p className="mt-2 text-sm text-teal-600">{selectedFile.name}</p>}
+            {selectedFile && <p className="mt-2 text-sm text-teal-400">{selectedFile.name}</p>}
           </div>
 
           {/* Category select */}
@@ -130,7 +130,7 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
             onClick={() => setCategoryFilter("")}
             className={`px-3 py-1 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
               categoryFilter === ""
-                ? "bg-teal-100 text-teal-700"
+                ? "bg-teal-500/100/20 text-teal-700"
                 : "bg-gray-100 text-slate-700 dark:text-slate-300 hover:bg-gray-200"
             }`}
           >
@@ -141,7 +141,7 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
               key={cat}
               onClick={() => setCategoryFilter(cat)}
               className={`px-3 py-1 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
-                categoryFilter === cat ? "bg-teal-100 text-teal-700" : "bg-gray-100 text-slate-700 dark:text-slate-300 hover:bg-gray-200"
+                categoryFilter === cat ? "bg-teal-500/100/20 text-teal-700" : "bg-gray-100 text-slate-700 dark:text-slate-300 hover:bg-gray-200"
               }`}
             >
               {cat}

@@ -53,7 +53,7 @@ export function LicensingTab({ facilityId }: LicensingTabProps) {
     <div className="space-y-8">
       <section className="rounded-[2rem] border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
         <h3 className="font-display text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-          <Shield className="h-5 w-5 text-teal-600" />
+          <Shield className="h-5 w-5 text-teal-400" />
           AHCA licensing
         </h3>
         <div className="grid gap-4 sm:grid-cols-2 text-sm">
