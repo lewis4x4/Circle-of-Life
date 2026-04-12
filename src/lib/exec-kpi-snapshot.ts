@@ -30,6 +30,12 @@ export type ExecKpiPayload = {
   infection: {
     activeOutbreaks: number;
   };
+  residentAssurance: {
+    overdueTasksCount: number;
+    missedRate: number;
+    openExceptions: number;
+    activeWatchCount: number;
+  };
 };
 
 function startOfMonthIsoDate(): string {
@@ -82,6 +88,7 @@ export async function fetchExecutiveKpiSnapshot(
       compliance: { openSurveyDeficiencies: 0 },
       workforce: { certificationsExpiring30d: 0 },
       infection: { activeOutbreaks: 0 },
+      residentAssurance: { overdueTasksCount: 0, missedRate: 0, openExceptions: 0, activeWatchCount: 0 },
     };
   }
 
@@ -143,6 +150,28 @@ export async function fetchExecutiveKpiSnapshot(
     .is("deleted_at", null)
     .is("resolved_at", null);
 
+  // Resident Assurance queries
+  let overdueTasksQuery = supabase
+    .from("resident_observation_tasks")
+    .select("id", { count: "exact", head: true })
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .in("status", ["overdue", "critically_overdue"]);
+
+  let openExceptionsQuery = supabase
+    .from("resident_observation_exceptions")
+    .select("id", { count: "exact", head: true })
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .eq("follow_up_status", "open");
+
+  let activeWatchQuery = supabase
+    .from("resident_watch_instances")
+    .select("id", { count: "exact", head: true })
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .eq("status", "active");
+
   if (facilityScoped) {
     invoicesOpenQuery = invoicesOpenQuery.eq("facility_id", facilityId!);
     incidentsOpenQuery = incidentsOpenQuery.eq("facility_id", facilityId!);
@@ -150,6 +179,9 @@ export async function fetchExecutiveKpiSnapshot(
     deficienciesOpenQuery = deficienciesOpenQuery.eq("facility_id", facilityId!);
     certsExpiringQuery = certsExpiringQuery.eq("facility_id", facilityId!);
     outbreaksActiveQuery = outbreaksActiveQuery.eq("facility_id", facilityId!);
+    overdueTasksQuery = overdueTasksQuery.eq("facility_id", facilityId!);
+    openExceptionsQuery = openExceptionsQuery.eq("facility_id", facilityId!);
+    activeWatchQuery = activeWatchQuery.eq("facility_id", facilityId!);
   }
 
   const [
@@ -160,6 +192,9 @@ export async function fetchExecutiveKpiSnapshot(
     deficienciesOpenRes,
     certsExpiringRes,
     outbreaksActiveRes,
+    overdueTasksRes,
+    openExceptionsRes,
+    activeWatchRes,
   ] = await Promise.all([
     residentsCountQuery,
     invoicesOpenQuery,
@@ -168,6 +203,9 @@ export async function fetchExecutiveKpiSnapshot(
     deficienciesOpenQuery,
     certsExpiringQuery,
     outbreaksActiveQuery,
+    overdueTasksQuery,
+    openExceptionsQuery,
+    activeWatchQuery,
   ]);
 
   const batchErrors = [
@@ -178,6 +216,9 @@ export async function fetchExecutiveKpiSnapshot(
     deficienciesOpenRes.error,
     certsExpiringRes.error,
     outbreaksActiveRes.error,
+    overdueTasksRes.error,
+    openExceptionsRes.error,
+    activeWatchRes.error,
   ].filter((e): e is NonNullable<typeof e> => e != null);
   if (batchErrors.length > 0) {
     throw new Error(batchErrors[0].message);
@@ -215,6 +256,12 @@ export async function fetchExecutiveKpiSnapshot(
     },
     infection: {
       activeOutbreaks: outbreaksActiveRes.count ?? 0,
+    },
+    residentAssurance: {
+      overdueTasksCount: overdueTasksRes.count ?? 0,
+      missedRate: 0, // Computed by resident-safety-scorer; live calc too expensive here
+      openExceptions: openExceptionsRes.count ?? 0,
+      activeWatchCount: activeWatchRes.count ?? 0,
     },
   };
 }

@@ -93,6 +93,10 @@ const ALLOWED_METRIC_DOMAINS = new Set([
   "compliance.openSurveyDeficiencies",
   "workforce.certificationsExpiring30d",
   "infection.activeOutbreaks",
+  "residentAssurance.overdueTasksCount",
+  "residentAssurance.missedRate",
+  "residentAssurance.openExceptions",
+  "residentAssurance.activeWatchCount",
 ]);
 
 /** Recency factor: alerts older than 24h get reduced score */
