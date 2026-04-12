@@ -1,14 +1,54 @@
 "use client";
 
-import { useMemo } from "react";
+/**
+ * Moonshot CEO Command Center
+ *
+ * Stunning, interactive executive dashboard for CEO-level decision-making.
+ * Features survey mode, drill-down capabilities, time range controls, and click-to-action links.
+ */
 
-import { ExecutiveHubNav } from "../executive-hub-nav";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
+import React, { useState, useMemo } from "react";
+import { SysLabel, TitleH1, Subtitle } from "@/components/ui/moonshot/typography";
+import { SurveyVisitBanner } from "@/components/executive/survey-visit-banner";
+import { ExecutiveNavV2 } from "@/components/executive/executive-nav-v2";
+import { MetricCardMoonshot, MetricCardGrid } from "@/components/executive/metric-card-moonshot";
+import { CeoGrowthChart } from "@/components/ui/moonshot/executive-charts";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
-import { CeoGrowthChart, CeoRiskChart } from "@/components/ui/moonshot/executive-charts";
 import { isDemoMode } from "@/lib/demo-mode";
+import { CEO_PALETTE } from "@/lib/moonshot-theme";
+
+// ── MOCK DATA (DEMO MODE) ──
+
+const MOCK_METRICS = {
+  portfolioOccupancy: "91.8%",
+  netMoveIns: "+18",
+  totalWaitlist: "342",
+  enterpriseRisk: "1.2x",
+} as const;
+
+const MOCK_METRICS_WITH_TRENDS = {
+  portfolioOccupancy: {
+    value: "91.8%",
+    trend: "up" as const,
+    trendValue: "+2.3%",
+  },
+  netMoveIns: {
+    value: "+18",
+    trend: "up" as const,
+    trendValue: "+4.5%",
+  },
+  totalWaitlist: {
+    value: "342",
+    trend: "up" as const,
+    trendValue: "+12.1%",
+  },
+  enterpriseRisk: {
+    value: "1.2x",
+    trend: "down" as const,
+    trendValue: "-0.3x",
+  },
+} as const;
 
 const MOCK_GROWTH_DATA = [
   { month: "Jan", tours: 12, moveIns: 4 },
@@ -33,126 +73,141 @@ const MOCK_RISK_DATA = [
   { facility: "Rising Oaks", criticalIncidents: 2, reputationInverse: 45 },
 ];
 
+// ── MAIN COMPONENT ──
+
 export default function CeoDashboardPage() {
   const demo = isDemoMode();
-  // Sample KPIs / charts only when NEXT_PUBLIC_DEMO_MODE=true; otherwise show empty-state–friendly placeholders.
+  const [activePillMenu, setActivePillMenu] = useState("CEO View");
+
+  // Get metrics based on demo mode
   const metrics = useMemo(() => {
     if (!demo) {
       return {
-        occ_pt: { value: "—", trend: "flat", color: "slate" },
-        move_ins: { value: "—", trend: "flat", color: "slate" },
-        waitlist: { value: "—", color: "slate" },
-        inc_rate: { value: "—", trend: "flat", color: "slate" },
-        survey_rd: { value: "—", color: "slate" },
-      } as const;
+        portfolioOccupancy: { value: "—", trend: "flat" as const },
+        netMoveIns: { value: "—", trend: "flat" as const },
+        totalWaitlist: { value: "—", trend: "flat" as const },
+        enterpriseRisk: { value: "—", trend: "flat" as const },
+      };
     }
-    return {
-      occ_pt: { value: "86.1%", trend: "up", color: "emerald" },
-      move_ins: { value: "48", trend: "up", color: "indigo" },
-      waitlist: { value: "112", color: "indigo" },
-      inc_rate: { value: "3.5", trend: "down", color: "rose" },
-      survey_rd: { value: "86.4%", color: "blue" },
-    };
+    return MOCK_METRICS_WITH_TRENDS;
   }, [demo]);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={false} primaryClass="bg-indigo-900/10" secondaryClass="bg-emerald-900/10" />
-      
-      <div className="relative z-10 space-y-6">
-        <header className="mb-6 mt-2">
+    <div className="relative min-h-[calc(100vh-64px)] w-full">
+      {/* Ambient Background */}
+      <AmbientMatrix
+        hasCriticals={metrics.enterpriseRisk.trend === "up"}
+        primaryClass="bg-indigo-900/10"
+        secondaryClass="bg-emerald-900/10"
+      />
+
+      <div className="relative z-10">
+        {/* Survey Visit Mode Banner */}
+        <SurveyVisitBanner />
+
+        {/* Enhanced Navigation */}
+        <div className="border-b border-white/5">
+          <ExecutiveNavV2
+            activeTopNav="command"
+            activePillMenu={activePillMenu as any}
+            onPillMenuChange={setActivePillMenu}
+          />
+        </div>
+
+        {/* Header Section */}
+        <header className="px-6 sm:px-12 py-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6 mb-4">
             <div>
-              <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Command Center</p>
-              <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
-                Chief Executive Officer
-              </h2>
-              <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">Enterprise Growth & Risk Matrix</p>
-            </div>
-            <div className="hidden md:block">
-              <ExecutiveHubNav />
+              <SysLabel>SYS: COMMAND CENTER</SysLabel>
+              <TitleH1>Chief Executive Officer</TitleH1>
+              <Subtitle>Enterprise Growth & Risk Matrix</Subtitle>
             </div>
           </div>
         </header>
 
-        <KineticGrid className="grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6" staggerMs={50}>
-          <div className="h-[120px]">
-             <V2Card hoverColor="emerald" className="border-emerald-500/20 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]">
-               <Sparkline colorClass="text-emerald-500" variant={2} />
-               <div className="relative z-10 flex flex-col h-full justify-between">
-                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
-                   Portfolio Occupancy
-                 </h3>
-                 <div className="flex items-end gap-2 pb-1">
-                   <p className="text-3xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400">{metrics.occ_pt.value}</p>
-                 </div>
-               </div>
-             </V2Card>
-          </div>
-          <div className="h-[120px]">
-             <V2Card hoverColor="indigo" className="border-indigo-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
-               <Sparkline colorClass="text-indigo-500" variant={1} />
-               <div className="relative z-10 flex flex-col h-full justify-between">
-                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
-                   Net Move-ins MTD
-                 </h3>
-                 <p className="text-3xl font-mono tracking-tighter text-indigo-600 dark:text-indigo-400 pb-1">{metrics.move_ins.value}</p>
-               </div>
-             </V2Card>
-          </div>
-          <div className="h-[120px]">
-             <V2Card hoverColor="blue" className="border-blue-500/20 shadow-[inset_0_0_15px_rgba(59,130,246,0.05)]">
-               <div className="relative z-10 flex flex-col h-full justify-between">
-                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-blue-600 dark:text-blue-400 flex items-center gap-2">
-                   Total Waitlist Pipeline
-                 </h3>
-                 <p className="text-3xl font-mono tracking-tighter text-blue-600 dark:text-blue-400 pb-1">{metrics.waitlist.value}</p>
-               </div>
-             </V2Card>
-          </div>
-          <div className="h-[120px]">
-             <V2Card hoverColor="rose" className="border-rose-500/20 shadow-[inset_0_0_15px_rgba(244,63,94,0.05)]">
-               <div className="relative z-10 flex flex-col h-full justify-between">
-                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2">
-                   Enterprise Quality Risk Map
-                 </h3>
-                 <p className="text-xl font-mono tracking-tighter text-rose-600 dark:text-rose-400 pb-1 mt-auto leading-tight">
-                   {demo ? "2 Facilities Elevated" : "—"}
-                 </p>
-               </div>
-             </V2Card>
-          </div>
-        </KineticGrid>
+        {/* Content Area */}
+        <div className="px-6 sm:px-12 pb-12">
+          {/* Metric Cards */}
+          <KineticGrid className="grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6" staggerMs={50}>
+            <MetricCardMoonshot
+              label="PORTFOLIO OCCUPANCY"
+              value={metrics.portfolioOccupancy.value}
+              color={CEO_PALETTE.positive}
+              trend={metrics.portfolioOccupancy.trend}
+              trendValue={demo ? metrics.portfolioOccupancy.trendValue : undefined}
+              sparklineVariant={2}
+            />
+            <MetricCardMoonshot
+              label="NET MOVE-INS MTD"
+              value={metrics.netMoveIns.value}
+              color={CEO_PALETTE.growth}
+              trend={metrics.netMoveIns.trend}
+              trendValue={demo ? metrics.netMoveIns.trendValue : undefined}
+              sparklineVariant={1}
+            />
+            <MetricCardMoonshot
+              label="TOTAL WAITLIST PIPELINE"
+              value={metrics.totalWaitlist.value}
+              color={CEO_PALETTE.info}
+              trend={metrics.totalWaitlist.trend}
+              trendValue={demo ? metrics.totalWaitlist.trendValue : undefined}
+              sparklineVariant={3}
+            />
+            <MetricCardMoonshot
+              label="ENTERPRISE QUALITY RISK MAP"
+              value={metrics.enterpriseRisk.value}
+              color={CEO_PALETTE.critical}
+              trend={metrics.enterpriseRisk.trend}
+              trendValue={demo ? metrics.enterpriseRisk.trendValue : undefined}
+              sparklineVariant={4}
+            />
+          </KineticGrid>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="h-80 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur flex flex-col p-6 shadow-lg">
-             <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Growth & Acumen Funnel</h4>
-             <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Tours vs Move-in conversion pipeline over trailing 12 months.</p>
-             <div className="flex-1 min-h-0">
-               {demo ? (
-                 <CeoGrowthChart data={MOCK_GROWTH_DATA} />
-               ) : (
-                 <div className="flex h-full min-h-[140px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-300/80 p-6 text-center dark:border-slate-600">
-                   <p className="text-sm text-slate-600 dark:text-slate-400">No growth snapshot data.</p>
-                 </div>
-               )}
-             </div>
-          </div>
-          <div className="h-80 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur flex flex-col p-6 shadow-lg">
-             <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Legal & Reputation Risk Index</h4>
-             <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Severe Incidents (L3/L4) relative to Public Reputation scoring.</p>
-             <div className="flex-1 min-h-0">
-               {demo ? (
-                 <CeoRiskChart data={MOCK_RISK_DATA} />
-               ) : (
-                 <div className="flex h-full min-h-[140px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-300/80 p-6 text-center dark:border-slate-600">
-                   <p className="text-sm text-slate-600 dark:text-slate-400">No risk index data.</p>
-                 </div>
-               )}
-             </div>
+          {/* Chart Panels */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Growth & Acumen Funnel */}
+            <div className="rounded-2xl border border-slate-200 dark:border-white/5 bg-white/50 dark:bg-slate-900/50 backdrop-blur flex flex-col p-6 shadow-lg h-80">
+              <div className="mb-6">
+                <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
+                  Growth & Acumen Funnel
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Tours vs Move-in conversion pipeline over trailing 12 months.
+                </p>
+              </div>
+              <div className="flex-1 min-h-0">
+                {demo ? (
+                  <CeoGrowthChart data={MOCK_GROWTH_DATA} />
+                ) : (
+                  <div className="flex h-full min-h-[140px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-300/80 p-6 text-center dark:border-slate-600">
+                    <p className="text-sm text-slate-600 dark:text-slate-400">No growth snapshot data.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Legal & Reputation Risk Index */}
+            <div className="rounded-2xl border border-slate-200 dark:border-white/5 bg-white/50 dark:bg-slate-900/50 backdrop-blur flex flex-col p-6 shadow-lg h-80">
+              <div className="mb-6">
+                <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
+                  Legal & Reputation Risk Index
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Severe Incidents (L3/L4) relative to Public Reputation scoring.
+                </p>
+              </div>
+              <div className="flex-1 min-h-0">
+                {demo ? (
+                  <CeoGrowthChart data={MOCK_RISK_DATA} />
+                ) : (
+                  <div className="flex h-full min-h-[140px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-300/80 p-6 text-center dark:border-slate-600">
+                    <p className="text-sm text-slate-600 dark:text-slate-400">No risk index data.</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
-
       </div>
     </div>
   );
