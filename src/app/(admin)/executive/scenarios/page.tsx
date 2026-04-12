@@ -1,291 +1,343 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { format } from "date-fns";
+/**
+ * Executive Scenario Modeling — Interactive What-If Projections
+ *
+ * CFOs/CEOs can adjust assumptions (occupancy, revenue growth, labor inflation)
+ * and see projected KPIs update in real-time with charts.
+ */
 
-import { ExecutiveHubNav } from "../executive-hub-nav";
-import { AdminFacilityScopeDropdown } from "@/components/common/admin-facility-scope-dropdown";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import React, { useState, useMemo } from "react";
+import Link from "next/link";
+import { ArrowLeft, TrendingUp, TrendingDown, Minus, Calculator, Sliders, RefreshCw } from "lucide-react";
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  ComposedChart, Line, Legend, BarChart, Bar,
+} from "recharts";
+import { SysLabel, TitleH1, Subtitle } from "@/components/ui/moonshot/typography";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
-import { Presentation, Loader2, Plus, Globe, Building2 } from "lucide-react";
-import { useFacilityStore } from "@/hooks/useFacilityStore";
-import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
-import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
-import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
-import type { Database } from "@/types/database";
+import { MetricCardMoonshot } from "@/components/executive/metric-card-moonshot";
+import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { cn } from "@/lib/utils";
 
-type ScenarioRow = Database["public"]["Tables"]["exec_scenarios"]["Row"] & {
-  facilities: { name: string } | null;
+// ── COLORS ──
+const CC = { emerald: "#10b981", rose: "#f43f5e", amber: "#f59e0b", blue: "#3b82f6", indigo: "#6366f1", grid: "rgba(255,255,255,0.05)", axis: "rgba(255,255,255,0.3)" };
+
+// ── BASELINE (COL current approximations) ──
+const BASELINE = {
+  totalBeds: 423,
+  occupancyPct: 91.8,
+  blendedRate: 3800, // $/bed/month
+  monthlyLabor: 2_600_000,
+  monthlyDebtService: 685_000,
+  otherOpexPct: 20, // % of revenue
 };
 
-export default function ExecutiveScenariosPage() {
-  const supabase = createClient();
-  const { selectedFacilityId } = useFacilityStore();
-  const [rows, setRows] = useState<ScenarioRow[]>([]);
-  const [facilityNames, setFacilityNames] = useState<{ id: string; name: string }[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [scopeFacilityId, setScopeFacilityId] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [canUse, setCanUse] = useState(false);
+// ── DEFAULT ASSUMPTIONS ──
+const DEFAULT_ASSUMPTIONS = {
+  occupancyChange: 0,    // percentage point change
+  revenueGrowth: 5.0,    // annual %
+  laborInflation: 3.5,   // annual %
+  newBeds: 0,
+  horizonMonths: 12,
+};
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) {
-        setError(ctx.error);
-        setRows([]);
-        setCanUse(false);
-        return;
-      }
-      const role = ctx.ctx.appRole;
-      const allowed = role === "owner" || role === "org_admin";
-      setCanUse(allowed);
-      if (!allowed) {
-        setRows([]);
-        return;
-      }
-      const [facList, { data, error: qErr }] = await Promise.all([
-        fetchAdminFacilityOptions(),
-        supabase
-          .from("exec_scenarios")
-          .select("*, facilities(name)")
-          .is("deleted_at", null)
-          .order("updated_at", { ascending: false })
-          .limit(50),
-      ]);
-      setFacilityNames(facList.map((f) => ({ id: f.id, name: f.name })));
-      if (qErr) throw qErr;
-      setRows((data ?? []) as ScenarioRow[]);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load scenarios.");
-      setRows([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase]);
+// ── SCENARIO PRESETS ──
+const PRESETS = [
+  { name: "Base Case", assumptions: { occupancyChange: 0, revenueGrowth: 5.0, laborInflation: 3.5, newBeds: 0, horizonMonths: 12 } },
+  { name: "Optimistic", assumptions: { occupancyChange: 4, revenueGrowth: 8.0, laborInflation: 2.5, newBeds: 10, horizonMonths: 12 } },
+  { name: "Conservative", assumptions: { occupancyChange: -2, revenueGrowth: 2.0, laborInflation: 5.0, newBeds: 0, horizonMonths: 12 } },
+  { name: "Downside", assumptions: { occupancyChange: -6, revenueGrowth: -1.5, laborInflation: 6.0, newBeds: 0, horizonMonths: 12 } },
+];
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+// ── HELPERS ──
+const fmtM = (v: number) => `$${(v / 1_000_000).toFixed(1)}M`;
+const fmtK = (v: number) => `$${(v / 1_000).toFixed(0)}K`;
+const Panel = ({ children, className }: { children: React.ReactNode; className?: string }) => (
+  <div className={cn("rounded-2xl border border-white/5 bg-slate-900/50 backdrop-blur p-6 shadow-lg", className)}>{children}</div>
+);
 
-  async function createScenario(e: React.FormEvent) {
-    e.preventDefault();
-    const n = name.trim();
-    if (!n) return;
-    setSaving(true);
-    setError(null);
-    try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) throw new Error(ctx.error);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Sign in required.");
-      const facilityId =
-        scopeFacilityId !== null && isValidFacilityIdForQuery(scopeFacilityId)
-          ? scopeFacilityId
-          : null;
-      const { error: insErr } = await supabase.from("exec_scenarios").insert({
-        organization_id: ctx.ctx.organizationId,
-        facility_id: facilityId,
-        name: n,
-        description: description.trim() || null,
-        created_by: user.id,
-        assumptions: {},
-      });
-      if (insErr) throw insErr;
-      setName("");
-      setDescription("");
-      setScopeFacilityId(null);
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not create scenario.");
-    } finally {
-      setSaving(false);
-    }
+// ── PROJECTION ENGINE ──
+function computeProjections(assumptions: typeof DEFAULT_ASSUMPTIONS) {
+  const months: string[] = [];
+  const data: Array<{ month: string; revenue: number; labor: number; noi: number; cashFlow: number; occupancy: number }> = [];
+
+  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const now = new Date();
+
+  for (let i = 1; i <= assumptions.horizonMonths; i++) {
+    const futureDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const label = `${monthNames[futureDate.getMonth()]} ${futureDate.getFullYear().toString().slice(2)}`;
+    months.push(label);
+
+    const pctMonth = i / assumptions.horizonMonths;
+    const projectedBeds = BASELINE.totalBeds + Math.round(assumptions.newBeds * pctMonth);
+    const projectedOccupancy = Math.min(Math.max((BASELINE.occupancyPct + assumptions.occupancyChange) / 100, 0.5), 1.0);
+    const occupiedBeds = projectedBeds * projectedOccupancy;
+
+    const monthlyRevGrowth = Math.pow(1 + assumptions.revenueGrowth / 100 / 12, i);
+    const revenue = occupiedBeds * BASELINE.blendedRate * monthlyRevGrowth;
+
+    const monthlyLaborGrowth = Math.pow(1 + assumptions.laborInflation / 100 / 12, i);
+    const labor = BASELINE.monthlyLabor * monthlyLaborGrowth;
+
+    const otherOpex = revenue * (BASELINE.otherOpexPct / 100);
+    const noi = revenue - labor - otherOpex;
+    const cashFlow = noi - BASELINE.monthlyDebtService;
+
+    data.push({
+      month: label,
+      revenue: Math.round(revenue),
+      labor: Math.round(labor),
+      noi: Math.round(noi),
+      cashFlow: Math.round(cashFlow),
+      occupancy: projectedOccupancy * 100,
+    });
   }
 
-  useEffect(() => {
-    if (selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId)) {
-      setScopeFacilityId(selectedFacilityId);
-    }
-  }, [selectedFacilityId]);
+  const lastMonth = data[data.length - 1];
+  const firstMonth = data[0];
+  const totalNoi = data.reduce((s, d) => s + d.noi, 0);
+  const totalCashFlow = data.reduce((s, d) => s + d.cashFlow, 0);
+  const breakEvenMonth = data.findIndex(d => d.cashFlow < 0);
 
-  useEffect(() => {
-    if (loading) return;
-    if (
-      scopeFacilityId !== null &&
-      !facilityNames.some((f) => f.id === scopeFacilityId)
-    ) {
-      setScopeFacilityId(null);
-    }
-  }, [loading, facilityNames, scopeFacilityId]);
+  return {
+    data,
+    summary: {
+      endRevenue: lastMonth?.revenue ?? 0,
+      endLabor: lastMonth?.labor ?? 0,
+      endNoi: lastMonth?.noi ?? 0,
+      endCashFlow: lastMonth?.cashFlow ?? 0,
+      endOccupancy: lastMonth?.occupancy ?? 0,
+      totalNoi,
+      totalCashFlow,
+      breakEvenMonth: breakEvenMonth >= 0 ? breakEvenMonth + 1 : null,
+      revenueGrowthPct: firstMonth && lastMonth ? ((lastMonth.revenue - firstMonth.revenue) / firstMonth.revenue * 100) : 0,
+    },
+  };
+}
+
+// ── SLIDER COMPONENT ──
+function AssumptionSlider({ label, value, onChange, min, max, step, unit, description }: {
+  label: string; value: number; onChange: (v: number) => void;
+  min: number; max: number; step: number; unit: string; description?: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-between items-center">
+        <label className="text-xs font-mono uppercase tracking-wider text-slate-400">{label}</label>
+        <span className={cn("text-sm font-mono font-bold", value > 0 ? "text-emerald-400" : value < 0 ? "text-rose-400" : "text-slate-300")}>
+          {value > 0 ? "+" : ""}{value}{unit}
+        </span>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={e => onChange(Number(e.target.value))}
+        className="w-full h-2 bg-white/5 rounded-full appearance-none cursor-pointer accent-indigo-500"
+      />
+      {description && <p className="text-[10px] text-slate-500">{description}</p>}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════
+export default function ExecutiveScenariosPage() {
+  const [assumptions, setAssumptions] = useState(DEFAULT_ASSUMPTIONS);
+
+  const projection = useMemo(() => computeProjections(assumptions), [assumptions]);
+  const { data, summary } = projection;
+
+  const update = (key: keyof typeof assumptions, value: number) => {
+    setAssumptions(prev => ({ ...prev, [key]: value }));
+  };
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix />
-      
-      <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-7xl mx-auto px-4 sm:px-6">
-        <ExecutiveHubNav />
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
-          <div className="space-y-3">
-             <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-               Scenarios
-             </h1>
-            <p className="mt-2 text-sm font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl text-balance">
-               What-if assumption bundles for portfolio modeling. Solvers and NLQ links are Enhanced.
-            </p>
+    <div className="relative min-h-[calc(100vh-64px)] w-full">
+      <AmbientMatrix primaryClass="bg-amber-900/10" secondaryClass="bg-indigo-900/10" />
+
+      <div className="relative z-10">
+        <header className="px-6 sm:px-12 py-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6 mb-4">
+            <div>
+              <Link href="/admin/executive" className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors mb-3">
+                <ArrowLeft className="w-3.5 h-3.5" /> Back to Executive Overview
+              </Link>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg">
+                  <Calculator className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <TitleH1>Scenario Modeling</TitleH1>
+                  <Subtitle>Adjust assumptions and see projected KPIs update in real-time</Subtitle>
+                </div>
+              </div>
+            </div>
           </div>
         </header>
 
-        {error && (
-          <div className="p-6 rounded-[2.5rem] bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 font-medium z-10 relative">
-            {error}
-          </div>
-        )}
+        <div className="px-6 sm:px-12 pb-12 space-y-6">
 
-        {!canUse && !loading && (
-          <div className="p-12 text-center text-amber-700 dark:text-amber-400 text-sm font-medium bg-amber-50 dark:bg-amber-900/20 rounded-[2.5rem] border border-amber-200 dark:border-amber-500/20 backdrop-blur-3xl z-10 relative">
-            Scenarios are available to organization owners and org admins.
-          </div>
-        )}
+          {/* Summary Cards */}
+          <KineticGrid className="grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" staggerMs={50}>
+            <MetricCardMoonshot label="PROJECTED MONTHLY NOI" value={fmtK(summary.endNoi)} color="emerald" trend={summary.endNoi > 0 ? "up" : "down"} sparklineVariant={1} />
+            <MetricCardMoonshot label="PROJECTED CASH FLOW" value={fmtK(summary.endCashFlow)} color={summary.endCashFlow >= 0 ? "blue" : "rose"} trend={summary.endCashFlow >= 0 ? "up" : "down"} sparklineVariant={2} />
+            <MetricCardMoonshot label="END OCCUPANCY" value={`${summary.endOccupancy.toFixed(1)}%`} color="amber" trend={assumptions.occupancyChange >= 0 ? "up" : "down"} sparklineVariant={3} />
+            <MetricCardMoonshot label="TOTAL NOI (PERIOD)" value={fmtM(summary.totalNoi)} color="indigo" trend="flat" sparklineVariant={4} />
+          </KineticGrid>
 
-        {canUse && (
-          <div className="grid grid-cols-1 xl:grid-cols-[1fr_2fr] gap-6">
-            <div className="border-indigo-500/20 dark:border-indigo-500/10 rounded-[2.5rem] bg-indigo-50/50 dark:bg-indigo-900/10 shadow-sm backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative h-fit order-last xl:order-first">
-               <div className="mb-6 border-b border-indigo-200/50 dark:border-white/5 pb-4 flex flex-col gap-1">
-                  <h3 className="text-xl font-display font-semibold text-indigo-900 dark:text-indigo-100 flex items-center gap-2">
-                    <Plus className="h-5 w-5 text-indigo-500" /> New Scenario
-                  </h3>
-                  <p className="text-[10px] uppercase tracking-widest font-bold text-indigo-700/60 dark:text-indigo-400/60">
-                     Organization-wide or isolated
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            {/* Assumptions Panel */}
+            <Panel className="lg:col-span-1 space-y-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                  <Sliders className="w-4 h-4 text-indigo-400" /> Assumptions
+                </h3>
+                <button onClick={() => setAssumptions(DEFAULT_ASSUMPTIONS)} className="text-[10px] text-slate-500 hover:text-white transition-colors flex items-center gap-1">
+                  <RefreshCw className="w-3 h-3" /> Reset
+                </button>
+              </div>
+
+              {/* Presets */}
+              <div className="flex flex-wrap gap-2">
+                {PRESETS.map(p => (
+                  <button
+                    key={p.name}
+                    onClick={() => setAssumptions(p.assumptions)}
+                    className="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-indigo-500/30 text-slate-300 transition-all"
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-5 pt-2">
+                <AssumptionSlider
+                  label="Occupancy Change"
+                  value={assumptions.occupancyChange}
+                  onChange={v => update("occupancyChange", v)}
+                  min={-15} max={10} step={0.5} unit="pp"
+                  description="Percentage point change from current 91.8%"
+                />
+                <AssumptionSlider
+                  label="Revenue Growth"
+                  value={assumptions.revenueGrowth}
+                  onChange={v => update("revenueGrowth", v)}
+                  min={-5} max={15} step={0.5} unit="%"
+                  description="Annual revenue growth rate"
+                />
+                <AssumptionSlider
+                  label="Labor Inflation"
+                  value={assumptions.laborInflation}
+                  onChange={v => update("laborInflation", v)}
+                  min={0} max={10} step={0.5} unit="%"
+                  description="Annual labor cost increase"
+                />
+                <AssumptionSlider
+                  label="New Beds"
+                  value={assumptions.newBeds}
+                  onChange={v => update("newBeds", v)}
+                  min={0} max={50} step={1} unit=""
+                  description="Additional beds added over the period"
+                />
+                <AssumptionSlider
+                  label="Time Horizon"
+                  value={assumptions.horizonMonths}
+                  onChange={v => update("horizonMonths", v)}
+                  min={6} max={36} step={6} unit=" mo"
+                  description="Projection period in months"
+                />
+              </div>
+
+              {summary.breakEvenMonth != null && (
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20">
+                  <p className="text-xs text-rose-400 font-semibold">
+                    Warning: Cash flow goes negative in month {summary.breakEvenMonth}
                   </p>
-               </div>
-               
-               <form onSubmit={createScenario} className="space-y-4">
-                  <div className="space-y-1.5 focus-within:text-indigo-600 dark:focus-within:text-indigo-400">
-                    <Label htmlFor="sc-name" className="text-xs uppercase tracking-widest font-bold text-slate-500 inherit-text">Name</Label>
-                    <Input
-                      id="sc-name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      maxLength={200}
-                      placeholder="e.g. +3% private-pay rate"
-                      className="h-12 bg-white/70 dark:bg-black/20 border-slate-200 dark:border-white/10 rounded-xl focus-visible:ring-indigo-500"
-                    />
-                  </div>
-                  <div className="space-y-1.5 focus-within:text-indigo-600 dark:focus-within:text-indigo-400">
-                    <Label htmlFor="sc-desc" className="text-xs uppercase tracking-widest font-bold text-slate-500 inherit-text">Description <span className="opacity-50 font-normal normal-case tracking-normal ml-1">(Optional)</span></Label>
-                    <textarea
-                      id="sc-desc"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      rows={2}
-                      placeholder="Notes for your team"
-                      className={cn(
-                        "min-h-[80px] w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-black/20 px-3 py-2 text-sm outline-none resize-none",
-                        "focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-500/50"
-                      )}
-                    />
-                  </div>
-                  <div className="space-y-1.5 focus-within:text-indigo-600 dark:focus-within:text-indigo-400">
-                    <Label htmlFor="sc-scope" className="text-xs uppercase tracking-widest font-bold text-slate-500 inherit-text">Scope</Label>
-                    <AdminFacilityScopeDropdown
-                      id="sc-scope"
-                      aria-label="Scenario scope"
-                      value={scopeFacilityId}
-                      onChange={setScopeFacilityId}
-                      facilities={facilityNames}
-                      loading={loading}
-                      disabled={saving}
-                      triggerClassName="rounded-xl border-slate-200 dark:border-white/10 bg-white/70 dark:bg-black/20"
-                    />
-                  </div>
-                  <Button type="submit" disabled={saving || !name.trim()} className="w-full h-12 rounded-xl font-bold tracking-widest uppercase text-[10px] bg-indigo-600 hover:bg-indigo-700 text-white shadow mt-2">
-                    {saving ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving…
-                      </>
-                    ) : (
-                      "Create Scenario"
-                    )}
-                  </Button>
-               </form>
-            </div>
-
-            <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-slate-50/50 dark:bg-white/[0.02] shadow-sm backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative">
-                <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
-                  <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1 flex items-center gap-2">
-                     <Presentation className="h-5 w-5 text-indigo-500" /> Saved Scenarios
-                  </h3>
-                  <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-1 uppercase">Order by updated</p>
                 </div>
+              )}
+            </Panel>
 
-                <div className="relative z-10 w-full overflow-hidden">
-                  {loading ? (
-                    <div className="flex items-center justify-center p-12 text-sm text-slate-500 font-medium">
-                       <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading Scenarios...
-                    </div>
-                  ) : (
-                    <>
-                      <div className="hidden sm:grid grid-cols-[2fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10 text-left">
-                         <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Name</div>
-                         <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Scope</div>
-                         <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Updated</div>
-                      </div>
-
-                      <div className="space-y-3 mt-6 relative z-10">
-                         <MotionList className="space-y-3">
-                            {rows.length === 0 ? (
-                              <div className="p-12 text-center text-slate-500 dark:text-slate-400 text-sm font-medium bg-white/50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5">
-                                 No scenarios yet.
-                              </div>
-                            ) : (
-                               rows.map((row) => (
-                                <MotionItem key={row.id}>
-                                   <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr] gap-4 sm:items-center p-5 rounded-2xl bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg transition-all duration-300 w-full outline-none">
-                                     <div className="flex flex-col">
-                                        <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Name</span>
-                                        <span className="font-semibold text-base text-slate-900 dark:text-slate-100 tracking-tight leading-tight">{row.name}</span>
-                                        {row.description && (
-                                           <span className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">{row.description}</span>
-                                        )}
-                                     </div>
-                                     <div className="flex flex-col">
-                                        <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Scope</span>
-                                        <span className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-                                           {row.facility_id ? <><Building2 className="w-3.5 h-3.5 opacity-60" /> {row.facilities?.name ?? row.facility_id}</> : <><Globe className="w-3.5 h-3.5 opacity-60" /> Organization</>}
-                                        </span>
-                                     </div>
-                                     <div className="flex flex-col sm:items-end">
-                                        <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Updated</span>
-                                        <span className="text-sm font-mono text-slate-600 dark:text-slate-400">
-                                           {format(new Date(row.updated_at), "MMM d, yyyy")}
-                                        </span>
-                                     </div>
-                                   </div>
-                                </MotionItem>
-                               ))
-                            )}
-                         </MotionList>
-                      </div>
-                    </>
-                  )}
+            {/* Charts */}
+            <Panel className="lg:col-span-2 space-y-6">
+              {/* Revenue vs Labor vs NOI */}
+              <div>
+                <h3 className="text-sm font-semibold text-white mb-1">Revenue, Labor &amp; NOI Projection</h3>
+                <p className="text-xs text-slate-400 mb-4">Monthly projected values over {assumptions.horizonMonths} months</p>
+                <div className="h-[280px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CC.grid} />
+                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: CC.axis }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: CC.axis }} tickFormatter={v => fmtM(v as number)} />
+                      <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 8, color: "#fff", fontSize: 12 }} formatter={(v) => fmtK(Number(v))} />
+                      <Area type="monotone" dataKey="revenue" stroke={CC.emerald} fill={CC.emerald} fillOpacity={0.15} strokeWidth={2} name="Revenue" />
+                      <Area type="monotone" dataKey="labor" stroke={CC.rose} fill={CC.rose} fillOpacity={0.15} strokeWidth={2} name="Labor" />
+                      <Line type="monotone" dataKey="noi" stroke={CC.amber} strokeWidth={3} dot={{ r: 3, fill: "#0f172a" }} name="NOI" />
+                      <Legend wrapperStyle={{ fontSize: "10px", textTransform: "uppercase", letterSpacing: "1px" }} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
                 </div>
-            </div>
+              </div>
+
+              {/* Cash Flow */}
+              <div>
+                <h3 className="text-sm font-semibold text-white mb-1">Monthly Cash Flow</h3>
+                <p className="text-xs text-slate-400 mb-4">NOI minus debt service ({fmtK(BASELINE.monthlyDebtService)}/mo)</p>
+                <div className="h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CC.grid} />
+                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: CC.axis }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: CC.axis }} tickFormatter={v => fmtK(v as number)} />
+                      <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 8, color: "#fff", fontSize: 12 }} formatter={(v) => fmtK(Number(v))} />
+                      <Bar dataKey="cashFlow" radius={[4, 4, 0, 0]} name="Cash Flow">
+                        {data.map((entry, i) => (
+                          <rect key={i} fill={entry.cashFlow >= 0 ? CC.emerald : CC.rose} fillOpacity={0.7} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Projection Table */}
+              <div>
+                <h3 className="text-sm font-semibold text-white mb-3">Monthly Detail</h3>
+                <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
+                  <table className="w-full text-left">
+                    <thead className="sticky top-0 bg-slate-900/90 backdrop-blur">
+                      <tr className="border-b border-white/5">
+                        <th className="text-[10px] font-mono uppercase tracking-wider text-slate-400 px-3 py-2">Month</th>
+                        <th className="text-[10px] font-mono uppercase tracking-wider text-slate-400 px-3 py-2">Revenue</th>
+                        <th className="text-[10px] font-mono uppercase tracking-wider text-slate-400 px-3 py-2">Labor</th>
+                        <th className="text-[10px] font-mono uppercase tracking-wider text-slate-400 px-3 py-2">NOI</th>
+                        <th className="text-[10px] font-mono uppercase tracking-wider text-slate-400 px-3 py-2">Cash Flow</th>
+                        <th className="text-[10px] font-mono uppercase tracking-wider text-slate-400 px-3 py-2">Occ %</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.map((d, i) => (
+                        <tr key={i} className="border-b border-white/5 hover:bg-white/[0.02]">
+                          <td className="px-3 py-2 text-xs font-mono text-slate-300">{d.month}</td>
+                          <td className="px-3 py-2 text-xs font-mono text-emerald-400">{fmtK(d.revenue)}</td>
+                          <td className="px-3 py-2 text-xs font-mono text-rose-400">{fmtK(d.labor)}</td>
+                          <td className={cn("px-3 py-2 text-xs font-mono font-bold", d.noi >= 0 ? "text-amber-400" : "text-rose-400")}>{fmtK(d.noi)}</td>
+                          <td className={cn("px-3 py-2 text-xs font-mono font-bold", d.cashFlow >= 0 ? "text-emerald-400" : "text-rose-400")}>{fmtK(d.cashFlow)}</td>
+                          <td className="px-3 py-2 text-xs font-mono text-slate-300">{d.occupancy.toFixed(1)}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </Panel>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
