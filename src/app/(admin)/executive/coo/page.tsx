@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState, useId } from "react";
+import Link from "next/link";
 import {
   AlertTriangle, TrendingUp, TrendingDown, Clock, Wrench, Utensils,
   Truck, Star, CheckCircle, XCircle, Users, Shield, Minus, Package,
-  Zap, Bell, MapPin
+  Zap, Bell, MapPin, ArrowLeft
 } from "lucide-react";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
@@ -253,9 +254,12 @@ export default function CooDashboardPage() {
         <header className="px-6 sm:px-12 py-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6 mb-4">
             <div>
+              <Link href="/admin/executive" className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors mb-3">
+                <ArrowLeft className="w-3.5 h-3.5" /> Back to Executive Overview
+              </Link>
               <SysLabel>SYS: COMMAND CENTER</SysLabel>
               <TitleH1>Chief Operating Officer</TitleH1>
-              <Subtitle>Enterprise Operations & Service Delivery</Subtitle>
+              <Subtitle>Enterprise Operations &amp; Service Delivery</Subtitle>
             </div>
           </div>
         </header>

@@ -7,7 +7,8 @@
  */
 
 import React, { useState } from "react";
-import { TrendingUp, TrendingDown, Minus, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import Link from "next/link";
+import { TrendingUp, TrendingDown, Minus, CheckCircle, XCircle, AlertTriangle, ArrowLeft } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ComposedChart, Line, Area, AreaChart, PieChart, Pie, Cell, Legend,
@@ -166,6 +167,9 @@ export default function CfoDashboardPage() {
         <header className="px-6 sm:px-12 py-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6 mb-4">
             <div>
+              <Link href="/admin/executive" className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors mb-3">
+                <ArrowLeft className="w-3.5 h-3.5" /> Back to Executive Overview
+              </Link>
               <SysLabel>SYS: COMMAND CENTER</SysLabel>
               <TitleH1>Chief Financial Officer</TitleH1>
               <Subtitle>Enterprise Revenue &amp; Margin Strategy</Subtitle>

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  ArrowLeft,
   ArrowRight,
   CalendarClock,
   ChevronRight,
@@ -263,6 +264,9 @@ export default function ReportsOverviewPage() {
 
         <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
           <div className="space-y-3">
+            <Link href="/admin/executive" className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+              <ArrowLeft className="w-3.5 h-3.5" /> Back to Executive Overview
+            </Link>
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary" className="rounded-full border border-indigo-500/20 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 uppercase tracking-widest text-[9px] font-bold px-2 py-0.5">
                 <Sparkles className="mr-1 size-3" aria-hidden />
