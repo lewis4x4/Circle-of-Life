@@ -257,7 +257,18 @@ const TOOL_REGISTRY: ToolDefinition[] = [
 
 function withToolCache(tools: ToolDefinition[]) {
   return tools.map((tool, idx) =>
-    idx === tools.length - 1 ? { ...tool, cache_control: { type: "ephemeral" } } : tool,
+    idx === tools.length - 1
+      ? {
+          name: tool.name,
+          description: tool.description,
+          input_schema: tool.input_schema,
+          cache_control: { type: "ephemeral" },
+        }
+      : {
+          name: tool.name,
+          description: tool.description,
+          input_schema: tool.input_schema,
+        },
   );
 }
 
