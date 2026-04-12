@@ -1,69 +1,4 @@
-import { createClient } from "@/lib/supabase/client";
-
-function getSupabaseUrl(): string {
-  return process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-}
-
-async function getAuthHeaders(): Promise<Record<string, string>> {
-  const supabase = createClient();
-  const {
-    data: { session },
-    error,
-  } = await supabase.auth.getSession();
-
-  // Debug logging
-  console.log("[Knowledge API Auth Debug]", {
-    hasError: !!error,
-    errorMessage: error?.message,
-    hasSession: !!session,
-    hasAccessToken: !!session?.access_token,
-    expiresAt: session?.expires_at,
-    nowSeconds: Math.floor(Date.now() / 1000),
-    userId: session?.user?.id,
-  });
-
-  if (error) {
-    return {
-      Authorization: "",
-      "Content-Type": "application/json",
-    };
-  }
-  if (!session?.access_token) {
-    return {
-      Authorization: "",
-      "Content-Type": "application/json",
-    };
-  }
-
-  const nowSeconds = Math.floor(Date.now() / 1000);
-  const expiresAt = session.expires_at ?? 0;
-
-  // Refresh if token is expiring within 60 seconds OR if expiresAt is missing/invalid
-  let accessToken = session.access_token;
-  if (!expiresAt || expiresAt < nowSeconds + 60) {
-    console.log("[Knowledge API Auth Debug] Attempting token refresh...", { expiresAt, nowSeconds });
-    const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
-    console.log("[Knowledge API Auth Debug] Refresh result", {
-      hasError: !!refreshError,
-      errorMessage: refreshError?.message,
-      hasNewSession: !!refreshed.session,
-      hasNewToken: !!refreshed.session?.access_token,
-    });
-    if (!refreshError && refreshed.session?.access_token) {
-      accessToken = refreshed.session.access_token;
-    }
-  }
-
-  console.log("[Knowledge API Auth Debug] Returning auth headers", {
-    hasAccessToken: !!accessToken,
-    userId: session?.user?.id,
-  });
-
-  return {
-    Authorization: `Bearer ${accessToken}`,
-    "Content-Type": "application/json",
-  };
-}
+import { authorizedEdgeFetch, requireVerifiedUserAccessToken } from "@/lib/supabase/edge-auth";
 
 /** Result of non-streaming Edge Function calls (ingest, document-admin). */
 export type EdgeCallResult =
@@ -71,11 +6,11 @@ export type EdgeCallResult =
   | { ok: false; error: string; status: number };
 
 async function postEdgeJson(path: string, init: RequestInit): Promise<EdgeCallResult> {
-  const base = getSupabaseUrl().replace(/\/$/, "");
-  if (!base) {
-    return { ok: false, error: "Missing NEXT_PUBLIC_SUPABASE_URL", status: 0 };
+  const functionName = path.split("/").pop();
+  if (!functionName) {
+    return { ok: false, error: "Invalid edge path", status: 0 };
   }
-  const res = await fetch(`${base}${path}`, init);
+  const res = await authorizedEdgeFetch(functionName, init, "Knowledge API Auth Debug");
   const text = await res.text();
   let data: unknown = {};
   if (text) {
@@ -105,24 +40,22 @@ export interface SendChatMessageOptions {
 }
 
 export async function sendChatMessage(message: string, options: SendChatMessageOptions): Promise<Response> {
-  const base = getSupabaseUrl().replace(/\/$/, "");
-  if (!base) {
-    return new Response(JSON.stringify({ error: "Missing NEXT_PUBLIC_SUPABASE_URL" }), {
-      status: 503,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-  const headers = await getAuthHeaders();
-  return fetch(`${base}/functions/v1/knowledge-agent`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      message,
-      conversation_id: options.conversationId,
-      workspace_id: options.workspaceId,
-    }),
-    signal: options.signal,
-  });
+  return authorizedEdgeFetch(
+    "knowledge-agent",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message,
+        conversation_id: options.conversationId,
+        workspace_id: options.workspaceId,
+      }),
+      signal: options.signal,
+    },
+    "Knowledge API Auth Debug",
+  );
 }
 
 export async function uploadDocument(
@@ -131,14 +64,6 @@ export async function uploadDocument(
   audience: string,
   workspaceId: string,
 ): Promise<EdgeCallResult> {
-  const base = getSupabaseUrl().replace(/\/$/, "");
-  if (!base) {
-    return { ok: false, error: "Missing NEXT_PUBLIC_SUPABASE_URL", status: 0 };
-  }
-  const supabase = createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
   const formData = new FormData();
   formData.append("file", file);
   formData.append("title", title);
@@ -147,16 +72,15 @@ export async function uploadDocument(
 
   return postEdgeJson("/functions/v1/ingest", {
     method: "POST",
-    headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
+    headers: { Authorization: `Bearer ${await requireVerifiedUserAccessToken("Knowledge API Auth Debug")}` },
     body: formData,
   });
 }
 
 export async function reindexDocument(documentId: string): Promise<EdgeCallResult> {
-  const headers = await getAuthHeaders();
   return postEdgeJson("/functions/v1/ingest", {
     method: "POST",
-    headers,
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ document_id: documentId }),
   });
 }
@@ -165,19 +89,17 @@ export async function adminUpdateDocument(
   documentId: string,
   updates: Record<string, unknown>,
 ): Promise<EdgeCallResult> {
-  const headers = await getAuthHeaders();
   return postEdgeJson("/functions/v1/document-admin", {
     method: "POST",
-    headers,
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "update", document_id: documentId, ...updates }),
   });
 }
 
 export async function adminDeleteDocument(documentId: string): Promise<EdgeCallResult> {
-  const headers = await getAuthHeaders();
   return postEdgeJson("/functions/v1/document-admin", {
     method: "POST",
-    headers,
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "delete", document_id: documentId }),
   });
 }

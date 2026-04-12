@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { authorizedEdgeFetch } from "@/lib/supabase/edge-auth";
 import { pushGracePresence } from "../presence";
 
 export interface GraceVoiceRecorderApi {
@@ -89,66 +89,17 @@ export function useGraceVoiceRecorder(): GraceVoiceRecorderApi {
   };
 }
 
-async function requireAccessToken(): Promise<string> {
-  const supabase = createClient();
-  const {
-    data: { session },
-    error,
-  } = await supabase.auth.getSession();
-
-  // Debug logging
-  console.log("[Grace Voice Recorder Auth Debug]", {
-    hasError: !!error,
-    errorMessage: error?.message,
-    hasSession: !!session,
-    hasAccessToken: !!session?.access_token,
-    expiresAt: session?.expires_at,
-    nowSeconds: Math.floor(Date.now() / 1000),
-    userId: session?.user?.id,
-  });
-
-  if (error) {
-    throw new Error(`Grace transcription auth: ${error.message}`);
-  }
-  if (!session?.access_token) {
-    throw new Error("Grace: not signed in. Please reload the page and sign in again.");
-  }
-
-  const nowSeconds = Math.floor(Date.now() / 1000);
-  const expiresAt = session.expires_at ?? 0;
-
-  // Refresh if token is expiring within 60 seconds OR if expiresAt is missing/invalid
-  if (!expiresAt || expiresAt < nowSeconds + 60) {
-    console.log("[Grace Voice Recorder Auth Debug] Attempting token refresh...", { expiresAt, nowSeconds });
-    const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
-    console.log("[Grace Voice Recorder Auth Debug] Refresh result", {
-      hasError: !!refreshError,
-      errorMessage: refreshError?.message,
-      hasNewSession: !!refreshed.session,
-      hasNewToken: !!refreshed.session?.access_token,
-    });
-    if (refreshError || !refreshed.session?.access_token) {
-      throw new Error("Grace: session expired and refresh failed. Please sign in again.");
-    }
-    return refreshed.session.access_token;
-  }
-
-  console.log("[Grace Voice Recorder Auth Debug] Returning valid token", { userId: session.user.id });
-  return session.access_token;
-}
-
 export async function transcribeGraceAudio(audio: Blob): Promise<string> {
-  const accessToken = await requireAccessToken();
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") ?? "";
   const form = new FormData();
   form.append("audio", audio, "grace-input.webm");
-  const res = await fetch(`${base}/functions/v1/grace-transcribe`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
+  const res = await authorizedEdgeFetch(
+    "grace-transcribe",
+    {
+      method: "POST",
+      body: form,
     },
-    body: form,
-  });
+    "Grace Voice Recorder Auth Debug",
+  );
   const payloadText = await res.text();
   const payload = parseJsonSafely<{ ok?: boolean; error?: string; text?: string }>(payloadText);
   if (!res.ok || !payload?.ok) {

@@ -1,76 +1,24 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/client";
+import { authorizedEdgeFetch } from "@/lib/supabase/edge-auth";
 import type {
   GraceExecuteResponse,
   GraceOrchestratorResponse,
   GraceUndoResponse,
 } from "./types";
 
-function getSupabaseUrl(): string {
-  return process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-}
-
-async function requireUserAccessToken(): Promise<string> {
-  const supabase = createClient();
-  const {
-    data: { session },
-    error,
-  } = await supabase.auth.getSession();
-
-  // Debug logging
-  console.log("[Grace Auth Debug]", {
-    hasError: !!error,
-    errorMessage: error?.message,
-    hasSession: !!session,
-    hasAccessToken: !!session?.access_token,
-    expiresAt: session?.expires_at,
-    nowSeconds: Math.floor(Date.now() / 1000),
-    userId: session?.user?.id,
-  });
-
-  if (error) {
-    throw new Error(`Grace auth: ${error.message}`);
-  }
-  if (!session?.access_token) {
-    throw new Error("Grace: not signed in. Please reload the page and sign in again.");
-  }
-
-  const nowSeconds = Math.floor(Date.now() / 1000);
-  const expiresAt = session.expires_at ?? 0;
-
-  // Refresh if token is expiring within 60 seconds OR if expiresAt is missing/invalid
-  if (!expiresAt || expiresAt < nowSeconds + 60) {
-    console.log("[Grace Auth Debug] Attempting token refresh...", { expiresAt, nowSeconds });
-    const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
-    console.log("[Grace Auth Debug] Refresh result", {
-      hasError: !!refreshError,
-      errorMessage: refreshError?.message,
-      hasNewSession: !!refreshed.session,
-      hasNewToken: !!refreshed.session?.access_token,
-    });
-    if (refreshError || !refreshed.session?.access_token) {
-      throw new Error("Grace: session expired and refresh failed. Please sign in again.");
-    }
-    return refreshed.session.access_token;
-  }
-
-  console.log("[Grace Auth Debug] Returning valid token", { userId: session.user.id });
-  return session.access_token;
-}
-
 async function postGraceJson<T>(functionName: string, body: unknown): Promise<T> {
-  const base = getSupabaseUrl().replace(/\/$/, "");
-  if (!base) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL");
-  const accessToken = await requireUserAccessToken();
-  const res = await fetch(`${base}/functions/v1/${functionName}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
+  const res = await authorizedEdgeFetch(
+    functionName,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
     },
-    body: JSON.stringify(body),
-  });
+    "Grace Auth Debug",
+  );
 
   const text = await res.text();
   let data: unknown = {};
@@ -121,26 +69,21 @@ export async function graceKnowledgeStream(input: {
   organization_id: string;
   route?: string;
 }): Promise<Response> {
-  const base = getSupabaseUrl().replace(/\/$/, "");
-  if (!base) {
-    return new Response(JSON.stringify({ error: "Missing NEXT_PUBLIC_SUPABASE_URL" }), {
-      status: 503,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-  const accessToken = await requireUserAccessToken();
-  return fetch(`${base}/functions/v1/knowledge-agent`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
+  return authorizedEdgeFetch(
+    "knowledge-agent",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: input.message,
+        conversation_id: input.conversation_id,
+        workspace_id: input.organization_id,
+        route: input.route,
+        grace: true,
+      }),
     },
-    body: JSON.stringify({
-      message: input.message,
-      conversation_id: input.conversation_id,
-      workspace_id: input.organization_id,
-      route: input.route,
-      grace: true,
-    }),
-  });
+    "Grace Auth Debug",
+  );
 }

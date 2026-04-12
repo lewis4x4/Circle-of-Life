@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Check, Loader2, Upload, X } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { authorizedEdgeFetch } from "@/lib/supabase/edge-auth";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
 const COMPLIANCE_CATEGORIES = [
@@ -42,7 +42,6 @@ export function UploadDocumentModal({
   facilityId,
   organizationId,
 }: UploadDocumentModalProps) {
-  const supabase = useMemo(() => createClient(), []);
   const [uploading, setUploading] = useState(false);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<ComplianceCategory>(COMPLIANCE_CATEGORIES[0].value);
@@ -82,24 +81,9 @@ export function UploadDocumentModal({
     }
 
     const trimmedTitle = title.trim() || selectedFile.name;
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    if (!supabaseUrl) {
-      setError("Missing NEXT_PUBLIC_SUPABASE_URL.");
-      return;
-    }
-
     setUploading(true);
 
     try {
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-
-      if (sessionError || !session?.access_token) {
-        throw new Error("Please sign in again before uploading.");
-      }
-
       const formData = new FormData();
       formData.append("file", selectedFile);
       formData.append("title", trimmedTitle);
@@ -107,13 +91,14 @@ export function UploadDocumentModal({
       formData.append("audience", "company_wide");
       formData.append("status", "pending_review");
 
-      const response = await fetch(`${supabaseUrl}/functions/v1/ingest`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
+      const response = await authorizedEdgeFetch(
+        "ingest",
+        {
+          method: "POST",
+          body: formData,
         },
-        body: formData,
-      });
+        "KB Upload Auth Debug",
+      );
 
       const payload = (await response.json().catch(() => ({}))) as {
         error?: string;
