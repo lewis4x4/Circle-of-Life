@@ -40,7 +40,7 @@ export default function CeoDashboardPage() {
           <ExecutiveNavV2
             showTopNav={false}
             activeTopNav="command"
-            activePillMenu="CEO View"
+            activePillMenu={activePillMenu}
             onPillMenuChange={setActivePillMenu}
           />
         </div>
