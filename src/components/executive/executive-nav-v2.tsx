@@ -8,9 +8,9 @@
  * - Pill menu: Executive view switching within domain (Overview, CEO View, CFO View, COO View, Alerts, Reports, Benchmarks, NLQ)
  */
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   Zap,
   Briefcase,
@@ -165,6 +165,13 @@ function TopNavigation({ activeTab, onTabChange }: TopNavigationProps) {
 
 // ── PILL MENU COMPONENT ──
 
+/** Pill tabs that should navigate to a different route instead of calling onTabChange */
+const PILL_LINKS: Record<string, string> = {
+  "CEO View": "/admin/executive/ceo",
+  "CFO View": "/admin/executive/cfo",
+  "COO View": "/admin/executive/coo",
+};
+
 interface PillMenuProps {
   activeTab: string;
   onTabChange?: (tab: string) => void;
@@ -174,20 +181,27 @@ interface PillMenuProps {
 function PillMenu({ activeTab, onTabChange, tabs }: PillMenuProps) {
   return (
     <div className="flex flex-wrap items-center bg-white/[0.03] border border-white/5 rounded-full px-1 py-1 gap-1">
-      {tabs.map((tab) => (
-        <button
-          key={tab}
-          onClick={() => onTabChange?.(tab)}
-          className={cn(
-            "px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-300",
-            activeTab === tab
-              ? "bg-white/10 text-white shadow-[0_2px_10px_rgba(0,0,0,0.2)]"
-              : "text-slate-400 hover:text-white"
-          )}
-        >
-          {tab}
-        </button>
-      ))}
+      {tabs.map((tab) => {
+        const href = PILL_LINKS[tab];
+        const cls = cn(
+          "px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-300",
+          activeTab === tab
+            ? "bg-white/10 text-white shadow-[0_2px_10px_rgba(0,0,0,0.2)]"
+            : "text-slate-400 hover:text-white"
+        );
+        if (href) {
+          return (
+            <Link key={tab} href={href} className={cls}>
+              {tab}
+            </Link>
+          );
+        }
+        return (
+          <button key={tab} onClick={() => onTabChange?.(tab)} className={cls}>
+            {tab}
+          </button>
+        );
+      })}
     </div>
   );
 }

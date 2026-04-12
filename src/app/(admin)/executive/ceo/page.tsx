@@ -38,8 +38,9 @@ export default function CeoDashboardPage() {
         {/* Enhanced Navigation */}
         <div className="border-b border-white/5">
           <ExecutiveNavV2
+            showTopNav={false}
             activeTopNav="command"
-            activePillMenu={activePillMenu as any}
+            activePillMenu="CEO View"
             onPillMenuChange={setActivePillMenu}
           />
         </div>

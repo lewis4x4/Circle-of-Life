@@ -62,8 +62,9 @@ export default function CfoDashboardPage() {
         {/* Enhanced Navigation */}
         <div className="border-b border-white/5">
           <ExecutiveNavV2
+            showTopNav={false}
             activeTopNav="finance"
-            activePillMenu={activePillMenu as any}
+            activePillMenu="CFO View"
             onPillMenuChange={setActivePillMenu}
             customPillTabs={[
               "Overview",
