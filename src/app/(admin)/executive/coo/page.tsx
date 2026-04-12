@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   AlertTriangle, TrendingUp, TrendingDown, Clock, Wrench, Utensils,
   Truck, Star, CheckCircle, XCircle, Users, Shield, Minus, Package,
-  Zap, Bell, MapPin, ArrowLeft
+  Zap, Bell, MapPin, ArrowLeft, Brain
 } from "lucide-react";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import { useExecRoleKpis } from "@/hooks/useExecRoleKpis";
 
 // ── PILL TABS ──
-const COO_TABS = ["Operations Hub", "Staffing", "Maintenance", "Dining", "Satisfaction", "Move Ops", "Vendors", "Readiness"];
+const COO_TABS = ["Operations Hub", "Staffing", "Maintenance", "Dining", "Satisfaction", "Move Ops", "Vendors", "Readiness", "Haven Insight"];
 
 // ── FACILITIES ──
 const FACILITIES = ["Homewood Lodge", "Riverside Manor", "Cedar Park", "Oakview Heights", "Maple Creek"];

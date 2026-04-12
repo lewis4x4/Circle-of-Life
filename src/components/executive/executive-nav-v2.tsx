@@ -69,7 +69,7 @@ const pillMenuTabs = [
   "Alerts",
   "Reports",
   "Benchmarks",
-  "NLQ",
+  "Haven Insight",
 ] as const;
 
 type PillMenuTab = (typeof pillMenuTabs)[number];
