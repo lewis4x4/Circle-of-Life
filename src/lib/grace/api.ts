@@ -8,10 +8,7 @@ import type {
 } from "./types";
 
 function getSupabaseUrl(): string {
-  // Use the Supabase client's configured URL instead of process.env
-  // (process.env doesn't exist in browser runtime)
-  const client = createClient();
-  return client.supabaseUrl;
+  return process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 }
 
 async function requireUserAccessToken(): Promise<string> {
