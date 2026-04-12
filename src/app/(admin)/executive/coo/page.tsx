@@ -242,8 +242,9 @@ export default function CooDashboardPage() {
       <div className="relative z-10">
         <div className="border-b border-white/5">
           <ExecutiveNavV2
+            showTopNav={false}
             activeTopNav="clinical"
-            activePillMenu={tab}
+            activePillMenu="COO View"
             onPillMenuChange={setTab}
             customPillTabs={COO_TABS}
           />
