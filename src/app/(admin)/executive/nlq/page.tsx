@@ -7,7 +7,7 @@
  * and get AI-powered answers from Haven data.
  */
 
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import { ArrowLeft, Send, Loader2, Brain, Sparkles, MessageSquare, RotateCcw } from "lucide-react";
 import { SysLabel, TitleH1, Subtitle } from "@/components/ui/moonshot/typography";
@@ -40,8 +40,10 @@ const SUGGESTED_QUESTIONS = [
 
 // ── Main Component ──
 
+const MAX_MESSAGES = 50;
+
 export default function ExecutiveNlqPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [messages, setMessages] = useState<NlqMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -88,7 +90,7 @@ export default function ExecutiveNlqPage() {
       content: q,
       timestamp: new Date(),
     };
-    setMessages(prev => [...prev, userMsg]);
+    setMessages(prev => [...prev.slice(-MAX_MESSAGES + 1), userMsg]);
     setLoading(true);
 
     try {
@@ -110,7 +112,7 @@ export default function ExecutiveNlqPage() {
         timestamp: new Date(),
         tokensUsed: data.tokens_used,
       };
-      setMessages(prev => [...prev, assistantMsg]);
+      setMessages(prev => [...prev.slice(-MAX_MESSAGES + 1), assistantMsg]);
     } catch (err) {
       const errMsg: NlqMessage = {
         id: `err-${Date.now()}`,
@@ -118,7 +120,7 @@ export default function ExecutiveNlqPage() {
         content: `I couldn't process that question right now. ${err instanceof Error ? err.message : "Please try again."}`,
         timestamp: new Date(),
       };
-      setMessages(prev => [...prev, errMsg]);
+      setMessages(prev => [...prev.slice(-MAX_MESSAGES + 1), errMsg]);
       setError(err instanceof Error ? err.message : "Query failed");
     } finally {
       setLoading(false);

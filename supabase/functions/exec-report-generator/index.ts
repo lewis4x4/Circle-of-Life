@@ -13,6 +13,7 @@ import {
 } from "../_shared/exec-kpi-metrics.ts";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
+import { isRateLimited } from "../_shared/rate-limit.ts";
 
 type Template = "ops_weekly" | "financial_monthly" | "board_quarterly" | "custom";
 type FacilityKpi = { name: string; id: string; kpi: ExecKpiPayload };
@@ -26,7 +27,7 @@ const TEMPLATES: Record<Template, string> = {
 
 // ── HTML Builder Helpers ──
 
-const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
 function kpiCard(label: string, value: string, color = "#0f172a"): string {
   return `<div class="kpi-card"><div class="kpi-label">${esc(label)}</div><div class="kpi-value" style="color:${color}">${esc(value)}</div></div>`;
@@ -152,6 +153,7 @@ Deno.serve(async (req) => {
   const token = (req.headers.get("authorization") ?? "").replace("Bearer ", "");
   const { data: { user }, error: authErr } = await admin.auth.getUser(token);
   if (authErr || !user) return jsonResponse({ error: "Unauthorized" }, 401, origin);
+  if (isRateLimited(user.id)) return jsonResponse({ error: "Rate limit exceeded." }, 429, origin);
 
   const { data: profile } = await admin.from("user_profiles").select("organization_id, app_role").eq("id", user.id).maybeSingle();
   if (!profile?.organization_id) return jsonResponse({ error: "Organization not found" }, 403, origin);
@@ -197,5 +199,13 @@ Deno.serve(async (req) => {
 
   t.log({ event: "complete", outcome: "success", template, facilities: allFacilities.length });
 
-  return jsonResponse({ ok: true, html, generated_at: new Date().toISOString() }, 200, origin);
+  return new Response(JSON.stringify({ ok: true, html, generated_at: new Date().toISOString() }), {
+    status: 200,
+    headers: {
+      ...getCorsHeaders(origin),
+      "Content-Type": "application/json",
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'",
+    },
+  });
 });

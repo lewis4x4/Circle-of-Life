@@ -69,17 +69,31 @@ function evaluateCondition(
   }
 }
 
-/** Replace template placeholders */
+/** Replace template placeholders using string replaceAll (no regex, safe from special chars) */
 function fillTemplate(
   template: string,
   vars: Record<string, string | number>,
 ): string {
   let result = template;
   for (const [key, val] of Object.entries(vars)) {
-    result = result.replace(new RegExp(`\\{${key}\\}`, "g"), String(val));
+    result = result.replaceAll(`{${key}}`, String(val));
   }
   return result;
 }
+
+/** Allowed metric domain paths for threshold evaluation */
+const ALLOWED_METRIC_DOMAINS = new Set([
+  "census.occupancyPct",
+  "census.occupiedResidents",
+  "census.licensedBeds",
+  "financial.openInvoicesCount",
+  "financial.totalBalanceDueCents",
+  "clinical.openIncidents",
+  "clinical.medicationErrorsMtd",
+  "compliance.openSurveyDeficiencies",
+  "workforce.certificationsExpiring30d",
+  "infection.activeOutbreaks",
+]);
 
 /** Recency factor: alerts older than 24h get reduced score */
 function recencyFactor(): number {
@@ -150,6 +164,9 @@ Deno.serve(async (req) => {
 
     for (const rule of activeRules) {
       rulesEvaluated++;
+
+      // Security: only evaluate known metric domains
+      if (!ALLOWED_METRIC_DOMAINS.has(rule.metric_domain)) continue;
 
       const value = resolvePath(kpi as unknown as Record<string, unknown>, rule.metric_domain);
       if (value == null) continue; // metric not available for this facility

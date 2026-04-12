@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   fetchExecutiveKpiSnapshot,
@@ -125,11 +125,7 @@ export function useExecRoleKpis(facilityId?: string | null): ExecRoleKpiData {
   }, [load]);
 
   // ── Realtime: auto-refetch when new snapshots or alerts arrive ──
-  const orgIdRef = useRef<string | null>(null);
   useEffect(() => {
-    // We need to track orgId from the last successful load for the Realtime filter.
-    // Since orgId is resolved inside `load`, we store it via a side-channel.
-    // For now, subscribe without org filter (Supabase RLS will scope it).
     const supabase = createClient();
     const channel = supabase
       .channel("exec-kpi-realtime")

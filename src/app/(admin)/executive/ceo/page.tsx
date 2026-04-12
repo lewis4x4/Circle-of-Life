@@ -111,10 +111,10 @@ export default function CeoDashboardPage() {
   // Use live alerts when available, otherwise use mock
   const displayAlerts = liveAlerts.length > 0 ? liveAlerts.map(a => ({
     id: typeof a.id === "string" ? parseInt(a.id.slice(0, 8), 16) : 0,
-    severity: a.severity as "critical" | "warning" | "info",
+    severity: (["critical","warning","info"].includes(a.severity) ? a.severity : "info") as "critical" | "warning" | "info",
     title: a.title,
     description: a.body ?? "",
-    facility: (a as Record<string, unknown>).facilities ? String((a as Record<string, unknown>).facilities) : "Enterprise",
+    facility: "facility_id" in a && a.facility_id ? String(a.facility_id).slice(0, 8) : "Enterprise",
     age: a.first_triggered_at ? timeSince(a.first_triggered_at) : "recent",
   })) : CEO_ALERTS;
 

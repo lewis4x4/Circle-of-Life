@@ -13,6 +13,7 @@ import {
   loadFacilitiesForOrganization,
 } from "../_shared/exec-kpi-metrics.ts";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
+import { isRateLimited } from "../_shared/rate-limit.ts";
 import { withTiming } from "../_shared/structured-log.ts";
 
 /* ------------------------------------------------------------------ */
@@ -73,6 +74,9 @@ Deno.serve(async (req) => {
     t.log({ event: "auth_failed", outcome: "blocked" });
     return jsonResponse({ error: "Unauthorized" }, 401, origin);
   }
+  if (isRateLimited(user.id)) {
+    return jsonResponse({ error: "Rate limit exceeded. Try again in a minute." }, 429, origin);
+  }
 
   // --- Parse body ---
   let body: { assumptions?: Assumptions; facility_id?: string };
@@ -95,6 +99,18 @@ Deno.serve(async (req) => {
   }
   if (a.time_horizon_months < 1 || a.time_horizon_months > 120) {
     return jsonResponse({ error: "time_horizon_months must be 1-120" }, 400, origin);
+  }
+  if (a.occupancy_pct < 0 || a.occupancy_pct > 1) {
+    return jsonResponse({ error: "occupancy_pct must be between 0 and 1" }, 400, origin);
+  }
+  if (a.revenue_growth_pct < -0.5 || a.revenue_growth_pct > 1.0) {
+    return jsonResponse({ error: "revenue_growth_pct must be between -0.5 and 1.0" }, 400, origin);
+  }
+  if (a.labor_inflation_pct < -0.2 || a.labor_inflation_pct > 0.5) {
+    return jsonResponse({ error: "labor_inflation_pct must be between -0.2 and 0.5" }, 400, origin);
+  }
+  if (a.new_beds < 0 || a.new_beds > 500) {
+    return jsonResponse({ error: "new_beds must be between 0 and 500" }, 400, origin);
   }
 
   // --- Profile + role check ---
