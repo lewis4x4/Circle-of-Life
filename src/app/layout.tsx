@@ -13,6 +13,12 @@ export const metadata: Metadata = {
   title: "Haven — Circle of Life",
   description:
     "Unified operations for assisted living, home health, and community-based care.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+  },
 };
 
 export const viewport: Viewport = {

@@ -21,8 +21,8 @@ import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { CEO_PALETTE } from "@/lib/moonshot-theme";
 import { cn } from "@/lib/utils";
 
-// ── PILL TABS ──
-const CEO_TABS = ["Overview", "CEO View", "CFO View", "COO View", "Alerts", "Reports", "Benchmarks", "NLQ"];
+// ── PILL TABS (custom set — CEO View is a local button, not a Link, since we're already on this page) ──
+const CEO_TABS = ["CEO View", "Alerts", "Reports", "Benchmarks", "NLQ"];
 
 // ── SHARED STYLES ──
 const TH = "text-left text-[10px] font-mono uppercase tracking-wider text-slate-400 px-3 py-2";
@@ -97,7 +97,7 @@ export default function CeoDashboardPage() {
       <AmbientMatrix primaryClass="bg-indigo-900/10" secondaryClass="bg-emerald-900/10" />
       <div className="relative z-10">
         <div className="border-b border-white/5">
-          <ExecutiveNavV2 showTopNav={false} activeTopNav="command" activePillMenu={tab} onPillMenuChange={setTab} />
+          <ExecutiveNavV2 showTopNav={false} activeTopNav="command" activePillMenu={tab} onPillMenuChange={setTab} customPillTabs={CEO_TABS} />
         </div>
 
         <header className="px-6 sm:px-12 py-8">
