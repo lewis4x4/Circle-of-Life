@@ -114,7 +114,7 @@ const CAPEX_ITEMS = [
   { project: "Roof Repair — Homewood", budget: 220_000, spent: 210_000, status: "Near Complete", completion: 95 },
   { project: "Kitchen Renovation — Oakview", budget: 350_000, spent: 80_000, status: "In Progress", completion: 23 },
   { project: "Generator Upgrade — Riverside", budget: 180_000, spent: 0, status: "Planned", completion: 0 },
-  { project: "Memory Care Wing — Maple Creek", budget: 1_200_000, spent: 120_000, status: "Design Phase", completion: 10 },
+  { project: "Assisted Living Wing Expansion — Maple Creek", budget: 1_200_000, spent: 120_000, status: "Design Phase", completion: 10 },
 ];
 const DEBT_SCHEDULE = FAC.map((f, i) => ({
   facility: f,
