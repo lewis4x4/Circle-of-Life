@@ -222,3 +222,164 @@ export function CooIncidentDensityChart({ data }: { data: ChartDatum[] }) {
     </ChartBox>
   );
 }
+
+// --- CFO WATERFALL TABLE & MONTHLY P&L ---
+
+type WaterfallRow = {
+  category: string;
+  actual: number;
+  budget: number;
+  priorYear: number;
+  isExpense?: boolean;
+  isTotal?: boolean;
+};
+
+function fmtM(cents: number): string {
+  return `$${(cents / 1_000_000).toFixed(1)}M`;
+}
+
+function varianceBadge(pct: number, isExpense: boolean) {
+  // For expenses, positive variance (actual < budget) is favorable
+  // For revenue, positive variance (actual > budget) is favorable
+  const favorable = isExpense ? pct > 0 : pct > 0;
+  const nearZero = Math.abs(pct) < 1;
+
+  let bg: string;
+  let text: string;
+  if (nearZero) {
+    bg = "bg-amber-500/20 text-amber-300";
+    text = `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`;
+  } else if (favorable) {
+    bg = "bg-emerald-500/20 text-emerald-300";
+    text = `+${pct.toFixed(1)}%`;
+  } else {
+    bg = "bg-rose-500/20 text-rose-300";
+    text = `${pct.toFixed(1)}%`;
+  }
+
+  return (
+    <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold ${bg}`}>
+      {text}
+    </span>
+  );
+}
+
+export function CfoWaterfallTable({ data }: { data: WaterfallRow[] }) {
+  return (
+    <div className="overflow-x-auto rounded-lg border border-white/10 bg-white/[0.03] backdrop-blur-md">
+      <table className="w-full min-w-[520px]">
+        <thead>
+          <tr className="border-b border-white/10">
+            {["Category", "Actual", "Budget", "Var %", "Prior Year", "YoY %"].map((h) => (
+              <th
+                key={h}
+                className="px-3 py-2 text-left text-[10px] font-mono uppercase tracking-wider text-slate-400"
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((row, i) => {
+            const isExp = row.isExpense ?? false;
+            const varPct =
+              row.budget === 0
+                ? 0
+                : isExp
+                  ? ((row.budget - row.actual) / row.budget) * 100
+                  : ((row.actual - row.budget) / row.budget) * 100;
+            const yoyPct =
+              row.priorYear === 0
+                ? 0
+                : ((row.actual - row.priorYear) / row.priorYear) * 100;
+
+            return (
+              <tr
+                key={i}
+                className={`border-b border-white/5 ${row.isTotal ? "bg-white/5 font-bold" : "hover:bg-white/[0.02]"}`}
+              >
+                <td className="px-3 py-2 text-sm text-slate-200">{row.category}</td>
+                <td className="px-3 py-2 text-sm font-mono text-slate-200">{fmtM(row.actual)}</td>
+                <td className="px-3 py-2 text-sm font-mono text-slate-200">{fmtM(row.budget)}</td>
+                <td className="px-3 py-2">{varianceBadge(varPct, isExp)}</td>
+                <td className="px-3 py-2 text-sm font-mono text-slate-200">{fmtM(row.priorYear)}</td>
+                <td className="px-3 py-2">{varianceBadge(yoyPct, isExp)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+type MonthlyPnLRow = {
+  month: string;
+  revenue: number;
+  laborCost: number;
+  noi: number;
+};
+
+export function CfoMonthlyPnLChart({ data }: { data: MonthlyPnLRow[] }) {
+  return (
+    <ChartBox>
+      <ResponsiveContainer width="100%" height={CHART_PX} minWidth={0}>
+        <ComposedChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+          <defs>
+            <linearGradient id="cfo-pnl-revenue" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={DARK_COLORS.emerald} stopOpacity={0.3} />
+              <stop offset="95%" stopColor={DARK_COLORS.emerald} stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="cfo-pnl-labor" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={DARK_COLORS.rose} stopOpacity={0.3} />
+              <stop offset="95%" stopColor={DARK_COLORS.rose} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={DARK_COLORS.grid} />
+          <XAxis
+            dataKey="month"
+            axisLine={false}
+            tickLine={false}
+            tick={{ fontSize: 10, fill: DARK_COLORS.axis }}
+            dy={10}
+          />
+          <YAxis
+            axisLine={false}
+            tickLine={false}
+            tick={{ fontSize: 10, fill: DARK_COLORS.axis }}
+            tickFormatter={(v: number) => `$${(v / 1_000_000).toFixed(1)}M`}
+          />
+          <Tooltip content={<CustomTooltip prefix="$" />} />
+          <Legend wrapperStyle={{ fontSize: "10px", textTransform: "uppercase", letterSpacing: "1px" }} />
+          <Area
+            type="monotone"
+            name="Revenue"
+            dataKey="revenue"
+            stroke={DARK_COLORS.emerald}
+            strokeWidth={2}
+            fillOpacity={1}
+            fill="url(#cfo-pnl-revenue)"
+          />
+          <Area
+            type="monotone"
+            name="Labor Cost"
+            dataKey="laborCost"
+            stroke={DARK_COLORS.rose}
+            strokeWidth={2}
+            fillOpacity={1}
+            fill="url(#cfo-pnl-labor)"
+          />
+          <Line
+            type="monotone"
+            name="NOI"
+            dataKey="noi"
+            stroke={DARK_COLORS.amber}
+            strokeWidth={3}
+            dot={{ r: 4, strokeWidth: 2, fill: "#0f172a" }}
+          />
+        </ComposedChart>
+      </ResponsiveContainer>
+    </ChartBox>
+  );
+}
