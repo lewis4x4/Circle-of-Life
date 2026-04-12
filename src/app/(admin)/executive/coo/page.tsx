@@ -20,6 +20,7 @@ import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { COO_PALETTE } from "@/lib/moonshot-theme";
 import { cn } from "@/lib/utils";
+import { useExecRoleKpis } from "@/hooks/useExecRoleKpis";
 
 // ── PILL TABS ──
 const COO_TABS = ["Operations Hub", "Staffing", "Maintenance", "Dining", "Satisfaction", "Move Ops", "Vendors", "Readiness"];
@@ -235,6 +236,13 @@ const TR = "border-b border-white/5 hover:bg-white/[0.02] transition-colors";
 
 export default function CooDashboardPage() {
   const [tab, setTab] = useState("Operations Hub");
+  const { kpis, isDemo } = useExecRoleKpis();
+
+  // Derive COO metric card values from live data when available
+  const incidentsValue = kpis ? `${kpis.clinical.openIncidents}` : "58";
+  const deficienciesValue = kpis ? `${kpis.compliance.openSurveyDeficiencies}` : "4.3 / 5.0";
+  const certsValue = kpis ? `${kpis.workforce.certificationsExpiring30d}` : "3";
+  const outbreaksValue = kpis ? `${kpis.infection.activeOutbreaks}` : "93.4%";
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full">
@@ -271,10 +279,10 @@ export default function CooDashboardPage() {
             <>
               {/* Metric Cards */}
               <KineticGrid className="grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" staggerMs={50}>
-                <MetricCardMoonshot label="SHIFT FILL RATE (TODAY)" value="93.4%" color={COO_PALETTE.positive} trend="up" trendValue="+1.8%" sparklineVariant={1} />
-                <MetricCardMoonshot label="OPEN WORK ORDERS" value="58" color={COO_PALETTE.critical} trend="down" trendValue="-3" sparklineVariant={3} />
-                <MetricCardMoonshot label="RESIDENT SATISFACTION" value="4.3 / 5.0" color={COO_PALETTE.growth} trend="up" trendValue="+0.2" sparklineVariant={2} />
-                <MetricCardMoonshot label="MOVE-INS THIS WEEK" value="3" color={COO_PALETTE.info} trend="flat" sparklineVariant={4} />
+                <MetricCardMoonshot label="ACTIVE OUTBREAKS" value={outbreaksValue} color={COO_PALETTE.positive} trend="flat" trendValue={isDemo ? "+1.8%" : undefined} sparklineVariant={1} />
+                <MetricCardMoonshot label="OPEN INCIDENTS" value={incidentsValue} color={COO_PALETTE.critical} trend="flat" trendValue={isDemo ? "-3" : undefined} sparklineVariant={3} />
+                <MetricCardMoonshot label="OPEN DEFICIENCIES" value={deficienciesValue} color={COO_PALETTE.growth} trend="flat" sparklineVariant={2} />
+                <MetricCardMoonshot label="CERTS EXPIRING 30D" value={certsValue} color={COO_PALETTE.info} trend="flat" sparklineVariant={4} />
               </KineticGrid>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
