@@ -20,6 +20,7 @@ import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { CEO_PALETTE } from "@/lib/moonshot-theme";
 import { cn } from "@/lib/utils";
+import { useExecRoleKpis } from "@/hooks/useExecRoleKpis";
 
 // ── PILL TABS (custom set — CEO View is a local button, not a Link, since we're already on this page) ──
 const CEO_TABS = ["CEO View", "Alerts", "Reports", "Benchmarks", "NLQ"];
@@ -88,9 +89,34 @@ const FACILITY_SCORECARD = FAC.map((f, i) => ({
 
 const fmtM = (v: number) => `$${(v / 1_000_000).toFixed(1)}M`;
 
+function timeSince(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  const hrs = Math.floor(ms / 3_600_000);
+  if (hrs < 1) return "just now";
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
 // ══════════════════════════════════════════════════════════
 export default function CeoDashboardPage() {
   const [tab, setTab] = useState("CEO View");
+  const { kpis, alerts: liveAlerts, facilities: liveFacilities, loading, isDemo } = useExecRoleKpis();
+
+  // Derive metric card values from live KPIs when available, otherwise use mock defaults
+  const occupancyValue = kpis?.census.occupancyPct != null ? `${kpis.census.occupancyPct}%` : "91.8%";
+  const incidentsValue = kpis ? `${kpis.clinical.openIncidents}` : "1.2x";
+  const arValue = kpis ? `$${(kpis.financial.totalBalanceDueCents / 100).toLocaleString()}` : "342";
+  const deficienciesValue = kpis ? `${kpis.compliance.openSurveyDeficiencies}` : "+18";
+
+  // Use live alerts when available, otherwise use mock
+  const displayAlerts = liveAlerts.length > 0 ? liveAlerts.map(a => ({
+    id: typeof a.id === "string" ? parseInt(a.id.slice(0, 8), 16) : 0,
+    severity: a.severity as "critical" | "warning" | "info",
+    title: a.title,
+    description: a.body ?? "",
+    facility: (a as Record<string, unknown>).facilities ? String((a as Record<string, unknown>).facilities) : "Enterprise",
+    age: a.first_triggered_at ? timeSince(a.first_triggered_at) : "recent",
+  })) : CEO_ALERTS;
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full">
@@ -116,10 +142,10 @@ export default function CeoDashboardPage() {
         <div className="px-6 sm:px-12 pb-12 space-y-6">
           {/* Metric Cards — always visible */}
           <KineticGrid className="grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" staggerMs={50}>
-            <MetricCardMoonshot label="PORTFOLIO OCCUPANCY" value="91.8%" color={CEO_PALETTE.positive} trend="up" trendValue="+2.3%" sparklineVariant={2} />
-            <MetricCardMoonshot label="NET MOVE-INS MTD" value="+18" color={CEO_PALETTE.growth} trend="up" trendValue="+4.5%" sparklineVariant={1} />
-            <MetricCardMoonshot label="TOTAL WAITLIST PIPELINE" value="342" color={CEO_PALETTE.info} trend="up" trendValue="+12.1%" sparklineVariant={3} />
-            <MetricCardMoonshot label="ENTERPRISE QUALITY RISK MAP" value="1.2x" color={CEO_PALETTE.critical} trend="down" trendValue="-0.3x" sparklineVariant={4} />
+            <MetricCardMoonshot label="PORTFOLIO OCCUPANCY" value={occupancyValue} color={CEO_PALETTE.positive} trend="up" trendValue={isDemo ? "+2.3%" : undefined} sparklineVariant={2} />
+            <MetricCardMoonshot label="OPEN DEFICIENCIES" value={deficienciesValue} color={CEO_PALETTE.growth} trend="flat" sparklineVariant={1} />
+            <MetricCardMoonshot label="TOTAL AR OUTSTANDING" value={arValue} color={CEO_PALETTE.info} trend="flat" sparklineVariant={3} />
+            <MetricCardMoonshot label="OPEN INCIDENTS" value={incidentsValue} color={CEO_PALETTE.critical} trend="flat" sparklineVariant={4} />
           </KineticGrid>
 
           {/* ═══ CEO VIEW (default) ═══ */}

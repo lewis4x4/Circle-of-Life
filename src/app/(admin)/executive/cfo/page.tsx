@@ -21,6 +21,7 @@ import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { CFO_PALETTE } from "@/lib/moonshot-theme";
 import { cn } from "@/lib/utils";
+import { useExecRoleKpis } from "@/hooks/useExecRoleKpis";
 
 // ── PILL TABS ──
 const CFO_TABS = ["Overview", "Revenue Cycle", "Labor Economics", "Cash & Liquidity", "Capex & Debt", "Budget Variance", "Scenarios"];
@@ -156,6 +157,13 @@ function VarBadge({ value }: { value: number }) {
 // ══════════════════════════════════════════════════════════
 export default function CfoDashboardPage() {
   const [tab, setTab] = useState("Overview");
+  const { kpis, isDemo } = useExecRoleKpis();
+
+  // Derive CFO metric card values from live data when available
+  const revenueValue = kpis ? `$${(kpis.financial.totalBalanceDueCents / 100_000).toFixed(1)}K` : "$57.6M";
+  const occupancyNoi = kpis?.census.occupancyPct != null ? `${kpis.census.occupancyPct}%` : "27.1%";
+  const openInvoices = kpis ? `${kpis.financial.openInvoicesCount}` : "28.4";
+  const certsExpiring = kpis ? `${kpis.workforce.certificationsExpiring30d}` : "+112%";
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full">
@@ -180,10 +188,10 @@ export default function CfoDashboardPage() {
         <div className="px-6 sm:px-12 pb-12 space-y-6">
           {/* Metric Cards — always visible */}
           <KineticGrid className="grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" staggerMs={50}>
-            <MetricCardMoonshot label="NET REVENUE YTD" value="$57.6M" color={CFO_PALETTE.positive} trend="up" trendValue="+5.2%" sparklineVariant={1} />
-            <MetricCardMoonshot label="NOI MARGIN" value="27.1%" color={CFO_PALETTE.growth} trend="up" trendValue="+1.4%" sparklineVariant={2} />
-            <MetricCardMoonshot label="DAYS SALES OUTSTANDING" value="28.4" color={CFO_PALETTE.info} trend="down" trendValue="-2.1" sparklineVariant={3} />
-            <MetricCardMoonshot label="AGENCY SPEND VS BUDGET" value="+112%" color="rose" trend="up" trendValue="+18%" sparklineVariant={4} />
+            <MetricCardMoonshot label="TOTAL AR OUTSTANDING" value={revenueValue} color={CFO_PALETTE.positive} trend="flat" trendValue={isDemo ? "+5.2%" : undefined} sparklineVariant={1} />
+            <MetricCardMoonshot label="PORTFOLIO OCCUPANCY" value={occupancyNoi} color={CFO_PALETTE.growth} trend="flat" trendValue={isDemo ? "+1.4%" : undefined} sparklineVariant={2} />
+            <MetricCardMoonshot label="OPEN INVOICES" value={openInvoices} color={CFO_PALETTE.info} trend="flat" sparklineVariant={3} />
+            <MetricCardMoonshot label="CERTS EXPIRING 30D" value={certsExpiring} color="rose" trend="flat" sparklineVariant={4} />
           </KineticGrid>
 
           {/* ═══ OVERVIEW ═══ */}
