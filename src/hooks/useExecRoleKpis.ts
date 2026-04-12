@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   fetchExecutiveKpiSnapshot,
@@ -122,6 +122,31 @@ export function useExecRoleKpis(facilityId?: string | null): ExecRoleKpiData {
 
   useEffect(() => {
     void load();
+  }, [load]);
+
+  // ── Realtime: auto-refetch when new snapshots or alerts arrive ──
+  const orgIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    // We need to track orgId from the last successful load for the Realtime filter.
+    // Since orgId is resolved inside `load`, we store it via a side-channel.
+    // For now, subscribe without org filter (Supabase RLS will scope it).
+    const supabase = createClient();
+    const channel = supabase
+      .channel("exec-kpi-realtime")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "exec_metric_snapshots" }, () => {
+        void load(); // Refetch when new KPI snapshot arrives
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "exec_alerts" }, () => {
+        void load(); // Refetch when new alert arrives
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "exec_alerts" }, () => {
+        void load(); // Refetch when alert is acknowledged/resolved
+      })
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
   }, [load]);
 
   return { kpis, alerts, facilities, loading, error, isDemo, refetch: load };
