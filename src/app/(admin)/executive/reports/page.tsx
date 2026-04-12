@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { FileSpreadsheet } from "lucide-react";
+import { FileSpreadsheet, Sparkles } from "lucide-react";
+import { authorizedEdgeFetch } from "@/lib/supabase/edge-auth";
 
 import { ExecutiveHubNav } from "../executive-hub-nav";
 import { Badge } from "@/components/ui/badge";
@@ -320,6 +321,37 @@ export default function ExecutiveSavedReportsPage() {
     }
   }
 
+  async function onEnhancedReport(report: ReportRow) {
+    if (!canManage || !orgId) return;
+    setBusyId(report.id);
+    setError(null);
+    try {
+      const { facilityId } = parseReportParameters(report.parameters);
+      const res = await authorizedEdgeFetch("exec-report-generator", {
+        method: "POST",
+        body: JSON.stringify({
+          template: report.template,
+          facility_id: facilityId,
+        }),
+      }, "exec-report-gen");
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "Report generation failed");
+      const w = window.open("", "_blank", "noopener,noreferrer");
+      if (!w) { setError("Pop-up blocked."); return; }
+      w.document.write(data.html);
+      w.document.close();
+      w.focus();
+      const trigger = () => { try { w.print(); } catch { /* ignore */ } };
+      if (w.document.readyState === "complete") setTimeout(trigger, 0);
+      else w.addEventListener("load", () => setTimeout(trigger, 0));
+      await persistLastGenerated(report.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Enhanced report failed.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function onDelete(report: ReportRow) {
     if (!canManage || !orgId) return;
     if (!window.confirm(`Remove saved report “${report.name}”?`)) return;
@@ -503,6 +535,17 @@ export default function ExecutiveSavedReportsPage() {
                               onClick={() => void onPrintPdf(r)}
                             >
                               {busyId === r.id ? "Working…" : "Print / PDF"}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={busyId !== null}
+                              onClick={() => void onEnhancedReport(r)}
+                              className="border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10"
+                            >
+                              <Sparkles className="mr-1 h-3 w-3" />
+                              {busyId === r.id ? "Working…" : "Enhanced"}
                             </Button>
                             <Button
                               type="button"
