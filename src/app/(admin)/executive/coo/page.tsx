@@ -43,7 +43,7 @@ const MOCK_METRICS = {
   shiftFillRate: { value: "93.4%", trend: "up" as const, trendValue: "+1.8%" },
   openWorkOrders: { value: "58", trend: "down" as const, trendValue: "-3" },
   satisfaction: { value: "4.3 / 5.0", trend: "up" as const, trendValue: "+0.2" },
-  moveIns: { value: "3", trend: "flat" as const },
+  moveIns: { value: "3", trend: "flat" as const, trendValue: "" },
 };
 
 // ── MAIN COMPONENT ──
@@ -56,10 +56,10 @@ export default function CooDashboardPage() {
   const metrics = useMemo(() => {
     if (!demo) {
       return {
-        shiftFillRate: { value: "—", trend: "flat" as const },
-        openWorkOrders: { value: "—", trend: "flat" as const },
-        satisfaction: { value: "—", trend: "flat" as const },
-        moveIns: { value: "—", trend: "flat" as const },
+        shiftFillRate: { value: "—", trend: "flat" as "up" | "down" | "flat", trendValue: "" },
+        openWorkOrders: { value: "—", trend: "flat" as "up" | "down" | "flat", trendValue: "" },
+        satisfaction: { value: "—", trend: "flat" as "up" | "down" | "flat", trendValue: "" },
+        moveIns: { value: "—", trend: "flat" as "up" | "down" | "flat", trendValue: "" },
       };
     }
     return MOCK_METRICS;

@@ -83,10 +83,10 @@ export default function CeoDashboardPage() {
   const metrics = useMemo(() => {
     if (!demo) {
       return {
-        portfolioOccupancy: { value: "—", trend: "flat" as "up" | "down" | "flat" },
-        netMoveIns: { value: "—", trend: "flat" as "up" | "down" | "flat" },
-        totalWaitlist: { value: "—", trend: "flat" as "up" | "down" | "flat" },
-        enterpriseRisk: { value: "—", trend: "flat" as "up" | "down" | "flat" },
+        portfolioOccupancy: { value: "—", trend: "flat" as "up" | "down" | "flat", trendValue: "" },
+        netMoveIns: { value: "—", trend: "flat" as "up" | "down" | "flat", trendValue: "" },
+        totalWaitlist: { value: "—", trend: "flat" as "up" | "down" | "flat", trendValue: "" },
+        enterpriseRisk: { value: "—", trend: "flat" as "up" | "down" | "flat", trendValue: "" },
       };
     }
     return MOCK_METRICS_WITH_TRENDS;
