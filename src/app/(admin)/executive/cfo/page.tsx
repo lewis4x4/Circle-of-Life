@@ -9,7 +9,7 @@
 
 import React, { useState, useMemo } from "react";
 import { SysLabel, TitleH1, Subtitle } from "@/components/ui/moonshot/typography";
-import { SurveyVisitBanner } from "@/components/executive/survey-visit-banner";
+
 import { ExecutiveNavV2 } from "@/components/executive/executive-nav-v2";
 import { MetricCardMoonshot } from "@/components/executive/metric-card-moonshot";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
@@ -68,9 +68,6 @@ export default function CfoDashboardPage() {
       />
 
       <div className="relative z-10 space-y-6">
-        {/* Survey Visit Mode Banner */}
-        <SurveyVisitBanner />
-
         {/* Enhanced Navigation */}
         <div className="border-b border-white/5">
           <ExecutiveNavV2
