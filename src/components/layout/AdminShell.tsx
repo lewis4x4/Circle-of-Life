@@ -250,9 +250,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-6">
           {/* Logo / Brand */}
           <Link
-            href="/"
+            href="/admin/executive"
             className="flex items-center gap-2 tap-responsive shrink-0 rounded-lg outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-indigo-500/80 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#050505]"
-            aria-label="Haven — go to home page"
+            aria-label="Haven — go to executive overview"
           >
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.4)]">
               <span className="text-white font-display font-bold text-lg leading-none mt-0.5">H</span>

@@ -130,7 +130,7 @@ function TopNavigation({ activeTab, onTabChange }: TopNavigationProps) {
   return (
     <div className="flex items-center bg-slate-900/50 backdrop-blur-xl border-b border-white/5 px-4 sm:px-6 h-12 gap-6">
       {/* Haven Brand */}
-      <Link href="/" className="flex items-center gap-3 mr-4 group">
+      <Link href="/admin/executive" className="flex items-center gap-3 mr-4 group">
         <div className="w-7 h-7 rounded-lg bg-indigo-500 flex items-center justify-center text-white font-bold text-sm group-hover:bg-indigo-400 transition-colors">
           H
         </div>
