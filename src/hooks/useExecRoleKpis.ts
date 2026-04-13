@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useId } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   fetchExecutiveKpiSnapshot,
@@ -54,6 +54,7 @@ const DEMO_ALERTS: ExecutiveAlertRow[] = [];
  * when NEXT_PUBLIC_DEMO_MODE=true and queries fail or return empty.
  */
 export function useExecRoleKpis(facilityId?: string | null): ExecRoleKpiData {
+  const instanceId = useId();
   const [kpis, setKpis] = useState<ExecKpiPayload | null>(null);
   const [alerts, setAlerts] = useState<ExecutiveAlertRow[]>([]);
   const [facilities, setFacilities] = useState<ExecRoleKpiData["facilities"]>([]);
@@ -129,7 +130,7 @@ export function useExecRoleKpis(facilityId?: string | null): ExecRoleKpiData {
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
-      .channel("exec-kpi-realtime")
+      .channel(`exec-kpi-realtime-${instanceId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "exec_metric_snapshots" }, () => {
         void load(); // Refetch when new KPI snapshot arrives
       })

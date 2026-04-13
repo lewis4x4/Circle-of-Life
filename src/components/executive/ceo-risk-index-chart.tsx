@@ -13,6 +13,7 @@ import React from "react";
 import {
   BarChart,
   Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -228,9 +229,10 @@ export function CeoRiskIndexChart({
             }}
           >
             {enrichedData.map((entry, index) => (
-              <div
+              <Cell
                 key={`bar-${index}`}
-                style={{ fill: entry.color }}
+                fill={entry.color}
+                fillOpacity={0.85}
               />
             ))}
           </Bar>
