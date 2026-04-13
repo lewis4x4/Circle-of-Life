@@ -414,12 +414,12 @@ const DEFAULT_CONTEXT: ModuleContext = {
  * Resolve the current pathname to a ModuleContext.
  * Uses longest-prefix matching for accuracy.
  */
+// Pre-sort once at module init (not on every call)
+const SORTED_CONTEXTS = [...ROUTE_CONTEXTS].sort((a, b) => b.prefix.length - a.prefix.length);
+
 export function resolveModuleContext(pathname: string | null): ModuleContext {
   if (!pathname) return DEFAULT_CONTEXT;
-
-  // Sort by prefix length descending so longest match wins
-  const sorted = [...ROUTE_CONTEXTS].sort((a, b) => b.prefix.length - a.prefix.length);
-  for (const entry of sorted) {
+  for (const entry of SORTED_CONTEXTS) {
     if (pathname.startsWith(entry.prefix)) {
       return entry.context;
     }
