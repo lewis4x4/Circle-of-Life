@@ -65,6 +65,285 @@ function sourceKey(source: GraceKnowledgeSource): string {
   return `${source.title}-${source.section_title ?? ""}-${source.confidence}`;
 }
 
+const KNOWLEDGE_THINKING_STEPS = [
+  {
+    label: "Verifying your access",
+    hint: "Checking role, organization, and selected facility context.",
+  },
+  {
+    label: "Sweeping live operations",
+    hint: "Looking through census, incidents, meds, and operational records.",
+  },
+  {
+    label: "Searching policy memory",
+    hint: "Pulling uploaded documents and knowledge-base evidence.",
+  },
+  {
+    label: "Composing Grace's answer",
+    hint: "Merging live signals into a single operator-facing response.",
+  },
+] as const;
+
+const FLOW_THINKING_STEPS = [
+  {
+    label: "Reading your intent",
+    hint: "Classifying whether this should answer directly or trigger a flow.",
+  },
+  {
+    label: "Selecting the lane",
+    hint: "Choosing the lowest-latency route that preserves auditability.",
+  },
+  {
+    label: "Preparing Grace",
+    hint: "Opening the right conversation and preloading context.",
+  },
+] as const;
+
+type GraceThinkingMode = "knowledge" | "flow";
+
+function GraceThinkingPanel({
+  mode,
+  facilityName,
+  elapsedMs,
+  sourceCount,
+  sourceTitles,
+}: {
+  mode: GraceThinkingMode;
+  facilityName: string | null;
+  elapsedMs: number;
+  sourceCount: number;
+  sourceTitles: string[];
+}) {
+  const steps =
+    mode === "flow" ? FLOW_THINKING_STEPS : KNOWLEDGE_THINKING_STEPS;
+  const stageIndex = Math.min(
+    steps.length - 1,
+    Math.floor(elapsedMs / (mode === "flow" ? 1800 : 2600))
+  );
+  const seconds = Math.max(1, Math.floor(elapsedMs / 1000));
+  const laneStates =
+    mode === "flow"
+      ? [
+          {
+            label: "Intent lane",
+            value: stageIndex >= 0 ? "locked" : "warming",
+            tone:
+              stageIndex >= 1
+                ? "border-emerald-300/25 bg-emerald-400/10 text-emerald-50"
+                : "border-violet-300/20 bg-violet-400/10 text-violet-50",
+          },
+          {
+            label: "Risk lane",
+            value: stageIndex >= 1 ? "scored" : "waiting",
+            tone:
+              stageIndex >= 2
+                ? "border-emerald-300/25 bg-emerald-400/10 text-emerald-50"
+                : "border-white/10 bg-white/[0.04] text-white/70",
+          },
+          {
+            label: "Flow lane",
+            value: stageIndex >= 2 ? "primed" : "holding",
+            tone:
+              stageIndex >= 2
+                ? "border-violet-300/25 bg-violet-400/12 text-violet-50"
+                : "border-white/10 bg-white/[0.04] text-white/70",
+          },
+        ]
+      : [
+          {
+            label: "Auth lane",
+            value: stageIndex >= 0 ? "verified" : "warming",
+            tone:
+              stageIndex >= 1
+                ? "border-emerald-300/25 bg-emerald-400/10 text-emerald-50"
+                : "border-violet-300/20 bg-violet-400/10 text-violet-50",
+          },
+          {
+            label: "Live data",
+            value: stageIndex >= 1 ? "querying" : "waiting",
+            tone:
+              stageIndex >= 2
+                ? "border-cyan-300/25 bg-cyan-400/10 text-cyan-50"
+                : "border-white/10 bg-white/[0.04] text-white/70",
+          },
+          {
+            label: "Knowledge",
+            value:
+              sourceCount > 0
+                ? `${sourceCount} sources`
+                : stageIndex >= 2
+                  ? "scanning"
+                  : "cold",
+            tone:
+              sourceCount > 0
+                ? "border-fuchsia-300/25 bg-fuchsia-400/12 text-fuchsia-50"
+                : "border-white/10 bg-white/[0.04] text-white/70",
+          },
+        ];
+  const longWait = seconds >= 8;
+  const pulseCount = 14;
+
+  return (
+    <div className="overflow-hidden rounded-[1.6rem] border border-violet-400/20 bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.16),rgba(15,23,42,0.92)_42%,rgba(2,6,23,0.96))] shadow-[0_0_0_1px_rgba(139,92,246,0.08),0_24px_90px_rgba(76,29,149,0.35)]">
+      <div className="border-b border-violet-400/15 bg-white/[0.03] px-4 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="relative flex size-10 items-center justify-center rounded-2xl border border-violet-300/20 bg-violet-500/10">
+              <span className="absolute inset-0 rounded-2xl bg-violet-400/10 animate-pulse" />
+              <Sparkles className="relative size-4 text-violet-300" />
+            </span>
+            <div>
+              <div className="text-sm font-semibold tracking-tight text-white">
+                {mode === "flow" ? "Grace is choosing a path" : "Grace is reading the system"}
+              </div>
+              <div className="text-xs text-violet-100/65">
+                {facilityName
+                  ? `Focused on ${facilityName}`
+                  : "Running org-wide until a header facility is selected"}
+              </div>
+            </div>
+          </div>
+          <div className="rounded-full border border-violet-300/15 bg-black/20 px-3 py-1 text-[11px] font-mono uppercase tracking-[0.18em] text-violet-100/70">
+            {seconds}s live
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 px-4 py-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(260px,0.8fr)]">
+        <div className="space-y-3">
+          {steps.map((step, index) => {
+            const complete = index < stageIndex;
+            const active = index === stageIndex;
+            return (
+              <div
+                key={step.label}
+                className={`relative overflow-hidden rounded-2xl border px-4 py-3 transition-all duration-500 ${
+                  active
+                    ? "border-violet-300/35 bg-violet-500/10 shadow-[0_0_24px_rgba(139,92,246,0.18)]"
+                    : complete
+                      ? "border-emerald-300/20 bg-emerald-500/10"
+                      : "border-white/8 bg-white/[0.02]"
+                }`}
+              >
+                {active ? (
+                  <div className="pointer-events-none absolute inset-0 translate-x-[-100%] animate-[grace-scan_1.8s_linear_infinite] bg-gradient-to-r from-transparent via-violet-300/12 to-transparent" />
+                ) : null}
+                <div className="relative flex items-start gap-3">
+                  <span
+                    className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
+                      complete
+                        ? "bg-emerald-400/20 text-emerald-100"
+                        : active
+                          ? "bg-violet-300/20 text-violet-50"
+                          : "bg-white/8 text-white/45"
+                    }`}
+                  >
+                    {complete ? "✓" : index + 1}
+                  </span>
+                  <div className="min-w-0">
+                    <div
+                      className={`text-sm font-medium ${
+                        active || complete ? "text-white" : "text-white/60"
+                      }`}
+                    >
+                      {step.label}
+                    </div>
+                    <div className="mt-1 text-xs leading-relaxed text-white/55">
+                      {step.hint}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="relative overflow-hidden rounded-[1.8rem] border border-white/8 bg-black/25 p-4">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(129,140,248,0.2),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(168,85,247,0.18),transparent_35%)]" />
+          <div className="relative space-y-4">
+            <div className="text-[10px] font-mono uppercase tracking-[0.22em] text-violet-100/55">
+              Grace core
+            </div>
+            <div className="relative flex min-h-[188px] items-center justify-center overflow-hidden rounded-[1.6rem] border border-violet-300/10 bg-[radial-gradient(circle_at_center,rgba(76,29,149,0.28),transparent_55%)]">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.12),transparent_40%)]" />
+              <div className="relative flex size-28 items-center justify-center">
+                <div className="absolute size-28 rounded-full border border-violet-300/20 animate-[grace-orbit_12s_linear_infinite]" />
+                <div className="absolute size-20 rounded-full border border-cyan-300/20 animate-[grace-orbit_8s_linear_infinite_reverse]" />
+                <div className="absolute size-12 rounded-full bg-[radial-gradient(circle_at_top,rgba(192,132,252,0.95),rgba(91,33,182,0.72)_45%,rgba(14,116,144,0.58)_100%)] shadow-[0_0_40px_rgba(168,85,247,0.45)] animate-[grace-breathe_2.6s_ease-in-out_infinite]" />
+                {Array.from({ length: pulseCount }).map((_, index) => {
+                  const angle = (index / pulseCount) * Math.PI * 2;
+                  const x = Math.cos(angle) * 74;
+                  const y = Math.sin(angle) * 74;
+                  return (
+                    <span
+                      key={index}
+                      className="absolute size-2 rounded-full bg-violet-200/65"
+                      style={{
+                        transform: `translate(${x}px, ${y}px)`,
+                        animation: `grace-node 1.6s ${index * 110}ms ease-in-out infinite`,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+            <div className="grid gap-2">
+              {laneStates.map((lane) => (
+                <div
+                  key={lane.label}
+                  className={`flex items-center justify-between rounded-2xl border px-3 py-2 text-[11px] font-mono uppercase tracking-[0.16em] ${lane.tone}`}
+                >
+                  <span>{lane.label}</span>
+                  <span>{lane.value}</span>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-2xl border border-violet-300/10 bg-white/[0.03] p-3 text-sm text-white/75">
+              {mode === "flow"
+                ? "Routing the request before Grace speaks keeps higher-risk actions auditable."
+                : "Grace is live against operational data and uploaded policies. Long answers can take a few more seconds while evidence is gathered."}
+            </div>
+            {sourceCount > 0 ? (
+              <div className="space-y-2">
+                <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-fuchsia-100/60">
+                  Evidence arriving
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {sourceTitles.slice(0, 4).map((title, index) => (
+                    <span
+                      key={`${title}-${index}`}
+                      className="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-2.5 py-1 text-[11px] text-fuchsia-50/90"
+                    >
+                      {title}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-[0.18em] text-white/45">
+                <span>Signal build</span>
+                <span>{Math.min(96, 24 + stageIndex * 24)}%</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-white/8">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-400 to-cyan-300 transition-all duration-700"
+                  style={{ width: `${Math.min(96, 24 + stageIndex * 24)}%` }}
+                />
+              </div>
+            </div>
+            {longWait ? (
+              <div className="rounded-2xl border border-amber-300/15 bg-amber-300/8 px-3 py-2 text-xs text-amber-50/85">
+                Deep queries can take longer when Grace is merging live operations with policy evidence. She is still working.
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function GraceBar() {
   const {
     state,
@@ -90,6 +369,7 @@ export function GraceBar() {
   const [input, setInput] = useState("");
   const [classifying, setClassifying] = useState(false);
   const [voicePending, setVoicePending] = useState(false);
+  const [busyNow, setBusyNow] = useState<number>(() => Date.now());
   const pathname = usePathname();
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -378,6 +658,43 @@ export function GraceBar() {
     classifying ||
     knowledge.status === "streaming" ||
     knowledge.status === "connecting";
+  const busySince = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (graceBusy && busySince.current == null) {
+      busySince.current = Date.now();
+      setBusyNow(Date.now());
+      return;
+    }
+    if (!graceBusy) {
+      busySince.current = null;
+      setBusyNow(Date.now());
+    }
+  }, [graceBusy]);
+
+  useEffect(() => {
+    if (!graceBusy) return;
+    const interval = window.setInterval(() => {
+      setBusyNow(Date.now());
+    }, 700);
+    return () => window.clearInterval(interval);
+  }, [graceBusy]);
+
+  const thinkingElapsedMs = Math.max(
+    0,
+    busySince.current ? busyNow - busySince.current : 0
+  );
+  const liveSourceTitles = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          knowledge.sources
+            .map((source) => source.title.trim())
+            .filter((title) => title.length > 0)
+        )
+      ),
+    [knowledge.sources]
+  );
 
   const toggleVoiceCapture = useCallback(async () => {
     if (!recorder.supported) {
@@ -557,10 +874,24 @@ export function GraceBar() {
                       : "border border-border/60 bg-card/80 text-foreground dark:border-white/10 dark:bg-muted/30"
                   }`}
                 >
-                  <div className="whitespace-pre-wrap">
-                    {message.content || (message.pending ? "…" : "")}
-                  </div>
-                  {message.pending && message.role === "assistant" ? (
+                  {message.pending &&
+                  message.role === "assistant" &&
+                  !message.content.trim() ? (
+                    <GraceThinkingPanel
+                      mode="knowledge"
+                      facilityName={selectedFacility?.name ?? null}
+                      elapsedMs={thinkingElapsedMs}
+                      sourceCount={knowledge.sources.length}
+                      sourceTitles={liveSourceTitles}
+                    />
+                  ) : (
+                    <div className="whitespace-pre-wrap">
+                      {message.content || (message.pending ? "…" : "")}
+                    </div>
+                  )}
+                  {message.pending &&
+                  message.role === "assistant" &&
+                  message.content.trim() ? (
                     <span
                       className="mt-2 inline-block h-3 w-px animate-pulse bg-violet-500/80"
                       aria-hidden
@@ -585,16 +916,21 @@ export function GraceBar() {
               ))}
 
               {classifying ? (
-                <div className="flex items-center gap-2 rounded-xl border border-violet-500/20 bg-violet-500/5 px-3 py-2 text-sm text-muted-foreground">
-                  <Loader2 className="size-4 animate-spin text-violet-500" />
-                  Starting a guided flow…
-                </div>
+                <GraceThinkingPanel
+                  mode="flow"
+                  facilityName={selectedFacility?.name ?? null}
+                  elapsedMs={thinkingElapsedMs}
+                  sourceCount={knowledge.sources.length}
+                  sourceTitles={liveSourceTitles}
+                />
               ) : null}
 
               {!classifying && knowledge.status === "connecting" ? (
-                <div className="flex items-center gap-2 rounded-xl border border-violet-500/20 bg-violet-500/5 px-3 py-2 text-sm text-muted-foreground">
-                  <Loader2 className="size-4 animate-spin text-violet-500" />
-                  Connecting to Grace…
+                <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3 text-sm text-violet-50/80">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="size-4 animate-spin text-violet-300" />
+                    Grace handshake complete. Opening live search channels…
+                  </div>
                 </div>
               ) : null}
 
