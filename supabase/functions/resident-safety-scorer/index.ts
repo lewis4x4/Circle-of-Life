@@ -142,11 +142,11 @@ Deno.serve(async (req) => {
 
     // Alert on downward tier transition
     if (pTier && TIER_ORD[rTier] > TIER_ORD[pTier]) {
-      const label = `${res.first_name} ${res.last_name}`.trim() || res.id.slice(0, 8);
+      const resRef = res.id.slice(0, 8); // Use ID fragment only — never expose resident names in alerts
       const sev = rTier === "critical" ? "critical" : rTier === "high" ? "warning" : null;
       const title = rTier === "critical"
-        ? `Resident safety score is CRITICAL \u2014 ${label}`
-        : rTier === "high" ? `Resident safety score declined to HIGH \u2014 ${label}` : null;
+        ? `Resident safety score is CRITICAL \u2014 resident ${resRef}`
+        : rTier === "high" ? `Resident safety score declined to HIGH \u2014 resident ${resRef}` : null;
       if (sev && title) {
         const { data: dup } = await sb.from("exec_alerts").select("id")
           .eq("organization_id", orgId).eq("title", title)

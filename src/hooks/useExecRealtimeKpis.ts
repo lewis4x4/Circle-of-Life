@@ -35,6 +35,9 @@ export function useExecRealtimeKpis(
 ) {
   const supabase = useMemo(() => createClient() as unknown as SupabaseClient, []);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  // Use ref for callbacks to avoid re-subscribing on every render
+  const callbacksRef = useRef(callbacks);
+  callbacksRef.current = callbacks;
 
   useEffect(() => {
     if (!organizationId) return;
@@ -57,7 +60,7 @@ export function useExecRealtimeKpis(
           filter: `organization_id=eq.${organizationId}`,
         },
         (payload) => {
-          callbacks.onSnapshotInsert?.(payload.new as Record<string, unknown>);
+          callbacksRef.current.onSnapshotInsert?.(payload.new as Record<string, unknown>);
         },
       )
       // Alert inserts
@@ -70,7 +73,7 @@ export function useExecRealtimeKpis(
           filter: `organization_id=eq.${organizationId}`,
         },
         (payload) => {
-          callbacks.onAlertInsert?.(payload.new as Record<string, unknown>);
+          callbacksRef.current.onAlertInsert?.(payload.new as Record<string, unknown>);
         },
       )
       // Alert updates (acknowledged, resolved)
@@ -83,7 +86,7 @@ export function useExecRealtimeKpis(
           filter: `organization_id=eq.${organizationId}`,
         },
         (payload) => {
-          callbacks.onAlertUpdate?.(payload.new as Record<string, unknown>);
+          callbacksRef.current.onAlertUpdate?.(payload.new as Record<string, unknown>);
         },
       )
       .subscribe();
@@ -94,6 +97,5 @@ export function useExecRealtimeKpis(
       channel.unsubscribe();
       channelRef.current = null;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, organizationId]);
 }
