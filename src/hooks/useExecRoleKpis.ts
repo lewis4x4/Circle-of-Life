@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useId } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   fetchExecutiveKpiSnapshot,
@@ -57,9 +57,11 @@ export function useExecRoleKpis(facilityId?: string | null): ExecRoleKpiData {
   const [kpis, setKpis] = useState<ExecKpiPayload | null>(null);
   const [alerts, setAlerts] = useState<ExecutiveAlertRow[]>([]);
   const [facilities, setFacilities] = useState<ExecRoleKpiData["facilities"]>([]);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDemo, setIsDemo] = useState(false);
+  const realtimeChannelKey = `exec-kpi-realtime-${useId().replace(/:/g, "")}`;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -73,6 +75,7 @@ export function useExecRoleKpis(facilityId?: string | null): ExecRoleKpiData {
       // Resolve organizationId from user profile (same pattern as finance pages)
       const roleResult = await loadFinanceRoleContext(supabase);
       if (!roleResult.ok) {
+        setOrganizationId(null);
         if (isDemoMode()) {
           setKpis(DEMO_KPI_PAYLOAD);
           setAlerts(DEMO_ALERTS);
@@ -84,6 +87,7 @@ export function useExecRoleKpis(facilityId?: string | null): ExecRoleKpiData {
         throw new Error(roleResult.error);
       }
       const { organizationId } = roleResult.ctx;
+      setOrganizationId(organizationId);
 
       const [kpiResult, alertsResult, facilitiesResult] = await Promise.all([
         fetchExecutiveKpiSnapshot(supabase, organizationId, facId),
@@ -106,11 +110,13 @@ export function useExecRoleKpis(facilityId?: string | null): ExecRoleKpiData {
     } catch (err) {
       // In demo mode, swallow errors and fall back to sample data.
       if (isDemoMode()) {
+        setOrganizationId(null);
         setKpis(DEMO_KPI_PAYLOAD);
         setAlerts(DEMO_ALERTS);
         setFacilities(DEMO_FACILITIES);
         setIsDemo(true);
       } else {
+        setOrganizationId(null);
         setKpis(null);
         setAlerts([]);
         setFacilities([]);
@@ -127,16 +133,20 @@ export function useExecRoleKpis(facilityId?: string | null): ExecRoleKpiData {
 
   // ── Realtime: auto-refetch when new snapshots or alerts arrive ──
   useEffect(() => {
+    if (!organizationId || isDemo) {
+      return;
+    }
+
     const supabase = createClient();
     const channel = supabase
-      .channel("exec-kpi-realtime")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "exec_metric_snapshots" }, () => {
+      .channel(realtimeChannelKey)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "exec_metric_snapshots", filter: `organization_id=eq.${organizationId}` }, () => {
         void load(); // Refetch when new KPI snapshot arrives
       })
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "exec_alerts" }, () => {
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "exec_alerts", filter: `organization_id=eq.${organizationId}` }, () => {
         void load(); // Refetch when new alert arrives
       })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "exec_alerts" }, () => {
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "exec_alerts", filter: `organization_id=eq.${organizationId}` }, () => {
         void load(); // Refetch when alert is acknowledged/resolved
       })
       .subscribe();
@@ -144,7 +154,7 @@ export function useExecRoleKpis(facilityId?: string | null): ExecRoleKpiData {
     return () => {
       channel.unsubscribe();
     };
-  }, [load]);
+  }, [isDemo, load, organizationId, realtimeChannelKey]);
 
   return { kpis, alerts, facilities, loading, error, isDemo, refetch: load };
 }

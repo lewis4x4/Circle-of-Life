@@ -10,7 +10,7 @@
  * Returns callbacks that update parent state when new data arrives.
  */
 
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useId } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -35,9 +35,13 @@ export function useExecRealtimeKpis(
 ) {
   const supabase = useMemo(() => createClient() as unknown as SupabaseClient, []);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const channelKey = `exec-kpi-${useId().replace(/:/g, "")}`;
   // Use ref for callbacks to avoid re-subscribing on every render
   const callbacksRef = useRef(callbacks);
-  callbacksRef.current = callbacks;
+
+  useEffect(() => {
+    callbacksRef.current = callbacks;
+  }, [callbacks]);
 
   useEffect(() => {
     if (!organizationId) return;
@@ -49,7 +53,7 @@ export function useExecRealtimeKpis(
     }
 
     const channel = supabase
-      .channel(`exec-kpi-${organizationId}`)
+      .channel(channelKey)
       // KPI snapshot inserts
       .on(
         "postgres_changes",
@@ -97,5 +101,5 @@ export function useExecRealtimeKpis(
       channel.unsubscribe();
       channelRef.current = null;
     };
-  }, [supabase, organizationId]);
+  }, [channelKey, organizationId, supabase]);
 }
