@@ -18,6 +18,56 @@ const SOFT_CAP_TOKENS = 50_000;
 const HARD_CAP_TOKENS = 150_000;
 
 type ToolTier = "kb_documents" | "clinical" | "operational" | "financial" | "payroll";
+type GraceIntentKind = "deterministic_summary" | "deterministic_lookup" | "semantic_kb" | "hybrid_cross_domain" | "unsupported";
+type GraceDomain =
+  | "resident_attention"
+  | "referral_pipeline"
+  | "admissions"
+  | "discharge"
+  | "medications"
+  | "incidents"
+  | "compliance"
+  | "executive"
+  | "family"
+  | "finance"
+  | "insurance"
+  | "vendors"
+  | "transport"
+  | "training"
+  | "dietary"
+  | "reputation"
+  | "facility_admin"
+  | "reporting"
+  | "rounding";
+type GraceFallbackReason = "no_data" | "access_restricted" | "domain_not_implemented" | "ambiguous_scope" | "iteration_cap";
+type GraceAnswerMode = "deterministic" | "agentic" | "mixed";
+
+type GraceQueryScope = {
+  facilityIds: string[];
+  facilityNames: string[];
+  entityIds?: string[];
+  timeWindowLabel?: string;
+  timeWindowStart?: string | null;
+  statusFilters?: string[];
+  outputShape?: "count" | "list" | "ranked_watchlist" | "brief_summary" | "per_resident" | "per_facility" | "per_entity";
+};
+
+type GraceAnswerProvenance = {
+  resolved_domain: GraceDomain;
+  resolved_scope: GraceQueryScope;
+  resolved_time_window: string | null;
+  tables_queried: string[];
+  rows_examined: number;
+  deterministic: boolean;
+  fallback_reason: GraceFallbackReason | null;
+};
+
+type GraceResolvedRoute = {
+  intent_kind: GraceIntentKind;
+  domain: GraceDomain;
+  scope: GraceQueryScope;
+  fallback_mode: GraceFallbackReason | null;
+};
 
 type ToolDefinition = {
   name: string;
@@ -113,6 +163,187 @@ type ReferralLeadSummaryRow = {
   created_at: string;
   updated_at: string;
   referral_sources: { name: string | null } | null;
+};
+
+type AdmissionCaseSummaryRow = {
+  id: string;
+  facility_id: string;
+  resident_id: string;
+  referral_lead_id: string | null;
+  status: string;
+  target_move_in_date: string | null;
+  financial_clearance_at: string | null;
+  physician_orders_received_at: string | null;
+  bed_id: string | null;
+};
+
+type EmarQueueRow = {
+  resident_id: string;
+  scheduled_time: string;
+  status: string;
+  resident_medication_id: string;
+};
+
+type MedicationQueueRow = {
+  id: string;
+  resident_id: string;
+  medication_name: string;
+  controlled_schedule: string;
+};
+
+type ComplianceDeficiencyRow = {
+  id: string;
+  tag_number: string;
+  status: string;
+  severity: string;
+};
+
+type CompliancePocRow = {
+  deficiency_id: string;
+  status: string;
+  submission_due_date: string;
+};
+
+type PolicyDocumentSummaryRow = {
+  id: string;
+  title: string;
+  acknowledgment_due_days: number;
+  published_at: string | null;
+};
+
+type TrainingCertificationRow = {
+  staff_id: string;
+  certification_name: string;
+  expiration_date: string | null;
+  status: string;
+};
+
+type TrainingCompletionRow = {
+  staff_id: string;
+  expires_at: string | null;
+  completed_at: string;
+};
+
+type TransportRequestSummaryRow = {
+  resident_id: string;
+  appointment_date: string;
+  pickup_time: string | null;
+  destination_name: string;
+  status: string;
+  wheelchair_required: boolean;
+};
+
+type DietOrderSummaryRow = {
+  resident_id: string;
+  status: string;
+  iddsi_food_level: string | null;
+  iddsi_fluid_level: string | null;
+  requires_swallow_eval: boolean;
+  medication_texture_review_notes: string | null;
+};
+
+type ReputationReplySummaryRow = {
+  facility_id: string;
+  status: string;
+  posted_to_platform_at: string | null;
+  review_excerpt: string | null;
+  reputation_accounts: { label: string; platform: string } | null;
+};
+
+type FamilyMessageSummaryRow = {
+  resident_id: string;
+  created_at: string;
+  author_kind: string;
+};
+
+type FamilyTriageSummaryRow = {
+  resident_id: string;
+  triage_status: string;
+};
+
+type ExecutiveAlertSummaryRow = {
+  facility_id: string | null;
+  entity_id: string | null;
+  severity: string;
+  title: string;
+  why_it_matters: string | null;
+  status: string;
+};
+
+type FinanceInvoiceSummaryRow = {
+  resident_id: string;
+  status: string;
+  balance_due: number;
+  due_date: string;
+};
+
+type CollectionActivitySummaryRow = {
+  resident_id: string;
+  follow_up_date: string | null;
+  outcome: string | null;
+};
+
+type InsuranceRenewalSummaryRow = {
+  id: string;
+  entity_id: string;
+  insurance_policy_id: string;
+  status: string;
+  target_effective_date: string;
+};
+
+type InsuranceClaimSummaryRow = {
+  facility_id: string | null;
+  entity_id: string;
+  status: string;
+  reserve_cents: number;
+  paid_cents: number;
+};
+
+type VendorContractSummaryRow = {
+  vendor_id: string;
+  expiration_date: string | null;
+  status: string;
+};
+
+type VendorPaymentSummaryRow = {
+  vendor_id: string;
+  amount_cents: number;
+  payment_date: string;
+};
+
+type VendorSummaryRow = {
+  id: string;
+  name: string;
+};
+
+type ReportingScheduleSummaryRow = {
+  id: string;
+  facility_id: string | null;
+  entity_id: string | null;
+  next_run_at: string | null;
+  last_error: string | null;
+  status: string;
+  title_pattern: string;
+};
+
+type ReportingRunSummaryRow = {
+  id: string;
+  status: string;
+  started_at: string;
+  completed_at: string | null;
+};
+
+type ResidentWatchInstanceSummaryRow = {
+  resident_id: string;
+  status: string;
+  starts_at: string;
+  ends_at: string | null;
+};
+
+type ResidentEscalationSummaryRow = {
+  resident_id: string;
+  status: string;
+  escalation_type: string;
 };
 
 const ALL_APP_ROLES = [
@@ -421,6 +652,96 @@ function isReferralPipelineQuestion(question: string): boolean {
   );
 }
 
+function isAdmissionsQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return q.includes("admission") || q.includes("move-in") || q.includes("move in") || q.includes("pending admission");
+}
+
+function isDischargeQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return q.includes("discharge") || q.includes("move-out") || q.includes("move out") || q.includes("transition");
+}
+
+function isMedicationQueueQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return q.includes("medication") || q.includes("emar") || q.includes("due soon") || q.includes("overdue pass") || q.includes("missed dose");
+}
+
+function isIncidentFollowupQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return q.includes("incident") || q.includes("follow-up") || q.includes("followup") || q.includes("unresolved incident");
+}
+
+function isComplianceWatchlistQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return q.includes("compliance") || q.includes("deficien") || q.includes("plan of correction") || q.includes("poc") || q.includes("policy acknowledgment");
+}
+
+function isTrainingQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return q.includes("certification") || q.includes("training") || q.includes("in-service") || q.includes("inservice") || q.includes("expire");
+}
+
+function isTransportQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return q.includes("transport") || q.includes("trip") || q.includes("ride") || q.includes("mileage") || q.includes("driver");
+}
+
+function isDietaryQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return q.includes("diet") || q.includes("swallow") || q.includes("iddsi") || q.includes("texture") || q.includes("fluid level");
+}
+
+function isReputationQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return q.includes("review") || q.includes("reputation") || q.includes("reply") || q.includes("google") || q.includes("yelp");
+}
+
+function isFamilyQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return q.includes("family") || q.includes("message") || q.includes("portal") || q.includes("conference");
+}
+
+function isExecutiveQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return q.includes("executive") || q.includes("alert") || q.includes("risk") || q.includes("benchmark") || q.includes("portfolio");
+}
+
+function isFinanceArQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return q.includes("ar ") || q.includes("accounts receivable") || q.includes("overdue invoice") || q.includes("collections") || q.includes("balance due");
+}
+
+function isFinanceCloseQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return q.includes("trial balance") || q.includes("period close") || q.includes("journal entr") || q.includes("unposted");
+}
+
+function isInsuranceQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return q.includes("insurance") || q.includes("claim") || q.includes("renewal") || q.includes("loss run") || q.includes("coi");
+}
+
+function isVendorQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return q.includes("vendor") || q.includes("contract") || q.includes("purchase order") || q.includes("po ") || q.includes("spend");
+}
+
+function isFacilityAdminQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return q.includes("facility profile") || q.includes("emergency contact") || q.includes("building profile") || q.includes("facility document") || q.includes("survey history");
+}
+
+function isReportingQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return q.includes("report") || q.includes("scheduled report") || q.includes("saved report") || q.includes("report run");
+}
+
+function isRoundingQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return q.includes("rounding") || q.includes("observation task") || q.includes("watch protocol") || q.includes("resident assurance");
+}
+
 function getRecentWindowStart(question: string): Date {
   const q = question.toLowerCase();
   const now = new Date();
@@ -437,6 +758,49 @@ function getRecentWindowStart(question: string): Date {
     return new Date(now.getTime() - 7 * msPerDay);
   }
   return new Date(now.getTime() - 7 * msPerDay);
+}
+
+function getTimeWindowLabel(question: string): string {
+  const q = question.toLowerCase();
+  if (q.includes("today")) return "today";
+  if (q.includes("yesterday")) return "yesterday";
+  if (q.includes("past 30 days") || q.includes("last 30 days") || q.includes("past month") || q.includes("last month")) return "past_30_days";
+  if (q.includes("past 2 weeks") || q.includes("last 2 weeks") || q.includes("past two weeks") || q.includes("last two weeks")) return "past_14_days";
+  if (q.includes("tomorrow")) return "tomorrow";
+  if (q.includes("next week")) return "next_week";
+  if (q.includes("past week") || q.includes("last week")) return "past_7_days";
+  return "past_7_days";
+}
+
+function resolveGraceRoute(question: string, route: string | undefined, scope: GraceQueryScope): GraceResolvedRoute | null {
+  const routeLower = route?.toLowerCase() ?? "";
+  const choose = (
+    domain: GraceDomain,
+    intent_kind: GraceIntentKind = "deterministic_summary",
+    fallback_mode: GraceFallbackReason | null = "no_data",
+  ): GraceResolvedRoute => ({ domain, intent_kind, scope, fallback_mode });
+
+  if (routeLower.startsWith("/admin/referrals") || isReferralPipelineQuestion(question)) return choose("referral_pipeline");
+  if (routeLower.startsWith("/admin/admissions") || isAdmissionsQuestion(question)) return choose("admissions");
+  if (routeLower.startsWith("/admin/discharge") || isDischargeQuestion(question)) return choose("discharge");
+  if (routeLower.startsWith("/admin/medications") || isMedicationQueueQuestion(question)) return choose("medications");
+  if (routeLower.startsWith("/admin/incidents") || isIncidentFollowupQuestion(question)) return choose("incidents");
+  if (routeLower.startsWith("/admin/compliance") || isComplianceWatchlistQuestion(question)) return choose("compliance");
+  if (routeLower.startsWith("/admin/training") || routeLower.startsWith("/admin/certifications") || isTrainingQuestion(question)) return choose("training");
+  if (routeLower.startsWith("/admin/transportation") || isTransportQuestion(question)) return choose("transport");
+  if (routeLower.startsWith("/admin/dietary") || isDietaryQuestion(question)) return choose("dietary");
+  if (routeLower.startsWith("/admin/reputation") || isReputationQuestion(question)) return choose("reputation");
+  if (routeLower.startsWith("/admin/family") || routeLower.startsWith("/family") || isFamilyQuestion(question)) return choose("family");
+  if (routeLower.startsWith("/admin/executive") || isExecutiveQuestion(question)) return choose("executive");
+  if (routeLower.startsWith("/admin/billing") || isFinanceArQuestion(question)) return choose("finance");
+  if (routeLower.startsWith("/admin/finance") || isFinanceCloseQuestion(question)) return choose("finance");
+  if (routeLower.startsWith("/admin/insurance") || isInsuranceQuestion(question)) return choose("insurance");
+  if (routeLower.startsWith("/admin/vendors") || isVendorQuestion(question)) return choose("vendors");
+  if (routeLower.startsWith("/admin/facilities") || isFacilityAdminQuestion(question)) return choose("facility_admin");
+  if (routeLower.startsWith("/admin/reports") || isReportingQuestion(question)) return choose("reporting");
+  if (routeLower.startsWith("/admin/rounding") || isRoundingQuestion(question)) return choose("rounding");
+  if (isResidentAttentionQuestion(question)) return choose("resident_attention");
+  return null;
 }
 
 function getSearchTokens(value: unknown): string[] {
@@ -956,6 +1320,573 @@ async function answerReferralPipelineQuestion(
     model: "deterministic:referral_pipeline_summary",
     kbSearchMiss: false,
   };
+}
+
+function buildDeterministicResult(
+  text: string,
+  domain: GraceDomain,
+  scope: GraceQueryScope,
+  tablesQueried: string[],
+  rowsExamined: number,
+  fallbackReason: GraceFallbackReason | null = null,
+): {
+  text: string;
+  sources: {
+    title: string;
+    excerpt: string;
+    confidence: number;
+    section_title: string | null;
+  }[];
+  toolsUsed: string[];
+  tokensIn: number;
+  tokensOut: number;
+  model: string;
+  kbSearchMiss: boolean;
+  deterministic: true;
+  provenance: GraceAnswerProvenance;
+  answer_mode: GraceAnswerMode;
+} {
+  return {
+    text,
+    sources: [],
+    toolsUsed: [`${domain}_summary`],
+    tokensIn: 0,
+    tokensOut: 0,
+    model: `deterministic:${domain}_summary`,
+    kbSearchMiss: false,
+    deterministic: true,
+    answer_mode: "deterministic",
+    provenance: {
+      resolved_domain: domain,
+      resolved_scope: scope,
+      resolved_time_window: scope.timeWindowStart ?? null,
+      tables_queried: tablesQueried,
+      rows_examined: rowsExamined,
+      deterministic: true,
+      fallback_reason: fallbackReason,
+    },
+  };
+}
+
+async function answerAdmissionsPipelineQuestion(
+  ctx: ToolContext,
+  scope: GraceQueryScope,
+): Promise<ReturnType<typeof buildDeterministicResult>> {
+  const facilityIds = scope.facilityIds.length > 0 ? scope.facilityIds : ctx.accessibleFacilityIds;
+  const { data } = await ctx.admin
+    .from("admission_cases")
+    .select("id,facility_id,resident_id,referral_lead_id,status,target_move_in_date,financial_clearance_at,physician_orders_received_at,bed_id")
+    .eq("organization_id", ctx.workspaceId)
+    .in("facility_id", facilityIds)
+    .is("deleted_at", null)
+    .order("updated_at", { ascending: false })
+    .limit(20);
+
+  const rows = (data ?? []) as AdmissionCaseSummaryRow[];
+  if (rows.length === 0) {
+    return buildDeterministicResult(
+      "No admission cases are currently open in the requested scope.",
+      "admissions",
+      scope,
+      ["admission_cases"],
+      0,
+      "no_data",
+    );
+  }
+
+  const pending = rows.filter((row) => row.status !== "completed" && row.status !== "cancelled");
+  const blocked = pending.filter((row) => !row.financial_clearance_at || !row.physician_orders_received_at || !row.bed_id);
+  const lines = pending.slice(0, 5).map((row, index) => {
+    const blockers: string[] = [];
+    if (!row.financial_clearance_at) blockers.push("financial clearance pending");
+    if (!row.physician_orders_received_at) blockers.push("physician orders missing");
+    if (!row.bed_id) blockers.push("bed assignment missing");
+    return `${index + 1}. case ${row.id.slice(0, 8)}: ${row.status.replace(/_/g, " ")}${row.target_move_in_date ? `; target ${row.target_move_in_date}` : ""}${blockers.length ? `; blockers: ${blockers.join(", ")}` : ""}.`;
+  });
+
+  return buildDeterministicResult(
+    `${pending.length} admission case${pending.length === 1 ? "" : "s"} are open. ${blocked.length} have blockers.\n\n${lines.join("\n")}`,
+    "admissions",
+    scope,
+    ["admission_cases"],
+    rows.length,
+  );
+}
+
+async function answerDischargeWatchlistQuestion(
+  ctx: ToolContext,
+  scope: GraceQueryScope,
+): Promise<ReturnType<typeof buildDeterministicResult>> {
+  const facilityIds = scope.facilityIds.length > 0 ? scope.facilityIds : ctx.accessibleFacilityIds;
+  const { data: residentsData } = await ctx.admin
+    .from("residents")
+    .select("id,facility_id,first_name,last_name,preferred_name,discharge_target_date,discharge_reason,discharge_destination,status")
+    .eq("organization_id", ctx.workspaceId)
+    .in("facility_id", facilityIds)
+    .is("deleted_at", null)
+    .not("discharge_target_date", "is", null)
+    .order("discharge_target_date", { ascending: true })
+    .limit(20);
+  const residents = (residentsData ?? []) as Array<{
+    id: string; facility_id: string; first_name: string; last_name: string; preferred_name: string | null;
+    discharge_target_date: string | null; discharge_reason: string | null; discharge_destination: string | null; status: string;
+  }>;
+
+  const residentIds = residents.map((row) => row.id);
+  const { data: medsData } = residentIds.length > 0
+    ? await ctx.admin
+        .from("discharge_med_reconciliation")
+        .select("resident_id,status")
+        .eq("organization_id", ctx.workspaceId)
+        .in("facility_id", facilityIds)
+        .in("resident_id", residentIds)
+    : { data: [] };
+  const medMap = new Map<string, string>();
+  for (const row of (medsData ?? []) as Array<{ resident_id: string; status: string }>) {
+    medMap.set(row.resident_id, row.status);
+  }
+
+  if (residents.length === 0) {
+    return buildDeterministicResult("No pending discharges are currently scheduled in the requested scope.", "discharge", scope, ["residents", "discharge_med_reconciliation"], 0, "no_data");
+  }
+
+  const lines = residents.slice(0, 5).map((row, index) => {
+    const medStatus = medMap.get(row.id);
+    const parts = [`target ${row.discharge_target_date}`];
+    if (row.discharge_reason) parts.push(`reason: ${row.discharge_reason.replace(/_/g, " ")}`);
+    if (row.discharge_destination) parts.push(`destination: ${row.discharge_destination}`);
+    if (medStatus && medStatus !== "completed") parts.push(`med rec ${medStatus.replace(/_/g, " ")}`);
+    return `${index + 1}. ${formatResidentName(row)}: ${parts.join("; ")}.`;
+  });
+  return buildDeterministicResult(`${residents.length} resident${residents.length === 1 ? "" : "s"} have pending discharge targets.\n\n${lines.join("\n")}`, "discharge", scope, ["residents", "discharge_med_reconciliation"], residents.length + (medsData?.length ?? 0));
+}
+
+async function answerMedicationQueueQuestion(
+  ctx: ToolContext,
+  scope: GraceQueryScope,
+): Promise<ReturnType<typeof buildDeterministicResult>> {
+  const facilityIds = scope.facilityIds.length > 0 ? scope.facilityIds : ctx.accessibleFacilityIds;
+  const nowIso = new Date().toISOString();
+  const { data: emarData } = await ctx.admin
+    .from("emar_records")
+    .select("resident_id,scheduled_time,status,resident_medication_id")
+    .eq("organization_id", ctx.workspaceId)
+    .in("facility_id", facilityIds)
+    .is("deleted_at", null)
+    .in("status", ["scheduled", "held", "refused"])
+    .order("scheduled_time", { ascending: true })
+    .limit(60);
+  const emarRows = (emarData ?? []) as EmarQueueRow[];
+  const overdueRows = emarRows.filter((row) => row.scheduled_time < nowIso);
+  const medIds = uniq(emarRows.map((row) => row.resident_medication_id));
+  const { data: medsData } = medIds.length > 0
+    ? await ctx.admin
+        .from("resident_medications")
+        .select("id,resident_id,medication_name,controlled_schedule")
+        .eq("organization_id", ctx.workspaceId)
+        .in("id", medIds)
+        .is("deleted_at", null)
+    : { data: [] };
+  const meds = (medsData ?? []) as MedicationQueueRow[];
+  const medMap = new Map(meds.map((row) => [row.id, row]));
+  const residentNames = await fetchResidentNameMap(ctx, uniq(meds.map((row) => row.resident_id)));
+
+  if (emarRows.length === 0) {
+    return buildDeterministicResult("No due or held medication queue items were found in the requested scope.", "medications", scope, ["emar_records", "resident_medications"], 0, "no_data");
+  }
+
+  const lines = overdueRows.slice(0, 5).map((row, index) => {
+    const med = medMap.get(row.resident_medication_id);
+    return `${index + 1}. ${residentNames[row.resident_id] ?? row.resident_id}: ${med?.medication_name ?? "medication"} is ${row.status} since ${row.scheduled_time.slice(11, 16)}${med?.controlled_schedule && med.controlled_schedule !== "non_controlled" ? "; controlled" : ""}.`;
+  });
+  return buildDeterministicResult(
+    `${overdueRows.length} overdue medication queue item${overdueRows.length === 1 ? "" : "s"} and ${emarRows.length - overdueRows.length} upcoming/held item${emarRows.length - overdueRows.length === 1 ? "" : "s"} are in the current queue.\n\n${lines.join("\n")}`,
+    "medications",
+    scope,
+    ["emar_records", "resident_medications"],
+    emarRows.length + meds.length,
+  );
+}
+
+async function answerIncidentFollowupSummary(
+  ctx: ToolContext,
+  scope: GraceQueryScope,
+): Promise<ReturnType<typeof buildDeterministicResult>> {
+  const facilityIds = scope.facilityIds.length > 0 ? scope.facilityIds : ctx.accessibleFacilityIds;
+  const nowIso = new Date().toISOString();
+  const [incidentsRes, followupsRes] = await Promise.all([
+    ctx.admin
+      .from("incidents")
+      .select("id,resident_id,incident_number,severity,status,occurred_at")
+      .eq("organization_id", ctx.workspaceId)
+      .in("facility_id", facilityIds)
+      .is("deleted_at", null)
+      .not("status", "in", "(closed,resolved)")
+      .order("occurred_at", { ascending: false })
+      .limit(20),
+    ctx.admin
+      .from("incident_followups")
+      .select("resident_id,due_at,task_type,description")
+      .eq("organization_id", ctx.workspaceId)
+      .in("facility_id", facilityIds)
+      .is("deleted_at", null)
+      .is("completed_at", null)
+      .order("due_at", { ascending: true })
+      .limit(20),
+  ]);
+  const incidents = (incidentsRes.data ?? []) as Array<{ id: string; resident_id: string | null; incident_number: string; severity: string; status: string; occurred_at: string }>;
+  const followups = (followupsRes.data ?? []) as ResidentAttentionFollowupRow[];
+  const residentIds = uniq([
+    ...incidents.map((row) => row.resident_id).filter(Boolean) as string[],
+    ...followups.map((row) => row.resident_id).filter(Boolean) as string[],
+  ]);
+  const residentNames = await fetchResidentNameMap(ctx, residentIds);
+  const overdue = followups.filter((row) => row.due_at < nowIso);
+
+  if (incidents.length === 0 && followups.length === 0) {
+    return buildDeterministicResult("No unresolved incidents or open incident follow-ups were found in the requested scope.", "incidents", scope, ["incidents", "incident_followups"], 0, "no_data");
+  }
+
+  const lines = overdue.slice(0, 5).map((row, index) => `${index + 1}. ${row.resident_id ? residentNames[row.resident_id] ?? row.resident_id : "Unlinked resident"}: ${row.task_type.replace(/_/g, " ")} overdue since ${row.due_at.slice(0, 10)}.`);
+  return buildDeterministicResult(
+    `${incidents.length} unresolved incident${incidents.length === 1 ? "" : "s"} and ${followups.length} open follow-up${followups.length === 1 ? "" : "s"} are active. ${overdue.length} follow-up${overdue.length === 1 ? "" : "s"} are overdue.\n\n${lines.join("\n")}`,
+    "incidents",
+    scope,
+    ["incidents", "incident_followups"],
+    incidents.length + followups.length,
+  );
+}
+
+async function answerComplianceWatchlistSummary(
+  ctx: ToolContext,
+  scope: GraceQueryScope,
+): Promise<ReturnType<typeof buildDeterministicResult>> {
+  const facilityIds = scope.facilityIds.length > 0 ? scope.facilityIds : ctx.accessibleFacilityIds;
+  const nowIso = new Date().toISOString();
+  const [defRes, pocRes, policyRes, ackRes] = await Promise.all([
+    ctx.admin.from("survey_deficiencies").select("id,tag_number,status,severity").eq("organization_id", ctx.workspaceId).in("facility_id", facilityIds).is("deleted_at", null).not("status", "in", "(verified,corrected)").limit(20),
+    ctx.admin.from("plans_of_correction").select("deficiency_id,status,submission_due_date").eq("organization_id", ctx.workspaceId).in("facility_id", facilityIds).is("deleted_at", null).not("status", "in", "(accepted,completed)").limit(20),
+    ctx.admin.from("policy_documents").select("id,title,acknowledgment_due_days,published_at").eq("organization_id", ctx.workspaceId).in("facility_id", facilityIds).is("deleted_at", null).eq("status", "published").limit(20),
+    ctx.admin.from("policy_acknowledgments").select("policy_document_id,user_id").eq("organization_id", ctx.workspaceId).in("facility_id", facilityIds),
+  ]);
+  const deficiencies = (defRes.data ?? []) as ComplianceDeficiencyRow[];
+  const pocs = (pocRes.data ?? []) as CompliancePocRow[];
+  const overduePocs = pocs.filter((row) => row.submission_due_date < nowIso.slice(0, 10));
+  const policies = (policyRes.data ?? []) as PolicyDocumentSummaryRow[];
+  const acks = (ackRes.data ?? []) as Array<{ policy_document_id: string; user_id: string }>;
+  const unackedPolicies = policies.filter((policy) => {
+    if (!policy.published_at) return false;
+    const dueDate = new Date(policy.published_at);
+    dueDate.setDate(dueDate.getDate() + policy.acknowledgment_due_days);
+    return dueDate.toISOString() < nowIso && !acks.some((ack) => ack.policy_document_id === policy.id);
+  });
+  if (deficiencies.length === 0 && overduePocs.length === 0 && unackedPolicies.length === 0) {
+    return buildDeterministicResult("No compliance watchlist items are currently open in the requested scope.", "compliance", scope, ["survey_deficiencies", "plans_of_correction", "policy_documents", "policy_acknowledgments"], 0, "no_data");
+  }
+  const parts = [
+    `${deficiencies.length} open deficiency${deficiencies.length === 1 ? "" : "ies"}`,
+    `${overduePocs.length} overdue POC${overduePocs.length === 1 ? "" : "s"}`,
+    `${unackedPolicies.length} published polic${unackedPolicies.length === 1 ? "y is" : "ies are"} overdue for acknowledgment`,
+  ];
+  return buildDeterministicResult(parts.join(", ") + ".", "compliance", scope, ["survey_deficiencies", "plans_of_correction", "policy_documents", "policy_acknowledgments"], deficiencies.length + pocs.length + policies.length + acks.length);
+}
+
+async function answerTrainingExpirySummary(
+  ctx: ToolContext,
+  scope: GraceQueryScope,
+): Promise<ReturnType<typeof buildDeterministicResult>> {
+  const facilityIds = scope.facilityIds.length > 0 ? scope.facilityIds : ctx.accessibleFacilityIds;
+  const windowEnd = new Date();
+  windowEnd.setDate(windowEnd.getDate() + 30);
+  const endIso = windowEnd.toISOString().slice(0, 10);
+  const [certRes, completionRes, sessionRes] = await Promise.all([
+    ctx.admin.from("staff_certifications").select("staff_id,certification_name,expiration_date,status").eq("organization_id", ctx.workspaceId).in("facility_id", facilityIds).is("deleted_at", null).not("expiration_date", "is", null).lte("expiration_date", endIso).limit(30),
+    ctx.admin.from("staff_training_completions").select("staff_id,expires_at,completed_at").eq("organization_id", ctx.workspaceId).in("facility_id", facilityIds).is("deleted_at", null).not("expires_at", "is", null).lte("expires_at", endIso).limit(30),
+    ctx.admin.from("inservice_log_sessions").select("session_date,topic,hours,facility_id").eq("organization_id", ctx.workspaceId).in("facility_id", facilityIds).is("deleted_at", null).gte("session_date", new Date().toISOString().slice(0, 10)).order("session_date", { ascending: true }).limit(5),
+  ]);
+  const certs = (certRes.data ?? []) as TrainingCertificationRow[];
+  const completions = (completionRes.data ?? []) as TrainingCompletionRow[];
+  const sessions = (sessionRes.data ?? []) as Array<{ session_date: string; topic: string; hours: number; facility_id: string }>;
+  const staffNames = await fetchStaffNameMap(ctx, uniq([...certs.map((row) => row.staff_id), ...completions.map((row) => row.staff_id)]));
+  if (certs.length === 0 && completions.length === 0 && sessions.length === 0) {
+    return buildDeterministicResult("No near-term certification expirations, completion expirations, or upcoming in-service sessions were found.", "training", scope, ["staff_certifications", "staff_training_completions", "inservice_log_sessions"], 0, "no_data");
+  }
+  const lines = [
+    `${certs.length} certification expiration${certs.length === 1 ? "" : "s"} in the next 30 days.`,
+    `${completions.length} training completion expiration${completions.length === 1 ? "" : "s"} in the next 30 days.`,
+  ];
+  if (sessions.length > 0) {
+    lines.push(`Next in-service: ${sessions[0].topic} on ${sessions[0].session_date}.`);
+  }
+  const detail = certs.slice(0, 4).map((row, index) => `${index + 1}. ${staffNames[row.staff_id] ?? row.staff_id}: ${row.certification_name} expires ${row.expiration_date}.`);
+  return buildDeterministicResult([...lines, "", ...detail].join("\n"), "training", scope, ["staff_certifications", "staff_training_completions", "inservice_log_sessions"], certs.length + completions.length + sessions.length);
+}
+
+async function answerTransportScheduleSummary(
+  ctx: ToolContext,
+  scope: GraceQueryScope,
+): Promise<ReturnType<typeof buildDeterministicResult>> {
+  const facilityIds = scope.facilityIds.length > 0 ? scope.facilityIds : ctx.accessibleFacilityIds;
+  const label = scope.timeWindowLabel ?? "today";
+  const today = new Date();
+  const start = new Date(today);
+  const end = new Date(today);
+  if (label === "tomorrow") {
+    start.setDate(start.getDate() + 1);
+    end.setDate(end.getDate() + 1);
+  } else if (label === "next_week") {
+    end.setDate(end.getDate() + 7);
+  }
+  const startIso = start.toISOString().slice(0, 10);
+  const endIso = end.toISOString().slice(0, 10);
+  let req = ctx.admin
+    .from("resident_transport_requests")
+    .select("resident_id,appointment_date,pickup_time,destination_name,status,wheelchair_required")
+    .eq("organization_id", ctx.workspaceId)
+    .in("facility_id", facilityIds)
+    .is("deleted_at", null)
+    .gte("appointment_date", startIso)
+    .lte("appointment_date", endIso)
+    .order("appointment_date", { ascending: true })
+    .limit(20);
+  const rows = (await req).data as TransportRequestSummaryRow[] ?? [];
+  const residentNames = await fetchResidentNameMap(ctx, uniq(rows.map((row) => row.resident_id)));
+  if (rows.length === 0) {
+    return buildDeterministicResult(`No transport trips are scheduled for ${label.replace(/_/g, " ")} in the requested scope.`, "transport", scope, ["resident_transport_requests"], 0, "no_data");
+  }
+  const lines = rows.slice(0, 5).map((row, index) => `${index + 1}. ${residentNames[row.resident_id] ?? row.resident_id}: ${row.destination_name} on ${row.appointment_date}${row.pickup_time ? ` at ${row.pickup_time}` : ""}; ${row.status.replace(/_/g, " ")}${row.wheelchair_required ? "; wheelchair" : ""}.`);
+  return buildDeterministicResult(`${rows.length} transport trip${rows.length === 1 ? "" : "s"} are scheduled for ${label.replace(/_/g, " ")}.\n\n${lines.join("\n")}`, "transport", scope, ["resident_transport_requests"], rows.length);
+}
+
+async function answerDietaryRiskSummary(
+  ctx: ToolContext,
+  scope: GraceQueryScope,
+): Promise<ReturnType<typeof buildDeterministicResult>> {
+  const facilityIds = scope.facilityIds.length > 0 ? scope.facilityIds : ctx.accessibleFacilityIds;
+  const { data } = await ctx.admin
+    .from("diet_orders")
+    .select("resident_id,status,iddsi_food_level,iddsi_fluid_level,requires_swallow_eval,medication_texture_review_notes")
+    .eq("organization_id", ctx.workspaceId)
+    .in("facility_id", facilityIds)
+    .is("deleted_at", null)
+    .eq("status", "active")
+    .limit(30);
+  const rows = (data ?? []) as DietOrderSummaryRow[];
+  const risky = rows.filter((row) => row.requires_swallow_eval || row.medication_texture_review_notes || row.iddsi_food_level || row.iddsi_fluid_level);
+  const residentNames = await fetchResidentNameMap(ctx, uniq(risky.map((row) => row.resident_id)));
+  if (risky.length === 0) {
+    return buildDeterministicResult("No active dietary risk items were found in the requested scope.", "dietary", scope, ["diet_orders"], 0, "no_data");
+  }
+  const lines = risky.slice(0, 5).map((row, index) => {
+    const parts: string[] = [];
+    if (row.iddsi_food_level) parts.push(`food ${row.iddsi_food_level}`);
+    if (row.iddsi_fluid_level) parts.push(`fluid ${row.iddsi_fluid_level}`);
+    if (row.requires_swallow_eval) parts.push("swallow eval required");
+    if (row.medication_texture_review_notes) parts.push("med-texture review flagged");
+    return `${index + 1}. ${residentNames[row.resident_id] ?? row.resident_id}: ${parts.join("; ")}.`;
+  });
+  return buildDeterministicResult(`${risky.length} resident${risky.length === 1 ? "" : "s"} have active dietary risk items.\n\n${lines.join("\n")}`, "dietary", scope, ["diet_orders"], rows.length);
+}
+
+async function answerReputationReplyQueueSummary(
+  ctx: ToolContext,
+  scope: GraceQueryScope,
+): Promise<ReturnType<typeof buildDeterministicResult>> {
+  const facilityIds = scope.facilityIds.length > 0 ? scope.facilityIds : ctx.accessibleFacilityIds;
+  const { data } = await ctx.admin
+    .from("reputation_replies")
+    .select("facility_id,status,posted_to_platform_at,review_excerpt,reputation_accounts(label,platform)")
+    .eq("organization_id", ctx.workspaceId)
+    .in("facility_id", facilityIds)
+    .is("deleted_at", null)
+    .order("updated_at", { ascending: false })
+    .limit(25);
+  const rows = (data ?? []) as ReputationReplySummaryRow[];
+  const pending = rows.filter((row) => row.status === "draft");
+  const failed = rows.filter((row) => row.status === "failed");
+  if (rows.length === 0) {
+    return buildDeterministicResult("No reputation reply records were found in the requested scope.", "reputation", scope, ["reputation_replies", "reputation_accounts"], 0, "no_data");
+  }
+  const lines = pending.slice(0, 4).map((row, index) => `${index + 1}. ${row.reputation_accounts?.label ?? "Account"} (${row.reputation_accounts?.platform ?? "platform"}): draft reply pending${row.review_excerpt ? ` — "${row.review_excerpt.slice(0, 80)}"` : ""}.`);
+  return buildDeterministicResult(`${pending.length} reply draft${pending.length === 1 ? "" : "s"} are waiting and ${failed.length} reply post${failed.length === 1 ? "" : "s"} failed.\n\n${lines.join("\n")}`, "reputation", scope, ["reputation_replies", "reputation_accounts"], rows.length);
+}
+
+async function answerFamilyCommunicationSummary(
+  ctx: ToolContext,
+  scope: GraceQueryScope,
+): Promise<ReturnType<typeof buildDeterministicResult>> {
+  const facilityIds = scope.facilityIds.length > 0 ? scope.facilityIds : ctx.accessibleFacilityIds;
+  const windowStartIso = (scope.timeWindowStart ?? getRecentWindowStart("past week").toISOString());
+  const [messagesRes, triageRes] = await Promise.all([
+    ctx.admin.from("family_portal_messages").select("resident_id,created_at,author_kind").eq("organization_id", ctx.workspaceId).in("facility_id", facilityIds).is("deleted_at", null).gte("created_at", windowStartIso).order("created_at", { ascending: false }).limit(30),
+    ctx.admin.from("family_message_triage_items").select("resident_id,triage_status").eq("organization_id", ctx.workspaceId).in("facility_id", facilityIds).is("deleted_at", null).not("triage_status", "in", "(resolved,dismissed)").limit(30),
+  ]);
+  const messages = (messagesRes.data ?? []) as FamilyMessageSummaryRow[];
+  const triageItems = (triageRes.data ?? []) as FamilyTriageSummaryRow[];
+  const residentNames = await fetchResidentNameMap(ctx, uniq([...messages.map((row) => row.resident_id), ...triageItems.map((row) => row.resident_id)]));
+  if (messages.length === 0 && triageItems.length === 0) {
+    return buildDeterministicResult("No recent family communication hotspots were found in the requested scope.", "family", scope, ["family_portal_messages", "family_message_triage_items"], 0, "no_data");
+  }
+  const lines = triageItems.slice(0, 5).map((row, index) => `${index + 1}. ${residentNames[row.resident_id] ?? row.resident_id}: triage status ${row.triage_status.replace(/_/g, " ")}.`);
+  return buildDeterministicResult(`${messages.length} family message${messages.length === 1 ? "" : "s"} were created in the selected time window and ${triageItems.length} triage item${triageItems.length === 1 ? "" : "s"} remain open.\n\n${lines.join("\n")}`, "family", scope, ["family_portal_messages", "family_message_triage_items"], messages.length + triageItems.length);
+}
+
+async function answerExecutiveAlertSummary(
+  ctx: ToolContext,
+  scope: GraceQueryScope,
+): Promise<ReturnType<typeof buildDeterministicResult>> {
+  const facilityIds = scope.facilityIds.length > 0 ? scope.facilityIds : ctx.accessibleFacilityIds;
+  let req = ctx.admin
+    .from("exec_alerts")
+    .select("facility_id,entity_id,severity,title,why_it_matters,status")
+    .eq("organization_id", ctx.workspaceId)
+    .is("deleted_at", null)
+    .not("status", "in", "(resolved,dismissed)");
+  if (facilityIds.length > 0) req = req.in("facility_id", facilityIds);
+  const rows = ((await req.limit(20)).data ?? []) as ExecutiveAlertSummaryRow[];
+  if (rows.length === 0) {
+    return buildDeterministicResult("No active executive alerts are open in the requested scope.", "executive", scope, ["exec_alerts"], 0, "no_data");
+  }
+  const critical = rows.filter((row) => row.severity === "critical");
+  const high = rows.filter((row) => row.severity === "high");
+  const lines = rows.slice(0, 5).map((row, index) => `${index + 1}. [${row.severity}] ${row.title}${row.why_it_matters ? ` — ${row.why_it_matters}` : ""}`);
+  return buildDeterministicResult(`${rows.length} executive alert${rows.length === 1 ? "" : "s"} are open: ${critical.length} critical and ${high.length} high.\n\n${lines.join("\n")}`, "executive", scope, ["exec_alerts"], rows.length);
+}
+
+async function answerFinanceArSummary(
+  ctx: ToolContext,
+  scope: GraceQueryScope,
+): Promise<ReturnType<typeof buildDeterministicResult>> {
+  if (!FINANCIAL_ROLES.has(ctx.userRole)) {
+    return buildDeterministicResult("I do not have access to billing and AR data for this role.", "finance", scope, ["invoices", "collection_activities"], 0, "access_restricted");
+  }
+  const facilityIds = scope.facilityIds.length > 0 ? scope.facilityIds : ctx.accessibleFacilityIds;
+  const [invoiceRes, activityRes] = await Promise.all([
+    ctx.admin.from("invoices").select("resident_id,status,balance_due,due_date").eq("organization_id", ctx.workspaceId).in("facility_id", facilityIds).is("deleted_at", null).in("status", ["sent", "partial", "overdue"]).limit(40),
+    ctx.admin.from("collection_activities").select("resident_id,follow_up_date,outcome").eq("organization_id", ctx.workspaceId).in("facility_id", facilityIds).is("deleted_at", null).limit(30),
+  ]);
+  const invoices = (invoiceRes.data ?? []) as FinanceInvoiceSummaryRow[];
+  const overdue = invoices.filter((row) => row.status === "overdue");
+  const totalBalance = invoices.reduce((sum, row) => sum + (row.balance_due ?? 0), 0);
+  const activities = (activityRes.data ?? []) as CollectionActivitySummaryRow[];
+  const dueFollowups = activities.filter((row) => row.follow_up_date);
+  if (invoices.length === 0) {
+    return buildDeterministicResult("No open AR invoices were found in the requested scope.", "finance", scope, ["invoices", "collection_activities"], 0, "no_data");
+  }
+  return buildDeterministicResult(`${overdue.length} invoice${overdue.length === 1 ? "" : "s"} are overdue. Total open AR is $${(totalBalance / 100).toFixed(2)}. ${dueFollowups.length} collection activit${dueFollowups.length === 1 ? "y has" : "ies have"} a follow-up date on file.`, "finance", scope, ["invoices", "collection_activities"], invoices.length + activities.length);
+}
+
+async function answerFinanceCloseSummary(
+  ctx: ToolContext,
+  scope: GraceQueryScope,
+): Promise<ReturnType<typeof buildDeterministicResult>> {
+  if (!FINANCIAL_ROLES.has(ctx.userRole)) {
+    return buildDeterministicResult("I do not have access to GL and close data for this role.", "finance", scope, ["gl_period_closes", "journal_entries"], 0, "access_restricted");
+  }
+  const [closeRes, journalRes] = await Promise.all([
+    ctx.admin.from("gl_period_closes").select("entity_id,period_month,period_year,status").eq("organization_id", ctx.workspaceId).is("deleted_at", null).limit(20),
+    ctx.admin.from("journal_entries").select("entity_id,status,posted_at").eq("organization_id", ctx.workspaceId).is("deleted_at", null).limit(40),
+  ]);
+  const closes = (closeRes.data ?? []) as Array<{ entity_id: string; period_month: number; period_year: number; status: string }>;
+  const journals = (journalRes.data ?? []) as Array<{ entity_id: string; status: string; posted_at: string | null }>;
+  const drafts = journals.filter((row) => row.status === "draft");
+  const blocked = closes.filter((row) => row.status !== "closed");
+  if (closes.length === 0 && journals.length === 0) {
+    return buildDeterministicResult("No finance close records were found in the requested scope.", "finance", scope, ["gl_period_closes", "journal_entries"], 0, "no_data");
+  }
+  return buildDeterministicResult(`${blocked.length} GL period close${blocked.length === 1 ? "" : "s"} are not closed and ${drafts.length} journal entr${drafts.length === 1 ? "y is" : "ies are"} still in draft.`, "finance", scope, ["gl_period_closes", "journal_entries"], closes.length + journals.length);
+}
+
+async function answerInsuranceRenewalSummary(
+  ctx: ToolContext,
+  scope: GraceQueryScope,
+): Promise<ReturnType<typeof buildDeterministicResult>> {
+  if (!FINANCIAL_ROLES.has(ctx.userRole)) {
+    return buildDeterministicResult("I do not have access to insurance and claims data for this role.", "insurance", scope, ["insurance_policies", "insurance_claims", "insurance_renewals"], 0, "access_restricted");
+  }
+  const [policyRes, claimRes, renewalRes] = await Promise.all([
+    ctx.admin.from("insurance_policies").select("expiration_date,status,carrier_name,policy_type").eq("organization_id", ctx.workspaceId).is("deleted_at", null).limit(30),
+    ctx.admin.from("insurance_claims").select("facility_id,entity_id,status,reserve_cents,paid_cents").eq("organization_id", ctx.workspaceId).is("deleted_at", null).not("status", "in", "(closed,denied)").limit(20),
+    ctx.admin.from("insurance_renewals").select("id,entity_id,insurance_policy_id,status,target_effective_date").eq("organization_id", ctx.workspaceId).is("deleted_at", null).not("status", "in", "(bound,expired,declined)").limit(20),
+  ]);
+  const claims = (claimRes.data ?? []) as InsuranceClaimSummaryRow[];
+  const renewals = (renewalRes.data ?? []) as InsuranceRenewalSummaryRow[];
+  const policies = (policyRes.data ?? []) as Array<{ expiration_date: string; status: string; carrier_name: string; policy_type: string }>;
+  const expiringSoon = policies.filter((row) => row.expiration_date <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
+  const openReserve = claims.reduce((sum, row) => sum + row.reserve_cents, 0);
+  if (policies.length === 0 && claims.length === 0 && renewals.length === 0) {
+    return buildDeterministicResult("No insurance policies, renewals, or open claims were found in the requested scope.", "insurance", scope, ["insurance_policies", "insurance_claims", "insurance_renewals"], 0, "no_data");
+  }
+  return buildDeterministicResult(`${expiringSoon.length} polic${expiringSoon.length === 1 ? "y expires" : "ies expire"} in the next 30 days, ${renewals.length} renewal${renewals.length === 1 ? "" : "s"} are in progress, and ${claims.length} open claim${claims.length === 1 ? "" : "s"} carry $${(openReserve / 100).toFixed(2)} in reserves.`, "insurance", scope, ["insurance_policies", "insurance_claims", "insurance_renewals"], policies.length + claims.length + renewals.length);
+}
+
+async function answerVendorSpendSummary(
+  ctx: ToolContext,
+  scope: GraceQueryScope,
+): Promise<ReturnType<typeof buildDeterministicResult>> {
+  if (!FINANCIAL_ROLES.has(ctx.userRole)) {
+    return buildDeterministicResult("I do not have access to vendor financial data for this role.", "vendors", scope, ["contracts", "purchase_orders", "vendor_invoices", "vendor_payments"], 0, "access_restricted");
+  }
+  const facilityIds = scope.facilityIds.length > 0 ? scope.facilityIds : ctx.accessibleFacilityIds;
+  const [contractRes, poRes, invoiceRes, paymentRes, vendorRes] = await Promise.all([
+    ctx.admin.from("contracts").select("vendor_id,expiration_date,status").eq("organization_id", ctx.workspaceId).in("facility_id", facilityIds).is("deleted_at", null).limit(20),
+    ctx.admin.from("purchase_orders").select("vendor_id,status,total_cents").eq("organization_id", ctx.workspaceId).in("facility_id", facilityIds).is("deleted_at", null).in("status", ["submitted", "approved", "partially_received"]).limit(20),
+    ctx.admin.from("vendor_invoices").select("vendor_id,status,total_cents,due_date").eq("organization_id", ctx.workspaceId).in("facility_id", facilityIds).is("deleted_at", null).in("status", ["submitted", "approved"]).limit(20),
+    ctx.admin.from("vendor_payments").select("vendor_id,amount_cents,payment_date").eq("organization_id", ctx.workspaceId).in("facility_id", facilityIds).is("deleted_at", null).gte("payment_date", getRecentWindowStart("past 30 days").toISOString().slice(0, 10)).limit(30),
+    ctx.admin.from("vendors").select("id,name").eq("organization_id", ctx.workspaceId).is("deleted_at", null).limit(50),
+  ]);
+  const contracts = (contractRes.data ?? []) as VendorContractSummaryRow[];
+  const pos = (poRes.data ?? []) as Array<{ vendor_id: string; status: string; total_cents: number }>;
+  const invoices = (invoiceRes.data ?? []) as Array<{ vendor_id: string; status: string; total_cents: number; due_date: string }>;
+  const payments = (paymentRes.data ?? []) as VendorPaymentSummaryRow[];
+  const vendors = (vendorRes.data ?? []) as VendorSummaryRow[];
+  const vendorNameMap = new Map(vendors.map((row) => [row.id, row.name]));
+  const expiringContracts = contracts.filter((row) => row.expiration_date && row.expiration_date <= new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
+  const pendingApproval = pos.filter((row) => row.status === "submitted").length;
+  const recentSpend = payments.reduce((sum, row) => sum + row.amount_cents, 0);
+  const invoiceLines = invoices.slice(0, 3).map((row, index) => `${index + 1}. ${vendorNameMap.get(row.vendor_id) ?? row.vendor_id}: ${row.status} invoice due ${row.due_date}.`);
+  return buildDeterministicResult(`${expiringContracts.length} vendor contract${expiringContracts.length === 1 ? "" : "s"} expire in the next 45 days, ${pendingApproval} purchase order${pendingApproval === 1 ? "" : "s"} await approval, and recent vendor payments total $${(recentSpend / 100).toFixed(2)}.\n\n${invoiceLines.join("\n")}`, "vendors", scope, ["contracts", "purchase_orders", "vendor_invoices", "vendor_payments", "vendors"], contracts.length + pos.length + invoices.length + payments.length + vendors.length);
+}
+
+async function answerReportingScheduleSummary(
+  ctx: ToolContext,
+  scope: GraceQueryScope,
+): Promise<ReturnType<typeof buildDeterministicResult>> {
+  const [scheduleRes, runRes] = await Promise.all([
+    ctx.admin.from("report_schedules").select("id,facility_id,entity_id,next_run_at,last_error,status,title_pattern").eq("organization_id", ctx.workspaceId).is("deleted_at", null).limit(20),
+    ctx.admin.from("report_runs").select("id,status,started_at,completed_at").eq("organization_id", ctx.workspaceId).order("started_at", { ascending: false }).limit(20),
+  ]);
+  const schedules = (scheduleRes.data ?? []) as ReportingScheduleSummaryRow[];
+  const runs = (runRes.data ?? []) as ReportingRunSummaryRow[];
+  const failedSchedules = schedules.filter((row) => row.status === "failed");
+  const dueSoon = schedules.filter((row) => row.next_run_at && row.next_run_at < new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString());
+  const failedRuns = runs.filter((row) => row.status === "failed");
+  if (schedules.length === 0 && runs.length === 0) {
+    return buildDeterministicResult("No report schedules or recent report runs were found in the requested scope.", "reporting", scope, ["report_schedules", "report_runs"], 0, "no_data");
+  }
+  const lines = failedSchedules.slice(0, 4).map((row, index) => `${index + 1}. ${row.title_pattern}: schedule status ${row.status}${row.last_error ? ` — ${row.last_error}` : ""}.`);
+  return buildDeterministicResult(`${schedules.length} report schedule${schedules.length === 1 ? "" : "s"} are configured. ${dueSoon.length} run in the next 24 hours. ${failedSchedules.length} schedule${failedSchedules.length === 1 ? "" : "s"} and ${failedRuns.length} recent run${failedRuns.length === 1 ? "" : "s"} are in failed state.\n\n${lines.join("\n")}`, "reporting", scope, ["report_schedules", "report_runs"], schedules.length + runs.length);
+}
+
+async function answerRoundingWatchSummary(
+  ctx: ToolContext,
+  scope: GraceQueryScope,
+): Promise<ReturnType<typeof buildDeterministicResult>> {
+  const facilityIds = scope.facilityIds.length > 0 ? scope.facilityIds : ctx.accessibleFacilityIds;
+  const [taskRes, watchRes, escalationRes] = await Promise.all([
+    ctx.admin.from("resident_observation_tasks").select("resident_id,status,due_at").eq("organization_id", ctx.workspaceId).in("facility_id", facilityIds).is("deleted_at", null).in("status", ["due_now", "overdue", "critically_overdue", "missed", "escalated"]).limit(30),
+    ctx.admin.from("resident_watch_instances").select("resident_id,status,starts_at,ends_at").eq("organization_id", ctx.workspaceId).in("facility_id", facilityIds).is("deleted_at", null).eq("status", "active").limit(20),
+    ctx.admin.from("resident_observation_escalations").select("resident_id,status,escalation_type").eq("organization_id", ctx.workspaceId).in("facility_id", facilityIds).is("deleted_at", null).not("status", "in", "(resolved,dismissed)").limit(20),
+  ]);
+  const tasks = (taskRes.data ?? []) as ResidentAttentionTaskRow[];
+  const watches = (watchRes.data ?? []) as ResidentWatchInstanceSummaryRow[];
+  const escalations = (escalationRes.data ?? []) as ResidentEscalationSummaryRow[];
+  const residentNames = await fetchResidentNameMap(ctx, uniq([...tasks.map((row) => row.resident_id), ...watches.map((row) => row.resident_id), ...escalations.map((row) => row.resident_id)]));
+  if (tasks.length === 0 && watches.length === 0 && escalations.length === 0) {
+    return buildDeterministicResult("No active rounding/watch items were found in the requested scope.", "rounding", scope, ["resident_observation_tasks", "resident_watch_instances", "resident_observation_escalations"], 0, "no_data");
+  }
+  const lines = escalations.slice(0, 4).map((row, index) => `${index + 1}. ${residentNames[row.resident_id] ?? row.resident_id}: ${row.escalation_type.replace(/_/g, " ")} (${row.status.replace(/_/g, " ")}).`);
+  return buildDeterministicResult(`${watches.length} active watch protocol${watches.length === 1 ? "" : "s"}, ${tasks.length} overdue or due-now observation task${tasks.length === 1 ? "" : "s"}, and ${escalations.length} open escalation${escalations.length === 1 ? "" : "s"} are active.\n\n${lines.join("\n")}`, "rounding", scope, ["resident_observation_tasks", "resident_watch_instances", "resident_observation_escalations"], tasks.length + watches.length + escalations.length);
 }
 
 async function fetchResidentMatches(
@@ -1961,12 +2892,61 @@ async function runAgentLoop(
   tokensOut: number;
   model: string;
   kbSearchMiss: boolean;
+  deterministic?: boolean;
+  provenance?: GraceAnswerProvenance;
+  answer_mode?: GraceAnswerMode;
 }> {
-  if (isReferralPipelineQuestion(question)) {
-    return await answerReferralPipelineQuestion(ctx, question);
-  }
-  if (isResidentAttentionQuestion(question)) {
-    return await answerResidentAttentionQuestion(ctx, question);
+  const resolvedScope = await resolveRequestedFacilityScope(ctx, question);
+  const route = resolveGraceRoute(question, ctx.route, {
+    facilityIds: resolvedScope.facilityIds,
+    facilityNames: resolvedScope.facilityNames,
+    timeWindowLabel: getTimeWindowLabel(question),
+    timeWindowStart: getRecentWindowStart(question).toISOString(),
+  });
+
+  if (route) {
+    switch (route.domain) {
+      case "referral_pipeline":
+        return await answerReferralPipelineQuestion(ctx, question);
+      case "resident_attention":
+        return await answerResidentAttentionQuestion(ctx, question);
+      case "admissions":
+        return await answerAdmissionsPipelineQuestion(ctx, route.scope);
+      case "discharge":
+        return await answerDischargeWatchlistQuestion(ctx, route.scope);
+      case "medications":
+        return await answerMedicationQueueQuestion(ctx, route.scope);
+      case "incidents":
+        return await answerIncidentFollowupSummary(ctx, route.scope);
+      case "compliance":
+        return await answerComplianceWatchlistSummary(ctx, route.scope);
+      case "training":
+        return await answerTrainingExpirySummary(ctx, route.scope);
+      case "transport":
+        return await answerTransportScheduleSummary(ctx, route.scope);
+      case "dietary":
+        return await answerDietaryRiskSummary(ctx, route.scope);
+      case "reputation":
+        return await answerReputationReplyQueueSummary(ctx, route.scope);
+      case "family":
+        return await answerFamilyCommunicationSummary(ctx, route.scope);
+      case "executive":
+        return await answerExecutiveAlertSummary(ctx, route.scope);
+      case "finance":
+        return isFinanceCloseQuestion(question)
+          ? await answerFinanceCloseSummary(ctx, route.scope)
+          : await answerFinanceArSummary(ctx, route.scope);
+      case "insurance":
+        return await answerInsuranceRenewalSummary(ctx, route.scope);
+      case "vendors":
+        return await answerVendorSpendSummary(ctx, route.scope);
+      case "reporting":
+        return await answerReportingScheduleSummary(ctx, route.scope);
+      case "rounding":
+        return await answerRoundingWatchSummary(ctx, route.scope);
+      default:
+        break;
+    }
   }
 
   let totalTokensIn = 0;
@@ -2102,6 +3082,19 @@ async function runAgentLoop(
     tokensOut: totalTokensOut,
     model,
     kbSearchMiss: kbSearchUsed && sources.length === 0,
+    deterministic: false,
+    answer_mode: "agentic",
+    provenance: route
+      ? {
+          resolved_domain: route.domain,
+          resolved_scope: route.scope,
+          resolved_time_window: route.scope.timeWindowStart ?? null,
+          tables_queried: [],
+          rows_examined: 0,
+          deterministic: false,
+          fallback_reason: "iteration_cap",
+        }
+      : undefined,
   };
 }
 

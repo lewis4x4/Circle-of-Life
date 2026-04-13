@@ -67,6 +67,28 @@ export const GRACE_TEMPLATES: GraceTemplate[] = [
     action: "send_knowledge",
   },
   {
+    id: "new_leads",
+    icon: Users,
+    title: "New leads",
+    subtitle: "Recent inquiries and pipeline activity",
+    roles: ["admin_assistant", "coordinator", "manager", "facility_admin", "org_admin", "owner"],
+    type: "knowledge",
+    phrase:
+      "At {facilityName}, do we have any new leads in the past week? Give me the count, active pipeline count, and top lead names with status.",
+    action: "send_knowledge",
+  },
+  {
+    id: "pending_admissions",
+    icon: ClipboardCheck,
+    title: "Pending admissions",
+    subtitle: "Move-in blockers and readiness",
+    roles: ["admin_assistant", "coordinator", "manager", "facility_admin", "org_admin", "owner"],
+    type: "knowledge",
+    phrase:
+      "At {facilityName}, which admissions are still pending and what is blocking move-in readiness?",
+    action: "send_knowledge",
+  },
+  {
     id: "medication_check",
     icon: Pill,
     title: "Medications due soon",
@@ -78,6 +100,17 @@ export const GRACE_TEMPLATES: GraceTemplate[] = [
     action: "send_knowledge",
   },
   {
+    id: "expiring_credentials",
+    icon: Shield,
+    title: "Expiring credentials",
+    subtitle: "Training and certification watchlist",
+    roles: ["nurse", "manager", "facility_admin", "org_admin", "owner"],
+    type: "knowledge",
+    phrase:
+      "At {facilityName}, which certifications or training completions expire in the next 30 days?",
+    action: "send_knowledge",
+  },
+  {
     id: "staff_on_shift",
     icon: Users,
     title: "Who's on shift",
@@ -85,6 +118,17 @@ export const GRACE_TEMPLATES: GraceTemplate[] = [
     roles: ["nurse", "manager", "facility_admin", "org_admin", "owner"],
     type: "knowledge",
     phrase: "Who is on shift right now at {facilityName}? Include roles or assignments if available.",
+    action: "send_knowledge",
+  },
+  {
+    id: "trips_today",
+    icon: Phone,
+    title: "Trips today",
+    subtitle: "Transportation schedule and ride status",
+    roles: ["admin_assistant", "coordinator", "manager", "facility_admin", "org_admin", "owner"],
+    type: "knowledge",
+    phrase:
+      "At {facilityName}, what transport trips are scheduled today and which ones need attention?",
     action: "send_knowledge",
   },
   {
@@ -117,6 +161,50 @@ export const GRACE_TEMPLATES: GraceTemplate[] = [
     type: "knowledge",
     phrase:
       "Search our uploaded policies and SOPs for infection prevention and hand hygiene expectations. Cite document titles when possible.",
+    action: "send_knowledge",
+  },
+  {
+    id: "unreplied_reviews",
+    icon: MessageCircle,
+    title: "Unreplied reviews",
+    subtitle: "Draft and failed reputation replies",
+    roles: ["manager", "facility_admin", "org_admin", "owner"],
+    type: "knowledge",
+    phrase:
+      "At {facilityName}, are there any reviews waiting for a reply or failed reply posts?",
+    action: "send_knowledge",
+  },
+  {
+    id: "open_claims",
+    icon: AlertTriangle,
+    title: "Open claims",
+    subtitle: "Insurance and risk watchlist",
+    roles: ["facility_admin", "org_admin", "owner"],
+    type: "knowledge",
+    phrase:
+      "For {facilityName}, what insurance claims or renewals still need attention?",
+    action: "send_knowledge",
+  },
+  {
+    id: "ar_watchlist",
+    icon: BarChart3,
+    title: "AR watchlist",
+    subtitle: "Overdue invoices and collections pressure",
+    roles: ["facility_admin", "org_admin", "owner"],
+    type: "knowledge",
+    phrase:
+      "For {facilityName}, what overdue invoices or AR issues should I watch right now?",
+    action: "send_knowledge",
+  },
+  {
+    id: "executive_alerts",
+    icon: AlertTriangle,
+    title: "Executive alerts",
+    subtitle: "Top risks and watchlist items",
+    roles: ["manager", "facility_admin", "org_admin", "owner"],
+    type: "knowledge",
+    phrase:
+      "What are the top executive alerts I should know about for {facilityName}? Keep it brief and ranked by urgency.",
     action: "send_knowledge",
   },
   {

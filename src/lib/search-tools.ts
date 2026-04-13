@@ -12,11 +12,34 @@ export type SearchToolTier =
   | "financial"
   | "payroll";
 
+export type SearchToolDomain =
+  | "kb_documents"
+  | "resident_attention"
+  | "referral_pipeline"
+  | "admissions"
+  | "discharge"
+  | "medications"
+  | "incidents"
+  | "compliance"
+  | "executive"
+  | "family"
+  | "finance"
+  | "insurance"
+  | "vendors"
+  | "transport"
+  | "training"
+  | "dietary"
+  | "reputation"
+  | "facility_admin"
+  | "reporting"
+  | "rounding";
+
 export type SearchToolDefinition = {
   name: string;
   label: string;
   description: string;
   tier: SearchToolTier;
+  domain?: SearchToolDomain;
 };
 
 export type SearchAuditEntry = {
@@ -52,60 +75,161 @@ export const SEARCH_TOOLS: SearchToolDefinition[] = [
     label: "Knowledge Base",
     description: "Search facility knowledge base articles and documents",
     tier: "kb_documents",
+    domain: "kb_documents",
   },
   {
     name: "resident_lookup",
     label: "Resident Lookup",
     description: "Search residents by name, room, or care status",
     tier: "clinical",
+    domain: "resident_attention",
   },
   {
     name: "daily_ops_search",
     label: "Daily Ops",
     description: "Search daily operations logs and shift notes",
     tier: "clinical",
+    domain: "resident_attention",
   },
   {
     name: "medication_search",
     label: "Medications",
     description: "Search medication records and eMAR entries",
     tier: "clinical",
+    domain: "medications",
   },
   {
     name: "incident_search",
     label: "Incidents",
     description: "Search incident reports and investigations",
     tier: "clinical",
+    domain: "incidents",
   },
   {
     name: "census_snapshot",
     label: "Census",
     description: "Current census and occupancy data",
     tier: "clinical",
+    domain: "executive",
   },
   {
     name: "staff_directory",
     label: "Staff Directory",
     description: "Search staff profiles, certifications, and schedules",
     tier: "operational",
+    domain: "training",
   },
   {
     name: "compliance_search",
     label: "Compliance",
     description: "Search compliance rules, citations, and survey results",
     tier: "operational",
+    domain: "compliance",
   },
   {
     name: "billing_search",
     label: "Billing",
     description: "Search invoices, payments, and accounts receivable",
     tier: "financial",
+    domain: "finance",
   },
   {
     name: "payroll_search",
     label: "Payroll",
     description: "Search payroll records and timesheet data",
     tier: "payroll",
+    domain: "finance",
+  },
+  {
+    name: "referral_pipeline_summary",
+    label: "Referral Pipeline",
+    description: "Summarize leads, pipeline stages, and referral source activity",
+    tier: "operational",
+    domain: "referral_pipeline",
+  },
+  {
+    name: "admissions_pipeline_summary",
+    label: "Admissions",
+    description: "Summarize pending admissions, blockers, and move-in readiness",
+    tier: "operational",
+    domain: "admissions",
+  },
+  {
+    name: "discharge_watchlist_summary",
+    label: "Discharge Watchlist",
+    description: "Summarize discharge targets, blockers, and transition work",
+    tier: "operational",
+    domain: "discharge",
+  },
+  {
+    name: "training_expiry_summary",
+    label: "Training Watch",
+    description: "Summarize expiring certifications and upcoming training sessions",
+    tier: "operational",
+    domain: "training",
+  },
+  {
+    name: "transport_schedule_summary",
+    label: "Transportation",
+    description: "Summarize scheduled trips, ride status, and transport workload",
+    tier: "operational",
+    domain: "transport",
+  },
+  {
+    name: "dietary_risk_summary",
+    label: "Dietary Risk",
+    description: "Summarize active diet, swallow, and texture-related risks",
+    tier: "clinical",
+    domain: "dietary",
+  },
+  {
+    name: "reputation_reply_queue_summary",
+    label: "Reputation Queue",
+    description: "Summarize pending and failed review replies across platforms",
+    tier: "operational",
+    domain: "reputation",
+  },
+  {
+    name: "family_communication_summary",
+    label: "Family Communications",
+    description: "Summarize recent family message volume and triage workload",
+    tier: "operational",
+    domain: "family",
+  },
+  {
+    name: "executive_alert_summary",
+    label: "Executive Alerts",
+    description: "Summarize executive alert severity, scope, and top risks",
+    tier: "operational",
+    domain: "executive",
+  },
+  {
+    name: "insurance_renewal_summary",
+    label: "Insurance & Risk",
+    description: "Summarize renewals, claims, and coverage watch items",
+    tier: "financial",
+    domain: "insurance",
+  },
+  {
+    name: "vendor_spend_summary",
+    label: "Vendor Spend",
+    description: "Summarize vendor contracts, approvals, invoices, and spend",
+    tier: "financial",
+    domain: "vendors",
+  },
+  {
+    name: "reporting_schedule_summary",
+    label: "Reporting",
+    description: "Summarize report schedules, failures, and stale report runs",
+    tier: "operational",
+    domain: "reporting",
+  },
+  {
+    name: "rounding_watch_summary",
+    label: "Rounding Watch",
+    description: "Summarize active watch protocols, overdue checks, and escalations",
+    tier: "clinical",
+    domain: "rounding",
   },
 ];
 
