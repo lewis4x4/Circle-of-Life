@@ -276,10 +276,10 @@ export default function AdminReferralsHl7InboundPage() {
         <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
           <div className="space-y-3">
              <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-               HL7 Inbound
+               Referral Inbox
              </h1>
             <p className="mt-2 text-sm font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl text-balance">
-               Raw ADT-style messages queued for the selected facility. Processed messages can be linked to a referral lead
+               Electronic referrals received from hospitals, physicians, and referral networks. Link incoming referrals to your pipeline leads
                manually — no automatic lead creation.
             </p>
           </div>
@@ -297,14 +297,14 @@ export default function AdminReferralsHl7InboundPage() {
               }
               onClick={() => void exportQueueCsv()}
             >
-              {exportingCsv ? "Preparing…" : "Download queue CSV"}
+              {exportingCsv ? "Preparing…" : "Download Referrals"}
             </Button>
             <Link
               href="/admin/referrals/hl7-inbound/new"
               className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-widest text-xs tap-responsive bg-slate-900 hover:bg-slate-800 text-white shadow-lg flex items-center gap-2 dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900")}
             >
               <Radio className="h-4 w-4" aria-hidden />
-              Ingest Message
+              Add Referral
             </Link>
           </div>
         </header>
@@ -312,14 +312,14 @@ export default function AdminReferralsHl7InboundPage() {
         <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-2xl backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative">
            <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1 flex items-center gap-2">
-                 <Server className="h-5 w-5 text-indigo-500" /> Message Queue
+                 <Server className="h-5 w-5 text-indigo-500" /> Incoming Referrals
               </h3>
               <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                 <label className="flex min-w-0 max-w-full flex-1 items-center gap-2 sm:max-w-xs">
                   <Search className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
                   <Input
                     type="search"
-                    placeholder="Search control ID, trigger, raw…"
+                    placeholder="Search referrals..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="h-9 rounded-lg border-slate-200 bg-white text-sm dark:border-white/10 dark:bg-white/5"
@@ -364,7 +364,7 @@ export default function AdminReferralsHl7InboundPage() {
            <div className="relative z-10 w-full overflow-hidden">
              {loading ? (
                <div className="flex items-center justify-center p-12 text-sm text-slate-500 font-medium">
-                  Loading Queue...
+                  Loading referrals...
                </div>
              ) : noFacility ? (
                <div className="p-6 rounded-[1.5rem] bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-500/20 text-amber-700 dark:text-amber-400 font-medium text-sm">
@@ -377,11 +377,11 @@ export default function AdminReferralsHl7InboundPage() {
              ) : (
                <>
                  <div className="hidden sm:grid grid-cols-[1fr_0.5fr_1fr_2fr_1.5fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10 text-left">
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Received / Ctrl ID</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Received</div>
                     <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Status</div>
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Trigger</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Source</div>
                     <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Preview</div>
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Lead</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Pipeline Lead</div>
                     <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Actions</div>
                  </div>
 
@@ -389,7 +389,7 @@ export default function AdminReferralsHl7InboundPage() {
                     <MotionList className="space-y-3">
                        {rows.length === 0 ? (
                          <div className="p-12 text-center text-slate-500 dark:text-slate-400 text-sm font-medium bg-white/50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5">
-                            No HL7 messages yet.
+                            No incoming referrals yet.
                          </div>
                        ) : filteredRows.length === 0 ? (
                          <div className="p-12 text-center text-slate-500 dark:text-slate-400 text-sm font-medium bg-white/50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5">
