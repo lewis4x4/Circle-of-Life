@@ -47,11 +47,21 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from("user_profiles")
       .select("app_role, organization_id")
       .eq("id", u.id)
       .maybeSingle();
+
+    if (profileError) {
+      const errObj = profileError as unknown as Record<string, unknown>;
+      console.error("[HavenAuth] user_profiles query failed", {
+        message: profileError.message,
+        code: errObj.code,
+        hint: errObj.hint,
+        userId: u.id,
+      });
+    }
 
     const roleFromMeta = u.app_metadata?.app_role as string | undefined;
     setAppRole((profile?.app_role as string) ?? roleFromMeta ?? "facility_admin");
