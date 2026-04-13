@@ -4,6 +4,7 @@
  */
 
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import type { Database } from "@/types/database";
 
 type AuditAction =
   | "create"
@@ -27,18 +28,22 @@ interface WriteAuditParams {
   reason?: string;
 }
 
+type UserManagementAuditInsert = Database["public"]["Tables"]["user_management_audit_log"]["Insert"];
+type DatabaseJson = Database["public"]["Tables"]["user_management_audit_log"]["Row"]["changes"];
+
 export async function writeUserAuditEntry(params: WriteAuditParams): Promise<void> {
   const supabase = createServiceRoleClient();
-
-  const { error } = await supabase.from("user_management_audit_log" as never).insert({
+  const payload: UserManagementAuditInsert = {
     organization_id: params.organizationId,
     acting_user_id: params.actingUserId,
     target_user_id: params.targetUserId,
     action: params.action,
     resource_type: params.resourceType ?? "user",
-    changes: params.changes,
+    changes: params.changes as DatabaseJson,
     reason: params.reason ?? null,
-  } as any);
+  };
+
+  const { error } = await supabase.from("user_management_audit_log").insert(payload);
 
   if (error) {
     // Log but don't throw — audit failure shouldn't block the operation

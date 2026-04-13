@@ -21,6 +21,11 @@ const uuidSchema = z.string().uuid();
  */
 const COL_PILOT_ORG = "00000000-0000-0000-0000-000000000001";
 
+type FloridaStatuteRow = {
+  statute_title: string | null;
+  description: string | null;
+};
+
 export function StatuteCitation({
   statuteCode,
   children,
@@ -37,13 +42,17 @@ export function StatuteCitation({
     let cancelled = false;
     const run = async () => {
       const supabase = createClient();
-      const { data, error } = await (supabase as any)
-        .from("fl_statutes")
+      const query = supabase
+        .from("fl_statutes" as never)
         .select("statute_title, description")
         .eq("organization_id", resolvedOrgId)
         .eq("statute_code", statuteCode)
         .is("deleted_at", null)
         .maybeSingle();
+      const { data, error } = (await query) as {
+        data: FloridaStatuteRow | null;
+        error: { message: string } | null;
+      };
       if (cancelled || error) return;
       if (!data) return;
       const tip = [data.statute_title, data.description].filter(Boolean).join(" — ");

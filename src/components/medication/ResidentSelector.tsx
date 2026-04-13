@@ -6,6 +6,7 @@ import { ChevronDown, Loader2, User } from "lucide-react";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import type { Database } from "@/types/database";
 
 export interface ResidentOption {
   id: string;
@@ -22,6 +23,11 @@ export interface ResidentSelectorProps {
   className?: string;
   placeholder?: string;
 }
+
+type ResidentRow = Pick<
+  Database["public"]["Tables"]["residents"]["Row"],
+  "id" | "first_name" | "last_name" | "preferred_name"
+>;
 
 export function ResidentSelector({
   value,
@@ -64,14 +70,14 @@ export function ResidentSelector({
 
       if (res.error) throw res.error;
 
-      const options = (res.data ?? []).map((r: any) => {
-        const firstName = r.preferred_name || r.first_name;
-        const label = [firstName, r.last_name].filter(Boolean).join(" ");
+      const options = ((res.data ?? []) as ResidentRow[]).map((resident) => {
+        const firstName = resident.preferred_name || resident.first_name;
+        const label = [firstName, resident.last_name].filter(Boolean).join(" ");
         return {
-          id: r.id,
+          id: resident.id,
           label,
           firstName,
-          lastName: r.last_name,
+          lastName: resident.last_name,
           room: null,
         };
       });
@@ -183,14 +189,14 @@ export function ResidentSelectorCompact({
           .limit(500);
 
         if (!cancelled && !res.error) {
-          const options = (res.data ?? []).map((r: any) => {
-            const firstName = r.preferred_name || r.first_name;
-            const label = [firstName, r.last_name].filter(Boolean).join(" ");
+          const options = ((res.data ?? []) as ResidentRow[]).map((resident) => {
+            const firstName = resident.preferred_name || resident.first_name;
+            const label = [firstName, resident.last_name].filter(Boolean).join(" ");
             return {
-              id: r.id,
+              id: resident.id,
               label,
               firstName,
-              lastName: r.last_name,
+              lastName: resident.last_name,
               room: null,
             };
           });

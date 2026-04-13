@@ -170,7 +170,7 @@ export function MetricCardMoonshot({
 /**
  * Compact metric card variant for smaller spaces
  */
-export interface MetricCardCompactProps extends Omit<MetricCardMoonshotProps, "compact"> {}
+export type MetricCardCompactProps = Omit<MetricCardMoonshotProps, "compact">;
 
 export function MetricCardCompact(props: MetricCardCompactProps) {
   return <MetricCardMoonshot {...props} compact />;

@@ -63,7 +63,11 @@ export function MedTechShell({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   useEffect(() => {
-    void checkAccess();
+    const timer = window.setTimeout(() => {
+      void checkAccess();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [checkAccess]);
 
   if (checking || !authorized) {
