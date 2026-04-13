@@ -103,6 +103,18 @@ type ResidentAttentionCareAlertRow = {
   status: string;
 };
 
+type ReferralLeadSummaryRow = {
+  id: string;
+  facility_id: string;
+  first_name: string;
+  last_name: string;
+  preferred_name: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  referral_sources: { name: string | null } | null;
+};
+
 const ALL_APP_ROLES = [
   "owner",
   "org_admin",
@@ -395,6 +407,36 @@ function isResidentAttentionQuestion(question: string): boolean {
     q.includes("followup") ||
     q.includes("follow-up")
   );
+}
+
+function isReferralPipelineQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return (
+    q.includes("lead") ||
+    q.includes("leads") ||
+    q.includes("referral") ||
+    q.includes("pipeline") ||
+    q.includes("inquiry") ||
+    q.includes("inquiries")
+  );
+}
+
+function getRecentWindowStart(question: string): Date {
+  const q = question.toLowerCase();
+  const now = new Date();
+  const msPerDay = 24 * 60 * 60 * 1000;
+  if (q.includes("today")) return new Date(now.getTime() - msPerDay);
+  if (q.includes("yesterday")) return new Date(now.getTime() - 2 * msPerDay);
+  if (q.includes("past 30 days") || q.includes("last 30 days") || q.includes("past month") || q.includes("last month")) {
+    return new Date(now.getTime() - 30 * msPerDay);
+  }
+  if (q.includes("past 2 weeks") || q.includes("last 2 weeks") || q.includes("past two weeks") || q.includes("last two weeks")) {
+    return new Date(now.getTime() - 14 * msPerDay);
+  }
+  if (q.includes("past week") || q.includes("last week")) {
+    return new Date(now.getTime() - 7 * msPerDay);
+  }
+  return new Date(now.getTime() - 7 * msPerDay);
 }
 
 function getSearchTokens(value: unknown): string[] {
@@ -796,6 +838,122 @@ async function answerResidentAttentionQuestion(
     tokensIn: 0,
     tokensOut: 0,
     model: "deterministic:resident_attention_summary",
+    kbSearchMiss: false,
+  };
+}
+
+async function answerReferralPipelineQuestion(
+  ctx: ToolContext,
+  question: string,
+): Promise<{
+  text: string;
+  sources: {
+    title: string;
+    excerpt: string;
+    confidence: number;
+    section_title: string | null;
+  }[];
+  toolsUsed: string[];
+  tokensIn: number;
+  tokensOut: number;
+  model: string;
+  kbSearchMiss: boolean;
+}> {
+  const facilityScope = await resolveRequestedFacilityScope(ctx, question);
+  if (facilityScope.facilityIds.length === 0) {
+    return {
+      text: "I could not find an accessible facility scope for that leads request.",
+      sources: [],
+      toolsUsed: ["referral_pipeline_summary"],
+      tokensIn: 0,
+      tokensOut: 0,
+      model: "deterministic:referral_pipeline_summary",
+      kbSearchMiss: false,
+    };
+  }
+
+  const windowStart = getRecentWindowStart(question);
+  const windowStartIso = windowStart.toISOString();
+
+  const { data } = await ctx.admin
+    .from("referral_leads")
+    .select("id, facility_id, first_name, last_name, preferred_name, status, created_at, updated_at, referral_sources(name)")
+    .eq("organization_id", ctx.workspaceId)
+    .in("facility_id", facilityScope.facilityIds)
+    .is("deleted_at", null)
+    .gte("created_at", windowStartIso)
+    .order("created_at", { ascending: false })
+    .limit(25);
+
+  const leads = (data ?? []) as ReferralLeadSummaryRow[];
+  const facilityNameById = new Map<string, string>();
+  facilityScope.facilityNames.forEach((name, index) => {
+    const id = facilityScope.facilityIds[index];
+    if (id) facilityNameById.set(id, name);
+  });
+
+  const activeStatuses = new Set([
+    "new",
+    "contacted",
+    "tour_scheduled",
+    "tour_completed",
+    "application_pending",
+    "waitlisted",
+  ]);
+  const activeLeads = leads.filter((lead) => activeStatuses.has(lead.status));
+  const newLeads = leads.filter((lead) => lead.status === "new");
+  const convertedLeads = leads.filter((lead) => lead.status === "converted");
+
+  const facilityLabel =
+    facilityScope.facilityNames.length === 1
+      ? facilityScope.facilityNames[0]
+      : "your accessible facilities";
+  const windowLabel =
+    question.toLowerCase().includes("today")
+      ? "today"
+      : question.toLowerCase().includes("yesterday")
+        ? "yesterday"
+        : question.toLowerCase().includes("30")
+          ? "the past 30 days"
+          : question.toLowerCase().includes("2 week") || question.toLowerCase().includes("two week")
+            ? "the past 2 weeks"
+            : "the past week";
+
+  if (leads.length === 0) {
+    return {
+      text: `No referral leads were created for ${facilityLabel} in ${windowLabel}.`,
+      sources: [],
+      toolsUsed: ["referral_pipeline_summary"],
+      tokensIn: 0,
+      tokensOut: 0,
+      model: "deterministic:referral_pipeline_summary",
+      kbSearchMiss: false,
+    };
+  }
+
+  const lines = [
+    `${leads.length} lead${leads.length === 1 ? "" : "s"} created in ${windowLabel} for ${facilityLabel}.`,
+    `${newLeads.length} new, ${activeLeads.length} active pipeline, ${convertedLeads.length} converted.`,
+  ];
+
+  const detailLines = leads.slice(0, 6).map((lead, index) => {
+    const residentName = formatResidentName(lead);
+    const sourceName = lead.referral_sources?.name?.trim();
+    const facilitySuffix =
+      facilityScope.facilityNames.length > 1
+        ? ` — ${facilityNameById.get(lead.facility_id) ?? lead.facility_id}`
+        : "";
+    const sourceSuffix = sourceName ? ` via ${sourceName}` : "";
+    return `${index + 1}. ${residentName}${facilitySuffix}: ${lead.status.replace(/_/g, " ")}${sourceSuffix}; created ${lead.created_at.slice(0, 10)}.`;
+  });
+
+  return {
+    text: [...lines, "", ...detailLines].join("\n"),
+    sources: [],
+    toolsUsed: ["referral_pipeline_summary"],
+    tokensIn: 0,
+    tokensOut: 0,
+    model: "deterministic:referral_pipeline_summary",
     kbSearchMiss: false,
   };
 }
@@ -1804,6 +1962,9 @@ async function runAgentLoop(
   model: string;
   kbSearchMiss: boolean;
 }> {
+  if (isReferralPipelineQuestion(question)) {
+    return await answerReferralPipelineQuestion(ctx, question);
+  }
   if (isResidentAttentionQuestion(question)) {
     return await answerResidentAttentionQuestion(ctx, question);
   }
