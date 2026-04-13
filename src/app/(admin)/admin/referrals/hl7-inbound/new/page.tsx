@@ -65,10 +65,10 @@ export default function AdminReferralsHl7InboundNewPage() {
     <div className="mx-auto max-w-2xl space-y-8">
       <div>
         <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          Ingest HL7 message
+          Add Referral
         </h1>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-          Paste a raw HL7 v2 payload (often pipe-delimited with segment separators). Automated ingress is Enhanced.
+          Manually add an electronic referral. Paste the referral data below, or enter key details for tracking.
         </p>
       </div>
 
@@ -76,7 +76,7 @@ export default function AdminReferralsHl7InboundNewPage() {
 
       {!facilityReady && (
         <p className="rounded-lg border border-amber-200/80 bg-amber-50/50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
-          Select a facility in the header before ingesting.
+          Select a facility in the header before adding a referral.
         </p>
       )}
 
@@ -89,12 +89,12 @@ export default function AdminReferralsHl7InboundNewPage() {
       <Card className="border-slate-200/80 shadow-soft dark:border-slate-800">
         <CardHeader>
           <CardTitle className="text-lg">Message</CardTitle>
-          <CardDescription>Optional control ID avoids duplicates when the hospital resends the same ADT.</CardDescription>
+          <CardDescription>Optional reference ID avoids duplicates when the same referral is received twice.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={submit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="raw">Raw HL7</Label>
+              <Label htmlFor="raw">Referral Data</Label>
               <textarea
                 id="raw"
                 required
@@ -107,7 +107,7 @@ export default function AdminReferralsHl7InboundNewPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="msh10">Message control ID (MSH-10)</Label>
+                <Label htmlFor="msh10">Reference ID</Label>
                 <Input
                   id="msh10"
                   value={messageControlId}
@@ -116,13 +116,13 @@ export default function AdminReferralsHl7InboundNewPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="trg">Trigger event (e.g. ADT^A01)</Label>
+                <Label htmlFor="trg">Referral Type</Label>
                 <Input id="trg" value={triggerEvent} onChange={(e) => setTriggerEvent(e.target.value)} />
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button type="submit" disabled={saving || !facilityReady || !rawMessage.trim()}>
-                {saving ? "Saving…" : "Queue message"}
+                {saving ? "Saving…" : "Add to Inbox"}
               </Button>
               <Link href="/admin/referrals/hl7-inbound" className={cn(buttonVariants({ variant: "outline" }))}>
                 Cancel

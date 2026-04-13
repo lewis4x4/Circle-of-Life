@@ -20,7 +20,7 @@ export function ReferralsHubNav() {
     { href: "/admin/referrals/sources", label: "Sources", active: pathname.startsWith("/admin/referrals/sources") },
     {
       href: "/admin/referrals/hl7-inbound",
-      label: "HL7 inbound",
+      label: "Referral Inbox",
       active: pathname.startsWith("/admin/referrals/hl7-inbound"),
     },
   ] as const;
