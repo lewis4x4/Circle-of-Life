@@ -726,7 +726,10 @@ export function GraceBar() {
 
   return (
     <Dialog open={state.barOpen} onOpenChange={(open) => !open && closeBar()}>
-      <DialogContent className="flex h-[min(88vh,780px)] max-w-5xl flex-col overflow-hidden border border-violet-500/20 bg-gradient-to-b from-violet-950/25 via-background to-background p-0 shadow-2xl shadow-violet-950/40 backdrop-blur-xl dark:from-violet-950/40 dark:via-background dark:to-background">
+      <DialogContent
+        hideDefaultClose
+        className="flex h-[min(88vh,780px)] max-w-5xl flex-col overflow-hidden border border-violet-500/20 bg-gradient-to-b from-violet-950/25 via-background to-background p-0 shadow-2xl shadow-violet-950/40 backdrop-blur-xl dark:from-violet-950/40 dark:via-background dark:to-background"
+      >
         <DialogHeader className="border-b border-violet-500/10 bg-violet-500/[0.03] px-6 py-4">
           <div className="flex items-start justify-between gap-4">
             <div>
