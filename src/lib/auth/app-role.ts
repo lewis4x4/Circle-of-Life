@@ -54,3 +54,8 @@ export function isManagerOrAbove(role: string): boolean {
 export function isMedTechRole(role: string): boolean {
   return role === "med_tech";
 }
+
+/** Dietary role — dedicated /dietary command deck for Lead Cooks and Dietary Aides. */
+export function isDietaryRole(role: string): boolean {
+  return role === "dietary" || role === "dietary_aide";
+}
