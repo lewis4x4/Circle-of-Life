@@ -76,50 +76,8 @@ UPDATE public.facilities SET
   last_survey_result = 'no_citations'
 WHERE id = '00000000-0000-0000-0002-000000000005';
 
--- ══════════════════════════════════════════════════════════
--- LEGAL ENTITIES TABLE UPDATES
--- Populates: ahca_license_number, ahca_license_expiration, last_survey_date, last_survey_result
--- ══════════════════════════════════════════════════════════
-
--- Oakridge entity (Pinehouse Inc)
-UPDATE public.legal_entities SET
-  ahca_license_number = '9863',
-  ahca_license_expiration = '2026-04-14'::timestamptz,
-  last_survey_date = '2024-06-18'::date,
-  last_survey_result = 'no_citations'
-WHERE id = '00000000-0000-0000-0001-000000000001';
-
--- Rising Oaks entity (Smith & Sorensen LLC)
-UPDATE public.legal_entities SET
-  ahca_license_number = '13041',
-  ahca_license_expiration = '2025-11-06'::timestamptz,
-  last_survey_date = '2024-01-10'::date,
-  last_survey_result = 'no_citations'
-WHERE id = '00000000-0000-0000-0001-000000000002';
-
--- Homewood entity (Sorensen, Smith & Bay LLC)
-UPDATE public.legal_entities SET
-  ahca_license_number = '12528',
-  ahca_license_expiration = '2026-09-27'::timestamptz,
-  last_survey_date = '2024-10-22'::date,
-  last_survey_result = 'no_citations'
-WHERE id = '00000000-0000-0000-0001-000000000003';
-
--- Plantation entity (Plantation On Summers LLC)
-UPDATE public.legal_entities SET
-  ahca_license_number = '5191',
-  ahca_license_expiration = '2026-07-16'::timestamptz,
-  last_survey_date = '2024-11-05'::date,
-  last_survey_result = 'no_citations'
-WHERE id = '00000000-0000-0000-0001-000000000004';
-
--- Grande Cypress entity (Grande Cypress ALF LLC)
-UPDATE public.legal_entities SET
-  ahca_license_number = '13688',
-  ahca_license_expiration = '2028-01-30'::timestamptz,
-  last_survey_date = NULL,
-  last_survey_result = 'no_citations'
-WHERE id = '00000000-0000-0000-0001-000000000005';
+-- NOTE: legal_entities table (from migration 104) does not exist on remote.
+-- License/survey data is tracked on the facilities table only.
 
 -- ══════════════════════════════════════════════════════════
 -- COMMENTS — source documentation
