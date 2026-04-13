@@ -20,6 +20,7 @@ const HARD_CAP_TOKENS = 150_000;
 type ToolTier = "kb_documents" | "clinical" | "operational" | "financial" | "payroll";
 type GraceIntentKind = "deterministic_summary" | "deterministic_lookup" | "semantic_kb" | "hybrid_cross_domain" | "unsupported";
 type GraceDomain =
+  | "census"
   | "resident_attention"
   | "referral_pipeline"
   | "admissions"
@@ -640,6 +641,18 @@ function isResidentAttentionQuestion(question: string): boolean {
   );
 }
 
+function isCensusQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return (
+    q.includes("how many residents") ||
+    q.includes("resident count") ||
+    q.includes("census") ||
+    q.includes("occupancy") ||
+    q.includes("available beds") ||
+    q.includes("licensed beds")
+  );
+}
+
 function isReferralPipelineQuestion(question: string): boolean {
   const q = question.toLowerCase();
   return (
@@ -780,26 +793,47 @@ function resolveGraceRoute(question: string, route: string | undefined, scope: G
     fallback_mode: GraceFallbackReason | null = "no_data",
   ): GraceResolvedRoute => ({ domain, intent_kind, scope, fallback_mode });
 
-  if (routeLower.startsWith("/admin/referrals") || isReferralPipelineQuestion(question)) return choose("referral_pipeline");
-  if (routeLower.startsWith("/admin/admissions") || isAdmissionsQuestion(question)) return choose("admissions");
-  if (routeLower.startsWith("/admin/discharge") || isDischargeQuestion(question)) return choose("discharge");
-  if (routeLower.startsWith("/admin/medications") || isMedicationQueueQuestion(question)) return choose("medications");
-  if (routeLower.startsWith("/admin/incidents") || isIncidentFollowupQuestion(question)) return choose("incidents");
-  if (routeLower.startsWith("/admin/compliance") || isComplianceWatchlistQuestion(question)) return choose("compliance");
-  if (routeLower.startsWith("/admin/training") || routeLower.startsWith("/admin/certifications") || isTrainingQuestion(question)) return choose("training");
-  if (routeLower.startsWith("/admin/transportation") || isTransportQuestion(question)) return choose("transport");
-  if (routeLower.startsWith("/admin/dietary") || isDietaryQuestion(question)) return choose("dietary");
-  if (routeLower.startsWith("/admin/reputation") || isReputationQuestion(question)) return choose("reputation");
-  if (routeLower.startsWith("/admin/family") || routeLower.startsWith("/family") || isFamilyQuestion(question)) return choose("family");
-  if (routeLower.startsWith("/admin/executive") || isExecutiveQuestion(question)) return choose("executive");
-  if (routeLower.startsWith("/admin/billing") || isFinanceArQuestion(question)) return choose("finance");
-  if (routeLower.startsWith("/admin/finance") || isFinanceCloseQuestion(question)) return choose("finance");
-  if (routeLower.startsWith("/admin/insurance") || isInsuranceQuestion(question)) return choose("insurance");
-  if (routeLower.startsWith("/admin/vendors") || isVendorQuestion(question)) return choose("vendors");
-  if (routeLower.startsWith("/admin/facilities") || isFacilityAdminQuestion(question)) return choose("facility_admin");
-  if (routeLower.startsWith("/admin/reports") || isReportingQuestion(question)) return choose("reporting");
-  if (routeLower.startsWith("/admin/rounding") || isRoundingQuestion(question)) return choose("rounding");
+  // Explicit question semantics always outrank route context.
+  if (isCensusQuestion(question)) return choose("census");
   if (isResidentAttentionQuestion(question)) return choose("resident_attention");
+  if (isReferralPipelineQuestion(question)) return choose("referral_pipeline");
+  if (isAdmissionsQuestion(question)) return choose("admissions");
+  if (isDischargeQuestion(question)) return choose("discharge");
+  if (isMedicationQueueQuestion(question)) return choose("medications");
+  if (isIncidentFollowupQuestion(question)) return choose("incidents");
+  if (isComplianceWatchlistQuestion(question)) return choose("compliance");
+  if (isTrainingQuestion(question)) return choose("training");
+  if (isTransportQuestion(question)) return choose("transport");
+  if (isDietaryQuestion(question)) return choose("dietary");
+  if (isReputationQuestion(question)) return choose("reputation");
+  if (isFamilyQuestion(question)) return choose("family");
+  if (isExecutiveQuestion(question)) return choose("executive");
+  if (isFinanceArQuestion(question) || isFinanceCloseQuestion(question)) return choose("finance");
+  if (isInsuranceQuestion(question)) return choose("insurance");
+  if (isVendorQuestion(question)) return choose("vendors");
+  if (isFacilityAdminQuestion(question)) return choose("facility_admin");
+  if (isReportingQuestion(question)) return choose("reporting");
+  if (isRoundingQuestion(question)) return choose("rounding");
+
+  // Route context is only a fallback when the question itself is ambiguous.
+  if (routeLower.startsWith("/admin/referrals")) return choose("referral_pipeline");
+  if (routeLower.startsWith("/admin/admissions")) return choose("admissions");
+  if (routeLower.startsWith("/admin/discharge")) return choose("discharge");
+  if (routeLower.startsWith("/admin/medications")) return choose("medications");
+  if (routeLower.startsWith("/admin/incidents")) return choose("incidents");
+  if (routeLower.startsWith("/admin/compliance")) return choose("compliance");
+  if (routeLower.startsWith("/admin/training") || routeLower.startsWith("/admin/certifications")) return choose("training");
+  if (routeLower.startsWith("/admin/transportation")) return choose("transport");
+  if (routeLower.startsWith("/admin/dietary")) return choose("dietary");
+  if (routeLower.startsWith("/admin/reputation")) return choose("reputation");
+  if (routeLower.startsWith("/admin/family") || routeLower.startsWith("/family")) return choose("family");
+  if (routeLower.startsWith("/admin/executive")) return choose("executive");
+  if (routeLower.startsWith("/admin/billing") || routeLower.startsWith("/admin/finance")) return choose("finance");
+  if (routeLower.startsWith("/admin/insurance")) return choose("insurance");
+  if (routeLower.startsWith("/admin/vendors")) return choose("vendors");
+  if (routeLower.startsWith("/admin/facilities")) return choose("facility_admin");
+  if (routeLower.startsWith("/admin/reports")) return choose("reporting");
+  if (routeLower.startsWith("/admin/rounding")) return choose("rounding");
   return null;
 }
 
@@ -1204,6 +1238,73 @@ async function answerResidentAttentionQuestion(
     model: "deterministic:resident_attention_summary",
     kbSearchMiss: false,
   };
+}
+
+async function answerCensusSummary(
+  ctx: ToolContext,
+  scope: GraceQueryScope,
+): Promise<ReturnType<typeof buildDeterministicResult>> {
+  const facilityIds = scope.facilityIds.length > 0 ? scope.facilityIds : ctx.accessibleFacilityIds;
+  const { data: facilitiesData } = await ctx.admin
+    .from("facilities")
+    .select("id,name,total_licensed_beds")
+    .eq("organization_id", ctx.workspaceId)
+    .in("id", facilityIds)
+    .is("deleted_at", null);
+
+  const facilities = (facilitiesData ?? []) as Array<{
+    id: string;
+    name: string;
+    total_licensed_beds: number | null;
+  }>;
+  if (facilities.length === 0) {
+    return buildDeterministicResult(
+      "I could not find facility census data in the requested scope.",
+      "census",
+      scope,
+      ["facilities", "residents"],
+      0,
+      "no_data",
+    );
+  }
+
+  const facilityNameById = new Map(facilities.map((row) => [row.id, row.name]));
+  const { data: residentsData } = await ctx.admin
+    .from("residents")
+    .select("facility_id,status")
+    .eq("organization_id", ctx.workspaceId)
+    .in("facility_id", facilityIds)
+    .is("deleted_at", null)
+    .eq("status", "active");
+  const residentRows = (residentsData ?? []) as Array<{ facility_id: string; status: string }>;
+
+  const counts = new Map<string, number>();
+  for (const resident of residentRows) {
+    counts.set(resident.facility_id, (counts.get(resident.facility_id) ?? 0) + 1);
+  }
+
+  const lines = facilities.map((facility, index) => {
+    const activeResidents = counts.get(facility.id) ?? 0;
+    const licensedBeds = facility.total_licensed_beds ?? 0;
+    const occupancyPct =
+      licensedBeds > 0 ? Math.round((activeResidents / licensedBeds) * 100) : null;
+    return `${index + 1}. ${facility.name}: ${activeResidents} active resident${activeResidents === 1 ? "" : "s"}${licensedBeds > 0 ? `, ${licensedBeds} licensed beds, ${occupancyPct}% occupancy` : ""}.`;
+  });
+
+  const totalResidents = residentRows.length;
+  const totalBeds = facilities.reduce((sum, facility) => sum + (facility.total_licensed_beds ?? 0), 0);
+  const header =
+    facilities.length === 1
+      ? `${facilityNameById.get(facilities[0].id) ?? "This facility"} currently has ${totalResidents} active resident${totalResidents === 1 ? "" : "s"}.`
+      : `${totalResidents} active residents are in scope across ${facilities.length} facilities.`;
+
+  return buildDeterministicResult(
+    `${header}${totalBeds > 0 ? ` Total licensed beds in scope: ${totalBeds}.` : ""}\n\n${lines.join("\n")}`,
+    "census",
+    scope,
+    ["facilities", "residents"],
+    facilities.length + residentRows.length,
+  );
 }
 
 async function answerReferralPipelineQuestion(
@@ -2906,6 +3007,8 @@ async function runAgentLoop(
 
   if (route) {
     switch (route.domain) {
+      case "census":
+        return await answerCensusSummary(ctx, route.scope);
       case "referral_pipeline":
         return await answerReferralPipelineQuestion(ctx, question);
       case "resident_attention":
