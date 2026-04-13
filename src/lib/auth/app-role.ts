@@ -49,3 +49,8 @@ export function isManagerOrAbove(role: string): boolean {
     role === "manager"
   );
 }
+
+/** Med-Tech role — dedicated /med-tech cockpit for medication technicians. */
+export function isMedTechRole(role: string): boolean {
+  return role === "med_tech";
+}

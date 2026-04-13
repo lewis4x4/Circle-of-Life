@@ -7,7 +7,7 @@ export interface DashboardConfig {
   /** Landing route for this role */
   route: string;
   /** Which shell to use */
-  shell: "admin" | "caregiver" | "family";
+  shell: "admin" | "caregiver" | "family" | "med-tech";
   /** Nav groups visible in sidebar */
   visibleGroups: string[];
   /** Sections to render on the dashboard page */
@@ -140,6 +140,12 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
       compliance: true, financials: true, watchlist: true,
     },
   },
+  med_tech: {
+    route: "/med-tech",
+    shell: "med-tech" as DashboardConfig["shell"],
+    visibleGroups: [],
+    sections: {},
+  },
 };
 
 const DEFAULT_CONFIG: DashboardConfig = {
@@ -160,6 +166,6 @@ export function getRoleDashboardConfig(role: string): DashboardConfig {
 }
 
 /** Returns which shell a role should use. */
-export function getShellForRole(role: string): "admin" | "caregiver" | "family" {
+export function getShellForRole(role: string): "admin" | "caregiver" | "family" | "med-tech" {
   return DASHBOARD_CONFIGS[role]?.shell ?? "admin";
 }
