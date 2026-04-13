@@ -76,7 +76,9 @@ const nextConfig: NextConfig = {
     const segments = [
       "billing",
       "certifications",
-      "dietary",
+      // "dietary" intentionally omitted — /dietary is the dedicated Lead Cook
+      // Command Deck at (dietary)/dietary/page.tsx, not a redirect to admin.
+      // Admin dietary hub remains at /admin/dietary (direct path).
       "executive",
       "finance",
       "incidents",
