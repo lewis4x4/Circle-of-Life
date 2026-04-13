@@ -72,6 +72,37 @@ type NamedResidentRow = {
   preferred_name: string | null;
 };
 
+type FacilityNameRow = {
+  id: string;
+  name: string;
+};
+
+type ResidentAttentionTaskRow = {
+  resident_id: string;
+  status: string;
+  due_at: string;
+};
+
+type ResidentAttentionFollowupRow = {
+  resident_id: string | null;
+  due_at: string;
+  task_type: string;
+  description: string;
+};
+
+type ResidentAttentionVitalAlertRow = {
+  resident_id: string;
+  vital_type: string;
+  status: string;
+  recorded_value: number;
+};
+
+type ResidentAttentionCareAlertRow = {
+  resident_id: string;
+  trigger_type: string;
+  status: string;
+};
+
 const ALL_APP_ROLES = [
   "owner",
   "org_admin",
@@ -353,6 +384,19 @@ function sanitizeSearchQuery(value: unknown): string {
     .trim();
 }
 
+function isResidentAttentionQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return (
+    q.includes("who needs attention") ||
+    q.includes("care alerts") ||
+    q.includes("open tasks") ||
+    q.includes("follow-ups") ||
+    q.includes("follow ups") ||
+    q.includes("followup") ||
+    q.includes("follow-up")
+  );
+}
+
 function getSearchTokens(value: unknown): string[] {
   const clean = sanitizeSearchQuery(value);
   if (!clean) return [];
@@ -412,6 +456,348 @@ async function resolveAccessibleFacilityIds(
     .is("revoked_at", null);
 
   return uniq((data ?? []).map((row: { facility_id: string }) => row.facility_id));
+}
+
+async function resolveRequestedFacilityScope(
+  ctx: ToolContext,
+  query: string,
+): Promise<{ facilityIds: string[]; facilityNames: string[] }> {
+  if (ctx.accessibleFacilityIds.length === 0) {
+    return { facilityIds: [], facilityNames: [] };
+  }
+
+  const { data } = await ctx.admin
+    .from("facilities")
+    .select("id,name")
+    .eq("organization_id", ctx.workspaceId)
+    .in("id", ctx.accessibleFacilityIds)
+    .is("deleted_at", null);
+
+  const rows = (data ?? []) as FacilityNameRow[];
+  if (rows.length === 0) {
+    return { facilityIds: [], facilityNames: [] };
+  }
+
+  const normalizedQuestion = sanitizeSearchQuery(query).toLowerCase();
+  const stopWords = new Set(["alf", "at", "the", "facility", "site", "building", "campus"]);
+  const scored = rows
+    .map((row) => {
+      const tokens = sanitizeSearchQuery(row.name)
+        .toLowerCase()
+        .split(" ")
+        .filter((token) => token.length > 2 && !stopWords.has(token));
+      const score = tokens.reduce((sum, token) => {
+        return sum + (normalizedQuestion.includes(token) ? 1 : 0);
+      }, 0);
+      const normalizedName = sanitizeSearchQuery(row.name).toLowerCase();
+      const directNameMatch =
+        normalizedQuestion.includes(normalizedName) ||
+        normalizedName.includes(normalizedQuestion);
+      return {
+        row,
+        score: directNameMatch ? Math.max(score, 3) : score,
+      };
+    })
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  if (scored.length > 0) {
+    const topScore = scored[0].score;
+    const matched = scored
+      .filter((entry) => entry.score === topScore)
+      .map((entry) => entry.row);
+    return {
+      facilityIds: matched.map((row) => row.id),
+      facilityNames: matched.map((row) => row.name),
+    };
+  }
+
+  if (rows.length === 0) {
+    return { facilityIds: [], facilityNames: [] };
+  }
+
+  return {
+    facilityIds: rows.map((row) => row.id),
+    facilityNames: rows.map((row) => row.name),
+  };
+}
+
+function attentionScoreForTaskStatus(status: string): number {
+  switch (status) {
+    case "critically_overdue":
+    case "missed":
+    case "escalated":
+      return 6;
+    case "overdue":
+      return 5;
+    case "due_now":
+      return 4;
+    case "due_soon":
+      return 3;
+    case "reassigned":
+      return 2;
+    default:
+      return 1;
+  }
+}
+
+async function answerResidentAttentionQuestion(
+  ctx: ToolContext,
+  question: string,
+): Promise<{
+  text: string;
+  sources: {
+    title: string;
+    excerpt: string;
+    confidence: number;
+    section_title: string | null;
+  }[];
+  toolsUsed: string[];
+  tokensIn: number;
+  tokensOut: number;
+  model: string;
+  kbSearchMiss: boolean;
+}> {
+  const facilityScope = await resolveRequestedFacilityScope(ctx, question);
+  if (facilityScope.facilityIds.length === 0) {
+    return {
+      text: "I could not find an accessible facility scope for that request.",
+      sources: [],
+      toolsUsed: ["resident_attention_summary"],
+      tokensIn: 0,
+      tokensOut: 0,
+      model: "deterministic:resident_attention_summary",
+      kbSearchMiss: false,
+    };
+  }
+
+  const { data: residentsData } = await ctx.admin
+    .from("residents")
+    .select("id,facility_id,first_name,last_name,preferred_name,status")
+    .eq("organization_id", ctx.workspaceId)
+    .in("facility_id", facilityScope.facilityIds)
+    .eq("status", "active")
+    .is("deleted_at", null);
+
+  const residents = (residentsData ?? []) as Array<{
+    id: string;
+    facility_id: string;
+    first_name: string;
+    last_name: string;
+    preferred_name: string | null;
+    status: string;
+  }>;
+  const residentIds = residents.map((row) => row.id);
+  if (residentIds.length === 0) {
+    return {
+      text: `I did not find any active residents in ${facilityScope.facilityNames.join(", ")}.`,
+      sources: [],
+      toolsUsed: ["resident_attention_summary"],
+      tokensIn: 0,
+      tokensOut: 0,
+      model: "deterministic:resident_attention_summary",
+      kbSearchMiss: false,
+    };
+  }
+
+  const residentById = new Map(
+    residents.map((resident) => [
+      resident.id,
+      {
+        name: formatResidentName(resident),
+        facility_id: resident.facility_id,
+      },
+    ]),
+  );
+  const facilityNameById = new Map<string, string>();
+  facilityScope.facilityNames.forEach((name, index) => {
+    const id = facilityScope.facilityIds[index];
+    if (id) facilityNameById.set(id, name);
+  });
+
+  const nowIso = new Date().toISOString();
+  const [
+    taskRes,
+    followupRes,
+    vitalRes,
+    careAlertRes,
+  ] = await Promise.all([
+    ctx.admin
+      .from("resident_observation_tasks")
+      .select("resident_id,status,due_at")
+      .eq("organization_id", ctx.workspaceId)
+      .in("facility_id", facilityScope.facilityIds)
+      .in("resident_id", residentIds)
+      .is("deleted_at", null)
+      .in("status", [
+        "due_soon",
+        "due_now",
+        "overdue",
+        "critically_overdue",
+        "missed",
+        "escalated",
+        "reassigned",
+      ]),
+    ctx.admin
+      .from("incident_followups")
+      .select("resident_id,due_at,task_type,description")
+      .eq("organization_id", ctx.workspaceId)
+      .in("facility_id", facilityScope.facilityIds)
+      .is("deleted_at", null)
+      .is("completed_at", null)
+      .gte("due_at", "1970-01-01T00:00:00Z"),
+    ctx.admin
+      .from("vital_sign_alerts")
+      .select("resident_id,vital_type,status,recorded_value")
+      .eq("organization_id", ctx.workspaceId)
+      .in("facility_id", facilityScope.facilityIds)
+      .in("resident_id", residentIds)
+      .is("deleted_at", null)
+      .not("status", "in", "(resolved,dismissed)"),
+    ctx.admin
+      .from("care_plan_review_alerts")
+      .select("resident_id,trigger_type,status")
+      .eq("organization_id", ctx.workspaceId)
+      .in("facility_id", facilityScope.facilityIds)
+      .in("resident_id", residentIds)
+      .is("deleted_at", null)
+      .not("status", "in", "(resolved,dismissed)"),
+  ]);
+
+  const tasks = (taskRes.data ?? []) as ResidentAttentionTaskRow[];
+  const followups = ((followupRes.data ?? []) as ResidentAttentionFollowupRow[]).filter(
+    (row) => row.resident_id && residentById.has(row.resident_id),
+  );
+  const vitalAlerts = (vitalRes.data ?? []) as ResidentAttentionVitalAlertRow[];
+  const careAlerts = (careAlertRes.data ?? []) as ResidentAttentionCareAlertRow[];
+
+  const attention = new Map<
+    string,
+    {
+      score: number;
+      taskCounts: Record<string, number>;
+      overdueFollowups: number;
+      upcomingFollowups: number;
+      vitalAlerts: ResidentAttentionVitalAlertRow[];
+      careAlerts: ResidentAttentionCareAlertRow[];
+    }
+  >();
+
+  for (const task of tasks) {
+    const current = attention.get(task.resident_id) ?? {
+      score: 0,
+      taskCounts: {},
+      overdueFollowups: 0,
+      upcomingFollowups: 0,
+      vitalAlerts: [],
+      careAlerts: [],
+    };
+    current.taskCounts[task.status] = (current.taskCounts[task.status] ?? 0) + 1;
+    current.score += attentionScoreForTaskStatus(task.status);
+    attention.set(task.resident_id, current);
+  }
+
+  for (const followup of followups) {
+    if (!followup.resident_id) continue;
+    const current = attention.get(followup.resident_id) ?? {
+      score: 0,
+      taskCounts: {},
+      overdueFollowups: 0,
+      upcomingFollowups: 0,
+      vitalAlerts: [],
+      careAlerts: [],
+    };
+    if (followup.due_at < nowIso) {
+      current.overdueFollowups += 1;
+      current.score += 4;
+    } else {
+      current.upcomingFollowups += 1;
+      current.score += 2;
+    }
+    attention.set(followup.resident_id, current);
+  }
+
+  for (const vitalAlert of vitalAlerts) {
+    const current = attention.get(vitalAlert.resident_id) ?? {
+      score: 0,
+      taskCounts: {},
+      overdueFollowups: 0,
+      upcomingFollowups: 0,
+      vitalAlerts: [],
+      careAlerts: [],
+    };
+    current.vitalAlerts.push(vitalAlert);
+    current.score += 3;
+    attention.set(vitalAlert.resident_id, current);
+  }
+
+  for (const careAlert of careAlerts) {
+    const current = attention.get(careAlert.resident_id) ?? {
+      score: 0,
+      taskCounts: {},
+      overdueFollowups: 0,
+      upcomingFollowups: 0,
+      vitalAlerts: [],
+      careAlerts: [],
+    };
+    current.careAlerts.push(careAlert);
+    current.score += 2;
+    attention.set(careAlert.resident_id, current);
+  }
+
+  const ranked = Array.from(attention.entries())
+    .filter(([residentId]) => residentById.has(residentId))
+    .sort((a, b) => b[1].score - a[1].score)
+    .slice(0, 6);
+
+  if (ranked.length === 0) {
+    const facilityLabel =
+      facilityScope.facilityNames.length === 1
+        ? facilityScope.facilityNames[0]
+        : "the requested facilities";
+    return {
+      text: `No residents currently stand out with open attention items in ${facilityLabel}.`,
+      sources: [],
+      toolsUsed: ["resident_attention_summary"],
+      tokensIn: 0,
+      tokensOut: 0,
+      model: "deterministic:resident_attention_summary",
+      kbSearchMiss: false,
+    };
+  }
+
+  const lines = ranked.map(([residentId, data], index) => {
+    const resident = residentById.get(residentId)!;
+    const parts: string[] = [];
+    if (data.taskCounts.critically_overdue) parts.push(`${data.taskCounts.critically_overdue} critically overdue task${data.taskCounts.critically_overdue > 1 ? "s" : ""}`);
+    if (data.taskCounts.overdue) parts.push(`${data.taskCounts.overdue} overdue task${data.taskCounts.overdue > 1 ? "s" : ""}`);
+    if (data.taskCounts.due_now) parts.push(`${data.taskCounts.due_now} due now`);
+    if (data.taskCounts.due_soon) parts.push(`${data.taskCounts.due_soon} due soon`);
+    if (data.taskCounts.missed) parts.push(`${data.taskCounts.missed} missed`);
+    if (data.overdueFollowups) parts.push(`${data.overdueFollowups} overdue follow-up${data.overdueFollowups > 1 ? "s" : ""}`);
+    if (data.upcomingFollowups) parts.push(`${data.upcomingFollowups} open follow-up${data.upcomingFollowups > 1 ? "s" : ""}`);
+    if (data.vitalAlerts.length) {
+      const vitalSummary = Array.from(new Set(data.vitalAlerts.map((alert) => alert.vital_type))).slice(0, 2).join(", ");
+      parts.push(`${data.vitalAlerts.length} vital alert${data.vitalAlerts.length > 1 ? "s" : ""}${vitalSummary ? ` (${vitalSummary})` : ""}`);
+    }
+    if (data.careAlerts.length) {
+      const alertSummary = Array.from(new Set(data.careAlerts.map((alert) => alert.trigger_type))).slice(0, 2).join(", ");
+      parts.push(`${data.careAlerts.length} care-plan alert${data.careAlerts.length > 1 ? "s" : ""}${alertSummary ? ` (${alertSummary})` : ""}`);
+    }
+    const facilityName = facilityNameById.get(resident.facility_id);
+    const suffix = facilityScope.facilityNames.length > 1 && facilityName ? ` — ${facilityName}` : "";
+    return `${index + 1}. ${resident.name}${suffix}: ${parts.join("; ")}.`;
+  });
+
+  return {
+    text: lines.join("\n"),
+    sources: [],
+    toolsUsed: ["resident_attention_summary"],
+    tokensIn: 0,
+    tokensOut: 0,
+    model: "deterministic:resident_attention_summary",
+    kbSearchMiss: false,
+  };
 }
 
 async function fetchResidentMatches(
@@ -1418,6 +1804,10 @@ async function runAgentLoop(
   model: string;
   kbSearchMiss: boolean;
 }> {
+  if (isResidentAttentionQuestion(question)) {
+    return await answerResidentAttentionQuestion(ctx, question);
+  }
+
   let totalTokensIn = 0;
   let totalTokensOut = 0;
   let model = MODEL_FULL;
@@ -1543,7 +1933,8 @@ async function runAgentLoop(
   }
 
   return {
-    text: "I reached my maximum number of search iterations. Please try rephrasing your question.",
+    text:
+      "I could not converge on a clean answer fast enough. Try narrowing the request to one lane, for example: open tasks only, follow-ups only, or vital/care alerts only.",
     sources,
     toolsUsed,
     tokensIn: totalTokensIn,
