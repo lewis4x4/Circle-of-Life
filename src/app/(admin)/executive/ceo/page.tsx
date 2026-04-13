@@ -6,10 +6,10 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, TrendingUp, TrendingDown, AlertTriangle, Shield, Users, Building, Minus, Brain } from "lucide-react";
+import { ArrowLeft, TrendingUp, AlertTriangle, Minus, Brain } from "lucide-react";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  ComposedChart, Line, Area, AreaChart, Legend, RadarChart, Radar, PolarGrid, PolarAngleAxis,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  Area, AreaChart, Legend,
 } from "recharts";
 import { SysLabel, TitleH1, Subtitle } from "@/components/ui/moonshot/typography";
 import { ExecutiveNavV2 } from "@/components/executive/executive-nav-v2";
@@ -45,12 +45,12 @@ const RISK_DATA = generateMockRiskIndexData();
 
 // ── MOCK DATA: ALERTS TAB ──
 const CEO_ALERTS = [
-  { id: 1, severity: "critical", title: "Occupancy Below 85% — Oakridge", description: "Dropped from 86.2% to 84.1% over 14 days. Cash flow break-even requires >88%.", facility: "Oakridge ALF", age: "2h" },
-  { id: 2, severity: "critical", title: "Staffing Ratio Breach — Cedar Park Night Shift", description: "Night shift at 5/7 required (71%). Agency unable to fill 2 remaining slots.", facility: "Cedar Park", age: "4h" },
-  { id: 3, severity: "warning", title: "AR > 90 Days Exceeds Threshold — Cedar Park", description: "$60K in AR over 90 days, up 40% from prior month. Collection activities initiated.", facility: "Cedar Park", age: "1d" },
-  { id: 4, severity: "warning", title: "Medication Error Rate Elevated — Plantation", description: "3 errors in past 7 days (vs 0.8 avg). Root cause analysis requested.", facility: "Plantation", age: "1d" },
-  { id: 5, severity: "warning", title: "Survey Deficiency Open > 30 Days", description: "Tag F-241 dignity violation POC still in draft status. Due date approaching.", facility: "Homewood Lodge", age: "3d" },
-  { id: 6, severity: "info", title: "Lease Renewal Due — Grande Cypress", description: "Commercial lease expires Aug 2026. Renewal negotiation should begin.", facility: "Grande Cypress", age: "5d" },
+  { id: 1, severity: "critical", title: "Occupancy Below 85% — Oakridge", description: "Dropped from 86.2% to 84.1% over 14 days. Cash flow break-even requires >88%.", facility: "Oakridge ALF", age: "2h ago" },
+  { id: 2, severity: "critical", title: "Staffing Ratio Breach — Cedar Park Night Shift", description: "Night shift at 5/7 required (71%). Agency unable to fill 2 remaining slots.", facility: "Cedar Park", age: "4h ago" },
+  { id: 3, severity: "warning", title: "AR > 90 Days Exceeds Threshold — Cedar Park", description: "$60K in AR over 90 days, up 40% from prior month. Collection activities initiated.", facility: "Cedar Park", age: "1d ago" },
+  { id: 4, severity: "warning", title: "Medication Error Rate Elevated — Plantation", description: "3 errors in past 7 days (vs 0.8 avg). Root cause analysis requested.", facility: "Plantation", age: "1d ago" },
+  { id: 5, severity: "warning", title: "Survey Deficiency Open > 30 Days", description: "Tag F-241 dignity violation POC still in draft status. Due date approaching.", facility: "Homewood Lodge", age: "3d ago" },
+  { id: 6, severity: "info", title: "Lease Renewal Due — Grande Cypress", description: "Commercial lease expires Aug 2026. Renewal negotiation should begin.", facility: "Grande Cypress", age: "5d ago" },
 ];
 
 // ── MOCK DATA: REPORTS TAB ──
@@ -100,7 +100,7 @@ function timeSince(iso: string): string {
 // ══════════════════════════════════════════════════════════
 export default function CeoDashboardPage() {
   const [tab, setTab] = useState("CEO View");
-  const { kpis, alerts: liveAlerts, facilities: liveFacilities, loading, isDemo } = useExecRoleKpis();
+  const { kpis, alerts: liveAlerts, isDemo } = useExecRoleKpis();
 
   // Derive metric card values from live KPIs when available, otherwise use mock defaults
   const occupancyValue = kpis?.census.occupancyPct != null ? `${kpis.census.occupancyPct}%` : "91.8%";
@@ -167,7 +167,7 @@ export default function CeoDashboardPage() {
             <Panel>
               <SectionTitle sub="Executive-level alerts requiring leadership attention">Active Alerts &amp; Escalations</SectionTitle>
               <div className="space-y-2">
-                {CEO_ALERTS.map(a => (
+                {displayAlerts.map(a => (
                   <div key={a.id} className="flex items-start gap-3 px-4 py-3 rounded-xl hover:bg-white/[0.02] transition-colors">
                     <div className={cn("w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5",
                       a.severity === "critical" ? "bg-rose-500/20" : a.severity === "warning" ? "bg-amber-500/20" : "bg-sky-500/20"
@@ -177,7 +177,7 @@ export default function CeoDashboardPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-white">{a.title}</p>
                       <p className="text-xs text-slate-400 mt-1">{a.description}</p>
-                      <p className="text-[10px] text-slate-500 mt-1">{a.facility} · {a.age} ago</p>
+                      <p className="text-[10px] text-slate-500 mt-1">{a.facility} · {a.age}</p>
                     </div>
                     <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border border-white/5 shrink-0",
                       a.severity === "critical" ? "bg-rose-500/20 text-rose-400" : a.severity === "warning" ? "bg-amber-500/20 text-amber-400" : "bg-sky-500/20 text-sky-400"

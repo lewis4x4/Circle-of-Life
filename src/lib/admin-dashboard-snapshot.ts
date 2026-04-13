@@ -211,12 +211,21 @@ export async function fetchAdminDashboardSnapshot(
     incidentsFeedQuery as unknown as Promise<QueryResult<SupabaseIncidentFeedRow[]>>,
   ]);
 
-  if (facilitiesResult.error) throw facilitiesResult.error;
-  if (residentsCountRes.error) throw residentsCountRes.error;
-  if (staffCountRes.error) throw staffCountRes.error;
-  if (incidentsCountRes.error) throw incidentsCountRes.error;
-  if (residentsPreviewResult.error) throw residentsPreviewResult.error;
-  if (incidentsFeedResult.error) throw incidentsFeedResult.error;
+  const firstError = [
+    facilitiesResult.error && { table: "facilities", ...facilitiesResult.error },
+    residentsCountRes.error && { table: "residents", ...residentsCountRes.error },
+    staffCountRes.error && { table: "staff", ...staffCountRes.error },
+    incidentsCountRes.error && { table: "incidents", ...incidentsCountRes.error },
+    residentsPreviewResult.error && { table: "residents_preview", ...residentsPreviewResult.error },
+    incidentsFeedResult.error && { table: "incidents_feed", ...incidentsFeedResult.error },
+  ].find(Boolean);
+
+  if (firstError) {
+    const table = (firstError as Record<string, unknown>).table ?? "unknown";
+    const code = (firstError as Record<string, unknown>).code ?? "";
+    console.error("[Haven] Admin dashboard query failed", firstError);
+    throw new Error(`${firstError.message}${code ? ` [${code}]` : ""} (table: ${table})`);
+  }
 
   const facilityRows = facilitiesResult.data ?? [];
   const licensedBedsSum = facilityRows.reduce((acc, f) => acc + (f.total_licensed_beds ?? 0), 0);

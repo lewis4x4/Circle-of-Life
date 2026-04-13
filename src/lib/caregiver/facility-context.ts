@@ -31,7 +31,14 @@ export async function loadCaregiverFacilityContext(
     .select("organization_id, app_role")
     .eq("id", user.id)
     .maybeSingle();
-  if (profileResult.error) return { ok: false, error: profileResult.error.message };
+  if (profileResult.error) {
+    const errObj = profileResult.error as unknown as Record<string, unknown>;
+    const pgCode = errObj.code ?? "";
+    const hint = errObj.hint ?? "";
+    const detail = errObj.details ?? "";
+    console.error("[Haven] user_profiles query failed", { message: profileResult.error.message, pgCode, hint, detail, userId: user.id });
+    return { ok: false, error: `${profileResult.error.message}${pgCode ? ` (${pgCode})` : ""}` };
+  }
   const profile = profileResult.data as ProfileRow | null;
   if (!profile?.organization_id) {
     return { ok: false, error: "Your profile is missing an organization. Contact an administrator." };
