@@ -6,7 +6,7 @@ import type { TrayTicket, VenueId } from "./types";
 
 const VENUE_META: Record<VenueId, { label: string; color: string; Icon: React.ElementType<{ className?: string }> }> = {
   main_dining:  { label: "Main Dining",  color: "from-amber-500 to-orange-500", Icon: Utensils },
-  memory_care:  { label: "Memory Care",  color: "from-violet-500 to-fuchsia-500", Icon: Heart },
+  enhanced_alf: { label: "Enhanced ALF Services", color: "from-violet-500 to-fuchsia-500", Icon: Heart },
   room_trays:   { label: "Room Trays",   color: "from-sky-500 to-cyan-500", Icon: Soup },
 };
 

@@ -97,7 +97,7 @@ CREATE TABLE meal_services (
     'breakfast','lunch','dinner','snack_am','snack_pm','snack_hs'
   )),
   venue            text NOT NULL CHECK (venue IN (
-    'main_dining','memory_care','room_trays','private_dining','event'
+    'main_dining','enhanced_alf','room_trays','private_dining','event'
   )),
   scheduled_start  timestamptz NOT NULL,
   scheduled_end    timestamptz NOT NULL,

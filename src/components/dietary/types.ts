@@ -27,7 +27,7 @@ export type TicketStatus =
   | "npo"
   | "hospital";
 
-export type VenueId = "main_dining" | "memory_care" | "room_trays";
+export type VenueId = "main_dining" | "enhanced_alf" | "room_trays";
 
 export type MealPeriod =
   | "breakfast"

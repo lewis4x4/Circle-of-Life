@@ -36,7 +36,7 @@ DECLARE
 
   -- Fixed UUIDs for idempotency
   ms_main uuid := 'f1000000-d000-0000-0000-000000000001'; -- lunch / main_dining
-  ms_mc   uuid := 'f1000000-d000-0000-0000-000000000002'; -- lunch / memory_care
+  ms_mc   uuid := 'f1000000-d000-0000-0000-000000000002'; -- lunch / enhanced_alf
   ms_tray uuid := 'f1000000-d000-0000-0000-000000000003'; -- lunch / room_trays
 BEGIN
 
@@ -149,7 +149,7 @@ BEGIN
      (today + '11:30'::time) AT TIME ZONE 'America/New_York',
      (today + '13:00'::time) AT TIME ZONE 'America/New_York',
      'plating', 4),
-    (ms_mc,   org, fac, today, 'lunch', 'memory_care',
+    (ms_mc,   org, fac, today, 'lunch', 'enhanced_alf',
      (today + '11:30'::time) AT TIME ZONE 'America/New_York',
      (today + '13:00'::time) AT TIME ZONE 'America/New_York',
      'plating', 2),

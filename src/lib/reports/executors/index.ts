@@ -189,9 +189,8 @@ async function runIncidentTrendSummary(params: ExecuteParams): Promise<ReportExe
   }
 
   const detailRows = rows.slice(0, 500).map((r) => ({
-    id: r.id,
-    category: r.category,
     discovered_at: r.discovered_at,
+    category: r.category,
   }));
 
   const incidents30dTotal = rows.length;
@@ -215,7 +214,7 @@ async function runStaffingCoverageByShift(params: ExecuteParams): Promise<Report
 
   let q = supabase
     .from("shift_assignments")
-    .select("id, shift_type, shift_date")
+    .select("id, shift_type, shift_date, staff_id")
     .eq("organization_id", organizationId)
     .is("deleted_at", null)
     .gte("shift_date", start);
@@ -225,6 +224,20 @@ async function runStaffingCoverageByShift(params: ExecuteParams): Promise<Report
   const { data, error } = await q;
   if (error) throw new Error(error.message);
   const rows = data ?? [];
+
+  // Resolve staff names in one batch query
+  const staffIds = [...new Set(rows.map((r) => r.staff_id).filter(Boolean))];
+  const nameById = new Map<string, string>();
+  if (staffIds.length > 0) {
+    const { data: staffRows } = await supabase
+      .from("staff")
+      .select("id, first_name, last_name")
+      .eq("organization_id", organizationId)
+      .in("id", staffIds);
+    for (const s of staffRows ?? []) {
+      nameById.set(s.id, `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim());
+    }
+  }
 
   let dayCt = 0;
   let eveCt = 0;
@@ -247,7 +260,7 @@ async function runStaffingCoverageByShift(params: ExecuteParams): Promise<Report
     rows: rows.slice(0, 500).map((r) => ({
       shift_date: r.shift_date,
       shift_type: r.shift_type,
-      id: r.id,
+      staff_member: nameById.get(r.staff_id) ?? "Unknown",
     })),
     footnotes: [
       "Counts scheduled shift assignments in the published schedule for the next two weeks (including today).",
@@ -286,6 +299,20 @@ async function runOvertimeLaborPressure(params: ExecuteParams): Promise<ReportEx
 
   const timeRecordRowCount = rows.length;
 
+  // Resolve staff names in one batch query
+  const otStaffIds = [...new Set(rows.filter((r) => (r.overtime_hours ?? 0) > 0).map((r) => r.staff_id).filter(Boolean))];
+  const otNameById = new Map<string, string>();
+  if (otStaffIds.length > 0) {
+    const { data: otStaffRows } = await supabase
+      .from("staff")
+      .select("id, first_name, last_name")
+      .eq("organization_id", organizationId)
+      .in("id", otStaffIds);
+    for (const s of otStaffRows ?? []) {
+      otNameById.set(s.id, `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim());
+    }
+  }
+
   return {
     summary: [
       { metricKey: "timePunches30d", value: timeRecordRowCount },
@@ -296,7 +323,7 @@ async function runOvertimeLaborPressure(params: ExecuteParams): Promise<ReportEx
       .filter((r) => (r.overtime_hours ?? 0) > 0)
       .slice(0, 500)
       .map((r) => ({
-        staff_id: r.staff_id,
+        staff_member: otNameById.get(r.staff_id) ?? "Unknown",
         overtime_hours: r.overtime_hours,
         clock_in: r.clock_in,
       })),
@@ -351,7 +378,6 @@ async function runMedicationExceptionReport(params: ExecuteParams): Promise<Repo
       occurred_at: r.occurred_at,
       severity: r.severity,
       error_type: r.error_type,
-      id: r.id,
     })),
     footnotes: [
       "MTD uses the executive KPI definition (calendar month). YTD counts all medication events since Jan 1 UTC.",

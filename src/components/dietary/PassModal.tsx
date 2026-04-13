@@ -7,7 +7,7 @@ import type { TrayTicket } from "./types";
 
 const VENUE_LABEL: Record<string, string> = {
   main_dining: "Main Dining",
-  memory_care: "Memory Care",
+  enhanced_alf: "Enhanced ALF Services",
   room_trays: "Room Tray",
 };
 

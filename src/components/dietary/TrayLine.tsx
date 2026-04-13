@@ -4,7 +4,7 @@ import { Activity, Printer, PackageOpen } from "lucide-react";
 import { VenueColumn } from "./VenueColumn";
 import type { MealService, TrayTicket, VenueId } from "./types";
 
-const VENUE_ORDER: VenueId[] = ["main_dining", "memory_care", "room_trays"];
+const VENUE_ORDER: VenueId[] = ["main_dining", "enhanced_alf", "room_trays"];
 
 export function TrayLine({
   services,
