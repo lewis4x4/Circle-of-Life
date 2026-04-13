@@ -8,11 +8,17 @@ import { NowLane } from "./NowLane";
 import { ResidentRail } from "./ResidentRail";
 import { ShiftTape } from "./ShiftTape";
 import { MedPassModal } from "./MedPassFlow/MedPassModal";
+import { ResidentDrawer } from "./ResidentDrawer";
+import { IncidentModal } from "./IncidentModal";
 import type { MedPassItem } from "./PassCard";
+import type { ResidentItem } from "./ResidentRail";
 import { useShiftCurrent } from "@/hooks/med-tech/useShiftCurrent";
 
 export function Cockpit() {
-  const [activePass, setActivePass] = useState<MedPassItem | null>(null);
+  const [activePass, setActivePass]         = useState<MedPassItem | null>(null);
+  const [activeResident, setActiveResident] = useState<ResidentItem | null>(null);
+  const [incidentOpen, setIncidentOpen]     = useState(false);
+
   const { shift, passes, residents, tape, loading, error } = useShiftCurrent();
 
   if (loading) {
@@ -53,13 +59,35 @@ export function Cockpit() {
 
       <div className="flex-1 flex min-h-0">
         <NowLane passes={passes} onOpen={setActivePass} />
-        <ResidentRail residents={residents} />
+        <ResidentRail
+          residents={residents}
+          onResidentClick={setActiveResident}
+          onIncidentClick={() => setIncidentOpen(true)}
+        />
       </div>
 
       <ShiftTape events={tape} handoffTime="15:00" />
 
+      {/* Med pass modal */}
       {activePass && (
         <MedPassModal pass={activePass} onClose={() => setActivePass(null)} />
+      )}
+
+      {/* Resident chart drawer */}
+      {activeResident && (
+        <ResidentDrawer
+          resident={activeResident}
+          passes={passes}
+          onClose={() => setActiveResident(null)}
+        />
+      )}
+
+      {/* Incident capture modal */}
+      {incidentOpen && (
+        <IncidentModal
+          residents={residents}
+          onClose={() => setIncidentOpen(false)}
+        />
       )}
     </div>
   );
