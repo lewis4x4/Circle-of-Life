@@ -54,6 +54,7 @@ const DEMO_ALERTS: ExecutiveAlertRow[] = [];
  * when NEXT_PUBLIC_DEMO_MODE=true and queries fail or return empty.
  */
 export function useExecRoleKpis(facilityId?: string | null): ExecRoleKpiData {
+  const instanceId = useId();
   const [kpis, setKpis] = useState<ExecKpiPayload | null>(null);
   const [alerts, setAlerts] = useState<ExecutiveAlertRow[]>([]);
   const [facilities, setFacilities] = useState<ExecRoleKpiData["facilities"]>([]);
