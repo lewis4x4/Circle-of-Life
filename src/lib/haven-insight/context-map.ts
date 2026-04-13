@@ -353,11 +353,11 @@ const ROUTE_CONTEXTS: Array<{ prefix: string; context: ModuleContext }> = [
     prefix: "/admin/referrals",
     context: {
       module: "Referral Pipeline",
-      perspective: "referral inquiries, lead pipeline, HL7 inbound, conversion rates",
+      perspective: "referral inquiries, lead pipeline, referral inbox, conversion rates",
       suggestedQuestions: [
         "How many leads are in the pipeline?",
         "What's our referral-to-tour conversion rate?",
-        "Are there any pending HL7 inbound referrals?",
+        "Are there any pending referral inbox items?",
       ],
       kpiDomains: ["census"],
       systemPromptAddon: "The user is in the Referral Pipeline. Focus on lead volume, conversion rates, pipeline stages, and inbound referral processing.",
@@ -436,7 +436,7 @@ export function resolveModuleContext(pathname: string | null): ModuleContext {
 export function generateDynamicSuggestions(
   moduleContext: ModuleContext,
   kpis?: ExecKpiPayload | null,
-  role?: string,
+  _role?: string,
 ): string[] {
   const base = [...moduleContext.suggestedQuestions];
 

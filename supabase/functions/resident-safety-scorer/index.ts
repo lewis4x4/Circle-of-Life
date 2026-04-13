@@ -19,7 +19,7 @@ type SB = ReturnType<typeof createClient<any>>;
 
 async function obsScore(sb: SB, rid: string, since: string): Promise<number> {
   const { data } = await sb.from("resident_observation_tasks").select("status")
-    .eq("resident_id", rid).gte("scheduled_at", since).is("deleted_at", null);
+    .eq("resident_id", rid).gte("scheduled_for", since).is("deleted_at", null);
   if (!data?.length) return 100;
   const done = data.filter((r: { status: string }) =>
     r.status === "completed" || r.status === "completed_late").length;
@@ -127,7 +127,7 @@ Deno.serve(async (req) => {
 
     const { data: prev } = await sb.from("resident_safety_scores")
       .select("score, risk_tier").eq("resident_id", res.id)
-      .order("scored_at", { ascending: false }).limit(1).maybeSingle();
+      .order("computed_at", { ascending: false }).limit(1).maybeSingle();
     const pScore = (prev as { score: number } | null)?.score ?? null;
     const pTier = (prev as { risk_tier: RiskTier } | null)?.risk_tier ?? null;
 
@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
       component_scores: { observation_compliance: obs, exception_severity: exc,
         incident_recency: inc, assessment_risk: asr, medication_adherence: med },
       previous_score: pScore, score_delta: pScore != null ? score - pScore : null,
-      scored_at: now.toISOString(),
+      computed_at: now.toISOString(),
     });
 
     // Alert on downward tier transition

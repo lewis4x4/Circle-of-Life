@@ -53,7 +53,7 @@ export default function ReportsNlqPage() {
     <div className="space-y-6">
       <ReportsHubNav />
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">NLQ-assisted reporting</h1>
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Haven Insight reporting</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
           Natural language maps to approved templates and governed report definitions.
         </p>

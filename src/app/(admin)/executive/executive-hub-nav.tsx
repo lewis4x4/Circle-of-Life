@@ -12,7 +12,7 @@ const LINKS = [
   { href: "/admin/executive/alerts", label: "Alerts" },
   { href: "/admin/reports", label: "Reports" },
   { href: "/admin/executive/benchmarks", label: "Benchmarks" },
-  { href: "/admin/executive/nlq", label: "NLQ" },
+  { href: "/admin/executive/nlq", label: "Haven Insight" },
 ] as const;
 
 export function ExecutiveHubNav() {
