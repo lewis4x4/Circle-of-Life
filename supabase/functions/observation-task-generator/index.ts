@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
           grace_ends_at: graceEndsAt,
           status: "upcoming",
         },
-        { onConflict: "organization_id,plan_rule_id,scheduled_for", ignoreDuplicates: true },
+        { onConflict: "resident_id,plan_rule_id,due_at", ignoreDuplicates: true },
       );
 
       if (!upsertErr) tasksGenerated += 1;

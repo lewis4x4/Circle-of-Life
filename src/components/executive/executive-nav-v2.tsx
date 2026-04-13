@@ -5,7 +5,7 @@
  *
  * Dual navigation system for executive dashboards:
  * - Top navigation: Major domains (Command, Pipeline, Clinical Ops, Quality & Risk, Knowledge, Workforce, Finance)
- * - Pill menu: Executive view switching within domain (Overview, CEO View, CFO View, COO View, Alerts, Reports, Benchmarks, NLQ)
+ * - Pill menu: Executive view switching within domain (Overview, CEO View, CFO View, COO View, Alerts, Reports, Benchmarks, Haven Insight)
  */
 
 import React from "react";

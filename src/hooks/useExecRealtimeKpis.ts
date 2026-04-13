@@ -37,7 +37,9 @@ export function useExecRealtimeKpis(
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   // Use ref for callbacks to avoid re-subscribing on every render
   const callbacksRef = useRef(callbacks);
-  callbacksRef.current = callbacks;
+  useEffect(() => {
+    callbacksRef.current = callbacks;
+  });
 
   useEffect(() => {
     if (!organizationId) return;

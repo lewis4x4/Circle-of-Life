@@ -7,7 +7,7 @@
  * Shows watermark or badge when in demo mode.
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Zap, Database } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +26,16 @@ export interface DemoToggleProps {
 
 const DEMO_MODE_STORAGE_KEY = "haven-demo-mode-enabled";
 
+/** Read demo mode from localStorage (safe for SSR) */
+function readDemoMode(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(DEMO_MODE_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
 // ── MAIN COMPONENT ──
 
 export function DemoToggle({
@@ -33,19 +43,8 @@ export function DemoToggle({
   compact = false,
   position = "top-right",
 }: DemoToggleProps) {
-  const [isEnabled, setIsEnabled] = useState(false);
+  const [isEnabled, setIsEnabled] = useState(readDemoMode);
 
-  // Load saved preference on mount
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(DEMO_MODE_STORAGE_KEY);
-      setIsEnabled(saved === "true");
-    } catch (error) {
-      console.error("Failed to load demo mode preference:", error);
-    }
-  }, []);
-
-  // Save preference when changed
   const handleToggle = () => {
     const newValue = !isEnabled;
     setIsEnabled(newValue);
@@ -154,16 +153,7 @@ export interface DemoWatermarkProps {
  * Full-screen watermark for demo mode
  */
 export function DemoWatermark({ className }: DemoWatermarkProps) {
-  const [isDemoMode, setIsDemoMode] = useState(false);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(DEMO_MODE_STORAGE_KEY);
-      setIsDemoMode(saved === "true");
-    } catch (error) {
-      console.error("Failed to load demo mode preference:", error);
-    }
-  }, []);
+  const [isDemoMode] = useState(readDemoMode);
 
   if (!isDemoMode) return null;
 
@@ -192,16 +182,7 @@ export function DemoWatermark({ className }: DemoWatermarkProps) {
  * Hook to access and manage demo mode state
  */
 export function useDemoMode() {
-  const [isEnabled, setIsEnabled] = useState(false);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(DEMO_MODE_STORAGE_KEY);
-      setIsEnabled(saved === "true");
-    } catch (error) {
-      console.error("Failed to load demo mode preference:", error);
-    }
-  }, []);
+  const [isEnabled, setIsEnabled] = useState(readDemoMode);
 
   const toggle = () => {
     const newValue = !isEnabled;

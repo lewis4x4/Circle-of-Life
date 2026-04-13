@@ -100,7 +100,7 @@ const QUICK_ACTIONS = [
     accent: "indigo",
   },
   {
-    title: "Natural language (NLQ)",
+    title: "Haven Insight",
     description: "Ask questions in plain English and route to governed outputs.",
     href: "/admin/reports/nlq",
     icon: MessageSquareText,
@@ -293,7 +293,7 @@ export default function ReportsOverviewPage() {
               className={cn(buttonVariants({ variant: "outline", size: "lg" }), "gap-2 border-indigo-500/30 dark:border-indigo-400/30 rounded-xl text-xs uppercase tracking-widest font-bold")}
             >
               <MessageSquareText className="size-4" aria-hidden />
-              Ask NLQ
+              Ask Haven Insight
             </Link>
           </div>
         </header>

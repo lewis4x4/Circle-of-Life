@@ -13,7 +13,7 @@ const LINKS = [
   { href: "/admin/reports/history", label: "History" },
   { href: "/admin/reports/admin", label: "Governance" },
   { href: "/admin/reports/benchmarks", label: "Benchmarks" },
-  { href: "/admin/reports/nlq", label: "NLQ" },
+  { href: "/admin/reports/nlq", label: "Haven Insight" },
 ] as const;
 
 export function ReportsHubNav() {

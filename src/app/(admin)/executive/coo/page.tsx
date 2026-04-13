@@ -679,6 +679,22 @@ export default function CooDashboardPage() {
             </>
           )}
 
+          {/* ═══ HAVEN INSIGHT ═══ */}
+          {tab === "Haven Insight" && (
+            <Panel className="min-h-[300px] flex items-center justify-center">
+              <div className="text-center space-y-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500/20 to-indigo-600/20 border border-violet-500/20 flex items-center justify-center mx-auto">
+                  <Brain className="w-7 h-7 text-violet-400" />
+                </div>
+                <p className="text-lg font-semibold text-white">Haven Insight</p>
+                <p className="text-sm text-slate-400 max-w-md">Ask questions about your operations in plain English and get AI-powered answers from your live data.</p>
+                <Link href="/admin/executive/nlq" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-semibold hover:from-violet-500 hover:to-indigo-500 transition-all shadow-lg shadow-violet-500/20">
+                  <Brain className="w-4 h-4" /> Open Haven Insight
+                </Link>
+              </div>
+            </Panel>
+          )}
+
         </div>
       </div>
     </div>

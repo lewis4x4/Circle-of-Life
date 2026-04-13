@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { resolveModuleContext, generateDynamicSuggestions, type ModuleContext } from "./context-map";
 import { useExecRoleKpis } from "@/hooks/useExecRoleKpis";
