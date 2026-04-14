@@ -292,6 +292,42 @@ const cases: EvalCase[] = [
     accessibleFacilityNames,
     expected: { kind: "clarify", includes: ["emergency contacts", "responsible parties", "family messages"] },
   },
+  {
+    name: "today leads question routes to referral pipeline",
+    question: withHeaderFacility("Oakridge ALF", "Did we get any new leads today at Oakridge?"),
+    accessibleFacilityNames,
+    expected: { kind: "route", domain: "referral_pipeline" },
+  },
+  {
+    name: "all facilities occupancy routes to census",
+    question: withNoHeaderFacility("What is occupancy across all facilities right now?"),
+    accessibleFacilityNames,
+    expected: { kind: "route", domain: "census" },
+  },
+  {
+    name: "all facilities attention clarifies scope",
+    question: withNoHeaderFacility("Who needs attention right now?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["Oakridge ALF", "all facilities"] },
+  },
+  {
+    name: "policy handbook query remains agentic",
+    question: withHeaderFacility("Homewood Lodge ALF", "What does the employee handbook say about workplace safety?"),
+    accessibleFacilityNames,
+    expected: { kind: "agentic" },
+  },
+  {
+    name: "sop query remains agentic",
+    question: withHeaderFacility("Oakridge ALF", "Show me the transportation scheduling SOP."),
+    accessibleFacilityNames,
+    expected: { kind: "agentic" },
+  },
+  {
+    name: "billing source of truth question gets integration clarification",
+    question: withHeaderFacility("Oakridge ALF", "Should we keep billing in Haven or QuickBooks?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["native Haven billing", "QuickBooks sync", "facility billing workflow differences"] },
+  },
 ];
 
 function assertCase(evalCase: EvalCase) {
