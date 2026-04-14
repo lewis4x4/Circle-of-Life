@@ -27,6 +27,8 @@ import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { isDemoMode } from "@/lib/demo-mode";
+import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 
 type LiveTaskRow = {
   id: string;
@@ -97,8 +99,10 @@ function toDrawerTask(task: LiveTaskRow): QuickCheckTask {
 export default function AdminRoundingLivePage() {
   const { selectedFacilityId } = useFacilityStore();
   const supabase = useMemo(() => createClient(), []);
+  const demo = isDemoMode();
   const [, setLoading] = useState(true);
   const [tasks, setTasks] = useState<LiveTaskRow[]>(DEMO_TASKS);
+  const [demoFallbackActive, setDemoFallbackActive] = useState(demo);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   // Drawer state
@@ -111,6 +115,7 @@ export default function AdminRoundingLivePage() {
     setLoading(true);
 
     if (!selectedFacilityId || !isBrowserSupabaseConfigured()) {
+      setDemoFallbackActive(demo);
       setTasks(DEMO_TASKS);
       setLoading(false);
       return;
@@ -128,8 +133,10 @@ export default function AdminRoundingLivePage() {
 
       if (error) throw error;
       const rows = (data ?? []) as unknown as LiveTaskRow[];
+      setDemoFallbackActive(rows.length === 0 && demo);
       setTasks(rows.length > 0 ? rows : DEMO_TASKS);
     } catch {
+      setDemoFallbackActive(demo);
       setTasks(DEMO_TASKS);
     } finally {
       setLoading(false);
@@ -242,6 +249,13 @@ export default function AdminRoundingLivePage() {
             </div>
           </div>
         </header>
+
+        {demoFallbackActive ? (
+          <AdminLiveDataFallbackNotice
+            message="Demo mode is active on the Live Rounding Board. These tasks are illustrative sample checks because no live rounding tasks were returned for the current scope."
+            onRetry={() => void load()}
+          />
+        ) : null}
 
         {/* Clickable stat cards */}
         <KineticGrid className="grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" staggerMs={50}>
