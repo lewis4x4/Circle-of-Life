@@ -11,7 +11,7 @@ import type { ChatMessageRow } from "../lib/types";
 
 export function ChatPage() {
   const supabase = useMemo(() => createClient(), []);
-  const { workspaceId, loading: workspaceLoading, error: workspaceError } = useKbWorkspaceId();
+  const { workspaceId, loading: workspaceLoading, error: workspaceError, reload: reloadWorkspace } = useKbWorkspaceId();
   const {
     conversations,
     loading: convsLoading,
@@ -148,6 +148,7 @@ export function ChatPage() {
           workspaceId={workspaceId}
           workspaceLoading={workspaceLoading}
           workspaceError={workspaceError}
+          onRetryWorkspace={() => void reloadWorkspace()}
           onStreamFinished={handleStreamFinished}
         />
       </div>

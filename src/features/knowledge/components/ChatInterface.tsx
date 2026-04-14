@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Send, Loader2, StopCircle, Paperclip, BookOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { ChatMessage } from "./ChatMessage";
 import { SuggestedPrompts } from "./SuggestedPrompts";
 import { useKnowledgeStream } from "../hooks/useKnowledgeStream";
@@ -18,6 +19,7 @@ interface ChatInterfaceProps {
   workspaceId: string | null;
   workspaceLoading: boolean;
   workspaceError: string | null;
+  onRetryWorkspace?: () => void;
   /** Pass conversation id when the thread was just created so messages reload correctly */
   onStreamFinished?: (conversationIdForReload?: string | null) => void;
 }
@@ -31,6 +33,7 @@ export function ChatInterface({
   workspaceId,
   workspaceLoading,
   workspaceError,
+  onRetryWorkspace,
   onStreamFinished,
 }: ChatInterfaceProps) {
   const [input, setInput] = useState("");
@@ -97,8 +100,18 @@ export function ChatInterface({
   return (
     <div className="relative flex min-h-0 flex-1 flex-col bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(99,102,241,0.12),transparent)] dark:bg-[#050505]">
       {workspaceError && (
-        <div className="shrink-0 border-b border-amber-900/50 bg-amber-950/40 px-4 py-2 text-sm text-amber-100">
-          {workspaceError}
+        <div className="shrink-0 border-b border-amber-900/50 bg-amber-950/40 px-4 py-3 text-sm text-amber-100 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>{workspaceError}</div>
+          {onRetryWorkspace ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onRetryWorkspace}
+              className="border-amber-800/60 text-amber-100 hover:bg-amber-950/60 dark:border-amber-800/60 dark:text-amber-100 dark:hover:bg-amber-950/60"
+            >
+              Retry workspace
+            </Button>
+          ) : null}
         </div>
       )}
 
