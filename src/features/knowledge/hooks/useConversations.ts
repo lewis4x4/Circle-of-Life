@@ -9,6 +9,7 @@ export function useConversations() {
   const [conversations, setConversations] = useState<ChatConversationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -38,15 +39,18 @@ export function useConversations() {
 
   const deleteConversation = useCallback(
     async (id: string) => {
+      setDeleteError(null);
       const { error } = await supabase.from("chat_conversations").delete().eq("id", id);
       if (error) {
         console.warn("[useConversations] delete failed", error.message);
-        return;
+        setDeleteError(error.message);
+        return false;
       }
       setConversations((prev) => prev.filter((c) => c.id !== id));
+      return true;
     },
     [supabase],
   );
 
-  return { conversations, loading, error, reload: load, deleteConversation };
+  return { conversations, loading, error, deleteError, reload: load, deleteConversation };
 }

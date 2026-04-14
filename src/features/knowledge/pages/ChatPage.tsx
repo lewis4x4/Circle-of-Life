@@ -12,7 +12,14 @@ import type { ChatMessageRow } from "../lib/types";
 export function ChatPage() {
   const supabase = useMemo(() => createClient(), []);
   const { workspaceId, loading: workspaceLoading, error: workspaceError } = useKbWorkspaceId();
-  const { conversations, loading: convsLoading, error: convsError, reload: reloadConvs, deleteConversation } = useConversations();
+  const {
+    conversations,
+    loading: convsLoading,
+    error: convsError,
+    deleteError,
+    reload: reloadConvs,
+    deleteConversation,
+  } = useConversations();
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessageRow[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
@@ -68,7 +75,8 @@ export function ChatPage() {
 
   const handleDeleteConversation = useCallback(
     async (id: string) => {
-      await deleteConversation(id);
+      const deleted = await deleteConversation(id);
+      if (!deleted) return;
       if (activeConversationId === id) {
         setActiveConversationId(null);
         setMessages([]);
@@ -101,6 +109,11 @@ export function ChatPage() {
         />
       </div>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        {deleteError && (
+          <div className="shrink-0 border-b border-red-900/50 bg-red-950/30 px-4 py-3 text-sm text-red-200">
+            Could not delete that conversation. {deleteError}
+          </div>
+        )}
         {messagesLoading && (
           <div className="shrink-0 border-b border-zinc-800/80 px-4 py-1.5 text-xs text-zinc-500">
             Loading messages…
