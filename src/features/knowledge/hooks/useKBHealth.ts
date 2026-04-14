@@ -9,71 +9,77 @@ export function useKBHealth() {
   const [health, setHealth] = useState<KBHealthMetrics | null>(null);
   const [insights, setInsights] = useState<ChatInsight | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(null);
+    try {
+      const [
+        totalDocsRes,
+        publishedDocsRes,
+        failedDocsRes,
+        totalChunksRes,
+        embeddedChunksRes,
+        queryCountRes,
+        positiveFbRes,
+        negativeFbRes,
+        gapCountRes,
+      ] = await Promise.all([
+        supabase.from("documents").select("*", { count: "exact", head: true }).is("deleted_at", null),
+        supabase.from("documents").select("*", { count: "exact", head: true }).eq("status", "published").is("deleted_at", null),
+        supabase.from("documents").select("*", { count: "exact", head: true }).eq("status", "ingest_failed").is("deleted_at", null),
+        supabase.from("chunks").select("*", { count: "exact", head: true }),
+        supabase.from("chunks").select("*", { count: "exact", head: true }).not("embedding", "is", null),
+        supabase.from("chat_messages").select("*", { count: "exact", head: true }).eq("role", "user"),
+        supabase.from("chat_messages").select("*", { count: "exact", head: true }).eq("feedback", "positive"),
+        supabase.from("chat_messages").select("*", { count: "exact", head: true }).eq("feedback", "negative"),
+        supabase.from("knowledge_gaps").select("*", { count: "exact", head: true }).eq("resolved", false),
+      ]);
 
-    const { count: totalDocs } = await supabase
-      .from("documents")
-      .select("*", { count: "exact", head: true })
-      .is("deleted_at", null);
-    const { count: publishedDocs } = await supabase
-      .from("documents")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "published")
-      .is("deleted_at", null);
-    const { count: failedDocs } = await supabase
-      .from("documents")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "ingest_failed")
-      .is("deleted_at", null);
-    const { count: totalChunks } = await supabase.from("chunks").select("*", { count: "exact", head: true });
-    const { count: embeddedChunks } = await supabase
-      .from("chunks")
-      .select("*", { count: "exact", head: true })
-      .not("embedding", "is", null);
+      const firstError = [
+        totalDocsRes.error,
+        publishedDocsRes.error,
+        failedDocsRes.error,
+        totalChunksRes.error,
+        embeddedChunksRes.error,
+        queryCountRes.error,
+        positiveFbRes.error,
+        negativeFbRes.error,
+        gapCountRes.error,
+      ].find(Boolean);
 
-    const total = totalDocs ?? 0;
-    const chunks = totalChunks ?? 0;
+      if (firstError) throw firstError;
 
-    setHealth({
-      totalDocuments: total,
-      publishedDocuments: publishedDocs ?? 0,
-      totalChunks: chunks,
-      embeddingCoverage: chunks > 0 ? ((embeddedChunks ?? 0) / chunks) * 100 : 0,
-      staleDocuments: 0,
-      failedIngestions: failedDocs ?? 0,
-      avgChunksPerDoc: total > 0 ? chunks / total : 0,
-    });
+      const total = totalDocsRes.count ?? 0;
+      const chunks = totalChunksRes.count ?? 0;
 
-    const { count: queryCount } = await supabase
-      .from("chat_messages")
-      .select("*", { count: "exact", head: true })
-      .eq("role", "user");
-    const { count: positiveFb } = await supabase
-      .from("chat_messages")
-      .select("*", { count: "exact", head: true })
-      .eq("feedback", "positive");
-    const { count: negativeFb } = await supabase
-      .from("chat_messages")
-      .select("*", { count: "exact", head: true })
-      .eq("feedback", "negative");
-    const { count: gapCount } = await supabase
-      .from("knowledge_gaps")
-      .select("*", { count: "exact", head: true })
-      .eq("resolved", false);
+      setHealth({
+        totalDocuments: total,
+        publishedDocuments: publishedDocsRes.count ?? 0,
+        totalChunks: chunks,
+        embeddingCoverage: chunks > 0 ? ((embeddedChunksRes.count ?? 0) / chunks) * 100 : 0,
+        staleDocuments: 0,
+        failedIngestions: failedDocsRes.count ?? 0,
+        avgChunksPerDoc: total > 0 ? chunks / total : 0,
+      });
 
-    setInsights({
-      totalQueries: queryCount ?? 0,
-      uniqueUsers: 0,
-      avgTokensPerQuery: 0,
-      topTopics: [],
-      positiveFeedback: positiveFb ?? 0,
-      negativeFeedback: negativeFb ?? 0,
-      gapCount: gapCount ?? 0,
-    });
-
-    setLoading(false);
+      setInsights({
+        totalQueries: queryCountRes.count ?? 0,
+        uniqueUsers: 0,
+        avgTokensPerQuery: 0,
+        topTopics: [],
+        positiveFeedback: positiveFbRes.count ?? 0,
+        negativeFeedback: negativeFbRes.count ?? 0,
+        gapCount: gapCountRes.count ?? 0,
+      });
+    } catch (loadError) {
+      setHealth(null);
+      setInsights(null);
+      setError(loadError instanceof Error ? loadError.message : "Failed to load knowledge health.");
+    } finally {
+      setLoading(false);
+    }
   }, [supabase]);
 
   useEffect(() => {
@@ -82,5 +88,5 @@ export function useKBHealth() {
     });
   }, [load]);
 
-  return { health, insights, loading, reload: load };
+  return { health, insights, loading, error, reload: load };
 }

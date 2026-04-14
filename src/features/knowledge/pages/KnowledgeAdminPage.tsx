@@ -27,7 +27,7 @@ export function KnowledgeAdminPage() {
   const { workspaceId, loading: workspaceLoading } = useKbWorkspaceId();
   const { documents, loading: docsLoading, error: docsError, reload: reloadDocs } = useDocuments();
   const { gaps, loading: gapsLoading, resolve: resolveGap, resolveError } = useKnowledgeGaps();
-  const { health, insights, loading: healthLoading } = useKBHealth();
+  const { health, insights, loading: healthLoading, error: healthError, reload: reloadHealth } = useKBHealth();
 
   return (
     <div className="space-y-6">
@@ -90,9 +90,37 @@ export function KnowledgeAdminPage() {
         </div>
       )}
 
-      {activeTab === "health" && <KBHealthPanel health={health} loading={healthLoading} />}
+      {activeTab === "health" && (
+        healthError ? (
+          <div className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-4 text-sm text-red-800 dark:text-red-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="font-medium">Could not load knowledge health.</div>
+              <div className="text-red-700/90 dark:text-red-200/90">{healthError}</div>
+            </div>
+            <Button type="button" variant="outline" onClick={() => void reloadHealth()} className="border-red-300 text-red-800 hover:bg-red-100 dark:border-red-800 dark:text-red-200 dark:hover:bg-red-950/60">
+              Retry health
+            </Button>
+          </div>
+        ) : (
+          <KBHealthPanel health={health} loading={healthLoading} />
+        )
+      )}
 
-      {activeTab === "insights" && <ChatInsightsPanel insights={insights} loading={healthLoading} />}
+      {activeTab === "insights" && (
+        healthError ? (
+          <div className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-4 text-sm text-red-800 dark:text-red-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="font-medium">Could not load chat insights.</div>
+              <div className="text-red-700/90 dark:text-red-200/90">{healthError}</div>
+            </div>
+            <Button type="button" variant="outline" onClick={() => void reloadHealth()} className="border-red-300 text-red-800 hover:bg-red-100 dark:border-red-800 dark:text-red-200 dark:hover:bg-red-950/60">
+              Retry insights
+            </Button>
+          </div>
+        ) : (
+          <ChatInsightsPanel insights={insights} loading={healthLoading} />
+        )
+      )}
     </div>
   );
 }
