@@ -15661,8 +15661,10 @@ export type Database = {
         | "admin_assistant"
         | "coordinator"
         | "nurse"
+        | "med_tech"
         | "caregiver"
         | "dietary"
+        | "dietary_aide"
         | "maintenance_role"
         | "housekeeper"
         | "family"
@@ -16245,8 +16247,10 @@ export const Constants = {
         "admin_assistant",
         "coordinator",
         "nurse",
+        "med_tech",
         "caregiver",
         "dietary",
+        "dietary_aide",
         "maintenance_role",
         "housekeeper",
         "family",
