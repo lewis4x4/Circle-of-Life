@@ -202,53 +202,53 @@ function findUnsupportedLane(question: string): UnsupportedLane | null {
 function buildUnsupportedLaneClarification(lane: UnsupportedLane): string {
   switch (lane) {
     case "admissions":
-      return "I can answer that once you narrow it to one lane: pending admissions, move-in blockers, or resident count.";
+      return "That admissions lane is not fully live yet. Narrow it to one lane: pending admissions, move-in blockers, or resident count.";
     case "discharge":
-      return "I can answer that once you narrow it to one lane: pending discharges, discharge paperwork, or resident count.";
+      return "That discharge lane is not fully live yet. Narrow it to one lane: pending discharges, discharge paperwork, or resident count.";
     case "medications":
-      return "I can answer that once you narrow it to one lane: meds due now, overdue passes, or medication errors.";
+      return "That medication lane is not fully live yet. Narrow it to one lane: meds due now, overdue passes, or medication errors.";
     case "incidents":
-      return "I can answer that once you narrow it to one lane: open incidents, overdue follow-ups, or resident attention.";
+      return "That incident lane is not fully live yet. Narrow it to one lane: open incidents, overdue follow-ups, or resident attention.";
     case "compliance":
-      return "I can answer that once you narrow it to one lane: open deficiencies, overdue plans of correction, or policy acknowledgments.";
+      return "That compliance lane is not fully live yet. Narrow it to one lane: open deficiencies, overdue plans of correction, or policy acknowledgments.";
     case "training":
-      return "I can answer that once you narrow it to one lane: certifications expiring, overdue completions, or upcoming in-service sessions.";
+      return "That training lane is not fully live yet. Narrow it to one lane: certifications expiring, overdue completions, or upcoming in-service sessions.";
     case "transport":
-      return "I can answer that once you narrow it to one lane: trips today, missed rides, or mileage approvals.";
+      return "That transportation lane is not fully live yet. Narrow it to one lane: trips today, missed rides, or mileage approvals.";
     case "dietary":
-      return "I can answer that once you narrow it to one lane: diet orders, swallow-risk items, or texture/liquid conflicts.";
+      return "That dietary lane is not fully live yet. Narrow it to one lane: diet orders, swallow-risk items, or texture/liquid conflicts.";
     case "reputation":
-      return "I can answer that once you narrow it to one lane: unreplied reviews, failed posts, or account status.";
+      return "That reputation lane is not fully live yet. Narrow it to one lane: unreplied reviews, failed posts, or account status.";
     case "family":
-      return "I can answer that once you narrow it to one lane: family journal, care team, or messages.";
+      return "That family-experience lane is not fully live yet. Narrow it to one lane: family journal, care team, or messages.";
     case "executive":
-      return "I can answer that once you narrow it to one lane: top alerts, facility risk, or benchmark outliers.";
+      return "That executive strategy lane is not fully live yet. Narrow it to one lane: top alerts, facility risk, or benchmark outliers.";
     case "finance":
-      return "I can answer that once you narrow it to one lane: overdue invoices, collection follow-ups, or close blockers.";
+      return "That finance lane is not fully live yet. Narrow it to one lane: overdue invoices, collection follow-ups, or close blockers.";
     case "insurance":
-      return "I can answer that once you narrow it to one lane: renewals due, open claims, or policy expirations.";
+      return "That insurance lane is not fully live yet. Narrow it to one lane: renewals due, open claims, or policy expirations.";
     case "vendors":
-      return "I can answer that once you narrow it to one lane: expiring contracts, pending approvals, or recent spend.";
+      return "That vendor lane is not fully live yet. Narrow it to one lane: expiring contracts, pending approvals, or recent spend.";
     case "facility_admin":
-      return "I can answer that once you narrow it to one lane: facility profile, survey history, or emergency contacts.";
+      return "That facility-admin lane is not fully live yet. Narrow it to one lane: facility profile, survey history, or emergency contacts.";
     case "reporting":
-      return "I can answer that once you narrow it to one lane: scheduled reports, failed runs, or due-soon reports.";
+      return "That reporting lane is not fully live yet. Narrow it to one lane: scheduled reports, failed runs, or due-soon reports.";
     case "rounding":
-      return "I can answer that once you narrow it to one lane: active watch protocols, overdue observation tasks, or open escalations.";
+      return "That rounding lane is not fully live yet. Narrow it to one lane: active watch protocols, overdue observation tasks, or open escalations.";
     case "marketing":
-      return "I can answer that once you narrow it to one lane: campaign leads, referral sources, or admissions conversion.";
+      return "That marketing lane is not fully live yet. Narrow it to one lane: campaign leads, referral sources, or admissions conversion.";
     case "waitlist_planning":
-      return "I can answer that once you narrow it to one lane: turned-away applicants by month, waitlist by facility, or conversion/capacity planning.";
+      return "That planning lane is not fully live yet. Narrow it to one lane: turned-away applicants by month, waitlist by facility, or conversion/capacity planning.";
     case "integration":
-      return "I can answer that once you narrow it to one lane: native Haven billing, QuickBooks sync, or facility billing workflow differences.";
+      return "That integration lane is not fully live yet. Narrow it to one lane: native Haven billing, QuickBooks sync, or facility billing workflow differences.";
     case "expansion":
-      return "I can answer that once you narrow it to one lane: new-facility provisioning, acquisition readiness, or capacity planning.";
+      return "That expansion lane is not fully live yet. Narrow it to one lane: new-facility provisioning, acquisition readiness, or capacity planning.";
     case "knowledge_admin":
-      return "I can answer that once you narrow it to one lane: KB uploads, facility document vault, or Obsidian doctrine drafts.";
+      return "That knowledge-admin lane is not fully live yet. Narrow it to one lane: KB uploads, facility document vault, or Obsidian doctrine drafts.";
     case "workflow_automation":
-      return "I can answer that once you narrow it to one lane: incident notifications, follow-up tasks, or document generation.";
+      return "That workflow-automation lane is not fully live yet. Narrow it to one lane: incident notifications, follow-up tasks, or document generation.";
     case "regulatory_story":
-      return "I can answer that once you narrow it to one lane: AHCA evidence story, survey-readiness proof, or commercialization narrative.";
+      return "That regulatory/commercialization lane is not fully live yet. Narrow it to one lane: AHCA evidence story, survey-readiness proof, or commercialization narrative.";
   }
 }
 
