@@ -159,32 +159,36 @@ export default function CaregiverHomePage() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <HeroStat 
-            label="Assigned Residents" 
-            value={brief.census} 
-            icon={<UserRound />} 
-            glowColor="rgba(255,255,255,0.05)" 
+          <HeroStat
+            label="Assigned Residents"
+            value={brief.census}
+            icon={<UserRound />}
+            glowColor="rgba(255,255,255,0.05)"
+            href="/caregiver/residents"
           />
-          <HeroStat 
-            label="High Priority" 
-            value={brief.highSeverityConditionCount} 
-            icon={<ShieldAlert />} 
-            glowColor={brief.highSeverityConditionCount > 0 ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.05)"} 
+          <HeroStat
+            label="High Priority"
+            value={brief.highSeverityConditionCount}
+            icon={<ShieldAlert />}
+            glowColor={brief.highSeverityConditionCount > 0 ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.05)"}
             danger={brief.highSeverityConditionCount > 0}
+            href="/caregiver/followups"
           />
-          <HeroStat 
-            label="eMAR Window" 
-            value={emarWindow} 
-            icon={<Pill />} 
-            glowColor={emarWindow > 0 ? "rgba(45,212,191,0.2)" : "rgba(255,255,255,0.05)"} 
+          <HeroStat
+            label="eMAR Window"
+            value={emarWindow}
+            icon={<Pill />}
+            glowColor={emarWindow > 0 ? "rgba(45,212,191,0.2)" : "rgba(255,255,255,0.05)"}
             accent={emarWindow > 0}
+            href="/caregiver/meds"
           />
-          <HeroStat 
-            label="Pending Docs" 
-            value={docPending} 
-            icon={<ClipboardList />} 
-            glowColor={docPending > 0 ? "rgba(245,158,11,0.2)" : "rgba(255,255,255,0.05)"} 
+          <HeroStat
+            label="Pending Docs"
+            value={docPending}
+            icon={<ClipboardList />}
+            glowColor={docPending > 0 ? "rgba(245,158,11,0.2)" : "rgba(255,255,255,0.05)"}
             warning={docPending > 0}
+            href="/caregiver/prn-followup"
           />
         </div>
       </div>
@@ -346,7 +350,8 @@ function HeroStat({
   glowColor,
   danger,
   warning,
-  accent
+  accent,
+  href,
 }: {
   label: string;
   value: number | string;
@@ -355,23 +360,42 @@ function HeroStat({
   danger?: boolean;
   warning?: boolean;
   accent?: boolean;
+  href?: string;
 }) {
   const valueColor = danger ? "text-rose-400" : warning ? "text-amber-400" : accent ? "text-teal-400" : "text-white";
-  
+  const inner = (
+    <div className="flex flex-col gap-1 z-10 relative">
+      <div className="flex items-center gap-2 mb-2 text-zinc-400">
+        <div className="w-5 h-5 opacity-80">{icon}</div>
+        <span className="text-[10px] font-bold uppercase tracking-widest">{label}</span>
+      </div>
+      <div className={`text-4xl md:text-5xl font-display font-medium tabular-nums tracking-tight ${valueColor}`}>
+        {value}
+      </div>
+    </div>
+  );
+
+  const baseClass = "relative rounded-2xl border border-white/10 bg-white/[0.03] p-5 overflow-hidden group";
+  const hoverClass = href ? " cursor-pointer hover:bg-white/[0.06] hover:border-white/20 transition-colors" : "";
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className={baseClass + hoverClass}
+        style={{ boxShadow: `inset 0 0 40px ${glowColor}` }}
+      >
+        {inner}
+      </Link>
+    );
+  }
+
   return (
-    <div 
-      className="relative rounded-2xl border border-white/10 bg-white/[0.03] p-5 overflow-hidden group"
+    <div
+      className={baseClass}
       style={{ boxShadow: `inset 0 0 40px ${glowColor}` }}
     >
-      <div className="flex flex-col gap-1 z-10 relative">
-        <div className="flex items-center gap-2 mb-2 text-zinc-400">
-          <div className="w-5 h-5 opacity-80">{icon}</div>
-          <span className="text-[10px] font-bold uppercase tracking-widest">{label}</span>
-        </div>
-        <div className={`text-4xl md:text-5xl font-display font-medium tabular-nums tracking-tight ${valueColor}`}>
-          {value}
-        </div>
-      </div>
+      {inner}
     </div>
   );
 }
