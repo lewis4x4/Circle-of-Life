@@ -3,8 +3,13 @@
  */
 
 import { z } from "zod";
+import { UUID_STRING_RE } from "@/lib/supabase/env";
 
 // ── Shared ────────────────────────────────────────────────────────
+
+const uuidStringSchema = z.string().refine((value) => UUID_STRING_RE.test(value), {
+  message: "Invalid UUID",
+});
 
 const appRoleEnum = z.enum([
   "owner",
@@ -32,7 +37,7 @@ export const listUsersQuerySchema = z.object({
   search: z.string().optional(),
   role: appRoleEnum.optional(),
   facility_id: z
-    .union([z.string().uuid(), z.array(z.string().uuid())])
+    .union([uuidStringSchema, z.array(uuidStringSchema)])
     .optional()
     .transform((v) => (v === undefined ? [] : Array.isArray(v) ? v : [v])),
   status: z.enum(["active", "inactive", "deleted"]).default("active"),
@@ -50,11 +55,11 @@ export const createUserSchema = z
     app_role: appRoleEnum,
     job_title: z.string().optional(),
     avatar_url: z.string().url().optional(),
-    manager_user_id: z.string().uuid().optional(),
+    manager_user_id: uuidStringSchema.optional(),
     facilities: z
       .array(
         z.object({
-          facility_id: z.string().uuid(),
+          facility_id: uuidStringSchema,
           is_primary: z.boolean(),
         }),
       )
@@ -84,7 +89,7 @@ export const updateUserSchema = z
     job_title: z.string().optional(),
     avatar_url: z.string().url().optional(),
     is_active: z.boolean().optional(),
-    manager_user_id: z.string().uuid().nullable().optional(),
+    manager_user_id: uuidStringSchema.nullable().optional(),
   })
   .strict()
   .refine((data) => Object.keys(data).length > 0, {
@@ -94,7 +99,7 @@ export const updateUserSchema = z
 // ── Grant Facility Access (POST body) ─────────────────────────────
 
 export const grantFacilityAccessSchema = z.object({
-  facility_id: z.string().uuid(),
+  facility_id: uuidStringSchema,
   is_primary: z.boolean().default(false),
 });
 
