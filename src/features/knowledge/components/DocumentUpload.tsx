@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { Upload, X, Loader2, Check, AlertTriangle } from "lucide-react";
-import { uploadDocument } from "../lib/knowledge-api";
+import { createObsidianDraft, uploadDocument } from "../lib/knowledge-api";
 import type { DocumentAudience } from "../lib/types";
 
 interface DocumentUploadProps {
@@ -65,10 +65,33 @@ export function DocumentUpload({ workspaceId, workspaceLoading, onSuccess }: Doc
           ? (result.data as Record<string, unknown>)
           : null;
       const queued = payload?.queued === true;
+      const documentId =
+        payload && typeof payload.document_id === "string"
+          ? payload.document_id
+          : null;
+      let draftMessage = "";
+      if (documentId) {
+        const draftResult = await createObsidianDraft(documentId);
+        if (draftResult.ok) {
+          const draftPayload =
+            draftResult.data && typeof draftResult.data === "object"
+              ? (draftResult.data as Record<string, unknown>)
+              : null;
+          const notePath =
+            draftPayload && typeof draftPayload.notePath === "string"
+              ? draftPayload.notePath
+              : "";
+          draftMessage = notePath
+            ? ` Obsidian draft created at ${notePath}.`
+            : " Obsidian draft created.";
+        } else {
+          draftMessage = ` Upload succeeded, but the Obsidian draft could not be created: ${draftResult.error}`;
+        }
+      }
       setSuccessMessage(
         queued
-          ? "Document uploaded. Indexing continues in the background. Refresh the list if the status does not update shortly."
-          : "Document uploaded and indexed successfully.",
+          ? `Document uploaded. Indexing continues in the background. Refresh the list if the status does not update shortly.${draftMessage}`
+          : `Document uploaded and indexed successfully.${draftMessage}`,
       );
       setFile(null);
       setTitle("");

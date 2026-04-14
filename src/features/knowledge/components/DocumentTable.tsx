@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { FileText, Trash2, RefreshCw, Loader2 } from "lucide-react";
 import type { DocumentRow, DocumentAudience, DocumentStatus } from "../lib/types";
-import { adminUpdateDocument, adminDeleteDocument, reindexDocument } from "../lib/knowledge-api";
+import { adminUpdateDocument, adminDeleteDocument, createObsidianDraft, reindexDocument } from "../lib/knowledge-api";
 
 interface DocumentTableProps {
   documents: DocumentRow[];
@@ -30,10 +30,12 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
   const filtered = documents.filter((d) => d.title.toLowerCase().includes(filter.toLowerCase()));
 
   const handleStatusChange = async (docId: string, status: DocumentStatus) => {
+    setActionSuccess(null);
     setActionError(null);
     setActionLoading(docId);
     try {
@@ -49,6 +51,7 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
   };
 
   const handleAudienceChange = async (docId: string, audience: DocumentAudience) => {
+    setActionSuccess(null);
     setActionError(null);
     setActionLoading(docId);
     try {
@@ -65,6 +68,7 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
 
   const handleDelete = async (docId: string) => {
     if (!confirm("Delete this document? This removes it from the knowledge base.")) return;
+    setActionSuccess(null);
     setActionError(null);
     setActionLoading(docId);
     try {
@@ -80,6 +84,7 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
   };
 
   const handleReindex = async (docId: string) => {
+    setActionSuccess(null);
     setActionError(null);
     setActionLoading(docId);
     try {
@@ -94,11 +99,41 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
     }
   };
 
+  const handleCreateDraft = async (docId: string) => {
+    setActionSuccess(null);
+    setActionError(null);
+    setActionLoading(docId);
+    try {
+      const result = await createObsidianDraft(docId);
+      if (!result.ok) {
+        setActionError(result.error);
+        return;
+      }
+      const payload =
+        result.data && typeof result.data === "object"
+          ? (result.data as Record<string, unknown>)
+          : null;
+      const notePath =
+        payload && typeof payload.notePath === "string"
+          ? payload.notePath
+          : "";
+      setActionSuccess(notePath ? `Obsidian draft created: ${notePath}` : "Obsidian draft created.");
+      await onRefresh();
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   return (
     <div className="space-y-3">
       {actionError && (
         <div className="rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-800 dark:text-red-200">
           {actionError}
+        </div>
+      )}
+      {actionSuccess && (
+        <div className="rounded-lg border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/40 px-3 py-2 text-sm text-green-800 dark:text-green-200">
+          {actionSuccess}
         </div>
       )}
       <input
@@ -174,6 +209,14 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
                         className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
                       >
                         <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleCreateDraft(doc.id)}
+                        title="Create Obsidian draft"
+                        className="px-2 py-1.5 rounded-lg text-[11px] font-medium text-violet-600 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors"
+                      >
+                        Draft
                       </button>
                       <button
                         type="button"

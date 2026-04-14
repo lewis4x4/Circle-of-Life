@@ -143,3 +143,39 @@ export async function adminDeleteDocument(documentId: string): Promise<EdgeCallR
     body: JSON.stringify({ action: "delete", document_id: documentId }),
   });
 }
+
+export async function createObsidianDraft(documentId: string): Promise<EdgeCallResult> {
+  try {
+    const res = await fetch("/api/knowledge/obsidian-draft", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ documentId }),
+      credentials: "same-origin",
+    });
+    const text = await res.text();
+    let data: unknown = {};
+    if (text) {
+      try {
+        data = JSON.parse(text) as unknown;
+      } catch {
+        data = { error: text.slice(0, 400) };
+      }
+    }
+    const obj = data && typeof data === "object" ? (data as Record<string, unknown>) : null;
+    const bodyError = obj && typeof obj.error === "string" && obj.error.length > 0 ? obj.error : "";
+    if (!res.ok || bodyError) {
+      return {
+        ok: false,
+        error: bodyError || `Request failed (${res.status})`,
+        status: res.status,
+      };
+    }
+    return { ok: true, data };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Request failed",
+      status: 0,
+    };
+  }
+}
