@@ -227,6 +227,12 @@ const cases: EvalCase[] = [
     expected: { kind: "clarify", includes: ["family journal", "care team", "messages"] },
   },
   {
+    name: "family billing question gets family clarification",
+    question: withHeaderFacility("Oakridge ALF", "What would family see in billing, invoices, and calendar?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["family journal", "care team", "messages"] },
+  },
+  {
     name: "document storage question with storage wording gets controlled fallback",
     question: withHeaderFacility("Oakridge ALF", "Can Haven store all of our facility documents and forms in one vault?"),
     accessibleFacilityNames,
@@ -249,6 +255,18 @@ const cases: EvalCase[] = [
     question: withHeaderFacility("Oakridge ALF", "Could this eventually be sold to Brookdale?"),
     accessibleFacilityNames,
     expected: { kind: "clarify", includes: ["AHCA evidence story", "survey-readiness proof", "commercialization narrative"] },
+  },
+  {
+    name: "staffing gaps question gets executive clarification",
+    question: withHeaderFacility("Oakridge ALF", "Which facilities have staffing gaps right now?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["top alerts", "facility risk", "benchmark outliers"] },
+  },
+  {
+    name: "owner visibility question gets executive clarification",
+    question: withNoHeaderFacility("What should ownership be looking at across facilities right now?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["top alerts", "facility risk", "benchmark outliers"] },
   },
 ];
 

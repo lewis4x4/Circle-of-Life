@@ -188,8 +188,8 @@ function findUnsupportedLane(question: string): UnsupportedLane | null {
   if (includesAny(q, ["transport", "trip", "ride", "mileage", "driver"])) return "transport";
   if (includesAny(q, ["diet", "swallow", "iddsi", "texture", "fluid level"])) return "dietary";
   if (includesAny(q, ["review reply", "reputation", "google review", "yelp"])) return "reputation";
-  if (includesAny(q, ["family portal", "family message", "family communication", "family journal", "care team", "family calendar"])) return "family";
-  if (includesAny(q, ["executive", "benchmark", "portfolio", "risk map"])) return "executive";
+  if (includesAny(q, ["family portal", "family message", "family communication", "family journal", "care team", "family calendar", "family billing", "family invoices", "what can family see", "what would family see", "family view"])) return "family";
+  if (includesAny(q, ["executive", "benchmark", "portfolio", "risk map", "staffing gaps", "owner visibility", "command center", "cross facility", "across facilities", "enterprise view", "top risks"])) return "executive";
   if (includesAny(q, ["accounts receivable", "ar ", "invoice", "collections", "trial balance", "period close", "journal entry"])) return "finance";
   if (includesAny(q, ["insurance", "claim", "claims", "renewal", "renewals", "coi", "loss run"])) return "insurance";
   if (includesAny(q, ["vendor", "contract", "purchase order", "po ", "spend"])) return "vendors";
