@@ -57,7 +57,7 @@ export default function ReputationIntegrationsPage() {
       }
       setStatus((await res.json()) as Status);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load");
+      setError(e instanceof Error ? e.message : "Could not load integration status.");
       setStatus(null);
     } finally {
       setLoading(false);
@@ -277,7 +277,12 @@ export default function ReputationIntegrationsPage() {
               </div>
             </>
           ) : (
-            <p className="text-sm text-slate-500">Could not load integration status.</p>
+            <div className="space-y-3">
+              <p className="text-sm text-slate-500">Could not load integration status.</p>
+              <Button type="button" variant="outline" onClick={() => void load()}>
+                Retry status
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -333,7 +338,12 @@ export default function ReputationIntegrationsPage() {
               </div>
             </>
           ) : (
-            <p className="text-sm text-slate-500">Could not load integration status.</p>
+            <div className="space-y-3">
+              <p className="text-sm text-slate-500">Could not load integration status.</p>
+              <Button type="button" variant="outline" onClick={() => void load()}>
+                Retry status
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
