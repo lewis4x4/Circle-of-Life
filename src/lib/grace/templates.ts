@@ -252,7 +252,21 @@ export const GRACE_TEMPLATES: GraceTemplate[] = [
   },
 ];
 
+const SAFE_PILOT_TEMPLATE_IDS = new Set([
+  "daily_census",
+  "resident_count",
+  "check_resident",
+  "new_leads",
+  "find_protocol",
+  "log_daily_note",
+  "report_incident",
+  "schedule_assessment",
+  "ask_grace",
+]);
+
 export function filterGraceTemplates(role: string | null | undefined): GraceTemplate[] {
   const safeRole = role ?? "caregiver";
-  return GRACE_TEMPLATES.filter((template) => template.roles.includes(safeRole));
+  return GRACE_TEMPLATES.filter(
+    (template) => template.roles.includes(safeRole) && SAFE_PILOT_TEMPLATE_IDS.has(template.id),
+  );
 }
