@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 
 type FeedbackBody = {
+  id?: string;
   facilityId?: string | null;
   shellKind?: string;
   route?: string;
@@ -11,6 +12,7 @@ type FeedbackBody = {
   severity?: string;
   title?: string;
   detail?: string;
+  status?: string;
 };
 
 const REVIEWER_ROLES = new Set(["owner", "org_admin", "facility_admin", "manager"]);
@@ -143,5 +145,88 @@ export async function GET(request: Request) {
       ...asRecord(row),
       metadata: asRecord(asRecord(row).metadata),
     })),
+  });
+}
+
+export async function PATCH(request: Request) {
+  let body: FeedbackBody;
+  try {
+    body = (await request.json()) as FeedbackBody;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const actor = await requireActor();
+  if ("error" in actor) return actor.error;
+
+  const { admin, user, profile } = actor;
+  if (!REVIEWER_ROLES.has(profile.app_role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const id = body.id?.trim();
+  const nextStatus = body.status?.trim();
+  if (!id || !nextStatus) {
+    return NextResponse.json({ error: "id and status are required" }, { status: 400 });
+  }
+
+  const allowedStatuses = new Set(["new", "triaged", "planned", "done", "dismissed"]);
+  if (!allowedStatuses.has(nextStatus)) {
+    return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+  }
+
+  const { data: existing, error: existingError } = await admin
+    .from("pilot_feedback_submissions" as never)
+    .select("id, organization_id, status, metadata")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (existingError || !existing) {
+    return NextResponse.json({ error: "Feedback item not found" }, { status: 404 });
+  }
+
+  if (String(asRecord(existing).organization_id) !== String(profile.organization_id)) {
+    return NextResponse.json({ error: "Organization mismatch" }, { status: 403 });
+  }
+
+  const now = new Date().toISOString();
+  const nextMetadata = {
+    ...asRecord(asRecord(existing).metadata),
+    status_history: [
+      ...(Array.isArray(asRecord(asRecord(existing).metadata).status_history)
+        ? (asRecord(asRecord(existing).metadata).status_history as unknown[])
+        : []),
+      {
+        from: asRecord(existing).status ?? null,
+        to: nextStatus,
+        changed_at: now,
+        changed_by: user.id,
+      },
+    ],
+  };
+
+  const { data, error } = await admin
+    .from("pilot_feedback_submissions" as never)
+    .update({
+      status: nextStatus,
+      updated_at: now,
+      triaged_at: nextStatus === "new" ? null : now,
+      triaged_by: nextStatus === "new" ? null : user.id,
+      metadata: nextMetadata,
+    } as never)
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({
+    ok: true,
+    feedback: {
+      ...asRecord(data),
+      metadata: asRecord(asRecord(data).metadata),
+    },
   });
 }

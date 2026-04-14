@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Flag, MessageSquareWarning } from "lucide-react";
+import { Flag } from "lucide-react";
 
 type FeedbackRow = {
   id: string;
@@ -30,6 +30,8 @@ export default function PilotFeedbackInboxPage() {
   const [rows, setRows] = useState<FeedbackRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeStatusFilter, setActiveStatusFilter] = useState<string>("all");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -54,13 +56,47 @@ export default function PilotFeedbackInboxPage() {
   }, [load]);
 
   const grouped = useMemo(() => {
-    return rows.reduce<Record<string, FeedbackRow[]>>((acc, row) => {
+    const visibleRows =
+      activeStatusFilter === "all"
+        ? rows
+        : rows.filter((row) => row.status === activeStatusFilter);
+
+    return visibleRows.reduce<Record<string, FeedbackRow[]>>((acc, row) => {
       const key = row.status;
       if (!acc[key]) acc[key] = [];
       acc[key].push(row);
       return acc;
     }, {});
+  }, [activeStatusFilter, rows]);
+
+  const statusCounts = useMemo(() => {
+    return rows.reduce<Record<string, number>>((acc, row) => {
+      acc[row.status] = (acc[row.status] ?? 0) + 1;
+      return acc;
+    }, {});
   }, [rows]);
+
+  const updateStatus = async (id: string, status: string) => {
+    setUpdatingId(id);
+    setError(null);
+    try {
+      const res = await fetch("/api/pilot-feedback", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ id, status }),
+      });
+      const payload = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!res.ok || payload.ok !== true) {
+        throw new Error(payload.error ?? `Request failed (${res.status})`);
+      }
+      await load();
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : "Could not update feedback status");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-7xl space-y-8 pb-12">
@@ -92,6 +128,23 @@ export default function PilotFeedbackInboxPage() {
         </div>
       ) : (
         <div className="space-y-8">
+          <div className="flex flex-wrap gap-2">
+            {["all", "new", "triaged", "planned", "done", "dismissed"].map((status) => (
+              <button
+                key={status}
+                type="button"
+                onClick={() => setActiveStatusFilter(status)}
+                className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-widest transition-colors ${
+                  activeStatusFilter === status
+                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                    : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:bg-white/[0.03] dark:text-zinc-300 dark:hover:bg-white/[0.06]"
+                }`}
+              >
+                {status} {status === "all" ? `(${rows.length})` : `(${statusCounts[status] ?? 0})`}
+              </button>
+            ))}
+          </div>
+
           {Object.entries(grouped).map(([status, items]) => (
             <section key={status} className="space-y-4">
               <div className="flex items-center gap-3">
@@ -120,6 +173,23 @@ export default function PilotFeedbackInboxPage() {
                         </div>
                         <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{row.title}</h2>
                         <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-zinc-300">{row.detail}</p>
+                        <div className="flex flex-wrap gap-2 pt-2">
+                          {["new", "triaged", "planned", "done", "dismissed"].map((nextStatus) => (
+                            <button
+                              key={nextStatus}
+                              type="button"
+                              disabled={updatingId === row.id || nextStatus === row.status}
+                              onClick={() => void updateStatus(row.id, nextStatus)}
+                              className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-widest transition-colors ${
+                                nextStatus === row.status
+                                  ? STATUS_STYLES[nextStatus] ?? STATUS_STYLES.new
+                                  : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:bg-black/20 dark:text-zinc-300 dark:hover:bg-white/[0.06]"
+                              }`}
+                            >
+                              {updatingId === row.id && nextStatus !== row.status ? "Updating…" : nextStatus}
+                            </button>
+                          ))}
+                        </div>
                       </div>
 
                       <div className="min-w-[240px] rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-xs text-slate-600 dark:border-white/10 dark:bg-black/20 dark:text-zinc-400">
