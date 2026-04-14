@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
   Users,
@@ -34,7 +35,9 @@ export function ShiftBar({
   const [now, setNow] = useState(new Date());
   const [menuOpen, setMenuOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -45,9 +48,10 @@ export function ShiftBar({
   // Close dropdown on outside click
   useEffect(() => {
     function handleOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
+      const target = e.target as Node;
+      const inBtn = btnRef.current?.contains(target);
+      const inMenu = menuRef.current?.contains(target);
+      if (!inBtn && !inMenu) setMenuOpen(false);
     }
     if (menuOpen) document.addEventListener("mousedown", handleOutside);
     return () => document.removeEventListener("mousedown", handleOutside);
@@ -70,9 +74,16 @@ export function ShiftBar({
     <div className="flex items-center justify-between px-6 py-3 border-b border-slate-800 bg-slate-950/80 backdrop-blur">
       <div className="flex items-center gap-6">
         {/* Avatar + dropdown */}
-        <div className="relative" ref={menuRef}>
+        <div className="relative">
           <button
-            onClick={() => setMenuOpen((o) => !o)}
+            ref={btnRef}
+            onClick={() => {
+              if (btnRef.current) {
+                const r = btnRef.current.getBoundingClientRect();
+                setMenuPos({ top: r.bottom + 8, left: r.left });
+              }
+              setMenuOpen((o) => !o);
+            }}
             className="flex items-center gap-3 rounded-xl hover:bg-slate-800/60 px-1 py-0.5 transition"
             aria-label="Account menu"
           >
@@ -88,8 +99,12 @@ export function ShiftBar({
             <ChevronDown className={`w-3.5 h-3.5 text-slate-500 transition-transform ${menuOpen ? "rotate-180" : ""}`} />
           </button>
 
-          {menuOpen && (
-            <div className="absolute left-0 top-full mt-2 z-50 w-52 rounded-2xl bg-slate-900 ring-1 ring-slate-700 shadow-2xl overflow-hidden">
+          {menuOpen && menuPos && typeof document !== "undefined" && createPortal(
+            <div
+              ref={menuRef}
+              style={{ position: "fixed", top: menuPos.top, left: menuPos.left, zIndex: 9999 }}
+              className="w-52 rounded-2xl bg-slate-900 ring-1 ring-slate-700 shadow-2xl overflow-hidden"
+            >
               <div className="px-4 py-3 border-b border-slate-800">
                 <div className="text-xs font-semibold text-white truncate">{techName}</div>
                 <div className="text-[11px] text-slate-500 mt-0.5">{unitLabel}</div>
@@ -102,7 +117,8 @@ export function ShiftBar({
                 <LogOut className="w-4 h-4" />
                 {signingOut ? "Signing out…" : "Sign out"}
               </button>
-            </div>
+            </div>,
+            document.body
           )}
         </div>
         <div className="h-8 w-px bg-slate-800" />
