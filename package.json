@@ -27,6 +27,9 @@
     "demo:pilot-readiness": "node scripts/demo/pilot-readiness.mjs",
     "demo:auth-smoke:real": "node scripts/demo/authenticated-smoke.mjs",
     "grace:evals": "tsx scripts/grace-safe-mode-evals.ts",
+    "obsidian:validate": "node scripts/obsidian/validate-vault.mjs",
+    "obsidian:compile": "node scripts/obsidian/compile-vault.mjs",
+    "obsidian:publish": "node scripts/obsidian/publish-vault.mjs",
     "demo:seed": "node scripts/demo/seed-demo-data.mjs",
     "demo:reset": "node scripts/demo/reset-demo-data.mjs",
     "demo:reseed": "npm run demo:reset && npm run demo:seed"

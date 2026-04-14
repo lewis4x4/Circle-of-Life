@@ -111,6 +111,60 @@ type ToolContext = {
   userEmail: string | null;
   accessibleFacilityIds: string[];
   route?: string;
+  memoryContext?: GraceMemoryRuntimeContext;
+};
+
+type MemoryAliasRow = {
+  document_id: string;
+  alias: string;
+  alias_normalized: string;
+  alias_kind: string;
+};
+
+type MemoryDocumentRow = {
+  id: string;
+  title: string;
+  doc_type: string | null;
+  trust_rank: number | null;
+  grace_priority: string | null;
+  canonical_slug: string | null;
+};
+
+type MemoryPlanningHintRow = {
+  document_id: string;
+  route_bias: string | null;
+  clarification_prompt: string | null;
+  forbidden_substitutions: string[] | null;
+  preferred_answer_shape: string | null;
+  preferred_live_tables: string[] | null;
+  metadata: Record<string, unknown> | null;
+};
+
+type MemoryContradictionRow = {
+  left_document_id: string | null;
+  right_document_id: string | null;
+  severity: string;
+  contradiction_type: string;
+  description: string;
+  metadata: Record<string, unknown> | null;
+};
+
+type GraceMemoryPlanningHint = MemoryPlanningHintRow & {
+  document_title: string | null;
+  document_type: string | null;
+  trust_rank: number | null;
+};
+
+type GraceMemoryRuntimeContext = {
+  normalizedQuestion: string;
+  aliasNeedles: string[];
+  aliasRows: MemoryAliasRow[];
+  matchedAliases: string[];
+  documentRows: MemoryDocumentRow[];
+  planningHints: GraceMemoryPlanningHint[];
+  contradictions: MemoryContradictionRow[];
+  suppressedDocumentIds: Set<string>;
+  contradictionWarnings: string[];
 };
 
 type ResidentLookupRow = {
@@ -650,6 +704,37 @@ function sanitizeSearchQuery(value: unknown): string {
     .trim();
 }
 
+function normalizeMemoryText(value: unknown): string {
+  return sanitizeSearchQuery(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildAliasNeedles(question: string): string[] {
+  const normalized = normalizeMemoryText(getGraceUserQuestion(question));
+  if (!normalized) return [];
+  const words = normalized.split(" ").filter(Boolean);
+  const needles = new Set<string>([normalized]);
+
+  for (const word of words) {
+    if (word.length >= 3) needles.add(word);
+  }
+
+  for (let index = 0; index < words.length - 1; index += 1) {
+    const bigram = `${words[index]} ${words[index + 1]}`.trim();
+    if (bigram.length >= 5) needles.add(bigram);
+  }
+
+  for (let index = 0; index < words.length - 2; index += 1) {
+    const trigram = `${words[index]} ${words[index + 1]} ${words[index + 2]}`.trim();
+    if (trigram.length >= 8) needles.add(trigram);
+  }
+
+  return Array.from(needles).slice(0, 20);
+}
+
 function getRecentWindowStart(question: string): Date {
   const q = question.toLowerCase();
   const now = new Date();
@@ -844,6 +929,156 @@ async function resolveRequestedFacilityScope(
     accessibleFacilityIds,
     accessibleFacilityNames,
   };
+}
+
+async function loadGraceMemoryRuntimeContext(
+  question: string,
+  ctx: ToolContext,
+): Promise<GraceMemoryRuntimeContext> {
+  const aliasNeedles = buildAliasNeedles(question);
+  const normalizedQuestion = normalizeMemoryText(getGraceUserQuestion(question));
+
+  if (aliasNeedles.length === 0) {
+    return {
+      normalizedQuestion,
+      aliasNeedles,
+      aliasRows: [],
+      matchedAliases: [],
+      documentRows: [],
+      planningHints: [],
+      contradictions: [],
+      suppressedDocumentIds: new Set<string>(),
+      contradictionWarnings: [],
+    };
+  }
+
+  const { data: aliasData } = await ctx.admin
+    .from("document_aliases")
+    .select("document_id,alias,alias_normalized,alias_kind")
+    .eq("workspace_id", ctx.workspaceId)
+    .in("alias_normalized", aliasNeedles);
+
+  const aliasRows = (aliasData ?? []) as MemoryAliasRow[];
+  const documentIds = uniq(aliasRows.map((row) => row.document_id));
+  if (documentIds.length === 0) {
+    return {
+      normalizedQuestion,
+      aliasNeedles,
+      aliasRows: [],
+      matchedAliases: [],
+      documentRows: [],
+      planningHints: [],
+      contradictions: [],
+      suppressedDocumentIds: new Set<string>(),
+      contradictionWarnings: [],
+    };
+  }
+
+  const [documentRes, planningHintRes, contradictionRes] = await Promise.all([
+    ctx.admin
+      .from("documents")
+      .select("id,title,doc_type,trust_rank,grace_priority,canonical_slug")
+      .eq("workspace_id", ctx.workspaceId)
+      .in("id", documentIds)
+      .is("deleted_at", null)
+      .in("lifecycle_status", ["active", "review_pending"]),
+    ctx.admin
+      .from("document_planning_hints")
+      .select("document_id,route_bias,clarification_prompt,forbidden_substitutions,preferred_answer_shape,preferred_live_tables,metadata")
+      .eq("workspace_id", ctx.workspaceId)
+      .in("document_id", documentIds),
+    ctx.admin
+      .from("knowledge_contradictions")
+      .select("left_document_id,right_document_id,severity,contradiction_type,description,metadata")
+      .eq("workspace_id", ctx.workspaceId)
+      .in("status", ["open", "acknowledged"])
+      .or(`left_document_id.in.(${documentIds.join(",")}),right_document_id.in.(${documentIds.join(",")})`),
+  ]);
+
+  const documentRows = (documentRes.data ?? []) as MemoryDocumentRow[];
+  const documentById = new Map(documentRows.map((row) => [row.id, row]));
+  const planningHints = ((planningHintRes.data ?? []) as MemoryPlanningHintRow[])
+    .map((hint) => ({
+      ...hint,
+      document_title: documentById.get(hint.document_id)?.title ?? null,
+      document_type: documentById.get(hint.document_id)?.doc_type ?? null,
+      trust_rank: documentById.get(hint.document_id)?.trust_rank ?? null,
+    }))
+    .sort((a, b) => (a.trust_rank ?? 99) - (b.trust_rank ?? 99));
+
+  const contradictions = (contradictionRes.data ?? []) as MemoryContradictionRow[];
+  const suppressedDocumentIds = new Set<string>();
+  const contradictionWarnings: string[] = [];
+
+  for (const contradiction of contradictions) {
+    contradictionWarnings.push(contradiction.description);
+    const left = contradiction.left_document_id ? documentById.get(contradiction.left_document_id) : null;
+    const right = contradiction.right_document_id ? documentById.get(contradiction.right_document_id) : null;
+    if (!left || !right) continue;
+    const leftRank = left.trust_rank ?? 99;
+    const rightRank = right.trust_rank ?? 99;
+    if (leftRank === rightRank) {
+      if (left.doc_type === "grace_pack" && right.doc_type !== "grace_pack") {
+        suppressedDocumentIds.add(right.id);
+      } else if (right.doc_type === "grace_pack" && left.doc_type !== "grace_pack") {
+        suppressedDocumentIds.add(left.id);
+      }
+      continue;
+    }
+    suppressedDocumentIds.add(leftRank > rightRank ? left.id : right.id);
+  }
+
+  return {
+    normalizedQuestion,
+    aliasNeedles,
+    aliasRows,
+    matchedAliases: uniq(aliasRows.map((row) => row.alias_normalized)),
+    documentRows,
+    planningHints,
+    contradictions,
+    suppressedDocumentIds,
+    contradictionWarnings,
+  };
+}
+
+function buildMemoryHintSummary(runtimeContext: GraceMemoryRuntimeContext | null): string | null {
+  if (!runtimeContext || runtimeContext.planningHints.length === 0) return null;
+  return runtimeContext.planningHints
+    .slice(0, 4)
+    .map((hint, index) => {
+      const substitutions =
+        hint.forbidden_substitutions && hint.forbidden_substitutions.length > 0
+          ? ` | forbidden substitutions: ${hint.forbidden_substitutions.join(", ")}`
+          : "";
+      return `${index + 1}. ${hint.document_title ?? hint.route_bias ?? "Planning hint"}${hint.route_bias ? ` [route_bias=${hint.route_bias}]` : ""}${hint.preferred_answer_shape ? ` [answer_shape=${hint.preferred_answer_shape}]` : ""}${substitutions}`;
+    })
+    .join("\n");
+}
+
+function buildContradictionWarningSummary(runtimeContext: GraceMemoryRuntimeContext | null): string | null {
+  if (!runtimeContext || runtimeContext.contradictionWarnings.length === 0) return null;
+  return runtimeContext.contradictionWarnings
+    .slice(0, 4)
+    .map((warning, index) => `${index + 1}. ${warning}`)
+    .join("\n");
+}
+
+function findPlanningHintClarification(
+  runtimeContext: GraceMemoryRuntimeContext | null,
+  domain: GraceDomain | "clarification",
+): string | null {
+  if (!runtimeContext) return null;
+  if (domain === "clarification") {
+    return runtimeContext.planningHints.find((hint) => hint.clarification_prompt)?.clarification_prompt ?? null;
+  }
+  const normalizedDomain = domain.replace(/_/g, " ");
+  const match = runtimeContext.planningHints.find((hint) => {
+    if (!hint.clarification_prompt) return false;
+    if (hint.route_bias === domain) return true;
+    const title = normalizeMemoryText(hint.document_title ?? "");
+    return title.includes(normalizedDomain);
+  });
+  return match?.clarification_prompt ?? null;
 }
 
 function attentionScoreForTaskStatus(status: string): number {
@@ -2097,8 +2332,23 @@ async function executeTool(
   const { admin, workspaceId, userRole } = ctx;
   switch (name) {
     case "semantic_kb_search": {
-      const query = sanitizeSearchQuery(input.query);
+      const logicalQuestion =
+        typeof input.query === "string" ? getGraceUserQuestion(input.query) : String(input.query ?? "");
+      const query = sanitizeSearchQuery(logicalQuestion);
       if (!query) return { error: "Query is required" };
+      const runtimeContext = ctx.memoryContext ?? await loadGraceMemoryRuntimeContext(query, ctx);
+      ctx.memoryContext = runtimeContext;
+      const expandedKeywordQuery = uniq([
+        query,
+        ...runtimeContext.matchedAliases,
+        ...runtimeContext.documentRows.map((row) => row.title),
+      ])
+        .filter(Boolean)
+        .join(" ");
+      const embeddingInput = uniq([
+        query,
+        ...runtimeContext.matchedAliases.slice(0, 6),
+      ]).join(" | ");
       const embRes = await fetch("https://api.openai.com/v1/embeddings", {
         method: "POST",
         headers: {
@@ -2107,7 +2357,7 @@ async function executeTool(
         },
         body: JSON.stringify({
           model: "text-embedding-3-small",
-          input: query,
+          input: embeddingInput,
         }),
         signal: AbortSignal.timeout(60_000),
       });
@@ -2123,7 +2373,7 @@ async function executeTool(
 
       const { data, error } = await admin.rpc("retrieve_evidence", {
         query_embedding: `[${embedding.join(",")}]`,
-        keyword_query: query,
+        keyword_query: expandedKeywordQuery,
         user_role: userRole,
         match_count: getRequestedLimit(input, 8, 12),
         semantic_threshold: 0.45,
@@ -2137,13 +2387,20 @@ async function executeTool(
         excerpt: string;
         confidence: number;
         section_title: string | null;
+        document_id?: string;
+        chunk_id?: string;
       }[];
 
-      if (rows.length > 3) {
-        return await rerankResults(rows, query);
+      const filteredRows = rows.filter((row) => {
+        if (!row.document_id) return true;
+        return !runtimeContext.suppressedDocumentIds.has(row.document_id);
+      });
+
+      if (filteredRows.length > 3) {
+        return await rerankResults(filteredRows, query);
       }
 
-      return rows;
+      return filteredRows;
     }
     case "resident_lookup": {
       const query = sanitizeSearchQuery(input.query);
@@ -2739,6 +2996,8 @@ async function rerankResults(
     excerpt: string;
     confidence: number;
     section_title: string | null;
+    document_id?: string;
+    chunk_id?: string;
   }[],
   query: string,
 ): Promise<typeof results> {
@@ -2797,7 +3056,7 @@ function chunkTextForStream(text: string): string[] {
 }
 
 function buildSystemPrompt(userRole: string, tools: ToolDefinition[]): string {
-  return buildSystemPromptWithEvidence(userRole, tools, null, undefined);
+  return buildSystemPromptWithEvidence(userRole, tools, null, undefined, null);
 }
 
 function buildSystemPromptWithEvidence(
@@ -2805,12 +3064,19 @@ function buildSystemPromptWithEvidence(
   tools: ToolDefinition[],
   preloadedEvidence: string | null,
   route: string | undefined,
+  runtimeContext: GraceMemoryRuntimeContext | null,
 ): string {
+  const memoryHintSummary = buildMemoryHintSummary(runtimeContext);
+  const contradictionSummary = buildContradictionWarningSummary(runtimeContext);
   return `You are the role-governed Haven knowledge assistant for Circle of Life.
 
 ${buildToolAccessSummary(userRole, tools)}
 
 ${route ? `Current operator route: ${route}` : ""}
+
+${memoryHintSummary ? `Published memory hints:\n${memoryHintSummary}\n` : ""}
+
+${contradictionSummary ? `Active contradiction warnings:\n${contradictionSummary}\nUse higher-trust Grace Packs or formal doctrine when contradictory memory artifacts overlap.\n` : ""}
 
 ${preloadedEvidence ? `Pre-loaded evidence:\n${preloadedEvidence}\n` : ""}
 
@@ -2898,6 +3164,7 @@ async function runAgentLoop(
   answer_mode?: GraceAnswerMode;
 }> {
   const resolvedScope = await resolveRequestedFacilityScope(ctx, question);
+  ctx.memoryContext = await loadGraceMemoryRuntimeContext(question, ctx);
   const routeScope: GraceQueryScope = {
     facilityIds: resolvedScope.facilityIds,
     facilityNames: resolvedScope.facilityNames,
@@ -2910,7 +3177,7 @@ async function runAgentLoop(
   });
   if (safeModeDecision.kind === "clarify") {
     return buildClarificationResult(
-      safeModeDecision.text,
+      findPlanningHintClarification(ctx.memoryContext ?? null, safeModeDecision.domain) ?? safeModeDecision.text,
       routeScope,
       safeModeDecision.reason,
     );
@@ -2972,7 +3239,7 @@ async function runAgentLoop(
         max_tokens: 4096,
         system: [{
           type: "text",
-          text: buildSystemPromptWithEvidence(ctx.userRole, tools, preloadedEvidence.evidenceText, ctx.route),
+          text: buildSystemPromptWithEvidence(ctx.userRole, tools, preloadedEvidence.evidenceText, ctx.route, ctx.memoryContext ?? null),
           cache_control: { type: "ephemeral" },
         }],
         tools: withToolCache(tools),
