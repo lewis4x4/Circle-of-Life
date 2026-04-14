@@ -178,6 +178,36 @@ const cases: EvalCase[] = [
     accessibleFacilityNames,
     expected: { kind: "agentic" },
   },
+  {
+    name: "quickbooks strategy question gets controlled fallback",
+    question: withHeaderFacility("Oakridge ALF", "Can Haven integrate QuickBooks?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["native Haven billing", "QuickBooks sync", "billing workflow differences"] },
+  },
+  {
+    name: "waitlist planning question gets controlled fallback",
+    question: withHeaderFacility("Oakridge ALF", "How many turned-away applicants did we have by month from the archive list?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["turned-away applicants by month", "waitlist by facility", "conversion/capacity planning"] },
+  },
+  {
+    name: "marketing question gets controlled fallback",
+    question: withHeaderFacility("Oakridge ALF", "Which campaign leads and social media sources are converting best?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["campaign leads", "referral sources", "admissions conversion"] },
+  },
+  {
+    name: "acquisition readiness question gets controlled fallback",
+    question: withHeaderFacility("Oakridge ALF", "Can Haven absorb five new Alabama buildings quickly?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["new-facility provisioning", "acquisition readiness", "capacity planning"] },
+  },
+  {
+    name: "billing workflow difference question gets controlled fallback",
+    question: withHeaderFacility("Oakridge ALF", "One facility bills in QuickBooks and another bills in Haven — how should we handle that?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["native Haven billing", "QuickBooks sync", "billing workflow differences"] },
+  },
 ];
 
 function assertCase(evalCase: EvalCase) {

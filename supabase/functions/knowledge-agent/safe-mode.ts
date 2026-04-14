@@ -26,7 +26,11 @@ type UnsupportedLane =
   | "vendors"
   | "facility_admin"
   | "reporting"
-  | "rounding";
+  | "rounding"
+  | "marketing"
+  | "waitlist_planning"
+  | "integration"
+  | "expansion";
 
 const GENERIC_FACILITY_WORDS = new Set([
   "all",
@@ -165,6 +169,10 @@ function questionNeedsCountClarification(question: string): boolean {
 
 function findUnsupportedLane(question: string): UnsupportedLane | null {
   const q = normalizeText(getGraceUserQuestion(question));
+  if (includesAny(q, ["quickbooks", "qb", "accounting sync", "billing integration"])) return "integration";
+  if (includesAny(q, ["marketing", "campaign", "social media", "facebook lead", "ad lead", "paid ads"])) return "marketing";
+  if (includesAny(q, ["waitlist", "turned away", "turn away", "archive list", "capacity planning", "build a new facility"])) return "waitlist_planning";
+  if (includesAny(q, ["alabama", "acquisition", "new facility onboarding", "provision new facilities", "auction buildings"])) return "expansion";
   if (includesAny(q, ["admission", "move in", "movein", "pending admission"])) return "admissions";
   if (includesAny(q, ["discharge", "move out", "moveout", "transition"])) return "discharge";
   if (includesAny(q, ["medication", "emar", "missed dose", "med error"])) return "medications";
@@ -221,6 +229,14 @@ function buildUnsupportedLaneClarification(lane: UnsupportedLane): string {
       return "I can answer that once you narrow it to one lane: scheduled reports, failed runs, or due-soon reports.";
     case "rounding":
       return "I can answer that once you narrow it to one lane: active watch protocols, overdue observation tasks, or open escalations.";
+    case "marketing":
+      return "I can answer that once you narrow it to one lane: campaign leads, referral sources, or admissions conversion.";
+    case "waitlist_planning":
+      return "I can answer that once you narrow it to one lane: turned-away applicants by month, waitlist by facility, or conversion/capacity planning.";
+    case "integration":
+      return "I can answer that once you narrow it to one lane: native Haven billing, QuickBooks sync, or facility billing workflow differences.";
+    case "expansion":
+      return "I can answer that once you narrow it to one lane: new-facility provisioning, acquisition readiness, or capacity planning.";
   }
 }
 
@@ -276,6 +292,21 @@ export function decideGraceSafeMode(input: {
   const { question, accessibleFacilityNames } = input;
   const headerFacility = getGraceHeaderFacility(question);
   const multipleFacilities = accessibleFacilityNames.length > 1;
+  const unsupportedLane = findUnsupportedLane(question);
+
+  if (
+    unsupportedLane === "marketing" ||
+    unsupportedLane === "waitlist_planning" ||
+    unsupportedLane === "integration" ||
+    unsupportedLane === "expansion"
+  ) {
+    return {
+      kind: "clarify",
+      domain: "clarification",
+      text: buildUnsupportedLaneClarification(unsupportedLane),
+      reason: "domain_not_implemented",
+    };
+  }
 
   if (questionNeedsCountClarification(question)) {
     return {
@@ -335,7 +366,6 @@ export function decideGraceSafeMode(input: {
     return { kind: "agentic" };
   }
 
-  const unsupportedLane = findUnsupportedLane(question);
   if (unsupportedLane) {
     return {
       kind: "clarify",
