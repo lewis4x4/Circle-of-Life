@@ -123,6 +123,10 @@ export interface GraceKnowledgeMeta {
   trace_id: string;
   conversation_id: string;
   model: string;
+  answer_mode?: "deterministic" | "agentic" | "mixed" | null;
+  resolved_domain?: string | null;
+  resolved_scope_label?: string | null;
+  resolved_time_window_label?: string | null;
 }
 
 export type GraceKnowledgeStatus = "idle" | "connecting" | "streaming" | "done" | "error";
@@ -133,6 +137,10 @@ export interface GraceChatMessage {
   content: string;
   pending?: boolean;
   citations?: GraceKnowledgeSource[];
+  answerMode?: "deterministic" | "agentic" | "mixed" | null;
+  resolvedDomain?: string | null;
+  resolvedScopeLabel?: string | null;
+  resolvedTimeWindowLabel?: string | null;
   createdAt: number;
 }
 

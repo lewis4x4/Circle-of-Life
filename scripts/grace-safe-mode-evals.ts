@@ -148,6 +148,36 @@ const cases: EvalCase[] = [
     accessibleFacilityNames,
     expected: { kind: "route", domain: "referral_pipeline" },
   },
+  {
+    name: "selected facility shorthand still routes to census",
+    question: withHeaderFacility("Oakridge ALF", "How many residents do we have here?"),
+    accessibleFacilityNames,
+    expected: { kind: "route", domain: "census" },
+  },
+  {
+    name: "open tasks phrase still routes to resident attention",
+    question: withHeaderFacility("Homewood Lodge ALF", "Which residents at Homewood have open tasks right now?"),
+    accessibleFacilityNames,
+    expected: { kind: "route", domain: "resident_attention" },
+  },
+  {
+    name: "new inquiries phrase routes to referral pipeline",
+    question: withHeaderFacility("Homewood Lodge ALF", "Any new inquiries for Homewood in the past week?"),
+    accessibleFacilityNames,
+    expected: { kind: "route", domain: "referral_pipeline" },
+  },
+  {
+    name: "occupancy wording stays in census lane",
+    question: withHeaderFacility("Oakridge ALF", "What is Oakridge occupancy right now?"),
+    accessibleFacilityNames,
+    expected: { kind: "route", domain: "census" },
+  },
+  {
+    name: "employee handbook query remains agentic",
+    question: withHeaderFacility("Oakridge ALF", "Show me the employee handbook policy."),
+    accessibleFacilityNames,
+    expected: { kind: "agentic" },
+  },
 ];
 
 function assertCase(evalCase: EvalCase) {

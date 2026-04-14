@@ -85,6 +85,34 @@ type GraceResolvedRoute = {
   fallback_mode: GraceFallbackReason | null;
 };
 
+function formatScopeLabel(scope: GraceQueryScope): string | null {
+  if (scope.facilityNames.length === 1) return scope.facilityNames[0];
+  if (scope.facilityNames.length > 1) return `${scope.facilityNames.length} facilities`;
+  return null;
+}
+
+function formatTimeWindowChip(scope: GraceQueryScope): string | null {
+  const label = scope.timeWindowLabel ?? null;
+  switch (label) {
+    case "today":
+      return "today";
+    case "yesterday":
+      return "yesterday";
+    case "past_7_days":
+      return "past 7 days";
+    case "past_14_days":
+      return "past 14 days";
+    case "past_30_days":
+      return "past 30 days";
+    case "tomorrow":
+      return "tomorrow";
+    case "next_week":
+      return "next week";
+    default:
+      return label ? label.replace(/_/g, " ") : null;
+  }
+}
+
 type FacilityScopeResolution = GraceQueryScope & {
   accessibleFacilityIds: string[];
   accessibleFacilityNames: string[];
@@ -3511,6 +3539,22 @@ Deno.serve(async (req) => {
         );
 
         const result = await runAgentLoop(message, history, toolContext, availableTools);
+
+        controller.enqueue(
+          encoder.encode(
+            `data: ${JSON.stringify({
+              meta: {
+                trace_id: traceId,
+                conversation_id: conversationId,
+                model: result.model,
+                answer_mode: result.answer_mode ?? null,
+                resolved_domain: result.provenance?.resolved_domain ?? null,
+                resolved_scope_label: result.provenance ? formatScopeLabel(result.provenance.resolved_scope) : null,
+                resolved_time_window_label: result.provenance ? formatTimeWindowChip(result.provenance.resolved_scope) : null,
+              },
+            })}\n\n`,
+          ),
+        );
 
         const outgoing =
           result.text.trim().length > 0

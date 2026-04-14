@@ -65,6 +65,11 @@ function sourceKey(source: GraceKnowledgeSource): string {
   return `${source.title}-${source.section_title ?? ""}-${source.confidence}`;
 }
 
+function formatDomainLabel(domain: string | null | undefined): string | null {
+  if (!domain) return null;
+  return domain.replace(/_/g, " ");
+}
+
 const KNOWLEDGE_THINKING_STEPS = [
   {
     label: "Verifying your access",
@@ -429,6 +434,10 @@ export function GraceBar() {
           : knowledge.text,
         pending: knowledge.status !== "done",
         citations: knowledge.sources,
+        answerMode: knowledge.meta?.answer_mode ?? null,
+        resolvedDomain: knowledge.meta?.resolved_domain ?? null,
+        resolvedScopeLabel: knowledge.meta?.resolved_scope_label ?? null,
+        resolvedTimeWindowLabel: knowledge.meta?.resolved_time_window_label ?? null,
       });
     }
     if (knowledge.status === "done" && knowledge.meta?.conversation_id) {
@@ -887,6 +896,34 @@ export function GraceBar() {
                       {message.content || (message.pending ? "…" : "")}
                     </div>
                   )}
+                  {message.role === "assistant" &&
+                  (message.answerMode ||
+                    message.resolvedDomain ||
+                    message.resolvedScopeLabel ||
+                    message.resolvedTimeWindowLabel) ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {message.answerMode ? (
+                        <span className="rounded-full border border-violet-300/20 bg-violet-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-200">
+                          {message.answerMode}
+                        </span>
+                      ) : null}
+                      {message.resolvedDomain ? (
+                        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/70">
+                          {formatDomainLabel(message.resolvedDomain)}
+                        </span>
+                      ) : null}
+                      {message.resolvedScopeLabel ? (
+                        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-medium tracking-wide text-white/70">
+                          {message.resolvedScopeLabel}
+                        </span>
+                      ) : null}
+                      {message.resolvedTimeWindowLabel ? (
+                        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-medium tracking-wide text-white/70">
+                          {message.resolvedTimeWindowLabel}
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
                   {message.pending &&
                   message.role === "assistant" &&
                   message.content.trim() ? (
