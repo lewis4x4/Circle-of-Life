@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 
 type BreakdownRow = {
   label: string;
@@ -82,6 +83,7 @@ export default function AdminRoundingReportsPage() {
   const [to, setTo] = useState(() => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16));
   const [, setLoading] = useState(true);
   const [summary, setSummary] = useState<ReportSummary>(DEMO_SUMMARY);
+  const [demoFallbackActive, setDemoFallbackActive] = useState(true);
   const [breakdowns, setBreakdowns] = useState<{ byShift: BreakdownRow[]; byStaff: BreakdownRow[]; byResident: BreakdownRow[] }>({
     byShift: DEMO_BY_SHIFT,
     byStaff: DEMO_BY_STAFF,
@@ -92,6 +94,7 @@ export default function AdminRoundingReportsPage() {
     setLoading(true);
 
     if (!selectedFacilityId || !isBrowserSupabaseConfigured()) {
+      setDemoFallbackActive(true);
       setSummary(DEMO_SUMMARY);
       setBreakdowns({ byShift: DEMO_BY_SHIFT, byStaff: DEMO_BY_STAFF, byResident: DEMO_BY_RESIDENT });
       setLoading(false);
@@ -112,6 +115,7 @@ export default function AdminRoundingReportsPage() {
 
       const s = json.summary;
       if (s && s.expected > 0) {
+        setDemoFallbackActive(false);
         setSummary({
           expected: s.expected ?? 0,
           completed: s.completed ?? 0,
@@ -129,10 +133,12 @@ export default function AdminRoundingReportsPage() {
           byResident: json.breakdowns?.byResident ?? DEMO_BY_RESIDENT,
         });
       } else {
+        setDemoFallbackActive(true);
         setSummary(DEMO_SUMMARY);
         setBreakdowns({ byShift: DEMO_BY_SHIFT, byStaff: DEMO_BY_STAFF, byResident: DEMO_BY_RESIDENT });
       }
     } catch {
+      setDemoFallbackActive(true);
       setSummary(DEMO_SUMMARY);
       setBreakdowns({ byShift: DEMO_BY_SHIFT, byStaff: DEMO_BY_STAFF, byResident: DEMO_BY_RESIDENT });
     } finally {
@@ -191,6 +197,13 @@ export default function AdminRoundingReportsPage() {
             <RoundingHubNav />
           </div>
         </header>
+
+        {demoFallbackActive ? (
+          <AdminLiveDataFallbackNotice
+            message="Demo mode is active on Completion Reports. These metrics and breakdowns are illustrative because no live rounding report data was returned for the selected window."
+            onRetry={() => void load()}
+          />
+        ) : null}
 
         <div className="flex flex-wrap items-end gap-6 glass-panel rounded-[2rem] border border-slate-200 dark:border-white/5 bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl p-6 shadow-sm">
           <label className="space-y-1 text-sm flex-1 min-w-[200px]">

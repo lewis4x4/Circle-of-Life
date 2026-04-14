@@ -22,6 +22,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 
 type OverviewSummary = {
   plans: number;
@@ -50,11 +51,13 @@ export default function AdminRoundingHubPage() {
   const supabase = useMemo(() => createClient(), []);
   const [, setLoading] = useState(true);
   const [summary, setSummary] = useState<OverviewSummary>(DEMO_SUMMARY);
+  const [demoFallbackActive, setDemoFallbackActive] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
 
     if (!selectedFacilityId || !isBrowserSupabaseConfigured()) {
+      setDemoFallbackActive(true);
       setSummary(DEMO_SUMMARY);
       setLoading(false);
       return;
@@ -86,8 +89,10 @@ export default function AdminRoundingHubPage() {
       const expected = taskRows.length;
 
       if (expected === 0) {
+        setDemoFallbackActive(true);
         setSummary(DEMO_SUMMARY);
       } else {
+        setDemoFallbackActive(false);
         setSummary({
           plans: planCount,
           activeTasks: active.length,
@@ -100,6 +105,7 @@ export default function AdminRoundingHubPage() {
         });
       }
     } catch {
+      setDemoFallbackActive(true);
       setSummary(DEMO_SUMMARY);
     } finally {
       setLoading(false);
@@ -140,6 +146,13 @@ export default function AdminRoundingHubPage() {
               <RoundingHubNav />
            </div>
         </div>
+
+        {demoFallbackActive ? (
+          <AdminLiveDataFallbackNotice
+            message="Demo mode is active on Resident Assurance. These summary metrics are illustrative because no live rounding metrics were returned for the current scope."
+            onRetry={() => void load()}
+          />
+        ) : null}
 
         {/* Hero Start Rounds CTA */}
         <Link
