@@ -8,18 +8,22 @@ interface ConversationSidebarProps {
   conversations: ChatConversationRow[];
   activeId: string | null;
   loading: boolean;
+  error?: string | null;
   onSelect: (id: string) => void;
   onNew: () => void;
   onDelete: (id: string) => void;
+  onRetry?: () => void;
 }
 
 export function ConversationSidebar({
   conversations,
   activeId,
   loading,
+  error,
   onSelect,
   onNew,
   onDelete,
+  onRetry,
 }: ConversationSidebarProps) {
   return (
     <div className="flex h-full min-h-0 w-full flex-col border-r border-zinc-800/90 bg-zinc-950/50">
@@ -37,6 +41,23 @@ export function ConversationSidebar({
         {loading && (
           <div className="flex justify-center py-6">
             <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
+          </div>
+        )}
+        {!loading && error && (
+          <div className="space-y-3 rounded-xl border border-red-900/50 bg-red-950/30 px-3 py-3 text-sm text-red-200">
+            <div>
+              <div className="font-medium">Could not load conversations.</div>
+              <div className="mt-1 text-red-200/80">{error}</div>
+            </div>
+            {onRetry ? (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="rounded-lg border border-red-800/60 px-3 py-2 text-xs font-medium text-red-100 transition hover:bg-red-950/60"
+              >
+                Retry conversations
+              </button>
+            ) : null}
           </div>
         )}
         {conversations.map((conv) => (

@@ -8,19 +8,26 @@ export function useConversations() {
   const supabase = useMemo(() => createClient(), []);
   const [conversations, setConversations] = useState<ChatConversationRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("chat_conversations")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(50);
-    if (error) {
-      console.warn("[useConversations]", error.message);
+    setError(null);
+    try {
+      const { data, error: queryError } = await supabase
+        .from("chat_conversations")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (queryError) throw queryError;
+      setConversations(data ?? []);
+    } catch (loadError) {
+      console.warn("[useConversations]", loadError);
+      setConversations([]);
+      setError(loadError instanceof Error ? loadError.message : "Failed to load conversations.");
+    } finally {
+      setLoading(false);
     }
-    setConversations(error ? [] : (data ?? []));
-    setLoading(false);
   }, [supabase]);
 
   useEffect(() => {
@@ -41,5 +48,5 @@ export function useConversations() {
     [supabase],
   );
 
-  return { conversations, loading, reload: load, deleteConversation };
+  return { conversations, loading, error, reload: load, deleteConversation };
 }
