@@ -18,6 +18,14 @@ const STATUS_COLORS: Record<string, string> = {
   ingest_failed: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
 };
 
+const STATUS_HELP: Record<DocumentStatus, string> = {
+  draft: "Uploaded but not yet ready for live use.",
+  pending_review: "Indexed and ready for a human review pass.",
+  published: "Live for Grace and knowledge search.",
+  archived: "Hidden from active knowledge use.",
+  ingest_failed: "Indexing failed. Use Re-index after the source issue is fixed.",
+};
+
 const AUDIENCE_LABELS: Record<string, string> = {
   company_wide: "All Staff",
   department_specific: "Department",
@@ -170,16 +178,22 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <select
-                    value={doc.status}
-                    onChange={(e) => void handleStatusChange(doc.id, e.target.value as DocumentStatus)}
-                    className={`text-xs font-medium rounded-full px-2 py-1 border-0 cursor-pointer ${STATUS_COLORS[doc.status] ?? STATUS_COLORS.draft}`}
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="pending_review">Pending Review</option>
-                    <option value="published">Published</option>
-                    <option value="archived">Archived</option>
-                  </select>
+                  <div className="space-y-1">
+                    <select
+                      value={doc.status}
+                      onChange={(e) => void handleStatusChange(doc.id, e.target.value as DocumentStatus)}
+                      className={`text-xs font-medium rounded-full px-2 py-1 border-0 cursor-pointer ${STATUS_COLORS[doc.status] ?? STATUS_COLORS.draft}`}
+                    >
+                      <option value="draft">Draft</option>
+                      <option value="pending_review">Pending Review</option>
+                      <option value="published">Published</option>
+                      <option value="archived">Archived</option>
+                      <option value="ingest_failed">Ingest Failed</option>
+                    </select>
+                    <div className="text-[11px] text-slate-500 dark:text-zinc-400 max-w-[220px]">
+                      {STATUS_HELP[doc.status as DocumentStatus] ?? STATUS_HELP.draft}
+                    </div>
+                  </div>
                 </td>
                 <td className="px-4 py-3">
                   <select
@@ -205,7 +219,7 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
                       <button
                         type="button"
                         onClick={() => void handleReindex(doc.id)}
-                        title="Re-index"
+                        title="Re-index document"
                         className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
                       >
                         <RefreshCw className="w-3.5 h-3.5 text-slate-500" />

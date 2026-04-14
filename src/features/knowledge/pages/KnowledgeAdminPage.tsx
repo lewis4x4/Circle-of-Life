@@ -57,6 +57,9 @@ export function KnowledgeAdminPage() {
             <h3 className="text-sm font-semibold text-slate-800 dark:text-zinc-200 mb-4">Upload Document</h3>
             <DocumentUpload workspaceId={workspaceId} workspaceLoading={workspaceLoading} onSuccess={reloadDocs} />
           </div>
+          <div className="rounded-xl border border-indigo-200/60 dark:border-indigo-900/40 bg-indigo-50/60 dark:bg-indigo-950/20 px-4 py-3 text-sm text-indigo-900 dark:text-indigo-100">
+            Uploaded documents may finish indexing in the background. In this table, <span className="font-semibold">Pending Review</span> means indexing finished and the document is ready for human review, while <span className="font-semibold">Ingest Failed</span> means the document needs a <span className="font-semibold">Re-index</span> retry after the source issue is fixed.
+          </div>
           {docsLoading ? (
             <div className="text-sm text-slate-400 py-8 text-center">Loading documents…</div>
           ) : (
