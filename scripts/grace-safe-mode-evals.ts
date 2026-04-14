@@ -226,6 +226,30 @@ const cases: EvalCase[] = [
     accessibleFacilityNames,
     expected: { kind: "clarify", includes: ["family journal", "care team", "messages"] },
   },
+  {
+    name: "document storage question with storage wording gets controlled fallback",
+    question: withHeaderFacility("Oakridge ALF", "Can Haven store all of our facility documents and forms in one vault?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["KB uploads", "facility document vault", "Obsidian doctrine drafts"] },
+  },
+  {
+    name: "workflow chain question gets controlled fallback",
+    question: withHeaderFacility("Oakridge ALF", "If an admission starts, what workflow starts automatically and who gets notified?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["incident notifications", "follow-up tasks", "document generation"] },
+  },
+  {
+    name: "ahca story question gets controlled fallback",
+    question: withHeaderFacility("Oakridge ALF", "Could we show AHCA this as proof and reduce survey intrusions?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["AHCA evidence story", "survey-readiness proof", "commercialization narrative"] },
+  },
+  {
+    name: "brookdale commercialization question gets controlled fallback",
+    question: withHeaderFacility("Oakridge ALF", "Could this eventually be sold to Brookdale?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["AHCA evidence story", "survey-readiness proof", "commercialization narrative"] },
+  },
 ];
 
 function assertCase(evalCase: EvalCase) {

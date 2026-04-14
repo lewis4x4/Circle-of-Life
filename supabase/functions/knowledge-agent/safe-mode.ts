@@ -32,7 +32,8 @@ type UnsupportedLane =
   | "integration"
   | "expansion"
   | "knowledge_admin"
-  | "workflow_automation";
+  | "workflow_automation"
+  | "regulatory_story";
 
 const GENERIC_FACILITY_WORDS = new Set([
   "all",
@@ -171,8 +172,9 @@ function questionNeedsCountClarification(question: string): boolean {
 
 function findUnsupportedLane(question: string): UnsupportedLane | null {
   const q = normalizeText(getGraceUserQuestion(question));
-  if (includesAny(q, ["document vault", "upload forms", "upload documents", "facility documents", "knowledge base admin", "knowledge admin", "house all documents"])) return "knowledge_admin";
-  if (includesAny(q, ["automatically process", "workflow automation", "chain reaction", "what happens automatically", "what gets created", "who gets notified"])) return "workflow_automation";
+  if (includesAny(q, ["document vault", "upload forms", "upload documents", "facility documents", "knowledge base admin", "knowledge admin", "house all documents", "store all documents"])) return "knowledge_admin";
+  if (includesAny(q, ["automatically process", "workflow automation", "chain reaction", "what happens automatically", "what gets created", "who gets notified", "what workflow starts"])) return "workflow_automation";
+  if (includesAny(q, ["ahca", "brookdale", "regulatory pitch", "clean sweeps", "zero citations", "regulator", "survey intrusions"])) return "regulatory_story";
   if (includesAny(q, ["quickbooks", "qb", "accounting sync", "billing integration"])) return "integration";
   if (includesAny(q, ["marketing", "campaign", "social media", "facebook lead", "ad lead", "paid ads"])) return "marketing";
   if (includesAny(q, ["waitlist", "turned away", "turn away", "archive list", "capacity planning", "build a new facility"])) return "waitlist_planning";
@@ -245,6 +247,8 @@ function buildUnsupportedLaneClarification(lane: UnsupportedLane): string {
       return "I can answer that once you narrow it to one lane: KB uploads, facility document vault, or Obsidian doctrine drafts.";
     case "workflow_automation":
       return "I can answer that once you narrow it to one lane: incident notifications, follow-up tasks, or document generation.";
+    case "regulatory_story":
+      return "I can answer that once you narrow it to one lane: AHCA evidence story, survey-readiness proof, or commercialization narrative.";
   }
 }
 
@@ -308,7 +312,8 @@ export function decideGraceSafeMode(input: {
     unsupportedLane === "integration" ||
     unsupportedLane === "expansion" ||
     unsupportedLane === "knowledge_admin" ||
-    unsupportedLane === "workflow_automation"
+    unsupportedLane === "workflow_automation" ||
+    unsupportedLane === "regulatory_story"
   ) {
     return {
       kind: "clarify",
