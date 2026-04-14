@@ -117,7 +117,7 @@ function formatTimeWindowChip(scope: GraceQueryScope): string | null {
 
 function questionUsesHistoricalWindow(question: string): boolean {
   const q = sanitizeSearchQuery(getGraceUserQuestion(question)).toLowerCase();
-  return includesAny(q, [
+  return [
     "today",
     "yesterday",
     "past week",
@@ -136,7 +136,7 @@ function questionUsesHistoricalWindow(question: string): boolean {
     "next week",
     "recent",
     "recently",
-  ]);
+  ].some((token) => q.includes(token));
 }
 
 function applyLiveNowScopeIfNeeded(
@@ -3244,8 +3244,12 @@ async function runAgentLoop(
     accessibleFacilityNames: resolvedScope.accessibleFacilityNames,
   });
   if (safeModeDecision.kind === "clarify") {
+    const clarificationText =
+      safeModeDecision.reason === "domain_not_implemented"
+        ? findPlanningHintClarification(ctx.memoryContext ?? null, safeModeDecision.domain) ?? safeModeDecision.text
+        : safeModeDecision.text;
     return buildClarificationResult(
-      findPlanningHintClarification(ctx.memoryContext ?? null, safeModeDecision.domain) ?? safeModeDecision.text,
+      clarificationText,
       routeScope,
       safeModeDecision.reason,
     );
