@@ -24,9 +24,9 @@ type TabKey = (typeof TABS)[number]["key"];
 
 export function KnowledgeAdminPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("documents");
-  const { workspaceId, loading: workspaceLoading } = useKbWorkspaceId();
+  const { workspaceId, loading: workspaceLoading, error: workspaceError, reload: reloadWorkspace } = useKbWorkspaceId();
   const { documents, loading: docsLoading, error: docsError, reload: reloadDocs } = useDocuments();
-  const { gaps, loading: gapsLoading, resolve: resolveGap, resolveError } = useKnowledgeGaps();
+  const { gaps, loading: gapsLoading, error: gapsError, resolve: resolveGap, resolveError, reload: reloadGaps } = useKnowledgeGaps();
   const { health, insights, loading: healthLoading, error: healthError, reload: reloadHealth } = useKBHealth();
 
   return (
@@ -54,6 +54,17 @@ export function KnowledgeAdminPage() {
 
       {activeTab === "documents" && (
         <div className="space-y-6">
+          {workspaceError && (
+            <div className="rounded-xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 px-4 py-4 text-sm text-amber-900 dark:text-amber-100 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="font-medium">Knowledge upload is not ready.</div>
+                <div className="text-amber-800/90 dark:text-amber-100/90">{workspaceError}</div>
+              </div>
+              <Button type="button" variant="outline" onClick={() => void reloadWorkspace()} className="border-amber-300 text-amber-900 hover:bg-amber-100 dark:border-amber-800 dark:text-amber-100 dark:hover:bg-amber-950/60">
+                Retry workspace
+              </Button>
+            </div>
+          )}
           <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
             <h3 className="text-sm font-semibold text-slate-800 dark:text-zinc-200 mb-4">Upload Document</h3>
             <DocumentUpload workspaceId={workspaceId} workspaceLoading={workspaceLoading} onSuccess={reloadDocs} />
@@ -86,7 +97,19 @@ export function KnowledgeAdminPage() {
               {resolveError}
             </div>
           )}
-          <KnowledgeGapsPanel gaps={gaps} loading={gapsLoading} onResolve={resolveGap} />
+          {gapsError ? (
+            <div className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-4 text-sm text-red-800 dark:text-red-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="font-medium">Could not load knowledge gaps.</div>
+                <div className="text-red-700/90 dark:text-red-200/90">{gapsError}</div>
+              </div>
+              <Button type="button" variant="outline" onClick={() => void reloadGaps()} className="border-red-300 text-red-800 hover:bg-red-100 dark:border-red-800 dark:text-red-200 dark:hover:bg-red-950/60">
+                Retry gaps
+              </Button>
+            </div>
+          ) : (
+            <KnowledgeGapsPanel gaps={gaps} loading={gapsLoading} onResolve={resolveGap} />
+          )}
         </div>
       )}
 

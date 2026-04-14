@@ -8,20 +8,27 @@ export function useKnowledgeGaps() {
   const supabase = useMemo(() => createClient(), []);
   const [gaps, setGaps] = useState<KnowledgeGapRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [resolveError, setResolveError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("knowledge_gaps")
-      .select("*")
-      .order("frequency", { ascending: false })
-      .limit(100);
-    if (error) {
-      console.warn("[useKnowledgeGaps] load failed", error.message);
+    setError(null);
+    try {
+      const { data, error: queryError } = await supabase
+        .from("knowledge_gaps")
+        .select("*")
+        .order("frequency", { ascending: false })
+        .limit(100);
+      if (queryError) throw queryError;
+      setGaps(data ?? []);
+    } catch (loadError) {
+      setGaps([]);
+      setError(loadError instanceof Error ? loadError.message : "Failed to load knowledge gaps.");
+      console.warn("[useKnowledgeGaps] load failed", loadError);
+    } finally {
+      setLoading(false);
     }
-    setGaps(data ?? []);
-    setLoading(false);
   }, [supabase]);
 
   useEffect(() => {
@@ -50,5 +57,5 @@ export function useKnowledgeGaps() {
     [supabase, load],
   );
 
-  return { gaps, loading, reload: load, resolve, resolveError };
+  return { gaps, loading, error, reload: load, resolve, resolveError };
 }
