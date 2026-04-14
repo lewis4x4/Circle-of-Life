@@ -14,6 +14,11 @@ export interface AdminUserResult {
   organization_id: string;
 }
 
+type AuthAdminLookupResult = {
+  id: string;
+  email: string;
+};
+
 // ── Helpers ───────────────────────────────────────────────────────
 
 /** Generate a secure random password for initial account creation. */
@@ -53,6 +58,35 @@ export async function adminInviteUser(
     app_role: options.app_role,
     organization_id: options.organization_id,
   };
+}
+
+/**
+ * Find an existing auth user by email.
+ * Uses paginated admin listing because GoTrue has no direct getUserByEmail API.
+ */
+export async function adminFindUserByEmail(email: string): Promise<AuthAdminLookupResult | null> {
+  const supabase = createServiceRoleClient();
+  const normalized = email.trim().toLowerCase();
+  let page = 1;
+
+  while (true) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) {
+      throw new Error(`Auth lookup error: ${error.message}`);
+    }
+
+    const match = (data.users ?? []).find(
+      (user) => (user.email ?? "").trim().toLowerCase() === normalized,
+    );
+    if (match?.email) {
+      return { id: match.id, email: match.email };
+    }
+
+    if (!data.nextPage || data.users.length === 0) {
+      return null;
+    }
+    page = data.nextPage;
+  }
 }
 
 /**
@@ -106,6 +140,27 @@ export async function adminUpdateUserRole(
 
   if (error) {
     throw new Error(`Auth role update error: ${error.message}`);
+  }
+}
+
+/**
+ * Update auth app_metadata for an existing user.
+ */
+export async function adminUpdateUserAccessMetadata(
+  userId: string,
+  updates: { app_role: string; organization_id: string },
+): Promise<void> {
+  const supabase = createServiceRoleClient();
+
+  const { error } = await supabase.auth.admin.updateUserById(userId, {
+    app_metadata: {
+      app_role: updates.app_role,
+      organization_id: updates.organization_id,
+    },
+  });
+
+  if (error) {
+    throw new Error(`Auth metadata update error: ${error.message}`);
   }
 }
 

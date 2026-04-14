@@ -12,7 +12,12 @@ import {
 import { canManageUser } from "@/lib/rbac";
 import type { Database } from "@/types/database";
 import { listUsersQuerySchema, createUserSchema } from "@/lib/validation/user-management";
-import { adminInviteUser, adminCreateUser } from "@/lib/supabase/admin-client";
+import {
+  adminInviteUser,
+  adminCreateUser,
+  adminFindUserByEmail,
+  adminUpdateUserAccessMetadata,
+} from "@/lib/supabase/admin-client";
 import { writeUserAuditEntry } from "@/lib/audit/user-management-audit";
 
 type UserProfileRow = Pick<
@@ -283,8 +288,18 @@ export async function POST(request: NextRequest) {
   // Create auth user
   let authUserId: string;
   let temporaryPassword: string | undefined;
+  let invitationSent = data.send_invite;
   try {
-    if (data.send_invite) {
+    const existingAuthUser = await adminFindUserByEmail(data.email);
+
+    if (existingAuthUser) {
+      authUserId = existingAuthUser.id;
+      invitationSent = false;
+      await adminUpdateUserAccessMetadata(existingAuthUser.id, {
+        app_role: data.app_role,
+        organization_id: actor.organization_id!,
+      });
+    } else if (data.send_invite) {
       const result = await adminInviteUser(data.email, {
         app_role: data.app_role,
         organization_id: actor.organization_id!,
@@ -354,7 +369,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json(
     {
       data: profile,
-      invitation_sent: data.send_invite,
+      invitation_sent: invitationSent,
       ...(temporaryPassword && { temporary_password: temporaryPassword }),
     },
     { status: 201 },
