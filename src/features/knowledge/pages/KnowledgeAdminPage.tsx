@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { FileText, BarChart3, HelpCircle, Activity } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { DocumentUpload } from "../components/DocumentUpload";
 import { DocumentTable } from "../components/DocumentTable";
 import { KBHealthPanel } from "../components/KBHealthPanel";
@@ -24,7 +25,7 @@ type TabKey = (typeof TABS)[number]["key"];
 export function KnowledgeAdminPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("documents");
   const { workspaceId, loading: workspaceLoading } = useKbWorkspaceId();
-  const { documents, loading: docsLoading, reload: reloadDocs } = useDocuments();
+  const { documents, loading: docsLoading, error: docsError, reload: reloadDocs } = useDocuments();
   const { gaps, loading: gapsLoading, resolve: resolveGap, resolveError } = useKnowledgeGaps();
   const { health, insights, loading: healthLoading } = useKBHealth();
 
@@ -62,6 +63,16 @@ export function KnowledgeAdminPage() {
           </div>
           {docsLoading ? (
             <div className="text-sm text-slate-400 py-8 text-center">Loading documents…</div>
+          ) : docsError ? (
+            <div className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-4 text-sm text-red-800 dark:text-red-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="font-medium">Could not load documents.</div>
+                <div className="text-red-700/90 dark:text-red-200/90">{docsError}</div>
+              </div>
+              <Button type="button" variant="outline" onClick={() => void reloadDocs()} className="border-red-300 text-red-800 hover:bg-red-100 dark:border-red-800 dark:text-red-200 dark:hover:bg-red-950/60">
+                Retry documents
+              </Button>
+            </div>
           ) : (
             <DocumentTable documents={documents} onRefresh={reloadDocs} />
           )}
