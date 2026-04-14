@@ -311,6 +311,12 @@ const cases: EvalCase[] = [
     expected: { kind: "clarify", includes: ["Oakridge ALF", "all facilities"] },
   },
   {
+    name: "here attention without selected facility clarifies scope",
+    question: withNoHeaderFacility("Who needs attention here?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["Oakridge ALF", "all facilities"] },
+  },
+  {
     name: "policy handbook query remains agentic",
     question: withHeaderFacility("Homewood Lodge ALF", "What does the employee handbook say about workplace safety?"),
     accessibleFacilityNames,

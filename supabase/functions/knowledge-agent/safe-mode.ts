@@ -284,7 +284,11 @@ function buildFacilityClarification(accessibleFacilityNames: string[]): string {
 
 function hasExplicitFacilityReference(question: string, accessibleFacilityNames: string[]): boolean {
   const raw = normalizeText(getGraceUserQuestion(question));
-  if (includesAny(raw, ["this facility", "here", "selected facility", "current facility", "all facilities", "across all facilities", "org wide", "organization wide"])) return true;
+  const headerFacility = getGraceHeaderFacility(question);
+  if (includesAny(raw, ["all facilities", "across all facilities", "org wide", "organization wide"])) return true;
+  if (includesAny(raw, ["this facility", "here", "selected facility", "current facility"])) {
+    return Boolean(headerFacility);
+  }
   return accessibleFacilityNames.some((name) => {
     const normalizedName = normalizeText(name);
     if (!normalizedName) return false;

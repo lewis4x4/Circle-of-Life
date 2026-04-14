@@ -2,6 +2,7 @@ import { mkdir, writeFile, access } from "node:fs/promises";
 import path from "node:path";
 
 const DEFAULT_OBSIDIAN_ACTIVE_VAULT_PATH = "/Users/brianlewis/Circle of Life/Circle of Life";
+const DEFAULT_OBSIDIAN_FALLBACK_VAULT_PATH = "/Users/brianlewis/Circle of Life/COL-Knowledge-Vault";
 const DRAFTS_FOLDER = ["00 Inbox", "KB Drafts"];
 const MAX_IMPORTED_MARKDOWN_CHARS = 120_000;
 
@@ -38,8 +39,34 @@ type DraftInference = {
   aliases: string[];
 };
 
-function activeVaultPath(): string {
-  return process.env.OBSIDIAN_ACTIVE_VAULT_PATH?.trim() || DEFAULT_OBSIDIAN_ACTIVE_VAULT_PATH;
+export class ObsidianVaultUnavailableError extends Error {
+  candidates: string[];
+
+  constructor(candidates: string[]) {
+    super(
+      `Local Obsidian draft creation is not available from this runtime. Checked: ${candidates.join(", ")}`,
+    );
+    this.name = "ObsidianVaultUnavailableError";
+    this.candidates = candidates;
+  }
+}
+
+function uniq(values: string[]): string[] {
+  return [...new Set(values.filter(Boolean))];
+}
+
+function candidateVaultPaths(): string[] {
+  const cwd = process.cwd();
+  const siblingActiveVault = path.resolve(cwd, "..", "Circle of Life");
+  const siblingFallbackVault = path.resolve(cwd, "..", "COL-Knowledge-Vault");
+
+  return uniq([
+    process.env.OBSIDIAN_ACTIVE_VAULT_PATH?.trim() ?? "",
+    DEFAULT_OBSIDIAN_ACTIVE_VAULT_PATH,
+    DEFAULT_OBSIDIAN_FALLBACK_VAULT_PATH,
+    siblingActiveVault,
+    siblingFallbackVault,
+  ]);
 }
 
 function slugify(value: string): string {
@@ -56,10 +83,6 @@ function sanitizeTitle(value: string): string {
 
 function normalizeText(value: string): string {
   return value.toLowerCase().replace(/\s+/g, " ").trim();
-}
-
-function uniq(values: string[]): string[] {
-  return [...new Set(values.filter(Boolean))];
 }
 
 function inferDraft(document: ObsidianDraftDocument): DraftInference {
@@ -300,10 +323,19 @@ ${importedSection || "_No extracted markdown_text or raw_text was available at d
 }
 
 export async function ensureActiveObsidianVault(): Promise<string> {
-  const vaultPath = activeVaultPath();
-  await access(vaultPath);
-  await mkdir(path.join(vaultPath, ...DRAFTS_FOLDER), { recursive: true });
-  return vaultPath;
+  const candidates = candidateVaultPaths();
+
+  for (const vaultPath of candidates) {
+    try {
+      await access(vaultPath);
+      await mkdir(path.join(vaultPath, ...DRAFTS_FOLDER), { recursive: true });
+      return vaultPath;
+    } catch {
+      continue;
+    }
+  }
+
+  throw new ObsidianVaultUnavailableError(candidates);
 }
 
 export async function createObsidianDraftFromDocument(document: ObsidianDraftDocument): Promise<ObsidianDraftResult> {

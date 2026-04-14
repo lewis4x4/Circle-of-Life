@@ -121,11 +121,22 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
         result.data && typeof result.data === "object"
           ? (result.data as Record<string, unknown>)
           : null;
+      const skipped = payload?.skipped === true;
+      const message =
+        payload && typeof payload.message === "string"
+          ? payload.message
+          : "";
       const notePath =
         payload && typeof payload.notePath === "string"
           ? payload.notePath
           : "";
-      setActionSuccess(notePath ? `Obsidian draft created: ${notePath}` : "Obsidian draft created.");
+      setActionSuccess(
+        skipped
+          ? message || "Obsidian draft skipped because this runtime cannot access the local vault."
+          : notePath
+            ? `Obsidian draft created: ${notePath}`
+            : "Obsidian draft created.",
+      );
       await onRefresh();
     } finally {
       setActionLoading(null);

@@ -77,13 +77,20 @@ export function DocumentUpload({ workspaceId, workspaceLoading, onSuccess }: Doc
             draftResult.data && typeof draftResult.data === "object"
               ? (draftResult.data as Record<string, unknown>)
               : null;
+          const draftSkipped = draftPayload?.skipped === true;
           const notePath =
             draftPayload && typeof draftPayload.notePath === "string"
               ? draftPayload.notePath
               : "";
-          draftMessage = notePath
-            ? ` Obsidian draft created at ${notePath}.`
-            : " Obsidian draft created.";
+          const draftNotice =
+            draftPayload && typeof draftPayload.message === "string"
+              ? draftPayload.message
+              : "";
+          draftMessage = draftSkipped
+            ? ` ${draftNotice || "Obsidian draft skipped because this runtime cannot access the local vault."}`
+            : notePath
+              ? ` Obsidian draft created at ${notePath}.`
+              : " Obsidian draft created.";
         } else {
           draftMessage = ` Upload succeeded, but the Obsidian draft could not be created: ${draftResult.error}`;
         }

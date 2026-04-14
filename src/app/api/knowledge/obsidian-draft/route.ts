@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import obsidianDraft from "@/lib/knowledge/obsidian-draft";
+import { ObsidianVaultUnavailableError } from "@/lib/knowledge/obsidian-draft";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { createClient } from "@/lib/supabase/server";
 
@@ -105,6 +106,18 @@ export async function POST(request: Request) {
       relatedLinks: draft.relatedLinks,
     });
   } catch (error) {
+    if (error instanceof ObsidianVaultUnavailableError) {
+      return NextResponse.json(
+        {
+          ok: true,
+          skipped: true,
+          reason: "vault_unavailable",
+          message:
+            "Upload succeeded, but this Haven runtime cannot access your local Obsidian vault. Run Haven on the same machine as the vault or set OBSIDIAN_ACTIVE_VAULT_PATH on a runtime that can reach it.",
+        },
+        { status: 200 },
+      );
+    }
     const message = error instanceof Error ? error.message : "Could not create Obsidian draft";
     return NextResponse.json({ error: message }, { status: 500 });
   }

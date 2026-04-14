@@ -94,6 +94,8 @@ function formatScopeLabel(scope: GraceQueryScope): string | null {
 function formatTimeWindowChip(scope: GraceQueryScope): string | null {
   const label = scope.timeWindowLabel ?? null;
   switch (label) {
+    case "live_now":
+      return "live now";
     case "today":
       return "today";
     case "yesterday":
@@ -111,6 +113,44 @@ function formatTimeWindowChip(scope: GraceQueryScope): string | null {
     default:
       return label ? label.replace(/_/g, " ") : null;
   }
+}
+
+function questionUsesHistoricalWindow(question: string): boolean {
+  const q = sanitizeSearchQuery(getGraceUserQuestion(question)).toLowerCase();
+  return includesAny(q, [
+    "today",
+    "yesterday",
+    "past week",
+    "last week",
+    "past 7 days",
+    "past 2 weeks",
+    "last 2 weeks",
+    "past two weeks",
+    "last two weeks",
+    "past 14 days",
+    "past 30 days",
+    "last 30 days",
+    "past month",
+    "last month",
+    "tomorrow",
+    "next week",
+    "recent",
+    "recently",
+  ]);
+}
+
+function applyLiveNowScopeIfNeeded(
+  question: string,
+  scope: GraceQueryScope,
+  domain: GraceDomain,
+): GraceQueryScope {
+  if (questionUsesHistoricalWindow(question)) return scope;
+  if (domain !== "census" && domain !== "resident_attention") return scope;
+  return {
+    ...scope,
+    timeWindowLabel: "live_now",
+    timeWindowStart: null,
+  };
 }
 
 type FacilityScopeResolution = GraceQueryScope & {
@@ -3214,13 +3254,14 @@ async function runAgentLoop(
   const route = resolveGraceRoute(question, routeScope, resolvedScope.accessibleFacilityNames);
 
   if (route) {
+    const effectiveScope = applyLiveNowScopeIfNeeded(question, route.scope, route.domain);
     switch (route.domain) {
       case "census":
-        return await answerCensusSummary(ctx, route.scope, question);
+        return await answerCensusSummary(ctx, effectiveScope, question);
       case "referral_pipeline":
-        return await answerReferralPipelineQuestion(ctx, question, route.scope);
+        return await answerReferralPipelineQuestion(ctx, question, effectiveScope);
       case "resident_attention":
-        return await answerResidentAttentionQuestion(ctx, route.scope);
+        return await answerResidentAttentionQuestion(ctx, effectiveScope);
       default:
         break;
     }
