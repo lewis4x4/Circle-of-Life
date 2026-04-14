@@ -58,25 +58,40 @@ export function UserCreateDialog({ open, onClose, onCreated }: UserCreateDialogP
 
     setIsSubmitting(true);
     try {
+      // Build facilities payload; ensure exactly one is_primary is true.
+      // If primaryFacilityId isn't set (edge case), default to first facility.
+      const effectivePrimary = primaryFacilityId || facilityIds[0] || "";
+      const facilitiesPayload = facilityIds.map((fid) => ({
+        facility_id: fid,
+        is_primary: fid === effectivePrimary,
+      }));
+
       const res = await fetch("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email,
           full_name: fullName,
-          phone: phone || undefined,
+          ...(phone ? { phone } : {}),
           app_role: appRole,
-          job_title: jobTitle || undefined,
+          ...(jobTitle ? { job_title: jobTitle } : {}),
           send_invite: sendInvite,
-          facilities: facilityIds.map((fid) => ({
-            facility_id: fid,
-            is_primary: fid === primaryFacilityId,
-          })),
+          facilities: facilitiesPayload,
         }),
       });
 
       if (!res.ok) {
         const json = await res.json();
+        // Surface Zod field-level errors so we can see exactly what failed
+        if (json.details?.fieldErrors) {
+          const fieldMsgs = Object.entries(json.details.fieldErrors as Record<string, string[]>)
+            .map(([k, v]) => `${k}: ${v.join(", ")}`)
+            .join(" | ");
+          if (fieldMsgs) throw new Error(`${json.error}: ${fieldMsgs}`);
+        }
+        if (json.details?.formErrors?.length) {
+          throw new Error(`${json.error}: ${(json.details.formErrors as string[]).join(", ")}`);
+        }
         throw new Error(json.error ?? "Failed to create user");
       }
 
