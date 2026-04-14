@@ -42,6 +42,10 @@ export function ChatPage() {
         } else {
           setMessages(data ?? []);
         }
+      } catch (loadError) {
+        console.warn("[ChatPage] loadMessages", loadError);
+        setMessages([]);
+        setMessagesError(loadError instanceof Error ? loadError.message : "Failed to load conversation history.");
       } finally {
         setMessagesLoading(false);
       }
@@ -139,6 +143,7 @@ export function ChatPage() {
           conversationId={activeConversationId}
           existingMessages={messages}
           messagesLoading={messagesLoading}
+          historyError={messagesError}
           onConversationCreated={handleConversationCreated}
           workspaceId={workspaceId}
           workspaceLoading={workspaceLoading}

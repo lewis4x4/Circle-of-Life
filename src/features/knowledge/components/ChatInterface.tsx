@@ -13,6 +13,7 @@ interface ChatInterfaceProps {
   existingMessages: ChatMessageRow[];
   /** True while fetching thread messages for the selected conversation */
   messagesLoading?: boolean;
+  historyError?: string | null;
   onConversationCreated: (id: string) => void;
   workspaceId: string | null;
   workspaceLoading: boolean;
@@ -25,6 +26,7 @@ export function ChatInterface({
   conversationId,
   existingMessages,
   messagesLoading = false,
+  historyError = null,
   onConversationCreated,
   workspaceId,
   workspaceLoading,
@@ -193,6 +195,7 @@ export function ChatInterface({
               existingMessages.length === 0 &&
               !isActive &&
               !error &&
+              !historyError &&
               !text &&
               !!conversationId &&
               !messagesLoading && (
