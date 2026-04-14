@@ -33,7 +33,9 @@ type UnsupportedLane =
   | "expansion"
   | "knowledge_admin"
   | "workflow_automation"
-  | "regulatory_story";
+  | "regulatory_story"
+  | "staffing_lookup"
+  | "resident_contacts";
 
 const GENERIC_FACILITY_WORDS = new Set([
   "all",
@@ -175,6 +177,8 @@ function findUnsupportedLane(question: string): UnsupportedLane | null {
   if (includesAny(q, ["document vault", "upload forms", "upload documents", "facility documents", "knowledge base admin", "knowledge admin", "house all documents", "store all documents"])) return "knowledge_admin";
   if (includesAny(q, ["automatically process", "workflow automation", "chain reaction", "what happens automatically", "what gets created", "who gets notified", "what workflow starts"])) return "workflow_automation";
   if (includesAny(q, ["ahca", "brookdale", "regulatory pitch", "clean sweeps", "zero citations", "regulator", "survey intrusions"])) return "regulatory_story";
+  if (includesAny(q, ["who is on shift", "whos on shift", "staffing gap", "staffing gaps", "who is working", "current staff"])) return "staffing_lookup";
+  if (includesAny(q, ["family contact", "emergency contact", "responsible party", "who should i call", "contact for a resident"])) return "resident_contacts";
   if (includesAny(q, ["quickbooks", "qb", "accounting sync", "billing integration"])) return "integration";
   if (includesAny(q, ["marketing", "campaign", "social media", "facebook lead", "ad lead", "paid ads"])) return "marketing";
   if (includesAny(q, ["waitlist", "turned away", "turn away", "archive list", "capacity planning", "build a new facility"])) return "waitlist_planning";
@@ -249,6 +253,10 @@ function buildUnsupportedLaneClarification(lane: UnsupportedLane): string {
       return "That workflow-automation lane is not fully live yet. Narrow it to one lane: incident notifications, follow-up tasks, or document generation.";
     case "regulatory_story":
       return "That regulatory/commercialization lane is not fully live yet. Narrow it to one lane: AHCA evidence story, survey-readiness proof, or commercialization narrative.";
+    case "staffing_lookup":
+      return "That staffing lane is not fully live yet. Narrow it to one lane: who is on shift, staffing gaps by facility, or certifications expiring.";
+    case "resident_contacts":
+      return "That contact lookup lane is not fully live yet. Narrow it to one lane: emergency contacts, responsible parties, or family messages.";
   }
 }
 
@@ -313,7 +321,9 @@ export function decideGraceSafeMode(input: {
     unsupportedLane === "expansion" ||
     unsupportedLane === "knowledge_admin" ||
     unsupportedLane === "workflow_automation" ||
-    unsupportedLane === "regulatory_story"
+    unsupportedLane === "regulatory_story" ||
+    unsupportedLane === "staffing_lookup" ||
+    unsupportedLane === "resident_contacts"
   ) {
     return {
       kind: "clarify",

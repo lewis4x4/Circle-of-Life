@@ -260,13 +260,37 @@ const cases: EvalCase[] = [
     name: "staffing gaps question gets executive clarification",
     question: withHeaderFacility("Oakridge ALF", "Which facilities have staffing gaps right now?"),
     accessibleFacilityNames,
-    expected: { kind: "clarify", includes: ["top alerts", "facility risk", "benchmark outliers"] },
+    expected: { kind: "clarify", includes: ["who is on shift", "staffing gaps by facility", "certifications expiring"] },
   },
   {
     name: "owner visibility question gets executive clarification",
     question: withNoHeaderFacility("What should ownership be looking at across facilities right now?"),
     accessibleFacilityNames,
     expected: { kind: "clarify", includes: ["top alerts", "facility risk", "benchmark outliers"] },
+  },
+  {
+    name: "who is on shift question gets staffing clarification",
+    question: withHeaderFacility("Oakridge ALF", "Who is on shift right now at Oakridge?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["who is on shift", "staffing gaps by facility", "certifications expiring"] },
+  },
+  {
+    name: "staffing gaps question gets staffing clarification",
+    question: withNoHeaderFacility("Which facilities have staffing gaps today?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["who is on shift", "staffing gaps by facility", "certifications expiring"] },
+  },
+  {
+    name: "emergency contact question gets resident contact clarification",
+    question: withHeaderFacility("Oakridge ALF", "How do I find the emergency contact for a resident?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["emergency contacts", "responsible parties", "family messages"] },
+  },
+  {
+    name: "responsible party question gets resident contact clarification",
+    question: withHeaderFacility("Oakridge ALF", "Who is the responsible party for this resident?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["emergency contacts", "responsible parties", "family messages"] },
   },
 ];
 
