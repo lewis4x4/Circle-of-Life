@@ -183,6 +183,11 @@ export default function CfoDashboardPage() {
               <Subtitle>Enterprise Revenue &amp; Margin Strategy</Subtitle>
             </div>
           </div>
+          {isDemo ? (
+            <div className="rounded-[1.5rem] border border-amber-300/40 bg-amber-500/10 px-5 py-4 text-sm text-amber-900 shadow-sm backdrop-blur-xl dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">
+              Demo data mode is active on this CFO view. Financial cards, charts, and benchmark values may be illustrative when live executive finance data is missing.
+            </div>
+          ) : null}
         </header>
 
         <div className="px-6 sm:px-12 pb-12 space-y-6">
