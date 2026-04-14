@@ -5,12 +5,52 @@ export type EdgeCallResult =
   | { ok: true; data: unknown }
   | { ok: false; error: string; status: number };
 
-async function postEdgeJson(path: string, init: RequestInit): Promise<EdgeCallResult> {
+function combineSignals(signals: Array<AbortSignal | null | undefined>): AbortSignal | undefined {
+  const available = signals.filter(Boolean) as AbortSignal[];
+  if (available.length === 0) return undefined;
+  if (available.length === 1) return available[0];
+  if (typeof AbortSignal.any === "function") {
+    return AbortSignal.any(available) ?? undefined;
+  }
+  return available[0];
+}
+
+async function postEdgeJson(
+  path: string,
+  init: RequestInit,
+  options?: { timeoutMs?: number },
+): Promise<EdgeCallResult> {
   const functionName = path.split("/").pop();
   if (!functionName) {
     return { ok: false, error: "Invalid edge path", status: 0 };
   }
-  const res = await authorizedEdgeFetch(functionName, init, "Knowledge API Auth Debug");
+  let res: Response;
+  try {
+    res = await authorizedEdgeFetch(
+      functionName,
+      {
+        ...init,
+        signal: combineSignals([
+          init.signal,
+          options?.timeoutMs ? AbortSignal.timeout(options.timeoutMs) : undefined,
+        ]),
+      },
+      "Knowledge API Auth Debug",
+    );
+  } catch (error) {
+    if ((error as { name?: string }).name === "AbortError") {
+      return {
+        ok: false,
+        error: "Upload timed out before Haven confirmed the document. Reload Knowledge Admin to check whether it appeared, then retry if needed.",
+        status: 408,
+      };
+    }
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Network request failed",
+      status: 0,
+    };
+  }
   const text = await res.text();
   let data: unknown = {};
   if (text) {
@@ -74,7 +114,7 @@ export async function uploadDocument(
     method: "POST",
     headers: { Authorization: `Bearer ${await requireVerifiedUserAccessToken("Knowledge API Auth Debug")}` },
     body: formData,
-  });
+  }, { timeoutMs: 90_000 });
 }
 
 export async function reindexDocument(documentId: string): Promise<EdgeCallResult> {

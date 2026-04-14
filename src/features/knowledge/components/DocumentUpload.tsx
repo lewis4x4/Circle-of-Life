@@ -25,7 +25,7 @@ export function DocumentUpload({ workspaceId, workspaceLoading, onSuccess }: Doc
   const [audience, setAudience] = useState<DocumentAudience>("company_wide");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
 
   const handleDrop = useCallback(
@@ -53,18 +53,32 @@ export function DocumentUpload({ workspaceId, workspaceLoading, onSuccess }: Doc
     if (!file || !title.trim() || !workspaceId) return;
     setUploading(true);
     setError(null);
-    setSuccess(false);
+    setSuccessMessage(null);
 
     try {
       const result = await uploadDocument(file, title.trim(), audience, workspaceId);
       if (!result.ok) {
         throw new Error(result.error);
       }
-      setSuccess(true);
+      const payload =
+        result.data && typeof result.data === "object"
+          ? (result.data as Record<string, unknown>)
+          : null;
+      const queued = payload?.queued === true;
+      setSuccessMessage(
+        queued
+          ? "Document uploaded. Indexing continues in the background. Refresh the list if the status does not update shortly."
+          : "Document uploaded and indexed successfully.",
+      );
       setFile(null);
       setTitle("");
       setAudience("company_wide");
       onSuccess?.();
+      if (queued) {
+        window.setTimeout(() => {
+          onSuccess?.();
+        }, 6000);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -139,10 +153,10 @@ export function DocumentUpload({ workspaceId, workspaceLoading, onSuccess }: Doc
           {error}
         </div>
       )}
-      {success && (
+      {successMessage && (
         <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
           <Check className="w-4 h-4 shrink-0" />
-          Document uploaded and indexed successfully
+          {successMessage}
         </div>
       )}
 
@@ -153,7 +167,7 @@ export function DocumentUpload({ workspaceId, workspaceLoading, onSuccess }: Doc
         className="w-full rounded-xl bg-indigo-600 text-white px-4 py-2.5 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
       >
         {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-        {uploading ? "Uploading & Indexing…" : "Upload Document"}
+        {uploading ? "Uploading…" : "Upload Document"}
       </button>
     </div>
   );

@@ -7,7 +7,7 @@
  * Pipeline: upload → type-specific extraction → Markdown conversion → semantic chunk → embed → summarize → audit
  */
 import { Buffer } from "node:buffer";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import mammoth from "npm:mammoth@1.8.0";
 import pdfParse from "npm:pdf-parse@1.1.1";
 import XLSX from "npm:xlsx@0.18.5";
@@ -35,6 +35,17 @@ const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+type AdminClient = SupabaseClient;
+
+function queueBackgroundTask(task: Promise<unknown>): boolean {
+  const runtime = (globalThis as { EdgeRuntime?: { waitUntil?: (promise: Promise<unknown>) => void } }).EdgeRuntime;
+  if (runtime && typeof runtime.waitUntil === "function") {
+    runtime.waitUntil(task);
+    return true;
+  }
+  return false;
+}
 
 // ---------------------------------------------------------------------------
 // Turndown instance (HTML → Markdown)
@@ -683,7 +694,7 @@ function resolveGovernance(
 // Ingest pipeline (chunk → embed → store → summarize)
 // ---------------------------------------------------------------------------
 async function ingestDocument(
-  admin: any,
+  admin: AdminClient,
   documentId: string,
   markdownText: string,
   rawText: string,
@@ -755,6 +766,72 @@ async function ingestDocument(
     .eq("id", documentId);
 
   return chunks.length;
+}
+
+async function finalizeUploadedDocument(
+  admin: AdminClient,
+  params: {
+    userId: string;
+    workspaceId: string;
+    documentId: string;
+    title: string;
+    kind: FileKind;
+    fileSize: number;
+    markdown: string;
+    rawText: string;
+    conversionMethod: string;
+  },
+  t: ReturnType<typeof withTiming>,
+) {
+  const { userId, workspaceId, documentId, title, kind, fileSize, markdown, rawText, conversionMethod } = params;
+
+  let chunkCount = 0;
+  try {
+    chunkCount = await ingestDocument(admin, documentId, markdown, rawText, title, workspaceId);
+  } catch (ingestErr: unknown) {
+    const msg = ingestErr instanceof Error ? ingestErr.message : String(ingestErr);
+    await admin.from("documents").update({ status: "ingest_failed" }).eq("id", documentId);
+    await admin.from("document_audit_events").insert({
+      actor_user_id: userId,
+      document_id: documentId,
+      document_title_snapshot: title,
+      event_type: "ingest_failed",
+      metadata: { error: msg },
+    });
+    t.log({ event: "ingest_failed", outcome: "error", document_id: documentId, error_message: msg });
+    return;
+  }
+
+  await admin.from("document_audit_events").insert({
+    actor_user_id: userId,
+    document_id: documentId,
+    document_title_snapshot: title,
+    event_type: "uploaded",
+    metadata: {
+      chunk_count: chunkCount,
+      file_type: kind,
+      file_size: fileSize,
+      conversion_method: conversionMethod,
+      background: true,
+    },
+  });
+
+  await admin.from("kb_analytics_events").insert({
+    workspace_id: workspaceId,
+    event_type: "doc_uploaded",
+    user_id: userId,
+    document_id: documentId,
+    metadata: { chunk_count: chunkCount, conversion_method: conversionMethod, background: true },
+  });
+
+  t.log({
+    event: "upload_ok",
+    outcome: "success",
+    document_id: documentId,
+    chunks: chunkCount,
+    conversion_method: conversionMethod,
+    background: true,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -931,12 +1008,13 @@ Deno.serve(async (req) => {
       // Step 2: Convert to Markdown IR
       let markdown: string;
       let conversionMethod: string;
+      let rawText = rawTextPre;
       try {
         const result = await convertToMarkdown(fileBuffer, kind, title, rawTextPre);
         markdown = result.markdown;
         conversionMethod = result.method;
         // Update rawText if scanned PDF provided better text
-        var rawText = result.rawText;
+        rawText = result.rawText;
       } catch (convErr: unknown) {
         // If Markdown conversion fails, fall back to raw text
         const msg = convErr instanceof Error ? convErr.message : String(convErr);
@@ -1002,59 +1080,52 @@ Deno.serve(async (req) => {
         return jsonResponse({ error: `Insert failed: ${docInsertErr?.message}` }, 500, origin);
       }
 
-      // Step 5: Ingest — chunk markdown → embed → summarize
-      let chunkCount = 0;
-      try {
-        chunkCount = await ingestDocument(admin, doc.id, markdown, rawText, doc.title, doc.workspace_id);
-      } catch (ingestErr: unknown) {
-        const msg = ingestErr instanceof Error ? ingestErr.message : String(ingestErr);
-        await admin.from("documents").update({ status: "ingest_failed" }).eq("id", doc.id);
-        await admin.from("document_audit_events").insert({
-          actor_user_id: user.id,
-          document_id: doc.id,
-          document_title_snapshot: doc.title,
-          event_type: "ingest_failed",
-          metadata: { error: msg },
-        });
-        t.log({ event: "ingest_failed", outcome: "error", error_message: msg });
-        return jsonResponse({ error: `Ingestion failed: ${msg}` }, 500, origin);
-      }
-
-      // Step 6: Audit + analytics
       await admin.from("document_audit_events").insert({
         actor_user_id: user.id,
         document_id: doc.id,
         document_title_snapshot: doc.title,
-        event_type: "uploaded",
+        event_type: "upload_queued",
         metadata: {
-          chunk_count: chunkCount,
           file_type: kind,
           file_size: file.size,
           conversion_method: conversionMethod,
+          storage_ok: storageOk,
         },
       });
 
-      await admin.from("kb_analytics_events").insert({
-        workspace_id: workspaceId,
-        event_type: "doc_uploaded",
-        user_id: user.id,
-        document_id: doc.id,
-        metadata: { chunk_count: chunkCount, conversion_method: conversionMethod },
-      });
+      const backgroundTask = finalizeUploadedDocument(
+        admin,
+        {
+          userId: user.id,
+          workspaceId: doc.workspace_id,
+          documentId: doc.id,
+          title: doc.title,
+          kind,
+          fileSize: file.size,
+          markdown,
+          rawText,
+          conversionMethod,
+        },
+        t,
+      );
+      const queued = queueBackgroundTask(backgroundTask);
+      if (!queued) {
+        await backgroundTask;
+      }
 
       t.log({
-        event: "upload_ok",
+        event: "upload_queued",
         outcome: "success",
         document_id: doc.id,
-        chunks: chunkCount,
         conversion_method: conversionMethod,
+        background: queued,
       });
       return new Response(
         JSON.stringify({
           success: true,
+          queued,
           document_id: doc.id,
           title: doc.title,
-          chunks: chunkCount,
           status: gov.status,
           audience: gov.audience,
           conversion_method: conversionMethod,
