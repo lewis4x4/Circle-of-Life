@@ -44,6 +44,17 @@ export function UserDataTable({
   onDeactivate,
   onReactivate,
 }: UserDataTableProps) {
+  const formatLastLogin = (value: string | null) => {
+    if (!value) return "Never";
+    return new Date(value).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-2">
@@ -99,9 +110,7 @@ export function UserDataTable({
                 <UserStatusBadge is_active={user.is_active} deleted_at={user.deleted_at} />
               </TableCell>
               <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
-                {user.last_login_at
-                  ? new Date(user.last_login_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
-                  : "Never"}
+                {formatLastLogin(user.last_login_at)}
               </TableCell>
               <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                 <UserRowActions

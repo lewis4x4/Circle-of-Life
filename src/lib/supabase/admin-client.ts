@@ -19,6 +19,12 @@ type AuthAdminLookupResult = {
   email: string;
 };
 
+type AuthAdminSnapshot = {
+  id: string;
+  email: string;
+  last_sign_in_at: string | null;
+};
+
 // ── Helpers ───────────────────────────────────────────────────────
 
 /** Generate a secure random password for initial account creation. */
@@ -65,9 +71,21 @@ export async function adminInviteUser(
  * Uses paginated admin listing because GoTrue has no direct getUserByEmail API.
  */
 export async function adminFindUserByEmail(email: string): Promise<AuthAdminLookupResult | null> {
-  const supabase = createServiceRoleClient();
+  const users = await adminListAuthUsers();
   const normalized = email.trim().toLowerCase();
+  const match = users.find(
+    (user) => (user.email ?? "").trim().toLowerCase() === normalized,
+  );
+  if (!match?.email) {
+    return null;
+  }
+  return { id: match.id, email: match.email };
+}
+
+async function adminListAuthUsers() {
+  const supabase = createServiceRoleClient();
   let page = 1;
+  const users: Array<{ id: string; email?: string | null; last_sign_in_at?: string | null }> = [];
 
   while (true) {
     const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
@@ -75,18 +93,35 @@ export async function adminFindUserByEmail(email: string): Promise<AuthAdminLook
       throw new Error(`Auth lookup error: ${error.message}`);
     }
 
-    const match = (data.users ?? []).find(
-      (user) => (user.email ?? "").trim().toLowerCase() === normalized,
-    );
-    if (match?.email) {
-      return { id: match.id, email: match.email };
-    }
+    users.push(...(data.users ?? []));
 
     if (!data.nextPage || data.users.length === 0) {
-      return null;
+      return users;
     }
     page = data.nextPage;
   }
+}
+
+export async function adminGetAuthSnapshotsByIds(
+  userIds: string[],
+): Promise<Record<string, AuthAdminSnapshot>> {
+  if (userIds.length === 0) {
+    return {};
+  }
+
+  const wanted = new Set(userIds);
+  const users = await adminListAuthUsers();
+  return users.reduce<Record<string, AuthAdminSnapshot>>((acc, user) => {
+    if (!wanted.has(user.id)) {
+      return acc;
+    }
+    acc[user.id] = {
+      id: user.id,
+      email: user.email ?? "",
+      last_sign_in_at: user.last_sign_in_at ?? null,
+    };
+    return acc;
+  }, {});
 }
 
 /**

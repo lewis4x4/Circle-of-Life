@@ -14,7 +14,11 @@ import {
 import { canManageUser } from "@/lib/rbac";
 import type { Database } from "@/types/database";
 import { updateUserSchema, deleteUserSchema } from "@/lib/validation/user-management";
-import { adminUpdateUserRole, adminDisableUser } from "@/lib/supabase/admin-client";
+import {
+  adminUpdateUserRole,
+  adminDisableUser,
+  adminGetAuthSnapshotsByIds,
+} from "@/lib/supabase/admin-client";
 import { writeUserAuditEntry } from "@/lib/audit/user-management-audit";
 
 interface RouteContext {
@@ -80,6 +84,8 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  const authSnapshots = await adminGetAuthSnapshotsByIds([id]);
+
   // Facility access
   const facilitiesResult = await admin
     .from("user_facility_access")
@@ -99,6 +105,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   return NextResponse.json({
     data: {
       ...profile,
+      last_login_at: authSnapshots[id]?.last_sign_in_at ?? profile.last_login_at,
       facilities: visibleFacilities.map((facility) => ({
         id: facility.id,
         facility_id: facility.facility_id,

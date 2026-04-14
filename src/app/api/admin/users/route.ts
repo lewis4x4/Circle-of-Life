@@ -16,6 +16,7 @@ import {
   adminInviteUser,
   adminCreateUser,
   adminFindUserByEmail,
+  adminGetAuthSnapshotsByIds,
   adminUpdateUserAccessMetadata,
 } from "@/lib/supabase/admin-client";
 import { writeUserAuditEntry } from "@/lib/audit/user-management-audit";
@@ -174,6 +175,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
   }
 
+  const authSnapshots = await adminGetAuthSnapshotsByIds(users.map((user) => user.id));
+
   // Fetch facility access for each user
   const userIds = users.map((user) => user.id);
   const facilityMap: Record<string, Array<{ facility_id: string; facility_name: string; is_primary: boolean }>> = {};
@@ -203,6 +206,7 @@ export async function GET(request: NextRequest) {
 
   const data: UserWithFacilities[] = users.map((user) => ({
     ...user,
+    last_login_at: authSnapshots[user.id]?.last_sign_in_at ?? user.last_login_at,
     facilities: facilityMap[user.id] ?? [],
   }));
 
