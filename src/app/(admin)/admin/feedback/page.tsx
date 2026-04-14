@@ -31,6 +31,10 @@ export default function PilotFeedbackInboxPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeStatusFilter, setActiveStatusFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [severityFilter, setSeverityFilter] = useState<string>("all");
+  const [shellFilter, setShellFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -56,10 +60,34 @@ export default function PilotFeedbackInboxPage() {
   }, [load]);
 
   const grouped = useMemo(() => {
-    const visibleRows =
-      activeStatusFilter === "all"
-        ? rows
-        : rows.filter((row) => row.status === activeStatusFilter);
+    const normalizedSearch = search.trim().toLowerCase();
+    const visibleRows = rows.filter((row) => {
+      const matchesStatus = activeStatusFilter === "all" || row.status === activeStatusFilter;
+      const matchesCategory = categoryFilter === "all" || row.category === categoryFilter;
+      const matchesSeverity = severityFilter === "all" || row.severity === severityFilter;
+      const matchesShell = shellFilter === "all" || row.shell_kind === shellFilter;
+      const matchesSearch =
+        normalizedSearch.length === 0 ||
+        [
+          row.title,
+          row.detail,
+          row.route,
+          row.user_email ?? "",
+          row.app_role,
+          row.category,
+          row.shell_kind,
+        ]
+          .join("\n")
+          .toLowerCase()
+          .includes(normalizedSearch);
+      return (
+        matchesStatus &&
+        matchesCategory &&
+        matchesSeverity &&
+        matchesShell &&
+        matchesSearch
+      );
+    });
 
     return visibleRows.reduce<Record<string, FeedbackRow[]>>((acc, row) => {
       const key = row.status;
@@ -67,7 +95,7 @@ export default function PilotFeedbackInboxPage() {
       acc[key].push(row);
       return acc;
     }, {});
-  }, [activeStatusFilter, rows]);
+  }, [activeStatusFilter, categoryFilter, rows, search, severityFilter, shellFilter]);
 
   const statusCounts = useMemo(() => {
     return rows.reduce<Record<string, number>>((acc, row) => {
@@ -128,6 +156,61 @@ export default function PilotFeedbackInboxPage() {
         </div>
       ) : (
         <div className="space-y-8">
+          <div className="grid gap-3 rounded-[1.5rem] border border-slate-200/70 bg-white/70 p-4 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.03] md:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,1fr))]">
+            <label className="grid gap-1 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-zinc-400">
+              Search
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Title, detail, route, user…"
+                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-900 dark:border-white/10 dark:bg-black/20 dark:text-zinc-100"
+              />
+            </label>
+            <label className="grid gap-1 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-zinc-400">
+              Category
+              <select
+                value={categoryFilter}
+                onChange={(event) => setCategoryFilter(event.target.value)}
+                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-900 dark:border-white/10 dark:bg-black/20 dark:text-zinc-100"
+              >
+                <option value="all">All</option>
+                <option value="bug">Bug</option>
+                <option value="confusion">Confusing</option>
+                <option value="request">Feature request</option>
+                <option value="friction">Friction</option>
+                <option value="praise">Praise</option>
+              </select>
+            </label>
+            <label className="grid gap-1 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-zinc-400">
+              Severity
+              <select
+                value={severityFilter}
+                onChange={(event) => setSeverityFilter(event.target.value)}
+                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-900 dark:border-white/10 dark:bg-black/20 dark:text-zinc-100"
+              >
+                <option value="all">All</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </label>
+            <label className="grid gap-1 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-zinc-400">
+              Shell
+              <select
+                value={shellFilter}
+                onChange={(event) => setShellFilter(event.target.value)}
+                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-900 dark:border-white/10 dark:bg-black/20 dark:text-zinc-100"
+              >
+                <option value="all">All</option>
+                <option value="admin">Admin</option>
+                <option value="caregiver">Caregiver</option>
+                <option value="family">Family</option>
+                <option value="med-tech">Med-tech</option>
+              </select>
+            </label>
+          </div>
+
           <div className="flex flex-wrap gap-2">
             {["all", "new", "triaged", "planned", "done", "dismissed"].map((status) => (
               <button
