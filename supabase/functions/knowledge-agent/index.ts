@@ -13,6 +13,7 @@ import {
   getGraceUserQuestion,
   isResidentCountOnlyQuestion as isResidentCountOnlyQuestionSafe,
 } from "./safe-mode.ts";
+import { rewriteGraceFollowupQuestion } from "./followup.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -3231,16 +3232,20 @@ async function runAgentLoop(
   provenance?: GraceAnswerProvenance;
   answer_mode?: GraceAnswerMode;
 }> {
-  const resolvedScope = await resolveRequestedFacilityScope(ctx, question);
-  ctx.memoryContext = await loadGraceMemoryRuntimeContext(question, ctx);
+  const effectiveQuestion = rewriteGraceFollowupQuestion({
+    question,
+    conversationHistory,
+  });
+  const resolvedScope = await resolveRequestedFacilityScope(ctx, effectiveQuestion);
+  ctx.memoryContext = await loadGraceMemoryRuntimeContext(effectiveQuestion, ctx);
   const routeScope: GraceQueryScope = {
     facilityIds: resolvedScope.facilityIds,
     facilityNames: resolvedScope.facilityNames,
-    timeWindowLabel: getTimeWindowLabel(question),
-    timeWindowStart: getRecentWindowStart(question).toISOString(),
+    timeWindowLabel: getTimeWindowLabel(effectiveQuestion),
+    timeWindowStart: getRecentWindowStart(effectiveQuestion).toISOString(),
   };
   const safeModeDecision = decideGraceSafeMode({
-    question,
+    question: effectiveQuestion,
     accessibleFacilityNames: resolvedScope.accessibleFacilityNames,
   });
   if (safeModeDecision.kind === "clarify") {
@@ -3255,15 +3260,15 @@ async function runAgentLoop(
     );
   }
 
-  const route = resolveGraceRoute(question, routeScope, resolvedScope.accessibleFacilityNames);
+  const route = resolveGraceRoute(effectiveQuestion, routeScope, resolvedScope.accessibleFacilityNames);
 
   if (route) {
-    const effectiveScope = applyLiveNowScopeIfNeeded(question, route.scope, route.domain);
+    const effectiveScope = applyLiveNowScopeIfNeeded(effectiveQuestion, route.scope, route.domain);
     switch (route.domain) {
       case "census":
-        return await answerCensusSummary(ctx, effectiveScope, question);
+        return await answerCensusSummary(ctx, effectiveScope, effectiveQuestion);
       case "referral_pipeline":
-        return await answerReferralPipelineQuestion(ctx, question, effectiveScope);
+        return await answerReferralPipelineQuestion(ctx, effectiveQuestion, effectiveScope);
       case "resident_attention":
         return await answerResidentAttentionQuestion(ctx, effectiveScope);
       default:
@@ -3283,13 +3288,13 @@ async function runAgentLoop(
     section_title: string | null;
   }[] = [];
   const preloadedEvidence = tools.some((tool) => tool.name === "semantic_kb_search")
-    ? await preloadKnowledgeEvidence(question, ctx)
+    ? await preloadKnowledgeEvidence(effectiveQuestion, ctx)
     : { evidenceText: null, sources: [] };
   sources.push(...preloadedEvidence.sources);
 
   const messages: Array<{ role: string; content: unknown }> = [
     ...conversationHistory.slice(-MAX_HISTORY),
-    { role: "user", content: question },
+    { role: "user", content: effectiveQuestion },
   ];
 
   for (let i = 0; i < MAX_ITERATIONS; i++) {
