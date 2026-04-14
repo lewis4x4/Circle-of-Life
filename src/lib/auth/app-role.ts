@@ -10,7 +10,6 @@ export const ADMIN_ELIGIBLE_APP_ROLES = new Set<string>([
   "manager",
   "admin_assistant",
   "coordinator",
-  "nurse",
   "maintenance_role",
   "broker",
 ]);
@@ -49,9 +48,9 @@ export function isManagerOrAbove(role: string): boolean {
   );
 }
 
-/** Med-Tech role — dedicated /med-tech cockpit for medication technicians. */
+/** Med-Tech / Nurse roles — dedicated /med-tech cockpit for medication technicians and nurses. */
 export function isMedTechRole(role: string): boolean {
-  return role === "med_tech";
+  return role === "med_tech" || role === "nurse";
 }
 
 /** Dietary role — dedicated /dietary command deck for Lead Cooks and Dietary Aides. */
