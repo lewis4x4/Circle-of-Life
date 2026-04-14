@@ -16,6 +16,7 @@ import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 
 type IncidentSeverity = "level_1" | "level_2" | "level_3" | "level_4";
 type IncidentStatus = "new" | "investigating" | "regulatory_review" | "closed";
@@ -39,6 +40,7 @@ export default function AdminIncidentsKanbanPage() {
   const [rows, setRows] = useState<IncidentRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [demoFallbackActive, setDemoFallbackActive] = useState(false);
   const [now, setNow] = useState<number>(() => Date.now());
 
   useEffect(() => {
@@ -52,17 +54,21 @@ export default function AdminIncidentsKanbanPage() {
     try {
       const liveRows = await fetchIncidentsFromSupabase(selectedFacilityId);
       if (liveRows.length > 0) {
+        setDemoFallbackActive(false);
         setRows(liveRows);
       } else if (isDemoMode()) {
+        setDemoFallbackActive(true);
         setRows([
           { id: "i1", incidentNumber: "DEMO-2025-001", residentName: "Margaret Sullivan", category: "fall", severity: "level_2", status: "new", reportedAt: "1 hour ago", reportedBy: "Demo Nurse", followupDueStr: "—", followupDueMs: 0 },
           { id: "i2", incidentNumber: "DEMO-2025-002", residentName: "Eleanor Vance", category: "elopement", severity: "level_4", status: "investigating", reportedAt: "2 hours ago", reportedBy: "Demo Staff", followupDueStr: "11 hours", followupDueMs: Date.now() + 11*3600*1000 },
           { id: "i3", incidentNumber: "DEMO-2025-003", residentName: "Robert Chen", category: "medication_error", severity: "level_3", status: "regulatory_review", reportedAt: "Yesterday", reportedBy: "Demo RN", followupDueStr: "—", followupDueMs: 0 },
         ]);
       } else {
+        setDemoFallbackActive(false);
         setRows([]);
       }
     } catch (err) {
+      setDemoFallbackActive(false);
       setError(err instanceof Error ? err.message : "Failed to load incidents");
     } finally {
       setIsLoading(false);
@@ -126,6 +132,12 @@ export default function AdminIncidentsKanbanPage() {
           </Badge>
         </div>
       </header>
+      {!isLoading && !error && demoFallbackActive ? (
+        <AdminLiveDataFallbackNotice
+          message="Demo mode is active on this incident board. These cards are sample incident records because no live incidents were returned for the current scope."
+          onRetry={() => void loadIncidents()}
+        />
+      ) : null}
 
       {/* Kanban Board Container */}
       <div className="relative z-10 flex-1 min-h-0 flex gap-6 overflow-x-auto pb-4 px-1 scrollbar-hide">

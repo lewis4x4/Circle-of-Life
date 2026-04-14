@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { CarePlanDiffModal } from "@/components/care-plans/care-plan-diff-modal";
+import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 
 // Types
 type AssessmentRow = {
@@ -109,6 +110,7 @@ export default function ClinicalDeskPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [diffCarePlanId, setDiffCarePlanId] = useState<string | null>(null);
+  const [demoFallbackActive, setDemoFallbackActive] = useState(false);
   const router = useRouter();
 
   const load = useCallback(async () => {
@@ -121,6 +123,7 @@ export default function ClinicalDeskPage() {
       ]);
       
       if (liveAssessments.length === 0 && liveCarePlans.length === 0 && isDemoMode()) {
+        setDemoFallbackActive(true);
         setAssessments([
           { id: "a1", residentId: "r1", residentName: "Eleanor Vance", assessmentType: "Fall Risk / 14-Day MDS", assessmentDate: "—", nextDueDate: "3 days ago", daysOverdue: 3, riskLevel: "High", totalScore: null },
           { id: "a2", residentId: "r2", residentName: "Arthur Pendelton", assessmentType: "Elopement Risk", assessmentDate: "—", nextDueDate: "3 days ago", daysOverdue: 3, riskLevel: "Critical", totalScore: null },
@@ -133,10 +136,12 @@ export default function ClinicalDeskPage() {
           { id: "p3", residentId: "r5", residentName: "Martha Jones", version: 1, status: "draft", effectiveDate: "—", reviewDueDate: "Today", daysOverdue: 0 }
         ]);
       } else {
+        setDemoFallbackActive(false);
         setAssessments(liveAssessments);
         setCarePlans(liveCarePlans);
       }
     } catch (err) {
+      setDemoFallbackActive(false);
       setError(err instanceof Error ? err.message : "Failed to load Clinical Desk");
     } finally {
       setIsLoading(false);
@@ -206,6 +211,14 @@ export default function ClinicalDeskPage() {
       </div>
 
       <div className="grid lg:grid-cols-12 gap-6 flex-1 min-h-[400px]">
+        {demoFallbackActive ? (
+          <div className="lg:col-span-12">
+            <AdminLiveDataFallbackNotice
+              message="Demo mode is active on Clinical Desk. These overdue assessments and care-plan drafts are illustrative because no live exception rows were returned for the selected scope."
+              onRetry={() => void load()}
+            />
+          </div>
+        ) : null}
         {/* Left Drawer: Overdue Assessments */}
         <div className="lg:col-span-4 flex flex-col h-full overflow-hidden">
           <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-slate-100/40 dark:bg-black/20 shadow-sm backdrop-blur-3xl p-6 flex flex-col h-full">

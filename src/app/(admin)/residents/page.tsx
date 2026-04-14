@@ -93,6 +93,7 @@ export default function AdminResidentsPage() {
   const [rows, setRows] = useState<ResidentRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [demoFallbackActive, setDemoFallbackActive] = useState(false);
 
   const [search, setSearch] = useState(DEFAULT_FILTERS.search);
   const [acuity, setAcuity] = useState(DEFAULT_FILTERS.acuity);
@@ -106,9 +107,11 @@ export default function AdminResidentsPage() {
     try {
       const liveRows = await fetchResidentsFromSupabase(selectedFacilityId);
       if (liveRows.length > 0) {
+        setDemoFallbackActive(false);
         setRows(liveRows);
       } else if (isDemoMode()) {
         // DEMO HYDRATION: sample roster when DB is unseeded (NEXT_PUBLIC_DEMO_MODE=true only)
+        setDemoFallbackActive(true);
         setRows([
           { id: "m1", name: "Margaret Sullivan", initials: "MS", room: "101-A", unit: "East Wing", acuity: 2, adlStatus: "assisted", status: "active", careSummary: "Routine assisted ADL support", updatedAt: "Oct 12, 09:42 AM" },
           { id: "m2", name: "Arthur Pendelton", initials: "AP", room: "102-B", unit: "East Wing", acuity: 1, adlStatus: "independent", status: "active", careSummary: "Independent daily routine", updatedAt: "Oct 12, 08:30 AM" },
@@ -117,9 +120,11 @@ export default function AdminResidentsPage() {
           { id: "m5", name: "Lucille Booth", initials: "LB", room: "205-B", unit: "West Wing", acuity: 2, adlStatus: "assisted", status: "active", careSummary: "Routine assisted ADL support", updatedAt: "Oct 12, 07:10 AM" },
         ]);
       } else {
+        setDemoFallbackActive(false);
         setRows([]);
       }
     } catch (err) {
+      setDemoFallbackActive(false);
       setError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
       setIsLoading(false);
@@ -274,6 +279,12 @@ export default function AdminResidentsPage() {
       {isLoading ? <AdminTableLoadingState /> : null}
       {!isLoading && error ? (
         <AdminLiveDataFallbackNotice message={error} onRetry={() => void loadResidents()} />
+      ) : null}
+      {!isLoading && !error && demoFallbackActive ? (
+        <AdminLiveDataFallbackNotice
+          message="Demo mode is active on this resident roster. These rows are illustrative sample residents because no live resident records were returned for the current scope."
+          onRetry={() => void loadResidents()}
+        />
       ) : null}
       {!isLoading && filteredRows.length === 0 ? (
         <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />

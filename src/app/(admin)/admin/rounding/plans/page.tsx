@@ -25,6 +25,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { isDemoMode } from "@/lib/demo-mode";
 import { cn } from "@/lib/utils";
+import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 
 type PlanRow = {
   id: string;
@@ -61,11 +62,13 @@ export default function AdminRoundingPlansPage() {
   const [generating, setGenerating] = useState(false);
   const [plans, setPlans] = useState<PlanRow[]>(() => (isDemoMode() ? DEMO_PLANS : []));
   const [filter, setFilter] = useState<FilterType>("all");
+  const [demoFallbackActive, setDemoFallbackActive] = useState<boolean>(() => isDemoMode());
 
   const load = useCallback(async () => {
     setLoading(true);
 
     if (!selectedFacilityId || !isBrowserSupabaseConfigured()) {
+      setDemoFallbackActive(false);
       setPlans(fallbackPlans);
       setLoading(false);
       return;
@@ -81,8 +84,10 @@ export default function AdminRoundingPlansPage() {
 
       if (error) throw error;
       const rows = (data ?? []) as unknown as PlanRow[];
+      setDemoFallbackActive(rows.length === 0 && demo);
       setPlans(rows.length > 0 ? rows : fallbackPlans);
     } catch {
+      setDemoFallbackActive(demo);
       setPlans(fallbackPlans);
     } finally {
       setLoading(false);
@@ -265,6 +270,12 @@ export default function AdminRoundingPlansPage() {
             New plan
           </Link>
         </div>
+        {demoFallbackActive ? (
+          <AdminLiveDataFallbackNotice
+            message="Demo mode is active on Observation Plans. These plan rows are sample plans because no live observation plans were returned for the current facility."
+            onRetry={() => void load()}
+          />
+        ) : null}
 
         {/* Plans section with filter */}
         <div id="plans-section">
