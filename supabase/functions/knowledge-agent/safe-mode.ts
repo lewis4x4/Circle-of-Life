@@ -30,7 +30,9 @@ type UnsupportedLane =
   | "marketing"
   | "waitlist_planning"
   | "integration"
-  | "expansion";
+  | "expansion"
+  | "knowledge_admin"
+  | "workflow_automation";
 
 const GENERIC_FACILITY_WORDS = new Set([
   "all",
@@ -169,6 +171,8 @@ function questionNeedsCountClarification(question: string): boolean {
 
 function findUnsupportedLane(question: string): UnsupportedLane | null {
   const q = normalizeText(getGraceUserQuestion(question));
+  if (includesAny(q, ["document vault", "upload forms", "upload documents", "facility documents", "knowledge base admin", "knowledge admin", "house all documents"])) return "knowledge_admin";
+  if (includesAny(q, ["automatically process", "workflow automation", "chain reaction", "what happens automatically", "what gets created", "who gets notified"])) return "workflow_automation";
   if (includesAny(q, ["quickbooks", "qb", "accounting sync", "billing integration"])) return "integration";
   if (includesAny(q, ["marketing", "campaign", "social media", "facebook lead", "ad lead", "paid ads"])) return "marketing";
   if (includesAny(q, ["waitlist", "turned away", "turn away", "archive list", "capacity planning", "build a new facility"])) return "waitlist_planning";
@@ -182,7 +186,7 @@ function findUnsupportedLane(question: string): UnsupportedLane | null {
   if (includesAny(q, ["transport", "trip", "ride", "mileage", "driver"])) return "transport";
   if (includesAny(q, ["diet", "swallow", "iddsi", "texture", "fluid level"])) return "dietary";
   if (includesAny(q, ["review reply", "reputation", "google review", "yelp"])) return "reputation";
-  if (includesAny(q, ["family portal", "family message", "family communication"])) return "family";
+  if (includesAny(q, ["family portal", "family message", "family communication", "family journal", "care team", "family calendar"])) return "family";
   if (includesAny(q, ["executive", "benchmark", "portfolio", "risk map"])) return "executive";
   if (includesAny(q, ["accounts receivable", "ar ", "invoice", "collections", "trial balance", "period close", "journal entry"])) return "finance";
   if (includesAny(q, ["insurance", "claim", "claims", "renewal", "renewals", "coi", "loss run"])) return "insurance";
@@ -214,7 +218,7 @@ function buildUnsupportedLaneClarification(lane: UnsupportedLane): string {
     case "reputation":
       return "I can answer that once you narrow it to one lane: unreplied reviews, failed posts, or account status.";
     case "family":
-      return "I can answer that once you narrow it to one lane: unread messages, open family triage items, or recent communication hotspots.";
+      return "I can answer that once you narrow it to one lane: family journal, care team, or messages.";
     case "executive":
       return "I can answer that once you narrow it to one lane: top alerts, facility risk, or benchmark outliers.";
     case "finance":
@@ -237,6 +241,10 @@ function buildUnsupportedLaneClarification(lane: UnsupportedLane): string {
       return "I can answer that once you narrow it to one lane: native Haven billing, QuickBooks sync, or facility billing workflow differences.";
     case "expansion":
       return "I can answer that once you narrow it to one lane: new-facility provisioning, acquisition readiness, or capacity planning.";
+    case "knowledge_admin":
+      return "I can answer that once you narrow it to one lane: KB uploads, facility document vault, or Obsidian doctrine drafts.";
+    case "workflow_automation":
+      return "I can answer that once you narrow it to one lane: incident notifications, follow-up tasks, or document generation.";
   }
 }
 
@@ -298,7 +306,9 @@ export function decideGraceSafeMode(input: {
     unsupportedLane === "marketing" ||
     unsupportedLane === "waitlist_planning" ||
     unsupportedLane === "integration" ||
-    unsupportedLane === "expansion"
+    unsupportedLane === "expansion" ||
+    unsupportedLane === "knowledge_admin" ||
+    unsupportedLane === "workflow_automation"
   ) {
     return {
       kind: "clarify",

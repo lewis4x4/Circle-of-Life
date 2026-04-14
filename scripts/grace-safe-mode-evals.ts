@@ -208,6 +208,24 @@ const cases: EvalCase[] = [
     accessibleFacilityNames,
     expected: { kind: "clarify", includes: ["native Haven billing", "QuickBooks sync", "billing workflow differences"] },
   },
+  {
+    name: "document vault question gets controlled fallback",
+    question: withHeaderFacility("Oakridge ALF", "Can Haven house all facility documents and let us upload forms?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["KB uploads", "facility document vault", "Obsidian doctrine drafts"] },
+  },
+  {
+    name: "workflow automation question gets controlled fallback",
+    question: withHeaderFacility("Oakridge ALF", "What happens automatically when an incident is created?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["incident notifications", "follow-up tasks", "document generation"] },
+  },
+  {
+    name: "family journal question gets family clarification",
+    question: withHeaderFacility("Oakridge ALF", "What would family see in the journal and care team area?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["family journal", "care team", "messages"] },
+  },
 ];
 
 function assertCase(evalCase: EvalCase) {
