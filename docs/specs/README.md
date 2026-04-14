@@ -32,7 +32,7 @@
 
 **Important:** Code and migrations have **outpaced** formal Phase 1 acceptance. **Do not** treat “migrations applied” or “routes exist” as equivalent to **Track A closed** or **production-ready** for PHI.
 
-**Next free migration number:** **`177`** — use for all new DDL after updating this README and the relevant spec.
+**Next free migration number:** **`179`** — use for all new DDL after updating this README and the relevant spec.
 
 **Post–Phase 6 work already in repo (`096`–`109`)** — see [Post–Phase 6 shipped work](#postphase-6-shipped-work-migrations-096109) below. Older roadmap drafts that reserved `096`+ for “digital twin” or “maintenance” are **obsolete**; those migration numbers are now consumed as listed.
 

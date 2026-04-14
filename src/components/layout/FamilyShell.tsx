@@ -15,6 +15,7 @@ import {
   HeartPulse
 } from "lucide-react";
 import { useTheme } from "next-themes";
+import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -79,6 +80,7 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
       
       {/* Floating Top-Right Utilities */}
       <div className="absolute top-4 right-4 md:top-6 md:right-6 z-50 flex items-center gap-2">
+         <PilotFeedbackLauncher shellKind="family" compact />
          <button className="relative p-3 rounded-full bg-stone-50/60 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.05)] text-stone-600 hover:text-stone-900 tap-responsive transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50">
             <Bell className="w-5 h-5" />
             <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-rose-400"></span>

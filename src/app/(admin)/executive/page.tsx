@@ -176,6 +176,11 @@ export default function ExecutiveOverviewPage() {
               <ExecutiveHubNav />
             </div>
           </div>
+          {demo ? (
+            <div className="mb-6 rounded-[1.5rem] border border-amber-300/40 bg-amber-500/10 px-5 py-4 text-sm text-amber-900 shadow-sm backdrop-blur-xl dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">
+              Demo data mode is active on this screen. Missing live metrics may be supplemented with sample values for presentation, so treat this page as illustrative until demo mode is turned off.
+            </div>
+          ) : null}
         </header>
 
         {/* Top Command Strip */}

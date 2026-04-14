@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { getAppRoleFromClaims, isMedTechRole } from "@/lib/auth/app-role";
+import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 
 /**
  * MedTechShell — dedicated full-bleed shell for the Med-Tech Shift Cockpit.
@@ -83,6 +84,9 @@ export function MedTechShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="med-tech-shell min-h-screen bg-slate-950 text-white font-sans antialiased">
+      <div className="fixed right-4 top-4 z-50">
+        <PilotFeedbackLauncher shellKind="med-tech" compact />
+      </div>
       {children}
     </div>
   );

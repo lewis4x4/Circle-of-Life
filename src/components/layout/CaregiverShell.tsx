@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Pill, ClipboardList, AlertTriangle, User } from "lucide-react";
 import { useTheme } from "next-themes";
+import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 
 export function CaregiverShell({ children }: { children: React.ReactNode }) {
   const { setTheme } = useTheme();
@@ -66,6 +67,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
             <p className="text-xs md:text-sm text-zinc-400 font-medium tracking-wide uppercase mt-0.5">Night Shift (11P - 7A)</p>
           </div>
           <div className="flex items-center gap-4">
+            <PilotFeedbackLauncher shellKind="caregiver" compact />
             <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 tap-responsive cursor-pointer hover:bg-white/10 transition-colors">
               <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]"></span>
               <span className="text-xs font-semibold text-zinc-200 uppercase tracking-widest">Sync</span>

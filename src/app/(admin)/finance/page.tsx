@@ -87,6 +87,11 @@ export default function AdminFinanceHubPage() {
             </p>
           </div>
         </div>
+        {demo ? (
+          <div className="rounded-[1.5rem] border border-amber-300/40 bg-amber-500/10 px-5 py-4 text-sm text-amber-900 shadow-sm backdrop-blur-xl dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">
+            Demo data mode is active on this screen. Sample finance actions and period status may appear when live records are missing.
+          </div>
+        ) : null}
 
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4" staggerMs={75}>
           <div className="col-span-1 h-[160px]">

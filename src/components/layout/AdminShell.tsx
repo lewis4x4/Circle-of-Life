@@ -71,6 +71,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SurveyVisitModeBar } from "@/components/compliance/SurveyVisitModeBar";
+import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -220,6 +221,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         { key: "finance", href: "/admin/finance", label: "Finance Hub", enabled: true, icon: Landmark },
         { key: "vendors", href: "/admin/vendors", label: "Vendors & AP", enabled: true, icon: Truck },
         { key: "insurance", href: "/admin/insurance", label: "Insurance", enabled: true, icon: Umbrella },
+        { key: "feedback", href: "/admin/feedback", label: "Pilot feedback", enabled: true, icon: MessageSquare },
         { key: "notifications", href: "/admin/settings/notifications", label: "Settings", enabled: true, icon: Smartphone },
       ]
     }
@@ -385,6 +387,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           >
             <Search className="w-5 h-5" />
           </Link>
+
+          <PilotFeedbackLauncher shellKind="admin" facilityId={selectedFacilityId} compact />
           
           <button className="relative p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-zinc-300 tap-responsive transition-colors" aria-label="Notifications">
             <Bell className="w-5 h-5" />
