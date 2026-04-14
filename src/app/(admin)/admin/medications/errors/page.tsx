@@ -103,7 +103,7 @@ export default function AdminMedicationErrorsPage() {
           <p className="font-display text-2xl font-semibold">{totals.n}</p>
         </div>
         <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:col-span-2">
-          <p className="text-xs font-medium uppercase text-slate-500">By severity (sample)</p>
+          <p className="text-xs font-medium uppercase text-slate-500">By severity in view</p>
           <p className="text-sm text-slate-600 dark:text-slate-400">
             {Object.entries(totals.bySeverity).length === 0
               ? "—"
