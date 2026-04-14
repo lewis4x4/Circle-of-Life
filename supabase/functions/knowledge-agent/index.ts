@@ -2,10 +2,17 @@
  * Knowledge Base — Claude tool-use agent with semantic_kb_search + SSE streaming.
  * Auth: user JWT.
  */
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
 import { redactString, redactValue } from "../_shared/redact-pii.ts";
+import {
+  decideGraceSafeMode,
+  formatCountOnlyCensusAnswer,
+  getGraceHeaderFacility,
+  getGraceUserQuestion,
+  isResidentCountOnlyQuestion as isResidentCountOnlyQuestionSafe,
+} from "./safe-mode.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -20,6 +27,7 @@ const HARD_CAP_TOKENS = 150_000;
 type ToolTier = "kb_documents" | "clinical" | "operational" | "financial" | "payroll";
 type GraceIntentKind = "deterministic_summary" | "deterministic_lookup" | "semantic_kb" | "hybrid_cross_domain" | "unsupported";
 type GraceDomain =
+  | "clarification"
   | "census"
   | "resident_attention"
   | "referral_pipeline"
@@ -40,7 +48,14 @@ type GraceDomain =
   | "facility_admin"
   | "reporting"
   | "rounding";
-type GraceFallbackReason = "no_data" | "access_restricted" | "domain_not_implemented" | "ambiguous_scope" | "iteration_cap";
+type GraceFallbackReason =
+  | "no_data"
+  | "access_restricted"
+  | "domain_not_implemented"
+  | "ambiguous_scope"
+  | "ambiguous_domain"
+  | "ambiguous_time_window"
+  | "iteration_cap";
 type GraceAnswerMode = "deterministic" | "agentic" | "mixed";
 
 type GraceQueryScope = {
@@ -70,6 +85,11 @@ type GraceResolvedRoute = {
   fallback_mode: GraceFallbackReason | null;
 };
 
+type FacilityScopeResolution = GraceQueryScope & {
+  accessibleFacilityIds: string[];
+  accessibleFacilityNames: string[];
+};
+
 type ToolDefinition = {
   name: string;
   description: string;
@@ -81,8 +101,10 @@ type ToolDefinition = {
   tier: ToolTier;
 };
 
+type AdminClient = SupabaseClient;
+
 type ToolContext = {
-  admin: any; // KB tables not in generated client schema yet
+  admin: AdminClient;
   workspaceId: string;
   userRole: string;
   userId: string;
@@ -552,7 +574,7 @@ function getAvailableToolsForRole(userRole: string): ToolDefinition[] {
 }
 
 async function applyPolicyOverrides(
-  admin: any,
+  admin: AdminClient,
   workspaceId: string,
   userRole: string,
   tools: ToolDefinition[],
@@ -628,133 +650,6 @@ function sanitizeSearchQuery(value: unknown): string {
     .trim();
 }
 
-function isResidentAttentionQuestion(question: string): boolean {
-  const q = question.toLowerCase();
-  return (
-    q.includes("who needs attention") ||
-    q.includes("care alerts") ||
-    q.includes("open tasks") ||
-    q.includes("follow-ups") ||
-    q.includes("follow ups") ||
-    q.includes("followup") ||
-    q.includes("follow-up")
-  );
-}
-
-function isCensusQuestion(question: string): boolean {
-  const q = question.toLowerCase();
-  return (
-    q.includes("how many residents") ||
-    q.includes("resident count") ||
-    q.includes("census") ||
-    q.includes("occupancy") ||
-    q.includes("available beds") ||
-    q.includes("licensed beds")
-  );
-}
-
-function isReferralPipelineQuestion(question: string): boolean {
-  const q = question.toLowerCase();
-  return (
-    q.includes("lead") ||
-    q.includes("leads") ||
-    q.includes("referral") ||
-    q.includes("pipeline") ||
-    q.includes("inquiry") ||
-    q.includes("inquiries")
-  );
-}
-
-function isAdmissionsQuestion(question: string): boolean {
-  const q = question.toLowerCase();
-  return q.includes("admission") || q.includes("move-in") || q.includes("move in") || q.includes("pending admission");
-}
-
-function isDischargeQuestion(question: string): boolean {
-  const q = question.toLowerCase();
-  return q.includes("discharge") || q.includes("move-out") || q.includes("move out") || q.includes("transition");
-}
-
-function isMedicationQueueQuestion(question: string): boolean {
-  const q = question.toLowerCase();
-  return q.includes("medication") || q.includes("emar") || q.includes("due soon") || q.includes("overdue pass") || q.includes("missed dose");
-}
-
-function isIncidentFollowupQuestion(question: string): boolean {
-  const q = question.toLowerCase();
-  return q.includes("incident") || q.includes("follow-up") || q.includes("followup") || q.includes("unresolved incident");
-}
-
-function isComplianceWatchlistQuestion(question: string): boolean {
-  const q = question.toLowerCase();
-  return q.includes("compliance") || q.includes("deficien") || q.includes("plan of correction") || q.includes("poc") || q.includes("policy acknowledgment");
-}
-
-function isTrainingQuestion(question: string): boolean {
-  const q = question.toLowerCase();
-  return q.includes("certification") || q.includes("training") || q.includes("in-service") || q.includes("inservice") || q.includes("expire");
-}
-
-function isTransportQuestion(question: string): boolean {
-  const q = question.toLowerCase();
-  return q.includes("transport") || q.includes("trip") || q.includes("ride") || q.includes("mileage") || q.includes("driver");
-}
-
-function isDietaryQuestion(question: string): boolean {
-  const q = question.toLowerCase();
-  return q.includes("diet") || q.includes("swallow") || q.includes("iddsi") || q.includes("texture") || q.includes("fluid level");
-}
-
-function isReputationQuestion(question: string): boolean {
-  const q = question.toLowerCase();
-  return q.includes("review") || q.includes("reputation") || q.includes("reply") || q.includes("google") || q.includes("yelp");
-}
-
-function isFamilyQuestion(question: string): boolean {
-  const q = question.toLowerCase();
-  return q.includes("family") || q.includes("message") || q.includes("portal") || q.includes("conference");
-}
-
-function isExecutiveQuestion(question: string): boolean {
-  const q = question.toLowerCase();
-  return q.includes("executive") || q.includes("alert") || q.includes("risk") || q.includes("benchmark") || q.includes("portfolio");
-}
-
-function isFinanceArQuestion(question: string): boolean {
-  const q = question.toLowerCase();
-  return q.includes("ar ") || q.includes("accounts receivable") || q.includes("overdue invoice") || q.includes("collections") || q.includes("balance due");
-}
-
-function isFinanceCloseQuestion(question: string): boolean {
-  const q = question.toLowerCase();
-  return q.includes("trial balance") || q.includes("period close") || q.includes("journal entr") || q.includes("unposted");
-}
-
-function isInsuranceQuestion(question: string): boolean {
-  const q = question.toLowerCase();
-  return q.includes("insurance") || q.includes("claim") || q.includes("renewal") || q.includes("loss run") || q.includes("coi");
-}
-
-function isVendorQuestion(question: string): boolean {
-  const q = question.toLowerCase();
-  return q.includes("vendor") || q.includes("contract") || q.includes("purchase order") || q.includes("po ") || q.includes("spend");
-}
-
-function isFacilityAdminQuestion(question: string): boolean {
-  const q = question.toLowerCase();
-  return q.includes("facility profile") || q.includes("emergency contact") || q.includes("building profile") || q.includes("facility document") || q.includes("survey history");
-}
-
-function isReportingQuestion(question: string): boolean {
-  const q = question.toLowerCase();
-  return q.includes("report") || q.includes("scheduled report") || q.includes("saved report") || q.includes("report run");
-}
-
-function isRoundingQuestion(question: string): boolean {
-  const q = question.toLowerCase();
-  return q.includes("rounding") || q.includes("observation task") || q.includes("watch protocol") || q.includes("resident assurance");
-}
-
 function getRecentWindowStart(question: string): Date {
   const q = question.toLowerCase();
   const now = new Date();
@@ -785,55 +680,18 @@ function getTimeWindowLabel(question: string): string {
   return "past_7_days";
 }
 
-function resolveGraceRoute(question: string, route: string | undefined, scope: GraceQueryScope): GraceResolvedRoute | null {
-  const routeLower = route?.toLowerCase() ?? "";
+function resolveGraceRoute(question: string, scope: GraceQueryScope, accessibleFacilityNames: string[]): GraceResolvedRoute | null {
   const choose = (
     domain: GraceDomain,
     intent_kind: GraceIntentKind = "deterministic_summary",
     fallback_mode: GraceFallbackReason | null = "no_data",
   ): GraceResolvedRoute => ({ domain, intent_kind, scope, fallback_mode });
 
-  // Explicit question semantics always outrank route context.
-  if (isCensusQuestion(question)) return choose("census");
-  if (isResidentAttentionQuestion(question)) return choose("resident_attention");
-  if (isReferralPipelineQuestion(question)) return choose("referral_pipeline");
-  if (isAdmissionsQuestion(question)) return choose("admissions");
-  if (isDischargeQuestion(question)) return choose("discharge");
-  if (isMedicationQueueQuestion(question)) return choose("medications");
-  if (isIncidentFollowupQuestion(question)) return choose("incidents");
-  if (isComplianceWatchlistQuestion(question)) return choose("compliance");
-  if (isTrainingQuestion(question)) return choose("training");
-  if (isTransportQuestion(question)) return choose("transport");
-  if (isDietaryQuestion(question)) return choose("dietary");
-  if (isReputationQuestion(question)) return choose("reputation");
-  if (isFamilyQuestion(question)) return choose("family");
-  if (isExecutiveQuestion(question)) return choose("executive");
-  if (isFinanceArQuestion(question) || isFinanceCloseQuestion(question)) return choose("finance");
-  if (isInsuranceQuestion(question)) return choose("insurance");
-  if (isVendorQuestion(question)) return choose("vendors");
-  if (isFacilityAdminQuestion(question)) return choose("facility_admin");
-  if (isReportingQuestion(question)) return choose("reporting");
-  if (isRoundingQuestion(question)) return choose("rounding");
-
-  // Route context is only a fallback when the question itself is ambiguous.
-  if (routeLower.startsWith("/admin/referrals")) return choose("referral_pipeline");
-  if (routeLower.startsWith("/admin/admissions")) return choose("admissions");
-  if (routeLower.startsWith("/admin/discharge")) return choose("discharge");
-  if (routeLower.startsWith("/admin/medications")) return choose("medications");
-  if (routeLower.startsWith("/admin/incidents")) return choose("incidents");
-  if (routeLower.startsWith("/admin/compliance")) return choose("compliance");
-  if (routeLower.startsWith("/admin/training") || routeLower.startsWith("/admin/certifications")) return choose("training");
-  if (routeLower.startsWith("/admin/transportation")) return choose("transport");
-  if (routeLower.startsWith("/admin/dietary")) return choose("dietary");
-  if (routeLower.startsWith("/admin/reputation")) return choose("reputation");
-  if (routeLower.startsWith("/admin/family") || routeLower.startsWith("/family")) return choose("family");
-  if (routeLower.startsWith("/admin/executive")) return choose("executive");
-  if (routeLower.startsWith("/admin/billing") || routeLower.startsWith("/admin/finance")) return choose("finance");
-  if (routeLower.startsWith("/admin/insurance")) return choose("insurance");
-  if (routeLower.startsWith("/admin/vendors")) return choose("vendors");
-  if (routeLower.startsWith("/admin/facilities")) return choose("facility_admin");
-  if (routeLower.startsWith("/admin/reports")) return choose("reporting");
-  if (routeLower.startsWith("/admin/rounding")) return choose("rounding");
+  const decision = decideGraceSafeMode({
+    question,
+    accessibleFacilityNames,
+  });
+  if (decision.kind === "route") return choose(decision.domain);
   return null;
 }
 
@@ -874,7 +732,7 @@ function uniq<T>(values: T[]): T[] {
 }
 
 async function resolveAccessibleFacilityIds(
-  admin: any,
+  admin: AdminClient,
   workspaceId: string,
   userId: string,
   userRole: string,
@@ -901,9 +759,14 @@ async function resolveAccessibleFacilityIds(
 async function resolveRequestedFacilityScope(
   ctx: ToolContext,
   query: string,
-): Promise<{ facilityIds: string[]; facilityNames: string[] }> {
+): Promise<FacilityScopeResolution> {
   if (ctx.accessibleFacilityIds.length === 0) {
-    return { facilityIds: [], facilityNames: [] };
+    return {
+      facilityIds: [],
+      facilityNames: [],
+      accessibleFacilityIds: [],
+      accessibleFacilityNames: [],
+    };
   }
 
   const { data } = await ctx.admin
@@ -915,10 +778,18 @@ async function resolveRequestedFacilityScope(
 
   const rows = (data ?? []) as FacilityNameRow[];
   if (rows.length === 0) {
-    return { facilityIds: [], facilityNames: [] };
+    return {
+      facilityIds: [],
+      facilityNames: [],
+      accessibleFacilityIds: [],
+      accessibleFacilityNames: [],
+    };
   }
 
-  const normalizedQuestion = sanitizeSearchQuery(query).toLowerCase();
+  const accessibleFacilityIds = rows.map((row) => row.id);
+  const accessibleFacilityNames = rows.map((row) => row.name);
+  const headerFacilityName = getGraceHeaderFacility(query);
+  const normalizedQuestion = sanitizeSearchQuery(getGraceUserQuestion(query)).toLowerCase();
   const stopWords = new Set(["alf", "at", "the", "facility", "site", "building", "campus"]);
   const scored = rows
     .map((row) => {
@@ -949,16 +820,29 @@ async function resolveRequestedFacilityScope(
     return {
       facilityIds: matched.map((row) => row.id),
       facilityNames: matched.map((row) => row.name),
+      accessibleFacilityIds,
+      accessibleFacilityNames,
     };
   }
 
-  if (rows.length === 0) {
-    return { facilityIds: [], facilityNames: [] };
+  if (headerFacilityName) {
+    const normalizedHeaderFacility = sanitizeSearchQuery(headerFacilityName).toLowerCase();
+    const headerMatch = rows.find((row) => sanitizeSearchQuery(row.name).toLowerCase() === normalizedHeaderFacility);
+    if (headerMatch) {
+      return {
+        facilityIds: [headerMatch.id],
+        facilityNames: [headerMatch.name],
+        accessibleFacilityIds,
+        accessibleFacilityNames,
+      };
+    }
   }
 
   return {
-    facilityIds: rows.map((row) => row.id),
-    facilityNames: rows.map((row) => row.name),
+    facilityIds: accessibleFacilityIds,
+    facilityNames: accessibleFacilityNames,
+    accessibleFacilityIds,
+    accessibleFacilityNames,
   };
 }
 
@@ -983,32 +867,17 @@ function attentionScoreForTaskStatus(status: string): number {
 
 async function answerResidentAttentionQuestion(
   ctx: ToolContext,
-  question: string,
-): Promise<{
-  text: string;
-  sources: {
-    title: string;
-    excerpt: string;
-    confidence: number;
-    section_title: string | null;
-  }[];
-  toolsUsed: string[];
-  tokensIn: number;
-  tokensOut: number;
-  model: string;
-  kbSearchMiss: boolean;
-}> {
-  const facilityScope = await resolveRequestedFacilityScope(ctx, question);
+  facilityScope: GraceQueryScope,
+): Promise<ReturnType<typeof buildDeterministicResult>> {
   if (facilityScope.facilityIds.length === 0) {
-    return {
-      text: "I could not find an accessible facility scope for that request.",
-      sources: [],
-      toolsUsed: ["resident_attention_summary"],
-      tokensIn: 0,
-      tokensOut: 0,
-      model: "deterministic:resident_attention_summary",
-      kbSearchMiss: false,
-    };
+    return buildDeterministicResult(
+      "I don't see any resident attention data for the requested scope.",
+      "resident_attention",
+      facilityScope,
+      ["residents", "resident_observation_tasks", "incident_followups", "vital_sign_alerts", "care_plan_review_alerts"],
+      0,
+      "no_data",
+    );
   }
 
   const { data: residentsData } = await ctx.admin
@@ -1029,15 +898,14 @@ async function answerResidentAttentionQuestion(
   }>;
   const residentIds = residents.map((row) => row.id);
   if (residentIds.length === 0) {
-    return {
-      text: `I did not find any active residents in ${facilityScope.facilityNames.join(", ")}.`,
-      sources: [],
-      toolsUsed: ["resident_attention_summary"],
-      tokensIn: 0,
-      tokensOut: 0,
-      model: "deterministic:resident_attention_summary",
-      kbSearchMiss: false,
-    };
+    return buildDeterministicResult(
+      `I don't see any active residents in ${facilityScope.facilityNames.join(", ")}.`,
+      "resident_attention",
+      facilityScope,
+      ["residents"],
+      0,
+      "no_data",
+    );
   }
 
   const residentById = new Map(
@@ -1195,15 +1063,14 @@ async function answerResidentAttentionQuestion(
       facilityScope.facilityNames.length === 1
         ? facilityScope.facilityNames[0]
         : "the requested facilities";
-    return {
-      text: `No residents currently stand out with open attention items in ${facilityLabel}.`,
-      sources: [],
-      toolsUsed: ["resident_attention_summary"],
-      tokensIn: 0,
-      tokensOut: 0,
-      model: "deterministic:resident_attention_summary",
-      kbSearchMiss: false,
-    };
+    return buildDeterministicResult(
+      `I don't see any residents with open attention items in ${facilityLabel}.`,
+      "resident_attention",
+      facilityScope,
+      ["residents", "resident_observation_tasks", "incident_followups", "vital_sign_alerts", "care_plan_review_alerts"],
+      residents.length + tasks.length + followups.length + vitalAlerts.length + careAlerts.length,
+      "no_data",
+    );
   }
 
   const lines = ranked.map(([residentId, data], index) => {
@@ -1229,20 +1096,19 @@ async function answerResidentAttentionQuestion(
     return `${index + 1}. ${resident.name}${suffix}: ${parts.join("; ")}.`;
   });
 
-  return {
-    text: lines.join("\n"),
-    sources: [],
-    toolsUsed: ["resident_attention_summary"],
-    tokensIn: 0,
-    tokensOut: 0,
-    model: "deterministic:resident_attention_summary",
-    kbSearchMiss: false,
-  };
+  return buildDeterministicResult(
+    lines.join("\n"),
+    "resident_attention",
+    facilityScope,
+    ["residents", "resident_observation_tasks", "incident_followups", "vital_sign_alerts", "care_plan_review_alerts"],
+    residents.length + tasks.length + followups.length + vitalAlerts.length + careAlerts.length,
+  );
 }
 
 async function answerCensusSummary(
   ctx: ToolContext,
   scope: GraceQueryScope,
+  question: string,
 ): Promise<ReturnType<typeof buildDeterministicResult>> {
   const facilityIds = scope.facilityIds.length > 0 ? scope.facilityIds : ctx.accessibleFacilityIds;
   const { data: facilitiesData } = await ctx.admin
@@ -1293,6 +1159,31 @@ async function answerCensusSummary(
 
   const totalResidents = residentRows.length;
   const totalBeds = facilities.reduce((sum, facility) => sum + (facility.total_licensed_beds ?? 0), 0);
+
+  if (isResidentCountOnlyQuestionSafe(question)) {
+    const facilityBreakdown = facilities.map((facility) => ({
+      name: facility.name,
+      activeResidents: counts.get(facility.id) ?? 0,
+    }));
+    return buildDeterministicResult(
+      formatCountOnlyCensusAnswer(facilityBreakdown),
+      "census",
+      scope,
+      ["facilities", "residents"],
+      facilities.length + residentRows.length,
+    );
+  }
+
+  if (facilities.length > 1) {
+    return buildDeterministicResult(
+      `${totalResidents} active residents are in scope across ${facilities.length} facilities. Total licensed beds in scope: ${totalBeds}.`,
+      "census",
+      scope,
+      ["facilities", "residents"],
+      facilities.length + residentRows.length,
+    );
+  }
+
   const header =
     facilities.length === 1
       ? `${facilityNameById.get(facilities[0].id) ?? "This facility"} currently has ${totalResidents} active resident${totalResidents === 1 ? "" : "s"}.`
@@ -1310,31 +1201,17 @@ async function answerCensusSummary(
 async function answerReferralPipelineQuestion(
   ctx: ToolContext,
   question: string,
-): Promise<{
-  text: string;
-  sources: {
-    title: string;
-    excerpt: string;
-    confidence: number;
-    section_title: string | null;
-  }[];
-  toolsUsed: string[];
-  tokensIn: number;
-  tokensOut: number;
-  model: string;
-  kbSearchMiss: boolean;
-}> {
-  const facilityScope = await resolveRequestedFacilityScope(ctx, question);
+  facilityScope: GraceQueryScope,
+): Promise<ReturnType<typeof buildDeterministicResult>> {
   if (facilityScope.facilityIds.length === 0) {
-    return {
-      text: "I could not find an accessible facility scope for that leads request.",
-      sources: [],
-      toolsUsed: ["referral_pipeline_summary"],
-      tokensIn: 0,
-      tokensOut: 0,
-      model: "deterministic:referral_pipeline_summary",
-      kbSearchMiss: false,
-    };
+    return buildDeterministicResult(
+      "I don't see any referral pipeline data for the requested scope.",
+      "referral_pipeline",
+      facilityScope,
+      ["referral_leads", "referral_sources"],
+      0,
+      "no_data",
+    );
   }
 
   const windowStart = getRecentWindowStart(question);
@@ -1385,15 +1262,14 @@ async function answerReferralPipelineQuestion(
             : "the past week";
 
   if (leads.length === 0) {
-    return {
-      text: `No referral leads were created for ${facilityLabel} in ${windowLabel}.`,
-      sources: [],
-      toolsUsed: ["referral_pipeline_summary"],
-      tokensIn: 0,
-      tokensOut: 0,
-      model: "deterministic:referral_pipeline_summary",
-      kbSearchMiss: false,
-    };
+    return buildDeterministicResult(
+      `I don't see any new referral leads for ${facilityLabel} in ${windowLabel}.`,
+      "referral_pipeline",
+      facilityScope,
+      ["referral_leads", "referral_sources"],
+      0,
+      "no_data",
+    );
   }
 
   const lines = [
@@ -1412,15 +1288,13 @@ async function answerReferralPipelineQuestion(
     return `${index + 1}. ${residentName}${facilitySuffix}: ${lead.status.replace(/_/g, " ")}${sourceSuffix}; created ${lead.created_at.slice(0, 10)}.`;
   });
 
-  return {
-    text: [...lines, "", ...detailLines].join("\n"),
-    sources: [],
-    toolsUsed: ["referral_pipeline_summary"],
-    tokensIn: 0,
-    tokensOut: 0,
-    model: "deterministic:referral_pipeline_summary",
-    kbSearchMiss: false,
-  };
+  return buildDeterministicResult(
+    [...lines, "", ...detailLines].join("\n"),
+    "referral_pipeline",
+    facilityScope,
+    ["referral_leads", "referral_sources"],
+    leads.length,
+  );
 }
 
 function buildDeterministicResult(
@@ -1443,6 +1317,7 @@ function buildDeterministicResult(
   tokensOut: number;
   model: string;
   kbSearchMiss: boolean;
+  clarification_needed?: string | null;
   deterministic: true;
   provenance: GraceAnswerProvenance;
   answer_mode: GraceAnswerMode;
@@ -1455,6 +1330,7 @@ function buildDeterministicResult(
     tokensOut: 0,
     model: `deterministic:${domain}_summary`,
     kbSearchMiss: false,
+    clarification_needed: null,
     deterministic: true,
     answer_mode: "deterministic",
     provenance: {
@@ -1466,6 +1342,26 @@ function buildDeterministicResult(
       deterministic: true,
       fallback_reason: fallbackReason,
     },
+  };
+}
+
+function buildClarificationResult(
+  text: string,
+  scope: GraceQueryScope,
+  fallbackReason: Extract<GraceFallbackReason, "ambiguous_scope" | "ambiguous_domain" | "ambiguous_time_window" | "domain_not_implemented">,
+): ReturnType<typeof buildDeterministicResult> {
+  return {
+    ...buildDeterministicResult(
+      text,
+      "clarification",
+      scope,
+      [],
+      0,
+      fallbackReason,
+    ),
+    toolsUsed: ["clarification_needed"],
+    model: "deterministic:clarification",
+    clarification_needed: text,
   };
 }
 
@@ -1740,7 +1636,7 @@ async function answerTransportScheduleSummary(
   }
   const startIso = start.toISOString().slice(0, 10);
   const endIso = end.toISOString().slice(0, 10);
-  let req = ctx.admin
+  const req = ctx.admin
     .from("resident_transport_requests")
     .select("resident_id,appointment_date,pickup_time,destination_name,status,wheelchair_required")
     .eq("organization_id", ctx.workspaceId)
@@ -2014,7 +1910,7 @@ async function fetchResidentMatches(
 
   if (filters) req = req.or(filters);
 
-  let { data } = await req;
+  const { data } = await req;
   const direct = (data ?? []) as ResidentLookupRow[];
   if (direct.length > 0 || !query) return direct;
 
@@ -2928,6 +2824,9 @@ How to think:
 Hard rules:
 - All tools are READ-ONLY. Never mutate data.
 - Never invent data. If the needed data is not available from your allowed tools, say so clearly.
+- If the question is ambiguous, ask a short clarifying question instead of guessing.
+- Never answer from an unrelated module just because the current route suggests it.
+- Treat the current route as a weak UI hint only, not as authority over the user's words.
 - Do not reveal or infer data from blocked tiers. If the user asks for financial or payroll data and those tools are unavailable to this role, say you do not have access.
 - Cite sources inline when drawing from \`semantic_kb_search\` results.
 - Live operational answers can cite the tool and the returned records in plain language; do not fabricate a document citation.
@@ -2993,60 +2892,40 @@ async function runAgentLoop(
   tokensOut: number;
   model: string;
   kbSearchMiss: boolean;
+  clarification_needed?: string | null;
   deterministic?: boolean;
   provenance?: GraceAnswerProvenance;
   answer_mode?: GraceAnswerMode;
 }> {
   const resolvedScope = await resolveRequestedFacilityScope(ctx, question);
-  const route = resolveGraceRoute(question, ctx.route, {
+  const routeScope: GraceQueryScope = {
     facilityIds: resolvedScope.facilityIds,
     facilityNames: resolvedScope.facilityNames,
     timeWindowLabel: getTimeWindowLabel(question),
     timeWindowStart: getRecentWindowStart(question).toISOString(),
+  };
+  const safeModeDecision = decideGraceSafeMode({
+    question,
+    accessibleFacilityNames: resolvedScope.accessibleFacilityNames,
   });
+  if (safeModeDecision.kind === "clarify") {
+    return buildClarificationResult(
+      safeModeDecision.text,
+      routeScope,
+      safeModeDecision.reason,
+    );
+  }
+
+  const route = resolveGraceRoute(question, routeScope, resolvedScope.accessibleFacilityNames);
 
   if (route) {
     switch (route.domain) {
       case "census":
-        return await answerCensusSummary(ctx, route.scope);
+        return await answerCensusSummary(ctx, route.scope, question);
       case "referral_pipeline":
-        return await answerReferralPipelineQuestion(ctx, question);
+        return await answerReferralPipelineQuestion(ctx, question, route.scope);
       case "resident_attention":
-        return await answerResidentAttentionQuestion(ctx, question);
-      case "admissions":
-        return await answerAdmissionsPipelineQuestion(ctx, route.scope);
-      case "discharge":
-        return await answerDischargeWatchlistQuestion(ctx, route.scope);
-      case "medications":
-        return await answerMedicationQueueQuestion(ctx, route.scope);
-      case "incidents":
-        return await answerIncidentFollowupSummary(ctx, route.scope);
-      case "compliance":
-        return await answerComplianceWatchlistSummary(ctx, route.scope);
-      case "training":
-        return await answerTrainingExpirySummary(ctx, route.scope);
-      case "transport":
-        return await answerTransportScheduleSummary(ctx, route.scope);
-      case "dietary":
-        return await answerDietaryRiskSummary(ctx, route.scope);
-      case "reputation":
-        return await answerReputationReplyQueueSummary(ctx, route.scope);
-      case "family":
-        return await answerFamilyCommunicationSummary(ctx, route.scope);
-      case "executive":
-        return await answerExecutiveAlertSummary(ctx, route.scope);
-      case "finance":
-        return isFinanceCloseQuestion(question)
-          ? await answerFinanceCloseSummary(ctx, route.scope)
-          : await answerFinanceArSummary(ctx, route.scope);
-      case "insurance":
-        return await answerInsuranceRenewalSummary(ctx, route.scope);
-      case "vendors":
-        return await answerVendorSpendSummary(ctx, route.scope);
-      case "reporting":
-        return await answerReportingScheduleSummary(ctx, route.scope);
-      case "rounding":
-        return await answerRoundingWatchSummary(ctx, route.scope);
+        return await answerResidentAttentionQuestion(ctx, route.scope);
       default:
         break;
     }
@@ -3178,13 +3057,14 @@ async function runAgentLoop(
 
   return {
     text:
-      "I could not converge on a clean answer fast enough. Try narrowing the request to one lane, for example: open tasks only, follow-ups only, or vital/care alerts only.",
+      "I’m not confident I can answer that cleanly yet. Narrow it to one lane, for example: resident count, new leads, or who needs attention.",
     sources,
     toolsUsed,
     tokensIn: totalTokensIn,
     tokensOut: totalTokensOut,
     model,
     kbSearchMiss: kbSearchUsed && sources.length === 0,
+    clarification_needed: null,
     deterministic: false,
     answer_mode: "agentic",
     provenance: route
@@ -3408,6 +3288,9 @@ Deno.serve(async (req) => {
               model: result.model,
               tools_used: result.toolsUsed,
               iterations: result.toolsUsed.length,
+              clarification_needed: result.clarification_needed ?? null,
+              answer_mode: result.answer_mode ?? null,
+              provenance: result.provenance ?? null,
             }),
             tokens_in: result.tokensIn,
             tokens_out: result.tokensOut,
@@ -3425,6 +3308,9 @@ Deno.serve(async (req) => {
               model: result.model,
               tools_used: result.toolsUsed,
               iterations: result.toolsUsed.length,
+              clarification_needed: result.clarification_needed ?? null,
+              answer_mode: result.answer_mode ?? null,
+              provenance: result.provenance ?? null,
             },
             tokens_in: result.tokensIn,
             tokens_out: result.tokensOut,

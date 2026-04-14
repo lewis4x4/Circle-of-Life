@@ -776,15 +776,10 @@ export function GraceBar() {
                 onClick={() => {
                   knowledgeCancel();
                   cancelGraceSpeech();
-                  // Add visual feedback for button click
-                  const btn = document.querySelector(
-                    '[aria-label="Stop response"]'
-                  ) as HTMLButtonElement;
-                  if (btn) btn.style.transform = "scale(0.95)";
-                  setTimeout(() => (btn.style.transform = ""), 150);
+                  closeBar();
                 }}
-                title="Stop response"
-                aria-label="Stop response"
+                title="Close Grace"
+                aria-label="Close Grace"
               >
                 <X className="size-4" />
               </Button>

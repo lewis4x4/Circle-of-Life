@@ -26,6 +26,7 @@
     "demo:web-health": "node scripts/demo/web-health.mjs",
     "demo:pilot-readiness": "node scripts/demo/pilot-readiness.mjs",
     "demo:auth-smoke:real": "node scripts/demo/authenticated-smoke.mjs",
+    "grace:evals": "tsx scripts/grace-safe-mode-evals.ts",
     "demo:seed": "node scripts/demo/seed-demo-data.mjs",
     "demo:reset": "node scripts/demo/reset-demo-data.mjs",
     "demo:reseed": "npm run demo:reset && npm run demo:seed"
