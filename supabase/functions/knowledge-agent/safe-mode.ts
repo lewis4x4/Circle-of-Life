@@ -85,6 +85,14 @@ export function isResidentAttentionQuestion(question: string): boolean {
     "who needs attention",
     "care alerts",
     "open tasks",
+    "alerts and tasks",
+    "needs review",
+    "need eyes on",
+    "needs eyes on",
+    "high risk residents",
+    "residents at risk",
+    "follow up list",
+    "follow up due",
     "follow up",
     "follow ups",
     "followup",
@@ -98,9 +106,15 @@ export function isCensusQuestion(question: string): boolean {
     "how many residents",
     "how many total residents",
     "resident count",
+    "live census",
+    "current census",
     "daily census",
     "census",
     "occupancy",
+    "open beds",
+    "beds open",
+    "vacancy",
+    "vacancies",
     "available beds",
     "licensed beds",
   ]);
@@ -130,8 +144,11 @@ export function isReferralPipelineQuestion(question: string): boolean {
   return includesAny(q, [
     "lead",
     "leads",
+    "prospect",
+    "prospects",
     "referral",
     "pipeline",
+    "crm",
     "inquiry",
     "inquiries",
   ]);
@@ -174,11 +191,11 @@ function questionNeedsCountClarification(question: string): boolean {
 
 function findUnsupportedLane(question: string): UnsupportedLane | null {
   const q = normalizeText(getGraceUserQuestion(question));
-  if (includesAny(q, ["document vault", "upload forms", "upload documents", "facility documents", "knowledge base admin", "knowledge admin", "house all documents", "store all documents"])) return "knowledge_admin";
-  if (includesAny(q, ["automatically process", "workflow automation", "chain reaction", "what happens automatically", "what gets created", "who gets notified", "what workflow starts"])) return "workflow_automation";
+  if (includesAny(q, ["document vault", "upload forms", "upload documents", "facility documents", "knowledge base admin", "knowledge admin", "house all documents", "store all documents", "forms library", "document library", "keep all our files", "keep all our forms", "one place for documents", "one place for files"])) return "knowledge_admin";
+  if (includesAny(q, ["automatically process", "workflow automation", "chain reaction", "what happens automatically", "what gets created", "who gets notified", "what workflow starts", "auto create tasks", "create tasks automatically", "auto created tasks", "get auto created", "escalate automatically"])) return "workflow_automation";
   if (includesAny(q, ["ahca", "brookdale", "regulatory pitch", "clean sweeps", "zero citations", "regulator", "survey intrusions"])) return "regulatory_story";
-  if (includesAny(q, ["who is on shift", "whos on shift", "staffing gap", "staffing gaps", "who is working", "current staff"])) return "staffing_lookup";
-  if (includesAny(q, ["family contact", "emergency contact", "responsible party", "who should i call", "contact for a resident"])) return "resident_contacts";
+  if (includesAny(q, ["who is on shift", "whos on shift", "staffing gap", "staffing gaps", "coverage gap", "coverage gaps", "who is working", "current staff"])) return "staffing_lookup";
+  if (includesAny(q, ["family contact", "emergency contact", "responsible party", "who should i call", "contact for a resident", "poa", "power of attorney", "next of kin"])) return "resident_contacts";
   if (includesAny(q, ["quickbooks", "qb", "accounting sync", "billing integration"])) return "integration";
   if (includesAny(q, ["marketing", "campaign", "social media", "facebook lead", "ad lead", "paid ads"])) return "marketing";
   if (includesAny(q, ["waitlist", "turned away", "turn away", "archive list", "capacity planning", "build a new facility"])) return "waitlist_planning";
@@ -192,7 +209,7 @@ function findUnsupportedLane(question: string): UnsupportedLane | null {
   if (includesAny(q, ["transport", "trip", "ride", "mileage", "driver"])) return "transport";
   if (includesAny(q, ["diet", "swallow", "iddsi", "texture", "fluid level"])) return "dietary";
   if (includesAny(q, ["review reply", "reputation", "google review", "yelp"])) return "reputation";
-  if (includesAny(q, ["family portal", "family message", "family communication", "family journal", "care team", "family calendar", "family billing", "family invoices", "what can family see", "what would family see", "family view"])) return "family";
+  if (includesAny(q, ["family portal", "family message", "family communication", "family journal", "care team", "family calendar", "family billing", "family invoices", "what can family see", "what would family see", "family view", "family updates", "family photos", "visit calendar", "payment history"])) return "family";
   if (includesAny(q, ["executive", "benchmark", "portfolio", "risk map", "staffing gaps", "owner visibility", "command center", "cross facility", "across facilities", "enterprise view", "top risks"])) return "executive";
   if (includesAny(q, ["accounts receivable", "ar ", "invoice", "collections", "trial balance", "period close", "journal entry"])) return "finance";
   if (includesAny(q, ["insurance", "claim", "claims", "renewal", "renewals", "coi", "loss run"])) return "insurance";

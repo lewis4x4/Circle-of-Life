@@ -328,6 +328,72 @@ const cases: EvalCase[] = [
     accessibleFacilityNames,
     expected: { kind: "clarify", includes: ["native Haven billing", "QuickBooks sync", "facility billing workflow differences"] },
   },
+  {
+    name: "open beds wording stays in census lane",
+    question: withHeaderFacility("Oakridge ALF", "How many open beds does Oakridge have right now?"),
+    accessibleFacilityNames,
+    expected: { kind: "route", domain: "census" },
+  },
+  {
+    name: "live census wording across all facilities stays in census lane",
+    question: withNoHeaderFacility("What is our live census across all facilities right now?"),
+    accessibleFacilityNames,
+    expected: { kind: "route", domain: "census" },
+  },
+  {
+    name: "prospects wording routes to referral pipeline",
+    question: withHeaderFacility("Homewood Lodge ALF", "Any prospects in the pipeline for Homewood this week?"),
+    accessibleFacilityNames,
+    expected: { kind: "route", domain: "referral_pipeline" },
+  },
+  {
+    name: "crm wording routes to referral pipeline",
+    question: withNoHeaderFacility("Show me the CRM pipeline across all facilities."),
+    accessibleFacilityNames,
+    expected: { kind: "route", domain: "referral_pipeline" },
+  },
+  {
+    name: "needs eyes on wording routes to resident attention",
+    question: withHeaderFacility("Oakridge ALF", "Which residents need eyes on right now at Oakridge?"),
+    accessibleFacilityNames,
+    expected: { kind: "route", domain: "resident_attention" },
+  },
+  {
+    name: "follow up list wording routes to resident attention",
+    question: withHeaderFacility("Homewood Lodge ALF", "Give me the follow-up list for Homewood Lodge."),
+    accessibleFacilityNames,
+    expected: { kind: "route", domain: "resident_attention" },
+  },
+  {
+    name: "files and forms wording gets knowledge clarification",
+    question: withHeaderFacility("Oakridge ALF", "Can Haven keep all our files and forms in one place?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["KB uploads", "facility document vault", "Obsidian doctrine drafts"] },
+  },
+  {
+    name: "auto created tasks wording gets workflow clarification",
+    question: withHeaderFacility("Oakridge ALF", "What tasks get auto-created when a resident falls?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["incident notifications", "follow-up tasks", "document generation"] },
+  },
+  {
+    name: "family updates and visits wording gets family clarification",
+    question: withHeaderFacility("Oakridge ALF", "What would family see for photos, updates, and visits?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["family journal", "care team", "messages"] },
+  },
+  {
+    name: "poa wording gets resident contact clarification",
+    question: withHeaderFacility("Oakridge ALF", "Who is the POA or next of kin for this resident?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["emergency contacts", "responsible parties", "family messages"] },
+  },
+  {
+    name: "coverage gaps wording gets staffing clarification",
+    question: withNoHeaderFacility("Where are our biggest coverage gaps today?"),
+    accessibleFacilityNames,
+    expected: { kind: "clarify", includes: ["who is on shift", "staffing gaps by facility", "certifications expiring"] },
+  },
 ];
 
 function assertCase(evalCase: EvalCase) {
