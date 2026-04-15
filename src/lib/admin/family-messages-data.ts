@@ -12,6 +12,7 @@ export type StaffMessageThread = {
   lastAuthorKind: "family" | "staff";
   unreadHint: boolean;
   messageCount: number;
+  triageItemId: string | null;
   triageStatus: Database["public"]["Enums"]["family_message_triage_status"] | null;
   triageKeywords: string[];
 };
@@ -46,6 +47,7 @@ type ProfileRow = {
 };
 
 type TriageMini = {
+  id: string;
   resident_id: string;
   triage_status: Database["public"]["Enums"]["family_message_triage_status"];
   matched_keywords: string[];
@@ -139,7 +141,7 @@ export async function fetchStaffMessageThreads(
   const { data: triageRows } = residentIds.length > 0
     ? await supabase
         .from("family_message_triage_items")
-        .select("resident_id, triage_status, matched_keywords, updated_at")
+        .select("id, resident_id, triage_status, matched_keywords, updated_at")
         .in("resident_id", residentIds)
         .is("deleted_at", null)
         .order("updated_at", { ascending: false })
@@ -167,6 +169,7 @@ export async function fetchStaffMessageThreads(
       lastAuthorKind: latest.author_kind,
       unreadHint: latest.author_kind === "family",
       messageCount: msgs.length,
+      triageItemId: triage?.id ?? null,
       triageStatus: triage?.triage_status ?? null,
       triageKeywords: triage?.matched_keywords ?? [],
     });

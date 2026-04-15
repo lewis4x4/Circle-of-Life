@@ -28,6 +28,9 @@ export default function StaffFamilyMessagesPage() {
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const [threadFilter, setThreadFilter] = useState<"all" | "triage" | "family_replied">("all");
+  const [threadActionLoading, setThreadActionLoading] = useState<string | null>(null);
+  const [threadActionError, setThreadActionError] = useState<string | null>(null);
+  const [threadActionMessage, setThreadActionMessage] = useState<string | null>(null);
 
   const loadThreads = useCallback(async () => {
     setLoading(true);
@@ -100,6 +103,49 @@ export default function StaffFamilyMessagesPage() {
     }
     return true;
   });
+  const selectedThread = selectedResidentId
+    ? threads.find((thread) => thread.residentId === selectedResidentId) ?? null
+    : null;
+
+  const updateThreadTriageStatus = useCallback(async (
+    triageItemId: string,
+    triageStatus: "in_review" | "resolved" | "false_positive",
+    successMessage: string,
+  ) => {
+    setThreadActionLoading(triageItemId);
+    setThreadActionError(null);
+    setThreadActionMessage(null);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user?.id) {
+        setThreadActionError("You must be signed in to update triage.");
+        return;
+      }
+      const { error } = await supabase
+        .from("family_message_triage_items")
+        .update({
+          triage_status: triageStatus,
+          reviewed_at: triageStatus === "resolved" || triageStatus === "false_positive" ? new Date().toISOString() : null,
+          reviewed_by: triageStatus === "resolved" || triageStatus === "false_positive" ? user.id : null,
+          updated_at: new Date().toISOString(),
+          updated_by: user.id,
+        })
+        .eq("id", triageItemId);
+      if (error) throw error;
+      setThreadActionMessage(successMessage);
+      await loadThreads();
+      if (selectedResidentId) {
+        await openThread(selectedResidentId);
+      }
+    } catch (err) {
+      setThreadActionError(err instanceof Error ? err.message : "Could not update triage.");
+    } finally {
+      setThreadActionLoading(null);
+    }
+  }, [loadThreads, openThread, selectedResidentId]);
 
   if (loading) {
     return (
@@ -145,9 +191,82 @@ export default function StaffFamilyMessagesPage() {
                <h2 className="text-2xl md:text-3xl font-display font-medium tracking-tight text-slate-900 dark:text-white">
                  {residentName}
                </h2>
+               {selectedThread?.triageStatus ? (
+                 <div className="mt-3 flex flex-wrap gap-2">
+                   <span className={cn(
+                     "inline-flex items-center px-3 py-1 rounded-full border shadow-inner text-[10px] font-bold uppercase tracking-widest",
+                     selectedThread.triageStatus === "pending_review"
+                       ? "bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400"
+                       : selectedThread.triageStatus === "in_review"
+                         ? "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400"
+                         : selectedThread.triageStatus === "resolved"
+                           ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-300"
+                           : "bg-slate-500/10 text-slate-600 border-slate-500/20 dark:text-slate-300",
+                   )}>
+                     {selectedThread.triageStatus.replace(/_/g, " ")}
+                   </span>
+                   {selectedThread.triageKeywords.map((keyword) => (
+                     <span
+                       key={keyword}
+                       className="inline-flex items-center px-3 py-1 rounded-full border shadow-inner bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400 text-[10px] font-bold uppercase tracking-widest"
+                     >
+                       {keyword}
+                     </span>
+                   ))}
+                 </div>
+               ) : null}
              </div>
            </div>
         </div>
+
+        {threadActionError ? (
+          <div className="rounded-[1.5rem] border border-rose-500/20 bg-rose-500/5 p-6 text-sm text-rose-700 dark:text-rose-400 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm">
+            <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/30">
+              <span className="font-bold">!</span>
+            </div>
+            {threadActionError}
+          </div>
+        ) : null}
+        {threadActionMessage ? (
+          <div className="rounded-[1.5rem] border border-emerald-500/20 bg-emerald-500/5 p-6 text-sm text-emerald-700 dark:text-emerald-300 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm">
+            <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 border border-emerald-500/30">
+              <span className="font-bold">✓</span>
+            </div>
+            {threadActionMessage}
+          </div>
+        ) : null}
+
+        {selectedThread?.triageItemId ? (
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={threadActionLoading === selectedThread.triageItemId || selectedThread.triageStatus === "in_review"}
+              onClick={() => void updateThreadTriageStatus(selectedThread.triageItemId as string, "in_review", "Thread triage moved to in review.")}
+            >
+              In review
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={threadActionLoading === selectedThread.triageItemId || selectedThread.triageStatus === "resolved"}
+              onClick={() => void updateThreadTriageStatus(selectedThread.triageItemId as string, "resolved", "Thread triage resolved.")}
+            >
+              Resolve
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={threadActionLoading === selectedThread.triageItemId || selectedThread.triageStatus === "false_positive"}
+              onClick={() => void updateThreadTriageStatus(selectedThread.triageItemId as string, "false_positive", "Thread triage marked false positive.")}
+            >
+              False positive
+            </Button>
+          </div>
+        ) : null}
 
         {/* Messages Body */}
         {msgLoading ? (
