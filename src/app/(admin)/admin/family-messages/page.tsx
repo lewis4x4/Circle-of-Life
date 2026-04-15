@@ -27,6 +27,7 @@ export default function StaffFamilyMessagesPage() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [threadFilter, setThreadFilter] = useState<"all" | "triage" | "family_replied">("all");
 
   const loadThreads = useCallback(async () => {
     setLoading(true);
@@ -89,6 +90,16 @@ export default function StaffFamilyMessagesPage() {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
+  const visibleThreads = threads.filter((thread) => {
+    if (threadFilter === "triage") {
+      return thread.triageStatus === "pending_review" || thread.triageStatus === "in_review";
+    }
+    if (threadFilter === "family_replied") {
+      return thread.unreadHint;
+    }
+    return true;
+  });
 
   if (loading) {
     return (
@@ -256,8 +267,34 @@ export default function StaffFamilyMessagesPage() {
             </h3>
           </div>
 
+          <div className="flex flex-wrap items-center gap-2 px-2">
+            {[
+              { key: "all", label: `All (${threads.length})` },
+              { key: "triage", label: `Triage (${threads.filter((t) => t.triageStatus === "pending_review" || t.triageStatus === "in_review").length})` },
+              { key: "family_replied", label: `Family replied (${threads.filter((t) => t.unreadHint).length})` },
+            ].map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => setThreadFilter(option.key as "all" | "triage" | "family_replied")}
+                className={cn(
+                  "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                  threadFilter === option.key
+                    ? "bg-indigo-600 text-white"
+                    : "bg-white/80 text-slate-600 hover:bg-white dark:bg-black/20 dark:text-zinc-300 dark:hover:bg-black/30",
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
           <MotionList className="grid gap-4 sm:grid-cols-2">
-            {threads.map((t) => (
+            {visibleThreads.length === 0 ? (
+              <div className="col-span-full rounded-[2rem] border border-slate-200/60 bg-white/60 p-10 text-center text-sm text-slate-500 shadow-sm dark:border-white/5 dark:bg-white/[0.02] dark:text-zinc-400">
+                No threads match this filter.
+              </div>
+            ) : visibleThreads.map((t) => (
               <MotionItem key={t.residentId}>
                 <div
                   className="group cursor-pointer tap-responsive rounded-[2.5rem] bg-white/60 dark:bg-black/20 border border-slate-200/50 dark:border-white/5 shadow-sm hover:shadow-xl dark:hover:bg-white/[0.03] transition-all duration-300 backdrop-blur-xl p-6 md:p-8"
@@ -279,6 +316,15 @@ export default function StaffFamilyMessagesPage() {
                           Family replied
                         </span>
                       )}
+                      {t.triageStatus === "pending_review" ? (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full border shadow-inner bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400 text-[10px] font-bold uppercase tracking-widest">
+                          Triage pending
+                        </span>
+                      ) : t.triageStatus === "in_review" ? (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full border shadow-inner bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400 text-[10px] font-bold uppercase tracking-widest">
+                          Triage in review
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                   
@@ -289,6 +335,11 @@ export default function StaffFamilyMessagesPage() {
                       </span>
                       {t.lastMessageBody}
                     </p>
+                    {t.triageKeywords.length > 0 ? (
+                      <p className="mt-3 text-[11px] font-mono uppercase tracking-widest text-rose-600 dark:text-rose-400">
+                        {t.triageKeywords.join(", ")}
+                      </p>
+                    ) : null}
                   </div>
                   
                   <div className="mt-5 flex items-center gap-2">

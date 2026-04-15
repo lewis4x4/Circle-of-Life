@@ -8,9 +8,12 @@ export type StaffMessageThread = {
   facilityName: string;
   lastMessageBody: string;
   lastMessageAt: string;
+  lastMessageAtIso: string;
   lastAuthorKind: "family" | "staff";
   unreadHint: boolean;
   messageCount: number;
+  triageStatus: Database["public"]["Enums"]["family_message_triage_status"] | null;
+  triageKeywords: string[];
 };
 
 export type StaffMessageRow = {
@@ -40,6 +43,13 @@ type ResRow = {
 type ProfileRow = {
   id: string;
   full_name: string;
+};
+
+type TriageMini = {
+  resident_id: string;
+  triage_status: Database["public"]["Enums"]["family_message_triage_status"];
+  matched_keywords: string[];
+  updated_at: string;
 };
 
 function residentName(r: ResRow): string {
@@ -126,10 +136,26 @@ export async function fetchStaffMessageThreads(
     grouped.set(m.resident_id, arr);
   }
 
+  const { data: triageRows } = residentIds.length > 0
+    ? await supabase
+        .from("family_message_triage_items")
+        .select("resident_id, triage_status, matched_keywords, updated_at")
+        .in("resident_id", residentIds)
+        .is("deleted_at", null)
+        .order("updated_at", { ascending: false })
+    : { data: [] };
+  const triageByResident = new Map<string, TriageMini>();
+  for (const row of ((triageRows ?? []) as unknown as TriageMini[])) {
+    if (!triageByResident.has(row.resident_id)) {
+      triageByResident.set(row.resident_id, row);
+    }
+  }
+
   const threads: StaffMessageThread[] = [];
   for (const [resId, msgs] of grouped) {
     const latest = msgs[0];
     const res = resMap.get(resId);
+    const triage = triageByResident.get(resId);
     threads.push({
       residentId: resId,
       residentName: res ? residentName(res) : "Unknown Resident",
@@ -137,15 +163,27 @@ export async function fetchStaffMessageThreads(
       facilityName: "Oakridge ALF",
       lastMessageBody: latest.body.length > 120 ? latest.body.slice(0, 120) + "…" : latest.body,
       lastMessageAt: timeAgo(latest.created_at),
+      lastMessageAtIso: latest.created_at,
       lastAuthorKind: latest.author_kind,
       unreadHint: latest.author_kind === "family",
       messageCount: msgs.length,
+      triageStatus: triage?.triage_status ?? null,
+      triageKeywords: triage?.matched_keywords ?? [],
     });
   }
 
+  const triagePriority: Record<string, number> = {
+    pending_review: 0,
+    in_review: 1,
+    resolved: 2,
+    false_positive: 3,
+  };
   threads.sort((a, b) => {
+    const aTriage = a.triageStatus ? (triagePriority[a.triageStatus] ?? 9) : 9;
+    const bTriage = b.triageStatus ? (triagePriority[b.triageStatus] ?? 9) : 9;
+    if (aTriage !== bTriage) return aTriage - bTriage;
     if (a.unreadHint !== b.unreadHint) return a.unreadHint ? -1 : 1;
-    return 0;
+    return new Date(b.lastMessageAtIso).getTime() - new Date(a.lastMessageAtIso).getTime();
   });
 
   return { ok: true, threads };
