@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Users } from "lucide-react";
 
 import {
@@ -86,9 +87,11 @@ const DEFAULT_FILTERS = {
   acuity: "all",
   unit: "all",
   adl: "all",
+  status: "all",
 };
 
 export default function AdminResidentsPage() {
+  const searchParams = useSearchParams();
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<ResidentRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -99,6 +102,7 @@ export default function AdminResidentsPage() {
   const [acuity, setAcuity] = useState(DEFAULT_FILTERS.acuity);
   const [unit, setUnit] = useState(DEFAULT_FILTERS.unit);
   const [adl, setAdl] = useState(DEFAULT_FILTERS.adl);
+  const [status, setStatus] = useState(DEFAULT_FILTERS.status);
 
   const loadResidents = useCallback(async () => {
     setIsLoading(true);
@@ -135,6 +139,28 @@ export default function AdminResidentsPage() {
     void loadResidents();
   }, [loadResidents]);
 
+  useEffect(() => {
+    const requestedSearch = searchParams.get("search") ?? DEFAULT_FILTERS.search;
+    const requestedAcuity = searchParams.get("acuity") ?? DEFAULT_FILTERS.acuity;
+    const requestedUnit = searchParams.get("unit") ?? DEFAULT_FILTERS.unit;
+    const requestedAdl = searchParams.get("adl") ?? DEFAULT_FILTERS.adl;
+    const requestedStatus = searchParams.get("status") ?? DEFAULT_FILTERS.status;
+
+    setSearch(requestedSearch);
+    setAcuity(["all", "1", "2", "3"].includes(requestedAcuity) ? requestedAcuity : DEFAULT_FILTERS.acuity);
+    setUnit(requestedUnit || DEFAULT_FILTERS.unit);
+    setAdl(
+      ["all", "independent", "assisted", "dependent"].includes(requestedAdl)
+        ? requestedAdl
+        : DEFAULT_FILTERS.adl,
+    );
+    setStatus(
+      ["all", "active", "hospital", "loa", "away"].includes(requestedStatus)
+        ? requestedStatus
+        : DEFAULT_FILTERS.status,
+    );
+  }, [searchParams]);
+
   const unitOptions = useMemo(() => {
     const distinctUnits = Array.from(new Set(rows.map((row) => row.unit))).sort((a, b) =>
       a.localeCompare(b),
@@ -154,10 +180,13 @@ export default function AdminResidentsPage() {
       const matchesAcuity = acuity === "all" || String(row.acuity) === acuity;
       const matchesUnit = unit === "all" || row.unit === unit;
       const matchesAdl = adl === "all" || row.adlStatus === adl;
+      const matchesStatus =
+        status === "all" ||
+        (status === "away" ? row.status === "hospital" || row.status === "loa" : row.status === status);
 
-      return matchesSearch && matchesAcuity && matchesUnit && matchesAdl;
+      return matchesSearch && matchesAcuity && matchesUnit && matchesAdl && matchesStatus;
     });
-  }, [rows, search, acuity, unit, adl]);
+  }, [rows, search, acuity, unit, adl, status]);
 
   const listEmptyCopy = useMemo(
     () =>
@@ -267,12 +296,25 @@ export default function AdminResidentsPage() {
               { value: "dependent", label: "Dependent" },
             ],
           },
+          {
+            id: "status",
+            value: status,
+            onChange: setStatus,
+            options: [
+              { value: "all", label: "All Residency Status" },
+              { value: "active", label: "Active" },
+              { value: "hospital", label: "Hospital" },
+              { value: "loa", label: "LOA" },
+              { value: "away", label: "Hospital / LOA" },
+            ],
+          },
         ]}
         onReset={() => {
           setSearch(DEFAULT_FILTERS.search);
           setAcuity(DEFAULT_FILTERS.acuity);
           setUnit(DEFAULT_FILTERS.unit);
           setAdl(DEFAULT_FILTERS.adl);
+          setStatus(DEFAULT_FILTERS.status);
         }}
       />
 

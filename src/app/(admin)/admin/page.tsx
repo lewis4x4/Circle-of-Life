@@ -545,7 +545,7 @@ export default function AdminDashboardPage() {
                 Pipeline & Capacity
              </h3>
              <div className="space-y-4">
-                <Link href="/admin/residents" className="block">
+                <Link href="/admin/residents?status=active" className="block">
                   <div className="flex justify-between items-center bg-white dark:bg-black/40 p-5 rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner transition-colors hover:bg-white dark:hover:bg-black/50">
                     <span className="text-[13px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 flex items-center gap-2">
                        <Users className="w-4 h-4" /> Total Census
@@ -595,7 +595,7 @@ export default function AdminDashboardPage() {
                     </span>
                   </div>
                 </Link>
-                <Link href="/admin/residents" className="block">
+                <Link href="/admin/residents?status=away" className="block">
                   <div className="flex justify-between items-center bg-white dark:bg-black/40 p-5 rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner transition-colors hover:bg-white dark:hover:bg-black/50">
                     <span className="text-[13px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 flex items-center gap-2">
                        <HeartPulse className="w-4 h-4" /> LOA / Hospital
