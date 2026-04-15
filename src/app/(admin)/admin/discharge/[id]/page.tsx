@@ -6,13 +6,14 @@ import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { DischargeHubNav } from "../discharge-hub-nav";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 
 type RowT = Database["public"]["Tables"]["discharge_med_reconciliation"]["Row"] & {
   residents: { first_name: string; last_name: string; discharge_target_date: string | null; hospice_status: string } | null;
@@ -36,10 +37,17 @@ export default function AdminDischargeDetailPage() {
   const id = typeof params.id === "string" ? params.id : "";
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
+  const { user } = useHavenAuth();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [row, setRow] = useState<RowT | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [nurseNotesDraft, setNurseNotesDraft] = useState("");
+  const [pharmacistNotesDraft, setPharmacistNotesDraft] = useState("");
+  const [pharmacistNpiDraft, setPharmacistNpiDraft] = useState("");
 
   const load = useCallback(async () => {
     if (!id) {
@@ -63,7 +71,11 @@ export default function AdminDischargeDetailPage() {
       setError(qErr.message);
       setRow(null);
     } else {
-      setRow(data as RowT | null);
+      const loadedRow = data as RowT | null;
+      setRow(loadedRow);
+      setNurseNotesDraft(loadedRow?.nurse_reconciliation_notes ?? "");
+      setPharmacistNotesDraft(loadedRow?.pharmacist_notes ?? "");
+      setPharmacistNpiDraft(loadedRow?.pharmacist_npi ?? "");
     }
     setLoading(false);
   }, [supabase, id]);
@@ -81,6 +93,33 @@ export default function AdminDischargeDetailPage() {
   const snapshotStr =
     row?.med_snapshot_json != null ? JSON.stringify(row.med_snapshot_json, null, 2) : null;
 
+  async function updateReconciliation(
+    patch: Partial<Database["public"]["Tables"]["discharge_med_reconciliation"]["Update"]>,
+    successMessage: string,
+  ) {
+    if (!row) return;
+    setActionLoading(successMessage);
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const { error: updateError } = await supabase
+        .from("discharge_med_reconciliation")
+        .update({
+          ...patch,
+          updated_at: new Date().toISOString(),
+          updated_by: user?.id ?? null,
+        })
+        .eq("id", row.id);
+      if (updateError) throw updateError;
+      setActionMessage(successMessage);
+      await load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Could not update discharge reconciliation.");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -95,7 +134,7 @@ export default function AdminDischargeDetailPage() {
             Med reconciliation
           </h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-            Read-only Core view; pharmacist attestation edits follow in a later segment.
+            Operational workspace for discharge reconciliation, pharmacist attestation, and transition notes.
           </p>
         </div>
         <Link href="/admin/discharge" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
@@ -122,6 +161,16 @@ export default function AdminDischargeDetailPage() {
         </Card>
       ) : (
         <>
+          {actionError ? (
+            <p className="rounded-lg border border-red-200/80 bg-red-50/50 px-4 py-3 text-sm text-red-950 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-100">
+              {actionError}
+            </p>
+          ) : null}
+          {actionMessage ? (
+            <p className="rounded-lg border border-emerald-200/80 bg-emerald-50/50 px-4 py-3 text-sm text-emerald-950 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-100">
+              {actionMessage}
+            </p>
+          ) : null}
           {wrongFacility ? (
             <p className="rounded-lg border border-amber-200/80 bg-amber-50/50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
               This record belongs to another facility. Switch the facility in the header to align context.
@@ -165,15 +214,79 @@ export default function AdminDischargeDetailPage() {
                 </div>
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Pharmacist NPI</dt>
-                  <dd className="mt-0.5 font-mono text-xs text-slate-900 dark:text-slate-100">{row.pharmacist_npi ?? "—"}</dd>
+                  <dd className="mt-2 space-y-2">
+                    <input
+                      value={pharmacistNpiDraft}
+                      onChange={(event) => setPharmacistNpiDraft(event.target.value)}
+                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={actionLoading === "Pharmacist NPI saved." || pharmacistNpiDraft === (row.pharmacist_npi ?? "")}
+                      onClick={() =>
+                        void updateReconciliation(
+                          { pharmacist_npi: pharmacistNpiDraft.trim() || null },
+                          "Pharmacist NPI saved.",
+                        )
+                      }
+                    >
+                      {actionLoading === "Pharmacist NPI saved." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save NPI"}
+                    </Button>
+                  </dd>
                 </div>
                 <div className="sm:col-span-2">
                   <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Pharmacist notes</dt>
-                  <dd className="mt-0.5 whitespace-pre-wrap text-slate-900 dark:text-slate-100">{row.pharmacist_notes ?? "—"}</dd>
+                  <dd className="mt-2 space-y-3">
+                    <textarea
+                      value={pharmacistNotesDraft}
+                      onChange={(event) => setPharmacistNotesDraft(event.target.value)}
+                      rows={4}
+                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={actionLoading === "Pharmacist notes saved." || pharmacistNotesDraft === (row.pharmacist_notes ?? "")}
+                        onClick={() =>
+                          void updateReconciliation(
+                            { pharmacist_notes: pharmacistNotesDraft.trim() || null },
+                            "Pharmacist notes saved.",
+                          )
+                        }
+                      >
+                        {actionLoading === "Pharmacist notes saved." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save pharmacist notes"}
+                      </Button>
+                    </div>
+                  </dd>
                 </div>
                 <div className="sm:col-span-2">
                   <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Nurse reconciliation notes</dt>
-                  <dd className="mt-0.5 whitespace-pre-wrap text-slate-900 dark:text-slate-100">{row.nurse_reconciliation_notes ?? "—"}</dd>
+                  <dd className="mt-2 space-y-3">
+                    <textarea
+                      value={nurseNotesDraft}
+                      onChange={(event) => setNurseNotesDraft(event.target.value)}
+                      rows={4}
+                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={actionLoading === "Nurse reconciliation notes saved." || nurseNotesDraft === (row.nurse_reconciliation_notes ?? "")}
+                        onClick={() =>
+                          void updateReconciliation(
+                            { nurse_reconciliation_notes: nurseNotesDraft.trim() || null },
+                            "Nurse reconciliation notes saved.",
+                          )
+                        }
+                      >
+                        {actionLoading === "Nurse reconciliation notes saved." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save nurse notes"}
+                      </Button>
+                    </div>
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Updated</dt>
@@ -195,6 +308,48 @@ export default function AdminDischargeDetailPage() {
               ) : (
                 <p className="text-sm text-slate-600 dark:text-slate-300">No snapshot stored.</p>
               )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-slate-200/80 shadow-soft dark:border-slate-800">
+            <CardHeader>
+              <CardTitle className="font-display text-lg">Workflow actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={row.status === "draft" || !!actionLoading}
+                  onClick={() => void updateReconciliation({ status: "draft" }, "Reconciliation moved to draft.")}
+                >
+                  {actionLoading === "Reconciliation moved to draft." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Move to draft"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={row.status === "pharmacist_review" || !!actionLoading}
+                  onClick={() => void updateReconciliation({ status: "pharmacist_review" }, "Reconciliation moved to pharmacist review.")}
+                >
+                  {actionLoading === "Reconciliation moved to pharmacist review." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Move to pharmacist review"}
+                </Button>
+                <Button
+                  type="button"
+                  disabled={row.status === "complete" || !!actionLoading}
+                  onClick={() =>
+                    void updateReconciliation(
+                      {
+                        status: "complete",
+                        pharmacist_reviewed_at: row.pharmacist_reviewed_at ?? new Date().toISOString(),
+                        pharmacist_reviewed_by: row.pharmacist_reviewed_by ?? user?.id ?? null,
+                      },
+                      "Reconciliation marked complete.",
+                    )
+                  }
+                >
+                  {actionLoading === "Reconciliation marked complete." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Mark complete"}
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
