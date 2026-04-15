@@ -148,6 +148,11 @@ export default function AdminIncidentsKanbanPage() {
               {rows.reduce((sum, row) => sum + row.overdueFollowups, 0)} Overdue follow-ups
             </Badge>
           </Link>
+          <Link href="/admin/incidents/followups">
+            <Badge variant="outline" className="h-8 px-3 border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 cursor-pointer">
+              {rows.reduce((sum, row) => sum + row.openFollowups, 0)} Open follow-ups
+            </Badge>
+          </Link>
           <Link href="/admin/incidents/overdue-followups">
             <Badge variant="outline" className="h-8 px-3 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 cursor-pointer">
               {rows.reduce((sum, row) => sum + row.unassignedFollowups, 0)} Unassigned follow-ups

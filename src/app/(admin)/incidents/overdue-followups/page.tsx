@@ -288,6 +288,11 @@ export default function AdminIncidentOverdueFollowupsPage() {
           <ArrowLeft className="h-4 w-4" />
           Incident queue
         </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/admin/incidents/followups" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+            Open all follow-ups
+          </Link>
+        </div>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-slate-900 dark:text-zinc-100">Overdue Follow-ups</h1>
