@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ClipboardList, DoorOpen, ArrowRight } from "lucide-react";
+import { ClipboardList, DoorOpen, ArrowRight, Loader2 } from "lucide-react";
 
 import { DischargeHubNav } from "./discharge-hub-nav";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
@@ -13,6 +13,8 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 
 type RowT = Pick<
   Database["public"]["Tables"]["discharge_med_reconciliation"]["Row"],
@@ -27,6 +29,7 @@ type RowT = Pick<
 };
 
 type DischargePhase = "planning" | "pharmacist_review" | "ready_to_complete" | "complete" | "cancelled";
+type PhaseFilter = "all" | DischargePhase;
 
 function formatStatus(s: string) {
   return s.replace(/_/g, " ");
@@ -96,6 +99,7 @@ function describeDischargePhase(row: RowT): {
 export default function AdminDischargeHubPage() {
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
+  const { user } = useHavenAuth();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [rows, setRows] = useState<RowT[]>([]);
@@ -105,6 +109,10 @@ export default function AdminDischargeHubPage() {
     complete: 0,
     cancelled: 0,
   });
+  const [phaseFilter, setPhaseFilter] = useState<PhaseFilter>("all");
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -159,6 +167,33 @@ export default function AdminDischargeHubPage() {
     void load();
   }, [load]);
 
+  async function updateReconciliation(
+    row: RowT,
+    patch: Partial<Database["public"]["Tables"]["discharge_med_reconciliation"]["Update"]>,
+    successMessage: string,
+  ) {
+    setActionLoading(row.id);
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const { error } = await supabase
+        .from("discharge_med_reconciliation")
+        .update({
+          ...patch,
+          updated_at: new Date().toISOString(),
+          updated_by: user?.id ?? null,
+        })
+        .eq("id", row.id);
+      if (error) throw error;
+      setActionMessage(successMessage);
+      await load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Could not update discharge reconciliation.");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
   const noFacility = !selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId);
   const featuredRows = useMemo(() => {
     const phaseOrder: Record<DischargePhase, number> = {
@@ -169,6 +204,7 @@ export default function AdminDischargeHubPage() {
       cancelled: 4,
     };
     return [...rows]
+      .filter((row) => phaseFilter === "all" || describeDischargePhase(row).phase === phaseFilter)
       .sort((a, b) => {
         const phaseA = describeDischargePhase(a).phase;
         const phaseB = describeDischargePhase(b).phase;
@@ -177,7 +213,7 @@ export default function AdminDischargeHubPage() {
         return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
       })
       .slice(0, 12);
-  }, [rows]);
+  }, [phaseFilter, rows]);
   const planningCount = rows.filter((row) => describeDischargePhase(row).phase === "planning").length;
   const pharmacistActionCount = rows.filter((row) => describeDischargePhase(row).phase === "pharmacist_review").length;
   const readyToCompleteCount = rows.filter((row) => describeDischargePhase(row).phase === "ready_to_complete").length;
@@ -298,6 +334,23 @@ export default function AdminDischargeHubPage() {
         </div>
       ) : null}
 
+      {actionError ? (
+        <div className="rounded-[1.5rem] border border-rose-500/20 bg-rose-500/5 p-6 text-sm text-rose-700 dark:text-rose-400 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm">
+          <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/30">
+            <span className="font-bold">!</span>
+          </div>
+          {actionError}
+        </div>
+      ) : null}
+      {actionMessage ? (
+        <div className="rounded-[1.5rem] border border-emerald-500/20 bg-emerald-500/5 p-6 text-sm text-emerald-700 dark:text-emerald-300 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm">
+          <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 border border-emerald-500/30">
+            <span className="font-bold">✓</span>
+          </div>
+          {actionMessage}
+        </div>
+      ) : null}
+
       {/* ─── CASE ROSTER (GLASS ROWS) ─── */}
       <div className="space-y-6">
         <div className="flex items-center gap-3 border-b border-slate-200/50 dark:border-white/10 pb-4">
@@ -313,6 +366,30 @@ export default function AdminDischargeHubPage() {
 
         <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-2xl backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative">
            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
+           <div className="relative z-10 mb-6 flex flex-wrap items-center gap-2">
+             {([
+               { value: "all", label: `All (${rows.length})` },
+               { value: "planning", label: `Planning (${planningCount})` },
+               { value: "pharmacist_review", label: `Pharmacist (${pharmacistActionCount})` },
+               { value: "ready_to_complete", label: `Ready (${readyToCompleteCount})` },
+               { value: "complete", label: `Complete (${counts.complete})` },
+               { value: "cancelled", label: `Cancelled (${counts.cancelled})` },
+             ] as Array<{ value: PhaseFilter; label: string }>).map((option) => (
+               <button
+                 key={option.value}
+                 type="button"
+                 onClick={() => setPhaseFilter(option.value)}
+                 className={cn(
+                   "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                   phaseFilter === option.value
+                     ? "bg-indigo-600 text-white"
+                     : "bg-white/80 text-slate-600 hover:bg-white dark:bg-black/20 dark:text-zinc-300 dark:hover:bg-black/30",
+                 )}
+               >
+                 {option.label}
+               </button>
+             ))}
+           </div>
 
            <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Resident</div>
@@ -332,6 +409,10 @@ export default function AdminDischargeHubPage() {
              ) : rows.length === 0 ? (
                <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
                  No rows yet. Start with <strong>New med reconciliation</strong>.
+               </div>
+             ) : featuredRows.length === 0 ? (
+               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
+                 No reconciliations match this filter.
                </div>
              ) : (
                 <MotionList className="space-y-4">
@@ -396,6 +477,44 @@ export default function AdminDischargeHubPage() {
                               )}>
                                 {phase.helperText}
                               </span>
+                              <div className="mt-2 flex flex-wrap justify-end gap-2">
+                                {phase.phase === "pharmacist_review" && r.status === "draft" ? (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={actionLoading === r.id}
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      void updateReconciliation(r, { status: "pharmacist_review" }, "Reconciliation moved to pharmacist review.");
+                                    }}
+                                  >
+                                    {actionLoading === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Move to pharmacist review"}
+                                  </Button>
+                                ) : null}
+                                {phase.phase === "ready_to_complete" ? (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={actionLoading === r.id}
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      void updateReconciliation(
+                                        r,
+                                        {
+                                          status: "complete",
+                                          pharmacist_reviewed_at: new Date().toISOString(),
+                                          pharmacist_reviewed_by: user?.id ?? null,
+                                        },
+                                        "Reconciliation marked complete.",
+                                      );
+                                    }}
+                                  >
+                                    {actionLoading === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Mark complete"}
+                                  </Button>
+                                ) : null}
+                              </div>
                             </div>
                           </div>
                         </Link>
