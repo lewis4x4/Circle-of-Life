@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, UserPlus, ArrowLeft } from "lucide-react";
 
@@ -32,6 +32,12 @@ type LeadOption = {
   id: string;
   first_name: string;
   last_name: string;
+  preferred_name: string | null;
+  date_of_birth: string | null;
+  phone: string | null;
+  email: string | null;
+  notes: string | null;
+  status: string;
 };
 
 type BedOption = {
@@ -41,8 +47,10 @@ type BedOption = {
 
 export default function AdminAdmissionsNewPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
+  const preselectedLeadId = searchParams.get("lead")?.trim() ?? "";
 
   // Form state
   const [residentId, setResidentId] = useState("");
@@ -69,6 +77,7 @@ export default function AdminAdmissionsNewPage() {
   const [residents, setResidents] = useState<ResidentOption[]>([]);
   const [leads, setLeads] = useState<LeadOption[]>([]);
   const [beds, setBeds] = useState<BedOption[]>([]);
+  const [prefillApplied, setPrefillApplied] = useState(false);
 
   const loadRefs = useCallback(async () => {
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
@@ -90,7 +99,7 @@ export default function AdminAdmissionsNewPage() {
         .order("last_name"),
       supabase
         .from("referral_leads")
-        .select("id, first_name, last_name")
+        .select("id, first_name, last_name, preferred_name, date_of_birth, phone, email, notes, status")
         .eq("facility_id", selectedFacilityId)
         .is("deleted_at", null)
         .not("status", "in", "(converted,lost,merged)")
@@ -120,6 +129,20 @@ export default function AdminAdmissionsNewPage() {
       setResidentId("");
     }
   }, [isCreatingResident]);
+
+  useEffect(() => {
+    if (!preselectedLeadId || prefillApplied || leads.length === 0) return;
+    const selectedLead = leads.find((lead) => lead.id === preselectedLeadId);
+    if (!selectedLead) return;
+    setReferralLeadId(selectedLead.id);
+    setIsCreatingResident(true);
+    setResidentId("");
+    setNewFirstName(selectedLead.first_name ?? "");
+    setNewLastName(selectedLead.last_name ?? "");
+    setNewDob(selectedLead.date_of_birth ?? "");
+    setNotes((prev) => prev || selectedLead.notes || "");
+    setPrefillApplied(true);
+  }, [leads, preselectedLeadId, prefillApplied]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -255,6 +278,11 @@ export default function AdminAdmissionsNewPage() {
             <p className="text-sm text-amber-800 dark:text-amber-200">Select a facility in the header to continue.</p>
           ) : (
             <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
+              {referralLeadId ? (
+                <div className="rounded-lg border border-indigo-200/80 bg-indigo-50/50 px-4 py-3 text-sm text-indigo-900 dark:border-indigo-900/40 dark:bg-indigo-950/30 dark:text-indigo-100">
+                  Admission will be linked to the selected referral lead and the new resident form has been prefilled where data exists.
+                </div>
+              ) : null}
               {/* Resident Selection Toggle */}
               <div className="space-y-4">
                 <div className="flex items-center gap-4">

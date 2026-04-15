@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 
 import { ReferralsHubNav } from "../referrals-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
@@ -94,9 +94,17 @@ export default function AdminReferralLeadDetailPage() {
             Read-only view of pipeline fields; status edits ship in a follow-up.
           </p>
         </div>
-        <Link href="/admin/referrals" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-          Back to pipeline
-        </Link>
+        <div className="flex items-center gap-2">
+          {lead && !lead.converted_resident_id ? (
+            <Link href={`/admin/admissions/new?lead=${lead.id}`} className={cn(buttonVariants({ size: "sm" }))}>
+              Start admission
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          ) : null}
+          <Link href="/admin/referrals" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+            Back to pipeline
+          </Link>
+        </div>
       </div>
 
       <ReferralsHubNav />
