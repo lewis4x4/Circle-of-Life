@@ -161,6 +161,12 @@ export default function AdminDashboardPage() {
       : workflows.referralsOnboardingHandoffs > 0
         ? "Referral Onboarding"
         : "Referral Handoffs";
+  const referralPrimaryHref =
+    workflows.referralsBlockedHandoffs > 0
+      ? "/admin/referrals/in-admissions?phase=blocked"
+      : workflows.referralsOnboardingHandoffs > 0
+        ? "/admin/referrals/in-admissions?phase=onboarding"
+        : "/admin/referrals/in-admissions?phase=ready";
   const familyPrimaryHref =
     workflows.familyTriagePending > 0 ? "/admin/family-messages" : "/admin/family-portal";
   const familyPrimaryTitle =
@@ -315,7 +321,7 @@ export default function AdminDashboardPage() {
               title={referralPrimaryTitle}
               value={referralPrimaryValue}
               icon={ArrowRightLeft}
-              href="/admin/referrals/in-admissions"
+              href={referralPrimaryHref}
               urgency={workflows.referralsBlockedHandoffs > 0 ? "high" : workflows.referralsInAdmissions > 0 ? "medium" : "normal"}
               subLabel={`${workflows.referralsBlockedHandoffs} blocked · ${workflows.referralsReadyHandoffs} ready · ${workflows.referralsOnboardingHandoffs} onboarding`}
             />
@@ -536,13 +542,13 @@ export default function AdminDashboardPage() {
                     </span>
                   </div>
                 </Link>
-                <Link href="/admin/referrals/in-admissions" className="block">
+                <Link href={referralPrimaryHref} className="block">
                   <div className="flex justify-between items-center bg-white dark:bg-black/40 p-5 rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner transition-colors hover:bg-white dark:hover:bg-black/50">
                     <span className="text-[13px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 flex items-center gap-2">
-                       <ArrowRightLeft className="w-4 h-4" /> Referral Handoffs
+                       <ArrowRightLeft className="w-4 h-4" /> {referralPrimaryTitle}
                     </span>
                     <span className="text-2xl font-display font-medium text-indigo-600 dark:text-indigo-400 tabular-nums">
-                      {workflows.referralsInAdmissions}
+                      {referralPrimaryValue}
                     </span>
                   </div>
                 </Link>

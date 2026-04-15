@@ -365,7 +365,7 @@ function buildWorkflowInbox(input: {
       label: "Referral Handoff",
       message: `${input.referralsBlockedHandoffs} lead${input.referralsBlockedHandoffs === 1 ? "" : "s"} crossed into admissions but are blocked before move-in readiness is complete.`,
       tone: "warning",
-      href: "/admin/referrals/in-admissions",
+      href: "/admin/referrals/in-admissions?phase=blocked",
       ctaLabel: "Clear handoff blockers",
     });
   } else if (input.referralsOnboardingHandoffs > 0) {
@@ -374,7 +374,7 @@ function buildWorkflowInbox(input: {
       label: "Referral Handoff",
       message: `${input.referralsOnboardingHandoffs} lead${input.referralsOnboardingHandoffs === 1 ? "" : "s"} are through move-in and now depend on downstream onboarding work.`,
       tone: "normal",
-      href: "/admin/referrals/in-admissions",
+      href: "/admin/referrals/in-admissions?phase=onboarding",
       ctaLabel: "Track onboarding handoffs",
     });
   } else if (input.referralsReadyHandoffs > 0 || input.referralsInAdmissions > 0) {
@@ -383,7 +383,7 @@ function buildWorkflowInbox(input: {
       label: "Referral Handoff",
       message: `${input.referralsReadyHandoffs} lead${input.referralsReadyHandoffs === 1 ? "" : "s"} are move-in ready inside the admissions bridge out of ${input.referralsInAdmissions} active handoff${input.referralsInAdmissions === 1 ? "" : "s"}.`,
       tone: "normal",
-      href: "/admin/referrals/in-admissions",
+      href: "/admin/referrals/in-admissions?phase=ready",
       ctaLabel: "Track handoffs",
     });
   }

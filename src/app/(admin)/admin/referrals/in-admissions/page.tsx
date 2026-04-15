@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle2, DoorOpen, Home, Loader2, UserPlus } from "lucide-react";
 
@@ -78,10 +79,20 @@ function formatRelative(date: string | null): string {
 export default function AdminReferralsInAdmissionsPage() {
   const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId } = useFacilityStore();
+  const searchParams = useSearchParams();
   const [rows, setRows] = useState<QueueRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [phaseFilter, setPhaseFilter] = useState<PhaseFilter>("all");
+  const requestedPhase = searchParams.get("phase");
+
+  useEffect(() => {
+    if (requestedPhase === "blocked" || requestedPhase === "ready" || requestedPhase === "onboarding" || requestedPhase === "complete") {
+      setPhaseFilter(requestedPhase);
+      return;
+    }
+    setPhaseFilter("all");
+  }, [requestedPhase]);
 
   const load = useCallback(async () => {
     setLoading(true);
