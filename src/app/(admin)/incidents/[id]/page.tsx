@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, ClipboardList, GitBranch, Loader2, MapPin, ShieldAlert, User } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, ClipboardList, GitBranch, Loader2, MapPin, ShieldAlert, User } from "lucide-react";
 
 import {
   AdminEmptyState,
@@ -238,6 +238,7 @@ export default function AdminIncidentDetailPage() {
   const { incident, residentName, reporterName, categoryUi, severityUi, statusUi, rcaInvestigation, followups } =
     detail;
   const openObligations = buildIncidentOpenObligations(incident);
+  const workflowSummary = buildIncidentWorkflowSummary(incident, rcaInvestigation, followups, openObligations);
 
   async function assignFollowupToMe(followupId: string) {
     if (!user) return;
@@ -403,6 +404,56 @@ export default function AdminIncidentDetailPage() {
             {followupActionMessage}
           </div>
         ) : null}
+        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800 lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-display text-lg">
+              {workflowSummary.tone === "clear" ? (
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              ) : (
+                <AlertTriangle className="h-4 w-4 text-amber-600" />
+              )}
+              Workflow Summary
+            </CardTitle>
+            <CardDescription>{workflowSummary.summary}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
+                {workflowSummary.openFollowups} open follow-up{workflowSummary.openFollowups === 1 ? "" : "s"}
+              </Badge>
+              <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
+                {workflowSummary.overdueFollowups} overdue
+              </Badge>
+              <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+                {workflowSummary.unassignedFollowups} unassigned
+              </Badge>
+              <Badge variant="outline" className="border-orange-200 bg-orange-50 text-orange-700">
+                {workflowSummary.escalatedFollowups} escalated
+              </Badge>
+              <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+                RCA {workflowSummary.rcaLabel}
+              </Badge>
+              <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
+                {workflowSummary.openObligations} reporting / notification item{workflowSummary.openObligations === 1 ? "" : "s"}
+              </Badge>
+            </div>
+
+            {workflowSummary.nextActions.length > 0 ? (
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Next actions</p>
+                <ul className="mt-2 list-inside list-disc text-sm text-slate-700 dark:text-slate-300">
+                  {workflowSummary.nextActions.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="text-sm text-emerald-700 dark:text-emerald-300">
+                This incident is operationally clear. Follow-ups, reporting, RCA, and care-plan expectations are in a good state.
+              </p>
+            )}
+          </CardContent>
+        </Card>
         <Card className="border-slate-200/70 shadow-soft dark:border-slate-800">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-display text-lg">
@@ -908,6 +959,76 @@ function buildIncidentOpenObligations(incident: SupabaseIncident): string[] {
   if (incident.ahca_reportable && !incident.ahca_reported) items.push("Complete AHCA reporting.");
   if (incident.insurance_reportable && !incident.insurance_reported) items.push("Report to the insurance carrier.");
   return items;
+}
+
+function buildIncidentWorkflowSummary(
+  incident: SupabaseIncident,
+  rcaInvestigation: RcaInvestigationUi,
+  followups: DetailView["followups"],
+  openObligations: string[],
+) {
+  const openFollowups = followups.filter((item) => !item.isCompleted);
+  const overdueFollowups = openFollowups.filter((item) => item.isOverdue).length;
+  const unassignedFollowups = openFollowups.filter((item) => !item.assignedToId).length;
+  const escalatedFollowups = openFollowups.filter((item) => isFollowupEscalated(item.escalationLevel)).length;
+  const rootCauseExpected =
+    incident.severity === "level_3" ||
+    incident.severity === "level_4" ||
+    followups.some((item) => item.taskType === "root_cause_analysis");
+  const carePlanPending =
+    Boolean(incident.resolved_at) &&
+    !incident.care_plan_updated &&
+    (incident.severity === "level_3" || incident.severity === "level_4" || openFollowups.length > 0);
+
+  const nextActions: string[] = [];
+  if (openObligations.length > 0) {
+    nextActions.push(...openObligations);
+  }
+  if (escalatedFollowups > 0) {
+    nextActions.push("Work the escalated follow-ups before closure or sign-off.");
+  } else if (overdueFollowups > 0) {
+    nextActions.push("Clear overdue follow-ups before the incident can move cleanly toward closure.");
+  }
+  if (unassignedFollowups > 0) {
+    nextActions.push("Assign the remaining unassigned follow-up work.");
+  }
+  if (rootCauseExpected && rcaInvestigation !== "complete") {
+    nextActions.push("Complete the root cause investigation for this incident.");
+  }
+  if (carePlanPending) {
+    nextActions.push("Document the care-plan update before closing the incident loop.");
+  }
+
+  let summary = "No outstanding workflow pressure.";
+  let tone: "clear" | "warning" = "clear";
+  if (openObligations.length > 0) {
+    summary = "Notifications or regulatory reporting are still incomplete.";
+    tone = "warning";
+  } else if (escalatedFollowups > 0) {
+    summary = "Chronically overdue follow-up work is driving the current incident risk.";
+    tone = "warning";
+  } else if (overdueFollowups > 0 || unassignedFollowups > 0) {
+    summary = "Follow-up execution still needs operator attention.";
+    tone = "warning";
+  } else if (rootCauseExpected && rcaInvestigation !== "complete") {
+    summary = "Root cause analysis is the main remaining incident workflow step.";
+    tone = "warning";
+  } else if (carePlanPending) {
+    summary = "Care-plan closure is the last operational step still pending.";
+    tone = "warning";
+  }
+
+  return {
+    summary,
+    tone,
+    openFollowups: openFollowups.length,
+    overdueFollowups,
+    unassignedFollowups,
+    escalatedFollowups,
+    openObligations: openObligations.length,
+    rcaLabel: rcaInvestigation === "complete" ? "complete" : rcaInvestigation === "draft" ? "draft" : "not started",
+    nextActions,
+  };
 }
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
