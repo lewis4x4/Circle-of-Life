@@ -129,6 +129,12 @@ export default function AdminDashboardPage() {
       : incidentLifecycleBacklog > 0
         ? incidentLifecycleBacklog
         : workflows.incidentOverdueFollowups;
+  const doctrinePrimaryHref =
+    workflows.doctrineOverdue > 0 || workflows.doctrineDueSoon > 0
+      ? "/admin/knowledge/admin#doctrine-review-sla"
+      : workflows.doctrineReadyToPublish > 0
+        ? "/admin/knowledge/admin#doctrine-ready-to-publish"
+        : "/admin/knowledge/admin#doctrine-blocked-review";
   const admissionsPrimaryHref =
     workflows.admissionsBlocked > 0
       ? "/admin/admissions/blocked"
@@ -303,7 +309,7 @@ export default function AdminDashboardPage() {
               title="Doctrine Review"
               value={workflows.doctrineOverdue > 0 ? workflows.doctrineOverdue : workflows.doctrineBlockedReview}
               icon={NotebookPen}
-              href="/admin/knowledge/admin"
+              href={doctrinePrimaryHref}
               urgency={workflows.doctrineOverdue > 0 ? "critical" : workflows.doctrineBlockedReview > 0 || workflows.doctrineDueSoon > 0 ? "high" : "normal"}
               subLabel={`${workflows.doctrineBlockedReview} blocked · ${workflows.doctrineReadyToPublish} ready · ${workflows.doctrineDueSoon} due soon`}
             />

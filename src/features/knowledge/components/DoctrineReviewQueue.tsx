@@ -363,7 +363,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
           {actionMessage}
         </div>
       )}
-      <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 space-y-4">
+      <div id="doctrine-blocked-review" className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 space-y-4">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
             { label: "Pending review", value: doctrineMetrics.pendingDocs.length },
@@ -496,7 +496,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
         )}
       </div>
 
-      <div className="rounded-xl border border-emerald-200/70 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-950/20 p-6 space-y-4">
+      <div id="doctrine-ready-to-publish" className="rounded-xl border border-emerald-200/70 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-950/20 p-6 space-y-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
@@ -562,7 +562,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
         )}
       </div>
 
-      <div className="rounded-xl border border-indigo-200/70 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20 p-6 space-y-4">
+      <div id="doctrine-review-sla" className="rounded-xl border border-indigo-200/70 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20 p-6 space-y-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <CalendarClock className="h-5 w-5 text-indigo-600 dark:text-indigo-300" />

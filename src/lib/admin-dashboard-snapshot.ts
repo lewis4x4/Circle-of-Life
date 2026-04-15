@@ -269,7 +269,7 @@ function buildWorkflowInbox(input: {
       label: "Doctrine Review",
       message: `${input.doctrineBlockedReview} document${input.doctrineBlockedReview === 1 ? "" : "s"} are blocked in review out of ${input.doctrinePendingReview} pending.`,
       tone: "warning",
-      href: "/admin/knowledge/admin",
+      href: "/admin/knowledge/admin#doctrine-blocked-review",
       ctaLabel: "Review doctrine",
     });
   }
@@ -280,7 +280,7 @@ function buildWorkflowInbox(input: {
       label: "Doctrine Review",
       message: `${input.doctrineReadyToPublish} document${input.doctrineReadyToPublish === 1 ? "" : "s"} cleared review prerequisites and are ready for publication.`,
       tone: "normal",
-      href: "/admin/knowledge/admin",
+      href: "/admin/knowledge/admin#doctrine-ready-to-publish",
       ctaLabel: "Review ready docs",
     });
   }
@@ -294,7 +294,7 @@ function buildWorkflowInbox(input: {
       label: "Doctrine SLA",
       message: `${parts.join(" · ")} review${input.doctrineOverdue + input.doctrineDueSoon === 1 ? "" : "s"} need attention in the doctrine lane.`,
       tone: input.doctrineOverdue > 0 ? "warning" : "normal",
-      href: "/admin/knowledge/admin",
+      href: "/admin/knowledge/admin#doctrine-review-sla",
       ctaLabel: "Review SLA queue",
     });
   }
