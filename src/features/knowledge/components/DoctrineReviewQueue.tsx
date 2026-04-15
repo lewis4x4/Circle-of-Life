@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarClock, FileWarning, Loader2, NotebookPen, UserRoundX } from "lucide-react";
+import { CalendarClock, CheckCircle2, FileWarning, Loader2, NotebookPen, UserRoundX } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
@@ -98,9 +98,10 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
 
   const doctrineMetrics = useMemo(() => {
     const pendingDocs = documents.filter((doc) => doc.status === "pending_review");
-    const readyToPublish = pendingDocs.filter(
+    const readyDocs = pendingDocs.filter(
       (doc) => !!doc.review_owner && !!doc.review_due_at && draftCreatedIds.has(doc.id),
-    ).length;
+    );
+    const readyToPublish = readyDocs.length;
     const blockedPending = pendingDocs.length - readyToPublish;
     const dueSoon = pendingDocs.filter((doc) => isDueSoon(doc.review_due_at, today)).length;
     const publishedThisWeek = documents.filter((doc) => {
@@ -110,6 +111,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
     }).length;
     return {
       pendingDocs,
+      readyDocs,
       readyToPublish,
       blockedPending,
       dueSoon,
@@ -129,6 +131,43 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
       .filter((item) => item.blockers.length > 0)
       .slice(0, 4);
   }, [doctrineMetrics.pendingDocs, draftCreatedIds]);
+
+  const runPublish = useCallback(async (documentId: string) => {
+    setActionLoading(documentId);
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const result = await adminUpdateDocument(documentId, { status: "published" });
+      if (!result.ok) throw new Error(result.error);
+      setActionMessage("Document published to Grace.");
+      await onRefresh();
+      await loadAudit();
+    } catch (publishError) {
+      setActionError(publishError instanceof Error ? publishError.message : "Could not publish document.");
+    } finally {
+      setActionLoading(null);
+    }
+  }, [loadAudit, onRefresh]);
+
+  const runPublishBulk = useCallback(async (documentIds: string[]) => {
+    if (documentIds.length === 0) return;
+    setActionLoading(`bulk-publish:${documentIds.length}`);
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      for (const documentId of documentIds) {
+        const result = await adminUpdateDocument(documentId, { status: "published" });
+        if (!result.ok) throw new Error(result.error);
+      }
+      setActionMessage(`Published ${documentIds.length} document${documentIds.length === 1 ? "" : "s"} to Grace.`);
+      await onRefresh();
+      await loadAudit();
+    } catch (publishError) {
+      setActionError(publishError instanceof Error ? publishError.message : "Could not publish documents.");
+    } finally {
+      setActionLoading(null);
+    }
+  }, [loadAudit, onRefresh]);
 
   const runCreateDraft = useCallback(async (documentId: string) => {
     setActionLoading(documentId);
@@ -404,6 +443,72 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
                 </div>
               );
             })}
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-emerald-200/70 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-950/20 p-6 space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
+            <div>
+              <h3 className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">Ready to Publish</h3>
+              <p className="text-xs text-emerald-800 dark:text-emerald-200">
+                Pending-review documents that already have an owner, a due date, and an Obsidian draft.
+              </p>
+            </div>
+          </div>
+          {doctrineMetrics.readyDocs.length > 1 ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={actionLoading === `bulk-publish:${doctrineMetrics.readyDocs.length}`}
+              onClick={() => void runPublishBulk(doctrineMetrics.readyDocs.map((doc) => doc.id))}
+            >
+              {actionLoading === `bulk-publish:${doctrineMetrics.readyDocs.length}`
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                : "Publish all ready"}
+            </Button>
+          ) : null}
+        </div>
+
+        {doctrineMetrics.readyDocs.length === 0 ? (
+          <div className="text-xs text-emerald-800 dark:text-emerald-200">Nothing is ready for publication right now.</div>
+        ) : (
+          <div className="space-y-2">
+            {doctrineMetrics.readyDocs.slice(0, 6).map((doc) => (
+              <div key={doc.id} className="rounded-lg border border-emerald-200/70 dark:border-emerald-900/30 bg-white/80 dark:bg-black/20 p-3 space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-medium text-slate-900 dark:text-zinc-100">{doc.title}</div>
+                    <div className="text-[11px] text-slate-500 dark:text-zinc-400">{dueDateLabel(doc.review_due_at)}</div>
+                  </div>
+                  <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Ready</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={actionLoading === doc.id}
+                    onClick={() => void runPublish(doc.id)}
+                  >
+                    {actionLoading === doc.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Publish now"}
+                  </Button>
+                  <Link
+                    href={`/admin/knowledge/admin/review/${doc.id}`}
+                    className="rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors"
+                  >
+                    Review
+                  </Link>
+                </div>
+              </div>
+            ))}
+            {doctrineMetrics.readyDocs.length > 6 ? (
+              <div className="text-[11px] text-emerald-800 dark:text-emerald-200">
+                {doctrineMetrics.readyDocs.length - 6} more ready document{doctrineMetrics.readyDocs.length - 6 === 1 ? "" : "s"} in this queue.
+              </div>
+            ) : null}
           </div>
         )}
       </div>
