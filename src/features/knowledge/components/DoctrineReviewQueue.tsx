@@ -112,6 +112,35 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
     }
   }, [loadAudit, onRefresh]);
 
+  const runCreateDraftBulk = useCallback(async (documentIds: string[]) => {
+    if (documentIds.length === 0) return;
+    setActionLoading(`bulk-draft:${documentIds.length}`);
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      let created = 0;
+      let skipped = 0;
+      for (const documentId of documentIds) {
+        const result = await createObsidianDraft(documentId);
+        if (!result.ok) throw new Error(result.error);
+        const payload = result.data && typeof result.data === "object" ? (result.data as Record<string, unknown>) : null;
+        if (payload?.skipped === true) skipped += 1;
+        else created += 1;
+      }
+      setActionMessage(
+        skipped > 0
+          ? `Draft pass finished: ${created} created, ${skipped} skipped because the vault was unavailable in this runtime.`
+          : `Created ${created} Obsidian draft${created === 1 ? "" : "s"}.`,
+      );
+      await onRefresh();
+      await loadAudit();
+    } catch (draftError) {
+      setActionError(draftError instanceof Error ? draftError.message : "Could not create drafts.");
+    } finally {
+      setActionLoading(null);
+    }
+  }, [loadAudit, onRefresh]);
+
   const assignToMe = useCallback(async (documentId: string) => {
     if (!user) return;
     setActionLoading(documentId);
@@ -129,6 +158,25 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
     }
   }, [onRefresh, user]);
 
+  const assignToMeBulk = useCallback(async (documentIds: string[]) => {
+    if (!user || documentIds.length === 0) return;
+    setActionLoading(`bulk-assign:${documentIds.length}`);
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      for (const documentId of documentIds) {
+        const result = await adminUpdateDocument(documentId, { review_owner: user.id });
+        if (!result.ok) throw new Error(result.error);
+      }
+      setActionMessage(`Assigned ${documentIds.length} document${documentIds.length === 1 ? "" : "s"} to you.`);
+      await onRefresh();
+    } catch (assignError) {
+      setActionError(assignError instanceof Error ? assignError.message : "Could not assign reviewers.");
+    } finally {
+      setActionLoading(null);
+    }
+  }, [onRefresh, user]);
+
   const sections: Array<{
     key: StuckBucket;
     title: string;
@@ -137,6 +185,8 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
     items: DocumentRow[];
     actionLabel: string;
     action: (documentId: string) => Promise<void>;
+    bulkActionLabel?: string;
+    bulkAction?: (documentIds: string[]) => Promise<void>;
   }> = [
     {
       key: "missing_draft",
@@ -146,6 +196,8 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
       items: buckets.missingDraft,
       actionLabel: "Create draft",
       action: runCreateDraft,
+      bulkActionLabel: "Create all drafts",
+      bulkAction: runCreateDraftBulk,
     },
     {
       key: "missing_reviewer",
@@ -155,6 +207,8 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
       items: buckets.missingReviewer,
       actionLabel: "Assign to me",
       action: assignToMe,
+      bulkActionLabel: "Assign all to me",
+      bulkAction: assignToMeBulk,
     },
     {
       key: "overdue",
@@ -212,6 +266,19 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
                     </div>
                     <div className="text-sm font-semibold text-slate-700 dark:text-zinc-300">{section.items.length}</div>
                   </div>
+                  {section.items.length > 1 && section.bulkAction && section.bulkActionLabel ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={actionLoading === `bulk-${section.key}:${section.items.length}` || actionLoading === `bulk-draft:${section.items.length}` || actionLoading === `bulk-assign:${section.items.length}`}
+                      onClick={() => void section.bulkAction?.(section.items.map((doc) => doc.id))}
+                    >
+                      {actionLoading === `bulk-draft:${section.items.length}` || actionLoading === `bulk-assign:${section.items.length}`
+                        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        : section.bulkActionLabel}
+                    </Button>
+                  ) : null}
                   {section.items.length === 0 ? (
                     <div className="text-xs text-slate-500 dark:text-zinc-400">Nothing stuck here right now.</div>
                   ) : (
