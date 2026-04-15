@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React, { useState } from "react";
 import { FileText, Trash2, RefreshCw, Loader2 } from "lucide-react";
 import type { DocumentRow, DocumentAudience, DocumentStatus } from "../lib/types";
@@ -243,6 +244,12 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
                       >
                         Draft
                       </button>
+                      <Link
+                        href={`/admin/knowledge/admin/review/${doc.id}`}
+                        className="px-2 py-1.5 rounded-lg text-[11px] font-medium text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                      >
+                        Review
+                      </Link>
                       <button
                         type="button"
                         onClick={() => void handleDelete(doc.id)}
