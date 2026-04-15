@@ -202,6 +202,70 @@ export default function AdminIncidentFollowupsPage() {
     return true;
   });
 
+  const assigneePressure = Array.from(
+    rows.reduce((map, row) => {
+      const key = row.assignedToId ?? "unassigned";
+      const current = map.get(key) ?? {
+        label: row.unassigned ? "Unassigned" : row.assignee,
+        count: 0,
+      };
+      current.count += 1;
+      map.set(key, current);
+      return map;
+    }, new Map<string, { label: string; count: number }>()),
+  )
+    .map(([, value]) => value)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  const assignAllUnassignedToMe = useCallback(async () => {
+    if (!user) return;
+    const unassignedIds = rows.filter((row) => row.unassigned).map((row) => row.id);
+    if (unassignedIds.length === 0) return;
+    setActionLoading("bulk-assign");
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const { error: updateError } = await supabase
+        .from("incident_followups")
+        .update({ assigned_to: user.id, updated_at: new Date().toISOString() })
+        .in("id", unassignedIds);
+      if (updateError) throw updateError;
+      setActionMessage(`Assigned ${unassignedIds.length} follow-up${unassignedIds.length === 1 ? "" : "s"} to you.`);
+      await load();
+    } catch (assignError) {
+      setActionError(assignError instanceof Error ? assignError.message : "Could not bulk-assign follow-ups.");
+    } finally {
+      setActionLoading(null);
+    }
+  }, [load, rows, supabase, user]);
+
+  const completeAllAssignedToMe = useCallback(async () => {
+    if (!user) return;
+    const myIds = rows.filter((row) => row.assignedToId === user.id).map((row) => row.id);
+    if (myIds.length === 0) return;
+    setActionLoading("bulk-complete");
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const { error: updateError } = await supabase
+        .from("incident_followups")
+        .update({
+          completed_at: new Date().toISOString(),
+          completed_by: user.id,
+          updated_at: new Date().toISOString(),
+        })
+        .in("id", myIds);
+      if (updateError) throw updateError;
+      setActionMessage(`Marked ${myIds.length} follow-up${myIds.length === 1 ? "" : "s"} complete.`);
+      await load();
+    } catch (completeError) {
+      setActionError(completeError instanceof Error ? completeError.message : "Could not bulk-complete follow-ups.");
+    } finally {
+      setActionLoading(null);
+    }
+  }, [load, rows, supabase, user]);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="space-y-2">
@@ -238,6 +302,17 @@ export default function AdminIncidentFollowupsPage() {
         />
       ) : (
         <div className="space-y-4">
+          <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Backlog by owner</span>
+              {assigneePressure.map((item) => (
+                <Badge key={item.label} variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
+                  {item.label}: {item.count}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
           <div className="flex flex-wrap items-center gap-2">
             {[
               { key: "all", label: `All (${counts.all})` },
@@ -260,6 +335,23 @@ export default function AdminIncidentFollowupsPage() {
                 {option.label}
               </button>
             ))}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={actionLoading === "bulk-assign" || counts.unassigned === 0}
+              onClick={() => void assignAllUnassignedToMe()}
+            >
+              {actionLoading === "bulk-assign" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><UserPlus className="mr-2 h-3.5 w-3.5" />Assign all unassigned to me</>}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              disabled={actionLoading === "bulk-complete" || counts.assignedToMe === 0}
+              onClick={() => void completeAllAssignedToMe()}
+            >
+              {actionLoading === "bulk-complete" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><CheckCircle2 className="mr-2 h-3.5 w-3.5" />Complete all assigned to me</>}
+            </Button>
           </div>
 
           <div className="grid gap-4">
