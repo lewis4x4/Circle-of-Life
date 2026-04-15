@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Heart, MessageCircle, Info, Calendar, FileCheck2 } from "lucide-react";
 
@@ -65,22 +65,19 @@ export default function AdminFamilyPortalPage() {
           )
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
-          .order("updated_at", { ascending: false })
-          .limit(25),
+          .order("updated_at", { ascending: false }),
         supabase
           .from("family_care_conference_sessions")
           .select("id, status, scheduled_start, scheduled_end, recording_consent, external_room_id, residents(first_name, last_name)")
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
-          .order("scheduled_start", { ascending: false })
-          .limit(25),
+          .order("scheduled_start", { ascending: false }),
         supabase
           .from("family_consent_records")
           .select("id, consent_type, document_version, signed_at, family_user_id, residents(first_name, last_name)")
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
-          .order("signed_at", { ascending: false })
-          .limit(25),
+          .order("signed_at", { ascending: false }),
       ]);
 
       if (tRes.error) throw tRes.error;
@@ -161,6 +158,21 @@ export default function AdminFamilyPortalPage() {
   }
 
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
+  const featuredTriage = useMemo(() => {
+    return [...triage]
+      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+      .slice(0, 12);
+  }, [triage]);
+  const featuredConferences = useMemo(() => {
+    return [...conferences]
+      .sort((a, b) => new Date(a.scheduled_start ?? 0).getTime() - new Date(b.scheduled_start ?? 0).getTime())
+      .slice(0, 12);
+  }, [conferences]);
+  const featuredConsents = useMemo(() => {
+    return [...consents]
+      .sort((a, b) => new Date(b.signed_at ?? 0).getTime() - new Date(a.signed_at ?? 0).getTime())
+      .slice(0, 12);
+  }, [consents]);
 
   return (
     <div className="mx-auto max-w-6xl space-y-10 pb-12 w-full">
@@ -260,7 +272,7 @@ export default function AdminFamilyPortalPage() {
                </div>
              ) : (
                 <MotionList className="space-y-4">
-                  {triage.map((row) => (
+                  {featuredTriage.map((row) => (
                     <MotionItem key={row.id}>
                       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_2fr_3fr_1fr] gap-4 items-center p-6 rounded-[1.8rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-rose-200 dark:hover:border-rose-500/30 transition-all duration-300 w-full cursor-pointer outline-none hover:shadow-lg dark:hover:bg-white/[0.05]">
                         <div className="flex items-center gap-4">
@@ -373,7 +385,7 @@ export default function AdminFamilyPortalPage() {
                </div>
              ) : (
                 <MotionList className="space-y-4">
-                  {conferences.map((row) => (
+                  {featuredConferences.map((row) => (
                     <MotionItem key={row.id}>
                       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1.5fr_1fr_1fr_1fr] gap-4 items-center p-6 rounded-[1.8rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-lg dark:hover:bg-white/[0.05] transition-all duration-300 w-full group">
                         <div className="flex items-center gap-4">
@@ -507,7 +519,7 @@ export default function AdminFamilyPortalPage() {
                </div>
              ) : (
                 <MotionList className="space-y-4">
-                  {consents.map((row) => (
+                  {featuredConsents.map((row) => (
                     <MotionItem key={row.id}>
                       <div className="grid grid-cols-1 lg:grid-cols-[2fr_2fr_1fr_1fr] gap-4 items-center p-6 rounded-[1.8rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-lg dark:hover:bg-white/[0.05] transition-all duration-300 w-full group">
                         <div className="flex items-center gap-4">
