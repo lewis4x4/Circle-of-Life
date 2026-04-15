@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { Award, ChevronRight, Download } from "lucide-react";
 
@@ -122,6 +123,7 @@ function buildCertificationsCsv(rows: StaffCertExportRow[]): string {
 const DEFAULT_FILTERS = { search: "", timeline: "all", dbStatus: "all" };
 
 export default function AdminCertificationsPage() {
+  const searchParams = useSearchParams();
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<CertRow[]>([]);
@@ -148,6 +150,24 @@ export default function AdminCertificationsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    const requestedSearch = searchParams.get("search") ?? DEFAULT_FILTERS.search;
+    const requestedTimeline = searchParams.get("timeline") ?? DEFAULT_FILTERS.timeline;
+    const requestedDbStatus = searchParams.get("dbStatus") ?? DEFAULT_FILTERS.dbStatus;
+
+    setSearch(requestedSearch);
+    setTimeline(
+      ["all", "current", "expiring_soon", "expired"].includes(requestedTimeline)
+        ? requestedTimeline
+        : DEFAULT_FILTERS.timeline,
+    );
+    setDbStatus(
+      ["all", "active", "pending_renewal", "expired", "revoked"].includes(requestedDbStatus)
+        ? requestedDbStatus
+        : DEFAULT_FILTERS.dbStatus,
+    );
+  }, [searchParams]);
 
   const filteredRows = useMemo(() => {
     const q = search.trim().toLowerCase();

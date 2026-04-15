@@ -309,7 +309,7 @@ export default function AdminDashboardPage() {
             title="Compliance Risks" 
             value={complianceAlerts} 
             icon={FileWarning}
-            href="/admin/certifications"
+            href="/admin/certifications?timeline=expiring_soon"
             urgency={complianceAlerts > 0 ? "high" : "normal"} 
             subLabel="Certifications expiring (30d)"
           />
