@@ -309,7 +309,7 @@ export default function AdminDashboardPage() {
             <div className="w-px h-6 bg-slate-200 dark:bg-white/10 mx-2" />
             <div className="flex flex-col items-start leading-tight">
                <span className="opacity-60 text-[10px] uppercase tracking-widest">Zone</span>
-               <span>America/New_York</span>
+               <span>{snapshot.timezoneLabel}</span>
             </div>
           </div>
         </div>
