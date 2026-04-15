@@ -401,12 +401,36 @@ export default function AdminDashboardPage() {
                     {snapshot.licensedBeds ? `${snapshot.residentCount} / ${snapshot.licensedBeds}` : snapshot.residentCount}
                   </span>
                 </div>
-                <div className="flex justify-between items-center bg-white dark:bg-black/40 p-5 rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner">
-                  <span className="text-[13px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 flex items-center gap-2">
-                     <DoorOpen className="w-4 h-4" /> Pending Move-Ins
-                  </span>
-                  <span className="text-2xl font-display font-medium text-indigo-600 dark:text-indigo-400 tabular-nums">3</span>
-                </div>
+                <Link href="/admin/admissions/blocked" className="block">
+                  <div className="flex justify-between items-center bg-white dark:bg-black/40 p-5 rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner transition-colors hover:bg-white dark:hover:bg-black/50">
+                    <span className="text-[13px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 flex items-center gap-2">
+                       <DoorOpen className="w-4 h-4" /> Blocked Admissions
+                    </span>
+                    <span className="text-2xl font-display font-medium text-amber-600 dark:text-amber-400 tabular-nums">
+                      {workflows.admissionsBlocked}
+                    </span>
+                  </div>
+                </Link>
+                <Link href="/admin/admissions/move-in-ready" className="block">
+                  <div className="flex justify-between items-center bg-white dark:bg-black/40 p-5 rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner transition-colors hover:bg-white dark:hover:bg-black/50">
+                    <span className="text-[13px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 flex items-center gap-2">
+                       <CheckCircle2 className="w-4 h-4" /> Move-In Ready
+                    </span>
+                    <span className="text-2xl font-display font-medium text-indigo-600 dark:text-indigo-400 tabular-nums">
+                      {workflows.admissionsMoveInReady}
+                    </span>
+                  </div>
+                </Link>
+                <Link href="/admin/admissions/onboarding" className="block">
+                  <div className="flex justify-between items-center bg-white dark:bg-black/40 p-5 rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner transition-colors hover:bg-white dark:hover:bg-black/50">
+                    <span className="text-[13px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 flex items-center gap-2">
+                       <HeartPulse className="w-4 h-4" /> Onboarding Pending
+                    </span>
+                    <span className="text-2xl font-display font-medium text-rose-600 dark:text-rose-400 tabular-nums">
+                      {workflows.admissionsOnboardingPending}
+                    </span>
+                  </div>
+                </Link>
                 <div className="flex justify-between items-center bg-white dark:bg-black/40 p-5 rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner">
                   <span className="text-[13px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 flex items-center gap-2">
                      <HeartPulse className="w-4 h-4" /> LOA / Hospital
