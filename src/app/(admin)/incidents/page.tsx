@@ -189,6 +189,14 @@ export default function AdminIncidentsKanbanPage() {
             : severityFilter === "all"
               ? "/admin/incidents/followups"
               : `/admin/incidents/followups?severity=${severityFilter}`;
+  const level4BadgeHref =
+    severityFilter === "level_4"
+      ? scopeFilter === "all"
+        ? "/admin/incidents"
+        : `/admin/incidents?scope=${scopeFilter}`
+      : scopeFilter === "all"
+        ? "/admin/incidents?severity=level_4&scope=active"
+        : `/admin/incidents?severity=level_4&scope=${scopeFilter}`;
 
   return (
     <div className="relative flex flex-col h-[calc(100vh-6rem)] space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-6">
@@ -204,7 +212,7 @@ export default function AdminIncidentsKanbanPage() {
            </h2>
         </div>
         <div className="flex items-center gap-2">
-          <Link href={severityFilter === "level_4" ? "/admin/incidents" : "/admin/incidents?severity=level_4&scope=active"}>
+          <Link href={level4BadgeHref}>
             <Badge variant="outline" className="h-8 px-3 border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 cursor-pointer">
               {rows.filter(r => r.severity === "level_4" && r.status !== "closed").length} Level-4 Exceptions
             </Badge>
