@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, Loader2, MessageCircle, Send, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import {
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 export default function StaffFamilyMessagesPage() {
+  const searchParams = useSearchParams();
   const [threads, setThreads] = useState<StaffMessageThread[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +33,15 @@ export default function StaffFamilyMessagesPage() {
   const [threadActionLoading, setThreadActionLoading] = useState<string | null>(null);
   const [threadActionError, setThreadActionError] = useState<string | null>(null);
   const [threadActionMessage, setThreadActionMessage] = useState<string | null>(null);
+  const requestedFilter = searchParams.get("filter");
+
+  useEffect(() => {
+    if (requestedFilter === "triage" || requestedFilter === "family_replied") {
+      setThreadFilter(requestedFilter);
+      return;
+    }
+    setThreadFilter("all");
+  }, [requestedFilter]);
 
   const loadThreads = useCallback(async () => {
     setLoading(true);
