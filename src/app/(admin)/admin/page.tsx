@@ -299,7 +299,7 @@ export default function AdminDashboardPage() {
             title="Med Exceptions" 
             value={medExceptions} 
             icon={Pill}
-            href="/admin/medications/errors"
+            href="/admin/medications/errors?review=unreviewed"
             urgency={medExceptions > 0 ? "medium" : "normal"} 
             subLabel="Unreviewed medication errors"
           />

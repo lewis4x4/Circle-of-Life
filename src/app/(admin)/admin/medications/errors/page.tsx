@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { AdminTableLoadingState } from "@/components/common/admin-list-patterns";
@@ -21,12 +22,16 @@ type Row = {
   reviewed_at: string | null;
 };
 
+type ReviewFilter = "all" | "unreviewed" | "reviewed";
+
 export default function AdminMedicationErrorsPage() {
+  const searchParams = useSearchParams();
   const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId } = useFacilityStore();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
+  const [reviewFilter, setReviewFilter] = useState<ReviewFilter>("all");
   const [totals, setTotals] = useState<{ n: number; bySeverity: Record<string, number> }>({
     n: 0,
     bySeverity: {},
@@ -71,6 +76,31 @@ export default function AdminMedicationErrorsPage() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    const requestedFilter = searchParams.get("review");
+    if (requestedFilter === "reviewed" || requestedFilter === "unreviewed") {
+      setReviewFilter(requestedFilter);
+      return;
+    }
+    setReviewFilter("all");
+  }, [searchParams]);
+
+  const visibleRows = useMemo(() => {
+    return rows.filter((row) => {
+      if (reviewFilter === "unreviewed") return !row.reviewed_at;
+      if (reviewFilter === "reviewed") return Boolean(row.reviewed_at);
+      return true;
+    });
+  }, [reviewFilter, rows]);
+
+  const visibleTotals = useMemo(() => {
+    const bySeverity: Record<string, number> = {};
+    for (const row of visibleRows) {
+      bySeverity[row.severity] = (bySeverity[row.severity] ?? 0) + 1;
+    }
+    return { n: visibleRows.length, bySeverity };
+  }, [visibleRows]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
@@ -100,28 +130,52 @@ export default function AdminMedicationErrorsPage() {
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950">
           <p className="text-xs font-medium uppercase text-slate-500">In view</p>
-          <p className="font-display text-2xl font-semibold">{totals.n}</p>
+          <p className="font-display text-2xl font-semibold">{visibleTotals.n}</p>
         </div>
         <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:col-span-2">
           <p className="text-xs font-medium uppercase text-slate-500">By severity in view</p>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            {Object.entries(totals.bySeverity).length === 0
+            {Object.entries(visibleTotals.bySeverity).length === 0
               ? "—"
-              : Object.entries(totals.bySeverity)
+              : Object.entries(visibleTotals.bySeverity)
                   .map(([k, v]) => `${k}: ${v}`)
                   .join(" · ")}
           </p>
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center gap-2">
+        {([
+          { value: "all", label: `All (${rows.length})` },
+          { value: "unreviewed", label: `Unreviewed (${rows.filter((row) => !row.reviewed_at).length})` },
+          { value: "reviewed", label: `Reviewed (${rows.filter((row) => !!row.reviewed_at).length})` },
+        ] as Array<{ value: ReviewFilter; label: string }>).map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => setReviewFilter(option.value)}
+            className={cn(
+              "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+              reviewFilter === option.value
+                ? "bg-rose-600 text-white"
+                : "bg-white/80 text-slate-600 hover:bg-white dark:bg-black/20 dark:text-zinc-300 dark:hover:bg-black/30",
+            )}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+
       {error ? <p className="text-sm text-amber-700 dark:text-amber-300">{error}</p> : null}
 
       {loading ? (
         <AdminTableLoadingState />
-      ) : rows.length === 0 ? (
+      ) : visibleRows.length === 0 ? (
         <div className="rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] p-16 text-center backdrop-blur-3xl shadow-sm">
           <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">No Errors Found</p>
-          <p className="text-sm font-medium text-slate-500 dark:text-zinc-500 mt-1">There are no medication errors logged for this facility.</p>
+          <p className="text-sm font-medium text-slate-500 dark:text-zinc-500 mt-1">
+            {rows.length === 0 ? "There are no medication errors logged for this facility." : "No medication errors match this review filter."}
+          </p>
         </div>
       ) : (
         <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] p-6 md:p-8 shadow-sm backdrop-blur-3xl relative overflow-hidden">
@@ -136,7 +190,7 @@ export default function AdminMedicationErrorsPage() {
 
           <div className="relative z-10 space-y-4 mt-6">
             <MotionList className="space-y-4">
-              {rows.map((r) => (
+              {visibleRows.map((r) => (
                 <MotionItem key={r.id}>
                   <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-4 items-center p-6 rounded-[1.8rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-rose-200 dark:hover:border-rose-500/30 hover:shadow-lg dark:hover:bg-white/[0.05] transition-all duration-300 w-full outline-none">
                     
