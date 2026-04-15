@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, Clock, ShieldAlert, Pill, FileWarning, CheckCircle2, UserCog, HeartPulse, Activity, Zap, Users, DoorOpen, NotebookPen, ClipboardList, type LucideIcon } from "lucide-react";
+import { AlertCircle, Clock, ShieldAlert, Pill, FileWarning, CheckCircle2, UserCog, HeartPulse, Activity, Zap, Users, DoorOpen, NotebookPen, ClipboardList, ArrowRightLeft, type LucideIcon } from "lucide-react";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminDashboardSnapshot, type AdminDashboardSnapshot } from "@/lib/admin-dashboard-snapshot";
@@ -115,6 +115,7 @@ export default function AdminDashboardPage() {
   const workflows = snapshot.workflowQueues;
   const totalActionable =
     workflows.doctrineBlockedReview +
+    workflows.doctrineReadyToPublish +
     workflows.incidentOverdueFollowups +
     workflows.incidentUnassignedFollowups +
     workflows.admissionsBlocked +
@@ -204,7 +205,7 @@ export default function AdminDashboardPage() {
             <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">Cross-lane backlog state across doctrine, incidents, and admissions.</p>
           </div>
         </div>
-        <MotionList className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <MotionList className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MotionItem>
             <TriageMetricCard
               title="Doctrine Review"
@@ -212,7 +213,7 @@ export default function AdminDashboardPage() {
               icon={NotebookPen}
               href="/admin/knowledge/admin"
               urgency={workflows.doctrineBlockedReview > 0 ? "high" : "normal"}
-              subLabel={`${workflows.doctrinePendingReview} pending review`}
+              subLabel={`${workflows.doctrinePendingReview} pending · ${workflows.doctrineReadyToPublish} ready`}
             />
           </MotionItem>
           <MotionItem>
@@ -233,6 +234,16 @@ export default function AdminDashboardPage() {
               href="/admin/admissions/blocked"
               urgency={workflows.admissionsBlocked > 0 ? "high" : workflows.admissionsOnboardingPending > 0 ? "medium" : "normal"}
               subLabel={`${workflows.admissionsMoveInReady} ready · ${workflows.admissionsOnboardingPending} onboarding`}
+            />
+          </MotionItem>
+          <MotionItem>
+            <TriageMetricCard
+              title="Referral Handoffs"
+              value={workflows.referralsInAdmissions}
+              icon={ArrowRightLeft}
+              href="/admin/referrals/in-admissions"
+              urgency={workflows.referralsInAdmissions > 0 ? "medium" : "normal"}
+              subLabel="Leads already in admissions"
             />
           </MotionItem>
         </MotionList>
@@ -428,6 +439,16 @@ export default function AdminDashboardPage() {
                     </span>
                     <span className="text-2xl font-display font-medium text-rose-600 dark:text-rose-400 tabular-nums">
                       {workflows.admissionsOnboardingPending}
+                    </span>
+                  </div>
+                </Link>
+                <Link href="/admin/referrals/in-admissions" className="block">
+                  <div className="flex justify-between items-center bg-white dark:bg-black/40 p-5 rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner transition-colors hover:bg-white dark:hover:bg-black/50">
+                    <span className="text-[13px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 flex items-center gap-2">
+                       <ArrowRightLeft className="w-4 h-4" /> Referral Handoffs
+                    </span>
+                    <span className="text-2xl font-display font-medium text-indigo-600 dark:text-indigo-400 tabular-nums">
+                      {workflows.referralsInAdmissions}
                     </span>
                   </div>
                 </Link>

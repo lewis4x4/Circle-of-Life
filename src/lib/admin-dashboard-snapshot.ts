@@ -44,11 +44,13 @@ export type AdminDashboardSnapshot = {
   workflowQueues: {
     doctrinePendingReview: number;
     doctrineBlockedReview: number;
+    doctrineReadyToPublish: number;
     incidentOverdueFollowups: number;
     incidentUnassignedFollowups: number;
     admissionsBlocked: number;
     admissionsMoveInReady: number;
     admissionsOnboardingPending: number;
+    referralsInAdmissions: number;
   };
   workflowInbox: WorkflowInboxItem[];
   censusPreview: DashboardCensusRow[];
@@ -102,6 +104,7 @@ type SupabaseDoctrineDocMini = {
 type SupabaseAdmissionMini = {
   id: string;
   resident_id: string;
+  referral_lead_id: string | null;
   status: string;
   target_move_in_date: string | null;
   financial_clearance_at: string | null;
@@ -164,11 +167,13 @@ function formatIncidentCategory(raw: string): string {
 function buildWorkflowInbox(input: {
   doctrineBlockedReview: number;
   doctrinePendingReview: number;
+  doctrineReadyToPublish: number;
   incidentOverdueFollowups: number;
   incidentUnassignedFollowups: number;
   admissionsBlocked: number;
   admissionsMoveInReady: number;
   admissionsOnboardingPending: number;
+  referralsInAdmissions: number;
 }): WorkflowInboxItem[] {
   const items: WorkflowInboxItem[] = [];
 
@@ -180,6 +185,17 @@ function buildWorkflowInbox(input: {
       tone: "warning",
       href: "/admin/knowledge/admin",
       ctaLabel: "Review doctrine",
+    });
+  }
+
+  if (input.doctrineReadyToPublish > 0) {
+    items.push({
+      id: "doctrine-ready",
+      label: "Doctrine Review",
+      message: `${input.doctrineReadyToPublish} document${input.doctrineReadyToPublish === 1 ? "" : "s"} cleared review prerequisites and are ready for publication.`,
+      tone: "normal",
+      href: "/admin/knowledge/admin",
+      ctaLabel: "Review ready docs",
     });
   }
 
@@ -225,6 +241,17 @@ function buildWorkflowInbox(input: {
       tone: "normal",
       href: "/admin/admissions/move-in-ready",
       ctaLabel: "Review ready cases",
+    });
+  }
+
+  if (input.referralsInAdmissions > 0) {
+    items.push({
+      id: "referral-handoff",
+      label: "Referral Handoff",
+      message: `${input.referralsInAdmissions} lead${input.referralsInAdmissions === 1 ? "" : "s"} already crossed into admissions and need handoff visibility.`,
+      tone: "normal",
+      href: "/admin/referrals/in-admissions",
+      ctaLabel: "Track handoffs",
     });
   }
 
@@ -322,7 +349,7 @@ export async function fetchAdminDashboardSnapshot(
 
   let admissionsQueueQuery = supabase
     .from("admission_cases" as never)
-    .select("id, resident_id, status, target_move_in_date, financial_clearance_at, physician_orders_received_at, bed_id")
+    .select("id, resident_id, referral_lead_id, status, target_move_in_date, financial_clearance_at, physician_orders_received_at, bed_id")
     .is("deleted_at", null)
     .not("status", "eq", "cancelled");
 
@@ -414,6 +441,7 @@ export async function fetchAdminDashboardSnapshot(
   const doctrineBlockedReview = pendingDoctrineDocs.filter(
     (doc) => !doc.review_owner || !doc.review_due_at || !draftCreatedIds.has(doc.id),
   ).length;
+  const doctrineReadyToPublish = pendingDoctrineDocs.length - doctrineBlockedReview;
 
   const admissionQueueRows = admissionsQueueRes.data ?? [];
   const admissionsBlocked = admissionQueueRows.filter((row) => {
@@ -422,6 +450,7 @@ export async function fetchAdminDashboardSnapshot(
   const admissionsMoveInReady = admissionQueueRows.filter((row) => {
     return Boolean(row.financial_clearance_at && row.physician_orders_received_at && row.bed_id && row.target_move_in_date);
   }).length;
+  const referralsInAdmissions = admissionQueueRows.filter((row) => Boolean(row.referral_lead_id)).length;
 
   const moveInResidentIds = admissionQueueRows
     .filter((row) => row.status === "move_in")
@@ -454,20 +483,24 @@ export async function fetchAdminDashboardSnapshot(
     workflowQueues: {
       doctrinePendingReview: pendingDoctrineDocs.length,
       doctrineBlockedReview,
+      doctrineReadyToPublish,
       incidentOverdueFollowups: incidentOverdueFollowupsRes.count ?? 0,
       incidentUnassignedFollowups: incidentUnassignedFollowupsRes.count ?? 0,
       admissionsBlocked,
       admissionsMoveInReady,
       admissionsOnboardingPending,
+      referralsInAdmissions,
     },
     workflowInbox: buildWorkflowInbox({
       doctrinePendingReview: pendingDoctrineDocs.length,
       doctrineBlockedReview,
+      doctrineReadyToPublish,
       incidentOverdueFollowups: incidentOverdueFollowupsRes.count ?? 0,
       incidentUnassignedFollowups: incidentUnassignedFollowupsRes.count ?? 0,
       admissionsBlocked,
       admissionsMoveInReady,
       admissionsOnboardingPending,
+      referralsInAdmissions,
     }),
     censusPreview,
     activity,
