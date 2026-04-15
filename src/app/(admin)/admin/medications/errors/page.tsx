@@ -165,6 +165,16 @@ export default function AdminMedicationErrorsPage() {
           </button>
         ))}
       </div>
+      {reviewFilter !== "all" ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
+            Review filter: {reviewFilter}
+          </Badge>
+          <Link href="/admin/medications/errors" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
+            Clear filter
+          </Link>
+        </div>
+      ) : null}
 
       {error ? <p className="text-sm text-amber-700 dark:text-amber-300">{error}</p> : null}
 
