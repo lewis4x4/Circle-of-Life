@@ -24,6 +24,7 @@ import { buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligatio
 type IncidentSeverity = "level_1" | "level_2" | "level_3" | "level_4";
 type IncidentStatus = "new" | "investigating" | "regulatory_review" | "closed";
 type IncidentCategory = "fall" | "medication_error" | "behavioral" | "elopement" | "other";
+type BoardScope = "all" | "active";
 
 type IncidentRow = {
   id: string;
@@ -121,6 +122,7 @@ export default function AdminIncidentsKanbanPage() {
   }
 
   const requestedSeverity = searchParams.get("severity");
+  const requestedScope = searchParams.get("scope");
   const severityFilter =
     requestedSeverity === "level_1" ||
     requestedSeverity === "level_2" ||
@@ -128,8 +130,12 @@ export default function AdminIncidentsKanbanPage() {
     requestedSeverity === "level_4"
       ? requestedSeverity
       : "all";
-  const visibleRows =
-    severityFilter === "all" ? rows : rows.filter((row) => row.severity === severityFilter);
+  const scopeFilter: BoardScope = requestedScope === "active" ? "active" : "all";
+  const visibleRows = rows.filter((row) => {
+    const matchesSeverity = severityFilter === "all" || row.severity === severityFilter;
+    const matchesScope = scopeFilter === "all" || row.status !== "closed";
+    return matchesSeverity && matchesScope;
+  });
   const columns: { id: IncidentStatus; label: string; dot: string }[] = [
     { id: "new", label: "New (Triage)", dot: "bg-rose-500" },
     { id: "investigating", label: "Investigating", dot: "bg-amber-500" },
@@ -217,13 +223,20 @@ export default function AdminIncidentsKanbanPage() {
           </Link>
         </div>
       </header>
-      {severityFilter !== "all" ? (
+      {severityFilter !== "all" || scopeFilter !== "all" ? (
         <div className="relative z-10 flex items-center gap-2 px-1">
-          <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
-            Severity filter: {severityFilter.replace("level_", "L")}
-          </Badge>
+          {scopeFilter !== "all" ? (
+            <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+              Scope: active only
+            </Badge>
+          ) : null}
+          {severityFilter !== "all" ? (
+            <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
+              Severity filter: {severityFilter.replace("level_", "L")}
+            </Badge>
+          ) : null}
           <Link href="/admin/incidents" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
-            Clear filter
+            Clear filters
           </Link>
         </div>
       ) : null}
