@@ -279,7 +279,7 @@ export default function AdminDashboardPage() {
             title="Open Incidents" 
             value={openIncidents} 
             icon={ShieldAlert}
-            href="/admin/incidents?scope=active"
+            href="/admin/incidents?scope=open"
             urgency={openIncidents > 0 ? "critical" : "normal"} 
             subLabel={openIncidents > 0 ? "Pending investigation" : "All clear"}
           />

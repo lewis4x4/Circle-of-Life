@@ -24,7 +24,7 @@ import { buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligatio
 type IncidentSeverity = "level_1" | "level_2" | "level_3" | "level_4";
 type IncidentStatus = "new" | "investigating" | "regulatory_review" | "closed";
 type IncidentCategory = "fall" | "medication_error" | "behavioral" | "elopement" | "other";
-type BoardScope = "all" | "active";
+type BoardScope = "all" | "active" | "open";
 
 type IncidentRow = {
   id: string;
@@ -130,10 +130,13 @@ export default function AdminIncidentsKanbanPage() {
     requestedSeverity === "level_4"
       ? requestedSeverity
       : "all";
-  const scopeFilter: BoardScope = requestedScope === "active" ? "active" : "all";
+  const scopeFilter: BoardScope =
+    requestedScope === "active" || requestedScope === "open" ? requestedScope : "all";
   const visibleRows = rows.filter((row) => {
     const matchesSeverity = severityFilter === "all" || row.severity === severityFilter;
-    const matchesScope = scopeFilter === "all" || row.status !== "closed";
+    const matchesScope =
+      scopeFilter === "all" ||
+      (scopeFilter === "active" ? row.status !== "closed" : row.status === "new" || row.status === "investigating");
     return matchesSeverity && matchesScope;
   });
   const columns: { id: IncidentStatus; label: string; dot: string }[] = [
@@ -227,7 +230,7 @@ export default function AdminIncidentsKanbanPage() {
         <div className="relative z-10 flex items-center gap-2 px-1">
           {scopeFilter !== "all" ? (
             <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
-              Scope: active only
+              Scope: {scopeFilter === "open" ? "open only" : "active only"}
             </Badge>
           ) : null}
           {severityFilter !== "all" ? (
