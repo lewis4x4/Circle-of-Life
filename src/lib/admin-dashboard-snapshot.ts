@@ -41,6 +41,9 @@ export type AdminDashboardSnapshot = {
   licensedBeds: number | null;
   activeStaffCount: number;
   openIncidentAlerts: number;
+  staffingGapSnapshots24h: number;
+  medicationErrorsUnreviewed: number;
+  expiringCertifications30d: number;
   workflowQueues: {
     doctrinePendingReview: number;
     doctrineBlockedReview: number;
@@ -388,8 +391,37 @@ export async function fetchAdminDashboardSnapshot(
     .is("deleted_at", null)
     .in("status", ["open", "investigating"]);
 
+  let staffingGapSnapshotsQuery = supabase
+    .from("staffing_ratio_snapshots" as never)
+    .select("id", { count: "exact", head: true })
+    .eq("is_compliant", false)
+    .gte("snapshot_at", new Date(Date.now() - 24 * 3_600_000).toISOString());
+
+  let medicationErrorsQuery = supabase
+    .from("medication_errors" as never)
+    .select("id", { count: "exact", head: true })
+    .is("deleted_at", null)
+    .is("reviewed_at", null);
+
+  const todayDate = new Date();
+  const todayIso = todayDate.toISOString().slice(0, 10);
+  const in30Date = new Date(todayDate);
+  in30Date.setUTCDate(in30Date.getUTCDate() + 30);
+  const in30Iso = in30Date.toISOString().slice(0, 10);
+  let expiringCertificationsQuery = supabase
+    .from("staff_certifications" as never)
+    .select("id", { count: "exact", head: true })
+    .is("deleted_at", null)
+    .eq("status", "active")
+    .not("expiration_date", "is", null)
+    .gte("expiration_date", todayIso)
+    .lte("expiration_date", in30Iso);
+
   if (isValidFacilityIdForQuery(selectedFacilityId)) {
     incidentsCountQuery = incidentsCountQuery.eq("facility_id", selectedFacilityId);
+    staffingGapSnapshotsQuery = staffingGapSnapshotsQuery.eq("facility_id", selectedFacilityId);
+    medicationErrorsQuery = medicationErrorsQuery.eq("facility_id", selectedFacilityId);
+    expiringCertificationsQuery = expiringCertificationsQuery.eq("facility_id", selectedFacilityId);
   }
 
   let residentsPreviewQuery = supabase
@@ -475,6 +507,9 @@ export async function fetchAdminDashboardSnapshot(
     residentsCountRes,
     staffCountRes,
     incidentsCountRes,
+    staffingGapSnapshotsRes,
+    medicationErrorsRes,
+    expiringCertificationsRes,
     residentsPreviewResult,
     incidentsFeedResult,
     doctrinePendingResult,
@@ -489,6 +524,9 @@ export async function fetchAdminDashboardSnapshot(
     residentsCountQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
     staffCountQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
     incidentsCountQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
+    staffingGapSnapshotsQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
+    medicationErrorsQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
+    expiringCertificationsQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
     residentsPreviewQuery as unknown as Promise<QueryResult<SupabaseResidentRow[]>>,
     incidentsFeedQuery as unknown as Promise<QueryResult<SupabaseIncidentFeedRow[]>>,
     doctrinePendingQuery as unknown as Promise<QueryResult<SupabaseDoctrineDocMini[]>>,
@@ -505,6 +543,9 @@ export async function fetchAdminDashboardSnapshot(
     residentsCountRes.error && { table: "residents", ...residentsCountRes.error },
     staffCountRes.error && { table: "staff", ...staffCountRes.error },
     incidentsCountRes.error && { table: "incidents", ...incidentsCountRes.error },
+    staffingGapSnapshotsRes.error && { table: "staffing_ratio_snapshots", ...staffingGapSnapshotsRes.error },
+    medicationErrorsRes.error && { table: "medication_errors", ...medicationErrorsRes.error },
+    expiringCertificationsRes.error && { table: "staff_certifications", ...expiringCertificationsRes.error },
     residentsPreviewResult.error && { table: "residents_preview", ...residentsPreviewResult.error },
     incidentsFeedResult.error && { table: "incidents_feed", ...incidentsFeedResult.error },
     doctrinePendingResult.error && { table: "documents_pending_review", ...doctrinePendingResult.error },
@@ -542,6 +583,9 @@ export async function fetchAdminDashboardSnapshot(
   const residentCount = residentsCountRes.count ?? 0;
   const activeStaffCount = staffCountRes.count ?? 0;
   const openIncidentAlerts = incidentsCountRes.count ?? 0;
+  const staffingGapSnapshots24h = staffingGapSnapshotsRes.count ?? 0;
+  const medicationErrorsUnreviewed = medicationErrorsRes.count ?? 0;
+  const expiringCertifications30d = expiringCertificationsRes.count ?? 0;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -647,6 +691,9 @@ export async function fetchAdminDashboardSnapshot(
     licensedBeds: licensedBedsSum > 0 ? licensedBedsSum : null,
     activeStaffCount,
     openIncidentAlerts,
+    staffingGapSnapshots24h,
+    medicationErrorsUnreviewed,
+    expiringCertifications30d,
     workflowQueues: {
       doctrinePendingReview: pendingDoctrineDocs.length,
       doctrineBlockedReview,

@@ -109,9 +109,9 @@ export default function AdminDashboardPage() {
   }
 
   const openIncidents = snapshot.openIncidentAlerts;
-  const staffingGaps = 2; // Mock logic 
-  const medExceptions = 5; // Mock logic
-  const complianceAlerts = 1; // Mock logic
+  const staffingGaps = snapshot.staffingGapSnapshots24h;
+  const medExceptions = snapshot.medicationErrorsUnreviewed;
+  const complianceAlerts = snapshot.expiringCertifications30d;
   const workflows = snapshot.workflowQueues;
   const totalActionable =
     workflows.doctrineBlockedReview +
@@ -182,7 +182,7 @@ export default function AdminDashboardPage() {
             icon={UserCog}
             href="/admin/staffing"
             urgency={staffingGaps > 0 ? "high" : "normal"} 
-            subLabel="Next 48 hours"
+            subLabel="Non-compliant snapshots (24h)"
           />
         </MotionItem>
         <MotionItem>
@@ -190,9 +190,9 @@ export default function AdminDashboardPage() {
             title="Med Exceptions" 
             value={medExceptions} 
             icon={Pill}
-            href="/admin/medications"
+            href="/admin/medications/errors"
             urgency={medExceptions > 0 ? "medium" : "normal"} 
-            subLabel="Overdue passes"
+            subLabel="Unreviewed medication errors"
           />
         </MotionItem>
         <MotionItem>
@@ -200,9 +200,9 @@ export default function AdminDashboardPage() {
             title="Compliance Risks" 
             value={complianceAlerts} 
             icon={FileWarning}
-            href="/admin/compliance"
+            href="/admin/certifications"
             urgency={complianceAlerts > 0 ? "high" : "normal"} 
-            subLabel="Expiring today"
+            subLabel="Certifications expiring (30d)"
           />
         </MotionItem>
       </MotionList>
