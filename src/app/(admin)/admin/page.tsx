@@ -188,7 +188,9 @@ export default function AdminDashboardPage() {
         ? "/admin/referrals/in-admissions?phase=onboarding"
         : "/admin/referrals/in-admissions?phase=ready";
   const familyPrimaryHref =
-    workflows.familyTriagePending > 0 ? "/admin/family-messages?filter=triage" : "/admin/family-portal";
+    workflows.familyTriagePending > 0
+      ? "/admin/family-messages?filter=triage"
+      : "/admin/family-portal?conference=scheduled#care-conferences";
   const familyPrimaryTitle =
     workflows.familyTriagePending > 0 ? "Family Triage" : "Care Conferences";
   const familyPrimaryValue =

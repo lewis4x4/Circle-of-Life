@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Heart, MessageCircle, Info, Calendar, FileCheck2 } from "lucide-react";
@@ -37,6 +38,7 @@ function formatStatus(s: string) {
 
 export default function AdminFamilyPortalPage() {
   const supabase = createClient();
+  const searchParams = useSearchParams();
   const { selectedFacilityId } = useFacilityStore();
   const { user } = useHavenAuth();
   const [loading, setLoading] = useState(true);
@@ -49,6 +51,33 @@ export default function AdminFamilyPortalPage() {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [triageFilter, setTriageFilter] = useState<TriageFilter>("all");
   const [conferenceFilter, setConferenceFilter] = useState<ConferenceFilter>("all");
+  const requestedTriageFilter = searchParams.get("triage");
+  const requestedConferenceFilter = searchParams.get("conference");
+
+  useEffect(() => {
+    if (
+      requestedTriageFilter === "pending_review" ||
+      requestedTriageFilter === "in_review" ||
+      requestedTriageFilter === "resolved" ||
+      requestedTriageFilter === "false_positive"
+    ) {
+      setTriageFilter(requestedTriageFilter);
+      return;
+    }
+    setTriageFilter("all");
+  }, [requestedTriageFilter]);
+
+  useEffect(() => {
+    if (
+      requestedConferenceFilter === "scheduled" ||
+      requestedConferenceFilter === "completed" ||
+      requestedConferenceFilter === "cancelled"
+    ) {
+      setConferenceFilter(requestedConferenceFilter);
+      return;
+    }
+    setConferenceFilter("all");
+  }, [requestedConferenceFilter]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -277,7 +306,7 @@ export default function AdminFamilyPortalPage() {
       )}
 
       {/* ─── MESSAGE TRIAGE ─── */}
-      <div className="space-y-6">
+      <div id="message-triage" className="space-y-6">
         <div className="flex items-center gap-3 border-b border-slate-200/50 dark:border-white/10 pb-4 px-2">
           <Heart className="h-5 w-5 text-rose-500" />
           <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white tracking-tight">
@@ -420,7 +449,7 @@ export default function AdminFamilyPortalPage() {
       </div>
 
       {/* ─── CARE CONFERENCES ─── */}
-      <div className="space-y-6">
+      <div id="care-conferences" className="space-y-6">
         <div className="flex items-center gap-3 border-b border-slate-200/50 dark:border-white/10 pb-4 px-2 tracking-tight">
           <Calendar className="h-5 w-5 text-indigo-500" />
           <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white">
