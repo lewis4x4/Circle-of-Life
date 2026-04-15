@@ -419,10 +419,10 @@ export default function AdminReferralsHubPage() {
             </p>
           </div>
           <Link
-            href="/admin/admissions"
+            href="/admin/referrals/in-admissions"
             className={cn(buttonVariants({ variant: "outline" }), "shrink-0 shadow-sm rounded-full bg-white dark:bg-black/50 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/5 w-full sm:w-auto px-6 tap-responsive font-bold uppercase tracking-widest text-xs")}
           >
-            Review Admissions
+            Open Handoff Queue
           </Link>
         </div>
       ) : null}
