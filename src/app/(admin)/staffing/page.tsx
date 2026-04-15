@@ -251,6 +251,16 @@ export default function AdminStaffingConsolePage() {
           ) : null}
         </div>
       </header>
+      {complianceFilter !== "all" ? (
+        <div className="relative z-10 flex items-center gap-2 pl-1">
+          <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
+            Compliance filter: {complianceFilter === "non_compliant" ? "non-compliant only" : "compliant only"}
+          </Badge>
+          <Link href="/admin/staffing" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
+            Clear filter
+          </Link>
+        </div>
+      ) : null}
 
       {/* Exception Metrics (Top Grid) */}
       <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4 relative z-10 mb-8" staggerMs={75}>
