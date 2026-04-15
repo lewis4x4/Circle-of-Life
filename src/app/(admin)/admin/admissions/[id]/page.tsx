@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, CalendarDays, FileText, Loader2, UserPlus } from "lucide-react";
 
 import { AdmissionsHubNav } from "../admissions-hub-nav";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
@@ -14,6 +14,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 
 type CaseDetail = Database["public"]["Tables"]["admission_cases"]["Row"] & {
   residents: { first_name: string; last_name: string } | null;
@@ -72,11 +73,16 @@ export default function AdminAdmissionCaseDetailPage() {
   const id = typeof params.id === "string" ? params.id : "";
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
+  const { user } = useHavenAuth();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [row, setRow] = useState<CaseDetail | null>(null);
   const [rateTerms, setRateTerms] = useState<Database["public"]["Tables"]["admission_case_rate_terms"]["Row"][]>([]);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [targetMoveInDraft, setTargetMoveInDraft] = useState("");
 
   const load = useCallback(async () => {
     if (!id) {
@@ -105,6 +111,7 @@ export default function AdminAdmissionCaseDetailPage() {
     } else {
       setRow(c as CaseDetail | null);
       setRateTerms((rt ?? []) as Database["public"]["Tables"]["admission_case_rate_terms"]["Row"][]);
+      setTargetMoveInDraft((c as CaseDetail | null)?.target_move_in_date ?? "");
     }
     setLoading(false);
   }, [supabase, id]);
@@ -118,6 +125,34 @@ export default function AdminAdmissionCaseDetailPage() {
     selectedFacilityId &&
     isValidFacilityIdForQuery(selectedFacilityId) &&
     row.facility_id !== selectedFacilityId;
+
+  async function updateCase(patch: Partial<Database["public"]["Tables"]["admission_cases"]["Update"]>, successMessage: string) {
+    if (!row) return;
+    setActionLoading(successMessage);
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const { error: updateError } = await supabase
+        .from("admission_cases")
+        .update({
+          ...patch,
+          updated_at: new Date().toISOString(),
+          updated_by: user?.id ?? null,
+        })
+        .eq("id", row.id);
+      if (updateError) throw updateError;
+      setActionMessage(successMessage);
+      await load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Could not update admission case.");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  const readiness = row ? admissionReadinessChecklist(row, rateTerms) : [];
+  const canReserveBed = Boolean(row?.financial_clearance_at && row?.physician_orders_received_at && row?.bed_id);
+  const canAdvanceMoveIn = Boolean(canReserveBed && row?.target_move_in_date && rateTerms.length > 0);
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -166,6 +201,16 @@ export default function AdminAdmissionCaseDetailPage() {
           </div>
         ) : (
           <>
+            {actionError ? (
+              <div className="p-6 rounded-[2.5rem] bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 font-medium text-sm">
+                {actionError}
+              </div>
+            ) : null}
+            {actionMessage ? (
+              <div className="p-6 rounded-[2.5rem] bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-medium text-sm">
+                {actionMessage}
+              </div>
+            ) : null}
             {wrongFacility && (
               <div className="p-6 rounded-[2.5rem] bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-500/20 text-amber-700 dark:text-amber-400 font-medium text-sm">
                 This case belongs to another facility. Switch the facility in the header to match.
@@ -229,7 +274,7 @@ export default function AdminAdmissionCaseDetailPage() {
                   <span className="text-[10px] font-mono tracking-widest text-amber-700 dark:text-amber-300 uppercase">Operational checklist</span>
                 </div>
                 <div className="space-y-3">
-                  {admissionReadinessChecklist(row, rateTerms).map((item) => (
+                  {readiness.map((item) => (
                     <div key={item.key} className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/80 dark:bg-black/20 px-4 py-3 flex items-center justify-between gap-3">
                       <span className="text-sm font-medium text-slate-900 dark:text-white">{item.label}</span>
                       <span className={cn(
@@ -255,6 +300,60 @@ export default function AdminAdmissionCaseDetailPage() {
                       <li>Core readiness items are in place. Advance this case through the move-in workflow.</li>
                     ) : null}
                   </ul>
+                </div>
+                <div className="mt-5 rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/80 dark:bg-black/20 p-4 space-y-4">
+                  <p className="text-[10px] font-mono tracking-widest uppercase text-slate-500">Workflow actions</p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={Boolean(row.financial_clearance_at) || !!actionLoading}
+                      onClick={() => void updateCase({ financial_clearance_at: new Date().toISOString(), financial_clearance_by: user?.id ?? null }, "Financial clearance recorded.")}
+                    >
+                      {actionLoading === "Financial clearance recorded." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Mark financial clearance"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={Boolean(row.physician_orders_received_at) || !!actionLoading}
+                      onClick={() => void updateCase({ physician_orders_received_at: new Date().toISOString() }, "Physician orders recorded.")}
+                    >
+                      {actionLoading === "Physician orders recorded." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Mark physician orders received"}
+                    </Button>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                    <input
+                      type="date"
+                      value={targetMoveInDraft}
+                      onChange={(event) => setTargetMoveInDraft(event.target.value)}
+                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={!targetMoveInDraft || targetMoveInDraft === (row.target_move_in_date ?? "") || !!actionLoading}
+                      onClick={() => void updateCase({ target_move_in_date: targetMoveInDraft }, "Target move-in date saved.")}
+                    >
+                      {actionLoading === "Target move-in date saved." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save move-in date"}
+                    </Button>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={!canReserveBed || row.status === "bed_reserved" || row.status === "move_in" || !!actionLoading}
+                      onClick={() => void updateCase({ status: "bed_reserved" }, "Case advanced to bed reserved.")}
+                    >
+                      {actionLoading === "Case advanced to bed reserved." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Advance to bed reserved"}
+                    </Button>
+                    <Button
+                      type="button"
+                      disabled={!canAdvanceMoveIn || row.status === "move_in" || !!actionLoading}
+                      onClick={() => void updateCase({ status: "move_in" }, "Case advanced to move-in.")}
+                    >
+                      {actionLoading === "Case advanced to move-in." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Advance to move-in"}
+                    </Button>
+                  </div>
                 </div>
               </div>
 
