@@ -69,10 +69,36 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: auditError.message }, { status: 500 });
   }
 
+  const userIds = Array.from(
+    new Set(
+      [
+        document.review_owner,
+        document.approved_by,
+        ...(auditRows ?? []).map((row) => row.actor_user_id),
+      ].filter((value): value is string => typeof value === "string" && value.length > 0),
+    ),
+  );
+
+  const { data: profileRows } =
+    userIds.length > 0
+      ? await admin
+          .from("user_profiles")
+          .select("id, full_name, email")
+          .in("id", userIds)
+      : { data: [] };
+
+  const userLabels = Object.fromEntries(
+    ((profileRows ?? []) as Array<{ id: string; full_name: string; email: string }>).map((row) => [
+      row.id,
+      row.full_name || row.email || row.id,
+    ]),
+  );
+
   return NextResponse.json({
     ok: true,
     document,
     auditEvents: auditRows ?? [],
     currentUserId: user.id,
+    userLabels,
   });
 }

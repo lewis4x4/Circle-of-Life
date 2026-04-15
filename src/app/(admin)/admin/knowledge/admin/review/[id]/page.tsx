@@ -38,6 +38,7 @@ type ReviewPayload = {
   document: ReviewDocument;
   auditEvents: DocumentAuditEventRow[];
   currentUserId: string;
+  userLabels?: Record<string, string>;
 };
 
 const AUDIENCE_LABELS: Record<DocumentAudience, string> = {
@@ -88,6 +89,7 @@ export default function KnowledgeDocumentReviewPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [reviewDueAt, setReviewDueAt] = useState("");
+  const [userLabels, setUserLabels] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     if (!documentId) return;
@@ -100,9 +102,11 @@ export default function KnowledgeDocumentReviewPage() {
       setDocument(payload.document);
       setAuditEvents(payload.auditEvents);
       setReviewDueAt(payload.document.review_due_at ? payload.document.review_due_at.slice(0, 10) : "");
+      setUserLabels(payload.userLabels ?? {});
     } catch (loadError) {
       setDocument(null);
       setAuditEvents([]);
+      setUserLabels({});
       setError(loadError instanceof Error ? loadError.message : "Could not load doctrine review.");
     } finally {
       setLoading(false);
@@ -192,7 +196,7 @@ export default function KnowledgeDocumentReviewPage() {
   const currentReviewerLabel = document?.review_owner
     ? user?.id === document.review_owner
       ? "Assigned to you"
-      : document.review_owner
+      : (userLabels[document.review_owner] ?? "Assigned reviewer")
     : "Unassigned";
 
   return (
@@ -358,6 +362,9 @@ export default function KnowledgeDocumentReviewPage() {
                             <div className="text-xs text-slate-500 dark:text-zinc-400">
                               {new Date(event.created_at).toLocaleString()}
                             </div>
+                          </div>
+                          <div className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
+                            {event.actor_user_id ? `Actor: ${userLabels[event.actor_user_id] ?? event.actor_user_id}` : "Actor unavailable"}
                           </div>
                           {lines.length > 0 && (
                             <ul className="mt-2 space-y-1 text-xs text-slate-600 dark:text-zinc-400">
