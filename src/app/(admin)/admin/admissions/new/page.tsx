@@ -79,6 +79,7 @@ export default function AdminAdmissionsNewPage() {
   const [beds, setBeds] = useState<BedOption[]>([]);
   const [prefillApplied, setPrefillApplied] = useState(false);
   const [existingAdmissionCaseId, setExistingAdmissionCaseId] = useState<string | null>(null);
+  const [existingResidentAdmissionCaseId, setExistingResidentAdmissionCaseId] = useState<string | null>(null);
 
   const loadRefs = useCallback(async () => {
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
@@ -165,11 +166,35 @@ export default function AdminAdmissionsNewPage() {
     void checkExistingCase();
   }, [referralLeadId, selectedFacilityId, supabase]);
 
+  useEffect(() => {
+    async function checkExistingResidentCase() {
+      if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId) || isCreatingResident || !residentId) {
+        setExistingResidentAdmissionCaseId(null);
+        return;
+      }
+      const { data } = await supabase
+        .from("admission_cases")
+        .select("id")
+        .eq("facility_id", selectedFacilityId)
+        .eq("resident_id", residentId)
+        .is("deleted_at", null)
+        .not("status", "eq", "cancelled")
+        .maybeSingle();
+      setExistingResidentAdmissionCaseId(data?.id ?? null);
+    }
+
+    void checkExistingResidentCase();
+  }, [isCreatingResident, residentId, selectedFacilityId, supabase]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
       setError("Select a facility in the header.");
+      return;
+    }
+    if (existingAdmissionCaseId || existingResidentAdmissionCaseId) {
+      setError("This intake is already represented by an active admission case.");
       return;
     }
 
@@ -304,6 +329,16 @@ export default function AdminAdmissionsNewPage() {
                   This referral lead already has an active admission case. Open that case instead of creating a duplicate.
                   <div className="mt-3">
                     <Link href={`/admin/admissions/${existingAdmissionCaseId}`} className={cn(buttonVariants({ size: "sm" }))}>
+                      Open existing admission case
+                    </Link>
+                  </div>
+                </div>
+              ) : null}
+              {existingResidentAdmissionCaseId ? (
+                <div className="rounded-lg border border-indigo-200/80 bg-indigo-50/50 px-4 py-3 text-sm text-indigo-950 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-indigo-100">
+                  This resident already has an active admission case. Open that case instead of creating a duplicate.
+                  <div className="mt-3">
+                    <Link href={`/admin/admissions/${existingResidentAdmissionCaseId}`} className={cn(buttonVariants({ size: "sm" }))}>
                       Open existing admission case
                     </Link>
                   </div>
@@ -484,7 +519,7 @@ export default function AdminAdmissionsNewPage() {
                 </p>
               ) : null}
 
-              <Button type="submit" disabled={submitting || Boolean(existingAdmissionCaseId) || (isCreatingResident ? false : residents.length === 0)}>
+              <Button type="submit" disabled={submitting || Boolean(existingAdmissionCaseId) || Boolean(existingResidentAdmissionCaseId) || (isCreatingResident ? false : residents.length === 0)}>
                 {submitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
