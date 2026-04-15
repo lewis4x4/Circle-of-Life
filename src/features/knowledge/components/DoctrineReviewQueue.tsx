@@ -16,6 +16,7 @@ type DoctrineReviewQueueProps = {
 };
 
 type StuckBucket = "missing_draft" | "missing_reviewer" | "overdue";
+type SlaFilter = "all" | "due_soon" | "overdue";
 
 function dueDateLabel(value: string | null): string {
   if (!value) return "No due date";
@@ -39,6 +40,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [slaFilter, setSlaFilter] = useState<SlaFilter>("all");
 
   const loadAudit = useCallback(async () => {
     const docIds = documents.map((doc) => doc.id);
@@ -118,6 +120,31 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
       publishedThisWeek,
     };
   }, [documents, draftCreatedIds, today]);
+
+  const reviewSlaRows = useMemo(() => {
+    return doctrineMetrics.pendingDocs
+      .map((doc) => {
+        if (!doc.review_due_at) return null;
+        const due = new Date(doc.review_due_at);
+        due.setHours(0, 0, 0, 0);
+        const diffDays = Math.ceil((due.getTime() - today.getTime()) / 86_400_000);
+        const status: "due_soon" | "overdue" | "future" =
+          diffDays < 0 ? "overdue" : diffDays <= 3 ? "due_soon" : "future";
+        return {
+          doc,
+          diffDays,
+          status,
+        };
+      })
+      .filter((item): item is { doc: DocumentRow; diffDays: number; status: "due_soon" | "overdue" | "future" } => Boolean(item))
+      .filter((item) => item.status !== "future")
+      .sort((a, b) => a.diffDays - b.diffDays);
+  }, [doctrineMetrics.pendingDocs, today]);
+
+  const visibleSlaRows = reviewSlaRows.filter((item) => {
+    if (slaFilter === "all") return true;
+    return item.status === slaFilter;
+  });
 
   const publishBlockers = useMemo(() => {
     return doctrineMetrics.pendingDocs
@@ -507,6 +534,85 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
             {doctrineMetrics.readyDocs.length > 6 ? (
               <div className="text-[11px] text-emerald-800 dark:text-emerald-200">
                 {doctrineMetrics.readyDocs.length - 6} more ready document{doctrineMetrics.readyDocs.length - 6 === 1 ? "" : "s"} in this queue.
+              </div>
+            ) : null}
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-indigo-200/70 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20 p-6 space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <CalendarClock className="h-5 w-5 text-indigo-600 dark:text-indigo-300" />
+            <div>
+              <h3 className="text-sm font-semibold text-indigo-900 dark:text-indigo-100">Review SLA</h3>
+              <p className="text-xs text-indigo-800 dark:text-indigo-200">
+                Pending-review documents that are due soon or already overdue.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {([
+              { value: "all", label: `All (${reviewSlaRows.length})` },
+              { value: "due_soon", label: `Due soon (${reviewSlaRows.filter((item) => item.status === "due_soon").length})` },
+              { value: "overdue", label: `Overdue (${reviewSlaRows.filter((item) => item.status === "overdue").length})` },
+            ] as Array<{ value: SlaFilter; label: string }>).map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setSlaFilter(option.value)}
+                className={[
+                  "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                  slaFilter === option.value
+                    ? "bg-indigo-600 text-white"
+                    : "bg-white/80 text-slate-600 hover:bg-white dark:bg-black/20 dark:text-zinc-300 dark:hover:bg-black/30",
+                ].join(" ")}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {reviewSlaRows.length === 0 ? (
+          <div className="text-xs text-indigo-800 dark:text-indigo-200">No pending-review documents are near or past their due date right now.</div>
+        ) : visibleSlaRows.length === 0 ? (
+          <div className="text-xs text-indigo-800 dark:text-indigo-200">No doctrine reviews match this SLA filter.</div>
+        ) : (
+          <div className="space-y-2">
+            {visibleSlaRows.slice(0, 6).map((item) => (
+              <div key={item.doc.id} className="rounded-lg border border-indigo-200/70 dark:border-indigo-900/30 bg-white/80 dark:bg-black/20 p-3 space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-medium text-slate-900 dark:text-zinc-100">{item.doc.title}</div>
+                    <div className="text-[11px] text-slate-500 dark:text-zinc-400">{dueDateLabel(item.doc.review_due_at)}</div>
+                  </div>
+                  <div
+                    className={[
+                      "text-xs font-semibold",
+                      item.status === "overdue" ? "text-rose-700 dark:text-rose-300" : "text-indigo-700 dark:text-indigo-300",
+                    ].join(" ")}
+                  >
+                    {item.status === "overdue"
+                      ? `${Math.abs(item.diffDays)}d overdue`
+                      : item.diffDays === 0
+                        ? "Due today"
+                        : `Due in ${item.diffDays}d`}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/admin/knowledge/admin/review/${item.doc.id}`}
+                    className="rounded-lg px-2 py-1.5 text-[11px] font-medium text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                  >
+                    Open review
+                  </Link>
+                </div>
+              </div>
+            ))}
+            {visibleSlaRows.length > 6 ? (
+              <div className="text-[11px] text-indigo-800 dark:text-indigo-200">
+                {visibleSlaRows.length - 6} more doctrine review{visibleSlaRows.length - 6 === 1 ? "" : "s"} in this SLA view.
               </div>
             ) : null}
           </div>
