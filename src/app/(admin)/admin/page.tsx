@@ -580,7 +580,7 @@ export default function AdminDashboardPage() {
           <div className="glass-panel rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-white/60 dark:bg-white/[0.01] backdrop-blur-3xl p-6 lg:p-8 shadow-sm">
             <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white mb-6 flex items-center justify-between">
                Acuity Watchlist
-               <Link href="/admin/residents?acuity=watchlist" className="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 hover:underline">Full Roster</Link>
+               <Link href="/admin/residents?acuity=watchlist" className="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 hover:underline">Watchlist Roster</Link>
             </h3>
             
             <div className="space-y-3">
