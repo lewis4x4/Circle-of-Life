@@ -154,6 +154,7 @@ export default function AdminDashboardPage() {
       : null,
   ].filter((item): item is LocalInboxItem => item !== null);
   const workflows = snapshot.workflowQueues;
+  const topStripActionable = staffingGaps + medExceptions + complianceAlerts;
   const incidentLifecycleBacklog =
     workflows.incidentOpenObligations + workflows.incidentRootCausePending + workflows.incidentCarePlanPending;
   const incidentFollowupBacklog =
@@ -259,6 +260,7 @@ export default function AdminDashboardPage() {
         ? workflows.dischargePharmacistReview
         : workflows.dischargeReadyToComplete;
   const totalActionable =
+    topStripActionable +
     workflows.doctrineBlockedReview +
     workflows.doctrineReadyToPublish +
     workflows.doctrineDueSoon +
