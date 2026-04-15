@@ -148,6 +148,16 @@ export default function AdminIncidentsKanbanPage() {
       return bScore - aScore;
     })
     .slice(0, 5);
+  const pressureBacklogHref =
+    rows.some((row) => row.openObligations > 0 || row.rootCausePending || row.carePlanPending)
+      ? "/admin/incidents/obligations"
+      : rows.some((row) => row.escalatedFollowups > 0)
+        ? "/admin/incidents/overdue-followups?filter=escalated"
+        : rows.some((row) => row.overdueFollowups > 0)
+          ? "/admin/incidents/overdue-followups"
+          : rows.some((row) => row.unassignedFollowups > 0)
+            ? "/admin/incidents/followups?filter=unassigned"
+            : "/admin/incidents/followups";
 
   return (
     <div className="relative flex flex-col h-[calc(100vh-6rem)] space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-6">
@@ -171,7 +181,7 @@ export default function AdminIncidentsKanbanPage() {
               {rows.reduce((sum, row) => sum + row.overdueFollowups, 0)} Overdue follow-ups
             </Badge>
           </Link>
-          <Link href="/admin/incidents/overdue-followups">
+          <Link href="/admin/incidents/overdue-followups?filter=escalated">
             <Badge variant="outline" className="h-8 px-3 border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 cursor-pointer">
               {rows.reduce((sum, row) => sum + row.escalatedFollowups, 0)} Escalated follow-ups
             </Badge>
@@ -186,7 +196,7 @@ export default function AdminIncidentsKanbanPage() {
               {rows.filter((row) => row.openObligations > 0 || row.rootCausePending || row.carePlanPending).length} Lifecycle blockers
             </Badge>
           </Link>
-          <Link href="/admin/incidents/overdue-followups">
+          <Link href="/admin/incidents/followups?filter=unassigned">
             <Badge variant="outline" className="h-8 px-3 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 cursor-pointer">
               {rows.reduce((sum, row) => sum + row.unassignedFollowups, 0)} Unassigned follow-ups
             </Badge>
@@ -214,7 +224,7 @@ export default function AdminIncidentsKanbanPage() {
                 <Badge variant="outline" className="border-amber-300 bg-white/70 text-amber-800 dark:border-amber-800 dark:bg-black/20 dark:text-amber-200">
                   {followupPressure.length} incident{followupPressure.length === 1 ? "" : "s"} need attention
                 </Badge>
-                <Link href="/admin/incidents/overdue-followups" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-amber-300 bg-white/70 text-amber-800 hover:bg-white dark:border-amber-800 dark:bg-black/20 dark:text-amber-200 dark:hover:bg-black/30")}>
+                <Link href={pressureBacklogHref} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-amber-300 bg-white/70 text-amber-800 hover:bg-white dark:border-amber-800 dark:bg-black/20 dark:text-amber-200 dark:hover:bg-black/30")}>
                   Open backlog
                 </Link>
                 <Link href="/admin/incidents/obligations" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-blue-300 bg-white/70 text-blue-800 hover:bg-white dark:border-blue-800 dark:bg-black/20 dark:text-blue-200 dark:hover:bg-black/30")}>
