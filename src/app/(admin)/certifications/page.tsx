@@ -206,7 +206,8 @@ export default function AdminCertificationsPage() {
       const hubFiltersDefault =
         search.trim() === "" &&
         timeline === DEFAULT_FILTERS.timeline &&
-        dbStatus === DEFAULT_FILTERS.dbStatus;
+        dbStatus === DEFAULT_FILTERS.dbStatus &&
+        windowFilter === DEFAULT_FILTERS.window;
       const scope = hubFiltersDefault ? "" : "_filtered";
       const stamp = format(new Date(), "yyyy-MM-dd");
 
@@ -261,7 +262,7 @@ export default function AdminCertificationsPage() {
     } finally {
       setExportingCsv(false);
     }
-  }, [supabase, filteredRows, search, timeline, dbStatus]);
+  }, [supabase, filteredRows, search, timeline, dbStatus, windowFilter]);
 
   const listEmptyCopy = useMemo(
     () =>
@@ -281,8 +282,8 @@ export default function AdminCertificationsPage() {
     [rows.length],
   );
 
-  const expiringCount = rows.filter((r) => r.timeline === "expiring_soon").length;
-  const expiredCount = rows.filter((r) => r.timeline === "expired").length;
+  const expiringCount = filteredRows.filter((r) => r.timeline === "expiring_soon").length;
+  const expiredCount = filteredRows.filter((r) => r.timeline === "expired").length;
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -308,7 +309,7 @@ export default function AdminCertificationsPage() {
               <MonolithicWatermark value={expiringCount} className="text-amber-600/5 dark:text-amber-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
-                  <Award className="h-3.5 w-3.5" /> Expiring (60D)
+                  <Award className="h-3.5 w-3.5" /> {windowFilter === "30d" ? "Expiring (30D)" : "Expiring (60D)"}
                 </h3>
                 <p className="text-4xl font-mono tracking-tighter text-amber-600 dark:text-amber-400 pb-1">{expiringCount}</p>
               </div>
