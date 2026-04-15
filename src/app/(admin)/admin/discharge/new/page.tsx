@@ -24,6 +24,7 @@ export default function AdminDischargeNewPage() {
   const [loadingRefs, setLoadingRefs] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [existingReconciliationId, setExistingReconciliationId] = useState<string | null>(null);
 
   const loadRefs = useCallback(async () => {
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
@@ -47,6 +48,27 @@ export default function AdminDischargeNewPage() {
     void loadRefs();
   }, [loadRefs]);
 
+  useEffect(() => {
+    async function checkExistingReconciliation() {
+      if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId) || !residentId) {
+        setExistingReconciliationId(null);
+        return;
+      }
+      const { data } = await supabase
+        .from("discharge_med_reconciliation")
+        .select("id")
+        .eq("facility_id", selectedFacilityId)
+        .eq("resident_id", residentId)
+        .is("deleted_at", null)
+        .not("status", "eq", "cancelled")
+        .not("status", "eq", "complete")
+        .maybeSingle();
+      setExistingReconciliationId(data?.id ?? null);
+    }
+
+    void checkExistingReconciliation();
+  }, [residentId, selectedFacilityId, supabase]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -56,6 +78,10 @@ export default function AdminDischargeNewPage() {
     }
     if (!residentId) {
       setError("Choose a resident.");
+      return;
+    }
+    if (existingReconciliationId) {
+      setError("This resident already has an active discharge reconciliation.");
       return;
     }
 
@@ -131,6 +157,16 @@ export default function AdminDischargeNewPage() {
             <p className="text-sm text-amber-800 dark:text-amber-200">Select a facility in the header to continue.</p>
           ) : (
             <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
+              {existingReconciliationId ? (
+                <div className="rounded-lg border border-indigo-200/80 bg-indigo-50/50 px-4 py-3 text-sm text-indigo-950 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-indigo-100">
+                  This resident already has an active discharge reconciliation. Open that record instead of creating a duplicate.
+                  <div className="mt-3">
+                    <Link href={`/admin/discharge/${existingReconciliationId}`} className={cn(buttonVariants({ size: "sm" }))}>
+                      Open existing reconciliation
+                    </Link>
+                  </div>
+                </div>
+              ) : null}
               <div className="space-y-2">
                 <Label htmlFor="dis-resident">Resident</Label>
                 <select
@@ -154,7 +190,7 @@ export default function AdminDischargeNewPage() {
                   {error}
                 </p>
               ) : null}
-              <Button type="submit" disabled={submitting || residents.length === 0}>
+              <Button type="submit" disabled={submitting || residents.length === 0 || !!existingReconciliationId}>
                 {submitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
