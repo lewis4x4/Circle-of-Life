@@ -75,6 +75,12 @@ function formatMetadata(metadata: unknown): string[] {
   });
 }
 
+type PublishReadinessCheck = {
+  key: string;
+  label: string;
+  passed: boolean;
+};
+
 export default function KnowledgeDocumentReviewPage() {
   const params = useParams<{ id: string }>();
   const documentId = typeof params?.id === "string" ? params.id : "";
@@ -221,6 +227,35 @@ export default function KnowledgeDocumentReviewPage() {
       ? "Assigned to you"
       : (userLabels[document.review_owner] ?? "Assigned reviewer")
     : "Unassigned";
+  const hasDraftAudit = auditEvents.some((event) => event.event_type === "obsidian_draft_created");
+  const publishChecks: PublishReadinessCheck[] = [
+    {
+      key: "review_owner",
+      label: "A review owner is assigned",
+      passed: Boolean(document?.review_owner),
+    },
+    {
+      key: "review_due_at",
+      label: "A review due date is set",
+      passed: Boolean(document?.review_due_at),
+    },
+    {
+      key: "draft",
+      label: "An Obsidian draft has been created or refreshed",
+      passed: hasDraftAudit,
+    },
+    {
+      key: "pending_review",
+      label: "Document is in pending review status",
+      passed: document?.status === "pending_review" || document?.status === "published",
+    },
+    {
+      key: "ingest_failed",
+      label: "Document is not in an ingest failed state",
+      passed: document?.status !== "ingest_failed",
+    },
+  ];
+  const publishReady = publishChecks.every((check) => check.passed);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
@@ -321,12 +356,28 @@ export default function KnowledgeDocumentReviewPage() {
                   <Button type="button" variant="outline" disabled={actionLoading === "pending_review"} onClick={() => void transitionStatus("pending_review")}>
                     {actionLoading === "pending_review" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Move to pending review"}
                   </Button>
-                  <Button type="button" disabled={actionLoading === "published"} onClick={() => void transitionStatus("published")}>
+                  <Button type="button" disabled={actionLoading === "published" || !publishReady} onClick={() => void transitionStatus("published")}>
                     {actionLoading === "published" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Publish to Grace"}
                   </Button>
                   <Button type="button" variant="secondary" disabled={actionLoading === "archived"} onClick={() => void transitionStatus("archived")}>
                     {actionLoading === "archived" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Archive"}
                   </Button>
+                </div>
+
+                <div className="rounded-lg border border-emerald-200/60 dark:border-emerald-900/40 bg-emerald-50/60 dark:bg-emerald-950/20 px-4 py-3 text-sm text-emerald-900 dark:text-emerald-100">
+                  <p className="font-medium">Publish readiness</p>
+                  <ul className="mt-2 space-y-1">
+                    {publishChecks.map((check) => (
+                      <li key={check.key} className={check.passed ? "text-emerald-900 dark:text-emerald-100" : "text-amber-800 dark:text-amber-200"}>
+                        {check.passed ? "✓" : "•"} {check.label}
+                      </li>
+                    ))}
+                  </ul>
+                  {!publishReady ? (
+                    <p className="mt-2 text-xs text-amber-800 dark:text-amber-200">
+                      Complete the missing review steps before publishing this document to Grace.
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
