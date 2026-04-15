@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import type { StaffMessageRow, StaffMessageThread } from "@/lib/admin/family-messages-data";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 import {
   fetchStaffMessageThreads,
   fetchStaffMessagesForResident,
@@ -418,6 +419,16 @@ export default function StaffFamilyMessagesPage() {
               </button>
             ))}
           </div>
+          {threadFilter !== "all" ? (
+            <div className="flex flex-wrap items-center gap-2 px-2">
+              <span className="inline-flex items-center px-3 py-1 rounded-full border shadow-inner bg-indigo-500/10 text-indigo-600 border-indigo-500/20 dark:text-indigo-400 text-[10px] font-bold uppercase tracking-widest">
+                Thread filter: {threadFilter === "family_replied" ? "family replied" : threadFilter}
+              </span>
+              <Link href="/admin/family-messages" className={cn("rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors")}>
+                Clear filter
+              </Link>
+            </div>
+          ) : null}
 
           <MotionList className="grid gap-4 sm:grid-cols-2">
             {visibleThreads.length === 0 ? (

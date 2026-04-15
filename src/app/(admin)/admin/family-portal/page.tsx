@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 
 type TriageRow = Database["public"]["Tables"]["family_message_triage_items"]["Row"] & {
@@ -342,10 +343,20 @@ export default function AdminFamilyPortalPage() {
                      : "bg-white/80 text-slate-600 hover:bg-white dark:bg-black/20 dark:text-zinc-300 dark:hover:bg-black/30",
                  )}
                >
-                 {option.label}
-               </button>
-             ))}
-           </div>
+                {option.label}
+              </button>
+            ))}
+          </div>
+          {triageFilter !== "all" ? (
+            <div className="relative z-10 mb-4 flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
+                Triage filter: {formatStatus(triageFilter)}
+              </Badge>
+              <Link href="/admin/family-portal#message-triage" className={cn("rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors")}>
+                Clear filter
+              </Link>
+            </div>
+          ) : null}
            <div className="hidden lg:grid grid-cols-[2fr_1fr_2fr_3fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Resident</div>
              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Status</div>
@@ -485,10 +496,20 @@ export default function AdminFamilyPortalPage() {
                      : "bg-white/80 text-slate-600 hover:bg-white dark:bg-black/20 dark:text-zinc-300 dark:hover:bg-black/30",
                  )}
                >
-                 {option.label}
-               </button>
-             ))}
-           </div>
+                {option.label}
+              </button>
+            ))}
+          </div>
+          {conferenceFilter !== "all" ? (
+            <div className="relative z-10 mb-4 flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+                Conference filter: {conferenceFilter === "upcoming" ? "upcoming" : formatStatus(conferenceFilter)}
+              </Badge>
+              <Link href="/admin/family-portal#care-conferences" className={cn("rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors")}>
+                Clear filter
+              </Link>
+            </div>
+          ) : null}
            <div className="hidden lg:grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Resident</div>
              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Start Time</div>
