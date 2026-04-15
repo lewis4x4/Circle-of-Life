@@ -325,7 +325,7 @@ export default function AdminDashboardPage() {
             icon={ShieldAlert}
             href="/admin/incidents?scope=open"
             urgency={openIncidents > 0 ? "critical" : "normal"} 
-            subLabel={openIncidents > 0 ? "Pending investigation" : "All clear"}
+            subLabel={openIncidents > 0 ? "Open / investigating" : "No open incidents"}
           />
         </MotionItem>
         <MotionItem>
