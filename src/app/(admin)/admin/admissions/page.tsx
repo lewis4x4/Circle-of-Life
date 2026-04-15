@@ -39,10 +39,17 @@ type AdmissionPhase = "blocked" | "ready" | "onboarding" | "stable";
 
 type DischargeRow = Pick<
   Database["public"]["Tables"]["discharge_med_reconciliation"]["Row"],
-  "id" | "status" | "updated_at"
+  | "id"
+  | "status"
+  | "updated_at"
+  | "nurse_reconciliation_notes"
+  | "pharmacist_npi"
+  | "pharmacist_notes"
 > & {
-  residents: { first_name: string; last_name: string } | null;
+  residents: { first_name: string; last_name: string; discharge_target_date: string | null; hospice_status: string } | null;
 };
+
+type DischargePhase = "planning" | "pharmacist_review" | "ready_to_complete" | "complete" | "cancelled";
 
 type TriageRow = Pick<
   Database["public"]["Tables"]["family_message_triage_items"]["Row"],
@@ -84,6 +91,67 @@ function admissionBlockers(row: CaseRow): string[] {
   if (!row.bed_id) blockers.push("bed");
   if (!row.target_move_in_date) blockers.push("move-in date");
   return blockers;
+}
+
+function describeDischargePhase(row: DischargeRow): {
+  phase: DischargePhase;
+  helperText: string;
+  nextActionLabel: string;
+} {
+  if (row.status === "cancelled") {
+    return {
+      phase: "cancelled",
+      helperText: "Reconciliation cancelled.",
+      nextActionLabel: "Cancelled",
+    };
+  }
+  if (row.status === "complete") {
+    return {
+      phase: "complete",
+      helperText: "Reconciliation and transition planning are complete.",
+      nextActionLabel: "Complete",
+    };
+  }
+  if (!row.residents?.discharge_target_date) {
+    return {
+      phase: "planning",
+      helperText: "Set the resident discharge target date.",
+      nextActionLabel: "Set discharge date",
+    };
+  }
+  if (row.residents?.hospice_status === "pending") {
+    return {
+      phase: "planning",
+      helperText: "Resolve hospice planning before transition completes.",
+      nextActionLabel: "Confirm hospice",
+    };
+  }
+  if (!row.nurse_reconciliation_notes?.trim()) {
+    return {
+      phase: "planning",
+      helperText: "Add nurse reconciliation notes before pharmacist handoff.",
+      nextActionLabel: "Add nurse notes",
+    };
+  }
+  if (row.status === "draft") {
+    return {
+      phase: "pharmacist_review",
+      helperText: "Ready to move into pharmacist review.",
+      nextActionLabel: "Send to pharmacist",
+    };
+  }
+  if (!row.pharmacist_npi?.trim() || !row.pharmacist_notes?.trim()) {
+    return {
+      phase: "pharmacist_review",
+      helperText: "Awaiting pharmacist attestation fields.",
+      nextActionLabel: "Finish pharmacist review",
+    };
+  }
+  return {
+    phase: "ready_to_complete",
+    helperText: "Pharmacist review is in place; this can be completed.",
+    nextActionLabel: "Mark complete",
+  };
 }
 
 // Section component for lifecycle stages
@@ -235,7 +303,7 @@ export default function AdminAdmissionsHubPage() {
           .order("updated_at", { ascending: false }),
         supabase
           .from("discharge_med_reconciliation")
-          .select("id, status, updated_at, residents(first_name, last_name)")
+          .select("id, status, updated_at, nurse_reconciliation_notes, pharmacist_npi, pharmacist_notes, residents(first_name, last_name, discharge_target_date, hospice_status)")
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
           .not("status", "eq", "cancelled")
@@ -430,6 +498,24 @@ export default function AdminAdmissionsHubPage() {
       })
       .slice(0, 8);
   }, [admissions, onboardingState]);
+  const featuredDischarges = useMemo(() => {
+    const phaseOrder: Record<DischargePhase, number> = {
+      planning: 0,
+      pharmacist_review: 1,
+      ready_to_complete: 2,
+      complete: 3,
+      cancelled: 4,
+    };
+    return [...discharges]
+      .sort((a, b) => {
+        const phaseA = describeDischargePhase(a).phase;
+        const phaseB = describeDischargePhase(b).phase;
+        const phaseDelta = phaseOrder[phaseA] - phaseOrder[phaseB];
+        if (phaseDelta !== 0) return phaseDelta;
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+      })
+      .slice(0, 6);
+  }, [discharges]);
 
   return (
     <div className="mx-auto max-w-6xl space-y-10 pb-12 w-full">
@@ -739,8 +825,9 @@ export default function AdminAdmissionsHubPage() {
           </p>
         ) : (
           <MotionList className="space-y-3">
-            {discharges.map((r) => {
+            {featuredDischarges.map((r) => {
               const isDraft = r.status === "draft";
+              const phase = describeDischargePhase(r);
               return (
                 <MotionItem key={r.id}>
                   <Link
@@ -765,9 +852,33 @@ export default function AdminAdmissionsHubPage() {
                         )}>
                           {formatStatus(r.status)}
                         </span>
+                        <span className={cn(
+                          "text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full border",
+                          phase.phase === "planning"
+                            ? "bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300"
+                            : phase.phase === "pharmacist_review"
+                              ? "bg-indigo-500/10 text-indigo-700 border-indigo-500/20 dark:text-indigo-300"
+                              : phase.phase === "ready_to_complete"
+                                ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300"
+                                : "bg-slate-500/10 text-slate-700 border-slate-500/20 dark:text-slate-300",
+                        )}>
+                          {phase.nextActionLabel}
+                        </span>
                       </div>
                       <p className="text-xs text-slate-500 dark:text-zinc-500 mt-0.5">
                         Updated {formatRelative(r.updated_at)}
+                      </p>
+                      <p className={cn(
+                        "mt-1 text-[11px]",
+                        phase.phase === "planning"
+                          ? "text-amber-700 dark:text-amber-300"
+                          : phase.phase === "pharmacist_review"
+                            ? "text-indigo-700 dark:text-indigo-300"
+                            : phase.phase === "ready_to_complete"
+                              ? "text-emerald-700 dark:text-emerald-300"
+                              : "text-slate-600 dark:text-zinc-400",
+                      )}>
+                        {phase.helperText}
                       </p>
                     </div>
                   </Link>

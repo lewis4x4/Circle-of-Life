@@ -122,7 +122,7 @@ export default function AdminDischargeHubPage() {
         .select("id, status, updated_at, nurse_reconciliation_notes, pharmacist_npi, pharmacist_notes, residents(first_name, last_name, discharge_target_date, hospice_status)")
         .eq("facility_id", selectedFacilityId)
         .is("deleted_at", null)
-        .order("updated_at", { ascending: false })
+        .order("updated_at", { ascending: false });
 
       if (listErr) throw listErr;
       setRows((list ?? []) as RowT[]);
