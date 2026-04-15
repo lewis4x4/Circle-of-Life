@@ -29,7 +29,12 @@ type QueueRow = {
   row: CaseRow;
   residentLabel: string;
   checklist: Array<{ key: string; label: string; passed: boolean }>;
+  missingItems: string[];
+  nextActionLabel: string;
+  nextActionHref: string;
 };
+
+type MissingFilter = "all" | "care plan" | "medication profile" | "resident payer" | "family consent";
 
 function onboardingChecklist(counts: { carePlans: number; medications: number; payers: number; familyConsents: number }) {
   return [
@@ -62,6 +67,7 @@ export default function AdminAdmissionsOnboardingPage() {
   const [rows, setRows] = useState<QueueRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [missingFilter, setMissingFilter] = useState<MissingFilter>("all");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -116,10 +122,31 @@ export default function AdminAdmissionsOnboardingPage() {
             payers: residentId && payerIds.has(residentId) ? 1 : 0,
             familyConsents: residentId && consentIds.has(residentId) ? 1 : 0,
           });
+          const missingItems = checklist.filter((item) => !item.passed).map((item) => item.label.toLowerCase());
+          const nextActionHref = residentId
+            ? missingItems[0] === "care plan"
+              ? `/admin/residents/${residentId}/care-plan`
+              : missingItems[0] === "medication profile"
+                ? `/admin/residents/${residentId}/medications`
+                : missingItems[0] === "resident payer"
+                  ? `/admin/residents/${residentId}/billing`
+                  : "/admin/family-messages"
+            : "/admin/admissions";
+          const nextActionLabel =
+            missingItems[0] === "care plan"
+              ? "Open care plan"
+              : missingItems[0] === "medication profile"
+                ? "Open medications"
+                : missingItems[0] === "resident payer"
+                  ? "Open billing"
+                  : "Open family coordination";
           return {
             row,
             residentLabel: row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Resident",
             checklist,
+            missingItems,
+            nextActionLabel,
+            nextActionHref,
           };
         })
         .filter((entry) => entry.checklist.some((item) => !item.passed));
@@ -141,6 +168,18 @@ export default function AdminAdmissionsOnboardingPage() {
     cases: rows.length,
     incomplete: rows.reduce((sum, row) => sum + row.checklist.filter((item) => !item.passed).length, 0),
   };
+
+  const missingCounts = useMemo(() => {
+    const countsMap = new Map<string, number>();
+    for (const row of rows) {
+      for (const item of row.missingItems) {
+        countsMap.set(item, (countsMap.get(item) ?? 0) + 1);
+      }
+    }
+    return Array.from(countsMap.entries()).sort((a, b) => b[1] - a[1]);
+  }, [rows]);
+
+  const visibleRows = rows.filter((row) => missingFilter === "all" || row.missingItems.includes(missingFilter));
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -177,8 +216,49 @@ export default function AdminAdmissionsOnboardingPage() {
           description="Move-in cases in this scope have their downstream onboarding items in place."
         />
       ) : (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Top missing work</span>
+              {missingCounts.map(([label, count]) => (
+                <Badge key={label} variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
+                  {label}: {count}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {([
+              { value: "all", label: `All (${rows.length})` },
+              ...missingCounts.map(([label, count]) => ({
+                value: label as MissingFilter,
+                label: `${label} (${count})`,
+              })),
+            ] as Array<{ value: MissingFilter; label: string }>).map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setMissingFilter(option.value)}
+                className={cn(
+                  "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                  missingFilter === option.value
+                    ? "bg-indigo-600 text-white"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700",
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
         <div className="grid gap-4">
-          {rows.map(({ row, residentLabel, checklist }) => (
+          {visibleRows.length === 0 ? (
+            <AdminEmptyState
+              title="No onboarding cases in this filter"
+              description="Try another missing-item filter to inspect the remaining downstream setup work."
+            />
+          ) : visibleRows.map(({ row, residentLabel, checklist, nextActionHref, nextActionLabel, missingItems }) => (
             <Card key={row.id} className="border-slate-200/70 shadow-soft dark:border-slate-800">
               <CardHeader className="pb-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -206,6 +286,13 @@ export default function AdminAdmissionsOnboardingPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {missingItems.map((item) => (
+                    <Badge key={item} variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+                      {item}
+                    </Badge>
+                  ))}
+                </div>
                 <div className="grid gap-2">
                   {checklist.map((item) => (
                     <div key={item.key} className="rounded-xl border border-slate-200/70 dark:border-white/5 bg-white/80 dark:bg-black/20 px-4 py-3 flex items-center justify-between gap-3">
@@ -224,6 +311,9 @@ export default function AdminAdmissionsOnboardingPage() {
                 <div className="flex flex-wrap gap-2">
                   <Link href={`/admin/admissions/${row.id}`} className={cn(buttonVariants({ size: "sm" }))}>
                     Open case
+                  </Link>
+                  <Link href={nextActionHref} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+                    {nextActionLabel}
                   </Link>
                   {row.resident_id ? (
                     <>
@@ -248,6 +338,7 @@ export default function AdminAdmissionsOnboardingPage() {
               </CardContent>
             </Card>
           ))}
+        </div>
         </div>
       )}
     </div>
