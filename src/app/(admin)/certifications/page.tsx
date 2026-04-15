@@ -120,7 +120,7 @@ function buildCertificationsCsv(rows: StaffCertExportRow[]): string {
   return [header, ...body].join("\r\n");
 }
 
-const DEFAULT_FILTERS = { search: "", timeline: "all", dbStatus: "all" };
+const DEFAULT_FILTERS = { search: "", timeline: "all", dbStatus: "all", window: "all" };
 
 export default function AdminCertificationsPage() {
   const searchParams = useSearchParams();
@@ -133,6 +133,7 @@ export default function AdminCertificationsPage() {
   const [search, setSearch] = useState(DEFAULT_FILTERS.search);
   const [timeline, setTimeline] = useState(DEFAULT_FILTERS.timeline);
   const [dbStatus, setDbStatus] = useState(DEFAULT_FILTERS.dbStatus);
+  const [windowFilter, setWindowFilter] = useState(DEFAULT_FILTERS.window);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -155,6 +156,7 @@ export default function AdminCertificationsPage() {
     const requestedSearch = searchParams.get("search") ?? DEFAULT_FILTERS.search;
     const requestedTimeline = searchParams.get("timeline") ?? DEFAULT_FILTERS.timeline;
     const requestedDbStatus = searchParams.get("dbStatus") ?? DEFAULT_FILTERS.dbStatus;
+    const requestedWindow = searchParams.get("window") ?? DEFAULT_FILTERS.window;
 
     setSearch(requestedSearch);
     setTimeline(
@@ -167,6 +169,7 @@ export default function AdminCertificationsPage() {
         ? requestedDbStatus
         : DEFAULT_FILTERS.dbStatus,
     );
+    setWindowFilter(["all", "30d"].includes(requestedWindow) ? requestedWindow : DEFAULT_FILTERS.window);
   }, [searchParams]);
 
   const filteredRows = useMemo(() => {
@@ -180,9 +183,20 @@ export default function AdminCertificationsPage() {
         (row.issuingAuthority?.toLowerCase().includes(q) ?? false);
       const matchesTimeline = timeline === "all" || row.timeline === timeline;
       const matchesDb = dbStatus === "all" || row.dbStatus === dbStatus;
-      return matchesSearch && matchesTimeline && matchesDb;
+      const matchesWindow =
+        windowFilter === "all" ||
+        (row.expirationDate
+          ? (() => {
+              const exp = new Date(`${row.expirationDate}T23:59:59`);
+              const now = new Date();
+              const soon = new Date();
+              soon.setDate(soon.getDate() + 30);
+              return exp >= now && exp <= soon;
+            })()
+          : false);
+      return matchesSearch && matchesTimeline && matchesDb && matchesWindow;
     });
-  }, [rows, search, timeline, dbStatus]);
+  }, [rows, search, timeline, dbStatus, windowFilter]);
 
   const exportCertificationsCsv = useCallback(async () => {
     setExportingCsv(true);
@@ -352,11 +366,21 @@ export default function AdminCertificationsPage() {
               { value: "revoked", label: "Revoked" },
             ],
           },
+          {
+            id: "window",
+            value: windowFilter,
+            onChange: setWindowFilter,
+            options: [
+              { value: "all", label: "All windows" },
+              { value: "30d", label: "Next 30 days" },
+            ],
+          },
         ]}
         onReset={() => {
           setSearch(DEFAULT_FILTERS.search);
           setTimeline(DEFAULT_FILTERS.timeline);
           setDbStatus(DEFAULT_FILTERS.dbStatus);
+          setWindowFilter(DEFAULT_FILTERS.window);
         }}
       />
 
