@@ -511,6 +511,16 @@ export default function AdminAdmissionsHubPage() {
               </div>
             )}
 
+            <div className="flex items-center justify-between gap-3 rounded-[1.5rem] border border-emerald-200/70 bg-emerald-50/60 dark:border-emerald-900/40 dark:bg-emerald-950/20 p-4">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest font-mono text-emerald-700 dark:text-emerald-300">Ready queue</p>
+                <p className="text-sm text-emerald-900 dark:text-emerald-100">Cases with core readiness items complete can be worked from one queue.</p>
+              </div>
+              <Link href="/admin/admissions/move-in-ready" className="text-[10px] font-bold uppercase tracking-widest text-emerald-700 hover:text-emerald-900 dark:text-emerald-300 dark:hover:text-emerald-100">
+                Open move-in ready →
+              </Link>
+            </div>
+
             <MotionList className="space-y-3">
             {admissions.map((r) => {
               const isPending = r.status === "pending_clearance";
