@@ -411,6 +411,25 @@ export default function AdminReferralsHubPage() {
       {!noFacility ? (
         <div className="glass-panel border-amber-200/60 dark:border-amber-500/20 rounded-[2rem] bg-amber-50/50 dark:bg-amber-950/20 shadow-sm backdrop-blur-3xl overflow-hidden p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
+            <p className="text-base font-bold text-slate-900 dark:text-white mb-1 tracking-tight">Admissions Handoff</p>
+            <p className="text-sm text-slate-600 dark:text-zinc-400 tracking-wide">
+              {loading
+                ? "Loading handoff counts…"
+                : `${counts.inAdmissions} referral lead${counts.inAdmissions === 1 ? "" : "s"} already have an active admission case in this facility.`}
+            </p>
+          </div>
+          <Link
+            href="/admin/admissions"
+            className={cn(buttonVariants({ variant: "outline" }), "shrink-0 shadow-sm rounded-full bg-white dark:bg-black/50 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/5 w-full sm:w-auto px-6 tap-responsive font-bold uppercase tracking-widest text-xs")}
+          >
+            Review Admissions
+          </Link>
+        </div>
+      ) : null}
+
+      {!noFacility ? (
+        <div className="glass-panel border-amber-200/60 dark:border-amber-500/20 rounded-[2rem] bg-amber-50/50 dark:bg-amber-950/20 shadow-sm backdrop-blur-3xl overflow-hidden p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
             <p className="text-base font-bold text-slate-900 dark:text-white mb-1 tracking-tight">HL7 ADT Inbound Queue</p>
             <p className="text-sm text-slate-600 dark:text-zinc-400 tracking-wide">
               {loading
