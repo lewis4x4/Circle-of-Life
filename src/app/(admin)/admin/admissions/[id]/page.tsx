@@ -41,6 +41,11 @@ type RateScheduleOption = Pick<
   | "care_surcharge_level_3"
 >;
 
+type BedOption = {
+  id: string;
+  bed_label: string;
+};
+
 function formatStatus(s: string) {
   return s.replace(/_/g, " ");
 }
@@ -149,10 +154,12 @@ export default function AdminAdmissionCaseDetailPage() {
     familyConsents: 0,
   });
   const [rateSchedules, setRateSchedules] = useState<RateScheduleOption[]>([]);
+  const [beds, setBeds] = useState<BedOption[]>([]);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [targetMoveInDraft, setTargetMoveInDraft] = useState("");
+  const [bedDraft, setBedDraft] = useState("");
   const [rateScheduleDraft, setRateScheduleDraft] = useState("");
   const [rateAccommodationDraft, setRateAccommodationDraft] =
     useState<Database["public"]["Enums"]["admission_accommodation_quote"]>("private");
@@ -191,18 +198,31 @@ export default function AdminAdmissionCaseDetailPage() {
       setRow(caseRow);
       setRateTerms((rt ?? []) as Database["public"]["Tables"]["admission_case_rate_terms"]["Row"][]);
       setTargetMoveInDraft(caseRow?.target_move_in_date ?? "");
+      setBedDraft(caseRow?.bed_id ?? "");
       setEffectiveDateDraft(caseRow?.target_move_in_date ?? "");
       if (caseRow?.facility_id) {
-        const { data: schedules, error: schedulesError } = await supabase
-          .from("rate_schedules")
-          .select("id, name, effective_date, base_rate_private, base_rate_semi_private, care_surcharge_level_1, care_surcharge_level_2, care_surcharge_level_3")
-          .eq("facility_id", caseRow.facility_id)
-          .is("deleted_at", null)
-          .order("effective_date", { ascending: false });
+        const [{ data: schedules, error: schedulesError }, { data: bedRows, error: bedsError }] = await Promise.all([
+          supabase
+            .from("rate_schedules")
+            .select("id, name, effective_date, base_rate_private, base_rate_semi_private, care_surcharge_level_1, care_surcharge_level_2, care_surcharge_level_3")
+            .eq("facility_id", caseRow.facility_id)
+            .is("deleted_at", null)
+            .order("effective_date", { ascending: false }),
+          supabase
+            .from("beds")
+            .select("id, bed_label")
+            .eq("facility_id", caseRow.facility_id)
+            .is("deleted_at", null)
+            .in("status", ["available", "hold"])
+            .order("bed_label"),
+        ]);
         if (schedulesError) throw schedulesError;
+        if (bedsError) throw bedsError;
         setRateSchedules((schedules ?? []) as RateScheduleOption[]);
+        setBeds((bedRows ?? []) as BedOption[]);
       } else {
         setRateSchedules([]);
+        setBeds([]);
       }
       if (caseRow?.resident_id) {
         const [carePlansRes, medsRes, payersRes, consentsRes] = await Promise.all([
@@ -494,10 +514,39 @@ export default function AdminAdmissionCaseDetailPage() {
                       {actionLoading === "Physician orders recorded." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Mark physician orders received"}
                     </Button>
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-                    <input
-                      type="date"
-                      value={targetMoveInDraft}
+                <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                  <select
+                    value={bedDraft}
+                    onChange={(event) => setBedDraft(event.target.value)}
+                    className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="">No bed assigned</option>
+                    {row.bed_id && row.beds?.bed_label ? (
+                      <option value={row.bed_id}>{row.beds.bed_label} (current)</option>
+                    ) : null}
+                    {beds
+                      .filter((bed) => bed.id !== row.bed_id)
+                      .map((bed) => (
+                        <option key={bed.id} value={bed.id}>
+                          {bed.bed_label}
+                        </option>
+                      ))}
+                  </select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={bedDraft === (row.bed_id ?? "") || !!actionLoading}
+                    onClick={() => void updateCase({ bed_id: bedDraft || null }, bedDraft ? "Bed assignment saved." : "Bed assignment cleared.")}
+                  >
+                    {actionLoading === "Bed assignment saved." || actionLoading === "Bed assignment cleared."
+                      ? <Loader2 className="h-4 w-4 animate-spin" />
+                      : "Save bed"}
+                  </Button>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                  <input
+                    type="date"
+                    value={targetMoveInDraft}
                       onChange={(event) => setTargetMoveInDraft(event.target.value)}
                       className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
