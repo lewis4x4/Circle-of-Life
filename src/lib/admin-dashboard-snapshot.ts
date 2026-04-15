@@ -436,7 +436,7 @@ function buildWorkflowInbox(input: {
       tone: input.familyTriagePending > 0 ? "warning" : "normal",
       href: input.familyTriagePending > 0
         ? "/admin/family-messages?filter=triage"
-        : "/admin/family-portal?conference=scheduled#care-conferences",
+        : "/admin/family-portal?conference=upcoming#care-conferences",
       ctaLabel: input.familyTriagePending > 0 ? "Review messages" : "Work conference queue",
     });
   }

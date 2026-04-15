@@ -236,7 +236,7 @@ export default function AdminDashboardPage() {
   const familyPrimaryHref =
     workflows.familyTriagePending > 0
       ? "/admin/family-messages?filter=triage"
-      : "/admin/family-portal?conference=scheduled#care-conferences";
+      : "/admin/family-portal?conference=upcoming#care-conferences";
   const familyPrimaryTitle =
     workflows.familyTriagePending > 0 ? "Family Triage" : "Care Conferences";
   const familyPrimaryValue =

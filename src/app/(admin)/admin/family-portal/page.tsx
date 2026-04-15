@@ -30,7 +30,7 @@ type ConsentRow = Database["public"]["Tables"]["family_consent_records"]["Row"] 
 };
 
 type TriageFilter = "all" | Database["public"]["Enums"]["family_message_triage_status"];
-type ConferenceFilter = "all" | Database["public"]["Enums"]["family_care_conference_status"];
+type ConferenceFilter = "all" | Database["public"]["Enums"]["family_care_conference_status"] | "upcoming";
 
 function formatStatus(s: string) {
   return s.replace(/_/g, " ");
@@ -70,6 +70,7 @@ export default function AdminFamilyPortalPage() {
   useEffect(() => {
     if (
       requestedConferenceFilter === "scheduled" ||
+      requestedConferenceFilter === "upcoming" ||
       requestedConferenceFilter === "completed" ||
       requestedConferenceFilter === "cancelled"
     ) {
@@ -227,7 +228,13 @@ export default function AdminFamilyPortalPage() {
   }, [triage, triageFilter]);
   const featuredConferences = useMemo(() => {
     return [...conferences]
-      .filter((row) => conferenceFilter === "all" || row.status === conferenceFilter)
+      .filter((row) => {
+        if (conferenceFilter === "all") return true;
+        if (conferenceFilter === "upcoming") {
+          return row.status === "scheduled" && new Date(row.scheduled_start).getTime() >= Date.now();
+        }
+        return row.status === conferenceFilter;
+      })
       .sort((a, b) => {
         if (a.status === "scheduled" && b.status !== "scheduled") return -1;
         if (a.status !== "scheduled" && b.status === "scheduled") return 1;
@@ -462,6 +469,7 @@ export default function AdminFamilyPortalPage() {
            <div className="relative z-10 mb-6 flex flex-wrap items-center gap-2">
              {([
                { value: "all", label: `All (${conferenceCounts.all})` },
+               { value: "upcoming", label: `Upcoming (${conferences.filter((row) => row.status === "scheduled" && new Date(row.scheduled_start).getTime() >= Date.now()).length})` },
                { value: "scheduled", label: `Scheduled (${conferenceCounts.scheduled})` },
                { value: "completed", label: `Completed (${conferenceCounts.completed})` },
                { value: "cancelled", label: `Cancelled (${conferenceCounts.cancelled})` },
