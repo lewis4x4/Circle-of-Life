@@ -144,6 +144,9 @@ export default function AdminIncidentDetailPage() {
   const [followupActionLoading, setFollowupActionLoading] = useState<string | null>(null);
   const [followupActionError, setFollowupActionError] = useState<string | null>(null);
   const [followupActionMessage, setFollowupActionMessage] = useState<string | null>(null);
+  const [incidentActionLoading, setIncidentActionLoading] = useState<string | null>(null);
+  const [incidentActionError, setIncidentActionError] = useState<string | null>(null);
+  const [incidentActionMessage, setIncidentActionMessage] = useState<string | null>(null);
   const [assigneeOptions, setAssigneeOptions] = useState<IncidentFollowupAssigneeOption[]>([]);
   const [followupAssigneeDrafts, setFollowupAssigneeDrafts] = useState<Record<string, string>>({});
 
@@ -313,6 +316,49 @@ export default function AdminIncidentDetailPage() {
     }
   }
 
+  async function updateIncidentWorkflow(
+    patch: Partial<Pick<
+      SupabaseIncident,
+      | "nurse_notified"
+      | "nurse_notified_at"
+      | "administrator_notified"
+      | "administrator_notified_at"
+      | "owner_notified"
+      | "owner_notified_at"
+      | "physician_notified"
+      | "physician_notified_at"
+      | "family_notified"
+      | "family_notified_at"
+      | "ahca_reported"
+      | "ahca_reported_at"
+      | "insurance_reported"
+      | "insurance_reported_at"
+      | "care_plan_updated"
+    >>,
+    successMessage: string,
+  ) {
+    setIncidentActionLoading(successMessage);
+    setIncidentActionError(null);
+    setIncidentActionMessage(null);
+    try {
+      const supabase = createClient();
+      const { error: updateError } = await supabase
+        .from("incidents")
+        .update({
+          ...patch,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", incident.id);
+      if (updateError) throw updateError;
+      setIncidentActionMessage(successMessage);
+      await load();
+    } catch (actionError) {
+      setIncidentActionError(actionError instanceof Error ? actionError.message : "Could not update incident workflow.");
+    } finally {
+      setIncidentActionLoading(null);
+    }
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -402,6 +448,16 @@ export default function AdminIncidentDetailPage() {
         {followupActionMessage ? (
           <div className="lg:col-span-2 rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-200">
             {followupActionMessage}
+          </div>
+        ) : null}
+        {incidentActionError ? (
+          <div className="lg:col-span-2 rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-3 text-sm text-red-800 dark:text-red-200">
+            {incidentActionError}
+          </div>
+        ) : null}
+        {incidentActionMessage ? (
+          <div className="lg:col-span-2 rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-200">
+            {incidentActionMessage}
           </div>
         ) : null}
         <Card className="border-slate-200/70 shadow-soft dark:border-slate-800 lg:col-span-2">
@@ -596,6 +652,163 @@ export default function AdminIncidentDetailPage() {
             ) : (
               <p className="text-sm text-emerald-700 dark:text-emerald-300">All expected notification and reporting steps are complete for the current incident state.</p>
             )}
+
+            <div className="rounded-lg border border-slate-200/70 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/40">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Workflow actions</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {!incident.nurse_notified ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={incidentActionLoading !== null}
+                    onClick={() =>
+                      void updateIncidentWorkflow(
+                        {
+                          nurse_notified: true,
+                          nurse_notified_at: new Date().toISOString(),
+                        },
+                        "Nurse notification recorded.",
+                      )
+                    }
+                  >
+                    {incidentActionLoading === "Nurse notification recorded." ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Mark nurse notified"}
+                  </Button>
+                ) : null}
+                {!incident.administrator_notified ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={incidentActionLoading !== null}
+                    onClick={() =>
+                      void updateIncidentWorkflow(
+                        {
+                          administrator_notified: true,
+                          administrator_notified_at: new Date().toISOString(),
+                        },
+                        "Administrator notification recorded.",
+                      )
+                    }
+                  >
+                    {incidentActionLoading === "Administrator notification recorded." ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Mark administrator notified"}
+                  </Button>
+                ) : null}
+                {!incident.owner_notified ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={incidentActionLoading !== null}
+                    onClick={() =>
+                      void updateIncidentWorkflow(
+                        {
+                          owner_notified: true,
+                          owner_notified_at: new Date().toISOString(),
+                        },
+                        "Owner notification recorded.",
+                      )
+                    }
+                  >
+                    {incidentActionLoading === "Owner notification recorded." ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Mark owner notified"}
+                  </Button>
+                ) : null}
+                {!incident.physician_notified ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={incidentActionLoading !== null}
+                    onClick={() =>
+                      void updateIncidentWorkflow(
+                        {
+                          physician_notified: true,
+                          physician_notified_at: new Date().toISOString(),
+                        },
+                        "Physician notification recorded.",
+                      )
+                    }
+                  >
+                    {incidentActionLoading === "Physician notification recorded." ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Mark physician notified"}
+                  </Button>
+                ) : null}
+                {!incident.family_notified ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={incidentActionLoading !== null}
+                    onClick={() =>
+                      void updateIncidentWorkflow(
+                        {
+                          family_notified: true,
+                          family_notified_at: new Date().toISOString(),
+                        },
+                        "Family notification recorded.",
+                      )
+                    }
+                  >
+                    {incidentActionLoading === "Family notification recorded." ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Mark family notified"}
+                  </Button>
+                ) : null}
+                {incident.ahca_reportable && !incident.ahca_reported ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={incidentActionLoading !== null}
+                    onClick={() =>
+                      void updateIncidentWorkflow(
+                        {
+                          ahca_reported: true,
+                          ahca_reported_at: new Date().toISOString(),
+                        },
+                        "AHCA reporting recorded.",
+                      )
+                    }
+                  >
+                    {incidentActionLoading === "AHCA reporting recorded." ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Mark AHCA reported"}
+                  </Button>
+                ) : null}
+                {incident.insurance_reportable && !incident.insurance_reported ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={incidentActionLoading !== null}
+                    onClick={() =>
+                      void updateIncidentWorkflow(
+                        {
+                          insurance_reported: true,
+                          insurance_reported_at: new Date().toISOString(),
+                        },
+                        "Insurance reporting recorded.",
+                      )
+                    }
+                  >
+                    {incidentActionLoading === "Insurance reporting recorded." ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Mark insurance reported"}
+                  </Button>
+                ) : null}
+                {!incident.care_plan_updated ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={incidentActionLoading !== null}
+                    onClick={() =>
+                      void updateIncidentWorkflow(
+                        {
+                          care_plan_updated: true,
+                        },
+                        "Care plan update recorded.",
+                      )
+                    }
+                  >
+                    {incidentActionLoading === "Care plan update recorded." ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Mark care plan updated"}
+                  </Button>
+                ) : null}
+              </div>
+            </div>
           </CardContent>
         </Card>
 
