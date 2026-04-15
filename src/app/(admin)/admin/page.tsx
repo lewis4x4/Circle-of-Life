@@ -463,14 +463,11 @@ export default function AdminDashboardPage() {
                               </p>
                             </div>
                             <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0">
-                              <Link href="/admin/incidents" className={`h-11 px-5 rounded-xl font-semibold tracking-wide flex items-center justify-center transition-colors border shadow-sm ${
+                              <Link href={event.href} className={`h-11 px-5 rounded-xl font-semibold tracking-wide flex items-center justify-center transition-colors border shadow-sm ${
                                 isCrit ? "bg-white dark:bg-stone-900 border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-stone-800" : "bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-white/10"
                               }`}>
-                                Review Root Cause
+                                {event.ctaLabel}
                               </Link>
-                              <button className="h-11 px-5 rounded-xl font-semibold tracking-wide flex items-center justify-center transition-colors text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white bg-transparent hover:bg-slate-100 dark:hover:bg-white/5">
-                                Transfer to Shift
-                              </button>
                             </div>
                           </div>
                         </MotionItem>

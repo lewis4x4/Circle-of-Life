@@ -23,6 +23,8 @@ export type DashboardActivityItem = {
   actor: string;
   message: string;
   tone: "critical" | "warning" | "normal";
+  href: string;
+  ctaLabel: string;
 };
 
 export type WorkflowInboxItem = {
@@ -1001,6 +1003,8 @@ async function mapIncidentsToActivity(
       actor: "Incident",
       message,
       tone,
+      href: `/admin/incidents/${row.id}`,
+      ctaLabel: tone === "critical" ? "Open critical incident" : "Open incident",
     };
   });
 }
