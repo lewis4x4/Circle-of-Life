@@ -132,6 +132,21 @@ function formatStatus(s: string) {
   return s.replace(/_/g, " ");
 }
 
+function leadPriority(status: ReferralLeadStatus, handoffPhase: HandoffPhase | null): number {
+  if (handoffPhase === "blocked") return 0;
+  if (handoffPhase === "ready") return 1;
+  if (handoffPhase === "onboarding") return 2;
+  if (status === "new") return 3;
+  if (status === "contacted") return 4;
+  if (status === "tour_scheduled") return 5;
+  if (status === "tour_completed") return 6;
+  if (status === "application_pending") return 7;
+  if (status === "waitlisted") return 8;
+  if (status === "converted") return 9;
+  if (status === "lost") return 10;
+  return 11;
+}
+
 export default function AdminReferralsHubPage() {
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
@@ -181,6 +196,18 @@ export default function AdminReferralsHubPage() {
     });
   }, [filteredRows, searchQuery]);
 
+  const featuredRows = useMemo(() => {
+    return [...displayRows]
+      .sort((a, b) => {
+        const phaseA = activeAdmissionCaseByLeadId[a.id]?.phase ?? null;
+        const phaseB = activeAdmissionCaseByLeadId[b.id]?.phase ?? null;
+        const priorityDelta = leadPriority(a.status, phaseA) - leadPriority(b.status, phaseB);
+        if (priorityDelta !== 0) return priorityDelta;
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+      })
+      .slice(0, 60);
+  }, [activeAdmissionCaseByLeadId, displayRows]);
+
   const load = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
@@ -201,8 +228,7 @@ export default function AdminReferralsHubPage() {
         )
         .eq("facility_id", selectedFacilityId)
         .is("deleted_at", null)
-        .order("updated_at", { ascending: false })
-        .limit(50);
+        .order("updated_at", { ascending: false });
 
       if (listErr) throw listErr;
       const leadRows = (list ?? []) as LeadRow[];
@@ -598,11 +624,11 @@ export default function AdminReferralsHubPage() {
                 <p className="text-[10px] font-mono tracking-widest text-slate-400 uppercase">
                   {searchQuery.trim() ? (
                     <>
-                      Showing {displayRows.length} of {filteredRows.length} · Search
+                      Showing {featuredRows.length} of {displayRows.length} · Search
                     </>
                   ) : (
                     <>
-                      Showing {filteredRows.length} of {rows.length} · Most recent first
+                      Showing {featuredRows.length} of {rows.length} · Priority-ranked
                     </>
                   )}
                 </p>
@@ -648,7 +674,7 @@ export default function AdminReferralsHubPage() {
                </div>
              ) : (
                 <MotionList className="space-y-4">
-                 {displayRows.map((r) => {
+                 {featuredRows.map((r) => {
                     const isNew = r.status.includes('new');
                     const linkedAdmission = activeAdmissionCaseByLeadId[r.id] ?? null;
                     const linkedAdmissionCaseId = linkedAdmission?.id ?? null;
