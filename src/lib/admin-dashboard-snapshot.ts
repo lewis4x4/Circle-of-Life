@@ -66,6 +66,8 @@ export type AdminDashboardSnapshot = {
     dischargePlanning: number;
     dischargePharmacistReview: number;
     dischargeReadyToComplete: number;
+    familyTriagePending: number;
+    familyConferencesUpcoming: number;
   };
   workflowInbox: WorkflowInboxItem[];
   censusPreview: DashboardCensusRow[];
@@ -160,6 +162,11 @@ type SupabaseDischargeMini = {
   } | null;
 };
 
+type SupabaseFamilyConferenceMini = {
+  id: string;
+  scheduled_start: string;
+};
+
 type SupabaseResidentMini = { id: string; first_name: string | null; last_name: string | null };
 
 function mapAcuity(value: string | null): 1 | 2 | 3 {
@@ -242,6 +249,8 @@ function buildWorkflowInbox(input: {
   dischargePlanning: number;
   dischargePharmacistReview: number;
   dischargeReadyToComplete: number;
+  familyTriagePending: number;
+  familyConferencesUpcoming: number;
 }): WorkflowInboxItem[] {
   const items: WorkflowInboxItem[] = [];
 
@@ -378,6 +387,20 @@ function buildWorkflowInbox(input: {
       tone: input.dischargePlanning > 0 ? "warning" : "normal",
       href: "/admin/discharge",
       ctaLabel: "Work discharges",
+    });
+  }
+
+  if (input.familyTriagePending > 0 || input.familyConferencesUpcoming > 0) {
+    const parts: string[] = [];
+    if (input.familyTriagePending > 0) parts.push(`${input.familyTriagePending} triage alert`);
+    if (input.familyConferencesUpcoming > 0) parts.push(`${input.familyConferencesUpcoming} conference`);
+    items.push({
+      id: "family-workflow",
+      label: "Family",
+      message: `${parts.join(" · ")}${input.familyTriagePending + input.familyConferencesUpcoming === 1 ? "" : "s"} need follow-through in the family lane.`,
+      tone: input.familyTriagePending > 0 ? "warning" : "normal",
+      href: "/admin/family-portal",
+      ctaLabel: "Work family queue",
     });
   }
 
@@ -530,6 +553,18 @@ export async function fetchAdminDashboardSnapshot(
     .select("id, status, nurse_reconciliation_notes, pharmacist_npi, pharmacist_notes, residents(discharge_target_date, hospice_status)")
     .is("deleted_at", null);
 
+  let familyTriageQuery = supabase
+    .from("family_message_triage_items" as never)
+    .select("id", { count: "exact", head: true })
+    .is("deleted_at", null)
+    .in("triage_status", ["pending_review", "in_review"]);
+
+  let familyConferenceQuery = supabase
+    .from("family_care_conference_sessions" as never)
+    .select("id, scheduled_start", { count: "exact" })
+    .is("deleted_at", null)
+    .gte("scheduled_start", new Date().toISOString());
+
   if (isValidFacilityIdForQuery(selectedFacilityId)) {
     doctrinePendingQuery = doctrinePendingQuery.eq("facility_id", selectedFacilityId);
     incidentOverdueFollowupsQuery = incidentOverdueFollowupsQuery.eq("facility_id", selectedFacilityId);
@@ -539,6 +574,8 @@ export async function fetchAdminDashboardSnapshot(
     incidentRcaQuery = incidentRcaQuery.eq("facility_id", selectedFacilityId);
     admissionsQueueQuery = admissionsQueueQuery.eq("facility_id", selectedFacilityId);
     dischargeQueueQuery = dischargeQueueQuery.eq("facility_id", selectedFacilityId);
+    familyTriageQuery = familyTriageQuery.eq("facility_id", selectedFacilityId);
+    familyConferenceQuery = familyConferenceQuery.eq("facility_id", selectedFacilityId);
   }
 
   const [
@@ -559,6 +596,8 @@ export async function fetchAdminDashboardSnapshot(
     incidentRcaRes,
     admissionsQueueRes,
     dischargeQueueRes,
+    familyTriageRes,
+    familyConferenceRes,
   ] = await Promise.all([
     facilitiesQuery as unknown as Promise<QueryResult<SupabaseFacilityRow[]>>,
     residentsCountQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
@@ -577,6 +616,8 @@ export async function fetchAdminDashboardSnapshot(
     incidentRcaQuery as unknown as Promise<QueryResult<SupabaseIncidentRcaMini[]>>,
     admissionsQueueQuery as unknown as Promise<QueryResult<SupabaseAdmissionMini[]>>,
     dischargeQueueQuery as unknown as Promise<QueryResult<SupabaseDischargeMini[]>>,
+    familyTriageQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
+    familyConferenceQuery as unknown as Promise<QueryResult<SupabaseFamilyConferenceMini[]>>,
   ]);
 
   const firstError = [
@@ -597,6 +638,8 @@ export async function fetchAdminDashboardSnapshot(
     incidentRcaRes.error && { table: "incident_rca", ...incidentRcaRes.error },
     admissionsQueueRes.error && { table: "admission_cases_queue", ...admissionsQueueRes.error },
     dischargeQueueRes.error && { table: "discharge_med_reconciliation", ...dischargeQueueRes.error },
+    familyTriageRes.error && { table: "family_message_triage_items", ...familyTriageRes.error },
+    familyConferenceRes.error && { table: "family_care_conference_sessions", ...familyConferenceRes.error },
   ].find(Boolean);
 
   if (firstError) {
@@ -735,6 +778,8 @@ export async function fetchAdminDashboardSnapshot(
     if (phase === "pharmacist_review") dischargePharmacistReview += 1;
     if (phase === "ready_to_complete") dischargeReadyToComplete += 1;
   }
+  const familyTriagePending = familyTriageRes.count ?? 0;
+  const familyConferencesUpcoming = (familyConferenceRes.data ?? []).length;
 
   return {
     headlineName,
@@ -769,6 +814,8 @@ export async function fetchAdminDashboardSnapshot(
       dischargePlanning,
       dischargePharmacistReview,
       dischargeReadyToComplete,
+      familyTriagePending,
+      familyConferencesUpcoming,
     },
     workflowInbox: buildWorkflowInbox({
       doctrinePendingReview: pendingDoctrineDocs.length,
@@ -792,6 +839,8 @@ export async function fetchAdminDashboardSnapshot(
       dischargePlanning,
       dischargePharmacistReview,
       dischargeReadyToComplete,
+      familyTriagePending,
+      familyConferencesUpcoming,
     }),
     censusPreview,
     activity,

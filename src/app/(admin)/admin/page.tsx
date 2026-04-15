@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, Clock, ShieldAlert, Pill, FileWarning, CheckCircle2, UserCog, HeartPulse, Activity, Zap, Users, DoorOpen, NotebookPen, ClipboardList, ArrowRightLeft, type LucideIcon } from "lucide-react";
+import { AlertCircle, Clock, ShieldAlert, Pill, FileWarning, CheckCircle2, UserCog, HeartPulse, Activity, Zap, Users, DoorOpen, NotebookPen, ClipboardList, ArrowRightLeft, MessageCircle, type LucideIcon } from "lucide-react";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminDashboardSnapshot, type AdminDashboardSnapshot } from "@/lib/admin-dashboard-snapshot";
@@ -131,7 +131,9 @@ export default function AdminDashboardPage() {
     workflows.referralsOnboardingHandoffs +
     workflows.dischargePlanning +
     workflows.dischargePharmacistReview +
-    workflows.dischargeReadyToComplete;
+    workflows.dischargeReadyToComplete +
+    workflows.familyTriagePending +
+    workflows.familyConferencesUpcoming;
 
   return (
     <div className="space-y-10 pb-12 overflow-x-hidden">
@@ -217,7 +219,7 @@ export default function AdminDashboardPage() {
             <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">Cross-lane backlog state across doctrine, incidents, and admissions.</p>
           </div>
         </div>
-        <MotionList className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <MotionList className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
           <MotionItem>
             <TriageMetricCard
               title="Doctrine Review"
@@ -272,6 +274,16 @@ export default function AdminDashboardPage() {
               href="/admin/discharge"
               urgency={workflows.dischargePlanning > 0 ? "high" : workflows.dischargePharmacistReview > 0 ? "medium" : workflows.dischargeReadyToComplete > 0 ? "normal" : "normal"}
               subLabel={`${workflows.dischargePlanning} planning · ${workflows.dischargePharmacistReview} pharmacist · ${workflows.dischargeReadyToComplete} ready`}
+            />
+          </MotionItem>
+          <MotionItem>
+            <TriageMetricCard
+              title="Family"
+              value={workflows.familyTriagePending > 0 ? workflows.familyTriagePending : workflows.familyConferencesUpcoming}
+              icon={MessageCircle}
+              href="/admin/family-portal"
+              urgency={workflows.familyTriagePending > 0 ? "high" : workflows.familyConferencesUpcoming > 0 ? "medium" : "normal"}
+              subLabel={`${workflows.familyTriagePending} triage · ${workflows.familyConferencesUpcoming} conferences`}
             />
           </MotionItem>
         </MotionList>
