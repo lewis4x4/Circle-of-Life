@@ -39,6 +39,9 @@ type IncidentRow = {
   unassignedFollowups: number;
   escalatedFollowups: number;
   criticalFollowups: number;
+  openObligations: number;
+  rootCausePending: boolean;
+  carePlanPending: boolean;
   ahcaReportable: boolean;
   ahcaReported: boolean;
 };
@@ -67,9 +70,9 @@ export default function AdminIncidentsKanbanPage() {
       } else if (isDemoMode()) {
         setDemoFallbackActive(true);
         setRows([
-          { id: "i1", incidentNumber: "DEMO-2025-001", residentName: "Margaret Sullivan", category: "fall", severity: "level_2", status: "new", reportedAt: "1 hour ago", reportedBy: "Demo Nurse", followupDueStr: "—", followupDueMs: 0, openFollowups: 0, overdueFollowups: 0, unassignedFollowups: 0, escalatedFollowups: 0, criticalFollowups: 0, ahcaReportable: false, ahcaReported: false },
-          { id: "i2", incidentNumber: "DEMO-2025-002", residentName: "Eleanor Vance", category: "elopement", severity: "level_4", status: "investigating", reportedAt: "2 hours ago", reportedBy: "Demo Staff", followupDueStr: "11 hours", followupDueMs: Date.now() + 11*3600*1000, openFollowups: 2, overdueFollowups: 1, unassignedFollowups: 1, escalatedFollowups: 1, criticalFollowups: 0, ahcaReportable: true, ahcaReported: false },
-          { id: "i3", incidentNumber: "DEMO-2025-003", residentName: "Robert Chen", category: "medication_error", severity: "level_3", status: "regulatory_review", reportedAt: "Yesterday", reportedBy: "Demo RN", followupDueStr: "—", followupDueMs: 0, openFollowups: 1, overdueFollowups: 0, unassignedFollowups: 0, escalatedFollowups: 0, criticalFollowups: 0, ahcaReportable: true, ahcaReported: true },
+          { id: "i1", incidentNumber: "DEMO-2025-001", residentName: "Margaret Sullivan", category: "fall", severity: "level_2", status: "new", reportedAt: "1 hour ago", reportedBy: "Demo Nurse", followupDueStr: "—", followupDueMs: 0, openFollowups: 0, overdueFollowups: 0, unassignedFollowups: 0, escalatedFollowups: 0, criticalFollowups: 0, openObligations: 2, rootCausePending: false, carePlanPending: false, ahcaReportable: false, ahcaReported: false },
+          { id: "i2", incidentNumber: "DEMO-2025-002", residentName: "Eleanor Vance", category: "elopement", severity: "level_4", status: "investigating", reportedAt: "2 hours ago", reportedBy: "Demo Staff", followupDueStr: "11 hours", followupDueMs: Date.now() + 11*3600*1000, openFollowups: 2, overdueFollowups: 1, unassignedFollowups: 1, escalatedFollowups: 1, criticalFollowups: 0, openObligations: 3, rootCausePending: true, carePlanPending: false, ahcaReportable: true, ahcaReported: false },
+          { id: "i3", incidentNumber: "DEMO-2025-003", residentName: "Robert Chen", category: "medication_error", severity: "level_3", status: "regulatory_review", reportedAt: "Yesterday", reportedBy: "Demo RN", followupDueStr: "—", followupDueMs: 0, openFollowups: 1, overdueFollowups: 0, unassignedFollowups: 0, escalatedFollowups: 0, criticalFollowups: 0, openObligations: 0, rootCausePending: true, carePlanPending: true, ahcaReportable: true, ahcaReported: true },
         ]);
       } else {
         setDemoFallbackActive(false);
@@ -121,10 +124,26 @@ export default function AdminIncidentsKanbanPage() {
     { id: "closed", label: "Closed / Signed off", dot: "bg-slate-400" },
   ];
   const followupPressure = rows
-    .filter((row) => row.overdueFollowups > 0 || row.unassignedFollowups > 0)
+    .filter((row) => row.overdueFollowups > 0 || row.unassignedFollowups > 0 || row.openObligations > 0 || row.rootCausePending || row.carePlanPending)
     .sort((a, b) => {
-      const aScore = a.criticalFollowups * 20 + a.escalatedFollowups * 12 + a.overdueFollowups * 10 + a.unassignedFollowups * 3 + a.openFollowups;
-      const bScore = b.criticalFollowups * 20 + b.escalatedFollowups * 12 + b.overdueFollowups * 10 + b.unassignedFollowups * 3 + b.openFollowups;
+      const aScore =
+        a.criticalFollowups * 20 +
+        a.escalatedFollowups * 12 +
+        a.overdueFollowups * 10 +
+        a.openObligations * 8 +
+        (a.rootCausePending ? 6 : 0) +
+        (a.carePlanPending ? 4 : 0) +
+        a.unassignedFollowups * 3 +
+        a.openFollowups;
+      const bScore =
+        b.criticalFollowups * 20 +
+        b.escalatedFollowups * 12 +
+        b.overdueFollowups * 10 +
+        b.openObligations * 8 +
+        (b.rootCausePending ? 6 : 0) +
+        (b.carePlanPending ? 4 : 0) +
+        b.unassignedFollowups * 3 +
+        b.openFollowups;
       return bScore - aScore;
     })
     .slice(0, 5);
@@ -182,7 +201,7 @@ export default function AdminIncidentsKanbanPage() {
               <div>
                 <p className="text-[10px] uppercase tracking-widest font-mono text-amber-700 dark:text-amber-300">Follow-up pressure</p>
                 <p className="text-sm text-amber-900 dark:text-amber-100">
-                  These incidents have overdue or unassigned follow-up work.
+                  These incidents still have unresolved follow-up, reporting, RCA, or care-plan workflow pressure.
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -238,6 +257,21 @@ export default function AdminIncidentsKanbanPage() {
                     {incident.followupDueStr !== "—" ? (
                       <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
                         Next due {incident.followupDueStr}
+                      </Badge>
+                    ) : null}
+                    {incident.openObligations > 0 ? (
+                      <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
+                        {incident.openObligations} reporting open
+                      </Badge>
+                    ) : null}
+                    {incident.rootCausePending ? (
+                      <Badge variant="outline" className="border-violet-200 bg-violet-50 text-violet-700">
+                        RCA pending
+                      </Badge>
+                    ) : null}
+                    {incident.carePlanPending ? (
+                      <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+                        Care plan pending
                       </Badge>
                     ) : null}
                   </div>
@@ -376,6 +410,21 @@ function KanbanCard({ incident, now }: { incident: IncidentRow; now: number }) {
                 AHCA reporting open
               </Badge>
             ) : null}
+            {incident.openObligations > 0 ? (
+              <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
+                {incident.openObligations} reporting / notify
+              </Badge>
+            ) : null}
+            {incident.rootCausePending ? (
+              <Badge variant="outline" className="border-violet-200 bg-violet-50 text-violet-700">
+                RCA pending
+              </Badge>
+            ) : null}
+            {incident.carePlanPending ? (
+              <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+                Care plan pending
+              </Badge>
+            ) : null}
           </div>
         )}
         
@@ -423,8 +472,17 @@ type SupabaseIncidentRow = {
   status: string;
   occurred_at: string;
   reported_by: string;
+  nurse_notified: boolean;
+  administrator_notified: boolean;
+  owner_notified: boolean;
+  physician_notified: boolean;
+  family_notified: boolean;
   ahca_reportable: boolean;
   ahca_reported: boolean;
+  insurance_reportable: boolean;
+  insurance_reported: boolean;
+  care_plan_updated: boolean;
+  resolved_at: string | null;
   deleted_at: string | null;
 };
 
@@ -451,7 +509,7 @@ async function fetchIncidentsFromSupabase(selectedFacilityId: string | null): Pr
   let incidentsQuery = supabase
     .from("incidents" as never)
     .select(
-      "id, incident_number, resident_id, facility_id, category, severity, status, occurred_at, reported_by, ahca_reportable, ahca_reported, deleted_at"
+      "id, incident_number, resident_id, facility_id, category, severity, status, occurred_at, reported_by, nurse_notified, administrator_notified, owner_notified, physician_notified, family_notified, ahca_reportable, ahca_reported, insurance_reportable, insurance_reported, care_plan_updated, resolved_at, deleted_at"
     )
     .is("deleted_at", null)
     .order("occurred_at", { ascending: false })
@@ -484,12 +542,18 @@ async function fetchIncidentsFromSupabase(selectedFacilityId: string | null): Pr
         .in("incident_id", incidentIds)
         .is("completed_at", null)
     : { data: [] };
+  const rcaResult = incidentIds.length
+    ? await supabase.from("incident_rca" as never).select("incident_id, investigation_status").in("incident_id", incidentIds)
+    : { data: [] };
 
   const residentById = new Map(
     ((residentsResult.data ?? []) as SupabaseResidentMini[]).map((r) => [r.id, r] as const)
   );
   const reporterById = new Map(
     ((profilesResult.data ?? []) as SupabaseProfileMini[]).map((p) => [p.id, p] as const)
+  );
+  const rcaByIncidentId = new Map(
+    (((rcaResult.data ?? []) as Array<{ incident_id: string; investigation_status: string }>)).map((row) => [row.incident_id, row.investigation_status] as const),
   );
 
   const nextDueByIncident = new Map<string, number>();
@@ -531,6 +595,18 @@ async function fetchIncidentsFromSupabase(selectedFacilityId: string | null): Pr
     const unassignedFollowups = unassignedFollowupsByIncident.get(row.id) ?? 0;
     const escalatedFollowups = escalatedFollowupsByIncident.get(row.id) ?? 0;
     const criticalFollowups = criticalFollowupsByIncident.get(row.id) ?? 0;
+    const openObligations = buildIncidentOpenObligations(row).length;
+    const rcaStatus = rcaByIncidentId.get(row.id);
+    const rootCausePending =
+      row.severity === "level_3" ||
+      row.severity === "level_4" ||
+      followupsResult.data?.some?.((item: SupabaseFollowupMini) => item.incident_id === row.id) === true
+        ? rcaStatus !== "complete"
+        : false;
+    const carePlanPending =
+      Boolean(row.resolved_at) &&
+      !row.care_plan_updated &&
+      (row.severity === "level_3" || row.severity === "level_4" || openFollowups > 0);
 
     // Convert status to Kanban format using real incident workflow state
     let status: IncidentStatus = "new";
@@ -560,10 +636,39 @@ async function fetchIncidentsFromSupabase(selectedFacilityId: string | null): Pr
       unassignedFollowups,
       escalatedFollowups,
       criticalFollowups,
+      openObligations,
+      rootCausePending,
+      carePlanPending,
       ahcaReportable: row.ahca_reportable,
       ahcaReported: row.ahca_reported,
     } as IncidentRow;
   });
+}
+
+function buildIncidentOpenObligations(incident: Pick<
+  SupabaseIncidentRow,
+  | "severity"
+  | "nurse_notified"
+  | "administrator_notified"
+  | "owner_notified"
+  | "physician_notified"
+  | "family_notified"
+  | "ahca_reportable"
+  | "ahca_reported"
+  | "insurance_reportable"
+  | "insurance_reported"
+>) {
+  const items: string[] = [];
+  if (!incident.nurse_notified) items.push("Notify the nurse.");
+  if (!incident.administrator_notified) items.push("Notify the administrator.");
+  if (incident.severity === "level_3" || incident.severity === "level_4") {
+    if (!incident.owner_notified) items.push("Notify the owner.");
+    if (!incident.physician_notified) items.push("Notify the physician.");
+    if (!incident.family_notified) items.push("Notify the family.");
+  }
+  if (incident.ahca_reportable && !incident.ahca_reported) items.push("Complete AHCA reporting.");
+  if (incident.insurance_reportable && !incident.insurance_reported) items.push("Report to the insurance carrier.");
+  return items;
 }
 
 function mapDbSeverityToUi(value: string): IncidentSeverity {
