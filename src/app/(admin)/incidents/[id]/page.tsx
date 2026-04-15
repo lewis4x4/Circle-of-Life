@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, ClipboardList, GitBranch, MapPin, ShieldAlert, User } from "lucide-react";
+import { ArrowLeft, ClipboardList, GitBranch, Loader2, MapPin, ShieldAlert, User } from "lucide-react";
 
 import {
   AdminEmptyState,
@@ -11,12 +11,13 @@ import {
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 
 type IncidentSeverityUi = "level_1" | "level_2" | "level_3" | "level_4";
 type IncidentStatusUi = "open" | "in_review" | "closed";
@@ -100,6 +101,8 @@ type DetailView = {
     dueLabel: string;
     statusLabel: string;
     assignee: string;
+    isCompleted: boolean;
+    isOverdue: boolean;
   }>;
 };
 
@@ -108,11 +111,15 @@ export default function AdminIncidentDetailPage() {
   const rawId = params?.id;
   const incidentId = typeof rawId === "string" ? rawId : Array.isArray(rawId) ? rawId[0] : "";
   const { selectedFacilityId } = useFacilityStore();
+  const { user } = useHavenAuth();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [detail, setDetail] = useState<DetailView | null>(null);
+  const [followupActionLoading, setFollowupActionLoading] = useState<string | null>(null);
+  const [followupActionError, setFollowupActionError] = useState<string | null>(null);
+  const [followupActionMessage, setFollowupActionMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -196,6 +203,55 @@ export default function AdminIncidentDetailPage() {
   const { incident, residentName, reporterName, categoryUi, severityUi, statusUi, rcaInvestigation, followups } =
     detail;
 
+  async function assignFollowupToMe(followupId: string) {
+    if (!user) return;
+    setFollowupActionLoading(followupId);
+    setFollowupActionError(null);
+    setFollowupActionMessage(null);
+    try {
+      const supabase = createClient();
+      const { error: updateError } = await supabase
+        .from("incident_followups")
+        .update({
+          assigned_to: user.id,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", followupId);
+      if (updateError) throw updateError;
+      setFollowupActionMessage("Follow-up assigned to you.");
+      await load();
+    } catch (actionError) {
+      setFollowupActionError(actionError instanceof Error ? actionError.message : "Could not assign follow-up.");
+    } finally {
+      setFollowupActionLoading(null);
+    }
+  }
+
+  async function completeFollowup(followupId: string) {
+    if (!user) return;
+    setFollowupActionLoading(followupId);
+    setFollowupActionError(null);
+    setFollowupActionMessage(null);
+    try {
+      const supabase = createClient();
+      const { error: updateError } = await supabase
+        .from("incident_followups")
+        .update({
+          completed_at: new Date().toISOString(),
+          completed_by: user.id,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", followupId);
+      if (updateError) throw updateError;
+      setFollowupActionMessage("Follow-up marked complete.");
+      await load();
+    } catch (actionError) {
+      setFollowupActionError(actionError instanceof Error ? actionError.message : "Could not complete follow-up.");
+    } finally {
+      setFollowupActionLoading(null);
+    }
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -277,6 +333,16 @@ export default function AdminIncidentDetailPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
+        {followupActionError ? (
+          <div className="lg:col-span-2 rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-3 text-sm text-red-800 dark:text-red-200">
+            {followupActionError}
+          </div>
+        ) : null}
+        {followupActionMessage ? (
+          <div className="lg:col-span-2 rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-200">
+            {followupActionMessage}
+          </div>
+        ) : null}
         <Card className="border-slate-200/70 shadow-soft dark:border-slate-800">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-display text-lg">
@@ -447,8 +513,40 @@ export default function AdminIncidentDetailPage() {
                     <p className="mt-1 text-sm text-slate-800 dark:text-slate-200">{f.description}</p>
                     <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                       Due {f.dueLabel}
-                      {f.assignee ? ` · ${f.assignee}` : ""}
+                      {f.assignee ? ` · ${f.assignee}` : " · Unassigned"}
                     </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {f.isOverdue && !f.isCompleted ? (
+                        <Badge variant="outline" className="border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
+                          Overdue
+                        </Badge>
+                      ) : null}
+                      {!f.isCompleted ? (
+                        <>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={followupActionLoading === f.id}
+                            onClick={() => void assignFollowupToMe(f.id)}
+                          >
+                            {followupActionLoading === f.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Assign to me"}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={followupActionLoading === f.id}
+                            onClick={() => void completeFollowup(f.id)}
+                          >
+                            {followupActionLoading === f.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Mark complete"}
+                          </Button>
+                        </>
+                      ) : (
+                        <Badge variant="outline" className="border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
+                          Completed
+                        </Badge>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -568,6 +666,8 @@ async function fetchIncidentDetail(
     dueLabel: formatTs(f.due_at),
     statusLabel: f.completed_at ? "Completed" : "Open",
     assignee: f.assigned_to ? assigneeById.get(f.assigned_to) ?? "Assigned" : "",
+    isCompleted: Boolean(f.completed_at),
+    isOverdue: !f.completed_at && new Date(f.due_at).getTime() < Date.now(),
   }));
 
   const rcaResult = (await supabase
