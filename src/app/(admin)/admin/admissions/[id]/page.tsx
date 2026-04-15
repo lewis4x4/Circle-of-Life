@@ -29,6 +29,18 @@ type OnboardingCounts = {
   familyConsents: number;
 };
 
+type RateScheduleOption = Pick<
+  Database["public"]["Tables"]["rate_schedules"]["Row"],
+  | "id"
+  | "name"
+  | "effective_date"
+  | "base_rate_private"
+  | "base_rate_semi_private"
+  | "care_surcharge_level_1"
+  | "care_surcharge_level_2"
+  | "care_surcharge_level_3"
+>;
+
 function formatStatus(s: string) {
   return s.replace(/_/g, " ");
 }
@@ -40,6 +52,14 @@ function formatTs(iso: string | null) {
   } catch {
     return iso;
   }
+}
+
+function formatCents(value: number | null | undefined) {
+  if (typeof value !== "number" || Number.isNaN(value)) return "—";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(value / 100);
 }
 
 function admissionReadinessChecklist(
@@ -128,10 +148,19 @@ export default function AdminAdmissionCaseDetailPage() {
     payers: 0,
     familyConsents: 0,
   });
+  const [rateSchedules, setRateSchedules] = useState<RateScheduleOption[]>([]);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [targetMoveInDraft, setTargetMoveInDraft] = useState("");
+  const [rateScheduleDraft, setRateScheduleDraft] = useState("");
+  const [rateAccommodationDraft, setRateAccommodationDraft] =
+    useState<Database["public"]["Enums"]["admission_accommodation_quote"]>("private");
+  const [rateCareLevelDraft, setRateCareLevelDraft] = useState<"1" | "2" | "3">("2");
+  const [quotedBaseDraft, setQuotedBaseDraft] = useState("");
+  const [quotedCareDraft, setQuotedCareDraft] = useState("");
+  const [effectiveDateDraft, setEffectiveDateDraft] = useState("");
+  const [rateNotesDraft, setRateNotesDraft] = useState("");
 
   const load = useCallback(async () => {
     if (!id) {
@@ -162,6 +191,19 @@ export default function AdminAdmissionCaseDetailPage() {
       setRow(caseRow);
       setRateTerms((rt ?? []) as Database["public"]["Tables"]["admission_case_rate_terms"]["Row"][]);
       setTargetMoveInDraft(caseRow?.target_move_in_date ?? "");
+      setEffectiveDateDraft(caseRow?.target_move_in_date ?? "");
+      if (caseRow?.facility_id) {
+        const { data: schedules, error: schedulesError } = await supabase
+          .from("rate_schedules")
+          .select("id, name, effective_date, base_rate_private, base_rate_semi_private, care_surcharge_level_1, care_surcharge_level_2, care_surcharge_level_3")
+          .eq("facility_id", caseRow.facility_id)
+          .is("deleted_at", null)
+          .order("effective_date", { ascending: false });
+        if (schedulesError) throw schedulesError;
+        setRateSchedules((schedules ?? []) as RateScheduleOption[]);
+      } else {
+        setRateSchedules([]);
+      }
       if (caseRow?.resident_id) {
         const [carePlansRes, medsRes, payersRes, consentsRes] = await Promise.all([
           supabase.from("care_plans").select("id", { count: "exact", head: true }).eq("resident_id", caseRow.resident_id).is("deleted_at", null),
@@ -220,6 +262,70 @@ export default function AdminAdmissionCaseDetailPage() {
   const canReserveBed = Boolean(row?.financial_clearance_at && row?.physician_orders_received_at && row?.bed_id);
   const canAdvanceMoveIn = Boolean(canReserveBed && row?.target_move_in_date && rateTerms.length > 0);
   const onboarding = onboardingChecklist(onboardingCounts);
+  const selectedRateSchedule = rateSchedules.find((schedule) => schedule.id === rateScheduleDraft) ?? null;
+
+  function prefillQuotedTermsFromSchedule() {
+    if (!selectedRateSchedule) return;
+    const base =
+      rateAccommodationDraft === "private"
+        ? selectedRateSchedule.base_rate_private
+        : selectedRateSchedule.base_rate_semi_private ?? selectedRateSchedule.base_rate_private;
+    const care =
+      rateCareLevelDraft === "1"
+        ? selectedRateSchedule.care_surcharge_level_1
+        : rateCareLevelDraft === "2"
+          ? selectedRateSchedule.care_surcharge_level_2
+          : selectedRateSchedule.care_surcharge_level_3;
+    setQuotedBaseDraft(String(base));
+    setQuotedCareDraft(String(care));
+    setEffectiveDateDraft((current) => current || selectedRateSchedule.effective_date || "");
+  }
+
+  async function addRateTerm() {
+    if (!row) return;
+    const base = Number.parseInt(quotedBaseDraft, 10);
+    const care = Number.parseInt(quotedCareDraft || "0", 10);
+    if (Number.isNaN(base)) {
+      setActionError("Quoted base rate must be a whole-number cents value.");
+      setActionMessage(null);
+      return;
+    }
+    if (Number.isNaN(care)) {
+      setActionError("Quoted care surcharge must be a whole-number cents value.");
+      setActionMessage(null);
+      return;
+    }
+    setActionLoading("rate-term");
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const { error: insertError } = await supabase
+        .from("admission_case_rate_terms")
+        .insert({
+          admission_case_id: row.id,
+          rate_schedule_id: rateScheduleDraft || null,
+          accommodation_type: rateAccommodationDraft,
+          quoted_base_rate_cents: base,
+          quoted_care_surcharge_cents: care,
+          effective_date: effectiveDateDraft || null,
+          notes: rateNotesDraft.trim() || null,
+          created_by: user?.id ?? null,
+        });
+      if (insertError) throw insertError;
+      setActionMessage("Quoted rate terms saved.");
+      setRateScheduleDraft("");
+      setRateAccommodationDraft("private");
+      setRateCareLevelDraft("2");
+      setQuotedBaseDraft("");
+      setQuotedCareDraft("");
+      setRateNotesDraft("");
+      await load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Could not save rate terms.");
+    } finally {
+      setActionLoading(null);
+    }
+  }
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -235,11 +341,11 @@ export default function AdminAdmissionCaseDetailPage() {
              >
                  <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> BACK TO ADMISSIONS
              </Link>
-             <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+            <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
                Admission Case
              </h1>
             <p className="mt-2 text-sm font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
-               Read-only view; status transitions and rate quotes can ship in a follow-up.
+               Operational workspace for move-in readiness, quoted terms, and downstream onboarding.
             </p>
           </div>
           <div>
@@ -475,6 +581,117 @@ export default function AdminAdmissionCaseDetailPage() {
                   <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-1 uppercase">Saved in admission_case_rate_terms</p>
                 </div>
 
+                <div className="mb-6 rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/80 dark:bg-black/20 p-4 space-y-4">
+                  <p className="text-[10px] font-mono tracking-widest uppercase text-slate-500">Add quoted terms</p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Rate schedule</label>
+                      <select
+                        value={rateScheduleDraft}
+                        onChange={(event) => setRateScheduleDraft(event.target.value)}
+                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        <option value="">Manual quote</option>
+                        {rateSchedules.map((schedule) => (
+                          <option key={schedule.id} value={schedule.id}>
+                            {schedule.name} · {schedule.effective_date}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Accommodation</label>
+                      <select
+                        value={rateAccommodationDraft}
+                        onChange={(event) => setRateAccommodationDraft(event.target.value as Database["public"]["Enums"]["admission_accommodation_quote"])}
+                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        <option value="private">Private</option>
+                        <option value="semi_private">Semi-private</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Care level helper</label>
+                      <select
+                        value={rateCareLevelDraft}
+                        onChange={(event) => setRateCareLevelDraft(event.target.value as "1" | "2" | "3")}
+                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        <option value="1">Level 1</option>
+                        <option value="2">Level 2</option>
+                        <option value="3">Level 3</option>
+                      </select>
+                    </div>
+                    <div className="flex items-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={!selectedRateSchedule}
+                        onClick={() => prefillQuotedTermsFromSchedule()}
+                      >
+                        Prefill from schedule
+                      </Button>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Quoted base rate (cents)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={quotedBaseDraft}
+                        onChange={(event) => setQuotedBaseDraft(event.target.value)}
+                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Quoted care surcharge (cents)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={quotedCareDraft}
+                        onChange={(event) => setQuotedCareDraft(event.target.value)}
+                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Effective date</label>
+                      <input
+                        type="date"
+                        value={effectiveDateDraft}
+                        onChange={(event) => setEffectiveDateDraft(event.target.value)}
+                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                  </div>
+                  {selectedRateSchedule ? (
+                    <div className="rounded-xl border border-indigo-200/70 dark:border-indigo-900/40 bg-indigo-50/60 dark:bg-indigo-950/20 px-4 py-3 text-xs text-indigo-900 dark:text-indigo-100">
+                      Schedule helper:
+                      <span className="ml-2 font-medium">Private {formatCents(selectedRateSchedule.base_rate_private)}</span>
+                      <span className="ml-2 font-medium">Semi-private {formatCents(selectedRateSchedule.base_rate_semi_private)}</span>
+                      <span className="ml-2 font-medium">L1 {formatCents(selectedRateSchedule.care_surcharge_level_1)}</span>
+                      <span className="ml-2 font-medium">L2 {formatCents(selectedRateSchedule.care_surcharge_level_2)}</span>
+                      <span className="ml-2 font-medium">L3 {formatCents(selectedRateSchedule.care_surcharge_level_3)}</span>
+                    </div>
+                  ) : null}
+                  <div className="space-y-2">
+                    <label className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Notes</label>
+                    <textarea
+                      value={rateNotesDraft}
+                      onChange={(event) => setRateNotesDraft(event.target.value)}
+                      rows={3}
+                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      disabled={actionLoading === "rate-term" || quotedBaseDraft.trim() === ""}
+                      onClick={() => void addRateTerm()}
+                    >
+                      {actionLoading === "rate-term" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save quoted terms"}
+                    </Button>
+                  </div>
+                </div>
+
                 <div className="relative z-10 w-full overflow-hidden">
                    {rateTerms.length === 0 ? (
                      <p className="text-sm text-slate-500 dark:text-slate-400 py-4 font-medium px-2">No rate quotes recorded.</p>
@@ -498,11 +715,11 @@ export default function AdminAdmissionCaseDetailPage() {
                                       </div>
                                       <div className="flex flex-col sm:items-end">
                                          <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Base (¢)</span>
-                                         <span className="text-sm font-mono text-slate-700 dark:text-slate-300">{t.quoted_base_rate_cents}</span>
+                                         <span className="text-sm font-mono text-slate-700 dark:text-slate-300">{formatCents(t.quoted_base_rate_cents)}</span>
                                       </div>
                                       <div className="flex flex-col sm:items-end">
                                          <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Care (¢)</span>
-                                         <span className="text-sm font-mono text-slate-700 dark:text-slate-300">{t.quoted_care_surcharge_cents}</span>
+                                         <span className="text-sm font-mono text-slate-700 dark:text-slate-300">{formatCents(t.quoted_care_surcharge_cents)}</span>
                                       </div>
                                       <div className="flex flex-col">
                                          <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Effective</span>
