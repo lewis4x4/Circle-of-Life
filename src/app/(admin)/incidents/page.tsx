@@ -277,7 +277,10 @@ export default function AdminIncidentsKanbanPage() {
                 <Link href={pressureBacklogHref} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-amber-300 bg-white/70 text-amber-800 hover:bg-white dark:border-amber-800 dark:bg-black/20 dark:text-amber-200 dark:hover:bg-black/30")}>
                   Open backlog
                 </Link>
-                <Link href="/admin/incidents/obligations" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-blue-300 bg-white/70 text-blue-800 hover:bg-white dark:border-blue-800 dark:bg-black/20 dark:text-blue-200 dark:hover:bg-black/30")}>
+                <Link
+                  href={severityFilter === "all" ? "/admin/incidents/obligations" : `/admin/incidents/obligations?severity=${severityFilter}`}
+                  className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-blue-300 bg-white/70 text-blue-800 hover:bg-white dark:border-blue-800 dark:bg-black/20 dark:text-blue-200 dark:hover:bg-black/30")}
+                >
                   Work obligations
                 </Link>
               </div>
