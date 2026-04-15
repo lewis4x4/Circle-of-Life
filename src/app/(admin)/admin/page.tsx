@@ -15,6 +15,15 @@ import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { MotionCard } from "@/components/ui/motion-card";
 
+type LocalInboxItem = {
+  id: string;
+  label: string;
+  message: string;
+  tone: "warning";
+  href: string;
+  ctaLabel: string;
+};
+
 export default function AdminDashboardPage() {
   const router = useRouter();
   const { selectedFacilityId } = useFacilityStore();
@@ -112,6 +121,38 @@ export default function AdminDashboardPage() {
   const staffingGaps = snapshot.staffingGapSnapshots24h;
   const medExceptions = snapshot.medicationErrorsUnreviewed;
   const complianceAlerts = snapshot.expiringCertifications30d;
+  const triageInboxItems: LocalInboxItem[] = [
+    staffingGaps > 0
+      ? {
+          id: "staffing-gaps",
+          label: "Staffing Gaps",
+          message: `${staffingGaps} non-compliant staffing snapshot${staffingGaps === 1 ? "" : "s"} need review.`,
+          tone: "warning",
+          href: "/admin/staffing?compliance=non_compliant",
+          ctaLabel: "Review staffing",
+        }
+      : null,
+    medExceptions > 0
+      ? {
+          id: "med-exceptions",
+          label: "Med Exceptions",
+          message: `${medExceptions} unreviewed medication error${medExceptions === 1 ? "" : "s"} need follow-up.`,
+          tone: "warning",
+          href: "/admin/medications/errors?review=unreviewed",
+          ctaLabel: "Review med errors",
+        }
+      : null,
+    complianceAlerts > 0
+      ? {
+          id: "compliance-risks",
+          label: "Compliance Risks",
+          message: `${complianceAlerts} certification${complianceAlerts === 1 ? "" : "s"} are expiring within 30 days.`,
+          tone: "warning",
+          href: "/admin/certifications?timeline=expiring_soon",
+          ctaLabel: "Review certifications",
+        }
+      : null,
+  ].filter((item): item is LocalInboxItem => item !== null);
   const workflows = snapshot.workflowQueues;
   const incidentLifecycleBacklog =
     workflows.incidentOpenObligations + workflows.incidentRootCausePending + workflows.incidentCarePlanPending;
@@ -416,7 +457,7 @@ export default function AdminDashboardPage() {
             </div>
             
             <div className="p-4 md:p-6 bg-slate-50/50 dark:bg-transparent">
-              {snapshot.workflowInbox.length === 0 && snapshot.activity.length === 0 && openIncidents === 0 ? (
+              {snapshot.workflowInbox.length === 0 && triageInboxItems.length === 0 && snapshot.activity.length === 0 && openIncidents === 0 ? (
                 <div className="p-16 text-center text-slate-500 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 dark:border-white/10 rounded-[2rem]">
                   <CheckCircle2 className="w-16 h-16 text-emerald-400 mb-6 opacity-30" />
                   <p className="text-xl font-display text-slate-800 dark:text-zinc-200 mb-2">Inbox Zero</p>
@@ -424,6 +465,32 @@ export default function AdminDashboardPage() {
                 </div>
               ) : (
                 <MotionList className="space-y-3">
+                  {triageInboxItems.map((item) => {
+                    return (
+                      <MotionItem key={item.id} className="glass-card p-5 md:p-6 rounded-[1.5rem] transition-all bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-500/30 shadow-[inset_0_0_30px_rgba(245,158,11,0.05)] hover:bg-amber-50 dark:hover:bg-amber-950/30">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className="px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-widest border bg-amber-200/50 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400 border-amber-300/50 dark:border-amber-500/30">
+                                {item.label}
+                              </span>
+                              <span className="text-xs font-semibold text-slate-500 dark:text-zinc-500 flex items-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5" /> Triage strip
+                              </span>
+                            </div>
+                            <p className="text-base font-medium text-slate-900 dark:text-slate-100">
+                              {item.message}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <Link href={item.href} className="h-12 px-6 bg-slate-900 dark:bg-white text-white dark:text-black rounded-xl font-semibold tracking-wide flex items-center justify-center hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors shadow-lg">
+                              {item.ctaLabel}
+                            </Link>
+                          </div>
+                        </div>
+                      </MotionItem>
+                    );
+                  })}
                   {snapshot.workflowInbox.map((item) => {
                     const isCrit = item.tone === "critical";
                     return (
