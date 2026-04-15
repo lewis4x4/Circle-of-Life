@@ -51,6 +51,9 @@ export type AdminDashboardSnapshot = {
     admissionsMoveInReady: number;
     admissionsOnboardingPending: number;
     referralsInAdmissions: number;
+    referralsBlockedHandoffs: number;
+    referralsReadyHandoffs: number;
+    referralsOnboardingHandoffs: number;
   };
   workflowInbox: WorkflowInboxItem[];
   censusPreview: DashboardCensusRow[];
@@ -174,6 +177,9 @@ function buildWorkflowInbox(input: {
   admissionsMoveInReady: number;
   admissionsOnboardingPending: number;
   referralsInAdmissions: number;
+  referralsBlockedHandoffs: number;
+  referralsReadyHandoffs: number;
+  referralsOnboardingHandoffs: number;
 }): WorkflowInboxItem[] {
   const items: WorkflowInboxItem[] = [];
 
@@ -244,11 +250,29 @@ function buildWorkflowInbox(input: {
     });
   }
 
-  if (input.referralsInAdmissions > 0) {
+  if (input.referralsBlockedHandoffs > 0) {
+    items.push({
+      id: "referral-handoff-blocked",
+      label: "Referral Handoff",
+      message: `${input.referralsBlockedHandoffs} lead${input.referralsBlockedHandoffs === 1 ? "" : "s"} crossed into admissions but are blocked before move-in readiness is complete.`,
+      tone: "warning",
+      href: "/admin/referrals/in-admissions",
+      ctaLabel: "Clear handoff blockers",
+    });
+  } else if (input.referralsOnboardingHandoffs > 0) {
+    items.push({
+      id: "referral-handoff-onboarding",
+      label: "Referral Handoff",
+      message: `${input.referralsOnboardingHandoffs} lead${input.referralsOnboardingHandoffs === 1 ? "" : "s"} are through move-in and now depend on downstream onboarding work.`,
+      tone: "normal",
+      href: "/admin/referrals/in-admissions",
+      ctaLabel: "Track onboarding handoffs",
+    });
+  } else if (input.referralsReadyHandoffs > 0 || input.referralsInAdmissions > 0) {
     items.push({
       id: "referral-handoff",
       label: "Referral Handoff",
-      message: `${input.referralsInAdmissions} lead${input.referralsInAdmissions === 1 ? "" : "s"} already crossed into admissions and need handoff visibility.`,
+      message: `${input.referralsReadyHandoffs} lead${input.referralsReadyHandoffs === 1 ? "" : "s"} are move-in ready inside the admissions bridge out of ${input.referralsInAdmissions} active handoff${input.referralsInAdmissions === 1 ? "" : "s"}.`,
       tone: "normal",
       href: "/admin/referrals/in-admissions",
       ctaLabel: "Track handoffs",
@@ -456,6 +480,10 @@ export async function fetchAdminDashboardSnapshot(
     .filter((row) => row.status === "move_in")
     .map((row) => row.resident_id);
   let admissionsOnboardingPending = 0;
+  let carePlanIds = new Set<string>();
+  let medIds = new Set<string>();
+  let payerIds = new Set<string>();
+  let consentIds = new Set<string>();
   if (moveInResidentIds.length > 0) {
     const [carePlansRes, medsRes, payersRes, consentsRes] = await Promise.all([
       supabase.from("care_plans" as never).select("resident_id").in("resident_id", moveInResidentIds).is("deleted_at", null),
@@ -463,13 +491,38 @@ export async function fetchAdminDashboardSnapshot(
       supabase.from("resident_payers" as never).select("resident_id").in("resident_id", moveInResidentIds).is("deleted_at", null),
       supabase.from("family_consent_records" as never).select("resident_id").in("resident_id", moveInResidentIds).is("deleted_at", null),
     ]);
-    const carePlanIds = new Set(((carePlansRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
-    const medIds = new Set(((medsRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
-    const payerIds = new Set(((payersRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
-    const consentIds = new Set(((consentsRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
+    carePlanIds = new Set(((carePlansRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
+    medIds = new Set(((medsRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
+    payerIds = new Set(((payersRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
+    consentIds = new Set(((consentsRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
     admissionsOnboardingPending = moveInResidentIds.filter((residentId) => {
       return !(carePlanIds.has(residentId) && medIds.has(residentId) && payerIds.has(residentId) && consentIds.has(residentId));
     }).length;
+  }
+
+  let referralsBlockedHandoffs = 0;
+  let referralsReadyHandoffs = 0;
+  let referralsOnboardingHandoffs = 0;
+  for (const row of admissionQueueRows) {
+    if (!row.referral_lead_id) continue;
+    const blocked = !row.financial_clearance_at || !row.physician_orders_received_at || !row.bed_id || !row.target_move_in_date;
+    if (blocked) {
+      referralsBlockedHandoffs += 1;
+      continue;
+    }
+    if (row.status !== "move_in") {
+      referralsReadyHandoffs += 1;
+      continue;
+    }
+    const residentId = row.resident_id;
+    const onboardingMissing =
+      !carePlanIds.has(residentId) ||
+      !medIds.has(residentId) ||
+      !payerIds.has(residentId) ||
+      !consentIds.has(residentId);
+    if (onboardingMissing) {
+      referralsOnboardingHandoffs += 1;
+    }
   }
 
   return {
@@ -490,6 +543,9 @@ export async function fetchAdminDashboardSnapshot(
       admissionsMoveInReady,
       admissionsOnboardingPending,
       referralsInAdmissions,
+      referralsBlockedHandoffs,
+      referralsReadyHandoffs,
+      referralsOnboardingHandoffs,
     },
     workflowInbox: buildWorkflowInbox({
       doctrinePendingReview: pendingDoctrineDocs.length,
@@ -501,6 +557,9 @@ export async function fetchAdminDashboardSnapshot(
       admissionsMoveInReady,
       admissionsOnboardingPending,
       referralsInAdmissions,
+      referralsBlockedHandoffs,
+      referralsReadyHandoffs,
+      referralsOnboardingHandoffs,
     }),
     censusPreview,
     activity,

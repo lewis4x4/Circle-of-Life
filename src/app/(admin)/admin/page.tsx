@@ -119,7 +119,10 @@ export default function AdminDashboardPage() {
     workflows.incidentOverdueFollowups +
     workflows.incidentUnassignedFollowups +
     workflows.admissionsBlocked +
-    workflows.admissionsOnboardingPending;
+    workflows.admissionsOnboardingPending +
+    workflows.referralsBlockedHandoffs +
+    workflows.referralsReadyHandoffs +
+    workflows.referralsOnboardingHandoffs;
 
   return (
     <div className="space-y-10 pb-12 overflow-x-hidden">
@@ -243,7 +246,7 @@ export default function AdminDashboardPage() {
               icon={ArrowRightLeft}
               href="/admin/referrals/in-admissions"
               urgency={workflows.referralsInAdmissions > 0 ? "medium" : "normal"}
-              subLabel="Leads already in admissions"
+              subLabel={`${workflows.referralsBlockedHandoffs} blocked · ${workflows.referralsReadyHandoffs} ready · ${workflows.referralsOnboardingHandoffs} onboarding`}
             />
           </MotionItem>
         </MotionList>
