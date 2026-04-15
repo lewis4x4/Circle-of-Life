@@ -34,6 +34,39 @@ function formatTs(iso: string | null) {
   }
 }
 
+function admissionReadinessChecklist(
+  row: CaseDetail,
+  rateTerms: Database["public"]["Tables"]["admission_case_rate_terms"]["Row"][],
+) {
+  return [
+    {
+      key: "financial",
+      label: "Financial clearance recorded",
+      passed: Boolean(row.financial_clearance_at),
+    },
+    {
+      key: "orders",
+      label: "Physician orders received",
+      passed: Boolean(row.physician_orders_received_at),
+    },
+    {
+      key: "bed",
+      label: "Bed assigned or reserved",
+      passed: Boolean(row.bed_id),
+    },
+    {
+      key: "move_in_date",
+      label: "Target move-in date set",
+      passed: Boolean(row.target_move_in_date),
+    },
+    {
+      key: "rate_terms",
+      label: "Rate terms recorded",
+      passed: rateTerms.length > 0,
+    },
+  ];
+}
+
 export default function AdminAdmissionCaseDetailPage() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
@@ -188,6 +221,41 @@ export default function AdminAdmissionCaseDetailPage() {
                     Updated: {formatTs(row.updated_at)}
                   </div>
                 </dl>
+              </div>
+
+              <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-amber-200/70 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-950/20 backdrop-blur-3xl shadow-sm relative overflow-hidden h-fit">
+                <div className="mb-6 border-b border-amber-200/70 dark:border-amber-900/40 pb-4 flex items-center justify-between">
+                  <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white">Move-In Readiness</h3>
+                  <span className="text-[10px] font-mono tracking-widest text-amber-700 dark:text-amber-300 uppercase">Operational checklist</span>
+                </div>
+                <div className="space-y-3">
+                  {admissionReadinessChecklist(row, rateTerms).map((item) => (
+                    <div key={item.key} className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/80 dark:bg-black/20 px-4 py-3 flex items-center justify-between gap-3">
+                      <span className="text-sm font-medium text-slate-900 dark:text-white">{item.label}</span>
+                      <span className={cn(
+                        "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-widest",
+                        item.passed
+                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                          : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+                      )}>
+                        {item.passed ? "Complete" : "Missing"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-5 rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/80 dark:bg-black/20 p-4">
+                  <p className="text-[10px] font-mono tracking-widest uppercase text-slate-500 mb-2">Next actions</p>
+                  <ul className="list-inside list-disc space-y-1 text-sm text-slate-700 dark:text-slate-300">
+                    {!row.financial_clearance_at ? <li>Record financial clearance before move-in.</li> : null}
+                    {!row.physician_orders_received_at ? <li>Capture physician orders receipt before move-in.</li> : null}
+                    {!row.bed_id ? <li>Reserve or assign a bed.</li> : null}
+                    {!row.target_move_in_date ? <li>Set a target move-in date.</li> : null}
+                    {rateTerms.length === 0 ? <li>Add quoted rate terms for the admission package.</li> : null}
+                    {row.financial_clearance_at && row.physician_orders_received_at && row.bed_id && row.target_move_in_date && rateTerms.length > 0 ? (
+                      <li>Core readiness items are in place. Advance this case through the move-in workflow.</li>
+                    ) : null}
+                  </ul>
+                </div>
               </div>
 
               <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-2xl backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative h-fit">

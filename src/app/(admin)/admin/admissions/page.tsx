@@ -23,7 +23,13 @@ type LeadRow = Pick<
 
 type CaseRow = Pick<
   Database["public"]["Tables"]["admission_cases"]["Row"],
-  "id" | "status" | "updated_at" | "target_move_in_date"
+  | "id"
+  | "status"
+  | "updated_at"
+  | "target_move_in_date"
+  | "financial_clearance_at"
+  | "physician_orders_received_at"
+  | "bed_id"
 > & {
   residents: { first_name: string; last_name: string } | null;
 };
@@ -66,6 +72,15 @@ function formatRelative(date: string | null): string {
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function admissionBlockers(row: CaseRow): string[] {
+  const blockers: string[] = [];
+  if (!row.financial_clearance_at) blockers.push("financial");
+  if (!row.physician_orders_received_at) blockers.push("orders");
+  if (!row.bed_id) blockers.push("bed");
+  if (!row.target_move_in_date) blockers.push("move-in date");
+  return blockers;
 }
 
 // Section component for lifecycle stages
@@ -147,7 +162,7 @@ export default function AdminAdmissionsHubPage() {
 
   // Admissions
   const [admissions, setAdmissions] = useState<CaseRow[]>([]);
-  const [admissionCounts, setAdmissionCounts] = useState({ pending: 0, reserved: 0, moveIn: 0, cancelled: 0 });
+  const [admissionCounts, setAdmissionCounts] = useState({ pending: 0, reserved: 0, moveIn: 0, cancelled: 0, blocked: 0 });
 
   // Discharges
   const [discharges, setDischarges] = useState<DischargeRow[]>([]);
@@ -168,7 +183,7 @@ export default function AdminAdmissionsHubPage() {
       setTriage([]);
       setConferences([]);
       setReferralCounts({ new: 0, pipeline: 0, converted: 0, attention: 0 });
-      setAdmissionCounts({ pending: 0, reserved: 0, moveIn: 0, cancelled: 0 });
+      setAdmissionCounts({ pending: 0, reserved: 0, moveIn: 0, cancelled: 0, blocked: 0 });
       setDischargeCounts({ draft: 0, review: 0, complete: 0, cancelled: 0 });
       setFamilyCounts({ triage: 0, conferences: 0, consents: 0 });
       setLoading(false);
@@ -210,7 +225,7 @@ export default function AdminAdmissionsHubPage() {
           .limit(5),
         supabase
           .from("admission_cases")
-          .select("id, status, updated_at, target_move_in_date, residents(first_name, last_name)")
+          .select("id, status, updated_at, target_move_in_date, financial_clearance_at, physician_orders_received_at, bed_id, residents(first_name, last_name)")
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
           .not("status", "eq", "cancelled")
@@ -273,11 +288,13 @@ export default function AdminAdmissionsHubPage() {
         converted: (cRefConv.count ?? 0) as number,
         attention: (cRefAtt.count ?? 0) as number,
       });
+      const admissionRows = (admList.data ?? []) as CaseRow[];
       setAdmissionCounts({
         pending: (cAdmPend.count ?? 0) as number,
         reserved: (cAdmRes.count ?? 0) as number,
         moveIn: (cAdmMove.count ?? 0) as number,
         cancelled: (cAdmCan.count ?? 0) as number,
+        blocked: admissionRows.filter((row) => admissionBlockers(row).length > 0).length,
       });
       setDischargeCounts({
         draft: (cDisDraft.count ?? 0) as number,
@@ -302,6 +319,10 @@ export default function AdminAdmissionsHubPage() {
   }, [load]);
 
   const noFacility = !selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId);
+  const blockedAdmissions = admissions
+    .map((row) => ({ row, blockers: admissionBlockers(row) }))
+    .filter((entry) => entry.blockers.length > 0)
+    .slice(0, 4);
 
   return (
     <div className="mx-auto max-w-6xl space-y-10 pb-12 w-full">
@@ -444,6 +465,7 @@ export default function AdminAdmissionsHubPage() {
           { label: "Pending", value: noFacility ? "—" : loading ? "—" : admissionCounts.pending },
           { label: "Bed Reserved", value: noFacility ? "—" : loading ? "—" : admissionCounts.reserved },
           { label: "Move-In Ready", value: noFacility ? "—" : loading ? "—" : admissionCounts.moveIn },
+          { label: "Blocked", value: noFacility ? "—" : loading ? "—" : admissionCounts.blocked },
         ]}
       >
         {noFacility ? (
@@ -455,9 +477,39 @@ export default function AdminAdmissionsHubPage() {
             No active cases. <Link href="/admin/admissions/new" className="underline text-indigo-600 dark:text-indigo-400">Start an admission</Link>.
           </p>
         ) : (
-          <MotionList className="space-y-3">
+          <div className="space-y-4">
+            {blockedAdmissions.length > 0 && (
+              <div className="rounded-[1.5rem] border border-amber-200/70 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/20 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest font-mono text-amber-700 dark:text-amber-300">Move-in readiness pressure</p>
+                    <p className="text-sm text-amber-900 dark:text-amber-100">These admissions are missing key readiness steps.</p>
+                  </div>
+                  <span className="text-sm font-semibold text-amber-900 dark:text-amber-100">{blockedAdmissions.length}</span>
+                </div>
+                <div className="mt-3 grid gap-3">
+                  {blockedAdmissions.map(({ row, blockers }) => (
+                    <Link
+                      key={row.id}
+                      href={`/admin/admissions/${row.id}`}
+                      className="rounded-xl border border-amber-200/70 bg-white/80 dark:border-amber-900/40 dark:bg-black/20 p-4 transition-colors hover:bg-white dark:hover:bg-black/30"
+                    >
+                      <div className="font-medium text-slate-900 dark:text-white">
+                        {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Unlinked case"}
+                      </div>
+                      <div className="mt-1 text-xs text-amber-800 dark:text-amber-200">
+                        {blockers.join(" · ")}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <MotionList className="space-y-3">
             {admissions.map((r) => {
               const isPending = r.status === "pending_clearance";
+              const blockers = admissionBlockers(r);
               return (
                 <MotionItem key={r.id}>
                   <Link
@@ -484,12 +536,20 @@ export default function AdminAdmissionsHubPage() {
                       <p className="text-xs text-slate-500 dark:text-zinc-500 mt-0.5">
                         {r.target_move_in_date ? `Target: ${r.target_move_in_date}` : "No date set"} · {formatRelative(r.updated_at)}
                       </p>
+                      {blockers.length > 0 ? (
+                        <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-300">
+                          Blockers: {blockers.join(" · ")}
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-[11px] text-emerald-700 dark:text-emerald-300">Ready for next move-in step.</p>
+                      )}
                     </div>
                   </Link>
                 </MotionItem>
               );
             })}
-          </MotionList>
+            </MotionList>
+          </div>
         )}
       </LifecycleSection>
 

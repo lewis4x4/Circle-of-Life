@@ -22,6 +22,14 @@ function dueDateLabel(value: string | null): string {
   return `Due ${new Date(value).toLocaleDateString()}`;
 }
 
+function isDueSoon(value: string | null, today: Date): boolean {
+  if (!value) return false;
+  const due = new Date(value);
+  due.setHours(0, 0, 0, 0);
+  const diffDays = Math.ceil((due.getTime() - today.getTime()) / 86_400_000);
+  return diffDays >= 0 && diffDays <= 3;
+}
+
 export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueueProps) {
   const supabase = useMemo(() => createClient(), []);
   const { user } = useHavenAuth();
@@ -87,6 +95,40 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
     });
     return { missingDraft, missingReviewer, overdue };
   }, [documents, draftCreatedIds, today]);
+
+  const doctrineMetrics = useMemo(() => {
+    const pendingDocs = documents.filter((doc) => doc.status === "pending_review");
+    const readyToPublish = pendingDocs.filter(
+      (doc) => !!doc.review_owner && !!doc.review_due_at && draftCreatedIds.has(doc.id),
+    ).length;
+    const blockedPending = pendingDocs.length - readyToPublish;
+    const dueSoon = pendingDocs.filter((doc) => isDueSoon(doc.review_due_at, today)).length;
+    const publishedThisWeek = documents.filter((doc) => {
+      if (!doc.approved_at || doc.status !== "published") return false;
+      const approvedAt = new Date(doc.approved_at);
+      return approvedAt.getTime() >= Date.now() - 7 * 86_400_000;
+    }).length;
+    return {
+      pendingDocs,
+      readyToPublish,
+      blockedPending,
+      dueSoon,
+      publishedThisWeek,
+    };
+  }, [documents, draftCreatedIds, today]);
+
+  const publishBlockers = useMemo(() => {
+    return doctrineMetrics.pendingDocs
+      .map((doc) => {
+        const blockers: string[] = [];
+        if (!doc.review_owner) blockers.push("no reviewer");
+        if (!doc.review_due_at) blockers.push("no due date");
+        if (!draftCreatedIds.has(doc.id)) blockers.push("no draft");
+        return { doc, blockers };
+      })
+      .filter((item) => item.blockers.length > 0)
+      .slice(0, 4);
+  }, [doctrineMetrics.pendingDocs, draftCreatedIds]);
 
   const runCreateDraft = useCallback(async (documentId: string) => {
     setActionLoading(documentId);
@@ -234,6 +276,41 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
         </div>
       )}
       <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            { label: "Pending review", value: doctrineMetrics.pendingDocs.length },
+            { label: "Ready to publish", value: doctrineMetrics.readyToPublish },
+            { label: "Blocked in review", value: doctrineMetrics.blockedPending },
+            { label: "Due soon / published 7d", value: `${doctrineMetrics.dueSoon} / ${doctrineMetrics.publishedThisWeek}` },
+          ].map((metric) => (
+            <div key={metric.label} className="rounded-xl border border-slate-200 dark:border-zinc-800 p-4">
+              <div className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">{metric.label}</div>
+              <div className="mt-1 text-2xl font-semibold text-slate-900 dark:text-zinc-100">{metric.value}</div>
+            </div>
+          ))}
+        </div>
+
+        {publishBlockers.length > 0 ? (
+          <div className="rounded-xl border border-amber-200/70 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/20 p-4 space-y-3">
+            <div>
+              <h4 className="text-sm font-semibold text-amber-900 dark:text-amber-100">Top promotion blockers</h4>
+              <p className="text-xs text-amber-800 dark:text-amber-200">These pending-review docs still have missing prerequisites.</p>
+            </div>
+            <div className="space-y-2">
+              {publishBlockers.map(({ doc, blockers }) => (
+                <Link
+                  key={doc.id}
+                  href={`/admin/knowledge/admin/review/${doc.id}`}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-amber-200/70 dark:border-amber-900/30 bg-white/80 dark:bg-black/20 px-3 py-2 text-sm transition-colors hover:bg-white dark:hover:bg-black/30"
+                >
+                  <span className="font-medium text-slate-900 dark:text-zinc-100">{doc.title}</span>
+                  <span className="text-xs text-amber-800 dark:text-amber-200">{blockers.join(" · ")}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         <div className="flex items-center gap-2">
           <FileWarning className="h-5 w-5 text-amber-500" />
           <div>
