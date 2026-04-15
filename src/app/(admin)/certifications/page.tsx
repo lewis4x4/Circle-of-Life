@@ -384,6 +384,28 @@ export default function AdminCertificationsPage() {
           setWindowFilter(DEFAULT_FILTERS.window);
         }}
       />
+      {(timeline !== DEFAULT_FILTERS.timeline || dbStatus !== DEFAULT_FILTERS.dbStatus || windowFilter !== DEFAULT_FILTERS.window) ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {timeline !== DEFAULT_FILTERS.timeline ? (
+            <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+              Timeline: {timeline.replace(/_/g, " ")}
+            </Badge>
+          ) : null}
+          {dbStatus !== DEFAULT_FILTERS.dbStatus ? (
+            <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+              Status: {dbStatus.replace(/_/g, " ")}
+            </Badge>
+          ) : null}
+          {windowFilter !== DEFAULT_FILTERS.window ? (
+            <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
+              Window: next 30 days
+            </Badge>
+          ) : null}
+          <Link href="/admin/certifications" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
+            Clear filters
+          </Link>
+        </div>
+      ) : null}
 
       {isLoading ? <AdminTableLoadingState /> : null}
       {!isLoading && error ? (
