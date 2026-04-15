@@ -6,17 +6,31 @@ import { useCallback, useEffect, useState } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
 
 import { ReferralsHubNav } from "../referrals-hub-nav";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants, Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 
 type LeadDetail = Database["public"]["Tables"]["referral_leads"]["Row"] & {
   referral_sources: { name: string } | null;
 };
+
+type EditableLeadStatus = Exclude<Database["public"]["Enums"]["referral_lead_status"], "merged">;
+
+const STATUS_OPTIONS: Array<{ value: EditableLeadStatus; label: string }> = [
+  { value: "new", label: "New" },
+  { value: "contacted", label: "Contacted" },
+  { value: "tour_scheduled", label: "Tour scheduled" },
+  { value: "tour_completed", label: "Tour completed" },
+  { value: "application_pending", label: "Application pending" },
+  { value: "waitlisted", label: "Waitlisted" },
+  { value: "converted", label: "Converted" },
+  { value: "lost", label: "Lost" },
+];
 
 function formatStatus(s: string) {
   return s.replace(/_/g, " ");
@@ -36,11 +50,17 @@ export default function AdminReferralLeadDetailPage() {
   const id = typeof params.id === "string" ? params.id : "";
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
+  const { user } = useHavenAuth();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lead, setLead] = useState<LeadDetail | null>(null);
   const [linkedAdmissionCaseId, setLinkedAdmissionCaseId] = useState<string | null>(null);
+  const [statusDraft, setStatusDraft] = useState<EditableLeadStatus>("new");
+  const [notesDraft, setNotesDraft] = useState("");
+  const [actionLoading, setActionLoading] = useState<"status" | "notes" | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!id) {
@@ -66,6 +86,8 @@ export default function AdminReferralLeadDetailPage() {
     } else {
       const leadRow = data as LeadDetail | null;
       setLead(leadRow);
+      setStatusDraft((leadRow?.status as EditableLeadStatus | undefined) ?? "new");
+      setNotesDraft(leadRow?.notes ?? "");
       if (leadRow) {
         const { data: admissionCase } = await supabase
           .from("admission_cases")
@@ -92,6 +114,36 @@ export default function AdminReferralLeadDetailPage() {
     isValidFacilityIdForQuery(selectedFacilityId) &&
     lead.facility_id !== selectedFacilityId;
 
+  const cannotSetConverted = Boolean(lead && !lead.converted_resident_id);
+
+  async function updateLead(
+    patch: Partial<Database["public"]["Tables"]["referral_leads"]["Update"]>,
+    kind: "status" | "notes",
+    successMessage: string,
+  ) {
+    if (!lead) return;
+    setActionLoading(kind);
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const { error: updateError } = await supabase
+        .from("referral_leads")
+        .update({
+          ...patch,
+          updated_at: new Date().toISOString(),
+          updated_by: user?.id ?? null,
+        })
+        .eq("id", lead.id);
+      if (updateError) throw updateError;
+      setActionMessage(successMessage);
+      await load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Could not update lead.");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -106,7 +158,7 @@ export default function AdminReferralLeadDetailPage() {
             Lead detail
           </h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-            Read-only view of pipeline fields; status edits ship in a follow-up.
+            Pipeline workspace for status, handoff, and prospect context.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -146,6 +198,16 @@ export default function AdminReferralLeadDetailPage() {
         </Card>
       ) : (
         <>
+          {actionError ? (
+            <p className="rounded-lg border border-red-200/80 bg-red-50/50 px-4 py-3 text-sm text-red-950 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-100">
+              {actionError}
+            </p>
+          ) : null}
+          {actionMessage ? (
+            <p className="rounded-lg border border-emerald-200/80 bg-emerald-50/50 px-4 py-3 text-sm text-emerald-950 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-100">
+              {actionMessage}
+            </p>
+          ) : null}
           {wrongFacility ? (
             <p className="rounded-lg border border-amber-200/80 bg-amber-50/50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
               This lead belongs to another facility. Switch the facility in the header to{" "}
@@ -172,6 +234,47 @@ export default function AdminReferralLeadDetailPage() {
               <p className="font-mono text-xs break-all text-slate-600 dark:text-slate-300">{lead.id}</p>
             </CardHeader>
             <CardContent className="space-y-6 text-sm">
+              <div className="rounded-lg border border-indigo-200/70 bg-indigo-50/60 px-4 py-4 dark:border-indigo-900/40 dark:bg-indigo-950/20">
+                <div className="grid gap-4 md:grid-cols-[1fr_auto]">
+                  <div className="space-y-2">
+                    <label htmlFor="lead-status" className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Pipeline status
+                    </label>
+                    <select
+                      id="lead-status"
+                      value={statusDraft}
+                      onChange={(event) => setStatusDraft(event.target.value as EditableLeadStatus)}
+                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      {STATUS_OPTIONS.map((option) => (
+                        <option
+                          key={option.value}
+                          value={option.value}
+                          disabled={option.value === "converted" && cannotSetConverted}
+                        >
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    {cannotSetConverted ? (
+                      <p className="text-xs text-amber-700 dark:text-amber-300">
+                        `Converted` requires a linked resident conversion record. Use the admissions workflow first.
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="flex items-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={actionLoading === "status" || statusDraft === lead.status}
+                      onClick={() => void updateLead({ status: statusDraft }, "status", "Lead status saved.")}
+                    >
+                      {actionLoading === "status" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save status"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
               <dl className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Status</dt>
@@ -199,7 +302,24 @@ export default function AdminReferralLeadDetailPage() {
                 </div>
                 <div className="sm:col-span-2">
                   <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Notes</dt>
-                  <dd className="mt-0.5 whitespace-pre-wrap text-slate-900 dark:text-slate-100">{lead.notes ?? "—"}</dd>
+                  <dd className="mt-2 space-y-3">
+                    <textarea
+                      value={notesDraft}
+                      onChange={(event) => setNotesDraft(event.target.value)}
+                      rows={5}
+                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={actionLoading === "notes" || notesDraft === (lead.notes ?? "")}
+                        onClick={() => void updateLead({ notes: notesDraft.trim() || null }, "notes", "Lead notes saved.")}
+                      >
+                        {actionLoading === "notes" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save notes"}
+                      </Button>
+                    </div>
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Converted resident</dt>
