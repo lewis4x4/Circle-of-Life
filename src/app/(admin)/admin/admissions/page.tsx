@@ -12,6 +12,8 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 
 // Types for each section
 type LeadRow = Pick<
@@ -56,14 +58,14 @@ type DischargePhase = "planning" | "pharmacist_review" | "ready_to_complete" | "
 
 type TriageRow = Pick<
   Database["public"]["Tables"]["family_message_triage_items"]["Row"],
-  "id" | "updated_at" | "matched_keywords"
+  "id" | "updated_at" | "matched_keywords" | "triage_status"
 > & {
   residents: { first_name: string; last_name: string } | null;
 };
 
 type ConferenceRow = Pick<
   Database["public"]["Tables"]["family_care_conference_sessions"]["Row"],
-  "id" | "scheduled_start" | "updated_at"
+  "id" | "scheduled_start" | "updated_at" | "status" | "recording_consent" | "recording_consent_at" | "recording_consent_by"
 > & {
   residents: { first_name: string; last_name: string } | null;
 };
@@ -242,6 +244,7 @@ function LifecycleSection({
 export default function AdminAdmissionsHubPage() {
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
+  const { user } = useHavenAuth();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -261,6 +264,9 @@ export default function AdminAdmissionsHubPage() {
   const [triage, setTriage] = useState<TriageRow[]>([]);
   const [conferences, setConferences] = useState<ConferenceRow[]>([]);
   const [familyCounts, setFamilyCounts] = useState({ triage: 0, conferences: 0, consents: 0 });
+  const [familyActionLoading, setFamilyActionLoading] = useState<string | null>(null);
+  const [familyActionError, setFamilyActionError] = useState<string | null>(null);
+  const [familyActionMessage, setFamilyActionMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -401,6 +407,62 @@ export default function AdminAdmissionsHubPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function updateTriageStatus(
+    itemId: string,
+    triageStatus: Database["public"]["Enums"]["family_message_triage_status"],
+    successMessage: string,
+  ) {
+    setFamilyActionLoading(itemId);
+    setFamilyActionError(null);
+    setFamilyActionMessage(null);
+    try {
+      const { error } = await supabase
+        .from("family_message_triage_items")
+        .update({
+          triage_status: triageStatus,
+          reviewed_at: triageStatus === "resolved" || triageStatus === "false_positive" ? new Date().toISOString() : null,
+          reviewed_by: triageStatus === "resolved" || triageStatus === "false_positive" ? user?.id ?? null : null,
+          updated_at: new Date().toISOString(),
+          updated_by: user?.id ?? null,
+        })
+        .eq("id", itemId);
+      if (error) throw error;
+      setFamilyActionMessage(successMessage);
+      await load();
+    } catch (err) {
+      setFamilyActionError(err instanceof Error ? err.message : "Could not update triage item.");
+    } finally {
+      setFamilyActionLoading(null);
+    }
+  }
+
+  async function updateConference(
+    sessionId: string,
+    patch: Partial<Database["public"]["Tables"]["family_care_conference_sessions"]["Update"]>,
+    successMessage: string,
+  ) {
+    setFamilyActionLoading(sessionId);
+    setFamilyActionError(null);
+    setFamilyActionMessage(null);
+    try {
+      const { error } = await supabase
+        .from("family_care_conference_sessions")
+        .update({
+          ...patch,
+          updated_at: new Date().toISOString(),
+          updated_by: user?.id ?? null,
+        })
+        .eq("id", sessionId);
+      if (error) throw error;
+      setFamilyActionMessage(successMessage);
+      await load();
+    } catch (err) {
+      setFamilyActionError(err instanceof Error ? err.message : "Could not update care conference.");
+    } finally {
+      setFamilyActionLoading(null);
+    }
+  }
 
   const noFacility = !selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId);
   const blockedAdmissions = admissions
@@ -985,6 +1047,16 @@ export default function AdminAdmissionsHubPage() {
           { label: "Consents", value: noFacility ? "—" : loading ? "—" : familyCounts.consents },
         ]}
       >
+        {familyActionError ? (
+          <div className="rounded-[1.5rem] border border-rose-500/20 bg-rose-500/5 p-4 text-sm text-rose-700 dark:text-rose-400">
+            {familyActionError}
+          </div>
+        ) : null}
+        {familyActionMessage ? (
+          <div className="rounded-[1.5rem] border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-emerald-700 dark:text-emerald-300">
+            {familyActionMessage}
+          </div>
+        ) : null}
         {noFacility ? (
           <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500">Select a facility to view family connections.</p>
         ) : loading ? (
@@ -1017,6 +1089,44 @@ export default function AdminAdmissionsHubPage() {
                     <p className="text-xs text-slate-500 dark:text-zinc-500 mt-0.5 truncate">
                       {t.matched_keywords?.join(", ") ?? "Keywords detected"} · {formatRelative(t.updated_at)}
                     </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={familyActionLoading === t.id || t.triage_status === "in_review"}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          void updateTriageStatus(t.id, "in_review", "Message triage moved to in review.");
+                        }}
+                      >
+                        In review
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={familyActionLoading === t.id || t.triage_status === "resolved"}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          void updateTriageStatus(t.id, "resolved", "Message triage resolved.");
+                        }}
+                      >
+                        Resolve
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={familyActionLoading === t.id || t.triage_status === "false_positive"}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          void updateTriageStatus(t.id, "false_positive", "Message triage marked false positive.");
+                        }}
+                      >
+                        False positive
+                      </Button>
+                    </div>
                   </div>
                 </Link>
               </MotionItem>
@@ -1043,6 +1153,52 @@ export default function AdminAdmissionsHubPage() {
                     <p className="text-xs text-slate-500 dark:text-zinc-500 mt-0.5">
                       {c.scheduled_start ? new Date(c.scheduled_start).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "No date"} · {formatRelative(c.updated_at)}
                     </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={familyActionLoading === c.id || c.status === "completed"}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          void updateConference(c.id, { status: "completed" }, "Care conference marked completed.");
+                        }}
+                      >
+                        Complete
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={familyActionLoading === c.id || c.status === "cancelled"}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          void updateConference(c.id, { status: "cancelled" }, "Care conference cancelled.");
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={familyActionLoading === c.id || c.recording_consent}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          void updateConference(
+                            c.id,
+                            {
+                              recording_consent: true,
+                              recording_consent_at: c.recording_consent_at ?? new Date().toISOString(),
+                              recording_consent_by: c.recording_consent_by ?? user?.id ?? null,
+                            },
+                            "Recording consent documented.",
+                          );
+                        }}
+                      >
+                        Record consent
+                      </Button>
+                    </div>
                   </div>
                 </Link>
               </MotionItem>
