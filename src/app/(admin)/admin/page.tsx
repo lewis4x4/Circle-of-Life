@@ -364,7 +364,7 @@ export default function AdminDashboardPage() {
         <div className="flex items-center justify-between border-b border-slate-200/50 dark:border-white/10 pb-3">
           <div>
             <h2 className="text-xl font-display font-medium text-slate-900 dark:text-white">Workflow Convergence</h2>
-            <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">Cross-lane backlog state across doctrine, incidents, and admissions.</p>
+            <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">Cross-lane backlog state across doctrine, incidents, admissions, referrals, discharge, and family workflows.</p>
           </div>
         </div>
         <MotionList className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
