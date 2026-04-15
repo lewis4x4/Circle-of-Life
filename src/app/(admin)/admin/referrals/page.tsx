@@ -120,11 +120,13 @@ export default function AdminReferralsHubPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [rows, setRows] = useState<LeadRow[]>([]);
+  const [activeAdmissionCaseByLeadId, setActiveAdmissionCaseByLeadId] = useState<Record<string, string>>({});
   const [counts, setCounts] = useState({
     new: 0,
     pipeline: 0,
     converted: 0,
     attention: 0,
+    inAdmissions: 0,
   });
   const [hl7Counts, setHl7Counts] = useState({ pending: 0, failed: 0 });
   const [exportingCsv, setExportingCsv] = useState(false);
@@ -163,8 +165,9 @@ export default function AdminReferralsHubPage() {
     setLoadError(null);
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
       setRows([]);
-      setCounts({ new: 0, pipeline: 0, converted: 0, attention: 0 });
+      setCounts({ new: 0, pipeline: 0, converted: 0, attention: 0, inAdmissions: 0 });
       setHl7Counts({ pending: 0, failed: 0 });
+      setActiveAdmissionCaseByLeadId({});
       setLoading(false);
       return;
     }
@@ -181,7 +184,30 @@ export default function AdminReferralsHubPage() {
         .limit(50);
 
       if (listErr) throw listErr;
-      setRows((list ?? []) as LeadRow[]);
+      const leadRows = (list ?? []) as LeadRow[];
+      setRows(leadRows);
+
+      const leadIds = leadRows.map((row) => row.id);
+      let inAdmissionsCount = 0;
+      if (leadIds.length > 0) {
+        const { data: admissionCases, error: admissionErr } = await supabase
+          .from("admission_cases")
+          .select("id, referral_lead_id")
+          .eq("facility_id", selectedFacilityId)
+          .is("deleted_at", null)
+          .in("referral_lead_id", leadIds)
+          .not("status", "eq", "cancelled");
+        if (admissionErr) throw admissionErr;
+        const activeMap = Object.fromEntries(
+          ((admissionCases ?? []) as Array<{ id: string; referral_lead_id: string | null }>)
+            .filter((row) => !!row.referral_lead_id)
+            .map((row) => [row.referral_lead_id as string, row.id]),
+        );
+        setActiveAdmissionCaseByLeadId(activeMap);
+        inAdmissionsCount = Object.keys(activeMap).length;
+      } else {
+        setActiveAdmissionCaseByLeadId({});
+      }
 
       const base = () =>
         supabase
@@ -216,6 +242,7 @@ export default function AdminReferralsHubPage() {
         pipeline: cPipe.count ?? 0,
         converted: cConv.count ?? 0,
         attention: cAtt.count ?? 0,
+        inAdmissions: inAdmissionsCount,
       });
       setHl7Counts({
         pending: hl7Pending.count ?? 0,
@@ -225,6 +252,7 @@ export default function AdminReferralsHubPage() {
       setLoadError(e instanceof Error ? e.message : "Could not load referrals.");
       setRows([]);
       setHl7Counts({ pending: 0, failed: 0 });
+      setActiveAdmissionCaseByLeadId({});
     } finally {
       setLoading(false);
     }
@@ -346,6 +374,18 @@ export default function AdminReferralsHubPage() {
                    {noFacility ? "—" : loading ? "—" : counts.attention}
                  </p>
                </div>
+             </div>
+           </V2Card>
+        </div>
+        <div className="h-[180px]">
+           <V2Card hoverColor="amber" className="border-amber-500/20 shadow-[0_8px_30px_rgba(245,158,11,0.05)]">
+             <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
+               <h3 className="text-xs font-bold tracking-widest uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                 In Admissions
+               </h3>
+               <p className="text-6xl font-display font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
+                 {noFacility ? "—" : loading ? "—" : counts.inAdmissions}
+               </p>
              </div>
            </V2Card>
         </div>
@@ -501,6 +541,7 @@ export default function AdminReferralsHubPage() {
                 <MotionList className="space-y-4">
                   {displayRows.map((r) => {
                     const isNew = r.status.includes('new');
+                    const linkedAdmissionCaseId = activeAdmissionCaseByLeadId[r.id] ?? null;
                     
                     return (
                       <MotionItem key={r.id}>
@@ -519,12 +560,19 @@ export default function AdminReferralsHubPage() {
                           
                           <div className="flex flex-row justify-between lg:justify-start items-center">
                             <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Status</span>
-                            <span className={cn(
-                              "text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded-full border shadow-inner",
-                              isNew ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400" : "bg-slate-500/10 text-slate-600 border-slate-500/20 dark:text-slate-400"
-                            )}>
-                              {formatStatus(r.status)}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className={cn(
+                                "text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded-full border shadow-inner",
+                                isNew ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400" : "bg-slate-500/10 text-slate-600 border-slate-500/20 dark:text-slate-400"
+                              )}>
+                                {formatStatus(r.status)}
+                              </span>
+                              {linkedAdmissionCaseId ? (
+                                <span className="text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded-full border shadow-inner bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300">
+                                  In admissions
+                                </span>
+                              ) : null}
+                            </div>
                           </div>
                           
                           <div className="flex flex-row justify-between lg:justify-end items-center">
@@ -536,9 +584,16 @@ export default function AdminReferralsHubPage() {
 
                           <div className="flex flex-row justify-between lg:justify-end items-center">
                             <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Updated</span>
-                            <span className="text-[11px] font-mono tracking-wide text-slate-500 dark:text-zinc-500">
-                              {new Date(r.updated_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
-                            </span>
+                            <div className="flex flex-col items-end">
+                              <span className="text-[11px] font-mono tracking-wide text-slate-500 dark:text-zinc-500">
+                                {new Date(r.updated_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                              </span>
+                              {linkedAdmissionCaseId ? (
+                                <span className="text-[11px] text-amber-700 dark:text-amber-300">
+                                  Admission case active
+                                </span>
+                              ) : null}
+                            </div>
                           </div>
                         </Link>
                       </MotionItem>
