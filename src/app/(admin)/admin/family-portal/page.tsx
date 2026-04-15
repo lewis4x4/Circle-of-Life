@@ -12,6 +12,8 @@ import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { Button } from "@/components/ui/button";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 
 type TriageRow = Database["public"]["Tables"]["family_message_triage_items"]["Row"] & {
   family_portal_messages: { body: string } | null;
@@ -33,11 +35,15 @@ function formatStatus(s: string) {
 export default function AdminFamilyPortalPage() {
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
+  const { user } = useHavenAuth();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [triage, setTriage] = useState<TriageRow[]>([]);
   const [conferences, setConferences] = useState<ConferenceRow[]>([]);
   const [consents, setConsents] = useState<ConsentRow[]>([]);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -98,6 +104,62 @@ export default function AdminFamilyPortalPage() {
     void load();
   }, [load]);
 
+  async function updateTriageStatus(
+    itemId: string,
+    triageStatus: Database["public"]["Enums"]["family_message_triage_status"],
+    successMessage: string,
+  ) {
+    setActionLoading(itemId);
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const { error } = await supabase
+        .from("family_message_triage_items")
+        .update({
+          triage_status: triageStatus,
+          reviewed_at: triageStatus === "resolved" || triageStatus === "false_positive" ? new Date().toISOString() : null,
+          reviewed_by: triageStatus === "resolved" || triageStatus === "false_positive" ? user?.id ?? null : null,
+          updated_at: new Date().toISOString(),
+          updated_by: user?.id ?? null,
+        })
+        .eq("id", itemId);
+      if (error) throw error;
+      setActionMessage(successMessage);
+      await load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Could not update triage item.");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function updateConference(
+    sessionId: string,
+    patch: Partial<Database["public"]["Tables"]["family_care_conference_sessions"]["Update"]>,
+    successMessage: string,
+  ) {
+    setActionLoading(sessionId);
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const { error } = await supabase
+        .from("family_care_conference_sessions")
+        .update({
+          ...patch,
+          updated_at: new Date().toISOString(),
+          updated_by: user?.id ?? null,
+        })
+        .eq("id", sessionId);
+      if (error) throw error;
+      setActionMessage(successMessage);
+      await load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Could not update care conference.");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
 
   return (
@@ -142,6 +204,22 @@ export default function AdminFamilyPortalPage() {
               <span className="font-bold">!</span>
            </div>
            {loadError}
+        </div>
+      )}
+      {actionError && (
+        <div className="rounded-[1.5rem] border border-rose-500/20 bg-rose-500/5 p-6 text-sm text-rose-700 dark:text-rose-400 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm mx-6">
+           <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/30">
+              <span className="font-bold">!</span>
+           </div>
+           {actionError}
+        </div>
+      )}
+      {actionMessage && (
+        <div className="rounded-[1.5rem] border border-emerald-500/20 bg-emerald-500/5 p-6 text-sm text-emerald-700 dark:text-emerald-300 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm mx-6">
+           <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 border border-emerald-500/30">
+              <span className="font-bold">✓</span>
+           </div>
+           {actionMessage}
         </div>
       )}
 
@@ -217,9 +295,40 @@ export default function AdminFamilyPortalPage() {
 
                         <div className="flex flex-row justify-between lg:justify-end items-center">
                           <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Updated</span>
-                          <span className="text-[11px] font-mono tracking-wide text-slate-500 dark:text-zinc-500 whitespace-nowrap">
-                            {format(new Date(row.updated_at), "MMM d, yyyy")}
-                          </span>
+                          <div className="flex flex-col items-end gap-2">
+                            <span className="text-[11px] font-mono tracking-wide text-slate-500 dark:text-zinc-500 whitespace-nowrap">
+                              {format(new Date(row.updated_at), "MMM d, yyyy")}
+                            </span>
+                            <div className="flex flex-wrap justify-end gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={actionLoading === row.id || row.triage_status === "in_review"}
+                                onClick={() => void updateTriageStatus(row.id, "in_review", "Message triage moved to in review.")}
+                              >
+                                In review
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={actionLoading === row.id || row.triage_status === "resolved"}
+                                onClick={() => void updateTriageStatus(row.id, "resolved", "Message triage resolved.")}
+                              >
+                                Resolve
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={actionLoading === row.id || row.triage_status === "false_positive"}
+                                onClick={() => void updateTriageStatus(row.id, "false_positive", "Message triage marked false positive.")}
+                              >
+                                False positive
+                              </Button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </MotionItem>
@@ -299,9 +408,62 @@ export default function AdminFamilyPortalPage() {
 
                         <div className="flex flex-row justify-between lg:justify-start items-center">
                           <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Room</span>
-                          <span className="text-sm font-mono text-slate-500 dark:text-zinc-500 truncate">
-                            {row.external_room_id ?? "—"}
-                          </span>
+                          <div className="flex flex-col items-start lg:items-end gap-2">
+                            <span className="text-sm font-mono text-slate-500 dark:text-zinc-500 truncate">
+                              {row.external_room_id ?? "—"}
+                            </span>
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={actionLoading === row.id || row.status === "completed"}
+                                onClick={() =>
+                                  void updateConference(
+                                    row.id,
+                                    { status: "completed" },
+                                    "Care conference marked completed.",
+                                  )
+                                }
+                              >
+                                Complete
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={actionLoading === row.id || row.status === "cancelled"}
+                                onClick={() =>
+                                  void updateConference(
+                                    row.id,
+                                    { status: "cancelled" },
+                                    "Care conference cancelled.",
+                                  )
+                                }
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={actionLoading === row.id || row.recording_consent}
+                                onClick={() =>
+                                  void updateConference(
+                                    row.id,
+                                    {
+                                      recording_consent: true,
+                                      recording_consent_at: row.recording_consent_at ?? new Date().toISOString(),
+                                      recording_consent_by: row.recording_consent_by ?? user?.id ?? null,
+                                    },
+                                    "Recording consent documented.",
+                                  )
+                                }
+                              >
+                                Record consent
+                              </Button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </MotionItem>
