@@ -289,7 +289,7 @@ export default function AdminDashboardPage() {
             title="Staffing Gaps" 
             value={staffingGaps} 
             icon={UserCog}
-            href="/admin/staffing"
+            href="/admin/staffing?compliance=non_compliant"
             urgency={staffingGaps > 0 ? "high" : "normal"} 
             subLabel="Non-compliant snapshots (24h)"
           />

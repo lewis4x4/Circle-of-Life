@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { Users, AlertCircle, Clock, FileWarning, CalendarPlus, Activity, Download } from "lucide-react";
 
@@ -32,6 +33,8 @@ type SnapshotRow = {
   requiredRatio: number;
   isCompliant: boolean;
 };
+
+type ComplianceFilter = "all" | "non_compliant" | "compliant";
 
 // Mock Types to achieve UI requirements
 type ShiftGap = {
@@ -88,6 +91,7 @@ function buildStaffingSnapshotsCsv(rows: StaffingSnapshotCsvRow[]): string {
 }
 
 export default function AdminStaffingConsolePage() {
+  const searchParams = useSearchParams();
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
   const [snapshots, setSnapshots] = useState<SnapshotRow[]>([]);
@@ -95,6 +99,7 @@ export default function AdminStaffingConsolePage() {
   const [error, setError] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
   const [csvExportError, setCsvExportError] = useState<string | null>(null);
+  const [complianceFilter, setComplianceFilter] = useState<ComplianceFilter>("all");
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -113,18 +118,33 @@ export default function AdminStaffingConsolePage() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    const requestedFilter = searchParams.get("compliance");
+    if (requestedFilter === "non_compliant" || requestedFilter === "compliant") {
+      setComplianceFilter(requestedFilter);
+      return;
+    }
+    setComplianceFilter("all");
+  }, [searchParams]);
+
   const snapshotIdsInOrder = useMemo(() => snapshots.map((s) => s.id), [snapshots]);
+  const visibleSnapshots = useMemo(() => {
+    if (complianceFilter === "non_compliant") return snapshots.filter((s) => !s.isCompliant);
+    if (complianceFilter === "compliant") return snapshots.filter((s) => s.isCompliant);
+    return snapshots;
+  }, [complianceFilter, snapshots]);
 
   const exportStaffingSnapshotsCsv = useCallback(async () => {
     setExportingCsv(true);
     setCsvExportError(null);
     try {
       const stamp = format(new Date(), "yyyy-MM-dd");
-      if (snapshotIdsInOrder.length === 0) {
+      if (visibleSnapshots.length === 0) {
         triggerCsvDownload(`staffing-ratio-snapshots-${stamp}.csv`, buildStaffingSnapshotsCsv([]));
         return;
       }
 
+      const snapshotIdsInOrder = visibleSnapshots.map((s) => s.id);
       const res = await supabase
         .from("staffing_ratio_snapshots" as never)
         .select("*")
@@ -141,7 +161,7 @@ export default function AdminStaffingConsolePage() {
     } finally {
       setExportingCsv(false);
     }
-  }, [supabase, snapshotIdsInOrder]);
+  }, [supabase, visibleSnapshots]);
 
   if (isLoading) {
     return (
@@ -357,9 +377,30 @@ export default function AdminStaffingConsolePage() {
             </MotionList>
             
             <div className="mt-4 glass-panel p-5 rounded-2xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40">
-               <p className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500 mb-4">Recent Ratio Snapshots (Historical)</p>
+               <div className="mb-4 flex flex-wrap items-center gap-2">
+                 <p className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500">Recent Ratio Snapshots (Historical)</p>
+                 {([
+                   { value: "all", label: `All (${snapshots.length})` },
+                   { value: "non_compliant", label: `Non-compliant (${snapshots.filter((s) => !s.isCompliant).length})` },
+                   { value: "compliant", label: `Compliant (${snapshots.filter((s) => s.isCompliant).length})` },
+                 ] as Array<{ value: ComplianceFilter; label: string }>).map((option) => (
+                   <button
+                     key={option.value}
+                     type="button"
+                     onClick={() => setComplianceFilter(option.value)}
+                     className={cn(
+                       "rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors",
+                       complianceFilter === option.value
+                         ? "bg-indigo-600 text-white"
+                         : "bg-white/80 text-slate-600 hover:bg-white dark:bg-black/20 dark:text-zinc-300 dark:hover:bg-black/30",
+                     )}
+                   >
+                     {option.label}
+                   </button>
+                 ))}
+               </div>
                <div className="flex flex-col gap-3">
-                 {snapshots.slice(0, 3).map(snap => (
+                 {visibleSnapshots.slice(0, 3).map(snap => (
                     <div key={snap.id} className="flex justify-between items-center text-sm">
                       <span className="font-mono text-xs text-slate-600 dark:text-slate-400">{new Date(snap.snapshotAt).toLocaleDateString()} {snap.shift}</span>
                       <span className={cn("font-mono text-xs font-bold uppercase tracking-widest", snap.isCompliant ? "text-emerald-500" : "text-rose-500")}>
@@ -367,6 +408,9 @@ export default function AdminStaffingConsolePage() {
                       </span>
                     </div>
                  ))}
+                 {visibleSnapshots.length === 0 ? (
+                   <p className="text-xs font-mono text-slate-500 dark:text-zinc-400">No staffing snapshots match this compliance filter.</p>
+                 ) : null}
                </div>
             </div>
          </div>
