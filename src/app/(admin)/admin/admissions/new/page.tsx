@@ -78,6 +78,7 @@ export default function AdminAdmissionsNewPage() {
   const [leads, setLeads] = useState<LeadOption[]>([]);
   const [beds, setBeds] = useState<BedOption[]>([]);
   const [prefillApplied, setPrefillApplied] = useState(false);
+  const [existingAdmissionCaseId, setExistingAdmissionCaseId] = useState<string | null>(null);
 
   const loadRefs = useCallback(async () => {
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
@@ -143,6 +144,26 @@ export default function AdminAdmissionsNewPage() {
     setNotes((prev) => prev || selectedLead.notes || "");
     setPrefillApplied(true);
   }, [leads, preselectedLeadId, prefillApplied]);
+
+  useEffect(() => {
+    async function checkExistingCase() {
+      if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId) || !referralLeadId) {
+        setExistingAdmissionCaseId(null);
+        return;
+      }
+      const { data } = await supabase
+        .from("admission_cases")
+        .select("id")
+        .eq("facility_id", selectedFacilityId)
+        .eq("referral_lead_id", referralLeadId)
+        .is("deleted_at", null)
+        .not("status", "eq", "cancelled")
+        .maybeSingle();
+      setExistingAdmissionCaseId(data?.id ?? null);
+    }
+
+    void checkExistingCase();
+  }, [referralLeadId, selectedFacilityId, supabase]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -278,6 +299,16 @@ export default function AdminAdmissionsNewPage() {
             <p className="text-sm text-amber-800 dark:text-amber-200">Select a facility in the header to continue.</p>
           ) : (
             <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
+              {existingAdmissionCaseId ? (
+                <div className="rounded-lg border border-indigo-200/80 bg-indigo-50/50 px-4 py-3 text-sm text-indigo-950 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-indigo-100">
+                  This referral lead already has an active admission case. Open that case instead of creating a duplicate.
+                  <div className="mt-3">
+                    <Link href={`/admin/admissions/${existingAdmissionCaseId}`} className={cn(buttonVariants({ size: "sm" }))}>
+                      Open existing admission case
+                    </Link>
+                  </div>
+                </div>
+              ) : null}
               {referralLeadId ? (
                 <div className="rounded-lg border border-indigo-200/80 bg-indigo-50/50 px-4 py-3 text-sm text-indigo-900 dark:border-indigo-900/40 dark:bg-indigo-950/30 dark:text-indigo-100">
                   Admission will be linked to the selected referral lead and the new resident form has been prefilled where data exists.
@@ -453,7 +484,7 @@ export default function AdminAdmissionsNewPage() {
                 </p>
               ) : null}
 
-              <Button type="submit" disabled={submitting || (isCreatingResident ? false : residents.length === 0)}>
+              <Button type="submit" disabled={submitting || Boolean(existingAdmissionCaseId) || (isCreatingResident ? false : residents.length === 0)}>
                 {submitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -40,6 +40,7 @@ export default function AdminReferralLeadDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lead, setLead] = useState<LeadDetail | null>(null);
+  const [linkedAdmissionCaseId, setLinkedAdmissionCaseId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!id) {
@@ -61,8 +62,22 @@ export default function AdminReferralLeadDetailPage() {
     if (qErr) {
       setError(qErr.message);
       setLead(null);
+      setLinkedAdmissionCaseId(null);
     } else {
-      setLead(data as LeadDetail | null);
+      const leadRow = data as LeadDetail | null;
+      setLead(leadRow);
+      if (leadRow) {
+        const { data: admissionCase } = await supabase
+          .from("admission_cases")
+          .select("id")
+          .eq("referral_lead_id", leadRow.id)
+          .is("deleted_at", null)
+          .not("status", "eq", "cancelled")
+          .maybeSingle();
+        setLinkedAdmissionCaseId(admissionCase?.id ?? null);
+      } else {
+        setLinkedAdmissionCaseId(null);
+      }
     }
     setLoading(false);
   }, [supabase, id]);
@@ -95,7 +110,12 @@ export default function AdminReferralLeadDetailPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {lead && !lead.converted_resident_id ? (
+          {linkedAdmissionCaseId ? (
+            <Link href={`/admin/admissions/${linkedAdmissionCaseId}`} className={cn(buttonVariants({ size: "sm" }))}>
+              Open admission case
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          ) : lead && !lead.converted_resident_id ? (
             <Link href={`/admin/admissions/new?lead=${lead.id}`} className={cn(buttonVariants({ size: "sm" }))}>
               Start admission
               <ArrowRight className="ml-2 h-4 w-4" />
@@ -130,6 +150,12 @@ export default function AdminReferralLeadDetailPage() {
             <p className="rounded-lg border border-amber-200/80 bg-amber-50/50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
               This lead belongs to another facility. Switch the facility in the header to{" "}
               <span className="font-mono text-xs">{lead.facility_id}</span> to align context.
+            </p>
+          ) : null}
+
+          {linkedAdmissionCaseId ? (
+            <p className="rounded-lg border border-indigo-200/80 bg-indigo-50/50 px-4 py-3 text-sm text-indigo-950 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-indigo-100">
+              This lead already has an active admission case. Continue the workflow from that case instead of starting a duplicate handoff.
             </p>
           ) : null}
 
