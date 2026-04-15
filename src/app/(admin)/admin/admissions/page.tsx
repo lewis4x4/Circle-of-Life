@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { UserPlus, Home, DoorOpen, MessageCircle, ArrowRight, Plus } from "lucide-react";
 
 import { V2Card } from "@/components/ui/moonshot/v2-card";
@@ -232,8 +232,7 @@ export default function AdminAdmissionsHubPage() {
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
           .not("status", "eq", "cancelled")
-          .order("updated_at", { ascending: false })
-          .limit(5),
+          .order("updated_at", { ascending: false }),
         supabase
           .from("discharge_med_reconciliation")
           .select("id, status, updated_at, residents(first_name, last_name)")
@@ -413,6 +412,24 @@ export default function AdminAdmissionsHubPage() {
       helperText: "Move-in complete and downstream setup is clear.",
     };
   }
+
+  const featuredAdmissions = useMemo(() => {
+    const phaseOrder: Record<AdmissionPhase, number> = {
+      blocked: 0,
+      ready: 1,
+      onboarding: 2,
+      stable: 3,
+    };
+    return [...admissions]
+      .sort((a, b) => {
+        const phaseA = describeAdmissionPhase(a).phase;
+        const phaseB = describeAdmissionPhase(b).phase;
+        const phaseDelta = phaseOrder[phaseA] - phaseOrder[phaseB];
+        if (phaseDelta !== 0) return phaseDelta;
+        return new Date(b.updated_at ?? 0).getTime() - new Date(a.updated_at ?? 0).getTime();
+      })
+      .slice(0, 8);
+  }, [admissions, onboardingState]);
 
   return (
     <div className="mx-auto max-w-6xl space-y-10 pb-12 w-full">
@@ -622,7 +639,7 @@ export default function AdminAdmissionsHubPage() {
             </div>
 
             <MotionList className="space-y-3">
-            {admissions.map((r) => {
+            {featuredAdmissions.map((r) => {
               const isPending = r.status === "pending_clearance";
               const phase = describeAdmissionPhase(r);
               return (
