@@ -45,6 +45,8 @@ export type AdminDashboardSnapshot = {
     doctrinePendingReview: number;
     doctrineBlockedReview: number;
     doctrineReadyToPublish: number;
+    doctrineDueSoon: number;
+    doctrineOverdue: number;
     incidentOverdueFollowups: number;
     incidentUnassignedFollowups: number;
     incidentEscalatedFollowups: number;
@@ -192,10 +194,20 @@ function formatIncidentCategory(raw: string): string {
   return raw.replace(/_/g, " ");
 }
 
+function isDueSoon(value: string | null, today: Date): boolean {
+  if (!value) return false;
+  const due = new Date(value);
+  due.setHours(0, 0, 0, 0);
+  const diffDays = Math.ceil((due.getTime() - today.getTime()) / 86_400_000);
+  return diffDays >= 0 && diffDays <= 3;
+}
+
 function buildWorkflowInbox(input: {
   doctrineBlockedReview: number;
   doctrinePendingReview: number;
   doctrineReadyToPublish: number;
+  doctrineDueSoon: number;
+  doctrineOverdue: number;
   incidentOverdueFollowups: number;
   incidentUnassignedFollowups: number;
   incidentEscalatedFollowups: number;
@@ -231,6 +243,20 @@ function buildWorkflowInbox(input: {
       tone: "normal",
       href: "/admin/knowledge/admin",
       ctaLabel: "Review ready docs",
+    });
+  }
+
+  if (input.doctrineOverdue > 0 || input.doctrineDueSoon > 0) {
+    const parts: string[] = [];
+    if (input.doctrineOverdue > 0) parts.push(`${input.doctrineOverdue} overdue`);
+    if (input.doctrineDueSoon > 0) parts.push(`${input.doctrineDueSoon} due soon`);
+    items.push({
+      id: "doctrine-sla",
+      label: "Doctrine SLA",
+      message: `${parts.join(" · ")} review${input.doctrineOverdue + input.doctrineDueSoon === 1 ? "" : "s"} need attention in the doctrine lane.`,
+      tone: input.doctrineOverdue > 0 ? "warning" : "normal",
+      href: "/admin/knowledge/admin",
+      ctaLabel: "Review SLA queue",
     });
   }
 
@@ -516,6 +542,8 @@ export async function fetchAdminDashboardSnapshot(
   const residentCount = residentsCountRes.count ?? 0;
   const activeStaffCount = staffCountRes.count ?? 0;
   const openIncidentAlerts = incidentsCountRes.count ?? 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   const pendingDoctrineDocs = doctrinePendingResult.data ?? [];
   const doctrineDocIds = pendingDoctrineDocs.map((doc) => doc.id);
@@ -535,6 +563,13 @@ export async function fetchAdminDashboardSnapshot(
     (doc) => !doc.review_owner || !doc.review_due_at || !draftCreatedIds.has(doc.id),
   ).length;
   const doctrineReadyToPublish = pendingDoctrineDocs.length - doctrineBlockedReview;
+  const doctrineDueSoon = pendingDoctrineDocs.filter((doc) => isDueSoon(doc.review_due_at, today)).length;
+  const doctrineOverdue = pendingDoctrineDocs.filter((doc) => {
+    if (!doc.review_due_at) return false;
+    const due = new Date(doc.review_due_at);
+    due.setHours(0, 0, 0, 0);
+    return due < today;
+  }).length;
   const incidentWorkflowRows = incidentWorkflowRes.data ?? [];
   const incidentRcaById = new Map((incidentRcaRes.data ?? []).map((row) => [row.incident_id, row.investigation_status] as const));
   const incidentOpenObligations = incidentWorkflowRows.filter((row) => buildIncidentOpenObligations(row).length > 0).length;
@@ -616,6 +651,8 @@ export async function fetchAdminDashboardSnapshot(
       doctrinePendingReview: pendingDoctrineDocs.length,
       doctrineBlockedReview,
       doctrineReadyToPublish,
+      doctrineDueSoon,
+      doctrineOverdue,
       incidentOverdueFollowups: incidentOverdueFollowupsRes.count ?? 0,
       incidentUnassignedFollowups: incidentUnassignedFollowupsRes.count ?? 0,
       incidentEscalatedFollowups: incidentEscalatedFollowupsRes.count ?? 0,
@@ -634,6 +671,8 @@ export async function fetchAdminDashboardSnapshot(
       doctrinePendingReview: pendingDoctrineDocs.length,
       doctrineBlockedReview,
       doctrineReadyToPublish,
+      doctrineDueSoon,
+      doctrineOverdue,
       incidentOverdueFollowups: incidentOverdueFollowupsRes.count ?? 0,
       incidentUnassignedFollowups: incidentUnassignedFollowupsRes.count ?? 0,
       incidentEscalatedFollowups: incidentEscalatedFollowupsRes.count ?? 0,

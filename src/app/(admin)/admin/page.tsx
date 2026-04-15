@@ -116,6 +116,8 @@ export default function AdminDashboardPage() {
   const totalActionable =
     workflows.doctrineBlockedReview +
     workflows.doctrineReadyToPublish +
+    workflows.doctrineDueSoon +
+    workflows.doctrineOverdue +
     workflows.incidentOverdueFollowups +
     workflows.incidentUnassignedFollowups +
     workflows.incidentEscalatedFollowups +
@@ -216,11 +218,11 @@ export default function AdminDashboardPage() {
           <MotionItem>
             <TriageMetricCard
               title="Doctrine Review"
-              value={workflows.doctrineBlockedReview}
+              value={workflows.doctrineOverdue > 0 ? workflows.doctrineOverdue : workflows.doctrineBlockedReview}
               icon={NotebookPen}
               href="/admin/knowledge/admin"
-              urgency={workflows.doctrineBlockedReview > 0 ? "high" : "normal"}
-              subLabel={`${workflows.doctrinePendingReview} pending · ${workflows.doctrineReadyToPublish} ready`}
+              urgency={workflows.doctrineOverdue > 0 ? "critical" : workflows.doctrineBlockedReview > 0 || workflows.doctrineDueSoon > 0 ? "high" : "normal"}
+              subLabel={`${workflows.doctrineBlockedReview} blocked · ${workflows.doctrineReadyToPublish} ready · ${workflows.doctrineDueSoon} due soon`}
             />
           </MotionItem>
           <MotionItem>
