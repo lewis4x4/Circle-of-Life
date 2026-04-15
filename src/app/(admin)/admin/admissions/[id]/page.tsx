@@ -68,6 +68,17 @@ function admissionReadinessChecklist(
   ];
 }
 
+function onboardingLinks(residentId: string | null) {
+  if (!residentId) return [];
+  return [
+    { label: "Resident profile", href: `/admin/residents/${residentId}` },
+    { label: "Care plan workspace", href: `/admin/residents/${residentId}/care-plan` },
+    { label: "Medication setup", href: `/admin/residents/${residentId}/medications` },
+    { label: "Resident billing", href: `/admin/residents/${residentId}/billing` },
+    { label: "Family coordination", href: "/admin/family-messages" },
+  ];
+}
+
 export default function AdminAdmissionCaseDetailPage() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
@@ -354,6 +365,26 @@ export default function AdminAdmissionCaseDetailPage() {
                       {actionLoading === "Case advanced to move-in." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Advance to move-in"}
                     </Button>
                   </div>
+                </div>
+                <div className="mt-5 rounded-2xl border border-indigo-200/70 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20 p-4 space-y-3">
+                  <p className="text-[10px] font-mono tracking-widest uppercase text-slate-500">Downstream onboarding work</p>
+                  {row.status !== "move_in" ? (
+                    <p className="text-sm text-slate-700 dark:text-slate-300">
+                      Advance this case to <span className="font-semibold">move in</span> before completing downstream onboarding work across resident, care plan, medications, billing, and family coordination.
+                    </p>
+                  ) : (
+                    <div className="grid gap-2">
+                      {onboardingLinks(row.resident_id).map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className="rounded-xl border border-slate-200/70 dark:border-white/5 bg-white/80 dark:bg-black/20 px-4 py-3 text-sm font-medium text-slate-900 dark:text-white transition-colors hover:bg-white dark:hover:bg-black/30"
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
