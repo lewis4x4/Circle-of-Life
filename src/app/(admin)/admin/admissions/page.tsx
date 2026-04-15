@@ -331,16 +331,14 @@ export default function AdminAdmissionsHubPage() {
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
           .in("triage_status", ["pending_review", "in_review"])
-          .order("updated_at", { ascending: false })
-          .limit(3),
+          .order("updated_at", { ascending: false }),
         supabase
           .from("family_care_conference_sessions")
           .select("id, scheduled_start, updated_at, residents(first_name, last_name)")
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
           .gte("scheduled_start", new Date().toISOString())
-          .order("scheduled_start", { ascending: true })
-          .limit(3),
+          .order("scheduled_start", { ascending: true }),
         // Referral counts
         supabase.from("referral_leads").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).eq("status", "new"),
         supabase.from("referral_leads").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).not("status", "in", "(converted,lost,merged)"),
@@ -561,6 +559,16 @@ export default function AdminAdmissionsHubPage() {
       })
       .slice(0, 6);
   }, [discharges]);
+  const featuredTriage = useMemo(() => {
+    return [...triage]
+      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+      .slice(0, 6);
+  }, [triage]);
+  const featuredConferences = useMemo(() => {
+    return [...conferences]
+      .sort((a, b) => new Date(a.scheduled_start ?? 0).getTime() - new Date(b.scheduled_start ?? 0).getTime())
+      .slice(0, 6);
+  }, [conferences]);
 
   return (
     <div className="mx-auto max-w-6xl space-y-10 pb-12 w-full">
@@ -988,7 +996,7 @@ export default function AdminAdmissionsHubPage() {
         ) : (
           <MotionList className="space-y-3">
             {/* Triage alerts first */}
-            {triage.map((t) => (
+            {featuredTriage.map((t) => (
               <MotionItem key={`triage-${t.id}`}>
                 <Link
                   href="/admin/family-portal"
@@ -1014,7 +1022,7 @@ export default function AdminAdmissionsHubPage() {
               </MotionItem>
             ))}
             {/* Upcoming conferences */}
-            {conferences.map((c) => (
+            {featuredConferences.map((c) => (
               <MotionItem key={`conf-${c.id}`}>
                 <Link
                   href="/admin/family-portal"
