@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { FileText, BarChart3, HelpCircle, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DocumentUpload } from "../components/DocumentUpload";
+import { DoctrineReviewQueue } from "../components/DoctrineReviewQueue";
 import { DocumentTable } from "../components/DocumentTable";
 import { KBHealthPanel } from "../components/KBHealthPanel";
 import { ChatInsightsPanel } from "../components/ChatInsightsPanel";
@@ -85,7 +86,10 @@ export function KnowledgeAdminPage() {
               </Button>
             </div>
           ) : (
-            <DocumentTable documents={documents} onRefresh={reloadDocs} />
+            <>
+              <DoctrineReviewQueue documents={documents} onRefresh={reloadDocs} />
+              <DocumentTable documents={documents} onRefresh={reloadDocs} />
+            </>
           )}
         </div>
       )}
