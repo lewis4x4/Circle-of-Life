@@ -26,6 +26,7 @@ type FollowupRow = {
   taskType: string;
   description: string;
   dueAt: string;
+  assignedToId: string | null;
   assignee: string;
   unassigned: boolean;
   hoursOverdue: number;
@@ -48,6 +49,8 @@ type ProfileMini = {
   full_name: string | null;
 };
 
+type QueueFilter = "all" | "unassigned" | "assigned_to_me";
+
 export default function AdminIncidentOverdueFollowupsPage() {
   const supabase = useMemo(() => createClient(), []);
   const { user } = useHavenAuth();
@@ -59,6 +62,7 @@ export default function AdminIncidentOverdueFollowupsPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -137,6 +141,7 @@ export default function AdminIncidentOverdueFollowupsPage() {
             taskType: row.task_type.replace(/_/g, " "),
             description: row.description,
             dueAt: row.due_at,
+            assignedToId: row.assigned_to,
             assignee: row.assigned_to ? assigneeById.get(row.assigned_to) ?? "Assigned" : "Unassigned",
             unassigned: !row.assigned_to,
             hoursOverdue: Math.max(1, Math.ceil((Date.now() - dueMs) / 3_600_000)),
@@ -201,6 +206,62 @@ export default function AdminIncidentOverdueFollowupsPage() {
 
   const overdueCount = rows.length;
   const unassignedCount = rows.filter((row) => row.unassigned).length;
+  const assignedToMeCount = rows.filter((row) => !!user && row.assignedToId === user.id).length;
+  const visibleRows = rows.filter((row) => {
+    if (queueFilter === "unassigned") return row.unassigned;
+    if (queueFilter === "assigned_to_me") {
+      return !!user && row.assignedToId === user.id;
+    }
+    return true;
+  });
+
+  const assignAllUnassignedToMe = useCallback(async () => {
+    if (!user) return;
+    const unassignedIds = rows.filter((row) => row.unassigned).map((row) => row.id);
+    if (unassignedIds.length === 0) return;
+    setActionLoading("bulk-assign");
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const { error: updateError } = await supabase
+        .from("incident_followups")
+        .update({ assigned_to: user.id, updated_at: new Date().toISOString() })
+        .in("id", unassignedIds);
+      if (updateError) throw updateError;
+      setActionMessage(`Assigned ${unassignedIds.length} overdue follow-up${unassignedIds.length === 1 ? "" : "s"} to you.`);
+      await load();
+    } catch (assignError) {
+      setActionError(assignError instanceof Error ? assignError.message : "Could not bulk-assign overdue follow-ups.");
+    } finally {
+      setActionLoading(null);
+    }
+  }, [load, rows, supabase, user]);
+
+  const completeAllAssignedToMe = useCallback(async () => {
+    if (!user) return;
+    const myIds = rows.filter((row) => row.assignedToId === user.id).map((row) => row.id);
+    if (myIds.length === 0) return;
+    setActionLoading("bulk-complete");
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const { error: updateError } = await supabase
+        .from("incident_followups")
+        .update({
+          completed_at: new Date().toISOString(),
+          completed_by: user.id,
+          updated_at: new Date().toISOString(),
+        })
+        .in("id", myIds);
+      if (updateError) throw updateError;
+      setActionMessage(`Marked ${myIds.length} overdue follow-up${myIds.length === 1 ? "" : "s"} complete.`);
+      await load();
+    } catch (completeError) {
+      setActionError(completeError instanceof Error ? completeError.message : "Could not bulk-complete follow-ups.");
+    } finally {
+      setActionLoading(null);
+    }
+  }, [load, rows, supabase, user]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -225,6 +286,9 @@ export default function AdminIncidentOverdueFollowupsPage() {
             </Badge>
             <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
               {unassignedCount} unassigned
+            </Badge>
+            <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+              {assignedToMeCount} assigned to me
             </Badge>
           </div>
         </div>
@@ -251,8 +315,53 @@ export default function AdminIncidentOverdueFollowupsPage() {
           description="The current incident follow-up backlog is clear for this scope."
         />
       ) : (
-        <div className="grid gap-4">
-          {rows.map((row) => (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { key: "all", label: "All overdue" },
+              { key: "unassigned", label: "Unassigned only" },
+              { key: "assigned_to_me", label: "Assigned to me" },
+            ].map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => setQueueFilter(option.key as QueueFilter)}
+                className={cn(
+                  "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                  queueFilter === option.key
+                    ? "bg-indigo-600 text-white"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700",
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={actionLoading === "bulk-assign" || unassignedCount === 0}
+              onClick={() => void assignAllUnassignedToMe()}
+            >
+              {actionLoading === "bulk-assign" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><UserPlus className="mr-2 h-3.5 w-3.5" />Assign all unassigned to me</>}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              disabled={actionLoading === "bulk-complete" || assignedToMeCount === 0}
+              onClick={() => void completeAllAssignedToMe()}
+            >
+              {actionLoading === "bulk-complete" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><CheckCircle2 className="mr-2 h-3.5 w-3.5" />Complete all assigned to me</>}
+            </Button>
+          </div>
+
+          <div className="grid gap-4">
+          {visibleRows.length === 0 ? (
+            <AdminEmptyState
+              title="No follow-ups in this filter"
+              description="Try another filter to view the remaining overdue work."
+            />
+          ) : visibleRows.map((row) => (
             <Card key={row.id} className="border-slate-200/70 shadow-soft dark:border-slate-800">
               <CardHeader className="pb-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -318,6 +427,7 @@ export default function AdminIncidentOverdueFollowupsPage() {
               </CardContent>
             </Card>
           ))}
+          </div>
         </div>
       )}
     </div>
