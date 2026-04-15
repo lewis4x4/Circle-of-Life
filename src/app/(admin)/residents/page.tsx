@@ -319,6 +319,42 @@ export default function AdminResidentsPage() {
           setStatus(DEFAULT_FILTERS.status);
         }}
       />
+      {(search !== DEFAULT_FILTERS.search ||
+        acuity !== DEFAULT_FILTERS.acuity ||
+        unit !== DEFAULT_FILTERS.unit ||
+        adl !== DEFAULT_FILTERS.adl ||
+        status !== DEFAULT_FILTERS.status) ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {search !== DEFAULT_FILTERS.search ? (
+            <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+              Search: {search}
+            </Badge>
+          ) : null}
+          {acuity !== DEFAULT_FILTERS.acuity ? (
+            <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
+              Acuity: {acuity === "watchlist" ? "watchlist (2-3)" : acuity}
+            </Badge>
+          ) : null}
+          {unit !== DEFAULT_FILTERS.unit ? (
+            <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+              Unit: {unit}
+            </Badge>
+          ) : null}
+          {adl !== DEFAULT_FILTERS.adl ? (
+            <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+              ADL: {adl}
+            </Badge>
+          ) : null}
+          {status !== DEFAULT_FILTERS.status ? (
+            <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
+              Status: {status === "away" ? "hospital / LOA" : status}
+            </Badge>
+          ) : null}
+          <Link href="/admin/residents" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
+            Clear filters
+          </Link>
+        </div>
+      ) : null}
 
       {isLoading ? <AdminTableLoadingState /> : null}
       {!isLoading && error ? (
