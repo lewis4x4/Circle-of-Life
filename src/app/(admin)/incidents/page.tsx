@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { AlertCircle, Clock, ShieldAlert, ArrowRight, CheckCircle2 } from "lucide-react";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -48,6 +49,7 @@ type IncidentRow = {
 };
 
 export default function AdminIncidentsKanbanPage() {
+  const searchParams = useSearchParams();
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<IncidentRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -118,13 +120,23 @@ export default function AdminIncidentsKanbanPage() {
     );
   }
 
+  const requestedSeverity = searchParams.get("severity");
+  const severityFilter =
+    requestedSeverity === "level_1" ||
+    requestedSeverity === "level_2" ||
+    requestedSeverity === "level_3" ||
+    requestedSeverity === "level_4"
+      ? requestedSeverity
+      : "all";
+  const visibleRows =
+    severityFilter === "all" ? rows : rows.filter((row) => row.severity === severityFilter);
   const columns: { id: IncidentStatus; label: string; dot: string }[] = [
     { id: "new", label: "New (Triage)", dot: "bg-rose-500" },
     { id: "investigating", label: "Investigating", dot: "bg-amber-500" },
     { id: "regulatory_review", label: "Regulatory Review", dot: "bg-blue-500" },
     { id: "closed", label: "Closed / Signed off", dot: "bg-slate-400" },
   ];
-  const followupPressure = rows
+  const followupPressure = visibleRows
     .filter((row) => row.overdueFollowups > 0 || row.unassignedFollowups > 0 || row.openObligations > 0 || row.rootCausePending || row.carePlanPending)
     .sort((a, b) => {
       const aScore =
@@ -149,13 +161,13 @@ export default function AdminIncidentsKanbanPage() {
     })
     .slice(0, 5);
   const pressureBacklogHref =
-    rows.some((row) => row.openObligations > 0 || row.rootCausePending || row.carePlanPending)
+    visibleRows.some((row) => row.openObligations > 0 || row.rootCausePending || row.carePlanPending)
       ? "/admin/incidents/obligations"
-      : rows.some((row) => row.escalatedFollowups > 0)
+      : visibleRows.some((row) => row.escalatedFollowups > 0)
         ? "/admin/incidents/overdue-followups?filter=escalated"
-        : rows.some((row) => row.overdueFollowups > 0)
+        : visibleRows.some((row) => row.overdueFollowups > 0)
           ? "/admin/incidents/overdue-followups"
-          : rows.some((row) => row.unassignedFollowups > 0)
+          : visibleRows.some((row) => row.unassignedFollowups > 0)
             ? "/admin/incidents/followups?filter=unassigned"
             : "/admin/incidents/followups";
 
@@ -169,40 +181,52 @@ export default function AdminIncidentsKanbanPage() {
         <div>
            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-1">SYS: Module 07 / Incident Command Center</p>
            <h2 className="text-4xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
-             Safety Operations Kanban {rows.filter(r => r.status === "new").length > 0 && <PulseDot colorClass="bg-rose-500" />}
+             Safety Operations Kanban {visibleRows.filter(r => r.status === "new").length > 0 && <PulseDot colorClass="bg-rose-500" />}
            </h2>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="h-8 px-3 border-rose-200 bg-rose-50 text-rose-700">
-            {rows.filter(r => r.severity === "level_4" && r.status !== "closed").length} Level-4 Exceptions
-          </Badge>
+          <Link href={severityFilter === "level_4" ? "/admin/incidents" : "/admin/incidents?severity=level_4"}>
+            <Badge variant="outline" className="h-8 px-3 border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 cursor-pointer">
+              {rows.filter(r => r.severity === "level_4" && r.status !== "closed").length} Level-4 Exceptions
+            </Badge>
+          </Link>
           <Link href="/admin/incidents/overdue-followups">
             <Badge variant="outline" className="h-8 px-3 border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 cursor-pointer">
-              {rows.reduce((sum, row) => sum + row.overdueFollowups, 0)} Overdue follow-ups
+              {visibleRows.reduce((sum, row) => sum + row.overdueFollowups, 0)} Overdue follow-ups
             </Badge>
           </Link>
           <Link href="/admin/incidents/overdue-followups?filter=escalated">
             <Badge variant="outline" className="h-8 px-3 border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 cursor-pointer">
-              {rows.reduce((sum, row) => sum + row.escalatedFollowups, 0)} Escalated follow-ups
+              {visibleRows.reduce((sum, row) => sum + row.escalatedFollowups, 0)} Escalated follow-ups
             </Badge>
           </Link>
           <Link href="/admin/incidents/followups">
             <Badge variant="outline" className="h-8 px-3 border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 cursor-pointer">
-              {rows.reduce((sum, row) => sum + row.openFollowups, 0)} Open follow-ups
+              {visibleRows.reduce((sum, row) => sum + row.openFollowups, 0)} Open follow-ups
             </Badge>
           </Link>
           <Link href="/admin/incidents/obligations">
             <Badge variant="outline" className="h-8 px-3 border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer">
-              {rows.filter((row) => row.openObligations > 0 || row.rootCausePending || row.carePlanPending).length} Lifecycle blockers
+              {visibleRows.filter((row) => row.openObligations > 0 || row.rootCausePending || row.carePlanPending).length} Lifecycle blockers
             </Badge>
           </Link>
           <Link href="/admin/incidents/followups?filter=unassigned">
             <Badge variant="outline" className="h-8 px-3 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 cursor-pointer">
-              {rows.reduce((sum, row) => sum + row.unassignedFollowups, 0)} Unassigned follow-ups
+              {visibleRows.reduce((sum, row) => sum + row.unassignedFollowups, 0)} Unassigned follow-ups
             </Badge>
           </Link>
         </div>
       </header>
+      {severityFilter !== "all" ? (
+        <div className="relative z-10 flex items-center gap-2 px-1">
+          <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
+            Severity filter: {severityFilter.replace("level_", "L")}
+          </Badge>
+          <Link href="/admin/incidents" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
+            Clear filter
+          </Link>
+        </div>
+      ) : null}
       {!isLoading && !error && demoFallbackActive ? (
         <AdminLiveDataFallbackNotice
           message="Demo mode is active on this incident board. These cards are sample incident records because no live incidents were returned for the current scope."
@@ -304,7 +328,7 @@ export default function AdminIncidentsKanbanPage() {
       {/* Kanban Board Container */}
       <div className="relative z-10 flex-1 min-h-0 flex gap-6 overflow-x-auto pb-4 px-1 scrollbar-hide">
         {columns.map((col) => {
-          const colRows = rows.filter(r => r.status === col.id);
+          const colRows = visibleRows.filter(r => r.status === col.id);
           return (
             <div key={col.id} className="flex-1 min-w-[340px] flex flex-col glass-panel rounded-[2rem] border border-white/20 dark:border-white/5 overflow-hidden shadow-2xl relative bg-white/30 dark:bg-black/20">
                <div className="shrink-0 p-5 border-b border-white/20 dark:border-white/5 flex items-center justify-between bg-white/40 dark:bg-black/40 backdrop-blur-md relative z-10">
