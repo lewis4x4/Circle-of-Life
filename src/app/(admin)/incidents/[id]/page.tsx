@@ -49,10 +49,21 @@ type SupabaseIncident = {
   reported_by: string;
   witness_names: string[] | null;
   nurse_notified: boolean;
+  nurse_notified_at: string | null;
   administrator_notified: boolean;
+  administrator_notified_at: string | null;
+  owner_notified: boolean;
+  owner_notified_at: string | null;
+  physician_notified: boolean;
+  physician_notified_at: string | null;
   family_notified: boolean;
+  family_notified_at: string | null;
   ahca_reportable: boolean;
   ahca_reported: boolean;
+  ahca_reported_at: string | null;
+  insurance_reportable: boolean;
+  insurance_reported: boolean;
+  insurance_reported_at: string | null;
   resolved_at: string | null;
   resolution_notes: string | null;
   care_plan_updated: boolean;
@@ -202,6 +213,7 @@ export default function AdminIncidentDetailPage() {
 
   const { incident, residentName, reporterName, categoryUi, severityUi, statusUi, rcaInvestigation, followups } =
     detail;
+  const openObligations = buildIncidentOpenObligations(incident);
 
   async function assignFollowupToMe(followupId: string) {
     if (!user) return;
@@ -451,13 +463,40 @@ export default function AdminIncidentDetailPage() {
           <CardHeader>
             <CardTitle className="font-display text-lg">Notifications &amp; regulatory</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
-            <NotifyPill active={incident.nurse_notified} label="Nurse" />
-            <NotifyPill active={incident.administrator_notified} label="Administrator" />
-            <NotifyPill active={incident.family_notified} label="Family" />
-            <NotifyPill active={incident.ahca_reportable} label="AHCA reportable" warn />
-            <NotifyPill active={incident.ahca_reported} label="AHCA reported" />
-            <NotifyPill active={incident.care_plan_updated} label="Care plan updated" />
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <NotifyPill active={incident.nurse_notified} label="Nurse" />
+              <NotifyPill active={incident.administrator_notified} label="Administrator" />
+              <NotifyPill active={incident.family_notified} label="Family" />
+              <NotifyPill active={incident.ahca_reportable} label="AHCA reportable" warn />
+              <NotifyPill active={incident.ahca_reported} label="AHCA reported" />
+              <NotifyPill active={incident.insurance_reportable} label="Insurance reportable" warn />
+              <NotifyPill active={incident.insurance_reported} label="Insurance reported" />
+              <NotifyPill active={incident.care_plan_updated} label="Care plan updated" />
+            </div>
+
+            <div className="grid gap-3 text-sm sm:grid-cols-2">
+              <DetailRow label="Nurse notified" value={incident.nurse_notified_at ? formatTs(incident.nurse_notified_at) : incident.nurse_notified ? "Yes" : "Pending"} />
+              <DetailRow label="Administrator notified" value={incident.administrator_notified_at ? formatTs(incident.administrator_notified_at) : incident.administrator_notified ? "Yes" : "Pending"} />
+              <DetailRow label="Owner notified" value={incident.owner_notified_at ? formatTs(incident.owner_notified_at) : incident.owner_notified ? "Yes" : "Not required / not done"} />
+              <DetailRow label="Physician notified" value={incident.physician_notified_at ? formatTs(incident.physician_notified_at) : incident.physician_notified ? "Yes" : "Not required / not done"} />
+              <DetailRow label="Family notified" value={incident.family_notified_at ? formatTs(incident.family_notified_at) : incident.family_notified ? "Yes" : "Pending"} />
+              <DetailRow label="AHCA reported" value={incident.ahca_reported_at ? formatTs(incident.ahca_reported_at) : incident.ahca_reported ? "Yes" : incident.ahca_reportable ? "Pending" : "Not reportable"} />
+              <DetailRow label="Insurance reported" value={incident.insurance_reported_at ? formatTs(incident.insurance_reported_at) : incident.insurance_reported ? "Yes" : incident.insurance_reportable ? "Pending" : "Not reportable"} />
+            </div>
+
+            {openObligations.length > 0 ? (
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Open obligations</p>
+                <ul className="mt-2 list-inside list-disc text-sm text-slate-700 dark:text-slate-300">
+                  {openObligations.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="text-sm text-emerald-700 dark:text-emerald-300">All expected notification and reporting steps are complete for the current incident state.</p>
+            )}
           </CardContent>
         </Card>
 
@@ -592,10 +631,21 @@ async function fetchIncidentDetail(
         "reported_by",
         "witness_names",
         "nurse_notified",
+        "nurse_notified_at",
         "administrator_notified",
+        "administrator_notified_at",
+        "owner_notified",
+        "owner_notified_at",
+        "physician_notified",
+        "physician_notified_at",
         "family_notified",
+        "family_notified_at",
         "ahca_reportable",
         "ahca_reported",
+        "ahca_reported_at",
+        "insurance_reportable",
+        "insurance_reported",
+        "insurance_reported_at",
         "resolved_at",
         "resolution_notes",
         "care_plan_updated",
@@ -745,6 +795,20 @@ function formatCategoryRaw(value: string): string {
     .split("_")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
+}
+
+function buildIncidentOpenObligations(incident: SupabaseIncident): string[] {
+  const items: string[] = [];
+  if (!incident.nurse_notified) items.push("Notify the nurse.");
+  if (!incident.administrator_notified) items.push("Notify the administrator.");
+  if (incident.severity === "level_3" || incident.severity === "level_4") {
+    if (!incident.owner_notified) items.push("Notify the owner.");
+    if (!incident.physician_notified) items.push("Notify the physician.");
+    if (!incident.family_notified) items.push("Notify the family.");
+  }
+  if (incident.ahca_reportable && !incident.ahca_reported) items.push("Complete AHCA reporting.");
+  if (incident.insurance_reportable && !incident.insurance_reported) items.push("Report to the insurance carrier.");
+  return items;
 }
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
