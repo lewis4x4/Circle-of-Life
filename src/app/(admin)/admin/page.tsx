@@ -529,14 +529,16 @@ export default function AdminDashboardPage() {
                 Pipeline & Capacity
              </h3>
              <div className="space-y-4">
-                <div className="flex justify-between items-center bg-white dark:bg-black/40 p-5 rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner">
-                  <span className="text-[13px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 flex items-center gap-2">
-                     <Users className="w-4 h-4" /> Total Census
-                  </span>
-                  <span className="text-2xl font-display font-medium text-slate-900 dark:text-white tabular-nums">
-                    {snapshot.licensedBeds ? `${snapshot.residentCount} / ${snapshot.licensedBeds}` : snapshot.residentCount}
-                  </span>
-                </div>
+                <Link href="/admin/residents" className="block">
+                  <div className="flex justify-between items-center bg-white dark:bg-black/40 p-5 rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner transition-colors hover:bg-white dark:hover:bg-black/50">
+                    <span className="text-[13px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 flex items-center gap-2">
+                       <Users className="w-4 h-4" /> Total Census
+                    </span>
+                    <span className="text-2xl font-display font-medium text-slate-900 dark:text-white tabular-nums">
+                      {snapshot.licensedBeds ? `${snapshot.residentCount} / ${snapshot.licensedBeds}` : snapshot.residentCount}
+                    </span>
+                  </div>
+                </Link>
                 <Link href="/admin/admissions/blocked" className="block">
                   <div className="flex justify-between items-center bg-white dark:bg-black/40 p-5 rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner transition-colors hover:bg-white dark:hover:bg-black/50">
                     <span className="text-[13px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 flex items-center gap-2">
@@ -577,14 +579,16 @@ export default function AdminDashboardPage() {
                     </span>
                   </div>
                 </Link>
-                <div className="flex justify-between items-center bg-white dark:bg-black/40 p-5 rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner">
-                  <span className="text-[13px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 flex items-center gap-2">
-                     <HeartPulse className="w-4 h-4" /> LOA / Hospital
-                  </span>
-                  <span className="text-2xl font-display font-medium text-amber-600 dark:text-amber-400 tabular-nums">
-                    {snapshot.awayResidentCount}
-                  </span>
-                </div>
+                <Link href="/admin/residents" className="block">
+                  <div className="flex justify-between items-center bg-white dark:bg-black/40 p-5 rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner transition-colors hover:bg-white dark:hover:bg-black/50">
+                    <span className="text-[13px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 flex items-center gap-2">
+                       <HeartPulse className="w-4 h-4" /> LOA / Hospital
+                    </span>
+                    <span className="text-2xl font-display font-medium text-amber-600 dark:text-amber-400 tabular-nums">
+                      {snapshot.awayResidentCount}
+                    </span>
+                  </div>
+                </Link>
              </div>
           </div>
         </div>
