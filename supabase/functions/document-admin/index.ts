@@ -54,6 +54,7 @@ Deno.serve(async (req) => {
     status?: string;
     review_owner?: string | null;
     review_due_at?: string | null;
+    review_completed?: boolean;
   };
   try {
     body = (await req.json()) as typeof body;
@@ -67,7 +68,8 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "document_id required" }, 400, origin);
   }
 
-  const { data: doc, error: docErr } = await admin.from("documents").select("*").eq("id", document_id).single();
+  const { data: doc, error: docErr } = await admin.from("documents").select("*")
+    .eq("id", document_id).single();
   if (docErr || !doc) {
     return jsonResponse({ error: "Document not found" }, 404, origin);
   }
@@ -80,6 +82,7 @@ Deno.serve(async (req) => {
       case "update": {
         const updates: Record<string, unknown> = {};
         const auditMeta: Record<string, unknown> = {};
+        let eventType = "status_changed";
 
         if (body.audience && body.audience !== doc.audience) {
           updates.audience = body.audience;
@@ -87,6 +90,7 @@ Deno.serve(async (req) => {
           updates.classification_updated_at = new Date().toISOString();
           auditMeta.audience_from = doc.audience;
           auditMeta.audience_to = body.audience;
+          eventType = "reclassified";
         }
         if (body.status && body.status !== doc.status) {
           updates.status = body.status;
@@ -96,28 +100,46 @@ Deno.serve(async (req) => {
           }
           auditMeta.status_from = doc.status;
           auditMeta.status_to = body.status;
+          if (body.status === "published") eventType = "published";
+          if (body.status === "approved") eventType = "approved";
         }
-        if (body.review_owner !== undefined) {
+        if (
+          body.review_owner !== undefined &&
+          body.review_owner !== doc.review_owner
+        ) {
           updates.review_owner = body.review_owner;
-          auditMeta.review_owner = body.review_owner;
+          auditMeta.review_owner_from = doc.review_owner;
+          auditMeta.review_owner_to = body.review_owner;
         }
-        if (body.review_due_at !== undefined) {
+        if (
+          body.review_due_at !== undefined &&
+          body.review_due_at !== doc.review_due_at
+        ) {
           updates.review_due_at = body.review_due_at;
-          auditMeta.review_due_at = body.review_due_at;
+          auditMeta.review_due_at_from = doc.review_due_at;
+          auditMeta.review_due_at_to = body.review_due_at;
+        }
+        if (body.review_completed === true) {
+          auditMeta.review_completed = true;
+          auditMeta.review_owner = doc.review_owner;
+          auditMeta.review_due_at = doc.review_due_at;
+          auditMeta.status = doc.status;
+          eventType = "review_completed";
         }
 
-        if (Object.keys(updates).length === 0) {
+        if (
+          Object.keys(updates).length === 0 && body.review_completed !== true
+        ) {
           return jsonResponse({ error: "No changes specified" }, 400, origin);
         }
 
-        updates.updated_at = new Date().toISOString();
-        const { error: updateErr } = await admin.from("documents").update(updates).eq("id", document_id);
-        if (updateErr) throw updateErr;
-
-        let eventType = "status_changed";
-        if (auditMeta.audience_to) eventType = "reclassified";
-        if (auditMeta.status_to === "published") eventType = "published";
-        if (auditMeta.status_to === "approved") eventType = "approved";
+        if (Object.keys(updates).length > 0) {
+          updates.updated_at = new Date().toISOString();
+          const { error: updateErr } = await admin.from("documents").update(
+            updates,
+          ).eq("id", document_id);
+          if (updateErr) throw updateErr;
+        }
 
         await admin.from("document_audit_events").insert({
           actor_user_id: user.id,
@@ -129,14 +151,22 @@ Deno.serve(async (req) => {
 
         t.log({ event: "update_ok", outcome: "success", document_id });
         return new Response(JSON.stringify({ success: true, updates }), {
-          headers: { ...getCorsHeaders(origin), "Content-Type": "application/json" },
+          headers: {
+            ...getCorsHeaders(origin),
+            "Content-Type": "application/json",
+          },
         });
       }
 
       case "delete": {
-        const meta = doc.metadata as { storage_path?: string; storage_bucket?: string } | null;
+        const meta = doc.metadata as {
+          storage_path?: string;
+          storage_bucket?: string;
+        } | null;
         if (meta?.storage_path) {
-          await admin.storage.from(meta.storage_bucket || "documents").remove([meta.storage_path]);
+          await admin.storage.from(meta.storage_bucket || "documents").remove([
+            meta.storage_path,
+          ]);
         }
 
         const { error: delErr } = await admin
@@ -154,9 +184,15 @@ Deno.serve(async (req) => {
         });
 
         t.log({ event: "soft_delete_ok", outcome: "success", document_id });
-        return new Response(JSON.stringify({ success: true, deleted: document_id }), {
-          headers: { ...getCorsHeaders(origin), "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({ success: true, deleted: document_id }),
+          {
+            headers: {
+              ...getCorsHeaders(origin),
+              "Content-Type": "application/json",
+            },
+          },
+        );
       }
 
       case "regenerate_markdown": {
@@ -175,25 +211,43 @@ Deno.serve(async (req) => {
 
         const ingestResult = await ingestRes.json();
         if (!ingestRes.ok) {
-          t.log({ event: "regenerate_failed", outcome: "error", error_message: ingestResult.error });
+          t.log({
+            event: "regenerate_failed",
+            outcome: "error",
+            error_message: ingestResult.error,
+          });
           return new Response(JSON.stringify(ingestResult), {
             status: ingestRes.status,
-            headers: { ...getCorsHeaders(origin), "Content-Type": "application/json" },
+            headers: {
+              ...getCorsHeaders(origin),
+              "Content-Type": "application/json",
+            },
           });
         }
 
         t.log({ event: "regenerate_ok", outcome: "success", document_id });
         return new Response(JSON.stringify(ingestResult), {
-          headers: { ...getCorsHeaders(origin), "Content-Type": "application/json" },
+          headers: {
+            ...getCorsHeaders(origin),
+            "Content-Type": "application/json",
+          },
         });
       }
 
       default:
-        return jsonResponse({ error: `Unknown action: ${action ?? "missing"}` }, 400, origin);
+        return jsonResponse(
+          { error: `Unknown action: ${action ?? "missing"}` },
+          400,
+          origin,
+        );
     }
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    t.log({ event: "document_admin_error", outcome: "error", error_message: msg });
+    t.log({
+      event: "document_admin_error",
+      outcome: "error",
+      error_message: msg,
+    });
     return jsonResponse({ error: msg }, 500, origin);
   }
 });

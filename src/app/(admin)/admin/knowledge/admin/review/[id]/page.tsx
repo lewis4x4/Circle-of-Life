@@ -182,6 +182,23 @@ export default function KnowledgeDocumentReviewPage() {
     }
   }, [document, reviewDueAt, load]);
 
+  const markReviewComplete = useCallback(async () => {
+    if (!document) return;
+    setActionError(null);
+    setActionMessage(null);
+    setActionLoading("review_complete");
+    try {
+      const result = await adminUpdateDocument(document.id, { review_completed: true });
+      if (!result.ok) throw new Error(result.error);
+      setActionMessage("Review completion recorded.");
+      await load();
+    } catch (reviewError) {
+      setActionError(reviewError instanceof Error ? reviewError.message : "Could not record review completion.");
+    } finally {
+      setActionLoading(null);
+    }
+  }, [document, load]);
+
   const transitionStatus = useCallback(async (status: DocumentStatus) => {
     if (!document) return;
     setActionError(null);
@@ -228,6 +245,13 @@ export default function KnowledgeDocumentReviewPage() {
       : (userLabels[document.review_owner] ?? "Assigned reviewer")
     : "Unassigned";
   const hasDraftAudit = auditEvents.some((event) => event.event_type === "obsidian_draft_created");
+  const latestDraftEvent = auditEvents.find((event) => event.event_type === "obsidian_draft_created") ?? null;
+  const latestReviewCompletedEvent = auditEvents.find((event) => event.event_type === "review_completed") ?? null;
+  const latestReviewCompletedAt = latestReviewCompletedEvent?.created_at ?? null;
+  const latestDraftAt = latestDraftEvent?.created_at ?? null;
+  const reviewCompletedCurrent =
+    latestReviewCompletedAt !== null &&
+    (latestDraftAt === null || new Date(latestReviewCompletedAt).getTime() >= new Date(latestDraftAt).getTime());
   const publishChecks: PublishReadinessCheck[] = [
     {
       key: "review_owner",
@@ -243,6 +267,11 @@ export default function KnowledgeDocumentReviewPage() {
       key: "draft",
       label: "An Obsidian draft has been created or refreshed",
       passed: hasDraftAudit,
+    },
+    {
+      key: "review_complete",
+      label: "A reviewer has explicitly marked the review complete",
+      passed: reviewCompletedCurrent,
     },
     {
       key: "pending_review",
@@ -353,6 +382,14 @@ export default function KnowledgeDocumentReviewPage() {
                   <Button type="button" variant="outline" disabled={actionLoading === "draft"} onClick={() => void handleDraft()}>
                     {actionLoading === "draft" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create / refresh draft"}
                   </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={actionLoading === "review_complete"}
+                    onClick={() => void markReviewComplete()}
+                  >
+                    {actionLoading === "review_complete" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Mark review complete"}
+                  </Button>
                   <Button type="button" variant="outline" disabled={actionLoading === "pending_review"} onClick={() => void transitionStatus("pending_review")}>
                     {actionLoading === "pending_review" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Move to pending review"}
                   </Button>
@@ -437,6 +474,21 @@ export default function KnowledgeDocumentReviewPage() {
                       {document.review_due_at ? new Date(document.review_due_at).toLocaleDateString() : "Not set"}
                     </div>
                   </div>
+                  <div className="rounded-lg border border-slate-200 dark:border-zinc-800 p-3">
+                    <div className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Review Completion</div>
+                    <div className="mt-1 text-sm font-medium text-slate-900 dark:text-zinc-100">
+                      {reviewCompletedCurrent
+                        ? latestReviewCompletedEvent
+                          ? new Date(latestReviewCompletedEvent.created_at).toLocaleString()
+                          : "Recorded"
+                        : "Not recorded"}
+                    </div>
+                    {reviewCompletedCurrent && latestReviewCompletedEvent?.actor_user_id ? (
+                      <div className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
+                        By {userLabels[latestReviewCompletedEvent.actor_user_id] ?? latestReviewCompletedEvent.actor_user_id}
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             </div>
@@ -488,7 +540,7 @@ export default function KnowledgeDocumentReviewPage() {
                     <li>Assign a reviewer and due date.</li>
                     <li>Create or refresh the Obsidian draft.</li>
                     <li>Review the draft and linked doctrine targets.</li>
-                    <li>Move to pending review, then publish only when ready.</li>
+                    <li>Record review completion, then publish only when ready.</li>
                   </ol>
                 </div>
               </div>

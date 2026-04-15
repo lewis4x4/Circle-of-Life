@@ -31,6 +31,11 @@ function isDueSoon(value: string | null, today: Date): boolean {
   return diffDays >= 0 && diffDays <= 3;
 }
 
+function latestAuditEventAt(events: DocumentAuditEventRow[], documentId: string, eventType: string): string | null {
+  const match = events.find((event) => event.document_id === documentId && event.event_type === eventType);
+  return match?.created_at ?? null;
+}
+
 export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueueProps) {
   const supabase = useMemo(() => createClient(), []);
   const { user } = useHavenAuth();
@@ -58,7 +63,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
         .from("document_audit_events")
         .select("*")
         .in("document_id", docIds)
-        .eq("event_type", "obsidian_draft_created")
+        .in("event_type", ["obsidian_draft_created", "review_completed"])
         .order("created_at", { ascending: false });
       if (queryError) throw queryError;
       setAuditEvents((data ?? []) as DocumentAuditEventRow[]);
@@ -75,8 +80,24 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
   }, [loadAudit]);
 
   const draftCreatedIds = useMemo(
-    () => new Set(auditEvents.map((event) => event.document_id)),
+    () => new Set(auditEvents.filter((event) => event.event_type === "obsidian_draft_created").map((event) => event.document_id)),
     [auditEvents],
+  );
+
+  const reviewCompletedIds = useMemo(
+    () =>
+      new Set(
+        documents
+          .filter((doc) => {
+            const lastDraftAt = latestAuditEventAt(auditEvents, doc.id, "obsidian_draft_created");
+            const lastReviewCompletedAt = latestAuditEventAt(auditEvents, doc.id, "review_completed");
+            if (!lastReviewCompletedAt) return false;
+            if (!lastDraftAt) return true;
+            return new Date(lastReviewCompletedAt).getTime() >= new Date(lastDraftAt).getTime();
+          })
+          .map((doc) => doc.id),
+      ),
+    [auditEvents, documents],
   );
 
   const today = useMemo(() => {
@@ -101,15 +122,15 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
   const doctrineMetrics = useMemo(() => {
     const pendingDocs = documents.filter((doc) => doc.status === "pending_review");
     const readyDocs = pendingDocs.filter(
-      (doc) => !!doc.review_owner && !!doc.review_due_at && draftCreatedIds.has(doc.id),
+      (doc) => !!doc.review_owner && !!doc.review_due_at && draftCreatedIds.has(doc.id) && reviewCompletedIds.has(doc.id),
     );
     const readyToPublish = readyDocs.length;
     const blockedPending = pendingDocs.length - readyToPublish;
     const dueSoon = pendingDocs.filter((doc) => isDueSoon(doc.review_due_at, today)).length;
-    const publishedThisWeek = documents.filter((doc) => {
-      if (!doc.approved_at || doc.status !== "published") return false;
-      const approvedAt = new Date(doc.approved_at);
-      return approvedAt.getTime() >= Date.now() - 7 * 86_400_000;
+    const reviewedThisWeek = auditEvents.filter((event) => {
+      if (event.event_type !== "review_completed") return false;
+      const createdAt = new Date(event.created_at);
+      return createdAt.getTime() >= Date.now() - 7 * 86_400_000;
     }).length;
     return {
       pendingDocs,
@@ -117,9 +138,9 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
       readyToPublish,
       blockedPending,
       dueSoon,
-      publishedThisWeek,
+      reviewedThisWeek,
     };
-  }, [documents, draftCreatedIds, today]);
+  }, [auditEvents, documents, draftCreatedIds, reviewCompletedIds, today]);
 
   const reviewSlaRows = useMemo(() => {
     return doctrineMetrics.pendingDocs
@@ -153,11 +174,12 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
         if (!doc.review_owner) blockers.push("no reviewer");
         if (!doc.review_due_at) blockers.push("no due date");
         if (!draftCreatedIds.has(doc.id)) blockers.push("no draft");
+        if (!reviewCompletedIds.has(doc.id)) blockers.push("review not completed");
         return { doc, blockers };
       })
       .filter((item) => item.blockers.length > 0)
       .slice(0, 4);
-  }, [doctrineMetrics.pendingDocs, draftCreatedIds]);
+  }, [doctrineMetrics.pendingDocs, draftCreatedIds, reviewCompletedIds]);
 
   const runPublish = useCallback(async (documentId: string) => {
     setActionLoading(documentId);
@@ -347,7 +369,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
             { label: "Pending review", value: doctrineMetrics.pendingDocs.length },
             { label: "Ready to publish", value: doctrineMetrics.readyToPublish },
             { label: "Blocked in review", value: doctrineMetrics.blockedPending },
-            { label: "Due soon / published 7d", value: `${doctrineMetrics.dueSoon} / ${doctrineMetrics.publishedThisWeek}` },
+            { label: "Due soon / reviewed 7d", value: `${doctrineMetrics.dueSoon} / ${doctrineMetrics.reviewedThisWeek}` },
           ].map((metric) => (
             <div key={metric.label} className="rounded-xl border border-slate-200 dark:border-zinc-800 p-4">
               <div className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">{metric.label}</div>
@@ -481,7 +503,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
             <div>
               <h3 className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">Ready to Publish</h3>
               <p className="text-xs text-emerald-800 dark:text-emerald-200">
-                Pending-review documents that already have an owner, a due date, and an Obsidian draft.
+                Pending-review documents that already have an owner, a due date, an Obsidian draft, and a recorded review completion.
               </p>
             </div>
           </div>

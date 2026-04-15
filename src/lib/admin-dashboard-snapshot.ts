@@ -681,16 +681,40 @@ export async function fetchAdminDashboardSnapshot(
     doctrineDocIds.length > 0
       ? ((await supabase
           .from("document_audit_events" as never)
-          .select("document_id")
+          .select("document_id, event_type, created_at")
           .in("document_id", doctrineDocIds)
-          .eq("event_type", "obsidian_draft_created")) as unknown as QueryResult<Array<{ document_id: string }>>)
-      : ({ data: [], error: null } as QueryResult<Array<{ document_id: string }>>);
+          .in("event_type", ["obsidian_draft_created", "review_completed"])) as unknown as QueryResult<
+          Array<{ document_id: string; event_type: string; created_at: string }>
+        >)
+      : ({ data: [], error: null } as QueryResult<Array<{ document_id: string; event_type: string; created_at: string }>>);
   if (doctrineDraftCreatedRes.error) {
     throw doctrineDraftCreatedRes.error;
   }
-  const draftCreatedIds = new Set((doctrineDraftCreatedRes.data ?? []).map((row) => row.document_id));
+  const doctrineAuditEvents = doctrineDraftCreatedRes.data ?? [];
+  const latestDraftAtByDoc = new Map<string, string>();
+  const latestReviewCompleteAtByDoc = new Map<string, string>();
+  for (const row of doctrineAuditEvents) {
+    if (row.event_type === "obsidian_draft_created" && !latestDraftAtByDoc.has(row.document_id)) {
+      latestDraftAtByDoc.set(row.document_id, row.created_at);
+    }
+    if (row.event_type === "review_completed" && !latestReviewCompleteAtByDoc.has(row.document_id)) {
+      latestReviewCompleteAtByDoc.set(row.document_id, row.created_at);
+    }
+  }
+  const draftCreatedIds = new Set(Array.from(latestDraftAtByDoc.keys()));
+  const reviewCompletedIds = new Set(
+    pendingDoctrineDocs
+      .filter((doc) => {
+        const draftAt = latestDraftAtByDoc.get(doc.id);
+        const reviewAt = latestReviewCompleteAtByDoc.get(doc.id);
+        if (!reviewAt) return false;
+        if (!draftAt) return true;
+        return new Date(reviewAt).getTime() >= new Date(draftAt).getTime();
+      })
+      .map((doc) => doc.id),
+  );
   const doctrineBlockedReview = pendingDoctrineDocs.filter(
-    (doc) => !doc.review_owner || !doc.review_due_at || !draftCreatedIds.has(doc.id),
+    (doc) => !doc.review_owner || !doc.review_due_at || !draftCreatedIds.has(doc.id) || !reviewCompletedIds.has(doc.id),
   ).length;
   const doctrineReadyToPublish = pendingDoctrineDocs.length - doctrineBlockedReview;
   const doctrineDueSoon = pendingDoctrineDocs.filter((doc) => isDueSoon(doc.review_due_at, today)).length;
