@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, CheckCircle2, ClipboardList, GitBranch, Loader2 } from "lucide-react";
 
@@ -19,6 +20,7 @@ import { buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligatio
 import { cn } from "@/lib/utils";
 
 type QueueFilter = "all" | "notifications" | "regulatory" | "rca" | "care_plan";
+type SeverityFilter = "all" | "level_1" | "level_2" | "level_3" | "level_4";
 
 type IncidentRow = {
   id: string;
@@ -66,6 +68,7 @@ type FollowupMini = { incident_id: string };
 
 export default function AdminIncidentObligationsPage() {
   const supabase = useMemo(() => createClient(), []);
+  const searchParams = useSearchParams();
   const { selectedFacilityId } = useFacilityStore();
 
   const [rows, setRows] = useState<IncidentRow[]>([]);
@@ -75,6 +78,7 @@ export default function AdminIncidentObligationsPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
+  const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -236,6 +240,20 @@ export default function AdminIncidentObligationsPage() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    const requestedSeverity = searchParams.get("severity");
+    if (
+      requestedSeverity === "level_1" ||
+      requestedSeverity === "level_2" ||
+      requestedSeverity === "level_3" ||
+      requestedSeverity === "level_4"
+    ) {
+      setSeverityFilter(requestedSeverity);
+      return;
+    }
+    setSeverityFilter("all");
+  }, [searchParams]);
+
   const updateIncident = useCallback(
     async (incidentId: string, patch: Record<string, boolean | string>, successMessage: string) => {
       setActionLoading(`${incidentId}:${successMessage}`);
@@ -270,11 +288,18 @@ export default function AdminIncidentObligationsPage() {
   };
 
   const visibleRows = rows.filter((row) => {
-    if (queueFilter === "notifications") return row.missingNotificationActions.length > 0;
-    if (queueFilter === "regulatory") return row.missingRegulatoryActions.length > 0;
-    if (queueFilter === "rca") return row.rootCausePending;
-    if (queueFilter === "care_plan") return row.carePlanPending;
-    return true;
+    const matchesSeverity = severityFilter === "all" || row.severity === severityFilter;
+    const matchesQueueFilter =
+      queueFilter === "notifications"
+        ? row.missingNotificationActions.length > 0
+        : queueFilter === "regulatory"
+          ? row.missingRegulatoryActions.length > 0
+          : queueFilter === "rca"
+            ? row.rootCausePending
+            : queueFilter === "care_plan"
+              ? row.carePlanPending
+              : true;
+    return matchesSeverity && matchesQueueFilter;
   });
 
   return (

@@ -171,14 +171,24 @@ export default function AdminIncidentsKanbanPage() {
     .slice(0, 5);
   const pressureBacklogHref =
     visibleRows.some((row) => row.openObligations > 0 || row.rootCausePending || row.carePlanPending)
-      ? "/admin/incidents/obligations"
+      ? severityFilter === "all"
+        ? "/admin/incidents/obligations"
+        : `/admin/incidents/obligations?severity=${severityFilter}`
       : visibleRows.some((row) => row.escalatedFollowups > 0)
-        ? "/admin/incidents/overdue-followups?filter=escalated"
+        ? severityFilter === "all"
+          ? "/admin/incidents/overdue-followups?filter=escalated"
+          : `/admin/incidents/overdue-followups?filter=escalated&severity=${severityFilter}`
         : visibleRows.some((row) => row.overdueFollowups > 0)
-          ? "/admin/incidents/overdue-followups"
+          ? severityFilter === "all"
+            ? "/admin/incidents/overdue-followups"
+            : `/admin/incidents/overdue-followups?severity=${severityFilter}`
           : visibleRows.some((row) => row.unassignedFollowups > 0)
-            ? "/admin/incidents/followups?filter=unassigned"
-            : "/admin/incidents/followups";
+            ? severityFilter === "all"
+              ? "/admin/incidents/followups?filter=unassigned"
+              : `/admin/incidents/followups?filter=unassigned&severity=${severityFilter}`
+            : severityFilter === "all"
+              ? "/admin/incidents/followups"
+              : `/admin/incidents/followups?severity=${severityFilter}`;
 
   return (
     <div className="relative flex flex-col h-[calc(100vh-6rem)] space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-6">
@@ -199,27 +209,27 @@ export default function AdminIncidentsKanbanPage() {
               {rows.filter(r => r.severity === "level_4" && r.status !== "closed").length} Level-4 Exceptions
             </Badge>
           </Link>
-          <Link href="/admin/incidents/overdue-followups">
+          <Link href={severityFilter === "all" ? "/admin/incidents/overdue-followups" : `/admin/incidents/overdue-followups?severity=${severityFilter}`}>
             <Badge variant="outline" className="h-8 px-3 border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 cursor-pointer">
               {visibleRows.reduce((sum, row) => sum + row.overdueFollowups, 0)} Overdue follow-ups
             </Badge>
           </Link>
-          <Link href="/admin/incidents/overdue-followups?filter=escalated">
+          <Link href={severityFilter === "all" ? "/admin/incidents/overdue-followups?filter=escalated" : `/admin/incidents/overdue-followups?filter=escalated&severity=${severityFilter}`}>
             <Badge variant="outline" className="h-8 px-3 border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 cursor-pointer">
               {visibleRows.reduce((sum, row) => sum + row.escalatedFollowups, 0)} Escalated follow-ups
             </Badge>
           </Link>
-          <Link href="/admin/incidents/followups">
+          <Link href={severityFilter === "all" ? "/admin/incidents/followups" : `/admin/incidents/followups?severity=${severityFilter}`}>
             <Badge variant="outline" className="h-8 px-3 border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 cursor-pointer">
               {visibleRows.reduce((sum, row) => sum + row.openFollowups, 0)} Open follow-ups
             </Badge>
           </Link>
-          <Link href="/admin/incidents/obligations">
+          <Link href={severityFilter === "all" ? "/admin/incidents/obligations" : `/admin/incidents/obligations?severity=${severityFilter}`}>
             <Badge variant="outline" className="h-8 px-3 border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer">
               {visibleRows.filter((row) => row.openObligations > 0 || row.rootCausePending || row.carePlanPending).length} Lifecycle blockers
             </Badge>
           </Link>
-          <Link href="/admin/incidents/followups?filter=unassigned">
+          <Link href={severityFilter === "all" ? "/admin/incidents/followups?filter=unassigned" : `/admin/incidents/followups?filter=unassigned&severity=${severityFilter}`}>
             <Badge variant="outline" className="h-8 px-3 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 cursor-pointer">
               {visibleRows.reduce((sum, row) => sum + row.unassignedFollowups, 0)} Unassigned follow-ups
             </Badge>

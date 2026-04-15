@@ -33,6 +33,7 @@ type FollowupRow = {
   id: string;
   incidentId: string;
   incidentNumber: string;
+  incidentSeverity: string;
   residentName: string;
   taskType: string;
   description: string;
@@ -48,6 +49,7 @@ type IncidentMini = {
   id: string;
   incident_number: string;
   resident_id: string | null;
+  severity: string;
 };
 
 type ResidentMini = {
@@ -62,6 +64,7 @@ type ProfileMini = {
 };
 
 type QueueFilter = "all" | "escalated" | "unassigned" | "assigned_to_me";
+type SeverityFilter = "all" | "level_1" | "level_2" | "level_3" | "level_4";
 
 export default function AdminIncidentOverdueFollowupsPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -76,6 +79,7 @@ export default function AdminIncidentOverdueFollowupsPage() {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
+  const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
   const [assigneeOptions, setAssigneeOptions] = useState<IncidentFollowupAssigneeOption[]>([]);
   const [assigneeDrafts, setAssigneeDrafts] = useState<Record<string, string>>({});
 
@@ -118,7 +122,7 @@ export default function AdminIncidentOverdueFollowupsPage() {
       const assigneeIds = [...new Set(followups.map((row) => row.assigned_to).filter(Boolean))] as string[];
 
       const [incidentsResult, residentsResult, assigneesResult] = await Promise.all([
-        supabase.from("incidents").select("id, incident_number, resident_id").in("id", incidentIds),
+        supabase.from("incidents").select("id, incident_number, resident_id, severity").in("id", incidentIds),
         residentIds.length > 0
           ? supabase.from("residents").select("id, first_name, last_name").in("id", residentIds)
           : Promise.resolve({ data: [], error: null }),
@@ -152,6 +156,7 @@ export default function AdminIncidentOverdueFollowupsPage() {
             id: row.id,
             incidentId: row.incident_id,
             incidentNumber: incidentById.get(row.incident_id)?.incident_number ?? "Incident",
+            incidentSeverity: incidentById.get(row.incident_id)?.severity ?? "level_1",
             residentName,
             taskType: row.task_type.replace(/_/g, " "),
             description: row.description,
@@ -190,6 +195,20 @@ export default function AdminIncidentOverdueFollowupsPage() {
       return;
     }
     setQueueFilter("all");
+  }, [searchParams]);
+
+  useEffect(() => {
+    const requestedSeverity = searchParams.get("severity");
+    if (
+      requestedSeverity === "level_1" ||
+      requestedSeverity === "level_2" ||
+      requestedSeverity === "level_3" ||
+      requestedSeverity === "level_4"
+    ) {
+      setSeverityFilter(requestedSeverity);
+      return;
+    }
+    setSeverityFilter("all");
   }, [searchParams]);
 
   useEffect(() => {
@@ -298,13 +317,16 @@ export default function AdminIncidentOverdueFollowupsPage() {
     .sort((a, b) => b.count - a.count)
     .slice(0, 4);
   const visibleRows = rows.filter((row) => {
-    if (queueFilter === "all") return true;
-    if (queueFilter === "escalated") return isFollowupEscalated(row.escalationLevel);
-    if (queueFilter === "unassigned") return row.unassigned;
-    if (queueFilter === "assigned_to_me") {
-      return !!user && row.assignedToId === user.id;
-    }
-    return true;
+    const matchesSeverity = severityFilter === "all" || row.incidentSeverity === severityFilter;
+    const matchesQueueFilter =
+      queueFilter === "all"
+        ? true
+        : queueFilter === "escalated"
+          ? isFollowupEscalated(row.escalationLevel)
+          : queueFilter === "unassigned"
+            ? row.unassigned
+            : !!user && row.assignedToId === user.id;
+    return matchesSeverity && matchesQueueFilter;
   });
 
   const assignAllUnassignedToMe = useCallback(async () => {
