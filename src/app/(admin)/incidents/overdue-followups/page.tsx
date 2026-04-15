@@ -207,6 +207,21 @@ export default function AdminIncidentOverdueFollowupsPage() {
   const overdueCount = rows.length;
   const unassignedCount = rows.filter((row) => row.unassigned).length;
   const assignedToMeCount = rows.filter((row) => !!user && row.assignedToId === user.id).length;
+  const assigneePressure = Array.from(
+    rows.reduce((map, row) => {
+      const key = row.assignedToId ?? "unassigned";
+      const current = map.get(key) ?? {
+        label: row.unassigned ? "Unassigned" : row.assignee,
+        count: 0,
+      };
+      current.count += 1;
+      map.set(key, current);
+      return map;
+    }, new Map<string, { label: string; count: number }>()),
+  )
+    .map(([, value]) => value)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 4);
   const visibleRows = rows.filter((row) => {
     if (queueFilter === "unassigned") return row.unassigned;
     if (queueFilter === "assigned_to_me") {
@@ -316,6 +331,17 @@ export default function AdminIncidentOverdueFollowupsPage() {
         />
       ) : (
         <div className="space-y-4">
+          <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Backlog by owner</span>
+              {assigneePressure.map((item) => (
+                <Badge key={item.label} variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
+                  {item.label}: {item.count}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
           <div className="flex flex-wrap items-center gap-2">
             {[
               { key: "all", label: "All overdue" },
