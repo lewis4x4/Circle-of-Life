@@ -21,6 +21,8 @@ type LeadRow = Pick<
   referral_sources: { name: string } | null;
 };
 
+type HandoffPhase = "blocked" | "ready" | "onboarding" | "complete";
+
 type CaseRow = Pick<
   Database["public"]["Tables"]["admission_cases"]["Row"],
   | "id"
@@ -31,6 +33,7 @@ type CaseRow = Pick<
   | "physician_orders_received_at"
   | "bed_id"
   | "resident_id"
+  | "referral_lead_id"
 > & {
   residents: { first_name: string; last_name: string } | null;
 };
@@ -82,6 +85,21 @@ function formatRelative(date: string | null): string {
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function leadPriority(status: Database["public"]["Enums"]["referral_lead_status"], handoffPhase: HandoffPhase | null): number {
+  if (handoffPhase === "blocked") return 0;
+  if (handoffPhase === "ready") return 1;
+  if (handoffPhase === "onboarding") return 2;
+  if (status === "new") return 3;
+  if (status === "contacted") return 4;
+  if (status === "tour_scheduled") return 5;
+  if (status === "tour_completed") return 6;
+  if (status === "application_pending") return 7;
+  if (status === "waitlisted") return 8;
+  if (status === "converted") return 9;
+  if (status === "lost") return 10;
+  return 11;
 }
 
 function admissionBlockers(row: CaseRow): string[] {
@@ -296,7 +314,7 @@ export default function AdminAdmissionsHubPage() {
           .limit(5),
         supabase
           .from("admission_cases")
-          .select("id, status, updated_at, target_move_in_date, financial_clearance_at, physician_orders_received_at, bed_id, residents(first_name, last_name)")
+          .select("id, referral_lead_id, status, updated_at, target_move_in_date, financial_clearance_at, physician_orders_received_at, bed_id, resident_id, residents(first_name, last_name)")
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
           .not("status", "eq", "cancelled")
@@ -498,6 +516,35 @@ export default function AdminAdmissionsHubPage() {
       })
       .slice(0, 8);
   }, [admissions, onboardingState]);
+  const activeAdmissionCaseByLeadId = useMemo(() => {
+    return Object.fromEntries(
+      admissions
+        .filter((row) => !!row.referral_lead_id)
+        .map((row) => {
+          const blockers = admissionBlockers(row);
+          let phase: HandoffPhase = "complete";
+          if (blockers.length > 0) {
+            phase = "blocked";
+          } else if (row.status !== "move_in") {
+            phase = "ready";
+          } else if ((onboardingState[row.id] ?? []).length > 0) {
+            phase = "onboarding";
+          }
+          return [row.referral_lead_id as string, { id: row.id, phase }] as const;
+        }),
+    );
+  }, [admissions, onboardingState]);
+  const featuredReferrals = useMemo(() => {
+    return [...referrals]
+      .sort((a, b) => {
+        const phaseA = activeAdmissionCaseByLeadId[a.id]?.phase ?? null;
+        const phaseB = activeAdmissionCaseByLeadId[b.id]?.phase ?? null;
+        const priorityDelta = leadPriority(a.status, phaseA) - leadPriority(b.status, phaseB);
+        if (priorityDelta !== 0) return priorityDelta;
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+      })
+      .slice(0, 8);
+  }, [activeAdmissionCaseByLeadId, referrals]);
   const featuredDischarges = useMemo(() => {
     const phaseOrder: Record<DischargePhase, number> = {
       planning: 0,
@@ -616,8 +663,10 @@ export default function AdminAdmissionsHubPage() {
           </p>
         ) : (
           <MotionList className="space-y-3">
-            {referrals.map((r) => {
+            {featuredReferrals.map((r) => {
               const isNew = r.status === "new";
+              const linkedAdmission = activeAdmissionCaseByLeadId[r.id] ?? null;
+              const handoffPhase = linkedAdmission?.phase ?? null;
               return (
                 <MotionItem key={r.id}>
                   <Link
@@ -635,10 +684,39 @@ export default function AdminAdmissionsHubPage() {
                         <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
                           {formatStatus(r.status)}
                         </span>
+                        {handoffPhase === "blocked" ? (
+                          <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300">
+                            Blocked
+                          </span>
+                        ) : handoffPhase === "ready" ? (
+                          <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300">
+                            Ready
+                          </span>
+                        ) : handoffPhase === "onboarding" ? (
+                          <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 border-indigo-500/20 dark:text-indigo-300">
+                            Onboarding
+                          </span>
+                        ) : null}
                       </div>
                       <p className="text-xs text-slate-500 dark:text-zinc-500 mt-0.5">
                         {r.referral_sources?.name ?? "No source"} · {formatRelative(r.updated_at)}
                       </p>
+                      {handoffPhase ? (
+                        <p className={cn(
+                          "mt-1 text-[11px]",
+                          handoffPhase === "blocked"
+                            ? "text-amber-700 dark:text-amber-300"
+                            : handoffPhase === "ready"
+                              ? "text-emerald-700 dark:text-emerald-300"
+                              : "text-indigo-700 dark:text-indigo-300",
+                        )}>
+                          {handoffPhase === "blocked"
+                            ? "Admissions handoff blocked."
+                            : handoffPhase === "ready"
+                              ? "Admissions handoff ready."
+                              : "Admissions handoff in onboarding."}
+                        </p>
+                      ) : null}
                     </div>
                   </Link>
                 </MotionItem>
