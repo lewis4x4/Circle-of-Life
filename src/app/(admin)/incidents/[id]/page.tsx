@@ -28,6 +28,7 @@ import {
   isFollowupEscalated,
   type FollowupEscalationLevel,
 } from "@/lib/incidents/followup-escalation";
+import { buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligations";
 
 type IncidentSeverityUi = "level_1" | "level_2" | "level_3" | "level_4";
 type IncidentStatusUi = "open" | "in_review" | "closed";
@@ -1158,20 +1159,6 @@ function formatCategoryRaw(value: string): string {
     .split("_")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
-}
-
-function buildIncidentOpenObligations(incident: SupabaseIncident): string[] {
-  const items: string[] = [];
-  if (!incident.nurse_notified) items.push("Notify the nurse.");
-  if (!incident.administrator_notified) items.push("Notify the administrator.");
-  if (incident.severity === "level_3" || incident.severity === "level_4") {
-    if (!incident.owner_notified) items.push("Notify the owner.");
-    if (!incident.physician_notified) items.push("Notify the physician.");
-    if (!incident.family_notified) items.push("Notify the family.");
-  }
-  if (incident.ahca_reportable && !incident.ahca_reported) items.push("Complete AHCA reporting.");
-  if (incident.insurance_reportable && !incident.insurance_reported) items.push("Report to the insurance carrier.");
-  return items;
 }
 
 function buildIncidentWorkflowSummary(

@@ -18,6 +18,7 @@ import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 import { classifyFollowupEscalation, isFollowupEscalated } from "@/lib/incidents/followup-escalation";
+import { buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligations";
 
 type IncidentSeverity = "level_1" | "level_2" | "level_3" | "level_4";
 type IncidentStatus = "new" | "investigating" | "regulatory_review" | "closed";
@@ -180,6 +181,11 @@ export default function AdminIncidentsKanbanPage() {
               {rows.reduce((sum, row) => sum + row.openFollowups, 0)} Open follow-ups
             </Badge>
           </Link>
+          <Link href="/admin/incidents/obligations">
+            <Badge variant="outline" className="h-8 px-3 border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer">
+              {rows.filter((row) => row.openObligations > 0 || row.rootCausePending || row.carePlanPending).length} Lifecycle blockers
+            </Badge>
+          </Link>
           <Link href="/admin/incidents/overdue-followups">
             <Badge variant="outline" className="h-8 px-3 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 cursor-pointer">
               {rows.reduce((sum, row) => sum + row.unassignedFollowups, 0)} Unassigned follow-ups
@@ -210,6 +216,9 @@ export default function AdminIncidentsKanbanPage() {
                 </Badge>
                 <Link href="/admin/incidents/overdue-followups" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-amber-300 bg-white/70 text-amber-800 hover:bg-white dark:border-amber-800 dark:bg-black/20 dark:text-amber-200 dark:hover:bg-black/30")}>
                   Open backlog
+                </Link>
+                <Link href="/admin/incidents/obligations" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-blue-300 bg-white/70 text-blue-800 hover:bg-white dark:border-blue-800 dark:bg-black/20 dark:text-blue-200 dark:hover:bg-black/30")}>
+                  Work obligations
                 </Link>
               </div>
             </div>
@@ -643,32 +652,6 @@ async function fetchIncidentsFromSupabase(selectedFacilityId: string | null): Pr
       ahcaReported: row.ahca_reported,
     } as IncidentRow;
   });
-}
-
-function buildIncidentOpenObligations(incident: Pick<
-  SupabaseIncidentRow,
-  | "severity"
-  | "nurse_notified"
-  | "administrator_notified"
-  | "owner_notified"
-  | "physician_notified"
-  | "family_notified"
-  | "ahca_reportable"
-  | "ahca_reported"
-  | "insurance_reportable"
-  | "insurance_reported"
->) {
-  const items: string[] = [];
-  if (!incident.nurse_notified) items.push("Notify the nurse.");
-  if (!incident.administrator_notified) items.push("Notify the administrator.");
-  if (incident.severity === "level_3" || incident.severity === "level_4") {
-    if (!incident.owner_notified) items.push("Notify the owner.");
-    if (!incident.physician_notified) items.push("Notify the physician.");
-    if (!incident.family_notified) items.push("Notify the family.");
-  }
-  if (incident.ahca_reportable && !incident.ahca_reported) items.push("Complete AHCA reporting.");
-  if (incident.insurance_reportable && !incident.insurance_reported) items.push("Report to the insurance carrier.");
-  return items;
 }
 
 function mapDbSeverityToUi(value: string): IncidentSeverity {

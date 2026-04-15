@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligations";
 
 type QueryError = { message: string };
 type QueryResult<T> = { data: T | null; error: QueryError | null };
@@ -845,20 +846,6 @@ export async function fetchAdminDashboardSnapshot(
     censusPreview,
     activity,
   };
-}
-
-function buildIncidentOpenObligations(incident: SupabaseIncidentMini): string[] {
-  const items: string[] = [];
-  if (!incident.nurse_notified) items.push("Notify the nurse.");
-  if (!incident.administrator_notified) items.push("Notify the administrator.");
-  if (incident.severity === "level_3" || incident.severity === "level_4") {
-    if (!incident.owner_notified) items.push("Notify the owner.");
-    if (!incident.physician_notified) items.push("Notify the physician.");
-    if (!incident.family_notified) items.push("Notify the family.");
-  }
-  if (incident.ahca_reportable && !incident.ahca_reported) items.push("Complete AHCA reporting.");
-  if (incident.insurance_reportable && !incident.insurance_reported) items.push("Report to the insurance carrier.");
-  return items;
 }
 
 function describeDischargePhase(row: SupabaseDischargeMini): "planning" | "pharmacist_review" | "ready_to_complete" | "complete" | "cancelled" {
