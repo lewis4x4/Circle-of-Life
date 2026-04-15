@@ -170,6 +170,7 @@ export default function AdminAdmissionCaseDetailPage() {
   const [quotedCareDraft, setQuotedCareDraft] = useState("");
   const [effectiveDateDraft, setEffectiveDateDraft] = useState("");
   const [rateNotesDraft, setRateNotesDraft] = useState("");
+  const [editingRateTermId, setEditingRateTermId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!id) {
@@ -323,32 +324,71 @@ export default function AdminAdmissionCaseDetailPage() {
     setActionError(null);
     setActionMessage(null);
     try {
-      const { error: insertError } = await supabase
-        .from("admission_case_rate_terms")
-        .insert({
-          admission_case_id: row.id,
-          rate_schedule_id: rateScheduleDraft || null,
-          accommodation_type: rateAccommodationDraft,
-          quoted_base_rate_cents: base,
-          quoted_care_surcharge_cents: care,
-          effective_date: effectiveDateDraft || null,
-          notes: rateNotesDraft.trim() || null,
-          created_by: user?.id ?? null,
-        });
-      if (insertError) throw insertError;
-      setActionMessage("Quoted rate terms saved.");
+      if (editingRateTermId) {
+        const { error: updateError } = await supabase
+          .from("admission_case_rate_terms")
+          .update({
+            rate_schedule_id: rateScheduleDraft || null,
+            accommodation_type: rateAccommodationDraft,
+            quoted_base_rate_cents: base,
+            quoted_care_surcharge_cents: care,
+            effective_date: effectiveDateDraft || null,
+            notes: rateNotesDraft.trim() || null,
+          })
+          .eq("id", editingRateTermId);
+        if (updateError) throw updateError;
+        setActionMessage("Quoted rate terms updated.");
+      } else {
+        const { error: insertError } = await supabase
+          .from("admission_case_rate_terms")
+          .insert({
+            admission_case_id: row.id,
+            rate_schedule_id: rateScheduleDraft || null,
+            accommodation_type: rateAccommodationDraft,
+            quoted_base_rate_cents: base,
+            quoted_care_surcharge_cents: care,
+            effective_date: effectiveDateDraft || null,
+            notes: rateNotesDraft.trim() || null,
+            created_by: user?.id ?? null,
+          });
+        if (insertError) throw insertError;
+        setActionMessage("Quoted rate terms saved.");
+      }
+      setEditingRateTermId(null);
       setRateScheduleDraft("");
       setRateAccommodationDraft("private");
       setRateCareLevelDraft("2");
       setQuotedBaseDraft("");
       setQuotedCareDraft("");
       setRateNotesDraft("");
+      setEffectiveDateDraft(row.target_move_in_date ?? "");
       await load();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Could not save rate terms.");
     } finally {
       setActionLoading(null);
     }
+  }
+
+  function startEditingRateTerm(term: Database["public"]["Tables"]["admission_case_rate_terms"]["Row"]) {
+    setEditingRateTermId(term.id);
+    setRateScheduleDraft(term.rate_schedule_id ?? "");
+    setRateAccommodationDraft(term.accommodation_type);
+    setQuotedBaseDraft(String(term.quoted_base_rate_cents));
+    setQuotedCareDraft(String(term.quoted_care_surcharge_cents));
+    setEffectiveDateDraft(term.effective_date ?? row?.target_move_in_date ?? "");
+    setRateNotesDraft(term.notes ?? "");
+  }
+
+  function clearRateTermForm() {
+    setEditingRateTermId(null);
+    setRateScheduleDraft("");
+    setRateAccommodationDraft("private");
+    setRateCareLevelDraft("2");
+    setQuotedBaseDraft("");
+    setQuotedCareDraft("");
+    setEffectiveDateDraft(row?.target_move_in_date ?? "");
+    setRateNotesDraft("");
   }
 
   return (
@@ -679,7 +719,16 @@ export default function AdminAdmissionCaseDetailPage() {
                 </div>
 
                 <div className="mb-6 rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/80 dark:bg-black/20 p-4 space-y-4">
-                  <p className="text-[10px] font-mono tracking-widest uppercase text-slate-500">Add quoted terms</p>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[10px] font-mono tracking-widest uppercase text-slate-500">
+                      {editingRateTermId ? "Edit quoted terms" : "Add quoted terms"}
+                    </p>
+                    {editingRateTermId ? (
+                      <Button type="button" variant="outline" size="sm" onClick={() => clearRateTermForm()}>
+                        Cancel edit
+                      </Button>
+                    ) : null}
+                  </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-2">
                       <label className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Rate schedule</label>
@@ -784,7 +833,11 @@ export default function AdminAdmissionCaseDetailPage() {
                       disabled={actionLoading === "rate-term" || quotedBaseDraft.trim() === ""}
                       onClick={() => void addRateTerm()}
                     >
-                      {actionLoading === "rate-term" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save quoted terms"}
+                      {actionLoading === "rate-term"
+                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                        : editingRateTermId
+                          ? "Update quoted terms"
+                          : "Save quoted terms"}
                     </Button>
                   </div>
                 </div>
@@ -818,9 +871,14 @@ export default function AdminAdmissionCaseDetailPage() {
                                          <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Care (¢)</span>
                                          <span className="text-sm font-mono text-slate-700 dark:text-slate-300">{formatCents(t.quoted_care_surcharge_cents)}</span>
                                       </div>
-                                      <div className="flex flex-col">
+                                     <div className="flex flex-col">
                                          <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Effective</span>
                                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2"><CalendarDays className="h-3.5 w-3.5 text-slate-400" /> {t.effective_date ?? "—"}</span>
+                                      </div>
+                                      <div className="sm:col-span-4 flex justify-end">
+                                        <Button type="button" variant="outline" size="sm" onClick={() => startEditingRateTerm(t)}>
+                                          Edit terms
+                                        </Button>
                                       </div>
                                     </div>
                                  </MotionItem>
