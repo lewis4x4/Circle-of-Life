@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isDemoMode } from "@/lib/demo-mode";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
@@ -143,12 +143,16 @@ export default function AdminIncidentsKanbanPage() {
           <Badge variant="outline" className="h-8 px-3 border-rose-200 bg-rose-50 text-rose-700">
             {rows.filter(r => r.severity === "level_4" && r.status !== "closed").length} Level-4 Exceptions
           </Badge>
-          <Badge variant="outline" className="h-8 px-3 border-amber-200 bg-amber-50 text-amber-700">
-            {rows.reduce((sum, row) => sum + row.overdueFollowups, 0)} Overdue follow-ups
-          </Badge>
-          <Badge variant="outline" className="h-8 px-3 border-slate-200 bg-slate-50 text-slate-700">
-            {rows.reduce((sum, row) => sum + row.unassignedFollowups, 0)} Unassigned follow-ups
-          </Badge>
+          <Link href="/admin/incidents/overdue-followups">
+            <Badge variant="outline" className="h-8 px-3 border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 cursor-pointer">
+              {rows.reduce((sum, row) => sum + row.overdueFollowups, 0)} Overdue follow-ups
+            </Badge>
+          </Link>
+          <Link href="/admin/incidents/overdue-followups">
+            <Badge variant="outline" className="h-8 px-3 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 cursor-pointer">
+              {rows.reduce((sum, row) => sum + row.unassignedFollowups, 0)} Unassigned follow-ups
+            </Badge>
+          </Link>
         </div>
       </header>
       {!isLoading && !error && demoFallbackActive ? (
@@ -168,9 +172,14 @@ export default function AdminIncidentsKanbanPage() {
                   These incidents have overdue or unassigned follow-up work.
                 </p>
               </div>
-              <Badge variant="outline" className="border-amber-300 bg-white/70 text-amber-800 dark:border-amber-800 dark:bg-black/20 dark:text-amber-200">
-                {followupPressure.length} incident{followupPressure.length === 1 ? "" : "s"} need attention
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="border-amber-300 bg-white/70 text-amber-800 dark:border-amber-800 dark:bg-black/20 dark:text-amber-200">
+                  {followupPressure.length} incident{followupPressure.length === 1 ? "" : "s"} need attention
+                </Badge>
+                <Link href="/admin/incidents/overdue-followups" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-amber-300 bg-white/70 text-amber-800 hover:bg-white dark:border-amber-800 dark:bg-black/20 dark:text-amber-200 dark:hover:bg-black/30")}>
+                  Open backlog
+                </Link>
+              </div>
             </div>
 
             <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
