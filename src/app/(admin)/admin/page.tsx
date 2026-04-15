@@ -112,8 +112,13 @@ export default function AdminDashboardPage() {
   const staffingGaps = 2; // Mock logic 
   const medExceptions = 5; // Mock logic
   const complianceAlerts = 1; // Mock logic
-  const totalActionable = openIncidents + staffingGaps + medExceptions + complianceAlerts;
   const workflows = snapshot.workflowQueues;
+  const totalActionable =
+    workflows.doctrineBlockedReview +
+    workflows.incidentOverdueFollowups +
+    workflows.incidentUnassignedFollowups +
+    workflows.admissionsBlocked +
+    workflows.admissionsOnboardingPending;
 
   return (
     <div className="space-y-10 pb-12 overflow-x-hidden">
@@ -256,7 +261,7 @@ export default function AdminDashboardPage() {
             </div>
             
             <div className="p-4 md:p-6 bg-slate-50/50 dark:bg-transparent">
-              {snapshot.activity.length === 0 && openIncidents === 0 ? (
+              {snapshot.workflowInbox.length === 0 && snapshot.activity.length === 0 && openIncidents === 0 ? (
                 <div className="p-16 text-center text-slate-500 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 dark:border-white/10 rounded-[2rem]">
                   <CheckCircle2 className="w-16 h-16 text-emerald-400 mb-6 opacity-30" />
                   <p className="text-xl font-display text-slate-800 dark:text-zinc-200 mb-2">Inbox Zero</p>
@@ -264,31 +269,45 @@ export default function AdminDashboardPage() {
                 </div>
               ) : (
                 <MotionList className="space-y-3">
-                  {/* Mocked Staffing Exception to show High Triage pattern */}
-                  {staffingGaps > 0 && (
-                    <MotionItem className="glass-card border-amber-200 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20 p-5 md:p-6 rounded-[1.5rem] shadow-[inset_0_0_30px_rgba(245,158,11,0.05)] transition-all hover:bg-amber-50 dark:hover:bg-amber-950/30">
+                  {snapshot.workflowInbox.map((item) => {
+                    const isCrit = item.tone === "critical";
+                    return (
+                      <MotionItem key={item.id} className={`glass-card p-5 md:p-6 rounded-[1.5rem] transition-all ${
+                        isCrit
+                          ? "bg-rose-50/50 dark:bg-rose-950/10 border-rose-200 dark:border-rose-500/30 shadow-[inset_0_0_40px_rgba(225,29,72,0.03)] hover:bg-rose-50 dark:hover:bg-rose-950/20"
+                          : item.tone === "warning"
+                            ? "bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-500/30 shadow-[inset_0_0_30px_rgba(245,158,11,0.05)] hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                            : "bg-white/80 dark:bg-white/[0.015] border-slate-200 dark:border-white/5 shadow-sm hover:bg-white dark:hover:bg-white/[0.03]"
+                      }`}>
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3 mb-2">
-                             <span className="px-2.5 py-1 rounded bg-amber-200/50 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400 text-[10px] font-bold uppercase tracking-widest border border-amber-300/50 dark:border-amber-500/30">
-                                Staffing Hold
+                             <span className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-widest border ${
+                                isCrit
+                                  ? "bg-rose-200/50 dark:bg-rose-500/20 text-rose-800 dark:text-rose-400 border-rose-300/50 dark:border-rose-500/30"
+                                  : item.tone === "warning"
+                                    ? "bg-amber-200/50 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400 border-amber-300/50 dark:border-amber-500/30"
+                                    : "bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-zinc-400 border-slate-200 lg:border-white/10"
+                             }`}>
+                                {item.label}
                              </span>
                              <span className="text-xs font-semibold text-slate-500 dark:text-zinc-500 flex items-center gap-1.5">
-                                <Clock className="w-3.5 h-3.5" /> Ends in 6 hrs
+                                <Clock className="w-3.5 h-3.5" /> Workflow backlog
                              </span>
                           </div>
                           <p className="text-base font-medium text-slate-900 dark:text-slate-100">
-                             Night Shift CNA Call-out (West Wing) — Below Minimum HPPD
+                             {item.message}
                           </p>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
-                          <Link href="/admin/staffing" className="h-12 px-6 bg-slate-900 dark:bg-white text-white dark:text-black rounded-xl font-semibold tracking-wide flex items-center justify-center hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors shadow-lg">
-                            Authorize Double Shift
+                          <Link href={item.href} className="h-12 px-6 bg-slate-900 dark:bg-white text-white dark:text-black rounded-xl font-semibold tracking-wide flex items-center justify-center hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors shadow-lg">
+                            {item.ctaLabel}
                           </Link>
                         </div>
                       </div>
                     </MotionItem>
-                  )}
+                    );
+                  })}
 
                   {snapshot.activity.filter(a => a.tone === "critical" || a.tone === "warning").map(event => {
                      const isCrit = event.tone === "critical";

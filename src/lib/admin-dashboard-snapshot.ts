@@ -24,6 +24,15 @@ export type DashboardActivityItem = {
   tone: "critical" | "warning" | "normal";
 };
 
+export type WorkflowInboxItem = {
+  id: string;
+  label: string;
+  message: string;
+  tone: "critical" | "warning" | "normal";
+  href: string;
+  ctaLabel: string;
+};
+
 export type AdminDashboardSnapshot = {
   headlineName: string;
   timezoneLabel: string;
@@ -41,6 +50,7 @@ export type AdminDashboardSnapshot = {
     admissionsMoveInReady: number;
     admissionsOnboardingPending: number;
   };
+  workflowInbox: WorkflowInboxItem[];
   censusPreview: DashboardCensusRow[];
   activity: DashboardActivityItem[];
 };
@@ -149,6 +159,76 @@ function shiftSummaryForTimezone(timeZone: string): string {
 
 function formatIncidentCategory(raw: string): string {
   return raw.replace(/_/g, " ");
+}
+
+function buildWorkflowInbox(input: {
+  doctrineBlockedReview: number;
+  doctrinePendingReview: number;
+  incidentOverdueFollowups: number;
+  incidentUnassignedFollowups: number;
+  admissionsBlocked: number;
+  admissionsMoveInReady: number;
+  admissionsOnboardingPending: number;
+}): WorkflowInboxItem[] {
+  const items: WorkflowInboxItem[] = [];
+
+  if (input.doctrineBlockedReview > 0) {
+    items.push({
+      id: "doctrine-blocked",
+      label: "Doctrine Review",
+      message: `${input.doctrineBlockedReview} document${input.doctrineBlockedReview === 1 ? "" : "s"} are blocked in review out of ${input.doctrinePendingReview} pending.`,
+      tone: "warning",
+      href: "/admin/knowledge/admin",
+      ctaLabel: "Review doctrine",
+    });
+  }
+
+  if (input.incidentOverdueFollowups > 0 || input.incidentUnassignedFollowups > 0) {
+    const parts: string[] = [];
+    if (input.incidentOverdueFollowups > 0) parts.push(`${input.incidentOverdueFollowups} overdue`);
+    if (input.incidentUnassignedFollowups > 0) parts.push(`${input.incidentUnassignedFollowups} unassigned`);
+    items.push({
+      id: "incident-followups",
+      label: "Incident Follow-Ups",
+      message: `${parts.join(" · ")} follow-up task${input.incidentOverdueFollowups + input.incidentUnassignedFollowups === 1 ? "" : "s"} need action.`,
+      tone: input.incidentOverdueFollowups > 0 ? "critical" : "warning",
+      href: input.incidentOverdueFollowups > 0 ? "/admin/incidents/overdue-followups" : "/admin/incidents/followups",
+      ctaLabel: "Work follow-ups",
+    });
+  }
+
+  if (input.admissionsBlocked > 0) {
+    items.push({
+      id: "admissions-blocked",
+      label: "Admissions",
+      message: `${input.admissionsBlocked} admission case${input.admissionsBlocked === 1 ? "" : "s"} are blocked on move-in readiness.`,
+      tone: "warning",
+      href: "/admin/admissions/blocked",
+      ctaLabel: "Clear blockers",
+    });
+  }
+
+  if (input.admissionsOnboardingPending > 0) {
+    items.push({
+      id: "admissions-onboarding",
+      label: "Onboarding",
+      message: `${input.admissionsOnboardingPending} move-in case${input.admissionsOnboardingPending === 1 ? "" : "s"} still need downstream onboarding work.`,
+      tone: "normal",
+      href: "/admin/admissions/onboarding",
+      ctaLabel: "Finish onboarding",
+    });
+  } else if (input.admissionsMoveInReady > 0) {
+    items.push({
+      id: "admissions-ready",
+      label: "Admissions",
+      message: `${input.admissionsMoveInReady} case${input.admissionsMoveInReady === 1 ? "" : "s"} are move-in ready and waiting for the next operational handoff.`,
+      tone: "normal",
+      href: "/admin/admissions/move-in-ready",
+      ctaLabel: "Review ready cases",
+    });
+  }
+
+  return items;
 }
 
 export async function fetchAdminDashboardSnapshot(
@@ -380,6 +460,15 @@ export async function fetchAdminDashboardSnapshot(
       admissionsMoveInReady,
       admissionsOnboardingPending,
     },
+    workflowInbox: buildWorkflowInbox({
+      doctrinePendingReview: pendingDoctrineDocs.length,
+      doctrineBlockedReview,
+      incidentOverdueFollowups: incidentOverdueFollowupsRes.count ?? 0,
+      incidentUnassignedFollowups: incidentUnassignedFollowupsRes.count ?? 0,
+      admissionsBlocked,
+      admissionsMoveInReady,
+      admissionsOnboardingPending,
+    }),
     censusPreview,
     activity,
   };
