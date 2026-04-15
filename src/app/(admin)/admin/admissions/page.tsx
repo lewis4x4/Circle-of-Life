@@ -478,6 +478,16 @@ export default function AdminAdmissionsHubPage() {
           </p>
         ) : (
           <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3 rounded-[1.5rem] border border-indigo-200/70 bg-indigo-50/60 dark:border-indigo-900/40 dark:bg-indigo-950/20 p-4">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest font-mono text-indigo-700 dark:text-indigo-300">Onboarding queue</p>
+                <p className="text-sm text-indigo-900 dark:text-indigo-100">Cases already at move-in can continue through downstream onboarding from a single queue.</p>
+              </div>
+              <Link href="/admin/admissions/onboarding" className="text-[10px] font-bold uppercase tracking-widest text-indigo-700 hover:text-indigo-900 dark:text-indigo-300 dark:hover:text-indigo-100">
+                Open onboarding →
+              </Link>
+            </div>
+
             {blockedAdmissions.length > 0 && (
               <div className="rounded-[1.5rem] border border-amber-200/70 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/20 p-4">
                 <div className="flex items-center justify-between gap-3">

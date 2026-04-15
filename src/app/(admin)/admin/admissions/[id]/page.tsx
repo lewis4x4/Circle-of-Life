@@ -22,6 +22,13 @@ type CaseDetail = Database["public"]["Tables"]["admission_cases"]["Row"] & {
   beds: { bed_label: string } | null;
 };
 
+type OnboardingCounts = {
+  carePlans: number;
+  medications: number;
+  payers: number;
+  familyConsents: number;
+};
+
 function formatStatus(s: string) {
   return s.replace(/_/g, " ");
 }
@@ -79,6 +86,31 @@ function onboardingLinks(residentId: string | null) {
   ];
 }
 
+function onboardingChecklist(counts: OnboardingCounts) {
+  return [
+    {
+      key: "care_plan",
+      label: "Care plan workspace has at least one plan",
+      passed: counts.carePlans > 0,
+    },
+    {
+      key: "meds",
+      label: "Medication profile exists",
+      passed: counts.medications > 0,
+    },
+    {
+      key: "billing",
+      label: "Resident payer is configured",
+      passed: counts.payers > 0,
+    },
+    {
+      key: "family",
+      label: "Family consent is on file",
+      passed: counts.familyConsents > 0,
+    },
+  ];
+}
+
 export default function AdminAdmissionCaseDetailPage() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
@@ -90,6 +122,12 @@ export default function AdminAdmissionCaseDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [row, setRow] = useState<CaseDetail | null>(null);
   const [rateTerms, setRateTerms] = useState<Database["public"]["Tables"]["admission_case_rate_terms"]["Row"][]>([]);
+  const [onboardingCounts, setOnboardingCounts] = useState<OnboardingCounts>({
+    carePlans: 0,
+    medications: 0,
+    payers: 0,
+    familyConsents: 0,
+  });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
@@ -120,9 +158,26 @@ export default function AdminAdmissionCaseDetailPage() {
       setRow(null);
       setRateTerms([]);
     } else {
-      setRow(c as CaseDetail | null);
+      const caseRow = c as CaseDetail | null;
+      setRow(caseRow);
       setRateTerms((rt ?? []) as Database["public"]["Tables"]["admission_case_rate_terms"]["Row"][]);
-      setTargetMoveInDraft((c as CaseDetail | null)?.target_move_in_date ?? "");
+      setTargetMoveInDraft(caseRow?.target_move_in_date ?? "");
+      if (caseRow?.resident_id) {
+        const [carePlansRes, medsRes, payersRes, consentsRes] = await Promise.all([
+          supabase.from("care_plans").select("id", { count: "exact", head: true }).eq("resident_id", caseRow.resident_id).is("deleted_at", null),
+          supabase.from("resident_medications").select("id", { count: "exact", head: true }).eq("resident_id", caseRow.resident_id).is("deleted_at", null),
+          supabase.from("resident_payers").select("id", { count: "exact", head: true }).eq("resident_id", caseRow.resident_id).is("deleted_at", null),
+          supabase.from("family_consent_records").select("id", { count: "exact", head: true }).eq("resident_id", caseRow.resident_id).is("deleted_at", null),
+        ]);
+        setOnboardingCounts({
+          carePlans: carePlansRes.count ?? 0,
+          medications: medsRes.count ?? 0,
+          payers: payersRes.count ?? 0,
+          familyConsents: consentsRes.count ?? 0,
+        });
+      } else {
+        setOnboardingCounts({ carePlans: 0, medications: 0, payers: 0, familyConsents: 0 });
+      }
     }
     setLoading(false);
   }, [supabase, id]);
@@ -164,6 +219,7 @@ export default function AdminAdmissionCaseDetailPage() {
   const readiness = row ? admissionReadinessChecklist(row, rateTerms) : [];
   const canReserveBed = Boolean(row?.financial_clearance_at && row?.physician_orders_received_at && row?.bed_id);
   const canAdvanceMoveIn = Boolean(canReserveBed && row?.target_move_in_date && rateTerms.length > 0);
+  const onboarding = onboardingChecklist(onboardingCounts);
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -373,17 +429,40 @@ export default function AdminAdmissionCaseDetailPage() {
                       Advance this case to <span className="font-semibold">move in</span> before completing downstream onboarding work across resident, care plan, medications, billing, and family coordination.
                     </p>
                   ) : (
-                    <div className="grid gap-2">
-                      {onboardingLinks(row.resident_id).map((item) => (
+                    <>
+                      <div className="space-y-2">
+                        {onboarding.map((item) => (
+                          <div key={item.key} className="rounded-xl border border-slate-200/70 dark:border-white/5 bg-white/80 dark:bg-black/20 px-4 py-3 flex items-center justify-between gap-3">
+                            <span className="text-sm font-medium text-slate-900 dark:text-white">{item.label}</span>
+                            <span className={cn(
+                              "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-widest",
+                              item.passed
+                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                                : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+                            )}>
+                              {item.passed ? "Complete" : "Missing"}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="grid gap-2">
+                        {onboardingLinks(row.resident_id).map((item) => (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            className="rounded-xl border border-slate-200/70 dark:border-white/5 bg-white/80 dark:bg-black/20 px-4 py-3 text-sm font-medium text-slate-900 dark:text-white transition-colors hover:bg-white dark:hover:bg-black/30"
+                          >
+                            {item.label}
+                          </Link>
+                        ))}
                         <Link
-                          key={item.href}
-                          href={item.href}
-                          className="rounded-xl border border-slate-200/70 dark:border-white/5 bg-white/80 dark:bg-black/20 px-4 py-3 text-sm font-medium text-slate-900 dark:text-white transition-colors hover:bg-white dark:hover:bg-black/30"
+                          href="/admin/admissions/onboarding"
+                          className="rounded-xl border border-indigo-200/70 dark:border-indigo-900/40 bg-indigo-50/60 dark:bg-indigo-950/20 px-4 py-3 text-sm font-medium text-indigo-900 dark:text-indigo-100 transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-950/30"
                         >
-                          {item.label}
+                          Open onboarding queue
                         </Link>
-                      ))}
-                    </div>
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
