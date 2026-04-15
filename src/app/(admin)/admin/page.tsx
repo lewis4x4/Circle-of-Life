@@ -120,9 +120,13 @@ export default function AdminDashboardPage() {
   const incidentPrimaryHref =
     incidentLifecycleBacklog > 0
       ? "/admin/incidents/obligations"
-      : workflows.incidentOverdueFollowups > 0
-        ? "/admin/incidents/overdue-followups"
-        : "/admin/incidents/followups";
+      : workflows.incidentEscalatedFollowups > 0
+        ? "/admin/incidents/followups?filter=escalated"
+        : workflows.incidentOverdueFollowups > 0
+          ? "/admin/incidents/overdue-followups"
+          : workflows.incidentUnassignedFollowups > 0
+            ? "/admin/incidents/followups?filter=unassigned"
+            : "/admin/incidents/followups";
   const incidentPrimaryValue =
     workflows.incidentEscalatedFollowups > 0
       ? workflows.incidentEscalatedFollowups

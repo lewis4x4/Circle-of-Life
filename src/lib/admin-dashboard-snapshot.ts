@@ -262,6 +262,14 @@ function buildWorkflowInbox(input: {
     input.incidentOpenObligations + input.incidentRootCausePending + input.incidentCarePlanPending;
   const incidentFollowupBlockers =
     input.incidentEscalatedFollowups + input.incidentOverdueFollowups + input.incidentUnassignedFollowups;
+  const incidentFollowupHref =
+    input.incidentEscalatedFollowups > 0
+      ? "/admin/incidents/followups?filter=escalated"
+      : input.incidentOverdueFollowups > 0
+        ? "/admin/incidents/overdue-followups"
+        : input.incidentUnassignedFollowups > 0
+          ? "/admin/incidents/followups?filter=unassigned"
+          : "/admin/incidents/followups";
 
   if (input.doctrineBlockedReview > 0) {
     items.push({
@@ -325,9 +333,7 @@ function buildWorkflowInbox(input: {
       href:
         incidentLifecycleBlockers > 0
           ? "/admin/incidents/obligations"
-          : input.incidentOverdueFollowups > 0
-            ? "/admin/incidents/overdue-followups"
-            : "/admin/incidents/followups",
+          : incidentFollowupHref,
       ctaLabel: incidentLifecycleBlockers > 0 ? "Work lifecycle queue" : "Work follow-ups",
     });
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Loader2, UserPlus } from "lucide-react";
 
@@ -64,6 +65,7 @@ type QueueFilter = "all" | "escalated" | "unassigned" | "assigned_to_me";
 
 export default function AdminIncidentOverdueFollowupsPage() {
   const supabase = useMemo(() => createClient(), []);
+  const searchParams = useSearchParams();
   const { user } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
 
@@ -176,6 +178,19 @@ export default function AdminIncidentOverdueFollowupsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    const requestedFilter = searchParams.get("filter");
+    if (
+      requestedFilter === "escalated" ||
+      requestedFilter === "unassigned" ||
+      requestedFilter === "assigned_to_me"
+    ) {
+      setQueueFilter(requestedFilter);
+      return;
+    }
+    setQueueFilter("all");
+  }, [searchParams]);
 
   useEffect(() => {
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
