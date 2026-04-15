@@ -135,6 +135,20 @@ export default function AdminDashboardPage() {
       : workflows.doctrineReadyToPublish > 0
         ? "/admin/knowledge/admin#doctrine-ready-to-publish"
         : "/admin/knowledge/admin#doctrine-blocked-review";
+  const doctrinePrimaryTitle =
+    workflows.doctrineOverdue > 0 || workflows.doctrineDueSoon > 0
+      ? "Doctrine SLA"
+      : workflows.doctrineReadyToPublish > 0
+        ? "Ready To Publish"
+        : "Doctrine Review";
+  const doctrinePrimaryValue =
+    workflows.doctrineOverdue > 0
+      ? workflows.doctrineOverdue
+      : workflows.doctrineBlockedReview > 0
+        ? workflows.doctrineBlockedReview
+        : workflows.doctrineReadyToPublish > 0
+          ? workflows.doctrineReadyToPublish
+          : workflows.doctrineDueSoon;
   const admissionsPrimaryHref =
     workflows.admissionsBlocked > 0
       ? "/admin/admissions/blocked"
@@ -306,8 +320,8 @@ export default function AdminDashboardPage() {
         <MotionList className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
           <MotionItem>
             <TriageMetricCard
-              title="Doctrine Review"
-              value={workflows.doctrineOverdue > 0 ? workflows.doctrineOverdue : workflows.doctrineBlockedReview}
+              title={doctrinePrimaryTitle}
+              value={doctrinePrimaryValue}
               icon={NotebookPen}
               href={doctrinePrimaryHref}
               urgency={workflows.doctrineOverdue > 0 ? "critical" : workflows.doctrineBlockedReview > 0 || workflows.doctrineDueSoon > 0 ? "high" : "normal"}
