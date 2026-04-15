@@ -363,6 +363,16 @@ export default function AdminIncidentObligationsPage() {
               </button>
             ))}
           </div>
+          {severityFilter !== "all" ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
+                Severity filter: {severityFilter.replace("level_", "L")}
+              </Badge>
+              <Link href="/admin/incidents/obligations" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
+                Clear severity
+              </Link>
+            </div>
+          ) : null}
 
           <div className="grid gap-4">
             {visibleRows.map((row) => (
