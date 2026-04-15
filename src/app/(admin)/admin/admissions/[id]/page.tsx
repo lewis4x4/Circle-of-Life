@@ -160,6 +160,8 @@ export default function AdminAdmissionCaseDetailPage() {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [targetMoveInDraft, setTargetMoveInDraft] = useState("");
   const [bedDraft, setBedDraft] = useState("");
+  const [physicianOrdersSummaryDraft, setPhysicianOrdersSummaryDraft] = useState("");
+  const [caseNotesDraft, setCaseNotesDraft] = useState("");
   const [rateScheduleDraft, setRateScheduleDraft] = useState("");
   const [rateAccommodationDraft, setRateAccommodationDraft] =
     useState<Database["public"]["Enums"]["admission_accommodation_quote"]>("private");
@@ -199,6 +201,8 @@ export default function AdminAdmissionCaseDetailPage() {
       setRateTerms((rt ?? []) as Database["public"]["Tables"]["admission_case_rate_terms"]["Row"][]);
       setTargetMoveInDraft(caseRow?.target_move_in_date ?? "");
       setBedDraft(caseRow?.bed_id ?? "");
+      setPhysicianOrdersSummaryDraft(caseRow?.physician_orders_summary ?? "");
+      setCaseNotesDraft(caseRow?.notes ?? "");
       setEffectiveDateDraft(caseRow?.target_move_in_date ?? "");
       if (caseRow?.facility_id) {
         const [{ data: schedules, error: schedulesError }, { data: bedRows, error: bedsError }] = await Promise.all([
@@ -449,11 +453,55 @@ export default function AdminAdmissionCaseDetailPage() {
                   </div>
                   <div className="sm:col-span-2 bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
                     <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Physician Orders Summary</dt>
-                    <dd className="text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{row.physician_orders_summary ?? "—"}</dd>
+                    <dd className="space-y-3">
+                      <textarea
+                        value={physicianOrdersSummaryDraft}
+                        onChange={(event) => setPhysicianOrdersSummaryDraft(event.target.value)}
+                        rows={4}
+                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                      <div className="flex justify-end">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={actionLoading === "Physician orders summary saved." || physicianOrdersSummaryDraft === (row.physician_orders_summary ?? "")}
+                          onClick={() =>
+                            void updateCase(
+                              { physician_orders_summary: physicianOrdersSummaryDraft.trim() || null },
+                              "Physician orders summary saved.",
+                            )
+                          }
+                        >
+                          {actionLoading === "Physician orders summary saved." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save summary"}
+                        </Button>
+                      </div>
+                    </dd>
                   </div>
                   <div className="sm:col-span-2 bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
                     <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Notes</dt>
-                    <dd className="text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{row.notes ?? "—"}</dd>
+                    <dd className="space-y-3">
+                      <textarea
+                        value={caseNotesDraft}
+                        onChange={(event) => setCaseNotesDraft(event.target.value)}
+                        rows={4}
+                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                      <div className="flex justify-end">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={actionLoading === "Admission notes saved." || caseNotesDraft === (row.notes ?? "")}
+                          onClick={() =>
+                            void updateCase(
+                              { notes: caseNotesDraft.trim() || null },
+                              "Admission notes saved.",
+                            )
+                          }
+                        >
+                          {actionLoading === "Admission notes saved." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save notes"}
+                        </Button>
+                      </div>
+                    </dd>
                   </div>
                   <div className="sm:col-span-2 flex items-center justify-end text-[10px] text-slate-400 uppercase tracking-widest font-mono mt-2">
                     Updated: {formatTs(row.updated_at)}
