@@ -19,6 +19,13 @@ type RowT = Database["public"]["Tables"]["discharge_med_reconciliation"]["Row"] 
   residents: { first_name: string; last_name: string; discharge_target_date: string | null; hospice_status: string } | null;
 };
 
+const HOSPICE_OPTIONS: Array<Database["public"]["Enums"]["hospice_status"]> = [
+  "none",
+  "pending",
+  "active",
+  "ended",
+];
+
 function formatStatus(s: string) {
   return s.replace(/_/g, " ");
 }
@@ -48,6 +55,8 @@ export default function AdminDischargeDetailPage() {
   const [nurseNotesDraft, setNurseNotesDraft] = useState("");
   const [pharmacistNotesDraft, setPharmacistNotesDraft] = useState("");
   const [pharmacistNpiDraft, setPharmacistNpiDraft] = useState("");
+  const [dischargeTargetDraft, setDischargeTargetDraft] = useState("");
+  const [hospiceStatusDraft, setHospiceStatusDraft] = useState<Database["public"]["Enums"]["hospice_status"]>("none");
 
   const load = useCallback(async () => {
     if (!id) {
@@ -76,6 +85,8 @@ export default function AdminDischargeDetailPage() {
       setNurseNotesDraft(loadedRow?.nurse_reconciliation_notes ?? "");
       setPharmacistNotesDraft(loadedRow?.pharmacist_notes ?? "");
       setPharmacistNpiDraft(loadedRow?.pharmacist_npi ?? "");
+      setDischargeTargetDraft(loadedRow?.residents?.discharge_target_date ?? "");
+      setHospiceStatusDraft((loadedRow?.residents?.hospice_status as Database["public"]["Enums"]["hospice_status"] | undefined) ?? "none");
     }
     setLoading(false);
   }, [supabase, id]);
@@ -115,6 +126,33 @@ export default function AdminDischargeDetailPage() {
       await load();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Could not update discharge reconciliation.");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function updateResidentDischargeFields(
+    patch: Partial<Database["public"]["Tables"]["residents"]["Update"]>,
+    successMessage: string,
+  ) {
+    if (!row?.resident_id) return;
+    setActionLoading(successMessage);
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const { error: updateError } = await supabase
+        .from("residents")
+        .update({
+          ...patch,
+          updated_at: new Date().toISOString(),
+          updated_by: user?.id ?? null,
+        })
+        .eq("id", row.resident_id);
+      if (updateError) throw updateError;
+      setActionMessage(successMessage);
+      await load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Could not update resident discharge planning.");
     } finally {
       setActionLoading(null);
     }
@@ -194,16 +232,59 @@ export default function AdminDischargeDetailPage() {
                   <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
                     Discharge target (resident)
                   </dt>
-                  <dd className="mt-0.5 text-slate-900 dark:text-slate-100">
-                    {row.residents?.discharge_target_date ?? "—"}
+                  <dd className="mt-2 space-y-2">
+                    <input
+                      type="date"
+                      value={dischargeTargetDraft}
+                      onChange={(event) => setDischargeTargetDraft(event.target.value)}
+                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={actionLoading === "Resident discharge target saved." || dischargeTargetDraft === (row.residents?.discharge_target_date ?? "")}
+                      onClick={() =>
+                        void updateResidentDischargeFields(
+                          { discharge_target_date: dischargeTargetDraft || null },
+                          "Resident discharge target saved.",
+                        )
+                      }
+                    >
+                      {actionLoading === "Resident discharge target saved." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save target"}
+                    </Button>
                   </dd>
                 </div>
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
                     Hospice (resident)
                   </dt>
-                  <dd className="mt-0.5 capitalize text-slate-900 dark:text-slate-100">
-                    {row.residents?.hospice_status ? formatStatus(row.residents.hospice_status) : "—"}
+                  <dd className="mt-2 space-y-2">
+                    <select
+                      value={hospiceStatusDraft}
+                      onChange={(event) => setHospiceStatusDraft(event.target.value as Database["public"]["Enums"]["hospice_status"])}
+                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      {HOSPICE_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {formatStatus(option)}
+                        </option>
+                      ))}
+                    </select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={actionLoading === "Resident hospice status saved." || hospiceStatusDraft === (row.residents?.hospice_status ?? "none")}
+                      onClick={() =>
+                        void updateResidentDischargeFields(
+                          { hospice_status: hospiceStatusDraft },
+                          "Resident hospice status saved.",
+                        )
+                      }
+                    >
+                      {actionLoading === "Resident hospice status saved." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save hospice"}
+                    </Button>
                   </dd>
                 </div>
                 <div>
@@ -361,7 +442,7 @@ export default function AdminDischargeDetailPage() {
               >
                 Open resident profile
               </Link>{" "}
-              to set <code className="text-xs">discharge_target_date</code> and <code className="text-xs">hospice_status</code>.
+              for broader resident context and downstream transition planning.
             </p>
           ) : null}
         </>
