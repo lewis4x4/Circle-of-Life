@@ -161,6 +161,12 @@ export default function AdminDashboardPage() {
       : workflows.referralsOnboardingHandoffs > 0
         ? "Referral Onboarding"
         : "Referral Handoffs";
+  const familyPrimaryHref =
+    workflows.familyTriagePending > 0 ? "/admin/family-messages" : "/admin/family-portal";
+  const familyPrimaryTitle =
+    workflows.familyTriagePending > 0 ? "Family Triage" : "Care Conferences";
+  const familyPrimaryValue =
+    workflows.familyTriagePending > 0 ? workflows.familyTriagePending : workflows.familyConferencesUpcoming;
   const totalActionable =
     workflows.doctrineBlockedReview +
     workflows.doctrineReadyToPublish +
@@ -326,10 +332,10 @@ export default function AdminDashboardPage() {
           </MotionItem>
           <MotionItem>
             <TriageMetricCard
-              title="Family"
-              value={workflows.familyTriagePending > 0 ? workflows.familyTriagePending : workflows.familyConferencesUpcoming}
+              title={familyPrimaryTitle}
+              value={familyPrimaryValue}
               icon={MessageCircle}
-              href="/admin/family-portal"
+              href={familyPrimaryHref}
               urgency={workflows.familyTriagePending > 0 ? "high" : workflows.familyConferencesUpcoming > 0 ? "medium" : "normal"}
               subLabel={`${workflows.familyTriagePending} triage · ${workflows.familyConferencesUpcoming} conferences`}
             />

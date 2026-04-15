@@ -409,11 +409,11 @@ function buildWorkflowInbox(input: {
     if (input.familyConferencesUpcoming > 0) parts.push(`${input.familyConferencesUpcoming} conference`);
     items.push({
       id: "family-workflow",
-      label: "Family",
+      label: input.familyTriagePending > 0 ? "Family Triage" : "Care Conferences",
       message: `${parts.join(" · ")}${input.familyTriagePending + input.familyConferencesUpcoming === 1 ? "" : "s"} need follow-through in the family lane.`,
       tone: input.familyTriagePending > 0 ? "warning" : "normal",
-      href: "/admin/family-portal",
-      ctaLabel: "Work family queue",
+      href: input.familyTriagePending > 0 ? "/admin/family-messages" : "/admin/family-portal",
+      ctaLabel: input.familyTriagePending > 0 ? "Review messages" : "Work conference queue",
     });
   }
 
