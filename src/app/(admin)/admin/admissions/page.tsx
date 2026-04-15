@@ -310,8 +310,7 @@ export default function AdminAdmissionsHubPage() {
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
           .not("status", "in", "(converted,lost,merged)")
-          .order("updated_at", { ascending: false })
-          .limit(5),
+          .order("updated_at", { ascending: false }),
         supabase
           .from("admission_cases")
           .select("id, referral_lead_id, status, updated_at, target_move_in_date, financial_clearance_at, physician_orders_received_at, bed_id, resident_id, residents(first_name, last_name)")
@@ -325,8 +324,7 @@ export default function AdminAdmissionsHubPage() {
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
           .not("status", "eq", "cancelled")
-          .order("updated_at", { ascending: false })
-          .limit(5),
+          .order("updated_at", { ascending: false }),
         supabase
           .from("family_message_triage_items")
           .select("id, updated_at, matched_keywords, residents(first_name, last_name)")
