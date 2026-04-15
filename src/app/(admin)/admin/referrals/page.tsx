@@ -35,6 +35,24 @@ type LeadRow = Pick<
   referral_sources: { name: string } | null;
 };
 
+type HandoffPhase = "blocked" | "ready" | "onboarding" | "complete";
+
+type ActiveAdmissionCase = {
+  id: string;
+  phase: HandoffPhase;
+};
+
+type AdmissionMini = {
+  id: string;
+  referral_lead_id: string | null;
+  status: string;
+  resident_id: string;
+  target_move_in_date: string | null;
+  financial_clearance_at: string | null;
+  physician_orders_received_at: string | null;
+  bed_id: string | null;
+};
+
 const LEAD_STATUS_FILTERS: { value: "all" | ReferralLeadStatus; label: string }[] = [
   { value: "all", label: "All" },
   { value: "new", label: "New" },
@@ -120,13 +138,16 @@ export default function AdminReferralsHubPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [rows, setRows] = useState<LeadRow[]>([]);
-  const [activeAdmissionCaseByLeadId, setActiveAdmissionCaseByLeadId] = useState<Record<string, string>>({});
+  const [activeAdmissionCaseByLeadId, setActiveAdmissionCaseByLeadId] = useState<Record<string, ActiveAdmissionCase>>({});
   const [counts, setCounts] = useState({
     new: 0,
     pipeline: 0,
     converted: 0,
     attention: 0,
     inAdmissions: 0,
+    handoffBlocked: 0,
+    handoffReady: 0,
+    handoffOnboarding: 0,
   });
   const [hl7Counts, setHl7Counts] = useState({ pending: 0, failed: 0 });
   const [exportingCsv, setExportingCsv] = useState(false);
@@ -165,7 +186,7 @@ export default function AdminReferralsHubPage() {
     setLoadError(null);
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
       setRows([]);
-      setCounts({ new: 0, pipeline: 0, converted: 0, attention: 0, inAdmissions: 0 });
+      setCounts({ new: 0, pipeline: 0, converted: 0, attention: 0, inAdmissions: 0, handoffBlocked: 0, handoffReady: 0, handoffOnboarding: 0 });
       setHl7Counts({ pending: 0, failed: 0 });
       setActiveAdmissionCaseByLeadId({});
       setLoading(false);
@@ -189,19 +210,79 @@ export default function AdminReferralsHubPage() {
 
       const leadIds = leadRows.map((row) => row.id);
       let inAdmissionsCount = 0;
+      let handoffBlocked = 0;
+      let handoffReady = 0;
+      let handoffOnboarding = 0;
       if (leadIds.length > 0) {
         const { data: admissionCases, error: admissionErr } = await supabase
           .from("admission_cases")
-          .select("id, referral_lead_id")
+          .select("id, referral_lead_id, status, resident_id, target_move_in_date, financial_clearance_at, physician_orders_received_at, bed_id")
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
           .in("referral_lead_id", leadIds)
           .not("status", "eq", "cancelled");
         if (admissionErr) throw admissionErr;
+        const admissionRows = (admissionCases ?? []) as AdmissionMini[];
+        const residentIds = Array.from(
+          new Set(
+            admissionRows
+              .map((row) => row.resident_id)
+              .filter((value): value is string => typeof value === "string" && value.length > 0),
+          ),
+        );
+        const [carePlansRes, medsRes, payersRes, consentsRes] =
+          residentIds.length > 0
+            ? await Promise.all([
+                supabase.from("care_plans").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
+                supabase.from("resident_medications").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
+                supabase.from("resident_payers").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
+                supabase.from("family_consent_records").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
+              ])
+            : [
+                { data: [], error: null },
+                { data: [], error: null },
+                { data: [], error: null },
+                { data: [], error: null },
+              ];
+        if (carePlansRes.error) throw carePlansRes.error;
+        if (medsRes.error) throw medsRes.error;
+        if (payersRes.error) throw payersRes.error;
+        if (consentsRes.error) throw consentsRes.error;
+
+        const carePlanIds = new Set((carePlansRes.data ?? []).map((row) => row.resident_id));
+        const medIds = new Set((medsRes.data ?? []).map((row) => row.resident_id));
+        const payerIds = new Set((payersRes.data ?? []).map((row) => row.resident_id));
+        const consentIds = new Set((consentsRes.data ?? []).map((row) => row.resident_id));
+
         const activeMap = Object.fromEntries(
-          ((admissionCases ?? []) as Array<{ id: string; referral_lead_id: string | null }>)
+          admissionRows
             .filter((row) => !!row.referral_lead_id)
-            .map((row) => [row.referral_lead_id as string, row.id]),
+            .map((row) => {
+              let phase: HandoffPhase = "complete";
+              const blocked =
+                !row.financial_clearance_at ||
+                !row.physician_orders_received_at ||
+                !row.bed_id ||
+                !row.target_move_in_date;
+              if (blocked) {
+                phase = "blocked";
+                handoffBlocked += 1;
+              } else if (row.status !== "move_in") {
+                phase = "ready";
+                handoffReady += 1;
+              } else {
+                const onboardingMissing =
+                  !carePlanIds.has(row.resident_id) ||
+                  !medIds.has(row.resident_id) ||
+                  !payerIds.has(row.resident_id) ||
+                  !consentIds.has(row.resident_id);
+                if (onboardingMissing) {
+                  phase = "onboarding";
+                  handoffOnboarding += 1;
+                }
+              }
+              return [row.referral_lead_id as string, { id: row.id, phase }] as const;
+            }),
         );
         setActiveAdmissionCaseByLeadId(activeMap);
         inAdmissionsCount = Object.keys(activeMap).length;
@@ -243,6 +324,9 @@ export default function AdminReferralsHubPage() {
         converted: cConv.count ?? 0,
         attention: cAtt.count ?? 0,
         inAdmissions: inAdmissionsCount,
+        handoffBlocked,
+        handoffReady,
+        handoffOnboarding,
       });
       setHl7Counts({
         pending: hl7Pending.count ?? 0,
@@ -253,6 +337,7 @@ export default function AdminReferralsHubPage() {
       setRows([]);
       setHl7Counts({ pending: 0, failed: 0 });
       setActiveAdmissionCaseByLeadId({});
+      setCounts({ new: 0, pipeline: 0, converted: 0, attention: 0, inAdmissions: 0, handoffBlocked: 0, handoffReady: 0, handoffOnboarding: 0 });
     } finally {
       setLoading(false);
     }
@@ -417,6 +502,11 @@ export default function AdminReferralsHubPage() {
                 ? "Loading handoff counts…"
                 : `${counts.inAdmissions} referral lead${counts.inAdmissions === 1 ? "" : "s"} already have an active admission case in this facility.`}
             </p>
+            {!loading && counts.inAdmissions > 0 ? (
+              <p className="text-xs text-slate-600 dark:text-zinc-400 tracking-wide mt-1">
+                {counts.handoffBlocked} blocked · {counts.handoffReady} ready · {counts.handoffOnboarding} onboarding
+              </p>
+            ) : null}
           </div>
           <Link
             href="/admin/referrals/in-admissions"
@@ -558,9 +648,11 @@ export default function AdminReferralsHubPage() {
                </div>
              ) : (
                 <MotionList className="space-y-4">
-                  {displayRows.map((r) => {
+                 {displayRows.map((r) => {
                     const isNew = r.status.includes('new');
-                    const linkedAdmissionCaseId = activeAdmissionCaseByLeadId[r.id] ?? null;
+                    const linkedAdmission = activeAdmissionCaseByLeadId[r.id] ?? null;
+                    const linkedAdmissionCaseId = linkedAdmission?.id ?? null;
+                    const handoffPhase = linkedAdmission?.phase ?? null;
                     
                     return (
                       <MotionItem key={r.id}>
@@ -591,6 +683,19 @@ export default function AdminReferralsHubPage() {
                                   In admissions
                                 </span>
                               ) : null}
+                              {handoffPhase === "blocked" ? (
+                                <span className="text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded-full border shadow-inner bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300">
+                                  Blocked
+                                </span>
+                              ) : handoffPhase === "ready" ? (
+                                <span className="text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded-full border shadow-inner bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300">
+                                  Ready
+                                </span>
+                              ) : handoffPhase === "onboarding" ? (
+                                <span className="text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded-full border shadow-inner bg-indigo-500/10 text-indigo-700 border-indigo-500/20 dark:text-indigo-300">
+                                  Onboarding
+                                </span>
+                              ) : null}
                             </div>
                           </div>
                           
@@ -609,7 +714,13 @@ export default function AdminReferralsHubPage() {
                               </span>
                               {linkedAdmissionCaseId ? (
                                 <span className="text-[11px] text-amber-700 dark:text-amber-300">
-                                  Admission case active
+                                  {handoffPhase === "blocked"
+                                    ? "Admissions handoff blocked"
+                                    : handoffPhase === "ready"
+                                      ? "Admissions handoff ready"
+                                      : handoffPhase === "onboarding"
+                                        ? "Onboarding handoff pending"
+                                        : "Admission case active"}
                                 </span>
                               ) : null}
                             </div>
