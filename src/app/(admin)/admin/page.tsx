@@ -129,6 +129,38 @@ export default function AdminDashboardPage() {
       : incidentLifecycleBacklog > 0
         ? incidentLifecycleBacklog
         : workflows.incidentOverdueFollowups;
+  const admissionsPrimaryHref =
+    workflows.admissionsBlocked > 0
+      ? "/admin/admissions/blocked"
+      : workflows.admissionsOnboardingPending > 0
+        ? "/admin/admissions/onboarding"
+        : "/admin/admissions/move-in-ready";
+  const admissionsPrimaryValue =
+    workflows.admissionsBlocked > 0
+      ? workflows.admissionsBlocked
+      : workflows.admissionsOnboardingPending > 0
+        ? workflows.admissionsOnboardingPending
+        : workflows.admissionsMoveInReady;
+  const admissionsPrimaryTitle =
+    workflows.admissionsBlocked > 0
+      ? "Admissions Backlog"
+      : workflows.admissionsOnboardingPending > 0
+        ? "Admissions Onboarding"
+        : "Move-In Ready";
+  const referralPrimaryValue =
+    workflows.referralsBlockedHandoffs > 0
+      ? workflows.referralsBlockedHandoffs
+      : workflows.referralsOnboardingHandoffs > 0
+        ? workflows.referralsOnboardingHandoffs
+        : workflows.referralsReadyHandoffs > 0
+          ? workflows.referralsReadyHandoffs
+          : workflows.referralsInAdmissions;
+  const referralPrimaryTitle =
+    workflows.referralsBlockedHandoffs > 0
+      ? "Referral Blockers"
+      : workflows.referralsOnboardingHandoffs > 0
+        ? "Referral Onboarding"
+        : "Referral Handoffs";
   const totalActionable =
     workflows.doctrineBlockedReview +
     workflows.doctrineReadyToPublish +
@@ -264,21 +296,21 @@ export default function AdminDashboardPage() {
           </MotionItem>
           <MotionItem>
             <TriageMetricCard
-              title="Admissions Backlog"
-              value={workflows.admissionsBlocked}
+              title={admissionsPrimaryTitle}
+              value={admissionsPrimaryValue}
               icon={DoorOpen}
-              href="/admin/admissions/blocked"
+              href={admissionsPrimaryHref}
               urgency={workflows.admissionsBlocked > 0 ? "high" : workflows.admissionsOnboardingPending > 0 ? "medium" : "normal"}
               subLabel={`${workflows.admissionsMoveInReady} ready · ${workflows.admissionsOnboardingPending} onboarding`}
             />
           </MotionItem>
           <MotionItem>
             <TriageMetricCard
-              title="Referral Handoffs"
-              value={workflows.referralsInAdmissions}
+              title={referralPrimaryTitle}
+              value={referralPrimaryValue}
               icon={ArrowRightLeft}
               href="/admin/referrals/in-admissions"
-              urgency={workflows.referralsInAdmissions > 0 ? "medium" : "normal"}
+              urgency={workflows.referralsBlockedHandoffs > 0 ? "high" : workflows.referralsInAdmissions > 0 ? "medium" : "normal"}
               subLabel={`${workflows.referralsBlockedHandoffs} blocked · ${workflows.referralsReadyHandoffs} ready · ${workflows.referralsOnboardingHandoffs} onboarding`}
             />
           </MotionItem>
