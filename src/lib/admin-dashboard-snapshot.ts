@@ -41,6 +41,7 @@ export type AdminDashboardSnapshot = {
   timezoneLabel: string;
   shiftSummary: string;
   residentCount: number;
+  awayResidentCount: number;
   licensedBeds: number | null;
   activeStaffCount: number;
   openIncidentAlerts: number;
@@ -74,6 +75,7 @@ export type AdminDashboardSnapshot = {
   };
   workflowInbox: WorkflowInboxItem[];
   censusPreview: DashboardCensusRow[];
+  acuityWatchlist: DashboardCensusRow[];
   activity: DashboardActivityItem[];
 };
 
@@ -500,11 +502,18 @@ export async function fetchAdminDashboardSnapshot(
     .gte("expiration_date", todayIso)
     .lte("expiration_date", in30Iso);
 
+  let awayResidentsCountQuery = supabase
+    .from("residents" as never)
+    .select("id", { count: "exact", head: true })
+    .is("deleted_at", null)
+    .in("status", ["hospital_hold", "loa"]);
+
   if (isValidFacilityIdForQuery(selectedFacilityId)) {
     incidentsCountQuery = incidentsCountQuery.eq("facility_id", selectedFacilityId);
     staffingGapSnapshotsQuery = staffingGapSnapshotsQuery.eq("facility_id", selectedFacilityId);
     medicationErrorsQuery = medicationErrorsQuery.eq("facility_id", selectedFacilityId);
     expiringCertificationsQuery = expiringCertificationsQuery.eq("facility_id", selectedFacilityId);
+    awayResidentsCountQuery = awayResidentsCountQuery.eq("facility_id", selectedFacilityId);
   }
 
   let residentsPreviewQuery = supabase
@@ -519,6 +528,22 @@ export async function fetchAdminDashboardSnapshot(
 
   if (isValidFacilityIdForQuery(selectedFacilityId)) {
     residentsPreviewQuery = residentsPreviewQuery.eq("facility_id", selectedFacilityId);
+  }
+
+  let acuityWatchlistQuery = supabase
+    .from("residents" as never)
+    .select(
+      "id, first_name, last_name, facility_id, status, acuity_level, updated_at, date_of_birth, deleted_at",
+    )
+    .is("deleted_at", null)
+    .in("status", ["active", "hospital_hold", "loa"])
+    .in("acuity_level", ["level_2", "level_3"])
+    .order("acuity_level", { ascending: false })
+    .order("updated_at", { ascending: false })
+    .limit(4);
+
+  if (isValidFacilityIdForQuery(selectedFacilityId)) {
+    acuityWatchlistQuery = acuityWatchlistQuery.eq("facility_id", selectedFacilityId);
   }
 
   let incidentsFeedQuery = supabase
@@ -613,7 +638,9 @@ export async function fetchAdminDashboardSnapshot(
     staffingGapSnapshotsRes,
     medicationErrorsRes,
     expiringCertificationsRes,
+    awayResidentsCountRes,
     residentsPreviewResult,
+    acuityWatchlistResult,
     incidentsFeedResult,
     doctrinePendingResult,
     incidentOverdueFollowupsRes,
@@ -633,7 +660,9 @@ export async function fetchAdminDashboardSnapshot(
     staffingGapSnapshotsQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
     medicationErrorsQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
     expiringCertificationsQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
+    awayResidentsCountQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
     residentsPreviewQuery as unknown as Promise<QueryResult<SupabaseResidentRow[]>>,
+    acuityWatchlistQuery as unknown as Promise<QueryResult<SupabaseResidentRow[]>>,
     incidentsFeedQuery as unknown as Promise<QueryResult<SupabaseIncidentFeedRow[]>>,
     doctrinePendingQuery as unknown as Promise<QueryResult<SupabaseDoctrineDocMini[]>>,
     incidentOverdueFollowupsQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
@@ -655,7 +684,9 @@ export async function fetchAdminDashboardSnapshot(
     staffingGapSnapshotsRes.error && { table: "staffing_ratio_snapshots", ...staffingGapSnapshotsRes.error },
     medicationErrorsRes.error && { table: "medication_errors", ...medicationErrorsRes.error },
     expiringCertificationsRes.error && { table: "staff_certifications", ...expiringCertificationsRes.error },
+    awayResidentsCountRes.error && { table: "residents_away_count", ...awayResidentsCountRes.error },
     residentsPreviewResult.error && { table: "residents_preview", ...residentsPreviewResult.error },
+    acuityWatchlistResult.error && { table: "residents_acuity_watchlist", ...acuityWatchlistResult.error },
     incidentsFeedResult.error && { table: "incidents_feed", ...incidentsFeedResult.error },
     doctrinePendingResult.error && { table: "documents_pending_review", ...doctrinePendingResult.error },
     incidentOverdueFollowupsRes.error && { table: "incident_followups_overdue", ...incidentOverdueFollowupsRes.error },
@@ -685,14 +716,17 @@ export async function fetchAdminDashboardSnapshot(
       : "All facilities";
 
   const previewResidents = residentsPreviewResult.data ?? [];
+  const watchlistResidents = acuityWatchlistResult.data ?? [];
   const incidentRows = incidentsFeedResult.data ?? [];
 
-  const [censusPreview, activity] = await Promise.all([
+  const [censusPreview, acuityWatchlist, activity] = await Promise.all([
     mapResidentsToCensusRows(supabase, previewResidents),
+    mapResidentsToCensusRows(supabase, watchlistResidents),
     mapIncidentsToActivity(supabase, incidentRows),
   ]);
 
   const residentCount = residentsCountRes.count ?? 0;
+  const awayResidentCount = awayResidentsCountRes.count ?? 0;
   const activeStaffCount = staffCountRes.count ?? 0;
   const openIncidentAlerts = incidentsCountRes.count ?? 0;
   const staffingGapSnapshots24h = staffingGapSnapshotsRes.count ?? 0;
@@ -837,6 +871,7 @@ export async function fetchAdminDashboardSnapshot(
     timezoneLabel: primaryTz,
     shiftSummary: shiftSummaryForTimezone(primaryTz),
     residentCount,
+    awayResidentCount,
     licensedBeds: licensedBedsSum > 0 ? licensedBedsSum : null,
     activeStaffCount,
     openIncidentAlerts,
@@ -894,6 +929,7 @@ export async function fetchAdminDashboardSnapshot(
       familyConferencesUpcoming,
     }),
     censusPreview,
+    acuityWatchlist,
     activity,
   };
 }

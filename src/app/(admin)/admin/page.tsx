@@ -488,7 +488,7 @@ export default function AdminDashboardPage() {
             </h3>
             
             <div className="space-y-3">
-               {snapshot.censusPreview.filter(r => r.acuity === 2 || r.acuity === 3).slice(0, 4).map(res => (
+               {snapshot.acuityWatchlist.map(res => (
                   <Link
                     key={res.id}
                     href={`/admin/residents/${res.id}`}
@@ -510,7 +510,7 @@ export default function AdminDashboardPage() {
                     )}
                   </Link>
                ))}
-               {snapshot.censusPreview.length === 0 && (
+               {snapshot.acuityWatchlist.length === 0 && (
                  <div className="text-center p-8 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-[1.5rem]">
                    <p className="text-sm font-medium text-slate-500">No high acuity residents currently.</p>
                  </div>
@@ -576,7 +576,7 @@ export default function AdminDashboardPage() {
                      <HeartPulse className="w-4 h-4" /> LOA / Hospital
                   </span>
                   <span className="text-2xl font-display font-medium text-amber-600 dark:text-amber-400 tabular-nums">
-                    {snapshot.censusPreview.filter(r => r.statusTone === "away").length}
+                    {snapshot.awayResidentCount}
                   </span>
                 </div>
              </div>
