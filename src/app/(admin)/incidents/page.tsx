@@ -117,6 +117,14 @@ export default function AdminIncidentsKanbanPage() {
     { id: "regulatory_review", label: "Regulatory Review", dot: "bg-blue-500" },
     { id: "closed", label: "Closed / Signed off", dot: "bg-slate-400" },
   ];
+  const followupPressure = rows
+    .filter((row) => row.overdueFollowups > 0 || row.unassignedFollowups > 0)
+    .sort((a, b) => {
+      const aScore = a.overdueFollowups * 10 + a.unassignedFollowups * 3 + a.openFollowups;
+      const bScore = b.overdueFollowups * 10 + b.unassignedFollowups * 3 + b.openFollowups;
+      return bScore - aScore;
+    })
+    .slice(0, 5);
 
   return (
     <div className="relative flex flex-col h-[calc(100vh-6rem)] space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-6">
@@ -149,6 +157,61 @@ export default function AdminIncidentsKanbanPage() {
           onRetry={() => void loadIncidents()}
         />
       ) : null}
+
+      {followupPressure.length > 0 && (
+        <div className="relative z-10 rounded-[1.8rem] border border-amber-200/70 bg-amber-50/70 dark:border-amber-900/40 dark:bg-amber-950/20 p-4 sm:p-5 backdrop-blur-xl">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest font-mono text-amber-700 dark:text-amber-300">Follow-up pressure</p>
+                <p className="text-sm text-amber-900 dark:text-amber-100">
+                  These incidents have overdue or unassigned follow-up work.
+                </p>
+              </div>
+              <Badge variant="outline" className="border-amber-300 bg-white/70 text-amber-800 dark:border-amber-800 dark:bg-black/20 dark:text-amber-200">
+                {followupPressure.length} incident{followupPressure.length === 1 ? "" : "s"} need attention
+              </Badge>
+            </div>
+
+            <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+              {followupPressure.map((incident) => (
+                <Link
+                  key={incident.id}
+                  href={`/admin/incidents/${incident.id}`}
+                  className="rounded-xl border border-amber-200/70 bg-white/80 dark:border-amber-900/40 dark:bg-black/20 p-4 transition-colors hover:bg-white dark:hover:bg-black/30"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-mono tracking-widest text-slate-500">{incident.incidentNumber}</p>
+                      <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">{incident.residentName}</p>
+                    </div>
+                    <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                      {incident.openFollowups} open
+                    </Badge>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {incident.overdueFollowups > 0 ? (
+                      <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
+                        {incident.overdueFollowups} overdue
+                      </Badge>
+                    ) : null}
+                    {incident.unassignedFollowups > 0 ? (
+                      <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+                        {incident.unassignedFollowups} unassigned
+                      </Badge>
+                    ) : null}
+                    {incident.followupDueStr !== "—" ? (
+                      <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+                        Next due {incident.followupDueStr}
+                      </Badge>
+                    ) : null}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Kanban Board Container */}
       <div className="relative z-10 flex-1 min-h-0 flex gap-6 overflow-x-auto pb-4 px-1 scrollbar-hide">
