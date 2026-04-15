@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { FileText, Trash2, RefreshCw, Loader2 } from "lucide-react";
 import type { DocumentRow, DocumentAudience, DocumentStatus } from "../lib/types";
 import { adminUpdateDocument, adminDeleteDocument, createObsidianDraft, reindexDocument } from "../lib/knowledge-api";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+
+type ReviewFilter = "all" | "ready" | "assigned_to_me" | "unassigned" | "overdue";
 
 interface DocumentTableProps {
   documents: DocumentRow[];
@@ -36,12 +39,65 @@ const AUDIENCE_LABELS: Record<string, string> = {
 };
 
 export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
+  const { user } = useHavenAuth();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
+  const [reviewFilter, setReviewFilter] = useState<ReviewFilter>("all");
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
-  const filtered = documents.filter((d) => d.title.toLowerCase().includes(filter.toLowerCase()));
+  const today = useMemo(() => {
+    const value = new Date();
+    value.setHours(0, 0, 0, 0);
+    return value;
+  }, []);
+
+  const reviewCounts = useMemo(() => {
+    let ready = 0;
+    let assignedToMe = 0;
+    let unassigned = 0;
+    let overdue = 0;
+
+    for (const doc of documents) {
+      const readyForReview = doc.status === "pending_review";
+      if (!readyForReview) continue;
+      ready += 1;
+      if (!doc.review_owner) unassigned += 1;
+      if (user?.id && doc.review_owner === user.id) assignedToMe += 1;
+      if (doc.review_due_at) {
+        const due = new Date(doc.review_due_at);
+        due.setHours(0, 0, 0, 0);
+        if (due < today) overdue += 1;
+      }
+    }
+
+    return { ready, assignedToMe, unassigned, overdue };
+  }, [documents, today, user?.id]);
+
+  const filtered = useMemo(() => {
+    return documents.filter((doc) => {
+      if (!doc.title.toLowerCase().includes(filter.toLowerCase())) return false;
+      switch (reviewFilter) {
+        case "ready":
+          return doc.status === "pending_review";
+        case "assigned_to_me":
+          return doc.status === "pending_review" && !!user?.id && doc.review_owner === user.id;
+        case "unassigned":
+          return doc.status === "pending_review" && !doc.review_owner;
+        case "overdue":
+          if (doc.status !== "pending_review" || !doc.review_due_at) return false;
+          return new Date(doc.review_due_at) < today;
+        default:
+          return true;
+      }
+    });
+  }, [documents, filter, reviewFilter, today, user?.id]);
+
+  const reviewOwnerLabel = (doc: DocumentRow) => {
+    if (!doc.review_owner) return "Unassigned";
+    if (user?.id && doc.review_owner === user.id) return "You";
+    return "Assigned";
+  };
 
   const handleStatusChange = async (docId: string, status: DocumentStatus) => {
     setActionSuccess(null);
@@ -164,12 +220,65 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
         className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
       />
 
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          { key: "ready", label: "Ready for review", value: reviewCounts.ready },
+          { key: "assigned_to_me", label: "Assigned to me", value: reviewCounts.assignedToMe },
+          { key: "unassigned", label: "Unassigned", value: reviewCounts.unassigned },
+          { key: "overdue", label: "Overdue", value: reviewCounts.overdue },
+        ].map((card) => {
+          const active = reviewFilter === card.key;
+          return (
+            <button
+              key={card.key}
+              type="button"
+              onClick={() => setReviewFilter(active ? "all" : (card.key as ReviewFilter))}
+              className={`rounded-xl border px-4 py-3 text-left transition-colors ${
+                active
+                  ? "border-indigo-400 bg-indigo-50 dark:border-indigo-500/50 dark:bg-indigo-950/30"
+                  : "border-slate-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
+              }`}
+            >
+              <div className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">{card.label}</div>
+              <div className="mt-1 text-2xl font-semibold text-slate-900 dark:text-zinc-100">{card.value}</div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        {[
+          { key: "all", label: "All docs" },
+          { key: "ready", label: "Ready for review" },
+          { key: "assigned_to_me", label: "Assigned to me" },
+          { key: "unassigned", label: "Unassigned" },
+          { key: "overdue", label: "Overdue" },
+        ].map((option) => {
+          const active = reviewFilter === option.key;
+          return (
+            <button
+              key={option.key}
+              type="button"
+              onClick={() => setReviewFilter(option.key as ReviewFilter)}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                active
+                  ? "bg-indigo-600 text-white"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+              }`}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+
       <div className="rounded-xl border border-slate-200 dark:border-zinc-800 overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-slate-50 dark:bg-zinc-900 text-left">
               <th className="px-4 py-3 font-medium text-slate-600 dark:text-zinc-400">Title</th>
               <th className="px-4 py-3 font-medium text-slate-600 dark:text-zinc-400">Status</th>
+              <th className="px-4 py-3 font-medium text-slate-600 dark:text-zinc-400">Review</th>
               <th className="px-4 py-3 font-medium text-slate-600 dark:text-zinc-400">Audience</th>
               <th className="px-4 py-3 font-medium text-slate-600 dark:text-zinc-400">Words</th>
               <th className="px-4 py-3 font-medium text-slate-600 dark:text-zinc-400">Actions</th>
@@ -204,6 +313,14 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
                     </select>
                     <div className="text-[11px] text-slate-500 dark:text-zinc-400 max-w-[220px]">
                       {STATUS_HELP[doc.status as DocumentStatus] ?? STATUS_HELP.draft}
+                    </div>
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="space-y-1 text-xs text-slate-600 dark:text-zinc-300">
+                    <div className="font-medium">{reviewOwnerLabel(doc)}</div>
+                    <div className="text-slate-500 dark:text-zinc-400">
+                      {doc.review_due_at ? `Due ${new Date(doc.review_due_at).toLocaleDateString()}` : "No due date"}
                     </div>
                   </div>
                 </td>
@@ -265,7 +382,7 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-slate-400 dark:text-zinc-500">
+                <td colSpan={6} className="px-4 py-8 text-center text-slate-400 dark:text-zinc-500">
                   No documents found
                 </td>
               </tr>
