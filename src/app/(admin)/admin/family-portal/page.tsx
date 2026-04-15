@@ -28,6 +28,9 @@ type ConsentRow = Database["public"]["Tables"]["family_consent_records"]["Row"] 
   residents: { first_name: string; last_name: string } | null;
 };
 
+type TriageFilter = "all" | Database["public"]["Enums"]["family_message_triage_status"];
+type ConferenceFilter = "all" | Database["public"]["Enums"]["family_care_conference_status"];
+
 function formatStatus(s: string) {
   return s.replace(/_/g, " ");
 }
@@ -44,6 +47,8 @@ export default function AdminFamilyPortalPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [triageFilter, setTriageFilter] = useState<TriageFilter>("all");
+  const [conferenceFilter, setConferenceFilter] = useState<ConferenceFilter>("all");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -158,16 +163,52 @@ export default function AdminFamilyPortalPage() {
   }
 
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
-  const featuredTriage = useMemo(() => {
-    return [...triage]
-      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-      .slice(0, 12);
+  const triageCounts = useMemo(() => {
+    return {
+      all: triage.length,
+      pending_review: triage.filter((row) => row.triage_status === "pending_review").length,
+      in_review: triage.filter((row) => row.triage_status === "in_review").length,
+      resolved: triage.filter((row) => row.triage_status === "resolved").length,
+      false_positive: triage.filter((row) => row.triage_status === "false_positive").length,
+    };
   }, [triage]);
+  const conferenceCounts = useMemo(() => {
+    return {
+      all: conferences.length,
+      scheduled: conferences.filter((row) => row.status === "scheduled").length,
+      completed: conferences.filter((row) => row.status === "completed").length,
+      cancelled: conferences.filter((row) => row.status === "cancelled").length,
+    };
+  }, [conferences]);
+  const featuredTriage = useMemo(() => {
+    const triagePriority: Record<Database["public"]["Enums"]["family_message_triage_status"], number> = {
+      pending_review: 0,
+      in_review: 1,
+      resolved: 2,
+      false_positive: 3,
+    };
+    return [...triage]
+      .filter((row) => triageFilter === "all" || row.triage_status === triageFilter)
+      .sort((a, b) => {
+        const priorityDelta = triagePriority[a.triage_status] - triagePriority[b.triage_status];
+        if (priorityDelta !== 0) return priorityDelta;
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+      })
+      .slice(0, 12);
+  }, [triage, triageFilter]);
   const featuredConferences = useMemo(() => {
     return [...conferences]
-      .sort((a, b) => new Date(a.scheduled_start ?? 0).getTime() - new Date(b.scheduled_start ?? 0).getTime())
+      .filter((row) => conferenceFilter === "all" || row.status === conferenceFilter)
+      .sort((a, b) => {
+        if (a.status === "scheduled" && b.status !== "scheduled") return -1;
+        if (a.status !== "scheduled" && b.status === "scheduled") return 1;
+        if (a.status === "scheduled" && b.status === "scheduled") {
+          return new Date(a.scheduled_start ?? 0).getTime() - new Date(b.scheduled_start ?? 0).getTime();
+        }
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+      })
       .slice(0, 12);
-  }, [conferences]);
+  }, [conferenceFilter, conferences]);
   const featuredConsents = useMemo(() => {
     return [...consents]
       .sort((a, b) => new Date(b.signed_at ?? 0).getTime() - new Date(a.signed_at ?? 0).getTime())
@@ -246,6 +287,29 @@ export default function AdminFamilyPortalPage() {
 
         <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-2xl backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative">
            <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
+           <div className="relative z-10 mb-6 flex flex-wrap items-center gap-2">
+             {([
+               { value: "all", label: `All (${triageCounts.all})` },
+               { value: "pending_review", label: `Pending (${triageCounts.pending_review})` },
+               { value: "in_review", label: `In review (${triageCounts.in_review})` },
+               { value: "resolved", label: `Resolved (${triageCounts.resolved})` },
+               { value: "false_positive", label: `False positive (${triageCounts.false_positive})` },
+             ] as Array<{ value: TriageFilter; label: string }>).map((option) => (
+               <button
+                 key={option.value}
+                 type="button"
+                 onClick={() => setTriageFilter(option.value)}
+                 className={cn(
+                   "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                   triageFilter === option.value
+                     ? "bg-rose-600 text-white"
+                     : "bg-white/80 text-slate-600 hover:bg-white dark:bg-black/20 dark:text-zinc-300 dark:hover:bg-black/30",
+                 )}
+               >
+                 {option.label}
+               </button>
+             ))}
+           </div>
            <div className="hidden lg:grid grid-cols-[2fr_1fr_2fr_3fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Resident</div>
              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Status</div>
@@ -269,6 +333,10 @@ export default function AdminFamilyPortalPage() {
                    <Info className="h-6 w-6 text-slate-400 dark:text-zinc-500"/>
                  </div>
                  No clinical triage anomalies detected in family messages.
+               </div>
+             ) : featuredTriage.length === 0 ? (
+               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
+                 No triage items match this filter.
                </div>
              ) : (
                 <MotionList className="space-y-4">
@@ -362,6 +430,28 @@ export default function AdminFamilyPortalPage() {
 
         <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-2xl backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative">
            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
+           <div className="relative z-10 mb-6 flex flex-wrap items-center gap-2">
+             {([
+               { value: "all", label: `All (${conferenceCounts.all})` },
+               { value: "scheduled", label: `Scheduled (${conferenceCounts.scheduled})` },
+               { value: "completed", label: `Completed (${conferenceCounts.completed})` },
+               { value: "cancelled", label: `Cancelled (${conferenceCounts.cancelled})` },
+             ] as Array<{ value: ConferenceFilter; label: string }>).map((option) => (
+               <button
+                 key={option.value}
+                 type="button"
+                 onClick={() => setConferenceFilter(option.value)}
+                 className={cn(
+                   "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                   conferenceFilter === option.value
+                     ? "bg-indigo-600 text-white"
+                     : "bg-white/80 text-slate-600 hover:bg-white dark:bg-black/20 dark:text-zinc-300 dark:hover:bg-black/30",
+                 )}
+               >
+                 {option.label}
+               </button>
+             ))}
+           </div>
            <div className="hidden lg:grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Resident</div>
              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Start Time</div>
@@ -382,6 +472,10 @@ export default function AdminFamilyPortalPage() {
              ) : conferences.length === 0 ? (
                <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
                  No scheduled conferences for this facility.
+               </div>
+             ) : featuredConferences.length === 0 ? (
+               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
+                 No conferences match this filter.
                </div>
              ) : (
                 <MotionList className="space-y-4">
