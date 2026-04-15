@@ -353,7 +353,7 @@ export default function AdminStaffingConsolePage() {
          <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between pb-2 border-b border-white/10">
                <h3 className="text-sm font-display font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">Credential Warnings (Blockers)</h3>
-               <Link href="/admin/certifications" className="text-[10px] font-mono tracking-widest uppercase font-bold text-indigo-500 hover:text-indigo-400">View All</Link>
+               <Link href="/admin/certifications?timeline=expired" className="text-[10px] font-mono tracking-widest uppercase font-bold text-indigo-500 hover:text-indigo-400">View All</Link>
             </div>
             
             <MotionList className="space-y-3">
