@@ -489,7 +489,11 @@ export default function AdminDashboardPage() {
             
             <div className="space-y-3">
                {snapshot.censusPreview.filter(r => r.acuity === 2 || r.acuity === 3).slice(0, 4).map(res => (
-                  <div key={res.id} className="flex items-center justify-between p-4 rounded-[1.5rem] bg-white border border-slate-100 dark:bg-white/[0.03] dark:border-white/5 shadow-sm tap-responsive group hover:border-slate-300 dark:hover:border-white/10 transition-colors cursor-pointer">
+                  <Link
+                    key={res.id}
+                    href={`/admin/residents/${res.id}`}
+                    className="flex items-center justify-between p-4 rounded-[1.5rem] bg-white border border-slate-100 dark:bg-white/[0.03] dark:border-white/5 shadow-sm tap-responsive group hover:border-slate-300 dark:hover:border-white/10 transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  >
                     <div className="flex items-center gap-4 overflow-hidden">
                       <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
                          <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400">{res.initials}</span>
@@ -504,7 +508,7 @@ export default function AdminDashboardPage() {
                     ) : (
                       <span className="px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30 text-[9px] font-black uppercase tracking-widest leading-none">OBSV</span>
                     )}
-                  </div>
+                  </Link>
                ))}
                {snapshot.censusPreview.length === 0 && (
                  <div className="text-center p-8 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-[1.5rem]">

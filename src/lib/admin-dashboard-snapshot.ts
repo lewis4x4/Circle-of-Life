@@ -395,13 +395,25 @@ function buildWorkflowInbox(input: {
     if (input.dischargePlanning > 0) parts.push(`${input.dischargePlanning} planning`);
     if (input.dischargePharmacistReview > 0) parts.push(`${input.dischargePharmacistReview} pharmacist`);
     if (input.dischargeReadyToComplete > 0) parts.push(`${input.dischargeReadyToComplete} ready to complete`);
+    const dischargeHref =
+      input.dischargePlanning > 0
+        ? "/admin/discharge?phase=planning"
+        : input.dischargePharmacistReview > 0
+          ? "/admin/discharge?phase=pharmacist_review"
+          : "/admin/discharge?phase=ready_to_complete";
+    const dischargeLabel =
+      input.dischargePlanning > 0
+        ? "Discharge Planning"
+        : input.dischargePharmacistReview > 0
+          ? "Pharmacist Review"
+          : "Ready To Complete";
     items.push({
       id: "discharge-workflow",
-      label: "Discharge",
+      label: dischargeLabel,
       message: `${parts.join(" · ")} reconciliation${input.dischargePlanning + input.dischargePharmacistReview + input.dischargeReadyToComplete === 1 ? "" : "s"} need transition attention.`,
       tone: input.dischargePlanning > 0 ? "warning" : "normal",
-      href: "/admin/discharge",
-      ctaLabel: "Work discharges",
+      href: dischargeHref,
+      ctaLabel: input.dischargePlanning > 0 ? "Open planning queue" : input.dischargePharmacistReview > 0 ? "Open pharmacist queue" : "Open ready queue",
     });
   }
 
