@@ -254,6 +254,10 @@ function buildWorkflowInbox(input: {
   familyConferencesUpcoming: number;
 }): WorkflowInboxItem[] {
   const items: WorkflowInboxItem[] = [];
+  const incidentLifecycleBlockers =
+    input.incidentOpenObligations + input.incidentRootCausePending + input.incidentCarePlanPending;
+  const incidentFollowupBlockers =
+    input.incidentEscalatedFollowups + input.incidentOverdueFollowups + input.incidentUnassignedFollowups;
 
   if (input.doctrineBlockedReview > 0) {
     items.push({
@@ -308,11 +312,19 @@ function buildWorkflowInbox(input: {
     if (input.incidentCarePlanPending > 0) parts.push(`${input.incidentCarePlanPending} care plan pending`);
     items.push({
       id: "incident-followups",
-      label: "Incident Follow-Ups",
-      message: `${parts.join(" · ")} follow-up task${input.incidentOverdueFollowups + input.incidentUnassignedFollowups === 1 ? "" : "s"} need action.`,
+      label: incidentLifecycleBlockers > 0 ? "Incident Lifecycle" : "Incident Follow-Ups",
+      message:
+        incidentLifecycleBlockers > 0
+          ? `${parts.join(" · ")} incident workflow blocker${incidentLifecycleBlockers === 1 ? "" : "s"} need action.`
+          : `${parts.join(" · ")} follow-up task${incidentFollowupBlockers === 1 ? "" : "s"} need action.`,
       tone: input.incidentEscalatedFollowups > 0 || input.incidentOpenObligations > 0 ? "critical" : "warning",
-      href: input.incidentOverdueFollowups > 0 ? "/admin/incidents/overdue-followups" : "/admin/incidents/followups",
-      ctaLabel: "Work follow-ups",
+      href:
+        incidentLifecycleBlockers > 0
+          ? "/admin/incidents/obligations"
+          : input.incidentOverdueFollowups > 0
+            ? "/admin/incidents/overdue-followups"
+            : "/admin/incidents/followups",
+      ctaLabel: incidentLifecycleBlockers > 0 ? "Work lifecycle queue" : "Work follow-ups",
     });
   }
 

@@ -113,6 +113,22 @@ export default function AdminDashboardPage() {
   const medExceptions = snapshot.medicationErrorsUnreviewed;
   const complianceAlerts = snapshot.expiringCertifications30d;
   const workflows = snapshot.workflowQueues;
+  const incidentLifecycleBacklog =
+    workflows.incidentOpenObligations + workflows.incidentRootCausePending + workflows.incidentCarePlanPending;
+  const incidentFollowupBacklog =
+    workflows.incidentEscalatedFollowups + workflows.incidentOverdueFollowups + workflows.incidentUnassignedFollowups;
+  const incidentPrimaryHref =
+    incidentLifecycleBacklog > 0
+      ? "/admin/incidents/obligations"
+      : workflows.incidentOverdueFollowups > 0
+        ? "/admin/incidents/overdue-followups"
+        : "/admin/incidents/followups";
+  const incidentPrimaryValue =
+    workflows.incidentEscalatedFollowups > 0
+      ? workflows.incidentEscalatedFollowups
+      : incidentLifecycleBacklog > 0
+        ? incidentLifecycleBacklog
+        : workflows.incidentOverdueFollowups;
   const totalActionable =
     workflows.doctrineBlockedReview +
     workflows.doctrineReadyToPublish +
@@ -232,10 +248,10 @@ export default function AdminDashboardPage() {
           </MotionItem>
           <MotionItem>
             <TriageMetricCard
-              title="Incident Follow-Ups"
-              value={workflows.incidentEscalatedFollowups > 0 ? workflows.incidentEscalatedFollowups : workflows.incidentOverdueFollowups}
+              title={incidentLifecycleBacklog > 0 ? "Incident Lifecycle" : "Incident Follow-Ups"}
+              value={incidentPrimaryValue}
               icon={ClipboardList}
-              href="/admin/incidents/overdue-followups"
+              href={incidentPrimaryHref}
               urgency={
                 workflows.incidentEscalatedFollowups > 0 || workflows.incidentOpenObligations > 0
                   ? "critical"
@@ -243,7 +259,7 @@ export default function AdminDashboardPage() {
                     ? "high"
                     : "normal"
               }
-              subLabel={`${workflows.incidentOverdueFollowups} overdue · ${workflows.incidentOpenObligations} reporting · ${workflows.incidentRootCausePending} RCA`}
+              subLabel={`${workflows.incidentOverdueFollowups} overdue · ${workflows.incidentOpenObligations} obligations · ${workflows.incidentRootCausePending} RCA`}
             />
           </MotionItem>
           <MotionItem>
