@@ -78,6 +78,7 @@ type IncidentMini = {
   id: string;
   facility_id: string;
   organization_id: string;
+  resident_id: string | null;
   incident_number: string;
   category: string;
   severity: string;
@@ -132,6 +133,8 @@ export default function AdminIncidentRcaPage() {
   const [completing, setCompleting] = useState(false);
   const [reopening, setReopening] = useState(false);
   const [completionErrors, setCompletionErrors] = useState<string[]>([]);
+  const [followupActionLoading, setFollowupActionLoading] = useState<"corrective" | "preventative" | null>(null);
+  const [followupActionMessage, setFollowupActionMessage] = useState<string | null>(null);
 
   const storageKey = `${STORAGE_PREFIX}${incidentId}`;
   const locked = investigationStatus === "complete";
@@ -157,7 +160,7 @@ export default function AdminIncidentRcaPage() {
       const res = (await supabase
         .from("incidents" as never)
         .select(
-          "id, facility_id, organization_id, incident_number, category, severity, status, occurred_at, description, contributing_factors",
+          "id, facility_id, organization_id, resident_id, incident_number, category, severity, status, occurred_at, description, contributing_factors",
         )
         .eq("id", incidentId)
         .is("deleted_at", null)
@@ -495,6 +498,69 @@ export default function AdminIncidentRcaPage() {
     [],
   );
 
+  const createRcaFollowup = useCallback(async (kind: "corrective" | "preventative") => {
+    if (!incident || locked) return;
+    const description = kind === "corrective" ? correctiveActions.trim() : preventativeActions.trim();
+    if (!description) {
+      setError(`Add ${kind} actions before creating a follow-up task.`);
+      return;
+    }
+    setFollowupActionLoading(kind);
+    setError(null);
+    setFollowupActionMessage(null);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user?.id) {
+        setError("You must be signed in to create follow-up tasks.");
+        return;
+      }
+
+      const taskType = kind === "corrective" ? "root_cause_corrective_action" : "root_cause_preventative_action";
+      const dueAt = new Date();
+      if (kind === "corrective") {
+        dueAt.setDate(dueAt.getDate() + 1);
+      } else {
+        dueAt.setDate(dueAt.getDate() + 7);
+      }
+
+      const existing = (await supabase
+        .from("incident_followups" as never)
+        .select("id")
+        .eq("incident_id", incident.id)
+        .eq("task_type", taskType)
+        .eq("description", description)
+        .is("deleted_at", null)
+        .is("completed_at", null)
+        .maybeSingle()) as unknown as QueryResult<{ id: string }>;
+      if (existing.error) throw existing.error;
+      if (existing.data?.id) {
+        setFollowupActionMessage(`${kind === "corrective" ? "Corrective" : "Preventative"} follow-up already exists.`);
+        return;
+      }
+
+      const insert = (await supabase
+        .from("incident_followups" as never)
+        .insert({
+          incident_id: incident.id,
+          resident_id: incident.resident_id,
+          facility_id: incident.facility_id,
+          organization_id: incident.organization_id,
+          task_type: taskType,
+          description,
+          due_at: dueAt.toISOString(),
+        } as never)) as unknown as QueryResult<unknown>;
+      if (insert.error) throw insert.error;
+      setFollowupActionMessage(`${kind === "corrective" ? "Corrective" : "Preventative"} follow-up queued.`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not create RCA follow-up.");
+    } finally {
+      setFollowupActionLoading(null);
+    }
+  }, [incident, locked, correctiveActions, preventativeActions]);
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -660,6 +726,14 @@ export default function AdminIncidentRcaPage() {
         </Card>
       ) : null}
 
+      {followupActionMessage ? (
+        <Card className="border-emerald-200/80 bg-emerald-50/40 dark:border-emerald-900/50 dark:bg-emerald-950/25">
+          <CardContent className="py-3 text-sm text-emerald-950 dark:text-emerald-100">
+            {followupActionMessage}
+          </CardContent>
+        </Card>
+      ) : null}
+
       {!locked ? (
         <Card className="border-slate-200/70 dark:border-slate-800">
           <CardHeader className="pb-2">
@@ -772,6 +846,34 @@ export default function AdminIncidentRcaPage() {
               placeholder="Policy, training, environment, or monitoring changes…"
             />
           </div>
+          {!locked ? (
+            <div className="rounded-lg border border-indigo-200/70 bg-indigo-50/60 dark:border-indigo-900/40 dark:bg-indigo-950/20 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-indigo-700 dark:text-indigo-300">
+                Operationalize RCA
+              </p>
+              <p className="mt-1 text-sm text-indigo-900 dark:text-indigo-100">
+                Turn corrective or preventative action text into follow-up tasks on the incident workspace.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={followupActionLoading !== null || correctiveActions.trim().length < MIN_CORRECTIVE_LEN}
+                  onClick={() => void createRcaFollowup("corrective")}
+                >
+                  {followupActionLoading === "corrective" ? "Queueing…" : "Queue corrective follow-up"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={followupActionLoading !== null || preventativeActions.trim().length < MIN_PREVENTATIVE_LEN}
+                  onClick={() => void createRcaFollowup("preventative")}
+                >
+                  {followupActionLoading === "preventative" ? "Queueing…" : "Queue preventative follow-up"}
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 
