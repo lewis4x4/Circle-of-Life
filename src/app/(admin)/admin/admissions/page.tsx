@@ -30,9 +30,12 @@ type CaseRow = Pick<
   | "financial_clearance_at"
   | "physician_orders_received_at"
   | "bed_id"
+  | "resident_id"
 > & {
   residents: { first_name: string; last_name: string } | null;
 };
+
+type AdmissionPhase = "blocked" | "ready" | "onboarding" | "stable";
 
 type DischargeRow = Pick<
   Database["public"]["Tables"]["discharge_med_reconciliation"]["Row"],
@@ -277,7 +280,8 @@ export default function AdminAdmissionsHubPage() {
       ]);
 
       setReferrals((refList.data ?? []) as LeadRow[]);
-      setAdmissions((admList.data ?? []) as CaseRow[]);
+      const admissionRows = (admList.data ?? []) as CaseRow[];
+      setAdmissions(admissionRows);
       setDischarges((disList.data ?? []) as DischargeRow[]);
       setTriage((triList.data ?? []) as TriageRow[]);
       setConferences((confList.data ?? []) as ConferenceRow[]);
@@ -288,7 +292,6 @@ export default function AdminAdmissionsHubPage() {
         converted: (cRefConv.count ?? 0) as number,
         attention: (cRefAtt.count ?? 0) as number,
       });
-      const admissionRows = (admList.data ?? []) as CaseRow[];
       setAdmissionCounts({
         pending: (cAdmPend.count ?? 0) as number,
         reserved: (cAdmRes.count ?? 0) as number,
@@ -323,6 +326,93 @@ export default function AdminAdmissionsHubPage() {
     .map((row) => ({ row, blockers: admissionBlockers(row) }))
     .filter((entry) => entry.blockers.length > 0)
     .slice(0, 4);
+  const [onboardingState, setOnboardingState] = useState<Record<string, string[]>>({});
+
+  useEffect(() => {
+    async function loadOnboardingState() {
+      if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId) || admissions.length === 0) {
+        setOnboardingState({});
+        return;
+      }
+      const moveInCases = admissions.filter((row) => row.status === "move_in" && row.resident_id);
+      const residentIds = moveInCases.map((row) => row.resident_id).filter(Boolean) as string[];
+      if (residentIds.length === 0) {
+        setOnboardingState({});
+        return;
+      }
+      const supabase = createClient();
+      const [carePlansRes, medsRes, payersRes, consentsRes] = await Promise.all([
+        supabase.from("care_plans").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
+        supabase.from("resident_medications").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
+        supabase.from("resident_payers").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
+        supabase.from("family_consent_records").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
+      ]);
+      if (carePlansRes.error || medsRes.error || payersRes.error || consentsRes.error) {
+        setOnboardingState({});
+        return;
+      }
+      const carePlanIds = new Set((carePlansRes.data ?? []).map((row) => row.resident_id));
+      const medIds = new Set((medsRes.data ?? []).map((row) => row.resident_id));
+      const payerIds = new Set((payersRes.data ?? []).map((row) => row.resident_id));
+      const consentIds = new Set((consentsRes.data ?? []).map((row) => row.resident_id));
+      setOnboardingState(
+        Object.fromEntries(
+          moveInCases.map((row) => {
+            const residentId = row.resident_id as string;
+            const missing = [
+              !carePlanIds.has(residentId) ? "care plan" : null,
+              !medIds.has(residentId) ? "medications" : null,
+              !payerIds.has(residentId) ? "billing" : null,
+              !consentIds.has(residentId) ? "family consent" : null,
+            ].filter((value): value is string => Boolean(value));
+            return [row.id, missing];
+          }),
+        ),
+      );
+    }
+
+    void loadOnboardingState();
+  }, [admissions, selectedFacilityId]);
+
+  function describeAdmissionPhase(row: CaseRow): {
+    phase: AdmissionPhase;
+    nextActionLabel: string;
+    nextActionHref: string;
+    helperText: string;
+  } {
+    const blockers = admissionBlockers(row);
+    if (blockers.length > 0) {
+      return {
+        phase: "blocked",
+        nextActionLabel: "Clear blockers",
+        nextActionHref: "/admin/admissions/blocked",
+        helperText: `Blockers: ${blockers.join(" · ")}`,
+      };
+    }
+    if (row.status !== "move_in") {
+      return {
+        phase: "ready",
+        nextActionLabel: "Advance move-in",
+        nextActionHref: "/admin/admissions/move-in-ready",
+        helperText: "Ready for next move-in step.",
+      };
+    }
+    const onboardingMissing = onboardingState[row.id] ?? [];
+    if (onboardingMissing.length > 0) {
+      return {
+        phase: "onboarding",
+        nextActionLabel: "Finish onboarding",
+        nextActionHref: "/admin/admissions/onboarding",
+        helperText: `Onboarding: ${onboardingMissing.join(" · ")}`,
+      };
+    }
+    return {
+      phase: "stable",
+      nextActionLabel: "Open onboarding",
+      nextActionHref: "/admin/admissions/onboarding",
+      helperText: "Move-in complete and downstream setup is clear.",
+    };
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-10 pb-12 w-full">
@@ -534,7 +624,7 @@ export default function AdminAdmissionsHubPage() {
             <MotionList className="space-y-3">
             {admissions.map((r) => {
               const isPending = r.status === "pending_clearance";
-              const blockers = admissionBlockers(r);
+              const phase = describeAdmissionPhase(r);
               return (
                 <MotionItem key={r.id}>
                   <Link
@@ -557,17 +647,49 @@ export default function AdminAdmissionsHubPage() {
                         )}>
                           {formatStatus(r.status)}
                         </span>
+                        {phase.phase === "blocked" ? (
+                          <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full border bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300">
+                            Blocked
+                          </span>
+                        ) : phase.phase === "ready" ? (
+                          <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full border bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300">
+                            Ready
+                          </span>
+                        ) : phase.phase === "onboarding" ? (
+                          <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full border bg-indigo-500/10 text-indigo-700 border-indigo-500/20 dark:text-indigo-300">
+                            Onboarding
+                          </span>
+                        ) : null}
                       </div>
                       <p className="text-xs text-slate-500 dark:text-zinc-500 mt-0.5">
                         {r.target_move_in_date ? `Target: ${r.target_move_in_date}` : "No date set"} · {formatRelative(r.updated_at)}
                       </p>
-                      {blockers.length > 0 ? (
-                        <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-300">
-                          Blockers: {blockers.join(" · ")}
-                        </p>
-                      ) : (
-                        <p className="mt-1 text-[11px] text-emerald-700 dark:text-emerald-300">Ready for next move-in step.</p>
-                      )}
+                      <p className={cn(
+                        "mt-1 text-[11px]",
+                        phase.phase === "blocked"
+                          ? "text-amber-700 dark:text-amber-300"
+                          : phase.phase === "ready"
+                            ? "text-emerald-700 dark:text-emerald-300"
+                            : phase.phase === "onboarding"
+                              ? "text-indigo-700 dark:text-indigo-300"
+                              : "text-slate-600 dark:text-zinc-400",
+                      )}>
+                        {phase.helperText}
+                      </p>
+                    </div>
+                    <div className="shrink-0 hidden xl:flex">
+                      <span className={cn(
+                        "rounded-full px-3 py-1.5 text-[10px] uppercase font-bold tracking-widest border",
+                        phase.phase === "blocked"
+                          ? "bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300"
+                          : phase.phase === "ready"
+                            ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300"
+                            : phase.phase === "onboarding"
+                              ? "bg-indigo-500/10 text-indigo-700 border-indigo-500/20 dark:text-indigo-300"
+                              : "bg-slate-500/10 text-slate-700 border-slate-500/20 dark:text-slate-300",
+                      )}>
+                        {phase.nextActionLabel}
+                      </span>
                     </div>
                   </Link>
                 </MotionItem>
