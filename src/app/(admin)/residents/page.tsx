@@ -147,7 +147,7 @@ export default function AdminResidentsPage() {
     const requestedStatus = searchParams.get("status") ?? DEFAULT_FILTERS.status;
 
     setSearch(requestedSearch);
-    setAcuity(["all", "1", "2", "3"].includes(requestedAcuity) ? requestedAcuity : DEFAULT_FILTERS.acuity);
+    setAcuity(["all", "1", "2", "3", "watchlist"].includes(requestedAcuity) ? requestedAcuity : DEFAULT_FILTERS.acuity);
     setUnit(requestedUnit || DEFAULT_FILTERS.unit);
     setAdl(
       ["all", "independent", "assisted", "dependent"].includes(requestedAdl)
@@ -177,7 +177,8 @@ export default function AdminResidentsPage() {
         row.name.toLowerCase().includes(loweredSearch) ||
         row.room.toLowerCase().includes(loweredSearch) ||
         row.careSummary.toLowerCase().includes(loweredSearch);
-      const matchesAcuity = acuity === "all" || String(row.acuity) === acuity;
+      const matchesAcuity =
+        acuity === "all" || (acuity === "watchlist" ? row.acuity === 2 || row.acuity === 3 : String(row.acuity) === acuity);
       const matchesUnit = unit === "all" || row.unit === unit;
       const matchesAdl = adl === "all" || row.adlStatus === adl;
       const matchesStatus =
@@ -274,6 +275,7 @@ export default function AdminResidentsPage() {
             onChange: setAcuity,
             options: [
               { value: "all", label: "All Acuity" },
+              { value: "watchlist", label: "Watchlist (2-3)" },
               { value: "1", label: "Acuity 1" },
               { value: "2", label: "Acuity 2" },
               { value: "3", label: "Acuity 3" },
