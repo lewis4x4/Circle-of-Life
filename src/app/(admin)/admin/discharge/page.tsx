@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ClipboardList, DoorOpen, ArrowRight, Loader2 } from "lucide-react";
 
@@ -100,6 +101,7 @@ export default function AdminDischargeHubPage() {
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
   const { user } = useHavenAuth();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [rows, setRows] = useState<RowT[]>([]);
@@ -113,6 +115,21 @@ export default function AdminDischargeHubPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const requestedPhase = searchParams.get("phase");
+
+  useEffect(() => {
+    if (
+      requestedPhase === "planning" ||
+      requestedPhase === "pharmacist_review" ||
+      requestedPhase === "ready_to_complete" ||
+      requestedPhase === "complete" ||
+      requestedPhase === "cancelled"
+    ) {
+      setPhaseFilter(requestedPhase);
+      return;
+    }
+    setPhaseFilter("all");
+  }, [requestedPhase]);
 
   const load = useCallback(async () => {
     setLoading(true);

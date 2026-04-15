@@ -173,6 +173,24 @@ export default function AdminDashboardPage() {
     workflows.familyTriagePending > 0 ? "Family Triage" : "Care Conferences";
   const familyPrimaryValue =
     workflows.familyTriagePending > 0 ? workflows.familyTriagePending : workflows.familyConferencesUpcoming;
+  const dischargePrimaryHref =
+    workflows.dischargePlanning > 0
+      ? "/admin/discharge?phase=planning"
+      : workflows.dischargePharmacistReview > 0
+        ? "/admin/discharge?phase=pharmacist_review"
+        : "/admin/discharge?phase=ready_to_complete";
+  const dischargePrimaryTitle =
+    workflows.dischargePlanning > 0
+      ? "Discharge Planning"
+      : workflows.dischargePharmacistReview > 0
+        ? "Pharmacist Review"
+        : "Ready To Complete";
+  const dischargePrimaryValue =
+    workflows.dischargePlanning > 0
+      ? workflows.dischargePlanning
+      : workflows.dischargePharmacistReview > 0
+        ? workflows.dischargePharmacistReview
+        : workflows.dischargeReadyToComplete;
   const totalActionable =
     workflows.doctrineBlockedReview +
     workflows.doctrineReadyToPublish +
@@ -328,10 +346,10 @@ export default function AdminDashboardPage() {
           </MotionItem>
           <MotionItem>
             <TriageMetricCard
-              title="Discharge"
-              value={workflows.dischargePlanning > 0 ? workflows.dischargePlanning : workflows.dischargePharmacistReview}
+              title={dischargePrimaryTitle}
+              value={dischargePrimaryValue}
               icon={DoorOpen}
-              href="/admin/discharge"
+              href={dischargePrimaryHref}
               urgency={workflows.dischargePlanning > 0 ? "high" : workflows.dischargePharmacistReview > 0 ? "medium" : workflows.dischargeReadyToComplete > 0 ? "normal" : "normal"}
               subLabel={`${workflows.dischargePlanning} planning · ${workflows.dischargePharmacistReview} pharmacist · ${workflows.dischargeReadyToComplete} ready`}
             />
