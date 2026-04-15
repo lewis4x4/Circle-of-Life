@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, Clock, ShieldAlert, Pill, FileWarning, CheckCircle2, UserCog, HeartPulse, Activity, Zap, Users, DoorOpen, type LucideIcon } from "lucide-react";
+import { AlertCircle, Clock, ShieldAlert, Pill, FileWarning, CheckCircle2, UserCog, HeartPulse, Activity, Zap, Users, DoorOpen, NotebookPen, ClipboardList, type LucideIcon } from "lucide-react";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminDashboardSnapshot, type AdminDashboardSnapshot } from "@/lib/admin-dashboard-snapshot";
@@ -113,6 +113,7 @@ export default function AdminDashboardPage() {
   const medExceptions = 5; // Mock logic
   const complianceAlerts = 1; // Mock logic
   const totalActionable = openIncidents + staffingGaps + medExceptions + complianceAlerts;
+  const workflows = snapshot.workflowQueues;
 
   return (
     <div className="space-y-10 pb-12 overflow-x-hidden">
@@ -190,6 +191,47 @@ export default function AdminDashboardPage() {
           />
         </MotionItem>
       </MotionList>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-200/50 dark:border-white/10 pb-3">
+          <div>
+            <h2 className="text-xl font-display font-medium text-slate-900 dark:text-white">Workflow Convergence</h2>
+            <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">Cross-lane backlog state across doctrine, incidents, and admissions.</p>
+          </div>
+        </div>
+        <MotionList className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <MotionItem>
+            <TriageMetricCard
+              title="Doctrine Review"
+              value={workflows.doctrineBlockedReview}
+              icon={NotebookPen}
+              href="/admin/knowledge/admin"
+              urgency={workflows.doctrineBlockedReview > 0 ? "high" : "normal"}
+              subLabel={`${workflows.doctrinePendingReview} pending review`}
+            />
+          </MotionItem>
+          <MotionItem>
+            <TriageMetricCard
+              title="Incident Follow-Ups"
+              value={workflows.incidentOverdueFollowups}
+              icon={ClipboardList}
+              href="/admin/incidents/overdue-followups"
+              urgency={workflows.incidentOverdueFollowups > 0 ? "critical" : workflows.incidentUnassignedFollowups > 0 ? "high" : "normal"}
+              subLabel={`${workflows.incidentUnassignedFollowups} unassigned`}
+            />
+          </MotionItem>
+          <MotionItem>
+            <TriageMetricCard
+              title="Admissions Backlog"
+              value={workflows.admissionsBlocked}
+              icon={DoorOpen}
+              href="/admin/admissions/blocked"
+              urgency={workflows.admissionsBlocked > 0 ? "high" : workflows.admissionsOnboardingPending > 0 ? "medium" : "normal"}
+              subLabel={`${workflows.admissionsMoveInReady} ready · ${workflows.admissionsOnboardingPending} onboarding`}
+            />
+          </MotionItem>
+        </MotionList>
+      </div>
 
       <div className="grid gap-8 lg:grid-cols-3 items-start">
         

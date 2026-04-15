@@ -32,6 +32,15 @@ export type AdminDashboardSnapshot = {
   licensedBeds: number | null;
   activeStaffCount: number;
   openIncidentAlerts: number;
+  workflowQueues: {
+    doctrinePendingReview: number;
+    doctrineBlockedReview: number;
+    incidentOverdueFollowups: number;
+    incidentUnassignedFollowups: number;
+    admissionsBlocked: number;
+    admissionsMoveInReady: number;
+    admissionsOnboardingPending: number;
+  };
   censusPreview: DashboardCensusRow[];
   activity: DashboardActivityItem[];
 };
@@ -72,6 +81,22 @@ type SupabaseIncidentFeedRow = {
   severity: string;
   status: string;
   resident_id: string | null;
+};
+
+type SupabaseDoctrineDocMini = {
+  id: string;
+  review_owner: string | null;
+  review_due_at: string | null;
+};
+
+type SupabaseAdmissionMini = {
+  id: string;
+  resident_id: string;
+  status: string;
+  target_move_in_date: string | null;
+  financial_clearance_at: string | null;
+  physician_orders_received_at: string | null;
+  bed_id: string | null;
 };
 
 type SupabaseResidentMini = { id: string; first_name: string | null; last_name: string | null };
@@ -195,6 +220,39 @@ export async function fetchAdminDashboardSnapshot(
     incidentsFeedQuery = incidentsFeedQuery.eq("facility_id", selectedFacilityId);
   }
 
+  let doctrinePendingQuery = supabase
+    .from("documents" as never)
+    .select("id, review_owner, review_due_at", { count: "exact" })
+    .eq("status", "pending_review")
+    .is("deleted_at", null);
+
+  let incidentOverdueFollowupsQuery = supabase
+    .from("incident_followups" as never)
+    .select("id", { count: "exact", head: true })
+    .is("deleted_at", null)
+    .is("completed_at", null)
+    .lt("due_at", new Date().toISOString());
+
+  let incidentUnassignedFollowupsQuery = supabase
+    .from("incident_followups" as never)
+    .select("id", { count: "exact", head: true })
+    .is("deleted_at", null)
+    .is("completed_at", null)
+    .is("assigned_to", null);
+
+  let admissionsQueueQuery = supabase
+    .from("admission_cases" as never)
+    .select("id, resident_id, status, target_move_in_date, financial_clearance_at, physician_orders_received_at, bed_id")
+    .is("deleted_at", null)
+    .not("status", "eq", "cancelled");
+
+  if (isValidFacilityIdForQuery(selectedFacilityId)) {
+    doctrinePendingQuery = doctrinePendingQuery.eq("facility_id", selectedFacilityId);
+    incidentOverdueFollowupsQuery = incidentOverdueFollowupsQuery.eq("facility_id", selectedFacilityId);
+    incidentUnassignedFollowupsQuery = incidentUnassignedFollowupsQuery.eq("facility_id", selectedFacilityId);
+    admissionsQueueQuery = admissionsQueueQuery.eq("facility_id", selectedFacilityId);
+  }
+
   const [
     facilitiesResult,
     residentsCountRes,
@@ -202,6 +260,10 @@ export async function fetchAdminDashboardSnapshot(
     incidentsCountRes,
     residentsPreviewResult,
     incidentsFeedResult,
+    doctrinePendingResult,
+    incidentOverdueFollowupsRes,
+    incidentUnassignedFollowupsRes,
+    admissionsQueueRes,
   ] = await Promise.all([
     facilitiesQuery as unknown as Promise<QueryResult<SupabaseFacilityRow[]>>,
     residentsCountQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
@@ -209,6 +271,10 @@ export async function fetchAdminDashboardSnapshot(
     incidentsCountQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
     residentsPreviewQuery as unknown as Promise<QueryResult<SupabaseResidentRow[]>>,
     incidentsFeedQuery as unknown as Promise<QueryResult<SupabaseIncidentFeedRow[]>>,
+    doctrinePendingQuery as unknown as Promise<QueryResult<SupabaseDoctrineDocMini[]>>,
+    incidentOverdueFollowupsQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
+    incidentUnassignedFollowupsQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
+    admissionsQueueQuery as unknown as Promise<QueryResult<SupabaseAdmissionMini[]>>,
   ]);
 
   const firstError = [
@@ -218,6 +284,10 @@ export async function fetchAdminDashboardSnapshot(
     incidentsCountRes.error && { table: "incidents", ...incidentsCountRes.error },
     residentsPreviewResult.error && { table: "residents_preview", ...residentsPreviewResult.error },
     incidentsFeedResult.error && { table: "incidents_feed", ...incidentsFeedResult.error },
+    doctrinePendingResult.error && { table: "documents_pending_review", ...doctrinePendingResult.error },
+    incidentOverdueFollowupsRes.error && { table: "incident_followups_overdue", ...incidentOverdueFollowupsRes.error },
+    incidentUnassignedFollowupsRes.error && { table: "incident_followups_unassigned", ...incidentUnassignedFollowupsRes.error },
+    admissionsQueueRes.error && { table: "admission_cases_queue", ...admissionsQueueRes.error },
   ].find(Boolean);
 
   if (firstError) {
@@ -247,6 +317,52 @@ export async function fetchAdminDashboardSnapshot(
   const activeStaffCount = staffCountRes.count ?? 0;
   const openIncidentAlerts = incidentsCountRes.count ?? 0;
 
+  const pendingDoctrineDocs = doctrinePendingResult.data ?? [];
+  const doctrineDocIds = pendingDoctrineDocs.map((doc) => doc.id);
+  const doctrineDraftCreatedRes =
+    doctrineDocIds.length > 0
+      ? ((await supabase
+          .from("document_audit_events" as never)
+          .select("document_id")
+          .in("document_id", doctrineDocIds)
+          .eq("event_type", "obsidian_draft_created")) as unknown as QueryResult<Array<{ document_id: string }>>)
+      : ({ data: [], error: null } as QueryResult<Array<{ document_id: string }>>);
+  if (doctrineDraftCreatedRes.error) {
+    throw doctrineDraftCreatedRes.error;
+  }
+  const draftCreatedIds = new Set((doctrineDraftCreatedRes.data ?? []).map((row) => row.document_id));
+  const doctrineBlockedReview = pendingDoctrineDocs.filter(
+    (doc) => !doc.review_owner || !doc.review_due_at || !draftCreatedIds.has(doc.id),
+  ).length;
+
+  const admissionQueueRows = admissionsQueueRes.data ?? [];
+  const admissionsBlocked = admissionQueueRows.filter((row) => {
+    return !row.financial_clearance_at || !row.physician_orders_received_at || !row.bed_id || !row.target_move_in_date;
+  }).length;
+  const admissionsMoveInReady = admissionQueueRows.filter((row) => {
+    return Boolean(row.financial_clearance_at && row.physician_orders_received_at && row.bed_id && row.target_move_in_date);
+  }).length;
+
+  const moveInResidentIds = admissionQueueRows
+    .filter((row) => row.status === "move_in")
+    .map((row) => row.resident_id);
+  let admissionsOnboardingPending = 0;
+  if (moveInResidentIds.length > 0) {
+    const [carePlansRes, medsRes, payersRes, consentsRes] = await Promise.all([
+      supabase.from("care_plans" as never).select("resident_id").in("resident_id", moveInResidentIds).is("deleted_at", null),
+      supabase.from("resident_medications" as never).select("resident_id").in("resident_id", moveInResidentIds).is("deleted_at", null),
+      supabase.from("resident_payers" as never).select("resident_id").in("resident_id", moveInResidentIds).is("deleted_at", null),
+      supabase.from("family_consent_records" as never).select("resident_id").in("resident_id", moveInResidentIds).is("deleted_at", null),
+    ]);
+    const carePlanIds = new Set(((carePlansRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
+    const medIds = new Set(((medsRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
+    const payerIds = new Set(((payersRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
+    const consentIds = new Set(((consentsRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
+    admissionsOnboardingPending = moveInResidentIds.filter((residentId) => {
+      return !(carePlanIds.has(residentId) && medIds.has(residentId) && payerIds.has(residentId) && consentIds.has(residentId));
+    }).length;
+  }
+
   return {
     headlineName,
     timezoneLabel: primaryTz,
@@ -255,6 +371,15 @@ export async function fetchAdminDashboardSnapshot(
     licensedBeds: licensedBedsSum > 0 ? licensedBedsSum : null,
     activeStaffCount,
     openIncidentAlerts,
+    workflowQueues: {
+      doctrinePendingReview: pendingDoctrineDocs.length,
+      doctrineBlockedReview,
+      incidentOverdueFollowups: incidentOverdueFollowupsRes.count ?? 0,
+      incidentUnassignedFollowups: incidentUnassignedFollowupsRes.count ?? 0,
+      admissionsBlocked,
+      admissionsMoveInReady,
+      admissionsOnboardingPending,
+    },
     censusPreview,
     activity,
   };
