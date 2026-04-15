@@ -118,6 +118,10 @@ export default function AdminDashboardPage() {
     workflows.doctrineReadyToPublish +
     workflows.incidentOverdueFollowups +
     workflows.incidentUnassignedFollowups +
+    workflows.incidentEscalatedFollowups +
+    workflows.incidentOpenObligations +
+    workflows.incidentRootCausePending +
+    workflows.incidentCarePlanPending +
     workflows.admissionsBlocked +
     workflows.admissionsOnboardingPending +
     workflows.referralsBlockedHandoffs +
@@ -222,11 +226,17 @@ export default function AdminDashboardPage() {
           <MotionItem>
             <TriageMetricCard
               title="Incident Follow-Ups"
-              value={workflows.incidentOverdueFollowups}
+              value={workflows.incidentEscalatedFollowups > 0 ? workflows.incidentEscalatedFollowups : workflows.incidentOverdueFollowups}
               icon={ClipboardList}
               href="/admin/incidents/overdue-followups"
-              urgency={workflows.incidentOverdueFollowups > 0 ? "critical" : workflows.incidentUnassignedFollowups > 0 ? "high" : "normal"}
-              subLabel={`${workflows.incidentUnassignedFollowups} unassigned`}
+              urgency={
+                workflows.incidentEscalatedFollowups > 0 || workflows.incidentOpenObligations > 0
+                  ? "critical"
+                  : workflows.incidentOverdueFollowups > 0 || workflows.incidentRootCausePending > 0 || workflows.incidentCarePlanPending > 0 || workflows.incidentUnassignedFollowups > 0
+                    ? "high"
+                    : "normal"
+              }
+              subLabel={`${workflows.incidentOverdueFollowups} overdue · ${workflows.incidentOpenObligations} reporting · ${workflows.incidentRootCausePending} RCA`}
             />
           </MotionItem>
           <MotionItem>

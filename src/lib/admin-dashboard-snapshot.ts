@@ -47,6 +47,10 @@ export type AdminDashboardSnapshot = {
     doctrineReadyToPublish: number;
     incidentOverdueFollowups: number;
     incidentUnassignedFollowups: number;
+    incidentEscalatedFollowups: number;
+    incidentOpenObligations: number;
+    incidentRootCausePending: number;
+    incidentCarePlanPending: number;
     admissionsBlocked: number;
     admissionsMoveInReady: number;
     admissionsOnboardingPending: number;
@@ -102,6 +106,27 @@ type SupabaseDoctrineDocMini = {
   id: string;
   review_owner: string | null;
   review_due_at: string | null;
+};
+
+type SupabaseIncidentMini = {
+  id: string;
+  severity: string;
+  nurse_notified: boolean;
+  administrator_notified: boolean;
+  owner_notified: boolean;
+  physician_notified: boolean;
+  family_notified: boolean;
+  ahca_reportable: boolean;
+  ahca_reported: boolean;
+  insurance_reportable: boolean;
+  insurance_reported: boolean;
+  care_plan_updated: boolean;
+  resolved_at: string | null;
+};
+
+type SupabaseIncidentRcaMini = {
+  incident_id: string;
+  investigation_status: string;
 };
 
 type SupabaseAdmissionMini = {
@@ -173,6 +198,10 @@ function buildWorkflowInbox(input: {
   doctrineReadyToPublish: number;
   incidentOverdueFollowups: number;
   incidentUnassignedFollowups: number;
+  incidentEscalatedFollowups: number;
+  incidentOpenObligations: number;
+  incidentRootCausePending: number;
+  incidentCarePlanPending: number;
   admissionsBlocked: number;
   admissionsMoveInReady: number;
   admissionsOnboardingPending: number;
@@ -205,15 +234,26 @@ function buildWorkflowInbox(input: {
     });
   }
 
-  if (input.incidentOverdueFollowups > 0 || input.incidentUnassignedFollowups > 0) {
+  if (
+    input.incidentOverdueFollowups > 0 ||
+    input.incidentUnassignedFollowups > 0 ||
+    input.incidentEscalatedFollowups > 0 ||
+    input.incidentOpenObligations > 0 ||
+    input.incidentRootCausePending > 0 ||
+    input.incidentCarePlanPending > 0
+  ) {
     const parts: string[] = [];
+    if (input.incidentEscalatedFollowups > 0) parts.push(`${input.incidentEscalatedFollowups} escalated`);
     if (input.incidentOverdueFollowups > 0) parts.push(`${input.incidentOverdueFollowups} overdue`);
     if (input.incidentUnassignedFollowups > 0) parts.push(`${input.incidentUnassignedFollowups} unassigned`);
+    if (input.incidentOpenObligations > 0) parts.push(`${input.incidentOpenObligations} reporting open`);
+    if (input.incidentRootCausePending > 0) parts.push(`${input.incidentRootCausePending} RCA pending`);
+    if (input.incidentCarePlanPending > 0) parts.push(`${input.incidentCarePlanPending} care plan pending`);
     items.push({
       id: "incident-followups",
       label: "Incident Follow-Ups",
       message: `${parts.join(" · ")} follow-up task${input.incidentOverdueFollowups + input.incidentUnassignedFollowups === 1 ? "" : "s"} need action.`,
-      tone: input.incidentOverdueFollowups > 0 ? "critical" : "warning",
+      tone: input.incidentEscalatedFollowups > 0 || input.incidentOpenObligations > 0 ? "critical" : "warning",
       href: input.incidentOverdueFollowups > 0 ? "/admin/incidents/overdue-followups" : "/admin/incidents/followups",
       ctaLabel: "Work follow-ups",
     });
@@ -371,6 +411,23 @@ export async function fetchAdminDashboardSnapshot(
     .is("completed_at", null)
     .is("assigned_to", null);
 
+  let incidentEscalatedFollowupsQuery = supabase
+    .from("incident_followups" as never)
+    .select("id, due_at", { count: "exact" })
+    .is("deleted_at", null)
+    .is("completed_at", null)
+    .lt("due_at", new Date(Date.now() - 48 * 3_600_000).toISOString());
+
+  let incidentWorkflowQuery = supabase
+    .from("incidents" as never)
+    .select("id, severity, nurse_notified, administrator_notified, owner_notified, physician_notified, family_notified, ahca_reportable, ahca_reported, insurance_reportable, insurance_reported, care_plan_updated, resolved_at")
+    .is("deleted_at", null)
+    .in("status", ["open", "investigating", "in_review", "regulatory_review", "resolved"]);
+
+  let incidentRcaQuery = supabase
+    .from("incident_rca" as never)
+    .select("incident_id, investigation_status");
+
   let admissionsQueueQuery = supabase
     .from("admission_cases" as never)
     .select("id, resident_id, referral_lead_id, status, target_move_in_date, financial_clearance_at, physician_orders_received_at, bed_id")
@@ -381,6 +438,9 @@ export async function fetchAdminDashboardSnapshot(
     doctrinePendingQuery = doctrinePendingQuery.eq("facility_id", selectedFacilityId);
     incidentOverdueFollowupsQuery = incidentOverdueFollowupsQuery.eq("facility_id", selectedFacilityId);
     incidentUnassignedFollowupsQuery = incidentUnassignedFollowupsQuery.eq("facility_id", selectedFacilityId);
+    incidentEscalatedFollowupsQuery = incidentEscalatedFollowupsQuery.eq("facility_id", selectedFacilityId);
+    incidentWorkflowQuery = incidentWorkflowQuery.eq("facility_id", selectedFacilityId);
+    incidentRcaQuery = incidentRcaQuery.eq("facility_id", selectedFacilityId);
     admissionsQueueQuery = admissionsQueueQuery.eq("facility_id", selectedFacilityId);
   }
 
@@ -394,6 +454,9 @@ export async function fetchAdminDashboardSnapshot(
     doctrinePendingResult,
     incidentOverdueFollowupsRes,
     incidentUnassignedFollowupsRes,
+    incidentEscalatedFollowupsRes,
+    incidentWorkflowRes,
+    incidentRcaRes,
     admissionsQueueRes,
   ] = await Promise.all([
     facilitiesQuery as unknown as Promise<QueryResult<SupabaseFacilityRow[]>>,
@@ -405,6 +468,9 @@ export async function fetchAdminDashboardSnapshot(
     doctrinePendingQuery as unknown as Promise<QueryResult<SupabaseDoctrineDocMini[]>>,
     incidentOverdueFollowupsQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
     incidentUnassignedFollowupsQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
+    incidentEscalatedFollowupsQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
+    incidentWorkflowQuery as unknown as Promise<QueryResult<SupabaseIncidentMini[]>>,
+    incidentRcaQuery as unknown as Promise<QueryResult<SupabaseIncidentRcaMini[]>>,
     admissionsQueueQuery as unknown as Promise<QueryResult<SupabaseAdmissionMini[]>>,
   ]);
 
@@ -418,6 +484,9 @@ export async function fetchAdminDashboardSnapshot(
     doctrinePendingResult.error && { table: "documents_pending_review", ...doctrinePendingResult.error },
     incidentOverdueFollowupsRes.error && { table: "incident_followups_overdue", ...incidentOverdueFollowupsRes.error },
     incidentUnassignedFollowupsRes.error && { table: "incident_followups_unassigned", ...incidentUnassignedFollowupsRes.error },
+    incidentEscalatedFollowupsRes.error && { table: "incident_followups_escalated", ...incidentEscalatedFollowupsRes.error },
+    incidentWorkflowRes.error && { table: "incidents_workflow", ...incidentWorkflowRes.error },
+    incidentRcaRes.error && { table: "incident_rca", ...incidentRcaRes.error },
     admissionsQueueRes.error && { table: "admission_cases_queue", ...admissionsQueueRes.error },
   ].find(Boolean);
 
@@ -466,6 +535,16 @@ export async function fetchAdminDashboardSnapshot(
     (doc) => !doc.review_owner || !doc.review_due_at || !draftCreatedIds.has(doc.id),
   ).length;
   const doctrineReadyToPublish = pendingDoctrineDocs.length - doctrineBlockedReview;
+  const incidentWorkflowRows = incidentWorkflowRes.data ?? [];
+  const incidentRcaById = new Map((incidentRcaRes.data ?? []).map((row) => [row.incident_id, row.investigation_status] as const));
+  const incidentOpenObligations = incidentWorkflowRows.filter((row) => buildIncidentOpenObligations(row).length > 0).length;
+  const incidentRootCausePending = incidentWorkflowRows.filter((row) => {
+    const rootCauseExpected = row.severity === "level_3" || row.severity === "level_4";
+    return rootCauseExpected && incidentRcaById.get(row.id) !== "complete";
+  }).length;
+  const incidentCarePlanPending = incidentWorkflowRows.filter((row) => {
+    return Boolean(row.resolved_at) && !row.care_plan_updated && (row.severity === "level_3" || row.severity === "level_4");
+  }).length;
 
   const admissionQueueRows = admissionsQueueRes.data ?? [];
   const admissionsBlocked = admissionQueueRows.filter((row) => {
@@ -539,6 +618,10 @@ export async function fetchAdminDashboardSnapshot(
       doctrineReadyToPublish,
       incidentOverdueFollowups: incidentOverdueFollowupsRes.count ?? 0,
       incidentUnassignedFollowups: incidentUnassignedFollowupsRes.count ?? 0,
+      incidentEscalatedFollowups: incidentEscalatedFollowupsRes.count ?? 0,
+      incidentOpenObligations,
+      incidentRootCausePending,
+      incidentCarePlanPending,
       admissionsBlocked,
       admissionsMoveInReady,
       admissionsOnboardingPending,
@@ -553,6 +636,10 @@ export async function fetchAdminDashboardSnapshot(
       doctrineReadyToPublish,
       incidentOverdueFollowups: incidentOverdueFollowupsRes.count ?? 0,
       incidentUnassignedFollowups: incidentUnassignedFollowupsRes.count ?? 0,
+      incidentEscalatedFollowups: incidentEscalatedFollowupsRes.count ?? 0,
+      incidentOpenObligations,
+      incidentRootCausePending,
+      incidentCarePlanPending,
       admissionsBlocked,
       admissionsMoveInReady,
       admissionsOnboardingPending,
@@ -564,6 +651,20 @@ export async function fetchAdminDashboardSnapshot(
     censusPreview,
     activity,
   };
+}
+
+function buildIncidentOpenObligations(incident: SupabaseIncidentMini): string[] {
+  const items: string[] = [];
+  if (!incident.nurse_notified) items.push("Notify the nurse.");
+  if (!incident.administrator_notified) items.push("Notify the administrator.");
+  if (incident.severity === "level_3" || incident.severity === "level_4") {
+    if (!incident.owner_notified) items.push("Notify the owner.");
+    if (!incident.physician_notified) items.push("Notify the physician.");
+    if (!incident.family_notified) items.push("Notify the family.");
+  }
+  if (incident.ahca_reportable && !incident.ahca_reported) items.push("Complete AHCA reporting.");
+  if (incident.insurance_reportable && !incident.insurance_reported) items.push("Report to the insurance carrier.");
+  return items;
 }
 
 async function mapResidentsToCensusRows(
