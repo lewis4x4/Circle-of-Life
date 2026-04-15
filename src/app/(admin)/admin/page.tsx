@@ -333,7 +333,7 @@ export default function AdminDashboardPage() {
             title="Staffing Gaps" 
             value={staffingGaps} 
             icon={UserCog}
-            href="/admin/staffing?compliance=non_compliant"
+            href="/admin/staffing?compliance=non_compliant&window=24h"
             urgency={staffingGaps > 0 ? "high" : "normal"} 
             subLabel="Non-compliant snapshots (24h)"
           />

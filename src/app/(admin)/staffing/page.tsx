@@ -35,6 +35,7 @@ type SnapshotRow = {
 };
 
 type ComplianceFilter = "all" | "non_compliant" | "compliant";
+type WindowFilter = "all" | "24h";
 
 // Mock Types to achieve UI requirements
 type ShiftGap = {
@@ -100,6 +101,7 @@ export default function AdminStaffingConsolePage() {
   const [exportingCsv, setExportingCsv] = useState(false);
   const [csvExportError, setCsvExportError] = useState<string | null>(null);
   const [complianceFilter, setComplianceFilter] = useState<ComplianceFilter>("all");
+  const [windowFilter, setWindowFilter] = useState<WindowFilter>("all");
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -120,19 +122,31 @@ export default function AdminStaffingConsolePage() {
 
   useEffect(() => {
     const requestedFilter = searchParams.get("compliance");
+    const requestedWindow = searchParams.get("window");
     if (requestedFilter === "non_compliant" || requestedFilter === "compliant") {
       setComplianceFilter(requestedFilter);
+    } else {
+      setComplianceFilter("all");
+    }
+    if (requestedWindow === "24h") {
+      setWindowFilter("24h");
       return;
     }
-    setComplianceFilter("all");
+    setWindowFilter("all");
   }, [searchParams]);
 
   const snapshotIdsInOrder = useMemo(() => snapshots.map((s) => s.id), [snapshots]);
   const visibleSnapshots = useMemo(() => {
-    if (complianceFilter === "non_compliant") return snapshots.filter((s) => !s.isCompliant);
-    if (complianceFilter === "compliant") return snapshots.filter((s) => s.isCompliant);
-    return snapshots;
-  }, [complianceFilter, snapshots]);
+    return snapshots.filter((snapshot) => {
+      const matchesCompliance =
+        complianceFilter === "all" ||
+        (complianceFilter === "non_compliant" ? !snapshot.isCompliant : snapshot.isCompliant);
+      const matchesWindow =
+        windowFilter === "all" ||
+        new Date(snapshot.snapshotAt).getTime() >= Date.now() - 24 * 3_600_000;
+      return matchesCompliance && matchesWindow;
+    });
+  }, [complianceFilter, snapshots, windowFilter]);
 
   const exportStaffingSnapshotsCsv = useCallback(async () => {
     setExportingCsv(true);
@@ -251,11 +265,18 @@ export default function AdminStaffingConsolePage() {
           ) : null}
         </div>
       </header>
-      {complianceFilter !== "all" ? (
+      {complianceFilter !== "all" || windowFilter !== "all" ? (
         <div className="relative z-10 flex items-center gap-2 pl-1">
-          <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
-            Compliance filter: {complianceFilter === "non_compliant" ? "non-compliant only" : "compliant only"}
-          </Badge>
+          {complianceFilter !== "all" ? (
+            <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
+              Compliance filter: {complianceFilter === "non_compliant" ? "non-compliant only" : "compliant only"}
+            </Badge>
+          ) : null}
+          {windowFilter !== "all" ? (
+            <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+              Window filter: last 24h
+            </Badge>
+          ) : null}
           <Link href="/admin/staffing" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
             Clear filter
           </Link>
