@@ -6,7 +6,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, CalendarClock, CheckCircle2, FileText, Loader2, NotebookPen } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/client";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { cn } from "@/lib/utils";
 import type { DocumentAudience, DocumentAuditEventRow, DocumentRow, DocumentStatus } from "@/features/knowledge/lib/types";
@@ -39,6 +38,7 @@ type ReviewPayload = {
   auditEvents: DocumentAuditEventRow[];
   currentUserId: string;
   userLabels?: Record<string, string>;
+  reviewerOptions?: Array<{ id: string; label: string; appRole: string }>;
 };
 
 const AUDIENCE_LABELS: Record<DocumentAudience, string> = {
@@ -78,7 +78,6 @@ function formatMetadata(metadata: unknown): string[] {
 export default function KnowledgeDocumentReviewPage() {
   const params = useParams<{ id: string }>();
   const documentId = typeof params?.id === "string" ? params.id : "";
-  const supabase = useMemo(() => createClient(), []);
   const { user, loading: authLoading } = useHavenAuth();
 
   const [document, setDocument] = useState<ReviewDocument | null>(null);
@@ -89,7 +88,9 @@ export default function KnowledgeDocumentReviewPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [reviewDueAt, setReviewDueAt] = useState("");
+  const [reviewOwner, setReviewOwner] = useState("");
   const [userLabels, setUserLabels] = useState<Record<string, string>>({});
+  const [reviewerOptions, setReviewerOptions] = useState<Array<{ id: string; label: string; appRole: string }>>([]);
 
   const load = useCallback(async () => {
     if (!documentId) return;
@@ -102,11 +103,14 @@ export default function KnowledgeDocumentReviewPage() {
       setDocument(payload.document);
       setAuditEvents(payload.auditEvents);
       setReviewDueAt(payload.document.review_due_at ? payload.document.review_due_at.slice(0, 10) : "");
+      setReviewOwner(payload.document.review_owner ?? "");
       setUserLabels(payload.userLabels ?? {});
+      setReviewerOptions(payload.reviewerOptions ?? []);
     } catch (loadError) {
       setDocument(null);
       setAuditEvents([]);
       setUserLabels({});
+      setReviewerOptions([]);
       setError(loadError instanceof Error ? loadError.message : "Could not load doctrine review.");
     } finally {
       setLoading(false);
@@ -133,6 +137,25 @@ export default function KnowledgeDocumentReviewPage() {
       setActionLoading(null);
     }
   }, [document, user, load]);
+
+  const saveReviewOwner = useCallback(async () => {
+    if (!document) return;
+    setActionError(null);
+    setActionMessage(null);
+    setActionLoading("owner");
+    try {
+      const result = await adminUpdateDocument(document.id, {
+        review_owner: reviewOwner || null,
+      });
+      if (!result.ok) throw new Error(result.error);
+      setActionMessage(reviewOwner ? "Review owner saved." : "Review owner cleared.");
+      await load();
+    } catch (ownerError) {
+      setActionError(ownerError instanceof Error ? ownerError.message : "Could not save review owner.");
+    } finally {
+      setActionLoading(null);
+    }
+  }, [document, reviewOwner, load]);
 
   const saveReviewDueDate = useCallback(async () => {
     if (!document) return;
@@ -304,6 +327,32 @@ export default function KnowledgeDocumentReviewPage() {
                   <Button type="button" variant="secondary" disabled={actionLoading === "archived"} onClick={() => void transitionStatus("archived")}>
                     {actionLoading === "archived" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Archive"}
                   </Button>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                  <div className="space-y-2">
+                    <label htmlFor="review-owner" className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">
+                      Review Owner
+                    </label>
+                    <select
+                      id="review-owner"
+                      value={reviewOwner}
+                      onChange={(event) => setReviewOwner(event.target.value)}
+                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="">Unassigned</option>
+                      {reviewerOptions.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.label} ({option.appRole})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex items-end">
+                    <Button type="button" variant="outline" disabled={actionLoading === "owner"} onClick={() => void saveReviewOwner()}>
+                      {actionLoading === "owner" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save owner"}
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-[1fr_auto]">

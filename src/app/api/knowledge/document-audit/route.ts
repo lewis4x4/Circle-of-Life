@@ -4,6 +4,7 @@ import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { createClient } from "@/lib/supabase/server";
 
 const ALLOWED_ROLES = new Set(["owner", "org_admin", "facility_admin"]);
+const REVIEWER_ROLES = ["owner", "org_admin", "facility_admin"] as const;
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -94,11 +95,25 @@ export async function GET(request: Request) {
     ]),
   );
 
+  const { data: reviewerRows } = await admin
+    .from("user_profiles")
+    .select("id, full_name, email, app_role")
+    .eq("organization_id", profile.organization_id)
+    .is("deleted_at", null)
+    .eq("is_active", true)
+    .in("app_role", REVIEWER_ROLES)
+    .order("full_name", { ascending: true });
+
   return NextResponse.json({
     ok: true,
     document,
     auditEvents: auditRows ?? [],
     currentUserId: user.id,
     userLabels,
+    reviewerOptions: (reviewerRows ?? []).map((row) => ({
+      id: row.id,
+      label: row.full_name || row.email || row.id,
+      appRole: row.app_role,
+    })),
   });
 }
