@@ -194,7 +194,7 @@ export default function AdminIncidentsKanbanPage() {
            </h2>
         </div>
         <div className="flex items-center gap-2">
-          <Link href={severityFilter === "level_4" ? "/admin/incidents" : "/admin/incidents?severity=level_4"}>
+          <Link href={severityFilter === "level_4" ? "/admin/incidents" : "/admin/incidents?severity=level_4&scope=active"}>
             <Badge variant="outline" className="h-8 px-3 border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 cursor-pointer">
               {rows.filter(r => r.severity === "level_4" && r.status !== "closed").length} Level-4 Exceptions
             </Badge>
