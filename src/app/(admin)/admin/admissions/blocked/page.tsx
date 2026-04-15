@@ -17,6 +17,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 
 type CaseRow = Pick<
   Database["public"]["Tables"]["admission_cases"]["Row"],
@@ -36,6 +37,8 @@ type BlockedCase = {
   residentLabel: string;
   blockers: string[];
 };
+
+type BlockerFilter = "all" | "financial clearance" | "physician orders" | "bed assignment" | "move-in date";
 
 function admissionBlockers(row: CaseRow): string[] {
   const blockers: string[] = [];
@@ -64,10 +67,16 @@ function formatRelative(date: string | null): string {
 export default function AdminBlockedAdmissionsPage() {
   const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId } = useFacilityStore();
+  const { user } = useHavenAuth();
 
   const [rows, setRows] = useState<BlockedCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [blockerFilter, setBlockerFilter] = useState<BlockerFilter>("all");
+  const [moveInDrafts, setMoveInDrafts] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -99,6 +108,9 @@ export default function AdminBlockedAdmissionsPage() {
         .filter((entry) => entry.blockers.length > 0);
 
       setRows(blocked);
+      setMoveInDrafts(
+        Object.fromEntries(blocked.map((entry) => [entry.row.id, entry.row.target_move_in_date ?? ""])),
+      );
     } catch (loadError) {
       setRows([]);
       setError(loadError instanceof Error ? loadError.message : "Could not load blocked admissions.");
@@ -120,6 +132,38 @@ export default function AdminBlockedAdmissionsPage() {
     }
     return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 4);
   }, [rows]);
+
+  const visibleRows = rows.filter((entry) => {
+    if (blockerFilter === "all") return true;
+    return entry.blockers.includes(blockerFilter);
+  });
+
+  async function updateCase(
+    caseId: string,
+    patch: Partial<Database["public"]["Tables"]["admission_cases"]["Update"]>,
+    successMessage: string,
+  ) {
+    setActionLoading(caseId);
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const { error: updateError } = await supabase
+        .from("admission_cases")
+        .update({
+          ...patch,
+          updated_at: new Date().toISOString(),
+          updated_by: user?.id ?? null,
+        })
+        .eq("id", caseId);
+      if (updateError) throw updateError;
+      setActionMessage(successMessage);
+      await load();
+    } catch (updateErr) {
+      setActionError(updateErr instanceof Error ? updateErr.message : "Could not update admission case.");
+    } finally {
+      setActionLoading(null);
+    }
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -157,6 +201,16 @@ export default function AdminBlockedAdmissionsPage() {
         />
       ) : (
         <div className="space-y-4">
+          {actionError ? (
+            <div className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-3 text-sm text-red-800 dark:text-red-200">
+              {actionError}
+            </div>
+          ) : null}
+          {actionMessage ? (
+            <div className="rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-200">
+              {actionMessage}
+            </div>
+          ) : null}
           <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Top blockers</span>
@@ -168,8 +222,37 @@ export default function AdminBlockedAdmissionsPage() {
             </div>
           </div>
 
+          <div className="flex flex-wrap items-center gap-2">
+            {([
+              { value: "all", label: `All (${rows.length})` },
+              ...blockerCounts.map(([label, count]) => ({
+                value: label as BlockerFilter,
+                label: `${label} (${count})`,
+              })),
+            ] as Array<{ value: BlockerFilter; label: string }>).map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setBlockerFilter(option.value)}
+                className={cn(
+                  "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                  blockerFilter === option.value
+                    ? "bg-indigo-600 text-white"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700",
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
           <div className="grid gap-4">
-            {rows.map(({ row, residentLabel, blockers }) => (
+            {visibleRows.length === 0 ? (
+              <AdminEmptyState
+                title="No blocked admissions in this filter"
+                description="Try another blocker filter to view the remaining readiness work."
+              />
+            ) : visibleRows.map(({ row, residentLabel, blockers }) => (
               <Card key={row.id} className="border-slate-200/70 shadow-soft dark:border-slate-800">
                 <CardHeader className="pb-3">
                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -206,6 +289,84 @@ export default function AdminBlockedAdmissionsPage() {
                   </div>
                   <div className="text-sm text-slate-500 dark:text-zinc-400">
                     Updated {formatRelative(row.updated_at)}
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      disabled={Boolean(row.financial_clearance_at) || actionLoading === row.id}
+                      onClick={() =>
+                        void updateCase(
+                          row.id,
+                          {
+                            financial_clearance_at: new Date().toISOString(),
+                            financial_clearance_by: user?.id ?? null,
+                          },
+                          "Financial clearance recorded.",
+                        )
+                      }
+                      className={cn(
+                        "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+                        Boolean(row.financial_clearance_at)
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300"
+                          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800",
+                      )}
+                    >
+                      {actionLoading === row.id && !row.financial_clearance_at ? (
+                        <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Saving…</span>
+                      ) : row.financial_clearance_at ? "Financial clearance complete" : "Mark financial clearance"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={Boolean(row.physician_orders_received_at) || actionLoading === row.id}
+                      onClick={() =>
+                        void updateCase(
+                          row.id,
+                          { physician_orders_received_at: new Date().toISOString() },
+                          "Physician orders recorded.",
+                        )
+                      }
+                      className={cn(
+                        "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+                        Boolean(row.physician_orders_received_at)
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300"
+                          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800",
+                      )}
+                    >
+                      {actionLoading === row.id && !row.physician_orders_received_at ? (
+                        <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Saving…</span>
+                      ) : row.physician_orders_received_at ? "Physician orders complete" : "Mark physician orders"}
+                    </button>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                    <input
+                      type="date"
+                      value={moveInDrafts[row.id] ?? ""}
+                      onChange={(event) =>
+                        setMoveInDrafts((current) => ({
+                          ...current,
+                          [row.id]: event.target.value,
+                        }))
+                      }
+                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <button
+                      type="button"
+                      disabled={
+                        actionLoading === row.id ||
+                        !moveInDrafts[row.id] ||
+                        moveInDrafts[row.id] === (row.target_move_in_date ?? "")
+                      }
+                      onClick={() =>
+                        void updateCase(
+                          row.id,
+                          { target_move_in_date: moveInDrafts[row.id] || null },
+                          "Target move-in date saved.",
+                        )
+                      }
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                    >
+                      {actionLoading === row.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save move-in date"}
+                    </button>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Link href={`/admin/admissions/${row.id}`} className={cn(buttonVariants({ size: "sm" }))}>

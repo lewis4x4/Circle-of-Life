@@ -17,6 +17,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 
 type CaseRow = Pick<
   Database["public"]["Tables"]["admission_cases"]["Row"],
@@ -59,10 +60,14 @@ function formatRelative(date: string | null): string {
 export default function AdminMoveInReadyPage() {
   const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId } = useFacilityStore();
+  const { user } = useHavenAuth();
 
   const [rows, setRows] = useState<CaseRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -97,6 +102,33 @@ export default function AdminMoveInReadyPage() {
     void load();
   }, [load]);
 
+  async function updateCase(
+    caseId: string,
+    patch: Partial<Database["public"]["Tables"]["admission_cases"]["Update"]>,
+    successMessage: string,
+  ) {
+    setActionLoading(caseId);
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const { error: updateError } = await supabase
+        .from("admission_cases")
+        .update({
+          ...patch,
+          updated_at: new Date().toISOString(),
+          updated_by: user?.id ?? null,
+        })
+        .eq("id", caseId);
+      if (updateError) throw updateError;
+      setActionMessage(successMessage);
+      await load();
+    } catch (updateErr) {
+      setActionError(updateErr instanceof Error ? updateErr.message : "Could not update admission case.");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="space-y-2">
@@ -127,6 +159,17 @@ export default function AdminMoveInReadyPage() {
           description="No cases currently meet the core move-in readiness criteria in this scope."
         />
       ) : (
+        <div className="space-y-4">
+          {actionError ? (
+            <div className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-3 text-sm text-red-800 dark:text-red-200">
+              {actionError}
+            </div>
+          ) : null}
+          {actionMessage ? (
+            <div className="rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-200">
+              {actionMessage}
+            </div>
+          ) : null}
         <div className="grid gap-4">
           {rows.map((row) => (
             <Card key={row.id} className="border-slate-200/70 shadow-soft dark:border-slate-800">
@@ -168,10 +211,25 @@ export default function AdminMoveInReadyPage() {
                   <Link href={`/admin/admissions/${row.id}`} className={cn(buttonVariants({ size: "sm" }))}>
                     Open case
                   </Link>
+                  {row.status === "pending_clearance" ? (
+                    <button
+                      type="button"
+                      disabled={actionLoading === row.id}
+                      onClick={() => void updateCase(row.id, { status: "bed_reserved" }, "Case advanced to bed reserved.")}
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                    >
+                      {actionLoading === row.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Advance to bed reserved"}
+                    </button>
+                  ) : null}
                   {row.status !== "move_in" ? (
-                    <span className="rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-600 dark:bg-zinc-800 dark:text-zinc-300">
-                      Advance the case to move-in from the detail page.
-                    </span>
+                    <button
+                      type="button"
+                      disabled={actionLoading === row.id}
+                      onClick={() => void updateCase(row.id, { status: "move_in" }, "Case advanced to move-in.")}
+                      className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {actionLoading === row.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Advance to move-in"}
+                    </button>
                   ) : (
                     <span className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300">
                       Move-in status already set. Continue downstream onboarding.
@@ -181,6 +239,7 @@ export default function AdminMoveInReadyPage() {
               </CardContent>
             </Card>
           ))}
+        </div>
         </div>
       )}
     </div>
