@@ -121,6 +121,7 @@ export default function AdminDashboardPage() {
   const staffingGaps = snapshot.staffingGapSnapshots24h;
   const medExceptions = snapshot.medicationErrorsUnreviewed;
   const complianceAlerts = snapshot.expiringCertifications30d;
+  const scopeLabel = snapshot.headlineName === "All facilities" ? "Global Triage Queue" : "Facility Triage Queue";
   const triageInboxItems: LocalInboxItem[] = [
     staffingGaps > 0
       ? {
@@ -295,7 +296,7 @@ export default function AdminDashboardPage() {
             Command Center
           </h1>
           <p className="text-slate-600 dark:text-zinc-400 font-medium tracking-wide mt-2">
-            {snapshot.headlineName} &middot; <span className="opacity-70 dark:opacity-50">Global Triage Queue</span>
+            {snapshot.headlineName} &middot; <span className="opacity-70 dark:opacity-50">{scopeLabel}</span>
           </p>
         </div>
         
