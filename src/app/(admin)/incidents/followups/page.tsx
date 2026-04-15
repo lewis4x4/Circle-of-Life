@@ -17,6 +17,16 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import {
+  fetchIncidentFollowupAssignees,
+  type IncidentFollowupAssigneeOption,
+} from "@/lib/incidents/followup-assignees";
+import {
+  classifyFollowupEscalation,
+  followupEscalationLabel,
+  isFollowupEscalated,
+  type FollowupEscalationLevel,
+} from "@/lib/incidents/followup-escalation";
 
 type FollowupRow = {
   id: string;
@@ -31,9 +41,11 @@ type FollowupRow = {
   unassigned: boolean;
   urgency: "overdue" | "due_24h" | "due_later";
   hoursUntilDue: number;
+  hoursOverdue: number;
+  escalationLevel: FollowupEscalationLevel;
 };
 
-type QueueFilter = "all" | "overdue" | "due_24h" | "unassigned" | "assigned_to_me";
+type QueueFilter = "all" | "overdue" | "escalated" | "due_24h" | "unassigned" | "assigned_to_me";
 
 type IncidentMini = { id: string; incident_number: string; resident_id: string | null };
 type ResidentMini = { id: string; first_name: string | null; last_name: string | null };
@@ -51,6 +63,8 @@ export default function AdminIncidentFollowupsPage() {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
+  const [assigneeOptions, setAssigneeOptions] = useState<IncidentFollowupAssigneeOption[]>([]);
+  const [assigneeDrafts, setAssigneeDrafts] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -114,6 +128,7 @@ export default function AdminIncidentFollowupsPage() {
           const hoursUntilDue = Math.ceil((new Date(row.due_at).getTime() - Date.now()) / 3_600_000);
           const urgency: FollowupRow["urgency"] =
             hoursUntilDue < 0 ? "overdue" : hoursUntilDue <= 24 ? "due_24h" : "due_later";
+          const hoursOverdue = hoursUntilDue < 0 ? Math.abs(hoursUntilDue) : 0;
           return {
             id: row.id,
             incidentId: row.incident_id,
@@ -127,8 +142,13 @@ export default function AdminIncidentFollowupsPage() {
             unassigned: !row.assigned_to,
             urgency,
             hoursUntilDue,
+            hoursOverdue,
+            escalationLevel: classifyFollowupEscalation(hoursOverdue),
           };
         }),
+      );
+      setAssigneeDrafts(
+        Object.fromEntries(followups.map((row) => [row.id, row.assigned_to ?? ""])),
       );
     } catch (loadError) {
       setRows([]);
@@ -141,6 +161,28 @@ export default function AdminIncidentFollowupsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
+      setAssigneeOptions([]);
+      return;
+    }
+    let cancelled = false;
+    void fetchIncidentFollowupAssignees(selectedFacilityId)
+      .then((options) => {
+        if (!cancelled) {
+          setAssigneeOptions(options);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAssigneeOptions([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedFacilityId]);
 
   const assignToMe = useCallback(async (followupId: string) => {
     if (!user) return;
@@ -186,9 +228,30 @@ export default function AdminIncidentFollowupsPage() {
     }
   }, [load, supabase, user]);
 
+  const saveAssignee = useCallback(async (followupId: string) => {
+    setActionLoading(followupId);
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const assigneeId = assigneeDrafts[followupId] || null;
+      const { error: updateError } = await supabase
+        .from("incident_followups")
+        .update({ assigned_to: assigneeId, updated_at: new Date().toISOString() })
+        .eq("id", followupId);
+      if (updateError) throw updateError;
+      setActionMessage(assigneeId ? "Follow-up assignee saved." : "Follow-up assignee cleared.");
+      await load();
+    } catch (assignError) {
+      setActionError(assignError instanceof Error ? assignError.message : "Could not save assignee.");
+    } finally {
+      setActionLoading(null);
+    }
+  }, [assigneeDrafts, load, supabase]);
+
   const counts = {
     all: rows.length,
     overdue: rows.filter((row) => row.urgency === "overdue").length,
+    escalated: rows.filter((row) => isFollowupEscalated(row.escalationLevel)).length,
     due24h: rows.filter((row) => row.urgency === "due_24h").length,
     unassigned: rows.filter((row) => row.unassigned).length,
     assignedToMe: rows.filter((row) => !!user && row.assignedToId === user.id).length,
@@ -196,6 +259,7 @@ export default function AdminIncidentFollowupsPage() {
 
   const visibleRows = rows.filter((row) => {
     if (queueFilter === "overdue") return row.urgency === "overdue";
+    if (queueFilter === "escalated") return isFollowupEscalated(row.escalationLevel);
     if (queueFilter === "due_24h") return row.urgency === "due_24h";
     if (queueFilter === "unassigned") return row.unassigned;
     if (queueFilter === "assigned_to_me") return !!user && row.assignedToId === user.id;
@@ -283,6 +347,7 @@ export default function AdminIncidentFollowupsPage() {
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">{counts.all} open</Badge>
             <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">{counts.overdue} overdue</Badge>
+            <Badge variant="outline" className="border-orange-200 bg-orange-50 text-orange-700">{counts.escalated} escalated</Badge>
             <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">{counts.unassigned} unassigned</Badge>
           </div>
         </div>
@@ -317,6 +382,7 @@ export default function AdminIncidentFollowupsPage() {
             {[
               { key: "all", label: `All (${counts.all})` },
               { key: "overdue", label: `Overdue (${counts.overdue})` },
+              { key: "escalated", label: `Escalated (${counts.escalated})` },
               { key: "due_24h", label: `Due in 24h (${counts.due24h})` },
               { key: "unassigned", label: `Unassigned (${counts.unassigned})` },
               { key: "assigned_to_me", label: `Assigned to me (${counts.assignedToMe})` },
@@ -370,7 +436,7 @@ export default function AdminIncidentFollowupsPage() {
                     <div className="flex flex-wrap gap-2">
                       {row.urgency === "overdue" ? (
                         <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
-                          {Math.abs(row.hoursUntilDue)}h overdue
+                          {followupEscalationLabel(row.escalationLevel, row.hoursOverdue)}
                         </Badge>
                       ) : row.urgency === "due_24h" ? (
                         <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
@@ -384,6 +450,17 @@ export default function AdminIncidentFollowupsPage() {
                       {row.unassigned ? (
                         <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
                           Unassigned
+                        </Badge>
+                      ) : null}
+                      {isFollowupEscalated(row.escalationLevel) ? (
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "border-orange-200 bg-orange-50 text-orange-700",
+                            row.escalationLevel === "critical" && "border-rose-200 bg-rose-50 text-rose-700",
+                          )}
+                        >
+                          {row.escalationLevel === "critical" ? "Critical escalation" : "Escalation risk"}
                         </Badge>
                       ) : null}
                     </div>
@@ -405,6 +482,36 @@ export default function AdminIncidentFollowupsPage() {
                     <Button type="button" variant="outline" size="sm" disabled={actionLoading === row.id} onClick={() => void assignToMe(row.id)}>
                       {actionLoading === row.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><UserPlus className="mr-2 h-3.5 w-3.5" />Assign to me</>}
                     </Button>
+                    {assigneeOptions.length > 0 ? (
+                      <>
+                        <select
+                          value={assigneeDrafts[row.id] ?? ""}
+                          onChange={(event) =>
+                            setAssigneeDrafts((current) => ({
+                              ...current,
+                              [row.id]: event.target.value,
+                            }))
+                          }
+                          className="h-9 min-w-[12rem] rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                        >
+                          <option value="">Unassigned</option>
+                          {assigneeOptions.map((option) => (
+                            <option key={option.id} value={option.id}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={actionLoading === row.id || (assigneeDrafts[row.id] ?? "") === (row.assignedToId ?? "")}
+                          onClick={() => void saveAssignee(row.id)}
+                        >
+                          {actionLoading === row.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save assignee"}
+                        </Button>
+                      </>
+                    ) : null}
                     <Button type="button" size="sm" disabled={actionLoading === row.id} onClick={() => void markComplete(row.id)}>
                       {actionLoading === row.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><CheckCircle2 className="mr-2 h-3.5 w-3.5" />Mark complete</>}
                     </Button>

@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
+import { classifyFollowupEscalation, isFollowupEscalated } from "@/lib/incidents/followup-escalation";
 
 type IncidentSeverity = "level_1" | "level_2" | "level_3" | "level_4";
 type IncidentStatus = "new" | "investigating" | "regulatory_review" | "closed";
@@ -36,6 +37,8 @@ type IncidentRow = {
   openFollowups: number;
   overdueFollowups: number;
   unassignedFollowups: number;
+  escalatedFollowups: number;
+  criticalFollowups: number;
   ahcaReportable: boolean;
   ahcaReported: boolean;
 };
@@ -64,9 +67,9 @@ export default function AdminIncidentsKanbanPage() {
       } else if (isDemoMode()) {
         setDemoFallbackActive(true);
         setRows([
-          { id: "i1", incidentNumber: "DEMO-2025-001", residentName: "Margaret Sullivan", category: "fall", severity: "level_2", status: "new", reportedAt: "1 hour ago", reportedBy: "Demo Nurse", followupDueStr: "—", followupDueMs: 0, openFollowups: 0, overdueFollowups: 0, unassignedFollowups: 0, ahcaReportable: false, ahcaReported: false },
-          { id: "i2", incidentNumber: "DEMO-2025-002", residentName: "Eleanor Vance", category: "elopement", severity: "level_4", status: "investigating", reportedAt: "2 hours ago", reportedBy: "Demo Staff", followupDueStr: "11 hours", followupDueMs: Date.now() + 11*3600*1000, openFollowups: 2, overdueFollowups: 1, unassignedFollowups: 1, ahcaReportable: true, ahcaReported: false },
-          { id: "i3", incidentNumber: "DEMO-2025-003", residentName: "Robert Chen", category: "medication_error", severity: "level_3", status: "regulatory_review", reportedAt: "Yesterday", reportedBy: "Demo RN", followupDueStr: "—", followupDueMs: 0, openFollowups: 1, overdueFollowups: 0, unassignedFollowups: 0, ahcaReportable: true, ahcaReported: true },
+          { id: "i1", incidentNumber: "DEMO-2025-001", residentName: "Margaret Sullivan", category: "fall", severity: "level_2", status: "new", reportedAt: "1 hour ago", reportedBy: "Demo Nurse", followupDueStr: "—", followupDueMs: 0, openFollowups: 0, overdueFollowups: 0, unassignedFollowups: 0, escalatedFollowups: 0, criticalFollowups: 0, ahcaReportable: false, ahcaReported: false },
+          { id: "i2", incidentNumber: "DEMO-2025-002", residentName: "Eleanor Vance", category: "elopement", severity: "level_4", status: "investigating", reportedAt: "2 hours ago", reportedBy: "Demo Staff", followupDueStr: "11 hours", followupDueMs: Date.now() + 11*3600*1000, openFollowups: 2, overdueFollowups: 1, unassignedFollowups: 1, escalatedFollowups: 1, criticalFollowups: 0, ahcaReportable: true, ahcaReported: false },
+          { id: "i3", incidentNumber: "DEMO-2025-003", residentName: "Robert Chen", category: "medication_error", severity: "level_3", status: "regulatory_review", reportedAt: "Yesterday", reportedBy: "Demo RN", followupDueStr: "—", followupDueMs: 0, openFollowups: 1, overdueFollowups: 0, unassignedFollowups: 0, escalatedFollowups: 0, criticalFollowups: 0, ahcaReportable: true, ahcaReported: true },
         ]);
       } else {
         setDemoFallbackActive(false);
@@ -120,8 +123,8 @@ export default function AdminIncidentsKanbanPage() {
   const followupPressure = rows
     .filter((row) => row.overdueFollowups > 0 || row.unassignedFollowups > 0)
     .sort((a, b) => {
-      const aScore = a.overdueFollowups * 10 + a.unassignedFollowups * 3 + a.openFollowups;
-      const bScore = b.overdueFollowups * 10 + b.unassignedFollowups * 3 + b.openFollowups;
+      const aScore = a.criticalFollowups * 20 + a.escalatedFollowups * 12 + a.overdueFollowups * 10 + a.unassignedFollowups * 3 + a.openFollowups;
+      const bScore = b.criticalFollowups * 20 + b.escalatedFollowups * 12 + b.overdueFollowups * 10 + b.unassignedFollowups * 3 + b.openFollowups;
       return bScore - aScore;
     })
     .slice(0, 5);
@@ -146,6 +149,11 @@ export default function AdminIncidentsKanbanPage() {
           <Link href="/admin/incidents/overdue-followups">
             <Badge variant="outline" className="h-8 px-3 border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 cursor-pointer">
               {rows.reduce((sum, row) => sum + row.overdueFollowups, 0)} Overdue follow-ups
+            </Badge>
+          </Link>
+          <Link href="/admin/incidents/overdue-followups">
+            <Badge variant="outline" className="h-8 px-3 border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 cursor-pointer">
+              {rows.reduce((sum, row) => sum + row.escalatedFollowups, 0)} Escalated follow-ups
             </Badge>
           </Link>
           <Link href="/admin/incidents/followups">
@@ -212,6 +220,19 @@ export default function AdminIncidentsKanbanPage() {
                     {incident.unassignedFollowups > 0 ? (
                       <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
                         {incident.unassignedFollowups} unassigned
+                      </Badge>
+                    ) : null}
+                    {incident.escalatedFollowups > 0 ? (
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "border-orange-200 bg-orange-50 text-orange-700",
+                          incident.criticalFollowups > 0 && "border-rose-200 bg-rose-50 text-rose-700",
+                        )}
+                      >
+                        {incident.criticalFollowups > 0
+                          ? `${incident.criticalFollowups} critical`
+                          : `${incident.escalatedFollowups} escalated`}
                       </Badge>
                     ) : null}
                     {incident.followupDueStr !== "—" ? (
@@ -339,6 +360,17 @@ function KanbanCard({ incident, now }: { incident: IncidentRow; now: number }) {
                 {incident.unassignedFollowups} unassigned
               </Badge>
             ) : null}
+            {incident.escalatedFollowups > 0 ? (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "border-orange-200 bg-orange-50 text-orange-700",
+                  incident.criticalFollowups > 0 && "border-rose-200 bg-rose-50 text-rose-700",
+                )}
+              >
+                {incident.criticalFollowups > 0 ? `${incident.criticalFollowups} critical` : `${incident.escalatedFollowups} escalated`}
+              </Badge>
+            ) : null}
             {incident.ahcaReportable && !incident.ahcaReported ? (
               <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
                 AHCA reporting open
@@ -464,6 +496,8 @@ async function fetchIncidentsFromSupabase(selectedFacilityId: string | null): Pr
   const openFollowupsByIncident = new Map<string, number>();
   const overdueFollowupsByIncident = new Map<string, number>();
   const unassignedFollowupsByIncident = new Map<string, number>();
+  const escalatedFollowupsByIncident = new Map<string, number>();
+  const criticalFollowupsByIncident = new Map<string, number>();
   for (const row of (followupsResult.data as SupabaseFollowupMini[] ?? [])) {
     const epoch = new Date(row.due_at).getTime();
     const existing = nextDueByIncident.get(row.incident_id);
@@ -473,6 +507,14 @@ async function fetchIncidentsFromSupabase(selectedFacilityId: string | null): Pr
     openFollowupsByIncident.set(row.incident_id, (openFollowupsByIncident.get(row.incident_id) ?? 0) + 1);
     if (epoch < Date.now()) {
       overdueFollowupsByIncident.set(row.incident_id, (overdueFollowupsByIncident.get(row.incident_id) ?? 0) + 1);
+      const hoursOverdue = Math.max(1, Math.ceil((Date.now() - epoch) / 3_600_000));
+      const escalationLevel = classifyFollowupEscalation(hoursOverdue);
+      if (isFollowupEscalated(escalationLevel)) {
+        escalatedFollowupsByIncident.set(row.incident_id, (escalatedFollowupsByIncident.get(row.incident_id) ?? 0) + 1);
+      }
+      if (escalationLevel === "critical") {
+        criticalFollowupsByIncident.set(row.incident_id, (criticalFollowupsByIncident.get(row.incident_id) ?? 0) + 1);
+      }
     }
     if (!row.assigned_to) {
       unassignedFollowupsByIncident.set(row.incident_id, (unassignedFollowupsByIncident.get(row.incident_id) ?? 0) + 1);
@@ -487,6 +529,8 @@ async function fetchIncidentsFromSupabase(selectedFacilityId: string | null): Pr
     const openFollowups = openFollowupsByIncident.get(row.id) ?? 0;
     const overdueFollowups = overdueFollowupsByIncident.get(row.id) ?? 0;
     const unassignedFollowups = unassignedFollowupsByIncident.get(row.id) ?? 0;
+    const escalatedFollowups = escalatedFollowupsByIncident.get(row.id) ?? 0;
+    const criticalFollowups = criticalFollowupsByIncident.get(row.id) ?? 0;
 
     // Convert status to Kanban format using real incident workflow state
     let status: IncidentStatus = "new";
@@ -514,6 +558,8 @@ async function fetchIncidentsFromSupabase(selectedFacilityId: string | null): Pr
       openFollowups,
       overdueFollowups,
       unassignedFollowups,
+      escalatedFollowups,
+      criticalFollowups,
       ahcaReportable: row.ahca_reportable,
       ahcaReported: row.ahca_reported,
     } as IncidentRow;

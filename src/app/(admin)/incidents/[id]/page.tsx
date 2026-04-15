@@ -18,6 +18,16 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import {
+  fetchIncidentFollowupAssignees,
+  type IncidentFollowupAssigneeOption,
+} from "@/lib/incidents/followup-assignees";
+import {
+  classifyFollowupEscalation,
+  followupEscalationLabel,
+  isFollowupEscalated,
+  type FollowupEscalationLevel,
+} from "@/lib/incidents/followup-escalation";
 
 type IncidentSeverityUi = "level_1" | "level_2" | "level_3" | "level_4";
 type IncidentStatusUi = "open" | "in_review" | "closed";
@@ -111,9 +121,12 @@ type DetailView = {
     description: string;
     dueLabel: string;
     statusLabel: string;
+    assignedToId: string | null;
     assignee: string;
     isCompleted: boolean;
     isOverdue: boolean;
+    hoursOverdue: number;
+    escalationLevel: FollowupEscalationLevel;
   }>;
 };
 
@@ -131,6 +144,8 @@ export default function AdminIncidentDetailPage() {
   const [followupActionLoading, setFollowupActionLoading] = useState<string | null>(null);
   const [followupActionError, setFollowupActionError] = useState<string | null>(null);
   const [followupActionMessage, setFollowupActionMessage] = useState<string | null>(null);
+  const [assigneeOptions, setAssigneeOptions] = useState<IncidentFollowupAssigneeOption[]>([]);
+  const [followupAssigneeDrafts, setFollowupAssigneeDrafts] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -152,6 +167,15 @@ export default function AdminIncidentDetailPage() {
         return;
       }
       setDetail(row);
+      setFollowupAssigneeDrafts(
+        Object.fromEntries(row.followups.map((followup) => [followup.id, followup.assignedToId ?? ""])),
+      );
+      try {
+        const options = await fetchIncidentFollowupAssignees(row.incident.facility_id);
+        setAssigneeOptions(options);
+      } catch {
+        setAssigneeOptions([]);
+      }
     } catch {
       setError("Incident record could not be loaded. Try again or return to the queue.");
     } finally {
@@ -234,6 +258,30 @@ export default function AdminIncidentDetailPage() {
       await load();
     } catch (actionError) {
       setFollowupActionError(actionError instanceof Error ? actionError.message : "Could not assign follow-up.");
+    } finally {
+      setFollowupActionLoading(null);
+    }
+  }
+
+  async function saveFollowupAssignee(followupId: string) {
+    setFollowupActionLoading(followupId);
+    setFollowupActionError(null);
+    setFollowupActionMessage(null);
+    try {
+      const supabase = createClient();
+      const assigneeId = followupAssigneeDrafts[followupId] || null;
+      const { error: updateError } = await supabase
+        .from("incident_followups")
+        .update({
+          assigned_to: assigneeId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", followupId);
+      if (updateError) throw updateError;
+      setFollowupActionMessage(assigneeId ? "Follow-up assignee saved." : "Follow-up assignee cleared.");
+      await load();
+    } catch (actionError) {
+      setFollowupActionError(actionError instanceof Error ? actionError.message : "Could not save assignee.");
     } finally {
       setFollowupActionLoading(null);
     }
@@ -557,7 +605,20 @@ export default function AdminIncidentDetailPage() {
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       {f.isOverdue && !f.isCompleted ? (
                         <Badge variant="outline" className="border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
-                          Overdue
+                          {followupEscalationLabel(f.escalationLevel, f.hoursOverdue)}
+                        </Badge>
+                      ) : null}
+                      {isFollowupEscalated(f.escalationLevel) && !f.isCompleted ? (
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200",
+                            f.escalationLevel === "critical"
+                              ? "border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200"
+                              : "",
+                          )}
+                        >
+                          {f.escalationLevel === "critical" ? "Critical escalation" : "Escalation risk"}
                         </Badge>
                       ) : null}
                       {!f.isCompleted ? (
@@ -579,6 +640,39 @@ export default function AdminIncidentDetailPage() {
                           >
                             {followupActionLoading === f.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Mark complete"}
                           </Button>
+                          {assigneeOptions.length > 0 ? (
+                            <>
+                              <select
+                                value={followupAssigneeDrafts[f.id] ?? ""}
+                                onChange={(event) =>
+                                  setFollowupAssigneeDrafts((current) => ({
+                                    ...current,
+                                    [f.id]: event.target.value,
+                                  }))
+                                }
+                                className="h-9 min-w-[12rem] rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                              >
+                                <option value="">Unassigned</option>
+                                {assigneeOptions.map((option) => (
+                                  <option key={option.id} value={option.id}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </select>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={
+                                  followupActionLoading === f.id ||
+                                  (followupAssigneeDrafts[f.id] ?? "") === (f.assignedToId ?? "")
+                                }
+                                onClick={() => void saveFollowupAssignee(f.id)}
+                              >
+                                {followupActionLoading === f.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save assignee"}
+                              </Button>
+                            </>
+                          ) : null}
                         </>
                       ) : (
                         <Badge variant="outline" className="border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
@@ -715,9 +809,14 @@ async function fetchIncidentDetail(
     description: f.description,
     dueLabel: formatTs(f.due_at),
     statusLabel: f.completed_at ? "Completed" : "Open",
+    assignedToId: f.assigned_to,
     assignee: f.assigned_to ? assigneeById.get(f.assigned_to) ?? "Assigned" : "",
     isCompleted: Boolean(f.completed_at),
     isOverdue: !f.completed_at && new Date(f.due_at).getTime() < Date.now(),
+    hoursOverdue: !f.completed_at ? Math.max(0, Math.ceil((Date.now() - new Date(f.due_at).getTime()) / 3_600_000)) : 0,
+    escalationLevel: !f.completed_at
+      ? classifyFollowupEscalation(Math.max(0, Math.ceil((Date.now() - new Date(f.due_at).getTime()) / 3_600_000)))
+      : "none",
   }));
 
   const rcaResult = (await supabase
