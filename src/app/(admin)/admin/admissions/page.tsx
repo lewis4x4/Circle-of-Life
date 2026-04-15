@@ -485,7 +485,12 @@ export default function AdminAdmissionsHubPage() {
                     <p className="text-[10px] uppercase tracking-widest font-mono text-amber-700 dark:text-amber-300">Move-in readiness pressure</p>
                     <p className="text-sm text-amber-900 dark:text-amber-100">These admissions are missing key readiness steps.</p>
                   </div>
-                  <span className="text-sm font-semibold text-amber-900 dark:text-amber-100">{blockedAdmissions.length}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-amber-900 dark:text-amber-100">{blockedAdmissions.length}</span>
+                    <Link href="/admin/admissions/blocked" className="text-[10px] font-bold uppercase tracking-widest text-amber-700 hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-100">
+                      Open blocked queue →
+                    </Link>
+                  </div>
                 </div>
                 <div className="mt-3 grid gap-3">
                   {blockedAdmissions.map(({ row, blockers }) => (
