@@ -128,7 +128,10 @@ export default function AdminDashboardPage() {
     workflows.admissionsOnboardingPending +
     workflows.referralsBlockedHandoffs +
     workflows.referralsReadyHandoffs +
-    workflows.referralsOnboardingHandoffs;
+    workflows.referralsOnboardingHandoffs +
+    workflows.dischargePlanning +
+    workflows.dischargePharmacistReview +
+    workflows.dischargeReadyToComplete;
 
   return (
     <div className="space-y-10 pb-12 overflow-x-hidden">
@@ -214,7 +217,7 @@ export default function AdminDashboardPage() {
             <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">Cross-lane backlog state across doctrine, incidents, and admissions.</p>
           </div>
         </div>
-        <MotionList className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MotionList className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <MotionItem>
             <TriageMetricCard
               title="Doctrine Review"
@@ -259,6 +262,16 @@ export default function AdminDashboardPage() {
               href="/admin/referrals/in-admissions"
               urgency={workflows.referralsInAdmissions > 0 ? "medium" : "normal"}
               subLabel={`${workflows.referralsBlockedHandoffs} blocked · ${workflows.referralsReadyHandoffs} ready · ${workflows.referralsOnboardingHandoffs} onboarding`}
+            />
+          </MotionItem>
+          <MotionItem>
+            <TriageMetricCard
+              title="Discharge"
+              value={workflows.dischargePlanning > 0 ? workflows.dischargePlanning : workflows.dischargePharmacistReview}
+              icon={DoorOpen}
+              href="/admin/discharge"
+              urgency={workflows.dischargePlanning > 0 ? "high" : workflows.dischargePharmacistReview > 0 ? "medium" : workflows.dischargeReadyToComplete > 0 ? "normal" : "normal"}
+              subLabel={`${workflows.dischargePlanning} planning · ${workflows.dischargePharmacistReview} pharmacist · ${workflows.dischargeReadyToComplete} ready`}
             />
           </MotionItem>
         </MotionList>

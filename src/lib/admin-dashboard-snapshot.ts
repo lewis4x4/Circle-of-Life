@@ -63,6 +63,9 @@ export type AdminDashboardSnapshot = {
     referralsBlockedHandoffs: number;
     referralsReadyHandoffs: number;
     referralsOnboardingHandoffs: number;
+    dischargePlanning: number;
+    dischargePharmacistReview: number;
+    dischargeReadyToComplete: number;
   };
   workflowInbox: WorkflowInboxItem[];
   censusPreview: DashboardCensusRow[];
@@ -145,6 +148,18 @@ type SupabaseAdmissionMini = {
   bed_id: string | null;
 };
 
+type SupabaseDischargeMini = {
+  id: string;
+  status: string;
+  nurse_reconciliation_notes: string | null;
+  pharmacist_npi: string | null;
+  pharmacist_notes: string | null;
+  residents: {
+    discharge_target_date: string | null;
+    hospice_status: string;
+  } | null;
+};
+
 type SupabaseResidentMini = { id: string; first_name: string | null; last_name: string | null };
 
 function mapAcuity(value: string | null): 1 | 2 | 3 {
@@ -224,6 +239,9 @@ function buildWorkflowInbox(input: {
   referralsBlockedHandoffs: number;
   referralsReadyHandoffs: number;
   referralsOnboardingHandoffs: number;
+  dischargePlanning: number;
+  dischargePharmacistReview: number;
+  dischargeReadyToComplete: number;
 }): WorkflowInboxItem[] {
   const items: WorkflowInboxItem[] = [];
 
@@ -345,6 +363,21 @@ function buildWorkflowInbox(input: {
       tone: "normal",
       href: "/admin/referrals/in-admissions",
       ctaLabel: "Track handoffs",
+    });
+  }
+
+  if (input.dischargePlanning > 0 || input.dischargePharmacistReview > 0 || input.dischargeReadyToComplete > 0) {
+    const parts: string[] = [];
+    if (input.dischargePlanning > 0) parts.push(`${input.dischargePlanning} planning`);
+    if (input.dischargePharmacistReview > 0) parts.push(`${input.dischargePharmacistReview} pharmacist`);
+    if (input.dischargeReadyToComplete > 0) parts.push(`${input.dischargeReadyToComplete} ready to complete`);
+    items.push({
+      id: "discharge-workflow",
+      label: "Discharge",
+      message: `${parts.join(" · ")} reconciliation${input.dischargePlanning + input.dischargePharmacistReview + input.dischargeReadyToComplete === 1 ? "" : "s"} need transition attention.`,
+      tone: input.dischargePlanning > 0 ? "warning" : "normal",
+      href: "/admin/discharge",
+      ctaLabel: "Work discharges",
     });
   }
 
@@ -492,6 +525,11 @@ export async function fetchAdminDashboardSnapshot(
     .is("deleted_at", null)
     .not("status", "eq", "cancelled");
 
+  let dischargeQueueQuery = supabase
+    .from("discharge_med_reconciliation" as never)
+    .select("id, status, nurse_reconciliation_notes, pharmacist_npi, pharmacist_notes, residents(discharge_target_date, hospice_status)")
+    .is("deleted_at", null);
+
   if (isValidFacilityIdForQuery(selectedFacilityId)) {
     doctrinePendingQuery = doctrinePendingQuery.eq("facility_id", selectedFacilityId);
     incidentOverdueFollowupsQuery = incidentOverdueFollowupsQuery.eq("facility_id", selectedFacilityId);
@@ -500,6 +538,7 @@ export async function fetchAdminDashboardSnapshot(
     incidentWorkflowQuery = incidentWorkflowQuery.eq("facility_id", selectedFacilityId);
     incidentRcaQuery = incidentRcaQuery.eq("facility_id", selectedFacilityId);
     admissionsQueueQuery = admissionsQueueQuery.eq("facility_id", selectedFacilityId);
+    dischargeQueueQuery = dischargeQueueQuery.eq("facility_id", selectedFacilityId);
   }
 
   const [
@@ -519,6 +558,7 @@ export async function fetchAdminDashboardSnapshot(
     incidentWorkflowRes,
     incidentRcaRes,
     admissionsQueueRes,
+    dischargeQueueRes,
   ] = await Promise.all([
     facilitiesQuery as unknown as Promise<QueryResult<SupabaseFacilityRow[]>>,
     residentsCountQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
@@ -536,6 +576,7 @@ export async function fetchAdminDashboardSnapshot(
     incidentWorkflowQuery as unknown as Promise<QueryResult<SupabaseIncidentMini[]>>,
     incidentRcaQuery as unknown as Promise<QueryResult<SupabaseIncidentRcaMini[]>>,
     admissionsQueueQuery as unknown as Promise<QueryResult<SupabaseAdmissionMini[]>>,
+    dischargeQueueQuery as unknown as Promise<QueryResult<SupabaseDischargeMini[]>>,
   ]);
 
   const firstError = [
@@ -555,6 +596,7 @@ export async function fetchAdminDashboardSnapshot(
     incidentWorkflowRes.error && { table: "incidents_workflow", ...incidentWorkflowRes.error },
     incidentRcaRes.error && { table: "incident_rca", ...incidentRcaRes.error },
     admissionsQueueRes.error && { table: "admission_cases_queue", ...admissionsQueueRes.error },
+    dischargeQueueRes.error && { table: "discharge_med_reconciliation", ...dischargeQueueRes.error },
   ].find(Boolean);
 
   if (firstError) {
@@ -683,6 +725,17 @@ export async function fetchAdminDashboardSnapshot(
     }
   }
 
+  const dischargeRows = dischargeQueueRes.data ?? [];
+  let dischargePlanning = 0;
+  let dischargePharmacistReview = 0;
+  let dischargeReadyToComplete = 0;
+  for (const row of dischargeRows) {
+    const phase = describeDischargePhase(row);
+    if (phase === "planning") dischargePlanning += 1;
+    if (phase === "pharmacist_review") dischargePharmacistReview += 1;
+    if (phase === "ready_to_complete") dischargeReadyToComplete += 1;
+  }
+
   return {
     headlineName,
     timezoneLabel: primaryTz,
@@ -713,6 +766,9 @@ export async function fetchAdminDashboardSnapshot(
       referralsBlockedHandoffs,
       referralsReadyHandoffs,
       referralsOnboardingHandoffs,
+      dischargePlanning,
+      dischargePharmacistReview,
+      dischargeReadyToComplete,
     },
     workflowInbox: buildWorkflowInbox({
       doctrinePendingReview: pendingDoctrineDocs.length,
@@ -733,6 +789,9 @@ export async function fetchAdminDashboardSnapshot(
       referralsBlockedHandoffs,
       referralsReadyHandoffs,
       referralsOnboardingHandoffs,
+      dischargePlanning,
+      dischargePharmacistReview,
+      dischargeReadyToComplete,
     }),
     censusPreview,
     activity,
@@ -751,6 +810,17 @@ function buildIncidentOpenObligations(incident: SupabaseIncidentMini): string[] 
   if (incident.ahca_reportable && !incident.ahca_reported) items.push("Complete AHCA reporting.");
   if (incident.insurance_reportable && !incident.insurance_reported) items.push("Report to the insurance carrier.");
   return items;
+}
+
+function describeDischargePhase(row: SupabaseDischargeMini): "planning" | "pharmacist_review" | "ready_to_complete" | "complete" | "cancelled" {
+  if (row.status === "cancelled") return "cancelled";
+  if (row.status === "complete") return "complete";
+  if (!row.residents?.discharge_target_date) return "planning";
+  if (row.residents?.hospice_status === "pending") return "planning";
+  if (!row.nurse_reconciliation_notes?.trim()) return "planning";
+  if (row.status === "draft") return "pharmacist_review";
+  if (!row.pharmacist_npi?.trim() || !row.pharmacist_notes?.trim()) return "pharmacist_review";
+  return "ready_to_complete";
 }
 
 async function mapResidentsToCensusRows(
