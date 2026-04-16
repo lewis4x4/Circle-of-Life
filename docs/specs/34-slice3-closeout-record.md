@@ -151,6 +151,8 @@ Confirmed by browser checks on:
 - `/admin/dietary-dashboard` now resolves to the canonical dietary surfaces instead of remaining a stale unreachable duplicate
 - the role contract now correctly models dietary’s home as `/dietary` instead of an admin-shell dashboard
 - housekeeper wrong-shell visits to `/dietary` now return to `/caregiver/housekeeper` instead of `/login`
+- `/med-tech` is now part of the server-side shell contract instead of relying only on client-side guards
+- the med-tech auth helper now matches live runtime behavior for nurse, facility admin, housekeeper, and logged-out users
 
 ---
 
@@ -183,6 +185,10 @@ Browser verification:
   - admin stale alias `/admin/dietary-dashboard` -> `/admin/dietary`
   - dietary login -> `/dietary`
   - housekeeper wrong-shell bounce from `/dietary` -> `/caregiver/housekeeper`
+  - logged-out `/med-tech` -> `/login?next=/med-tech`
+  - nurse -> `/med-tech`
+  - facility admin wrong-shell bounce from `/med-tech` -> `/admin`
+  - housekeeper wrong-shell bounce from `/med-tech` -> `/caregiver/housekeeper`
 
 Operational verification:
 

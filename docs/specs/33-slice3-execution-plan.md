@@ -39,6 +39,7 @@ The work landed as a set of coherent role packages instead of one monolithic red
 8. admin-specialist navigation convergence for front desk, coordinator, and nurse
 9. stale specialist-route convergence for dietary
 10. dietary role-contract convergence
+11. med-tech shell convergence at the proxy layer
 
 Browser validation was run against the role homes and the key floor/family routes needed by the acceptance gates.
 
@@ -234,6 +235,19 @@ Delivered:
 - the central dashboard-routing contract now reflects the actual dietary home as `/dietary`
 - dietary is modeled as its own shell in the role contract instead of as an admin-shell role
 - housekeeper users who hit `/dietary` are now redirected back to `/caregiver/housekeeper` instead of falling through to `/login`
+
+### Workstream K — Med-Tech Shell Convergence
+
+**Status:** complete
+
+Delivered:
+
+- `/med-tech` is now protected and role-routed at the proxy layer instead of relying only on client-side shell checks
+- the standalone med-tech auth helper now matches the live role contract:
+  - nurse allowed
+  - facility admin bounced to `/admin`
+  - housekeeper bounced to `/caregiver/housekeeper`
+  - logged-out users redirected to `/login?next=/med-tech`
 
 ---
 

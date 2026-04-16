@@ -1,7 +1,8 @@
 import type { User } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
-import { getAppRoleFromClaims, isAdminEligibleAppRole } from "@/lib/auth/app-role";
+import { getAppRoleFromClaims, isAdminEligibleAppRole, isMedTechRole } from "@/lib/auth/app-role";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
 /**
  * Med-Tech cockpit path detection.
@@ -11,7 +12,7 @@ export function isMedTechShellPath(pathname: string): boolean {
 }
 
 /**
- * Med-Tech UI requires a session and `med_tech` role.
+ * Med-Tech UI requires a session and a medication role (`med_tech` or `nurse`).
  * Other known roles redirect to their shells.
  */
 export function medTechShellAccessRedirect(
@@ -28,17 +29,17 @@ export function medTechShellAccessRedirect(
   }
 
   const role = getAppRoleFromClaims(user);
-  if (role === "med_tech") {
-    return null; // allowed
+  if (isMedTechRole(role)) {
+    return null;
   }
-  if (role === "caregiver") {
-    return NextResponse.redirect(new URL("/caregiver", nextUrl.origin));
+  if (role === "caregiver" || role === "housekeeper") {
+    return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
   }
   if (role === "family") {
     return NextResponse.redirect(new URL("/family", nextUrl.origin));
   }
   if (isAdminEligibleAppRole(role)) {
-    return NextResponse.redirect(new URL("/admin", nextUrl.origin));
+    return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
   }
 
   const url = nextUrl.clone();

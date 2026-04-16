@@ -3,6 +3,7 @@ import { adminShellAccessRedirect, isAdminShellPath, mergeSetCookieHeaders } fro
 import { caregiverShellAccessRedirect, isCaregiverShellPath } from "@/lib/auth/caregiver-shell";
 import { dietaryShellAccessRedirect, isDietaryShellPath } from "@/lib/auth/dietary-shell";
 import { familyShellAccessRedirect, isFamilyShellPath } from "@/lib/auth/family-shell";
+import { isMedTechShellPath, medTechShellAccessRedirect } from "@/lib/auth/med-tech-shell";
 import { isOnboardingShellPath, onboardingShellAccessRedirect } from "@/lib/auth/onboarding-shell";
 import { updateSession } from "@/lib/supabase/middleware";
 
@@ -30,6 +31,15 @@ export async function proxy(request: NextRequest) {
 
   if (isDietaryShellPath(pathname)) {
     const redirect = dietaryShellAccessRedirect(request, user);
+    if (redirect) {
+      mergeSetCookieHeaders(response, redirect);
+      return redirect;
+    }
+    return response;
+  }
+
+  if (isMedTechShellPath(pathname)) {
+    const redirect = medTechShellAccessRedirect(request, user);
     if (redirect) {
       mergeSetCookieHeaders(response, redirect);
       return redirect;
