@@ -55,7 +55,24 @@ type CertWarning = {
   daysExpired: number;
 };
 
+type SupabaseExpiredCertRow = {
+  id: string;
+  staff_id: string;
+  certification_name: string;
+  expiration_date: string | null;
+  status: string;
+};
+
+type SupabaseStaffWarningMini = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  staff_role: string;
+};
+
 type StaffingSnapshotCsvRow = Database["public"]["Tables"]["staffing_ratio_snapshots"]["Row"];
+type QueryError = { message: string };
+type QueryResult<T> = { data: T[] | null; error: QueryError | null };
 
 function buildStaffingSnapshotsCsv(rows: StaffingSnapshotCsvRow[]): string {
   const header = [
@@ -96,6 +113,7 @@ export default function AdminStaffingConsolePage() {
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
   const [snapshots, setSnapshots] = useState<SnapshotRow[]>([]);
+  const [certWarnings, setCertWarnings] = useState<CertWarning[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
@@ -107,10 +125,15 @@ export default function AdminStaffingConsolePage() {
     setIsLoading(true);
     setError(null);
     try {
-      const live = await fetchSnapshotsFromSupabase(selectedFacilityId);
-      setSnapshots(live);
+      const [liveSnapshots, liveCertWarnings] = await Promise.all([
+        fetchSnapshotsFromSupabase(selectedFacilityId),
+        fetchExpiredCertificationWarnings(selectedFacilityId),
+      ]);
+      setSnapshots(liveSnapshots);
+      setCertWarnings(liveCertWarnings);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load staffing metrics");
+      setCertWarnings([]);
     } finally {
       setIsLoading(false);
     }
@@ -216,10 +239,6 @@ export default function AdminStaffingConsolePage() {
   const shiftGaps: ShiftGap[] = [
     { id: "1", date: "Today", shift: "Night (11p-7a)", role: "CNA", shortage: 2, urgency: "critical" },
     { id: "2", date: "Tomorrow", shift: "Day (7a-3p)", role: "RN", shortage: 1, urgency: "warning" },
-  ];
-
-  const certWarnings: CertWarning[] = [
-    { id: "1", staffName: "Sarah Jenkins", role: "CNA", certName: "State Registry", daysExpired: 4 },
   ];
 
   return (
@@ -500,4 +519,61 @@ async function fetchSnapshotsFromSupabase(selectedFacilityId: string | null): Pr
     requiredRatio: Number(r.required_ratio),
     isCompliant: r.is_compliant,
   }));
+}
+
+async function fetchExpiredCertificationWarnings(selectedFacilityId: string | null): Promise<CertWarning[]> {
+  const supabase = createClient();
+  const todayIso = new Date().toISOString().slice(0, 10);
+
+  let certsQuery = supabase
+    .from("staff_certifications" as never)
+    .select("id, staff_id, certification_name, expiration_date, status")
+    .is("deleted_at", null)
+    .or(`status.in.(expired,revoked),expiration_date.lt.${todayIso}`)
+    .order("expiration_date", { ascending: true })
+    .limit(10);
+
+  if (isValidFacilityIdForQuery(selectedFacilityId)) {
+    certsQuery = certsQuery.eq("facility_id", selectedFacilityId);
+  }
+
+  const certsRes = (await certsQuery) as unknown as QueryResult<SupabaseExpiredCertRow>;
+  const certs = certsRes.data ?? [];
+  if (certsRes.error) throw certsRes.error;
+  if (certs.length === 0) return [];
+
+  const staffIds = [...new Set(certs.map((row: SupabaseExpiredCertRow) => row.staff_id))];
+  const staffRes = (await supabase
+    .from("staff" as never)
+    .select("id, first_name, last_name, staff_role")
+    .in("id", staffIds)
+    .is("deleted_at", null)) as unknown as QueryResult<SupabaseStaffWarningMini>;
+  const staffRows = staffRes.data ?? [];
+  if (staffRes.error) throw staffRes.error;
+
+  const staffById = new Map(staffRows.map((row: SupabaseStaffWarningMini) => [row.id, row] as const));
+  const now = Date.now();
+
+  return certs.map((row: SupabaseExpiredCertRow) => {
+    const staff = staffById.get(row.staff_id);
+    const first = staff?.first_name?.trim() ?? "";
+    const last = staff?.last_name?.trim() ?? "";
+    const expirationAt = row.expiration_date ? new Date(`${row.expiration_date}T23:59:59`).getTime() : now;
+    const daysExpired = Math.max(1, Math.ceil((now - expirationAt) / 86_400_000));
+    return {
+      id: row.id,
+      staffName: `${first} ${last}`.trim() || "Unknown staff",
+      role: mapDbStaffRoleToLabel(staff?.staff_role ?? "other"),
+      certName: row.certification_name,
+      daysExpired,
+    };
+  });
+}
+
+function mapDbStaffRoleToLabel(role: string): string {
+  const normalized = role.trim().toLowerCase();
+  if (normalized === "cna") return "CNA";
+  if (normalized === "rn") return "RN";
+  if (normalized === "lpn") return "LPN";
+  return normalized.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
