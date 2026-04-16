@@ -143,6 +143,9 @@ Confirmed by browser checks on:
 - nurse now lands in `/admin/nurse-dashboard` as a specialist home instead of entering the med-tech tool as a first screen
 - nurse keeps access to `/med-tech` as a live medication-workflow surface
 - wrong-shell redirects for admin-eligible specialist roles now return them to their actual role homes instead of generic `/admin`
+- maintenance now lands in `/admin/facilities` with a narrowed admin shell
+- broker now lands in `/admin/insurance` with a narrowed admin shell
+- `/admin` now redirects specialist admin roles back to their defined homes instead of silently showing the generic command center
 
 ---
 
@@ -164,6 +167,10 @@ Browser verification:
   - nurse tool access -> `/med-tech`
   - nurse wrong-shell bounce -> `/admin/nurse-dashboard`
   - dietary -> `/dietary`
+  - maintenance -> `/admin/facilities`
+  - maintenance `/admin` bounce -> `/admin/facilities`
+  - broker -> `/admin/insurance`
+  - broker `/admin` bounce -> `/admin/insurance`
 
 Operational verification:
 

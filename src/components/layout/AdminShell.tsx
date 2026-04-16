@@ -229,10 +229,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     }
   ], []);
 
-  const navGroups = useMemo(
-    () => allNavGroups.filter((group) => roleConfig.visibleGroups.includes(group.group)),
-    [allNavGroups, roleConfig.visibleGroups],
-  );
+  const navGroups = useMemo(() => {
+    const visibleKeySet = roleConfig.visibleItemKeys ? new Set(roleConfig.visibleItemKeys) : null;
+    return allNavGroups
+      .filter((group) => roleConfig.visibleGroups.includes(group.group))
+      .map((group) => ({
+        ...group,
+        items: visibleKeySet
+          ? group.items.filter((item) => visibleKeySet.has(item.key))
+          : group.items,
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [allNavGroups, roleConfig.visibleGroups, roleConfig.visibleItemKeys]);
 
   // Determine active group for styling the top-nav pill
   const activeGroup = useMemo(() => {

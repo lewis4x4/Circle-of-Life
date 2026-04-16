@@ -46,6 +46,12 @@ export default function AdminDashboardPage() {
       return;
     }
 
+    if (config.route !== "/admin") {
+      router.replace(config.route);
+      setIsLoading(false);
+      return;
+    }
+
     const cached = getFreshSnapshot(selectedFacilityId);
     if (cached) {
       setSnapshot(cached);

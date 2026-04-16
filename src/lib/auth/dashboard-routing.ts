@@ -20,6 +20,8 @@ export interface DashboardConfig {
   mobileTabletExpectation: "desktop-first" | "phone-first" | "phone-and-tablet";
   /** Nav groups visible in sidebar */
   visibleGroups: string[];
+  /** Optional nav item keys to show when a role should see only part of a group */
+  visibleItemKeys?: string[];
   /** Sections to render on the dashboard page */
   sections: {
     heroStats?: boolean;
@@ -156,14 +158,15 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
     },
   },
   maintenance_role: {
-    route: "/admin",
+    route: "/admin/facilities",
     shell: "admin",
     roleLabel: "Maintenance",
-    primaryTaskLanes: ["command"],
-    firstScreenPriority: ["facility_tasks"],
+    primaryTaskLanes: ["facility_tasks", "vendor_follow_through"],
+    firstScreenPriority: ["facility_tasks", "vendor_follow_through"],
     suppressedSections: ["enterprise_rollup", "clinical_follow_through", "family_billing"],
     mobileTabletExpectation: "desktop-first",
-    visibleGroups: ["Command"],
+    visibleGroups: ["Command", "Finance"],
+    visibleItemKeys: ["facilities", "vendors"],
     sections: {
       heroStats: true, quickActions: true,
     },
@@ -202,14 +205,15 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
     sections: {},
   },
   broker: {
-    route: "/admin",
+    route: "/admin/insurance",
     shell: "admin",
     roleLabel: "Broker",
-    primaryTaskLanes: ["command", "pipeline"],
-    firstScreenPriority: ["portfolio_health", "pipeline"],
-    suppressedSections: ["caregiver_density", "family_billing"],
+    primaryTaskLanes: ["insurance", "claims", "renewals"],
+    firstScreenPriority: ["insurance", "claims", "renewals"],
+    suppressedSections: ["caregiver_density", "family_billing", "general_operator_backlog"],
     mobileTabletExpectation: "desktop-first",
-    visibleGroups: ["Command", "Pipeline", "Clinical Ops", "Quality & Risk", "Workforce", "Finance"],
+    visibleGroups: ["Finance"],
+    visibleItemKeys: ["insurance"],
     sections: {
       heroStats: true, quickActions: true, criticalUpdates: true,
       compliance: true, financials: true, watchlist: true,

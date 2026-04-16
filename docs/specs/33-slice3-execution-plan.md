@@ -35,6 +35,7 @@ The work landed as a set of coherent role packages instead of one monolithic red
 4. med-tech exception and controlled-count flow
 5. family depth and cross-page product coherence
 6. specialist route convergence for nurse and other admin-eligible specialist returns
+7. limited-shell convergence for maintenance and broker roles
 
 Browser validation was run against the role homes and the key floor/family routes needed by the acceptance gates.
 
@@ -190,6 +191,17 @@ Delivered:
 - nurse still retains access to `/med-tech` as the live medication-workflow tool
 - cross-shell redirects now return admin-eligible specialists to their actual role homes instead of collapsing them back to generic `/admin`
 
+### Workstream G — Limited Admin Shell Specialists
+
+**Status:** complete
+
+Delivered:
+
+- maintenance now lands in `/admin/facilities`
+- broker now lands in `/admin/insurance`
+- `/admin` no longer acts as a generic fallback for roles whose defined home already lives elsewhere
+- the shared admin shell now supports per-role nav-item narrowing so limited-shell specialists only see the module lanes they are supposed to operate
+
 ---
 
 ## What Is Left
@@ -198,7 +210,7 @@ No Slice 3 implementation blocker remains.
 
 Non-blocking follow-up observations:
 
-1. additional specialist roles such as maintenance and broker still inherit the broader post-Slice-3 structure and can be refined in later work
+1. no remaining specialist role-home blocker is known inside the current Slice 3 scope
 2. some non-core role routes such as `/caregiver/me` and `/caregiver/clock` were not part of the explicit Slice 3 browser acceptance pass
 
 ---
