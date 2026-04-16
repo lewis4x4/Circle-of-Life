@@ -332,6 +332,17 @@ Delivered:
   - `184_harden_incident_number_allocator_against_seeded_data.sql`
 - incident number allocation now survives the internal sequence table and seeded incident history, so caregiver incident submission reaches a real success state again
 
+### Workstream S — Admin Compliance Dashboard Return Parity
+
+**Status:** complete
+
+Delivered:
+
+- the compliance deficiency analysis page no longer hardcodes its `Back to Dashboard` link to the facility-admin path
+- owner and org-admin now return to `/admin/executive`
+- facility admin still returns to `/admin`
+- the page now matches the same role-home contract already used on other admin recovery links
+
 ---
 
 ## What Is Left

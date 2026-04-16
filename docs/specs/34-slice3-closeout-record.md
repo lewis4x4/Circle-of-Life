@@ -229,6 +229,9 @@ Browser verification:
   - caregiver incident success state returns:
     - `RETURN TO SHIFT` -> `/caregiver`
     - `OPEN FOLLOW-UPS` -> `/caregiver/followups`
+  - compliance deficiency analysis `Back to Dashboard` now resolves by admin role:
+    - owner -> `/admin/executive`
+    - facility admin -> `/admin`
 
 Operational verification:
 

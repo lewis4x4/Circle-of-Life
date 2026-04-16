@@ -25,6 +25,7 @@ import {
 } from "recharts";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import {
@@ -51,12 +52,26 @@ const CHART_COLORS = {
   axis: "rgba(255,255,255,0.3)",
 };
 
-function CustomTooltip({ active, payload, label }: any) {
+type TooltipPayloadEntry = {
+  color?: string;
+  name?: string;
+  value?: number | string | null;
+};
+
+function CustomTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: TooltipPayloadEntry[];
+  label?: string;
+}) {
   if (active && payload && payload.length) {
     return (
       <div className="bg-slate-900/90 backdrop-blur-md border border-slate-700/50 p-3 rounded-lg shadow-2xl">
         <p className="text-xs font-mono text-slate-400 mb-2 uppercase tracking-widest">{label}</p>
-        {payload.map((p: any, idx: number) => (
+        {payload.map((p, idx) => (
           <div key={idx} className="flex items-center gap-2 mb-1 last:mb-0">
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
             <span className="text-sm font-semibold text-slate-100">
@@ -77,6 +92,7 @@ export default function DeficienciesAnalysisPage() {
   const [selectedMonths, setSelectedMonths] = useState(12);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [homeHref, setHomeHref] = useState("/admin");
 
   const [trendData, setTrendData] = useState<DeficiencyTrendPoint[]>([]);
   const [tagCounts, setTagCounts] = useState<{ tag_number: string; tag_title: string; count: number }[]>([]);
@@ -125,6 +141,24 @@ export default function DeficienciesAnalysisPage() {
     void loadData();
   }, [loadData]);
 
+  useEffect(() => {
+    void (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setHomeHref("/admin");
+        return;
+      }
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("app_role")
+        .eq("id", user.id)
+        .maybeSingle();
+      setHomeHref(profile?.app_role ? getDashboardRouteForRole(profile.app_role) : "/admin");
+    })();
+  }, [supabase]);
+
   const facilityReady = !!(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
 
   // Prepare trend data for line chart
@@ -161,7 +195,7 @@ export default function DeficienciesAnalysisPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Link href="/admin/compliance" className="text-[10px] uppercase tracking-widest font-mono text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+            <Link href={homeHref} className="text-[10px] uppercase tracking-widest font-mono text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
               ← Back to Dashboard
             </Link>
           </div>
