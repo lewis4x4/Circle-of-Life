@@ -129,8 +129,8 @@ export default function AdminDashboardPage() {
           label: "Staffing Gaps",
           message: `${staffingGaps} non-compliant staffing snapshot${staffingGaps === 1 ? "" : "s"} need review.`,
           tone: "warning",
-          href: "/admin/staffing?compliance=non_compliant",
-          ctaLabel: "Review staffing",
+          href: "/admin/staffing?compliance=non_compliant&window=24h",
+          ctaLabel: "Review staffing gaps",
         }
       : null,
     medExceptions > 0
@@ -140,7 +140,7 @@ export default function AdminDashboardPage() {
           message: `${medExceptions} unreviewed medication error${medExceptions === 1 ? "" : "s"} need follow-up.`,
           tone: "warning",
           href: "/admin/medications/errors?review=unreviewed",
-          ctaLabel: "Review med errors",
+          ctaLabel: "Review unreviewed errors",
         }
       : null,
     complianceAlerts > 0
@@ -149,8 +149,8 @@ export default function AdminDashboardPage() {
           label: "Compliance Risks",
           message: `${complianceAlerts} certification${complianceAlerts === 1 ? "" : "s"} are expiring within 30 days.`,
           tone: "warning",
-          href: "/admin/certifications?timeline=expiring_soon",
-          ctaLabel: "Review certifications",
+          href: "/admin/certifications?timeline=expiring_soon&dbStatus=active&window=30d",
+          ctaLabel: "Review expiring credentials",
         }
       : null,
   ].filter((item): item is LocalInboxItem => item !== null);
