@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Activity, ChevronRight, Loader2, Pill } from "lucide-react";
 
+import { getDashboardRouteForUser } from "@/lib/auth/user-home-route";
 import {
   canUpdateAnyEmarRecord,
   DEFAULT_PRN_REASSESS_MINUTES,
@@ -58,6 +59,7 @@ export default function CaregiverPrnFollowupPage() {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<DisplayRow[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  const [homeHref, setHomeHref] = useState("/caregiver");
 
   const [openId, setOpenId] = useState<string | null>(null);
   const [result, setResult] = useState("effective");
@@ -84,6 +86,7 @@ export default function CaregiverPrnFollowupPage() {
         setLoading(false);
         return;
       }
+      setHomeHref(getDashboardRouteForUser(user, "/caregiver"));
       setUserId(user.id);
       const prof = await supabase.from("user_profiles").select("app_role").eq("id", user.id).maybeSingle();
       const role = (prof.data as { app_role: string } | null)?.app_role ?? null;
@@ -202,7 +205,7 @@ export default function CaregiverPrnFollowupPage() {
       <div className="space-y-3">
         <div className="rounded-lg border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-100">{loadError}</div>
         <Link
-          href="/caregiver"
+          href={homeHref}
           className="inline-flex h-11 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-4 text-sm font-medium text-zinc-200 hover:bg-zinc-800"
         >
           Back to shift home

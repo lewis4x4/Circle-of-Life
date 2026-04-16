@@ -218,12 +218,26 @@ Browser verification:
   - caregiver invalid resident detail -> `Shift home` -> `/caregiver`
   - admin error boundary home link now resolves from the signed-in role
   - caregiver error boundary home link now resolves from the signed-in role
+  - housekeeper wrong-shell bounce from caregiver clinical routes:
+    - `/caregiver/tasks`
+    - `/caregiver/meds`
+    - `/caregiver/followups`
+    - `/caregiver/prn-followup`
+    - `/caregiver/incident-draft`
+    -> `/caregiver/housekeeper`
+  - caregiver incident submission reaches success state again
+  - caregiver incident success state returns:
+    - `RETURN TO SHIFT` -> `/caregiver`
+    - `OPEN FOLLOW-UPS` -> `/caregiver/followups`
 
 Operational verification:
 
 - med-tech incident capture path validated in-browser after:
   - `180_allow_med_tech_incident_capture.sql`
   - `181_fix_watch_auto_trigger_for_current_incident_schema.sql`
+- caregiver incident capture path revalidated after:
+  - `183_fix_incident_sequence_audit_trigger.sql`
+  - `184_harden_incident_number_allocator_against_seeded_data.sql`
 
 ---
 

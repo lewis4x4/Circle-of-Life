@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { BellRing, ChevronRight, Clock3, Loader2 } from "lucide-react";
 
+import { getDashboardRouteForUser } from "@/lib/auth/user-home-route";
 import { conditionChangeTypeLabel } from "@/lib/caregiver/floor-queues";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { fetchActiveResidentsWithRooms } from "@/lib/caregiver/facility-residents";
@@ -29,6 +30,7 @@ export default function CaregiverFollowupsPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<OpenCondition[]>([]);
+  const [homeHref, setHomeHref] = useState("/caregiver");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -42,6 +44,10 @@ export default function CaregiverFollowupsPage() {
       return;
     }
     try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setHomeHref(getDashboardRouteForUser(user, "/caregiver"));
       const resolved = await loadCaregiverFacilityContext(supabase);
       if (!resolved.ok) {
         setLoadError(resolved.error);
@@ -122,7 +128,7 @@ export default function CaregiverFollowupsPage() {
       <div className="space-y-3">
         <div className="rounded-lg border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-100">{loadError}</div>
         <Link
-          href="/caregiver"
+          href={homeHref}
           className="inline-flex h-11 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-4 text-sm font-medium text-zinc-200 hover:bg-zinc-800"
         >
           Back to shift home

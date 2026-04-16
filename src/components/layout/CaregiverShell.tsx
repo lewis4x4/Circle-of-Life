@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Home, Pill, ClipboardList, AlertTriangle, Clock3, User } from "lucide-react";
 import { useTheme } from "next-themes";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
@@ -11,10 +11,12 @@ import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
+import { isHousekeeperAllowedPath } from "@/lib/auth/caregiver-route-access";
 
 export function CaregiverShell({ children }: { children: React.ReactNode }) {
   const { setTheme } = useTheme();
   const pathname = usePathname();
+  const router = useRouter();
   const themeSet = useRef(false);
   const { appRole, user } = useHavenAuth();
   const [facilityName, setFacilityName] = useState("Facility");
@@ -64,6 +66,12 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
       themeSet.current = true;
     }
   }, [setTheme]);
+
+  useEffect(() => {
+    if (isHousekeeper && !isHousekeeperAllowedPath(pathname)) {
+      router.replace("/caregiver/housekeeper");
+    }
+  }, [isHousekeeper, pathname, router]);
 
   return (
     <div className="caregiver-shell min-h-screen text-zinc-100 flex font-sans selection:bg-teal-900 selection:text-teal-100 pb-20 md:pb-0">

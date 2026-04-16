@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertTriangle, CheckCircle2, ChevronDown, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 
+import { getDashboardRouteForUser } from "@/lib/auth/user-home-route";
 import {
   caregiverIncidentFormSchema,
   caregiverIncidentCategoryValues,
@@ -81,6 +82,7 @@ function CaregiverIncidentDraftPageInner() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submittedNumber, setSubmittedNumber] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [homeHref, setHomeHref] = useState("/caregiver");
 
   const form = useForm<CaregiverIncidentFormData>({
     resolver: zodResolver(caregiverIncidentFormSchema),
@@ -109,6 +111,7 @@ function CaregiverIncidentDraftPageInner() {
         setLoadingContext(false);
         return;
       }
+      setHomeHref(getDashboardRouteForUser(user, "/caregiver"));
 
       const profileResult = await supabase
         .from("user_profiles" as never)
@@ -309,7 +312,7 @@ function CaregiverIncidentDraftPageInner() {
           <p>{loadError}</p>
         </div>
         <Link
-          href="/caregiver"
+          href={homeHref}
           className="flex h-14 items-center justify-center rounded-2xl bg-white/10 border border-white/20 text-sm font-semibold text-white hover:bg-white/20 transition-colors tap-responsive"
         >
           Back to shift home
@@ -332,7 +335,7 @@ function CaregiverIncidentDraftPageInner() {
           
           <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
              <Link
-               href="/caregiver"
+               href={homeHref}
                className="h-14 px-8 rounded-2xl flex items-center justify-center font-bold tracking-wide transition-all shadow-lg bg-emerald-500 text-black hover:bg-emerald-400 tap-responsive"
              >
                RETURN TO SHIFT

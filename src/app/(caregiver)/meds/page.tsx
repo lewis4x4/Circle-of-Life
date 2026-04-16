@@ -13,6 +13,7 @@ import {
   zonedYmd,
   type EmarQueueSlot,
 } from "@/lib/caregiver/emar-queue";
+import { getDashboardRouteForUser } from "@/lib/auth/user-home-route";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 import { FloorWorkflowStrip } from "@/components/caregiver/FloorWorkflowStrip";
@@ -44,6 +45,7 @@ export default function CaregiverMedsPage() {
   } | null>(null);
   const [slots, setSlots] = useState<EmarQueueSlot[]>([]);
   const [actingKey, setActingKey] = useState<string | null>(null);
+  const [homeHref, setHomeHref] = useState("/caregiver");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -58,6 +60,10 @@ export default function CaregiverMedsPage() {
     }
 
     try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setHomeHref(getDashboardRouteForUser(user, "/caregiver"));
       const resolved = await loadCaregiverFacilityContext(supabase);
       if (!resolved.ok) {
         setLoadError(resolved.error);
@@ -260,7 +266,7 @@ export default function CaregiverMedsPage() {
           <p>{loadError}</p>
         </div>
         <Link
-          href="/caregiver"
+          href={homeHref}
           className="flex h-14 items-center justify-center rounded-2xl bg-white/10 border border-white/20 text-sm font-semibold text-white hover:bg-white/20 transition-colors tap-responsive"
         >
           Back to shift dashboard

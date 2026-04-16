@@ -10,6 +10,7 @@ import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 import { ADL_OPTIONS, ASSIST_OPTIONS } from "@/lib/caregiver/adl-form-options";
 import { fetchShiftDailyLogId } from "@/lib/caregiver/daily-log-link";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
+import { getDashboardRouteForUser } from "@/lib/auth/user-home-route";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 
@@ -33,6 +34,7 @@ export default function CaregiverTasksPage() {
   const [residents, setResidents] = useState<ResidentWithRoom[]>([]);
   const [adlCountByResident, setAdlCountByResident] = useState<Map<string, number>>(new Map());
   const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const [homeHref, setHomeHref] = useState("/caregiver");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -46,6 +48,10 @@ export default function CaregiverTasksPage() {
       return;
     }
     try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setHomeHref(getDashboardRouteForUser(user, "/caregiver"));
       const resolved = await loadCaregiverFacilityContext(supabase);
       if (!resolved.ok) {
         setLoadError(resolved.error);
@@ -182,7 +188,7 @@ export default function CaregiverTasksPage() {
       <div className="space-y-3">
         <div className="rounded-lg border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-100">{loadError}</div>
         <Link
-          href="/caregiver"
+          href={homeHref}
           className="inline-flex h-11 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-4 text-sm font-medium text-zinc-200 hover:bg-zinc-800"
         >
           Back to shift home

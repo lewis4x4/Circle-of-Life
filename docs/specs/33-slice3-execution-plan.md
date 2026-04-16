@@ -314,6 +314,24 @@ Delivered:
 - the shared admin error boundary now returns each admin-side role to its actual home instead of hardcoding `/admin`
 - the shared caregiver error boundary now returns housekeeper to `/caregiver/housekeeper` instead of hardcoding `/caregiver`
 
+### Workstream R — Caregiver Clinical Boundary + Incident Recovery
+
+**Status:** complete
+
+Delivered:
+
+- caregiver workflow pages that still hardcoded `/caregiver` recovery links now resolve the signed-in role’s actual home
+- housekeeper is now actively bounced out of caregiver-only clinical workflow routes:
+  - `/caregiver/tasks`
+  - `/caregiver/meds`
+  - `/caregiver/followups`
+  - `/caregiver/prn-followup`
+  - `/caregiver/incident-draft`
+- fixed the caregiver incident runtime path by shipping two database repairs:
+  - `183_fix_incident_sequence_audit_trigger.sql`
+  - `184_harden_incident_number_allocator_against_seeded_data.sql`
+- incident number allocation now survives the internal sequence table and seeded incident history, so caregiver incident submission reaches a real success state again
+
 ---
 
 ## What Is Left

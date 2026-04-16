@@ -2,6 +2,7 @@ import type { User } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { getAppRoleFromClaims, isAdminEligibleAppRole } from "@/lib/auth/app-role";
+import { isHousekeeperAllowedPath } from "@/lib/auth/caregiver-route-access";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
 /**
@@ -18,23 +19,6 @@ const CAREGIVER_ROOT_ALIAS_PREFIXES = [
   "/tasks",
   "/resident",
 ] as const;
-
-const HOUSEKEEPER_ALLOWED_PREFIXES = [
-  "/caregiver",
-  "/caregiver/housekeeper",
-  "/caregiver/clock",
-  "/caregiver/schedules",
-  "/caregiver/me",
-  "/caregiver/policies",
-  "/clock",
-  "/me",
-] as const;
-
-function isHousekeeperAllowedPath(pathname: string): boolean {
-  return HOUSEKEEPER_ALLOWED_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
-}
 
 export function isCaregiverShellPath(pathname: string): boolean {
   if (pathname === "/caregiver" || pathname.startsWith("/caregiver/")) {
