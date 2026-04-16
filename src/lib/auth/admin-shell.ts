@@ -69,6 +69,11 @@ export function adminShellAccessRedirect(request: NextRequest, user: User | null
     return NextResponse.redirect(url);
   }
 
+  const roleHome = getDashboardRouteForRole(role);
+  if (nextUrl.pathname === "/admin" && roleHome !== "/admin") {
+    return NextResponse.redirect(new URL(roleHome, nextUrl.origin));
+  }
+
   return null;
 }
 

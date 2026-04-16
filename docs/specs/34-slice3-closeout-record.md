@@ -153,6 +153,7 @@ Confirmed by browser checks on:
 - housekeeper wrong-shell visits to `/dietary` now return to `/caregiver/housekeeper` instead of `/login`
 - `/med-tech` is now part of the server-side shell contract instead of relying only on client-side guards
 - the med-tech auth helper now matches live runtime behavior for nurse, facility admin, housekeeper, and logged-out users
+- `/admin` now resolves admin/specialist roles to their real home server-side instead of rendering the generic command center first and correcting client-side afterward
 
 ---
 
@@ -189,6 +190,14 @@ Browser verification:
   - nurse -> `/med-tech`
   - facility admin wrong-shell bounce from `/med-tech` -> `/admin`
   - housekeeper wrong-shell bounce from `/med-tech` -> `/caregiver/housekeeper`
+  - owner `/admin` -> `/admin/executive`
+  - org admin `/admin` -> `/admin/executive`
+  - front desk `/admin` -> `/admin/assistant-dashboard`
+  - coordinator `/admin` -> `/admin/coordinator-dashboard`
+  - nurse `/admin` -> `/admin/nurse-dashboard`
+  - maintenance `/admin` -> `/admin/facilities`
+  - broker `/admin` -> `/admin/insurance`
+  - facility admin `/admin` stays `/admin`
 
 Operational verification:
 

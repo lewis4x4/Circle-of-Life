@@ -40,6 +40,7 @@ The work landed as a set of coherent role packages instead of one monolithic red
 9. stale specialist-route convergence for dietary
 10. dietary role-contract convergence
 11. med-tech shell convergence at the proxy layer
+12. server-side admin home convergence
 
 Browser validation was run against the role homes and the key floor/family routes needed by the acceptance gates.
 
@@ -248,6 +249,17 @@ Delivered:
   - facility admin bounced to `/admin`
   - housekeeper bounced to `/caregiver/housekeeper`
   - logged-out users redirected to `/login?next=/med-tech`
+
+### Workstream L — Server-Side Admin Home Convergence
+
+**Status:** complete
+
+Delivered:
+
+- `/admin` now resolves specialist/admin roles to their real home at the shell boundary instead of waiting for a client-side redirect
+- owner and org admin now stay on `/admin/executive` when they hit `/admin`
+- front desk, coordinator, nurse, maintenance, and broker now resolve directly to their role homes when they hit `/admin`
+- facility admin remains the one role whose canonical admin home is still `/admin`
 
 ---
 
