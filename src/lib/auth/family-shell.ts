@@ -30,7 +30,7 @@ export function familyShellAccessRedirect(request: NextRequest, user: User | nul
     return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
   }
   if (isAdminEligibleAppRole(role)) {
-    return NextResponse.redirect(new URL("/admin", nextUrl.origin));
+    return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
   }
 
   const url = nextUrl.clone();

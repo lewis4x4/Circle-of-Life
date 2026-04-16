@@ -79,6 +79,7 @@ export default function LoginPage() {
     const role = getAppRoleFromClaims(user);
 
     if (isOnboardingAppRole(role)) return "/onboarding";
+    if (role === "nurse") return getDashboardRouteForRole(role);
     if (isMedTechRole(role)) return "/med-tech";
     if (isDietaryRole(role)) return "/dietary";
     if (role === "caregiver" || role === "housekeeper") return getDashboardRouteForRole(role);

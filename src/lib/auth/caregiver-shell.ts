@@ -2,6 +2,7 @@ import type { User } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { getAppRoleFromClaims, isAdminEligibleAppRole } from "@/lib/auth/app-role";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
 /**
  * Root-level aliases for `src/app/(caregiver)/` routes (same pages as under `/caregiver/*`).
@@ -49,7 +50,7 @@ export function caregiverShellAccessRedirect(request: NextRequest, user: User | 
     return NextResponse.redirect(new URL("/family", nextUrl.origin));
   }
   if (isAdminEligibleAppRole(role)) {
-    return NextResponse.redirect(new URL("/admin", nextUrl.origin));
+    return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
   }
 
   const url = nextUrl.clone();

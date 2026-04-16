@@ -128,7 +128,7 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
     },
   },
   nurse: {
-    route: "/admin",
+    route: "/admin/nurse-dashboard",
     shell: "admin",
     roleLabel: "Nurse",
     primaryTaskLanes: ["incidents", "clinical_follow_through", "watchlist"],

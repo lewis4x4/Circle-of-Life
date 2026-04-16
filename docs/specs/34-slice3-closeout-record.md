@@ -138,6 +138,12 @@ Confirmed by browser checks on:
 - deeper family pages now carry resident-centered framing and calmer, family-safe language
 - billing/invoices/payments now feel like one product area instead of utility screens
 
+### Specialist route convergence
+
+- nurse now lands in `/admin/nurse-dashboard` as a specialist home instead of entering the med-tech tool as a first screen
+- nurse keeps access to `/med-tech` as a live medication-workflow surface
+- wrong-shell redirects for admin-eligible specialist roles now return them to their actual role homes instead of generic `/admin`
+
 ---
 
 ## Verification Evidence
@@ -153,6 +159,11 @@ Browser verification:
 - caregiver phone/tablet route checks
 - med-tech phone/tablet route checks
 - family phone/desktop route checks
+- specialist no-regression checks:
+  - nurse -> `/admin/nurse-dashboard`
+  - nurse tool access -> `/med-tech`
+  - nurse wrong-shell bounce -> `/admin/nurse-dashboard`
+  - dietary -> `/dietary`
 
 Operational verification:
 

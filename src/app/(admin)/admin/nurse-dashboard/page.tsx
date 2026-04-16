@@ -52,16 +52,16 @@ export default function NurseDashboardPage() {
       {/* Hero Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard title="Active Medications" value={brief.activeMedications} icon={Pill} urgency="normal" subLabel="Currently prescribed" href="/admin/residents" />
-        <StatCard title="eMAR Compliance" value={`${brief.emarCompliancePct}%`} icon={Activity} urgency={brief.emarCompliancePct < 95 ? "critical" : "normal"} subLabel={brief.emarCompliancePct < 95 ? "Below 95% threshold" : "On target"} href="/admin/residents" />
-        <StatCard title="Med Errors (7d)" value={brief.medErrors7d} icon={AlertTriangle} urgency={brief.medErrors7d > 0 ? "critical" : "normal"} subLabel={brief.medErrors7d > 0 ? "Requires review" : "None reported"} href="/admin/incidents?category=medication_error" />
-        <StatCard title="Controlled Counts" value={brief.controlledDiscrepancies} icon={ShieldCheck} urgency={brief.controlledDiscrepancies > 0 ? "critical" : "normal"} subLabel={brief.controlledDiscrepancies > 0 ? "Discrepancies found" : "All verified"} href="/admin/residents" />
+        <StatCard title="eMAR Compliance" value={`${brief.emarCompliancePct}%`} icon={Activity} urgency={brief.emarCompliancePct < 95 ? "critical" : "normal"} subLabel={brief.emarCompliancePct < 95 ? "Below 95% threshold" : "On target"} href="/med-tech" />
+        <StatCard title="Med Errors (7d)" value={brief.medErrors7d} icon={AlertTriangle} urgency={brief.medErrors7d > 0 ? "critical" : "normal"} subLabel={brief.medErrors7d > 0 ? "Requires review" : "None reported"} href="/admin/medications/errors?review=unreviewed" />
+        <StatCard title="Controlled Counts" value={brief.controlledDiscrepancies} icon={ShieldCheck} urgency={brief.controlledDiscrepancies > 0 ? "critical" : "normal"} subLabel={brief.controlledDiscrepancies > 0 ? "Discrepancies found" : "All verified"} href="/med-tech/controlled-count" />
       </div>
 
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <ActionTile label="Open eMAR" href="/admin/residents" gradient="bg-teal-500" />
-        <ActionTile label="Controlled Counts" href="/admin/residents" gradient="bg-rose-500" />
-        <ActionTile label="Med Error Review" href="/admin/incidents?category=medication_error" gradient="bg-amber-500" />
+        <ActionTile label="Open Med Pass" href="/med-tech" gradient="bg-teal-500" />
+        <ActionTile label="Controlled Counts" href="/med-tech/controlled-count" gradient="bg-rose-500" />
+        <ActionTile label="Med Error Review" href="/admin/medications/errors?review=unreviewed" gradient="bg-amber-500" />
         <ActionTile label="Report Incident" href="/admin/incidents/new" gradient="bg-indigo-500" />
       </div>
 

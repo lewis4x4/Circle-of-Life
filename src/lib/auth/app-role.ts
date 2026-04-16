@@ -10,6 +10,7 @@ export const ADMIN_ELIGIBLE_APP_ROLES = new Set<string>([
   "manager",
   "admin_assistant",
   "coordinator",
+  "nurse",
   "maintenance_role",
   "broker",
 ]);

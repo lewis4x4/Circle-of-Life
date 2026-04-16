@@ -6,7 +6,8 @@ import { useTheme } from "next-themes";
 import { Loader2 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
-import { getAppRoleFromClaims, isMedTechRole } from "@/lib/auth/app-role";
+import { getAppRoleFromClaims, isAdminEligibleAppRole, isMedTechRole } from "@/lib/auth/app-role";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 
 /**
@@ -54,12 +55,14 @@ export function MedTechShell({ children }: { children: React.ReactNode }) {
     }
 
     // Redirect to appropriate shell
-    if (role === "caregiver") {
-      router.replace("/caregiver");
+    if (role === "caregiver" || role === "housekeeper") {
+      router.replace(getDashboardRouteForRole(role));
     } else if (role === "family") {
       router.replace("/family");
+    } else if (isAdminEligibleAppRole(role)) {
+      router.replace(getDashboardRouteForRole(role));
     } else {
-      router.replace("/admin");
+      router.replace("/login");
     }
   }, [router]);
 
