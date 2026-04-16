@@ -22,14 +22,14 @@ const password = process.env.PHASE1_DEMO_PASSWORD ?? "HavenDemo2026!";
 
 const PILOT_USERS = [
   {
-    email: "milton@circleoflifealf.com",
+    email: "milton.smith@circleoflifealf.com",
     role: "owner",
     shell: "/admin",
     probe: "/admin/residents",
     crossShellDenial: [{ from: "/caregiver", expectPathPrefix: "/admin" }],
   },
   {
-    email: "jessica@circleoflifealf.com",
+    email: "jessica.murphy@circleoflifealf.com",
     role: "facility_admin",
     shell: "/admin",
     probe: "/admin/residents",
@@ -43,7 +43,7 @@ const PILOT_USERS = [
     crossShellDenial: [{ from: "/admin/residents", expectPathPrefix: "/caregiver" }],
   },
   {
-    email: "robert.sullivan@circleoflifealf.com",
+    email: "linda.chen@circleoflifealf.com",
     role: "family",
     shell: "/family",
     probe: "/family",

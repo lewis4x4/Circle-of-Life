@@ -4,7 +4,14 @@
 
 **Canonical repro:** `npm run demo:auth-check`
 
-**Status (2026-04-09):** **RESOLVED for target** — hosted Auth issues pilot JWTs again; repo migrations **`110`** (JWT `raw_app_meta_data.app_role` / `app_metadata.app_role`) and **`111`** (`user_profiles.updated_by` + email sync) applied; owner verified sign-in and shells for owner, facility_admin, caregiver, family ([PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md)). Reopen this doc if `Database error querying schema` returns.
+**Status (2026-04-16):** **RESOLVED for target** — hosted Auth issues pilot JWTs again; the current pilot matrix was re-verified with:
+
+- `milton.smith@circleoflifealf.com`
+- `jessica.murphy@circleoflifealf.com`
+- `maria.garcia@circleoflifealf.com`
+- `linda.chen@circleoflifealf.com`
+
+All use `HavenDemo2026!`, and owner / facility_admin / caregiver / family shell routing was rechecked locally against the target project.
 
 ---
 
@@ -27,7 +34,11 @@
 - `auth/v1/settings` responds successfully.
 - Email/password auth is enabled.
 - Legacy `.demo` addresses now fail as plain `invalid_credentials`, which is expected after email normalization.
-- Current pilot addresses on `@circleoflifealf.com` still fail with `Database error querying schema`.
+- Current verified pilot addresses are:
+  - `milton.smith@circleoflifealf.com`
+  - `jessica.murphy@circleoflifealf.com`
+  - `maria.garcia@circleoflifealf.com`
+  - `linda.chen@circleoflifealf.com`
 
 ---
 
@@ -39,20 +50,20 @@ Run:
 npm run demo:auth-check
 ```
 
-Latest observed result on 2026-04-06:
+Latest observed result on 2026-04-16:
 
 - `settings.ok = true`
 - `settings.email_provider_enabled = true`
 - `settings.disable_signup = false`
-- `pilot_login_ok = false`
-- common error = `Database error querying schema`
+- `pilot_login_ok = true`
+- current pilot matrix authenticates with email/password again
 
 Pilot emails checked:
 
-- `milton@circleoflifealf.com`
-- `jessica@circleoflifealf.com`
+- `milton.smith@circleoflifealf.com`
+- `jessica.murphy@circleoflifealf.com`
 - `maria.garcia@circleoflifealf.com`
-- `robert.sullivan@circleoflifealf.com`
+- `linda.chen@circleoflifealf.com`
 
 Expected success condition:
 

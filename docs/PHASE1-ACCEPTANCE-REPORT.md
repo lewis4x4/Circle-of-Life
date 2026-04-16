@@ -289,19 +289,18 @@ npm run dev            # Start dev server at localhost:3000
 
 | Role | Email | Password |
 |------|-------|----------|
-| Owner/Admin | `milton@circleoflifealf.com` | `HavenDemo2026!` |
-| Facility Admin | `jessica@circleoflifealf.com` | `HavenDemo2026!` |
+| Owner/Admin | `milton.smith@circleoflifealf.com` | `HavenDemo2026!` |
+| Facility Admin | `jessica.murphy@circleoflifealf.com` | `HavenDemo2026!` |
 | Nurse | `sarah.williams@circleoflifealf.com` | `HavenDemo2026!` |
 | Caregiver | `maria.garcia@circleoflifealf.com` | `HavenDemo2026!` |
 | Caregiver | `james.thompson@circleoflifealf.com` | `HavenDemo2026!` |
-| Family | `robert.sullivan@circleoflifealf.com` | `HavenDemo2026!` |
 | Family | `linda.chen@circleoflifealf.com` | `HavenDemo2026!` |
 
 ### Auth & Routing Tests
 
-- [ ] Login as `milton@` (admin) → lands on `/admin`
+- [ ] Login as `milton.smith@` (owner/admin) → lands on `/admin`
 - [ ] Login as `maria.garcia@` (caregiver) → lands on `/caregiver`
-- [ ] Login as `robert.sullivan@` (family) → lands on `/family`
+- [ ] Login as `linda.chen@` (family) → lands on `/family`
 - [ ] Enter wrong password → visible error message (not silent)
 - [ ] Visit `/admin/residents` while logged out → redirects to `/login`
 - [ ] Login as caregiver, navigate to `/admin` → redirected to `/caregiver`

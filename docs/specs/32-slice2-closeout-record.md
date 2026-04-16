@@ -1,6 +1,6 @@
 # Slice 2 Closeout Record
 
-**Status:** PASS WITH CAVEATS  
+**Status:** PASS  
 **Roadmap source:** [29-col-demo-roadmap.md](/Users/brianlewis/Circle%20of%20Life/Circle-of-Life/docs/specs/29-col-demo-roadmap.md)  
 **Execution plan:** [31-slice2-execution-plan.md](/Users/brianlewis/Circle%20of%20Life/Circle-of-Life/docs/specs/31-slice2-execution-plan.md)  
 **Slice:** `Workflow Convergence`  
@@ -11,7 +11,7 @@
 
 ## Verdict
 
-Slice 2 is **formally closed at PASS WITH CAVEATS**.
+Slice 2 is **formally closed at PASS**.
 
 The browser-backed closeout pass was completed against the live command surface and its filtered destination pages. That pass surfaced two real runtime mismatches, both of which are now fixed:
 
@@ -22,7 +22,7 @@ Recommended disposition:
 
 - **Engineering implementation:** PASS
 - **Workflow convergence:** PASS
-- **Browser-backed closeout:** PASS WITH CAVEATS
+- **Browser-backed closeout:** PASS
 
 ---
 
@@ -107,7 +107,7 @@ Delivered:
 
 ### 5. The command surface can answer “what changed, what is blocked, and what happens next”
 
-**Status:** PASS WITH CAVEATS
+**Status:** PASS
 
 What shipped:
 
@@ -119,7 +119,6 @@ What shipped:
 Residual risk:
 
 - no further Slice 2 command-surface/runtime mismatch was confirmed after the closeout browser pass
-- the remaining caveat is operational auth drift on the target project, not a workflow-convergence defect in Slice 2
 
 ---
 
@@ -177,12 +176,11 @@ Residual risk:
 
 There is no remaining Slice 2 implementation blocker.
 
-The remaining caveat is operational:
+Operational closeout work completed during signoff:
 
-1. **Target-project demo auth drift**
-   - the historical pilot credential matrix in repo docs no longer authenticated on the target project at closeout time
-   - browser QA was completed by repairing an admin-capable demo login (`admin@circleoflifealf.com`) so the Slice 2 routes could be verified
-   - this should be tracked as an auth/runbook maintenance issue, not as a Slice 2 workflow-convergence reopen
+1. **Pilot auth matrix repair**
+   - repaired and re-verified the current pilot logins used for owner, facility admin, caregiver, and family browser verification
+   - updated repo smoke scripts to use the current verified pilot emails
 
 ### Not required before moving to the next slice
 
@@ -196,5 +194,3 @@ The remaining caveat is operational:
 ## Current Recommendation
 
 Move to Slice 3.
-
-Keep the auth caveat in mind if a later acceptance pass depends on the old pilot login matrix; that issue is operational and separate from Slice 2 closure.

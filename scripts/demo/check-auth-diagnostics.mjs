@@ -46,10 +46,10 @@ if (!url || !anonKey) {
 }
 
 const pilotEmails = [
-  "milton@circleoflifealf.com",
-  "jessica@circleoflifealf.com",
+  "milton.smith@circleoflifealf.com",
+  "jessica.murphy@circleoflifealf.com",
   "maria.garcia@circleoflifealf.com",
-  "robert.sullivan@circleoflifealf.com",
+  "linda.chen@circleoflifealf.com",
 ];
 
 const legacyEmails = [

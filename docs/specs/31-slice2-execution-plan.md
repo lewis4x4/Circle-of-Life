@@ -1,6 +1,6 @@
 # Slice 2 Execution Plan
 
-**Status:** BROWSER QA COMPLETE — CLOSEOUT READY WITH CAVEATS  
+**Status:** FORMALLY CLOSED — PASS  
 **Roadmap source:** [29-col-demo-roadmap.md](/Users/brianlewis/Circle%20of%20Life/Circle-of-Life/docs/specs/29-col-demo-roadmap.md)  
 **Previous slice:** [30-slice1-closeout-record.md](/Users/brianlewis/Circle%20of%20Life/Circle-of-Life/docs/specs/30-slice1-closeout-record.md)  
 **Slice:** `Workflow Convergence`  
@@ -26,14 +26,14 @@ This slice focused on making existing surfaces behave like real operational lane
 
 ## Current Read
 
-Slice 2 is now **complete enough to close from an implementation standpoint**.
+Slice 2 is now **formally complete and signed off**.
 
 The browser-backed closeout pass was run against the command surface and its filtered destinations. That pass surfaced two real runtime mismatches, both now fixed:
 
 1. `/admin` used invalid `incident_status` enum values in the dashboard snapshot query
 2. incident backlog links under `/admin/incidents/...` were pointing at admin-prefixed routes that did not exist, so they fell through to the incident detail route
 
-The remaining caveat is operational auth drift on the target project, not additional Slice 2 workflow construction.
+The closeout pass also repaired and re-verified a current pilot auth matrix so browser verification no longer depends on an out-of-date demo-login runbook.
 
 ---
 
@@ -112,7 +112,7 @@ Delivered:
 Residual risk:
 
 - destination filter chrome and command-surface deep links were browser-checked on the closeout path
-- target-project auth drift still makes the historical pilot credential matrix unreliable without repair
+- no remaining closeout caveat is blocking movement to Slice 3
 
 ### 4. At least one cross-module workflow beyond Knowledge and Incident is operationalized end to end
 
@@ -232,15 +232,14 @@ Delivered:
 
 Only formal recording work remains:
 
-1. **Closeout verdict**
-   - record Slice 2 as `PASS WITH CAVEATS`
+1. **Carry the verified auth matrix forward**
+   - use the current pilot emails in repo smoke scripts and runbooks
 
-2. **Operational caveat tracking**
-   - note that browser QA required repairing an admin-capable demo login because the target-project pilot auth matrix has drifted from the historical runbooks
-   - treat that as an auth/runbook maintenance issue, not a Slice 2 workflow-convergence reopen
+2. **Move to Slice 3**
+   - no Slice 2 blocker remains open
 
 ---
 
 ## Recommended Next Step
 
-Record the final closeout verdict and move to Slice 3 from a clean engineering baseline.
+Move to Slice 3 from a clean engineering baseline.
