@@ -172,19 +172,23 @@ export default function AdminCertificationsPage() {
     setWindowFilter(["all", "30d"].includes(requestedWindow) ? requestedWindow : DEFAULT_FILTERS.window);
   }, [searchParams]);
 
-  const filteredRows = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return rows.filter((row) => {
+  const applyCertificationFilters = useCallback((input: CertRow[], overrides?: Partial<{ timeline: string; dbStatus: string; windowFilter: string; search: string }>) => {
+    const effectiveSearch = overrides?.search ?? search;
+    const effectiveTimeline = overrides?.timeline ?? timeline;
+    const effectiveDbStatus = overrides?.dbStatus ?? dbStatus;
+    const effectiveWindow = overrides?.windowFilter ?? windowFilter;
+    const q = effectiveSearch.trim().toLowerCase();
+    return input.filter((row) => {
       const matchesSearch =
         q.length === 0 ||
         row.staffName.toLowerCase().includes(q) ||
         row.certificationName.toLowerCase().includes(q) ||
         row.certificationType.toLowerCase().includes(q) ||
         (row.issuingAuthority?.toLowerCase().includes(q) ?? false);
-      const matchesTimeline = timeline === "all" || row.timeline === timeline;
-      const matchesDb = dbStatus === "all" || row.dbStatus === dbStatus;
+      const matchesTimeline = effectiveTimeline === "all" || row.timeline === effectiveTimeline;
+      const matchesDb = effectiveDbStatus === "all" || row.dbStatus === effectiveDbStatus;
       const matchesWindow =
-        windowFilter === "all" ||
+        effectiveWindow === "all" ||
         (row.expirationDate
           ? (() => {
               const exp = new Date(`${row.expirationDate}T23:59:59`);
@@ -196,7 +200,11 @@ export default function AdminCertificationsPage() {
           : false);
       return matchesSearch && matchesTimeline && matchesDb && matchesWindow;
     });
-  }, [rows, search, timeline, dbStatus, windowFilter]);
+  }, [dbStatus, search, timeline, windowFilter]);
+
+  const filteredRows = useMemo(() => {
+    return applyCertificationFilters(rows);
+  }, [applyCertificationFilters, rows]);
 
   const exportCertificationsCsv = useCallback(async () => {
     setExportingCsv(true);
@@ -349,10 +357,10 @@ export default function AdminCertificationsPage() {
             value: timeline,
             onChange: setTimeline,
             options: [
-              { value: "all", label: "All timelines" },
-              { value: "current", label: "Current" },
-              { value: "expiring_soon", label: "Expiring soon" },
-              { value: "expired", label: "Expired" },
+              { value: "all", label: `All timelines (${applyCertificationFilters(rows, { timeline: "all" }).length})` },
+              { value: "current", label: `Current (${applyCertificationFilters(rows, { timeline: "current" }).length})` },
+              { value: "expiring_soon", label: `Expiring soon (${applyCertificationFilters(rows, { timeline: "expiring_soon" }).length})` },
+              { value: "expired", label: `Expired (${applyCertificationFilters(rows, { timeline: "expired" }).length})` },
             ],
           },
           {
@@ -360,11 +368,11 @@ export default function AdminCertificationsPage() {
             value: dbStatus,
             onChange: setDbStatus,
             options: [
-              { value: "all", label: "All record statuses" },
-              { value: "active", label: "Active" },
-              { value: "pending_renewal", label: "Pending renewal" },
-              { value: "expired", label: "Expired" },
-              { value: "revoked", label: "Revoked" },
+              { value: "all", label: `All record statuses (${applyCertificationFilters(rows, { dbStatus: "all" }).length})` },
+              { value: "active", label: `Active (${applyCertificationFilters(rows, { dbStatus: "active" }).length})` },
+              { value: "pending_renewal", label: `Pending renewal (${applyCertificationFilters(rows, { dbStatus: "pending_renewal" }).length})` },
+              { value: "expired", label: `Expired (${applyCertificationFilters(rows, { dbStatus: "expired" }).length})` },
+              { value: "revoked", label: `Revoked (${applyCertificationFilters(rows, { dbStatus: "revoked" }).length})` },
             ],
           },
           {
@@ -372,8 +380,8 @@ export default function AdminCertificationsPage() {
             value: windowFilter,
             onChange: setWindowFilter,
             options: [
-              { value: "all", label: "All windows" },
-              { value: "30d", label: "Next 30 days" },
+              { value: "all", label: `All windows (${applyCertificationFilters(rows, { windowFilter: "all" }).length})` },
+              { value: "30d", label: `Next 30 days (${applyCertificationFilters(rows, { windowFilter: "30d" }).length})` },
             ],
           },
         ]}
