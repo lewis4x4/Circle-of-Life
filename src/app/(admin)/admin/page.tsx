@@ -171,10 +171,10 @@ export default function AdminDashboardPage() {
             ? "/admin/incidents/followups?filter=unassigned"
             : "/admin/incidents/followups";
   const incidentPrimaryValue =
-    workflows.incidentEscalatedFollowups > 0
-      ? workflows.incidentEscalatedFollowups
-      : incidentLifecycleBacklog > 0
-        ? incidentLifecycleBacklog
+    incidentLifecycleBacklog > 0
+      ? incidentLifecycleBacklog
+      : workflows.incidentEscalatedFollowups > 0
+        ? workflows.incidentEscalatedFollowups
         : workflows.incidentOverdueFollowups;
   const doctrinePrimaryHref =
     workflows.doctrineOverdue > 0 || workflows.doctrineDueSoon > 0
