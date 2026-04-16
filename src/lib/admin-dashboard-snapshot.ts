@@ -278,7 +278,7 @@ function buildWorkflowInbox(input: {
       message: `${input.doctrineBlockedReview} document${input.doctrineBlockedReview === 1 ? "" : "s"} are blocked in review out of ${input.doctrinePendingReview} pending.`,
       tone: "warning",
       href: "/admin/knowledge/admin#doctrine-blocked-review",
-      ctaLabel: "Review doctrine",
+      ctaLabel: "Open blocked queue",
     });
   }
 
@@ -289,7 +289,7 @@ function buildWorkflowInbox(input: {
       message: `${input.doctrineReadyToPublish} document${input.doctrineReadyToPublish === 1 ? "" : "s"} cleared review prerequisites and are ready for publication.`,
       tone: "normal",
       href: "/admin/knowledge/admin#doctrine-ready-to-publish",
-      ctaLabel: "Review ready docs",
+      ctaLabel: "Open ready queue",
     });
   }
 
@@ -303,7 +303,7 @@ function buildWorkflowInbox(input: {
       message: `${parts.join(" · ")} review${input.doctrineOverdue + input.doctrineDueSoon === 1 ? "" : "s"} need attention in the doctrine lane.`,
       tone: input.doctrineOverdue > 0 ? "warning" : "normal",
       href: "/admin/knowledge/admin#doctrine-review-sla",
-      ctaLabel: "Review SLA queue",
+      ctaLabel: "Open SLA queue",
     });
   }
 
@@ -385,7 +385,7 @@ function buildWorkflowInbox(input: {
       message: `${input.referralsOnboardingHandoffs} lead${input.referralsOnboardingHandoffs === 1 ? "" : "s"} are through move-in and now depend on downstream onboarding work.`,
       tone: "normal",
       href: "/admin/referrals/in-admissions?phase=onboarding",
-      ctaLabel: "Track onboarding handoffs",
+      ctaLabel: "Open onboarding handoffs",
     });
   } else if (input.referralsReadyHandoffs > 0 || input.referralsInAdmissions > 0) {
     items.push({
@@ -394,7 +394,7 @@ function buildWorkflowInbox(input: {
       message: `${input.referralsReadyHandoffs} lead${input.referralsReadyHandoffs === 1 ? "" : "s"} are move-in ready inside the admissions bridge out of ${input.referralsInAdmissions} active handoff${input.referralsInAdmissions === 1 ? "" : "s"}.`,
       tone: "normal",
       href: "/admin/referrals/in-admissions?phase=ready",
-      ctaLabel: "Track handoffs",
+      ctaLabel: "Open ready handoffs",
     });
   }
 
