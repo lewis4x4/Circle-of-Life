@@ -250,6 +250,11 @@ Browser verification:
     - owner stays on `/admin/executive`
     - facility admin visiting `/admin/executive` -> `/admin`
     - nurse visiting `/admin/executive` -> `/admin/nurse-dashboard`
+  - quality hub now uses neutral local recovery copy:
+    - `Back to dashboard`
+  - quality hub `Back to dashboard` resolves by role:
+    - owner -> `/admin/executive`
+    - facility admin -> `/admin`
 
 Operational verification:
 

@@ -394,6 +394,19 @@ Delivered:
   - other specialist admin roles -> their existing role homes
 - this closes a real Slice 3 role-fit gap where facility-admin and specialist roles could still sit inside owner-only executive pages by direct URL
 
+### Workstream X — Quality Hub Dashboard-Return Parity
+
+**Status:** complete
+
+Delivered:
+
+- the quality hub no longer exposes executive-only footer framing on a shared admin page
+- its local footer CTA now uses neutral copy:
+  - `Back to dashboard`
+- the destination resolves by role on a fresh signed-in render:
+  - owner / org-admin -> `/admin/executive`
+  - facility admin -> `/admin`
+
 ---
 
 ## What Is Left

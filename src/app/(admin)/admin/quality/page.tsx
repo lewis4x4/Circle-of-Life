@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ClipboardList, LineChart } from "lucide-react";
 
 import { QualityHubNav } from "./quality-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient } from "@/lib/supabase/client";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
@@ -26,11 +29,16 @@ type LatestRow = Database["public"]["Views"]["quality_latest_facility_measures"]
 export default function AdminQualityHubPage() {
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
+  const { appRole, user } = useHavenAuth();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [measures, setMeasures] = useState<MeasureRow[]>([]);
   const [latest, setLatest] = useState<LatestRow[]>([]);
   const [pbjRows, setPbjRows] = useState<Database["public"]["Tables"]["pbj_export_batches"]["Row"][]>([]);
+  const homeHref = useMemo(() => {
+    const effectiveRole = getAppRoleFromClaims(user) || appRole;
+    return effectiveRole ? getDashboardRouteForRole(effectiveRole) : "/admin";
+  }, [appRole, user]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -299,9 +307,9 @@ export default function AdminQualityHubPage() {
       </div>
 
       <div className="flex flex-wrap gap-2 text-sm text-slate-500 font-mono tracking-widest uppercase mt-4">
-        <span>Executive KPIs:</span>
-        <Link href="/admin/executive" className={cn(buttonVariants({ variant: "link", size: "sm" }), "h-auto p-0 text-[10px] text-indigo-600 dark:text-indigo-400 leading-none pb-0.5")}>
-          Command center
+        <span>Dashboard:</span>
+        <Link href={homeHref} className={cn(buttonVariants({ variant: "link", size: "sm" }), "h-auto p-0 text-[10px] text-indigo-600 dark:text-indigo-400 leading-none pb-0.5")}>
+          Back to dashboard
         </Link>
       </div>
       </div>
