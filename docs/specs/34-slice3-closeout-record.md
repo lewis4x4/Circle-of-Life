@@ -241,6 +241,11 @@ Browser verification:
     - owner -> `/admin/executive`
     - facility admin -> `/admin`
     - nurse -> `/admin/nurse-dashboard`
+  - reporting hub now uses neutral local recovery copy:
+    - `Back to Dashboard`
+  - reporting hub `Back to Dashboard` resolves by role:
+    - owner -> `/admin/executive`
+    - facility admin -> `/admin`
 
 Operational verification:
 

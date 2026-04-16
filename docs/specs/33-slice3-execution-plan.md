@@ -368,6 +368,19 @@ Delivered:
   - nurse -> `/admin/nurse-dashboard`
 - this keeps the settings surface aligned with the same role-home contract already applied to other admin utility pages
 
+### Workstream V — Reporting Hub Dashboard-Return Parity
+
+**Status:** complete
+
+Delivered:
+
+- the reporting hub no longer hardcodes an executive-only recovery path in shared admin usage
+- its local recovery CTA now uses neutral copy:
+  - `Back to Dashboard`
+- the destination resolves from the signed-in reports role context:
+  - owner / org-admin -> `/admin/executive`
+  - facility admin -> `/admin`
+
 ---
 
 ## What Is Left
