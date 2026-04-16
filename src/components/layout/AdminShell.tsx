@@ -72,6 +72,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SurveyVisitModeBar } from "@/components/compliance/SurveyVisitModeBar";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
+import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -86,7 +87,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   const [facilitiesLoading, setFacilitiesLoading] = useState(true);
   const [facilitiesLoadFailed, setFacilitiesLoadFailed] = useState(false);
-  const { email: sessionEmail } = useHavenAuth();
+  const { email: sessionEmail, appRole } = useHavenAuth();
+  const roleConfig = useMemo(() => getRoleDashboardConfig(appRole), [appRole]);
   const [signingOut, setSigningOut] = useState(false);
 
   const handleSignOut = useCallback(async () => {
@@ -144,7 +146,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const navGroups = useMemo(() => [
+  const allNavGroups = useMemo(() => [
     {
       group: "Command",
       icon: Zap,
@@ -227,6 +229,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     }
   ], []);
 
+  const navGroups = useMemo(
+    () => allNavGroups.filter((group) => roleConfig.visibleGroups.includes(group.group)),
+    [allNavGroups, roleConfig.visibleGroups],
+  );
+
   // Determine active group for styling the top-nav pill
   const activeGroup = useMemo(() => {
     let active = "";
@@ -252,15 +259,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-6">
           {/* Logo / Brand */}
           <Link
-            href="/admin/executive"
+            href={roleConfig.route}
             className="flex items-center gap-2 tap-responsive shrink-0 rounded-lg outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-indigo-500/80 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#050505]"
-            aria-label="Haven — go to executive overview"
+            aria-label={`Haven — go to ${roleConfig.roleLabel.toLowerCase()} home`}
           >
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.4)]">
               <span className="text-white font-display font-bold text-lg leading-none mt-0.5">H</span>
             </div>
             <span className="text-xl font-semibold font-display text-slate-900 dark:text-white tracking-tight hidden md:block">
               Haven
+            </span>
+            <span className="hidden 2xl:inline-flex items-center rounded-full border border-slate-200/70 bg-slate-100/60 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-400">
+              {roleConfig.roleLabel}
             </span>
           </Link>
 

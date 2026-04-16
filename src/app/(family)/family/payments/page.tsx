@@ -97,8 +97,7 @@ export default function FamilyPaymentsPage() {
             Payments
           </CardTitle>
           <CardDescription>
-            Posted payments visible for linked residents (read-only). Phase 1 does not include initiating new payments from
-            this app.
+            Posted payments visible for linked residents. This page is for review only and does not start new payments.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -115,7 +114,7 @@ export default function FamilyPaymentsPage() {
         <CardContent className="space-y-2">
           {rows.length === 0 ? (
             <p className="py-6 text-center text-sm text-stone-600">
-              No payments on file for your account, or financial viewing is not enabled on your family link.
+              No payments are visible right now, or your current family access does not include payment history.
             </p>
           ) : (
             rows.map((p) => (

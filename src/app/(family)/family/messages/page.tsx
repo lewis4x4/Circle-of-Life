@@ -155,7 +155,7 @@ export default function FamilyMessagesPage() {
         </div>
         <h1 className="text-4xl md:text-5xl font-serif text-stone-800 tracking-tight mb-3">Messages</h1>
         <p className="text-stone-500 max-w-lg mx-auto text-base">
-          Direct communication with your care team. (Phase 1 — family can send; staff reply in admin workflows).
+          Secure notes with your loved one&apos;s care team.
         </p>
       </div>
 
@@ -164,7 +164,7 @@ export default function FamilyMessagesPage() {
          <div className="glass-card-light rounded-[2rem] p-6 bg-white/60 text-center">
             <p className="inline-flex items-center justify-center gap-2 text-sm text-stone-600 font-medium w-full">
                <ShieldCheck className="h-5 w-5 text-emerald-500" />
-               Messages are securely encrypted with audit logging.
+               Messages are private, time-stamped, and visible to the care team.
             </p>
          </div>
 

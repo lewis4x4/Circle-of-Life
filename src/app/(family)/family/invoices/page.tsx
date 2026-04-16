@@ -110,7 +110,7 @@ export default function FamilyInvoicesPage() {
             Invoices
           </CardTitle>
           <CardDescription>
-            Statements you are allowed to see for linked residents (read-only). Open balance across visible invoices:{" "}
+            Statements available for your linked residents. Open balance across visible invoices:{" "}
             <span className="font-medium text-stone-800">{formatUsd(data.totalBalanceDue)}</span>.
           </CardDescription>
         </CardHeader>
@@ -123,7 +123,7 @@ export default function FamilyInvoicesPage() {
         <CardContent className="space-y-2">
           {data.invoices.length === 0 ? (
             <p className="py-6 text-center text-sm text-stone-600">
-              No invoices on file for your account, or financial viewing is not enabled on your family link.
+              No invoices are visible right now, or your current family access does not include billing records.
             </p>
           ) : (
             data.invoices.map((inv) => (

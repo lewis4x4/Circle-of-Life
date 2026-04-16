@@ -127,9 +127,9 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
       {/* Floating iPadOS Style Dock */}
       <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
          <nav className="glass-card-light pointer-events-auto rounded-[2.5rem] px-2 py-2 flex items-center gap-1 shadow-[0_12px_40px_rgb(0,0,0,0.08)] bg-white/70">
-           <DockTab
+            <DockTab
               href="/family"
-              label="Journal"
+              label="Today"
               icon={<CalendarHeart className="h-6 w-6" />}
               active={pathname === "/family" || pathname === "/family/"}
             />
@@ -141,9 +141,15 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
             />
             <DockTab
               href="/family/care-plan"
-              label="Care Team"
+              label="Care"
               icon={<HeartPulse className="h-6 w-6" />}
               active={pathname.startsWith("/family/care-plan")}
+            />
+            <DockTab
+              href="/family/messages"
+              label="Messages"
+              icon={<MessageSquare className="h-6 w-6" />}
+              active={pathname.startsWith("/family/messages")}
             />
             <DockTab
               href="/family/billing"
@@ -154,12 +160,6 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
                 pathname.startsWith("/family/invoices") ||
                 pathname.startsWith("/family/payments")
               }
-            />
-            <DockTab
-              href="/family/messages"
-              label="Messages"
-              icon={<MessageSquare className="h-6 w-6" />}
-              active={pathname.startsWith("/family/messages")}
             />
          </nav>
       </div>

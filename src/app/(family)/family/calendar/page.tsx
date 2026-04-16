@@ -85,10 +85,9 @@ export default function FamilyCalendarPage() {
         <div className="w-16 h-16 mx-auto bg-violet-100 rounded-[1.5rem] flex items-center justify-center rounded-tr-sm -rotate-3 transform mb-6 shadow-sm">
            <CalendarDays className="w-8 h-8 text-violet-500 rotate-3" />
         </div>
-        <h1 className="text-4xl md:text-5xl font-serif text-stone-800 tracking-tight mb-3">Facility Calendar</h1>
+        <h1 className="text-4xl md:text-5xl font-serif text-stone-800 tracking-tight mb-3">Upcoming Moments</h1>
         <p className="text-stone-500 max-w-lg mx-auto text-base">
-          Community activities scheduled at your loved one&apos;s facility (read-only). Telehealth and private visits
-          may not appear until those modules are connected.
+          Shared activities and events happening around your loved one&apos;s day. Private visits or appointments may appear later as more scheduling connections come online.
         </p>
       </div>
 
@@ -97,7 +96,7 @@ export default function FamilyCalendarPage() {
           <div className="glass-card-light rounded-[2rem] p-10 text-center border-dashed border-2 border-stone-200/50">
             <p className="text-stone-600 font-serif text-xl italic mb-2">No scheduled activities.</p>
             <p className="text-sm text-stone-500 max-w-md mx-auto">
-               We could not find any activities in the selected window, or your family link does not include calendar access.
+               We could not find any shared events in this window, or your current family access does not include calendar updates yet.
             </p>
           </div>
         ) : (

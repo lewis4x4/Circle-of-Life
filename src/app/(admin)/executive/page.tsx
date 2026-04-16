@@ -16,6 +16,7 @@ import { ExecutiveHubNav } from "./executive-hub-nav";
 
 import type { ExecutiveAlertRow } from "@/lib/exec-alerts";
 import { isDemoMode } from "@/lib/demo-mode";
+import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 
 interface AlertWithFacility extends ExecutiveAlertRow {
   facilities?: { name: string } | null;
@@ -24,6 +25,7 @@ interface AlertWithFacility extends ExecutiveAlertRow {
 export default function ExecutiveOverviewPage() {
   const demo = isDemoMode();
   const supabase = createClient();
+  const ownerConfig = getRoleDashboardConfig("owner");
   const [, setLoading] = useState(true);
   const [, setError] = useState<string | null>(null);
 
@@ -153,6 +155,32 @@ export default function ExecutiveOverviewPage() {
   const formatPct = (val?: number) => val !== undefined ? `${(val * 100).toFixed(1)}%` : "--%";
   const formatNum = (val?: number) => val !== undefined ? Math.round(val).toLocaleString() : "--";
   const formatCur = (val?: number) => val !== undefined ? `$${(val / 100).toLocaleString()}` : "--";
+  const ownerPriorityCards = [
+    {
+      title: "Executive Alerts",
+      description: "Work high-severity operational exceptions across the portfolio first.",
+      href: "/admin/executive/alerts",
+      stat: `${alerts.length} open`,
+    },
+    {
+      title: "Finance Hub",
+      description: "Review billed revenue, labor pressure, and monthly financial movement.",
+      href: "/admin/finance",
+      stat: formatCur(metrics["rev_mtd"]),
+    },
+    {
+      title: "Insurance & Risk",
+      description: "Keep claims, renewals, and facility risk posture visible at leadership level.",
+      href: "/admin/insurance",
+      stat: `${alerts.filter((alert) => alert.category === "risk").length} risk alerts`,
+    },
+    {
+      title: "High-Severity Incidents",
+      description: "Jump directly into open incident exceptions without entering the facility-operator backlog first.",
+      href: "/admin/incidents?scope=open&severity=level_4",
+      stat: `${alerts.filter((alert) => alert.category === "incident").length} related alerts`,
+    },
+  ];
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-8 pb-12 overflow-x-hidden">
@@ -171,6 +199,9 @@ export default function ExecutiveOverviewPage() {
               <p className="text-sm md:text-base text-slate-500 dark:text-zinc-400 mt-2 font-medium tracking-wide">
                 Enterprise Portfolio Overview
               </p>
+              <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-zinc-400">
+                {ownerConfig.roleLabel} home: see portfolio movement, exception pressure, and the next leadership decision without dropping into facility-operator queue noise.
+              </p>
             </div>
             <div className="hidden md:block">
               <ExecutiveHubNav />
@@ -182,6 +213,36 @@ export default function ExecutiveOverviewPage() {
             </div>
           ) : null}
         </header>
+
+        <section className="space-y-4">
+          <div className="flex items-center justify-between gap-4 border-b border-slate-200/50 dark:border-white/10 pb-4">
+            <div>
+              <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white">Enterprise Priorities</h3>
+              <p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">
+                {ownerConfig.firstScreenPriority.join(" · ").replace(/_/g, " ")}
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {ownerPriorityCards.map((card) => (
+              <Link
+                key={card.title}
+                href={card.href}
+                className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg dark:border-white/5 dark:bg-white/[0.03] dark:hover:border-indigo-500/30"
+              >
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">
+                  {card.stat}
+                </p>
+                <h4 className="mt-3 text-lg font-semibold text-slate-900 dark:text-white">{card.title}</h4>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-zinc-400">{card.description}</p>
+                <div className="mt-4 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-300">
+                  Open lane
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
 
         {/* Top Command Strip */}
         <KineticGrid className="grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 mb-8" staggerMs={50}>

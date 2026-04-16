@@ -94,7 +94,7 @@ export default function FamilyCarePlanPage() {
         </div>
         <h1 className="text-4xl md:text-5xl font-serif text-stone-800 tracking-tight mb-3">Care Summary</h1>
         <p className="text-stone-500 max-w-lg mx-auto text-base">
-          The structural plan guiding daily attention and medical requirements.
+          A plain-language view of the care approach guiding daily support and clinical attention.
         </p>
       </div>
 
@@ -120,7 +120,7 @@ export default function FamilyCarePlanPage() {
              <span className="px-3 py-1 rounded-full bg-stone-100 text-stone-500 text-[10px] font-bold uppercase tracking-wider">Read-only</span>
            </div>
            <p className="mb-6 text-sm text-stone-600 leading-relaxed max-w-xl">
-             This view reflects care plan records the clinical team has explicitly shared for your linked residents. For questions, use secure messages.
+             This view reflects the care information the team has chosen to share for your linked residents. If anything feels unclear, send a message and they can walk you through it.
            </p>
            <div className="flex flex-wrap gap-3">
              <button
@@ -136,7 +136,7 @@ export default function FamilyCarePlanPage() {
                className="flex-1 min-w-[140px] h-12 rounded-2xl bg-stone-900 text-white font-medium hover:bg-stone-800 transition-colors shadow-[0_4px_14px_rgba(0,0,0,0.1)] inline-flex items-center justify-center tap-responsive"
              >
                <ClipboardCheck className="mr-2 h-4 w-4 text-stone-300" />
-               Request Clarity
+               Ask A Question
              </Link>
            </div>
          </div>

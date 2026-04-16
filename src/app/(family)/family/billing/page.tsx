@@ -108,7 +108,7 @@ export default function FamilyBillingSummaryPage() {
         </div>
         <h1 className="text-4xl md:text-5xl font-serif text-stone-800 tracking-tight mb-3">Billing Summary</h1>
         <p className="text-stone-500 max-w-lg mx-auto text-base">
-          Read-only overview from invoices and payments visible to your account.
+          A calm overview of invoices and payments visible to your account.
         </p>
       </div>
 
@@ -168,11 +168,11 @@ export default function FamilyBillingSummaryPage() {
            <div className="mb-4 flex items-center justify-between gap-2">
              <p className="inline-flex items-center gap-2 text-sm font-semibold text-stone-800 uppercase tracking-widest">
                <ShieldCheck className="h-4 w-4 text-emerald-500" />
-               Phase 1 Scope
+               Billing Access
              </p>
            </div>
            <p className="mb-6 text-sm text-stone-600 leading-relaxed max-w-xl">
-             Family billing is read-only during this phase. Online payment actions are scheduled for a future release.
+             This space is read-only today. You can review statements and payment history here, while any payment action still happens off-platform.
            </p>
            <div className="flex flex-wrap gap-3">
              <Link

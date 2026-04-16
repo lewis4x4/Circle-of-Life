@@ -160,14 +160,14 @@ export default function CaregiverHomePage() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <HeroStat
-            label="Assigned Residents"
+            label="My Residents"
             value={brief.census}
             icon={<UserRound />}
             glowColor="rgba(255,255,255,0.05)"
             href="/caregiver/residents"
           />
           <HeroStat
-            label="High Priority"
+            label="Urgent Alerts"
             value={brief.highSeverityConditionCount}
             icon={<ShieldAlert />}
             glowColor={brief.highSeverityConditionCount > 0 ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.05)"}
@@ -175,7 +175,7 @@ export default function CaregiverHomePage() {
             href="/caregiver/followups"
           />
           <HeroStat
-            label="eMAR Window"
+            label="Medications Due"
             value={emarWindow}
             icon={<Pill />}
             glowColor={emarWindow > 0 ? "rgba(45,212,191,0.2)" : "rgba(255,255,255,0.05)"}
@@ -183,7 +183,7 @@ export default function CaregiverHomePage() {
             href="/caregiver/meds"
           />
           <HeroStat
-            label="Pending Docs"
+            label="Notes To Finish"
             value={docPending}
             icon={<ClipboardList />}
             glowColor={docPending > 0 ? "rgba(245,158,11,0.2)" : "rgba(255,255,255,0.05)"}
@@ -197,34 +197,34 @@ export default function CaregiverHomePage() {
       <div className="glass-card rounded-[1.5rem] md:col-span-2 p-6 flex flex-col border-t border-t-white/20">
         <div className="flex items-center gap-2 mb-6">
           <div className="w-1.5 h-6 bg-teal-400 rounded-full" />
-          <h3 className="text-lg font-display font-medium text-white">Quick Actions</h3>
+          <h3 className="text-lg font-display font-medium text-white">Work Now</h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
           <ActionTile 
             href="/caregiver/meds" 
             icon={<Pill className="text-teal-300" />} 
-            title="Open eMAR" 
+            title="Medication Pass" 
             gradient="from-teal-900/40 to-teal-950/40 hover:from-teal-800/60 hover:to-teal-900/60"
             border="border-teal-500/30"
           />
           <ActionTile 
             href="/caregiver/incident-draft" 
             icon={<AlertTriangle className="text-amber-300" />} 
-            title="Report Incident" 
+            title="Report An Incident" 
             gradient="from-amber-900/40 to-amber-950/40 hover:from-amber-800/60 hover:to-amber-900/60"
             border="border-amber-500/30"
           />
           <ActionTile 
             href="/caregiver/rounds" 
             icon={<CheckCircle2 className="text-emerald-300" />} 
-            title="Smart Rounds" 
+            title="Rounds & Checks" 
             gradient="from-emerald-900/40 to-emerald-950/40 hover:from-emerald-800/60 hover:to-emerald-900/60"
             border="border-emerald-500/30"
           />
           <ActionTile 
             href="/caregiver/clock" 
             icon={<LogIn className="text-indigo-300" />} 
-            title="Clock In / Out" 
+            title="Shift Clock" 
             gradient="from-indigo-900/40 to-indigo-950/40 hover:from-indigo-800/60 hover:to-indigo-900/60"
             border="border-indigo-500/30"
           />
