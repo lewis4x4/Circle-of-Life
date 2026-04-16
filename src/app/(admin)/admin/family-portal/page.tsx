@@ -320,6 +320,11 @@ export default function AdminFamilyPortalPage() {
           <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white tracking-tight">
             Message Triage
           </h3>
+          {triageFilter !== "all" ? (
+            <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
+              {featuredTriage.length} visible
+            </Badge>
+          ) : null}
         </div>
 
         <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-2xl backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative">
@@ -473,6 +478,11 @@ export default function AdminFamilyPortalPage() {
           <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white">
             Care Conferences
           </h3>
+          {conferenceFilter !== "all" ? (
+            <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+              {featuredConferences.length} visible
+            </Badge>
+          ) : null}
         </div>
 
         <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-2xl backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative">

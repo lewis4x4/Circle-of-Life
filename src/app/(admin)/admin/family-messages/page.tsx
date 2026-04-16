@@ -396,6 +396,11 @@ export default function StaffFamilyMessagesPage() {
             <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white tracking-tight">
               Active Threads
             </h3>
+            {threadFilter !== "all" ? (
+              <span className="inline-flex items-center px-3 py-1 rounded-full border shadow-inner bg-indigo-500/10 text-indigo-600 border-indigo-500/20 dark:text-indigo-400 text-[10px] font-bold uppercase tracking-widest">
+                {visibleThreads.length} visible
+              </span>
+            ) : null}
           </div>
 
           <div className="flex flex-wrap items-center gap-2 px-2">
