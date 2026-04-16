@@ -286,7 +286,7 @@ export default function AdminStaffingConsolePage() {
             </Badge>
           ) : null}
           <Link href="/admin/staffing" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
-            {complianceFilter !== "all" && windowFilter !== "all" ? "Clear filters" : "Clear filter"}
+            {complianceFilter !== "all" && windowFilter !== "all" ? "Clear staffing filters" : "Clear staffing filter"}
           </Link>
         </div>
       ) : null}

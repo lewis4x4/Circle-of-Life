@@ -496,7 +496,7 @@ export default function AdminIncidentFollowupsPage() {
                 </Badge>
               ) : null}
               <Link href="/admin/incidents/followups" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
-                Clear filters
+                Clear queue filters
               </Link>
             </div>
           ) : scopeFilter !== "all" ? (
@@ -505,7 +505,7 @@ export default function AdminIncidentFollowupsPage() {
                 Scope: {scopeFilter === "open" ? "open only" : "active only"}
               </Badge>
               <Link href="/admin/incidents/followups" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
-                Clear filters
+                Clear queue filters
               </Link>
             </div>
           ) : null}

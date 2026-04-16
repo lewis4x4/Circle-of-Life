@@ -413,7 +413,7 @@ export default function AdminCertificationsPage() {
             </Badge>
           ) : null}
           <Link href="/admin/certifications" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
-            Clear filters
+            Clear certification filters
           </Link>
         </div>
       ) : null}
