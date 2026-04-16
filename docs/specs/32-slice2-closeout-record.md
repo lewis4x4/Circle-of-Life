@@ -167,6 +167,7 @@ Residual risk:
   - fewer generic hub links
   - less misleading summary copy
   - better alignment between cards, inbox items, and destination pages
+- staffing credential blockers now come from live certification + staff data rather than hardcoded placeholder rows
 
 ---
 

@@ -217,6 +217,7 @@ Delivered:
 - top-strip routing
 - destination-side filter/section visibility on many linked surfaces
 - reduction of generic-hub links where the app already knows the exact slice
+- staffing credential blockers now derive from live certification records instead of hardcoded placeholders
 
 ---
 
