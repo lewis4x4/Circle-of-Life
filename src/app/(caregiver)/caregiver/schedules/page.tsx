@@ -5,6 +5,8 @@ import Link from "next/link";
 import { CalendarDays, Loader2 } from "lucide-react";
 
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 
@@ -20,6 +22,7 @@ export default function CaregiverSchedulesPage() {
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<AssignmentRow[]>([]);
   const [facilityName, setFacilityName] = useState<string | null>(null);
+  const [homeHref, setHomeHref] = useState("/caregiver");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -38,6 +41,7 @@ export default function CaregiverSchedulesPage() {
         setLoading(false);
         return;
       }
+      setHomeHref(getDashboardRouteForRole(getAppRoleFromClaims(user)));
 
       const ctxRes = await loadCaregiverFacilityContext(supabase);
       if (!ctxRes.ok) {
@@ -152,7 +156,7 @@ export default function CaregiverSchedulesPage() {
       ) : null}
 
       <Link
-        href="/caregiver"
+        href={homeHref}
         className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-sm font-medium text-zinc-200 hover:bg-zinc-800"
       >
         Back to shift home

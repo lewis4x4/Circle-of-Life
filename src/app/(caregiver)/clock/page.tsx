@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Clock3, Loader2, LogIn, LogOut } from "lucide-react";
 
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 
@@ -29,6 +31,7 @@ export default function CaregiverClockPage() {
   const [staff, setStaff] = useState<StaffRow | null>(null);
   const [openPunch, setOpenPunch] = useState<OpenPunch | null>(null);
   const [facilityName, setFacilityName] = useState<string | null>(null);
+  const [homeHref, setHomeHref] = useState("/caregiver");
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -47,6 +50,7 @@ export default function CaregiverClockPage() {
         setLoading(false);
         return;
       }
+      setHomeHref(getDashboardRouteForRole(getAppRoleFromClaims(user)));
 
       const ctxRes = await loadCaregiverFacilityContext(supabase);
       if (!ctxRes.ok) {
@@ -246,7 +250,7 @@ export default function CaregiverClockPage() {
           ) : null}
 
           <Link
-            href="/caregiver"
+            href={homeHref}
             className="inline-flex h-14 w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-[11px] uppercase tracking-widest font-mono font-bold text-zinc-300 hover:bg-white/[0.08] hover:text-white transition-colors tap-responsive shadow-inner mt-4"
           >
             Back to shift home

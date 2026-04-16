@@ -156,6 +156,7 @@ Confirmed by browser checks on:
 - `/admin` now resolves admin/specialist roles to their real home server-side instead of rendering the generic command center first and correcting client-side afterward
 - `/onboarding` now behaves like a true shell boundary instead of a partly-open admin catchall
 - roles with dedicated admin-side homes no longer see a misleading `Triage Inbox` nav item that simply redirects back to those homes
+- housekeeper support routes now return to `/caregiver/housekeeper` instead of generic `/caregiver`
 
 ---
 
@@ -209,6 +210,8 @@ Browser verification:
   - owner command nav omits `Triage Inbox`
   - org admin command nav omits `Triage Inbox`
   - facility admin command nav still shows `Triage Inbox`
+  - housekeeper `/caregiver/clock` -> `Back to shift home` -> `/caregiver/housekeeper`
+  - housekeeper `/caregiver/schedules` -> `Back to shift home` -> `/caregiver/housekeeper`
 
 Operational verification:
 

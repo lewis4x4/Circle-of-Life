@@ -43,6 +43,7 @@ The work landed as a set of coherent role packages instead of one monolithic red
 12. server-side admin home convergence
 13. onboarding shell convergence
 14. admin command-nav parity for dedicated-home roles
+15. caregiver support-lane home-link parity
 
 Browser validation was run against the role homes and the key floor/family routes needed by the acceptance gates.
 
@@ -283,6 +284,15 @@ Delivered:
 
 - roles whose canonical home is no longer `/admin` no longer see a misleading `Triage Inbox` command item that only redirects back to their own home
 - facility admin still keeps the `Triage Inbox` item because `/admin` remains its real home
+
+### Workstream O — Caregiver Support-Lane Home-Link Parity
+
+**Status:** complete
+
+Delivered:
+
+- the canonical caregiver support routes now send housekeeper users back to `/caregiver/housekeeper` instead of generic `/caregiver`
+- facility-admin and owner support/admin recovery links already respect their role homes; this pass closes the same parity gap on the floor-side support lane
 
 ---
 
