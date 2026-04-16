@@ -1,7 +1,7 @@
 import type { User } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
-import { getAppRoleFromClaims, isAdminEligibleAppRole } from "@/lib/auth/app-role";
+import { getAppRoleFromClaims, isAdminEligibleAppRole, isDietaryRole } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
 /**
@@ -55,6 +55,9 @@ export function adminShellAccessRedirect(request: NextRequest, user: User | null
   const role = getAppRoleFromClaims(user);
   if (role === "caregiver" || role === "housekeeper") {
     return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
+  }
+  if (isDietaryRole(role) && nextUrl.pathname === "/admin/dietary-dashboard") {
+    return NextResponse.redirect(new URL("/dietary", nextUrl.origin));
   }
   if (role === "family") {
     return NextResponse.redirect(new URL("/family", nextUrl.origin));

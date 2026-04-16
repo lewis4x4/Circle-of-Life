@@ -148,6 +148,7 @@ Confirmed by browser checks on:
 - `/admin` now redirects specialist admin roles back to their defined homes instead of silently showing the generic command center
 - front desk, coordinator, and nurse now get explicit specialist-home entries and narrowed menu lanes inside the shared admin shell
 - `/admin/care-plans/reviews-due` now exists as a real coordinator-facing care plan review queue instead of a dead linked path
+- `/admin/dietary-dashboard` now resolves to the canonical dietary surfaces instead of remaining a stale unreachable duplicate
 
 ---
 
@@ -176,6 +177,8 @@ Browser verification:
   - front desk shell menu -> specialist home + narrowed pipeline/ops links
   - coordinator shell menu -> specialist home + real `/admin/care-plans/reviews-due`
   - nurse shell menu -> specialist home + med-tech / medication-error links
+  - dietary stale alias `/admin/dietary-dashboard` -> `/dietary`
+  - admin stale alias `/admin/dietary-dashboard` -> `/admin/dietary`
 
 Operational verification:
 

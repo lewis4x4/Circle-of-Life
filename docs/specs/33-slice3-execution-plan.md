@@ -37,6 +37,7 @@ The work landed as a set of coherent role packages instead of one monolithic red
 6. specialist route convergence for nurse and other admin-eligible specialist returns
 7. limited-shell convergence for maintenance and broker roles
 8. admin-specialist navigation convergence for front desk, coordinator, and nurse
+9. stale specialist-route convergence for dietary
 
 Browser validation was run against the role homes and the key floor/family routes needed by the acceptance gates.
 
@@ -212,6 +213,16 @@ Delivered:
 - front desk, coordinator, and nurse now see explicit specialist home entries inside the shared admin shell
 - the admin shell now narrows visible menu items for those roles to the modules their dashboards already promise
 - `/admin/care-plans/reviews-due` now exists as a real coordinator destination instead of a dead route referenced by the coordinator dashboard and compliance flows
+
+### Workstream I — Dietary Alias Convergence
+
+**Status:** complete
+
+Delivered:
+
+- `/admin/dietary-dashboard` no longer acts like a stale duplicate specialist page
+- dietary users hitting that stale path are now redirected to the canonical `/dietary` command deck
+- admin users hitting that stale path are redirected to the canonical `/admin/dietary` hub
 
 ---
 
