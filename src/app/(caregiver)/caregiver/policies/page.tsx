@@ -10,6 +10,7 @@ import type { PendingPolicySummary } from "@/lib/pending-policies";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { CaregiverSupportStrip } from "@/components/caregiver/CaregiverSupportStrip";
 
 export default function CaregiverPendingPoliciesPage() {
   const supabase = createClient();
@@ -44,6 +45,11 @@ export default function CaregiverPendingPoliciesPage() {
 
   return (
     <div className="space-y-4">
+      <CaregiverSupportStrip
+        active="policies"
+        title="Keep required acknowledgments close to the rest of your shift support tools."
+        description="Review policy tasks here, then return to your profile, schedule, or the active shift once you are caught up."
+      />
       <div>
         <Link href="/caregiver/me" className="text-sm text-zinc-400 hover:text-zinc-200">
           ← Me

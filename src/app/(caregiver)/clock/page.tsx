@@ -9,6 +9,7 @@ import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client
 import type { Database } from "@/types/database";
 
 import { Button } from "@/components/ui/button";
+import { CaregiverSupportStrip } from "@/components/caregiver/CaregiverSupportStrip";
 
 type StaffRow = Pick<
   Database["public"]["Tables"]["staff"]["Row"],
@@ -173,15 +174,20 @@ export default function CaregiverClockPage() {
 
   return (
     <div className="space-y-4 max-w-lg mx-auto mt-4 md:mt-10">
+      <CaregiverSupportStrip
+        active="clock"
+        title="Start or end the shift cleanly, then move back into care work."
+        description="Use the clock here, then head back to the shift dashboard or check your schedule if something looks off."
+      />
       <div className="glass-panel p-6 sm:p-10 rounded-[3rem] border border-white/5 bg-gradient-to-br from-indigo-950/40 via-slate-900/60 to-black/80 backdrop-blur-3xl shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100 flex flex-col items-center text-center">
         <div className="w-16 h-16 rounded-[2rem] bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30 mb-6 shadow-inner">
           <Clock3 className="h-8 w-8 text-indigo-400" />
         </div>
         
-        <h3 className="text-3xl font-display font-semibold text-white tracking-wide mb-2">Time clock</h3>
-        <p className="text-sm font-mono text-indigo-200/60 max-w-xs mb-8">
-          {facilityName ? `Punch in/out for ${facilityName}.` : "Mobile punch tied to your staff profile."}
-        </p>
+            <h3 className="text-3xl font-display font-semibold text-white tracking-wide mb-2">Time clock</h3>
+            <p className="text-sm font-mono text-indigo-200/60 max-w-xs mb-8">
+          {facilityName ? `Punch in and out for ${facilityName}.` : "Mobile punch tied to your staff profile."}
+            </p>
 
         <div className="w-full space-y-6">
           {staff ? (
@@ -243,7 +249,7 @@ export default function CaregiverClockPage() {
             href="/caregiver"
             className="inline-flex h-14 w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-[11px] uppercase tracking-widest font-mono font-bold text-zinc-300 hover:bg-white/[0.08] hover:text-white transition-colors tap-responsive shadow-inner mt-4"
           >
-            Back to shift dashboard
+            Back to shift home
           </Link>
         </div>
       </div>

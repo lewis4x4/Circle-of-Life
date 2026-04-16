@@ -10,6 +10,7 @@ import type { Database } from "@/types/database";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CaregiverSupportStrip } from "@/components/caregiver/CaregiverSupportStrip";
 
 type AssignmentRow = Database["public"]["Tables"]["shift_assignments"]["Row"];
 
@@ -96,6 +97,11 @@ export default function CaregiverSchedulesPage() {
 
   return (
     <div className="space-y-4">
+      <CaregiverSupportStrip
+        active="schedules"
+        title="Check your published shifts before or after the floor workflow changes."
+        description="Use this view to confirm where you are expected next, then return to the shift home or clock if your assignment timing needs attention."
+      />
       <Card className="border-zinc-800 bg-gradient-to-br from-zinc-950 to-zinc-900 text-zinc-100">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-xl font-display">
@@ -103,7 +109,7 @@ export default function CaregiverSchedulesPage() {
             My schedule
           </CardTitle>
           <CardDescription className="text-zinc-400">
-            {facilityName ? `Assigned shifts at ${facilityName} (next ~3 weeks).` : "Your published shift assignments."}
+            {facilityName ? `Published shifts at ${facilityName} for the next few weeks.` : "Your published shift assignments."}
           </CardDescription>
         </CardHeader>
       </Card>

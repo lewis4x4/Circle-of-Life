@@ -8,6 +8,7 @@ import { Loader2, LogOut, UserCircle2 } from "lucide-react";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { fetchPendingPoliciesForUser, resolveAckFacilityId } from "@/lib/pending-policies";
 import type { Database } from "@/types/database";
+import { CaregiverSupportStrip } from "@/components/caregiver/CaregiverSupportStrip";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -135,6 +136,11 @@ export default function CaregiverMePage() {
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
+      <CaregiverSupportStrip
+        active="me"
+        title="Keep your shift identity, policies, and support links in one place."
+        description="Use this area to verify who you are signed in as, report illness, review policy tasks, and move into clock or schedule support without leaving the caregiver shell."
+      />
       <div className="glass-panel p-8 sm:p-10 rounded-[3rem] border border-white/5 bg-gradient-to-br from-zinc-900/80 via-black/60 to-black/80 backdrop-blur-3xl shadow-2xl relative overflow-hidden z-10 w-full transition-all text-zinc-100">
          {/* Background accent light */}
          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
@@ -149,7 +155,7 @@ export default function CaregiverMePage() {
                
                <div className="flex flex-wrap gap-2 mt-4">
                   <Badge className="border-emerald-500/40 bg-emerald-500/10 text-emerald-300 uppercase tracking-widest font-mono text-[9px] font-bold rounded-full px-3 py-1 shadow-[inset_0_1px_10px_rgba(16,185,129,0.1)]">
-                     Haven floor app
+                  Floor profile
                   </Badge>
                   {email ? (
                      <Badge className="border-white/10 bg-black/40 text-zinc-300 tracking-wider font-mono text-[10px] font-bold rounded-full px-3 py-1">
