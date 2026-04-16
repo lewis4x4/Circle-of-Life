@@ -1,10 +1,10 @@
 # Slice 2 Execution Plan
 
-**Status:** ACTIVE EXECUTION PLAN  
+**Status:** ENGINEERING EXECUTION SUBSTANTIALLY COMPLETE  
 **Roadmap source:** [29-col-demo-roadmap.md](/Users/brianlewis/Circle%20of%20Life/Circle-of-Life/docs/specs/29-col-demo-roadmap.md)  
 **Previous slice:** [30-slice1-closeout-record.md](/Users/brianlewis/Circle%20of%20Life/Circle-of-Life/docs/specs/30-slice1-closeout-record.md)  
 **Slice:** `Workflow Convergence`  
-**Date:** 2026-04-14  
+**Date:** 2026-04-15  
 **Audience:** Brian Lewis, Circle of Life leadership, future execution agents
 
 ---
@@ -13,251 +13,236 @@
 
 Turn the major business lanes into end-to-end operational systems instead of disconnected modules.
 
-This slice is not about adding broad new surfaces. It is about taking lanes that already exist and making them work as coherent operator workflows:
+This slice focused on making existing surfaces behave like real operational lanes:
 
 - document upload -> doctrine review -> promotion
-- incident -> follow-up -> escalation -> backlog management
-- referral -> admissions -> onboarding work creation
-- command-center visibility into what changed and what is blocked
+- incident -> follow-up -> escalation -> obligations -> backlog management
+- referral -> admissions -> onboarding -> downstream handoff
+- discharge -> reconciliation -> pharmacist -> completion
+- family triage / conferences as real admin workflows
+- command-center visibility into what changed, what is blocked, and what happens next
 
 ---
 
-## Why This Slice Starts Here
+## Current Read
 
-Slice 1 closed the trust gap:
+Slice 2 is now **largely complete from an engineering standpoint**.
 
-- Grace is safer and more explicit
-- demo/sample truth leaks were addressed
-- key async/failure states were surfaced
-- Knowledge Admin became trustworthy enough to use
+The remaining work is not broad workflow construction.
+It is:
 
-That means the next constraint is no longer trust-first UI honesty.
-It is **workflow fragmentation**.
-
-Operators can now trust more of the product, but they still have to hop across pages and infer what happens next.
-Slice 2 removes that fragmentation.
+1. browser-level verification of the latest queue/filter/routing behavior
+2. fixing any final runtime mismatches found there
+3. formal closeout documentation
 
 ---
 
-## Acceptance Gates
+## Acceptance Gate Review
 
-Slice 2 is complete when all of these are true:
+### 1. KB uploads enter a visible doctrine review path
 
-1. A KB upload enters a visible doctrine review path instead of dying as a standalone file.
-2. Incident follow-up work is actionable and triageable from backlog surfaces, not only from record detail.
-3. Operators can see which work is overdue, unassigned, assigned, or complete.
-4. At least one cross-module workflow beyond Knowledge and Incident is operationalized end to end.
-5. The command surface can answer “what changed, what is blocked, and what happens next” for the converged lanes.
+**Status:** PASS
 
----
+Delivered:
 
-## Active Workstreams
-
-### Workstream A — Doctrine Review Workflow
-
-**Purpose:** Convert uploaded KB documents into governed doctrine review work.
-
-**Delivered**
-
-- document upload -> review page -> draft -> publish/archive
-- review owner and due date
-- audit trail
+- upload -> review page -> draft -> publish/archive
 - stuck-upload queue
-- bulk actions for stuck uploads
-- reviewer identity resolution
-- explicit reviewer selection
+- SLA queue
+- ready-to-publish queue
+- explicit review-complete milestone
+- publish gating tied to actual review readiness
+- command-surface routing into blocked / ready / SLA doctrine slices
 
-**Primary surfaces**
+Primary surfaces:
 
 - `/admin/knowledge/admin`
 - `/admin/knowledge/admin/review/[id]`
-- `/api/knowledge/document-audit`
+- `supabase/functions/document-admin`
 
-**What still remains**
+Residual risk:
 
-- publish-readiness checks before promotion
-- review SLA reporting
-- doctrine-review metrics suitable for admin command surfaces
-- optional “review completed” event or milestone signal
+- browser verification still needs to confirm the section-focused doctrine entry points and review-complete flow
 
-**Current status:** in progress, strong foundation in place
+### 2. Incident follow-up work is actionable and triageable from backlog surfaces
 
----
+**Status:** PASS
 
-### Workstream B — Incident Follow-up Workflow
+Delivered:
 
-**Purpose:** Make incident follow-ups executable from both detail and backlog surfaces.
+- incident detail actions
+- open follow-up queue
+- overdue follow-up queue
+- obligations queue
+- escalation visibility
+- assignee routing
+- RCA -> follow-up bridge
+- board badges / board scope / board severity views
+- queue deep links preserving severity and scope
+- queue summaries/bulk actions aligned with the active slice
 
-**Delivered**
-
-- incident detail follow-ups are actionable:
-  - assign to me
-  - mark complete
-- incident detail shows open obligations for notifications/reporting
-- incident board uses real follow-up state instead of random presentation state
-- incident board exposes:
-  - overdue follow-up count
-  - unassigned follow-up count
-  - follow-up pressure panel
-- dedicated `/admin/incidents/overdue-followups` backlog
-- dedicated `/admin/incidents/followups` open-work backlog
-- bulk actions in backlog views
-- ownership pressure summaries in backlog views
-
-**Primary surfaces**
+Primary surfaces:
 
 - `/admin/incidents`
 - `/admin/incidents/[id]`
-- `/admin/incidents/overdue-followups`
 - `/admin/incidents/followups`
+- `/admin/incidents/overdue-followups`
+- `/admin/incidents/obligations`
+- `/admin/incidents/[id]/rca`
 
-**What still remains**
+Residual risk:
 
-- explicit escalation visibility for chronically overdue work
-- broader assignment workflows beyond “assign to me”
-- root-cause / follow-up / reporting lifecycle linkage in one status model
-- optional notification log depth and command-center rollup
+- browser verification still needs to confirm queue handoffs, severity/scope filters, and queue bulk-action behavior
 
-**Current status:** in progress, operational backlog lane established
+### 3. Operators can see which work is overdue, unassigned, assigned, or complete
 
----
+**Status:** PASS
 
-### Workstream C — Referral -> Admissions -> Onboarding
+Delivered:
 
-**Purpose:** Build the next major end-to-end operational lane after Knowledge and Incidents.
+- doctrine blocked / ready / SLA states
+- incident overdue / escalated / unassigned / lifecycle blockers
+- admissions blocked / ready / onboarding
+- referral blocked / ready / onboarding / stable handoffs
+- discharge planning / pharmacist review / ready
+- family triage / conference queues
+- command-center cards, inbox items, and sidebar links increasingly route into the correct slice
 
-**Why next**
+Residual risk:
 
-- it was explicitly raised in the demo
-- it is one of the clearest examples of disconnected module behavior that must converge
-- it creates downstream work across multiple teams, so it is high leverage
+- browser verification still needs to confirm that the visible counts, pills, and deep links feel coherent in the rendered UI
 
-**Target outcome**
+### 4. At least one cross-module workflow beyond Knowledge and Incident is operationalized end to end
 
-- a referral or lead becomes an admission case
-- admissions create downstream onboarding tasks
-- the right roles see the right next actions
-- status can be traced from top of funnel to resident onboarding
+**Status:** PASS
 
-**Expected first package**
+Delivered:
 
-- define the concrete downstream tasks created by admissions
-- surface those tasks in a visible admin lane
-- avoid hidden automation
+- referral -> admissions -> onboarding
+- discharge workflow lane
+- family triage / conference workflow lane
 
-**Current status:** not started
+### 5. The command surface can answer “what changed, what is blocked, and what happens next”
 
----
+**Status:** MOSTLY PASS, pending browser verification
 
-### Workstream D — Command Surface Workflow Visibility
+Delivered:
 
-**Purpose:** Ensure the operator-facing command surfaces can show converged workflow state.
+- `/admin` workflow cards now route into the active lane slice
+- `/admin` inbox now reflects real workflow backlog state
+- top triage strip routes into filtered destinations
+- destination pages now increasingly acknowledge the active deep-linked slice instead of hiding it in the URL
 
-**Target outcomes**
+Residual risk:
 
-- command surfaces answer:
-  - what changed
-  - what is blocked
-  - what needs action
-- doctrine and incident backlog state becomes visible above the record-detail level
-
-**Current status**
-
-- partially started through incident board pressure and doctrine queues
-- not yet generalized
+- final browser review is still needed to verify that the command surface feels coherent and that the linked slices render as expected in practice
 
 ---
 
-## Execution Order
+## Workstream Summary
 
-### Package 1 — Doctrine review lane foundation
+### Workstream A — Doctrine Review
 
-**Status:** shipped
+**Status:** engineering pass complete
 
-- review page
-- audit API
-- queue visibility
-- stuck-upload reporting
+Delivered:
+
+- review queue
+- stuck uploads
+- bulk actions
 - reviewer assignment
+- audit trail
+- review-complete milestone
+- publish gating
+- SLA and ready queues
+- command-surface doctrine routing
 
-### Package 2 — Incident follow-up lane foundation
+### Workstream B — Incident Workflow
 
-**Status:** shipped
+**Status:** engineering pass complete
 
-- incident detail actions
-- truthful board state
-- overdue backlog
-- open backlog
-- bulk queue actions
+Delivered:
 
-### Package 3 — Doctrine promotion hardening
+- actionable incident detail
+- follow-up / overdue / obligations queues
+- escalation and lifecycle pressure
+- RCA handoff
+- board scope + severity filters
+- queue context preservation
+- command-surface routing into the right incident slice
 
-**Status:** next in doctrine lane
+### Workstream C — Referral / Admissions / Onboarding
 
-- block unsafe publish paths
-- add stronger readiness criteria
-- expose review SLA / publish readiness
+**Status:** engineering pass complete
 
-### Package 4 — Incident escalation hardening
+Delivered:
 
-**Status:** next in incident lane
+- referral -> admission handoff
+- duplicate protection
+- blocked / move-in-ready / onboarding queues
+- actionable admissions case
+- downstream onboarding routing
+- phase-aware referral handoff routing
 
-- overdue escalation visibility
-- stronger ownership routing
-- lifecycle consistency between incident state and follow-up state
+### Workstream D — Discharge
 
-### Package 5 — Referral -> admissions -> onboarding automation visibility
+**Status:** engineering pass complete
 
-**Status:** next major lane after current two
+Delivered:
 
-- create downstream task model
-- surface generated work
-- make ownership explicit
+- actionable discharge detail
+- phase-aware discharge hub
+- duplicate protection
+- phase deep links from `/admin`
+
+### Workstream E — Family
+
+**Status:** engineering pass complete
+
+Delivered:
+
+- family triage actions
+- care conference actions
+- direct-message triage routing
+- family lane deep links from `/admin`
+- destination-side filter visibility
+
+### Workstream F — Command Surface
+
+**Status:** engineering pass complete
+
+Delivered:
+
+- workflow card routing
+- inbox routing
+- top-strip routing
+- destination-side filter/section visibility on many linked surfaces
+- reduction of generic-hub links where the app already knows the exact slice
+
+---
+
+## What Is Left
+
+Only the short tail remains:
+
+1. **Browser verification**
+   - `/admin`
+   - doctrine queue sections
+   - incident board / queues
+   - admissions / referral handoffs
+   - discharge hub
+   - family portal / family messages
+
+2. **Fix final runtime stragglers**
+   - only if found in the browser pass
+
+3. **Formal closeout**
+   - capture pass / pass-with-caveat / fail
+   - declare Slice 2 closed or note exact residual caveats
 
 ---
 
 ## Recommended Next Step
 
-Continue with **Package 3 or Package 4**, then move to **Package 5**.
+Run the Slice 2 browser pass and use the results to produce the final closeout record.
 
-Recommended order:
-
-1. finish doctrine promotion hardening
-2. finish incident escalation hardening
-3. begin referral -> admissions -> onboarding convergence
-
-Rationale:
-
-- Knowledge and Incident lanes already have meaningful momentum
-- a half-finished lane switch now would create more fragmentation
-- once these two lanes are stronger, the admissions lane becomes the next high-value convergence target
-
----
-
-## Definition Of “Done Enough To Move On”
-
-Move off a workstream when:
-
-- the lane has a visible backlog surface
-- the lane has actionable controls
-- ownership is visible
-- blocked/overdue work is visible
-- the workflow is understandable without engineering explanation
-
-That is the minimum bar for workflow convergence.
-
----
-
-## What This Slice Is Not
-
-Do not confuse Slice 2 with:
-
-- visual polish
-- role redesign
-- finance strategy resolution
-- Alabama expansion readiness
-- commercialization
-
-Those belong to later slices.
-
-Slice 2 is specifically about making the platform’s key lanes behave like operating systems, not demos or disconnected tools.
+That is now the highest-value move.
