@@ -171,7 +171,7 @@ export default function AdminMedicationErrorsPage() {
             Review filter: {reviewFilter}
           </Badge>
           <Link href="/admin/medications/errors" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
-            Clear filter
+            Clear review filter
           </Link>
         </div>
       ) : null}

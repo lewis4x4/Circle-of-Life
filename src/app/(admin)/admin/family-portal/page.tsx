@@ -353,7 +353,7 @@ export default function AdminFamilyPortalPage() {
                 Triage filter: {formatStatus(triageFilter)}
               </Badge>
               <Link href="/admin/family-portal#message-triage" className={cn("rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors")}>
-                Clear filter
+                Clear triage filter
               </Link>
             </div>
           ) : null}
@@ -506,7 +506,7 @@ export default function AdminFamilyPortalPage() {
                 Conference filter: {conferenceFilter === "upcoming" ? "upcoming" : formatStatus(conferenceFilter)}
               </Badge>
               <Link href="/admin/family-portal#care-conferences" className={cn("rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors")}>
-                Clear filter
+                Clear conference filter
               </Link>
             </div>
           ) : null}
