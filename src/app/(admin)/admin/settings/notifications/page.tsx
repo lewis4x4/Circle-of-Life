@@ -10,6 +10,7 @@ import {
   invokeDispatchPushTest,
   subscribePushAndSave,
 } from "@/lib/push-notifications";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient } from "@/lib/supabase/client";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +22,7 @@ export default function AdminNotificationsSettingsPage() {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [role, setRole] = useState<string | null>(null);
+  const [homeHref, setHomeHref] = useState<string | null>(null);
   const [pushSupported, setPushSupported] = useState(false);
   const [vapidConfigured, setVapidConfigured] = useState(false);
 
@@ -37,7 +39,9 @@ export default function AdminNotificationsSettingsPage() {
   useEffect(() => {
     void (async () => {
       const ctx = await loadFinanceRoleContext(supabase);
-      setRole(ctx.ok ? ctx.ctx.appRole : null);
+      const nextRole = ctx.ok ? ctx.ctx.appRole : null;
+      setRole(nextRole);
+      setHomeHref(nextRole ? getDashboardRouteForRole(nextRole) : "/admin");
     })();
   }, [supabase]);
 
@@ -131,17 +135,23 @@ export default function AdminNotificationsSettingsPage() {
   }, [supabase]);
 
   const canDispatch = role === "owner" || role === "org_admin";
-
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 md:p-6">
       <div>
-        <Link
-          href="/admin"
-          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "mb-2 -ml-2 gap-1")}
-        >
-          <ArrowLeft className="h-4 w-4" aria-hidden />
-          Dashboard
-        </Link>
+        {homeHref ? (
+          <Link
+            href={homeHref}
+            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "mb-2 -ml-2 gap-1")}
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden />
+            Dashboard
+          </Link>
+        ) : (
+          <span className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "mb-2 -ml-2 gap-1 pointer-events-none text-slate-400")}>
+            <ArrowLeft className="h-4 w-4" aria-hidden />
+            Resolving home…
+          </span>
+        )}
         <h1 className="flex items-center gap-2 text-2xl font-semibold text-slate-900 dark:text-white">
           <BellRing className="h-7 w-7 text-slate-600 dark:text-slate-300" aria-hidden />
           Notifications
