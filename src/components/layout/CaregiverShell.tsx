@@ -10,15 +10,17 @@ import { createClient } from "@/lib/supabase/client";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 
 export function CaregiverShell({ children }: { children: React.ReactNode }) {
   const { setTheme } = useTheme();
   const pathname = usePathname();
   const themeSet = useRef(false);
-  const { appRole } = useHavenAuth();
+  const { appRole, user } = useHavenAuth();
   const [facilityName, setFacilityName] = useState("Facility");
   const [shiftLabel, setShiftLabel] = useState("Shift");
-  const isHousekeeper = appRole === "housekeeper";
+  const effectiveRole = getAppRoleFromClaims(user) || appRole;
+  const isHousekeeper = effectiveRole === "housekeeper";
 
   useEffect(() => {
     const supabase = createClient();
