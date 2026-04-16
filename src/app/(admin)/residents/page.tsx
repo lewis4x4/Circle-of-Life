@@ -351,7 +351,7 @@ export default function AdminResidentsPage() {
             </Badge>
           ) : null}
           <Link href="/admin/residents" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
-            Clear filters
+            Clear roster filters
           </Link>
         </div>
       ) : null}
