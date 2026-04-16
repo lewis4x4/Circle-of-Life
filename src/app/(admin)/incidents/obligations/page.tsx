@@ -293,21 +293,25 @@ export default function AdminIncidentObligationsPage() {
     [load, supabase],
   );
 
-  const counts = {
-    all: rows.length,
-    notifications: rows.filter((row) => row.missingNotificationActions.length > 0).length,
-    regulatory: rows.filter((row) => row.missingRegulatoryActions.length > 0).length,
-    rca: rows.filter((row) => row.rootCausePending).length,
-    carePlan: rows.filter((row) => row.carePlanPending).length,
-  };
-
-  const visibleRows = rows.filter((row) => {
+  const scopedRows = rows.filter((row) => {
     const matchesSeverity = severityFilter === "all" || row.severity === severityFilter;
     const matchesScope =
       scopeFilter === "all" ||
       (scopeFilter === "active"
         ? row.status !== "closed" && row.status !== "resolved"
         : row.status === "open" || row.status === "investigating");
+    return matchesSeverity && matchesScope;
+  });
+
+  const counts = {
+    all: scopedRows.length,
+    notifications: scopedRows.filter((row) => row.missingNotificationActions.length > 0).length,
+    regulatory: scopedRows.filter((row) => row.missingRegulatoryActions.length > 0).length,
+    rca: scopedRows.filter((row) => row.rootCausePending).length,
+    carePlan: scopedRows.filter((row) => row.carePlanPending).length,
+  };
+
+  const visibleRows = scopedRows.filter((row) => {
     const matchesQueueFilter =
       queueFilter === "notifications"
         ? row.missingNotificationActions.length > 0
@@ -318,7 +322,7 @@ export default function AdminIncidentObligationsPage() {
             : queueFilter === "care_plan"
               ? row.carePlanPending
               : true;
-    return matchesSeverity && matchesScope && matchesQueueFilter;
+    return matchesQueueFilter;
   });
 
   return (

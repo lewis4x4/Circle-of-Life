@@ -311,12 +311,21 @@ export default function AdminIncidentOverdueFollowupsPage() {
     }
   }, [assigneeDrafts, load, supabase]);
 
-  const overdueCount = rows.length;
-  const escalatedCount = rows.filter((row) => isFollowupEscalated(row.escalationLevel)).length;
-  const unassignedCount = rows.filter((row) => row.unassigned).length;
-  const assignedToMeCount = rows.filter((row) => !!user && row.assignedToId === user.id).length;
+  const scopedRows = rows.filter((row) => {
+    const matchesSeverity = severityFilter === "all" || row.incidentSeverity === severityFilter;
+    const matchesScope =
+      scopeFilter === "all" ||
+      (scopeFilter === "active"
+        ? row.incidentStatus !== "closed" && row.incidentStatus !== "resolved"
+        : row.incidentStatus === "open" || row.incidentStatus === "investigating");
+    return matchesSeverity && matchesScope;
+  });
+  const overdueCount = scopedRows.length;
+  const escalatedCount = scopedRows.filter((row) => isFollowupEscalated(row.escalationLevel)).length;
+  const unassignedCount = scopedRows.filter((row) => row.unassigned).length;
+  const assignedToMeCount = scopedRows.filter((row) => !!user && row.assignedToId === user.id).length;
   const assigneePressure = Array.from(
-    rows.reduce((map, row) => {
+    scopedRows.reduce((map, row) => {
       const key = row.assignedToId ?? "unassigned";
       const current = map.get(key) ?? {
         label: row.unassigned ? "Unassigned" : row.assignee,
@@ -330,13 +339,7 @@ export default function AdminIncidentOverdueFollowupsPage() {
     .map(([, value]) => value)
     .sort((a, b) => b.count - a.count)
     .slice(0, 4);
-  const visibleRows = rows.filter((row) => {
-    const matchesSeverity = severityFilter === "all" || row.incidentSeverity === severityFilter;
-    const matchesScope =
-      scopeFilter === "all" ||
-      (scopeFilter === "active"
-        ? row.incidentStatus !== "closed" && row.incidentStatus !== "resolved"
-        : row.incidentStatus === "open" || row.incidentStatus === "investigating");
+  const visibleRows = scopedRows.filter((row) => {
     const matchesQueueFilter =
       queueFilter === "all"
         ? true
@@ -345,12 +348,12 @@ export default function AdminIncidentOverdueFollowupsPage() {
           : queueFilter === "unassigned"
             ? row.unassigned
             : !!user && row.assignedToId === user.id;
-    return matchesSeverity && matchesScope && matchesQueueFilter;
+    return matchesQueueFilter;
   });
 
   const assignAllUnassignedToMe = useCallback(async () => {
     if (!user) return;
-    const unassignedIds = rows.filter((row) => row.unassigned).map((row) => row.id);
+    const unassignedIds = visibleRows.filter((row) => row.unassigned).map((row) => row.id);
     if (unassignedIds.length === 0) return;
     setActionLoading("bulk-assign");
     setActionError(null);
@@ -368,7 +371,7 @@ export default function AdminIncidentOverdueFollowupsPage() {
     } finally {
       setActionLoading(null);
     }
-  }, [load, rows, supabase, user]);
+  }, [load, supabase, user, visibleRows]);
 
   const completeAllAssignedToMe = useCallback(async () => {
     if (!user) return;
@@ -394,7 +397,7 @@ export default function AdminIncidentOverdueFollowupsPage() {
     } finally {
       setActionLoading(null);
     }
-  }, [load, rows, supabase, user]);
+  }, [load, supabase, user, visibleRows]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">

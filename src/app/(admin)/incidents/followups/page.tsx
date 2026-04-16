@@ -296,16 +296,7 @@ export default function AdminIncidentFollowupsPage() {
     }
   }, [assigneeDrafts, load, supabase]);
 
-  const counts = {
-    all: rows.length,
-    overdue: rows.filter((row) => row.urgency === "overdue").length,
-    escalated: rows.filter((row) => isFollowupEscalated(row.escalationLevel)).length,
-    due24h: rows.filter((row) => row.urgency === "due_24h").length,
-    unassigned: rows.filter((row) => row.unassigned).length,
-    assignedToMe: rows.filter((row) => !!user && row.assignedToId === user.id).length,
-  };
-
-  const visibleRows = rows.filter((row) => {
+  const scopedRows = rows.filter((row) => {
     const matchesSeverity =
       severityFilter === "all" || row.incidentSeverity === severityFilter;
     const matchesScope =
@@ -313,6 +304,19 @@ export default function AdminIncidentFollowupsPage() {
       (scopeFilter === "active"
         ? row.incidentStatus !== "closed" && row.incidentStatus !== "resolved"
         : row.incidentStatus === "open" || row.incidentStatus === "investigating");
+    return matchesSeverity && matchesScope;
+  });
+
+  const counts = {
+    all: scopedRows.length,
+    overdue: scopedRows.filter((row) => row.urgency === "overdue").length,
+    escalated: scopedRows.filter((row) => isFollowupEscalated(row.escalationLevel)).length,
+    due24h: scopedRows.filter((row) => row.urgency === "due_24h").length,
+    unassigned: scopedRows.filter((row) => row.unassigned).length,
+    assignedToMe: scopedRows.filter((row) => !!user && row.assignedToId === user.id).length,
+  };
+
+  const visibleRows = scopedRows.filter((row) => {
     const matchesQueueFilter =
       queueFilter === "overdue"
         ? row.urgency === "overdue"
@@ -325,11 +329,11 @@ export default function AdminIncidentFollowupsPage() {
               : queueFilter === "assigned_to_me"
                 ? !!user && row.assignedToId === user.id
                 : true;
-    return matchesSeverity && matchesScope && matchesQueueFilter;
+    return matchesQueueFilter;
   });
 
   const assigneePressure = Array.from(
-    rows.reduce((map, row) => {
+    scopedRows.reduce((map, row) => {
       const key = row.assignedToId ?? "unassigned";
       const current = map.get(key) ?? {
         label: row.unassigned ? "Unassigned" : row.assignee,
@@ -346,7 +350,7 @@ export default function AdminIncidentFollowupsPage() {
 
   const assignAllUnassignedToMe = useCallback(async () => {
     if (!user) return;
-    const unassignedIds = rows.filter((row) => row.unassigned).map((row) => row.id);
+    const unassignedIds = visibleRows.filter((row) => row.unassigned).map((row) => row.id);
     if (unassignedIds.length === 0) return;
     setActionLoading("bulk-assign");
     setActionError(null);
@@ -364,11 +368,11 @@ export default function AdminIncidentFollowupsPage() {
     } finally {
       setActionLoading(null);
     }
-  }, [load, rows, supabase, user]);
+  }, [load, supabase, user, visibleRows]);
 
   const completeAllAssignedToMe = useCallback(async () => {
     if (!user) return;
-    const myIds = rows.filter((row) => row.assignedToId === user.id).map((row) => row.id);
+    const myIds = visibleRows.filter((row) => row.assignedToId === user.id).map((row) => row.id);
     if (myIds.length === 0) return;
     setActionLoading("bulk-complete");
     setActionError(null);
@@ -390,7 +394,7 @@ export default function AdminIncidentFollowupsPage() {
     } finally {
       setActionLoading(null);
     }
-  }, [load, rows, supabase, user]);
+  }, [load, supabase, user, visibleRows]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
