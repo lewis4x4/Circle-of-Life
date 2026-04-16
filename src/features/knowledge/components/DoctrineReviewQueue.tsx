@@ -46,6 +46,14 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [slaFilter, setSlaFilter] = useState<SlaFilter>("all");
+  const [activeSectionHash, setActiveSectionHash] = useState("");
+
+  useEffect(() => {
+    const syncHash = () => setActiveSectionHash(window.location.hash || "");
+    syncHash();
+    window.addEventListener("hashchange", syncHash);
+    return () => window.removeEventListener("hashchange", syncHash);
+  }, []);
 
   const loadAudit = useCallback(async () => {
     const docIds = documents.map((doc) => doc.id);
@@ -363,6 +371,28 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
           {actionMessage}
         </div>
       )}
+      {activeSectionHash ? (
+        <div className="rounded-lg border border-indigo-200 dark:border-indigo-900 bg-indigo-50 dark:bg-indigo-950/40 px-3 py-2 text-sm text-indigo-900 dark:text-indigo-100 flex items-center justify-between gap-3">
+          <span>
+            Focused section:{" "}
+            <span className="font-medium">
+              {activeSectionHash === "#doctrine-blocked-review"
+                ? "Blocked review"
+                : activeSectionHash === "#doctrine-ready-to-publish"
+                  ? "Ready to publish"
+                  : activeSectionHash === "#doctrine-review-sla"
+                    ? "Review SLA"
+                    : activeSectionHash.replace(/^#/, "")}
+            </span>
+          </span>
+          <Link
+            href="/admin/knowledge/admin"
+            className="rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors"
+          >
+            Clear section focus
+          </Link>
+        </div>
+      ) : null}
       <div id="doctrine-blocked-review" className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 space-y-4">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
