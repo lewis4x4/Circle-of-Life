@@ -16,9 +16,11 @@ import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 
 export default function AdminInsuranceHubPage() {
   const supabase = createClient();
+  const ownerConfig = getRoleDashboardConfig("owner");
   const [activePolicies, setActivePolicies] = useState<number | null>(null);
   const [renewalsInFlight, setRenewalsInFlight] = useState<number | null>(null);
   const [openClaims, setOpenClaims] = useState<number | null>(null);
@@ -139,6 +141,9 @@ export default function AdminInsuranceHubPage() {
             <p className="text-sm text-slate-600 dark:text-slate-400">
               Corporate policies, renewals, claims, COIs, and workers’ compensation (Module 18).
             </p>
+            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-zinc-400">
+              {ownerConfig.roleLabel} drill-in: keep policy posture, claims movement, and renewal exposure close to the executive exception flow.
+            </p>
           </div>
         </div>
 
@@ -147,6 +152,23 @@ export default function AdminInsuranceHubPage() {
             {loadError}
           </p>
         )}
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {[
+            { title: "Executive alerts", description: "Return to the leadership queue after checking risk exposure.", href: "/admin/executive/alerts" },
+            { title: "Finance hub", description: "Cross-check reserve pressure and policy costs against the finance controls.", href: "/admin/finance" },
+            { title: "Open claims", description: "Go straight to active claims when the risk lane needs detail.", href: "/admin/insurance/claims" },
+          ].map((item) => (
+            <Link
+              key={item.title}
+              href={item.href}
+              className="rounded-[1.5rem] border border-slate-200/70 bg-white/70 p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg dark:border-white/5 dark:bg-white/[0.03] dark:hover:border-indigo-500/30"
+            >
+              <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">{item.title}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-slate-700 dark:text-zinc-300">{item.description}</p>
+            </Link>
+          ))}
+        </div>
 
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4" staggerMs={75}>
           <div className="h-[160px]">

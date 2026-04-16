@@ -13,6 +13,7 @@ import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchExecutiveAlerts, acknowledgeExecutiveAlert, type ExecutiveAlertRow } from "@/lib/exec-alerts";
 import { cn } from "@/lib/utils";
+import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
@@ -24,6 +25,7 @@ interface AlertWithFacility extends ExecutiveAlertRow {
 
 export default function ExecutiveAlertsPage() {
   const supabase = createClient();
+  const ownerConfig = getRoleDashboardConfig("owner");
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<ExecutiveAlertRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,6 +79,23 @@ export default function ExecutiveAlertsPage() {
   const criticals = rows.filter(r => r.severity === 'critical');
   const warnings = rows.filter(r => r.severity === 'warning');
   const infos = rows.filter(r => r.severity === 'info');
+  const decisionLinks = [
+    {
+      title: "Finance review",
+      description: "Check whether a financial exception or posting delay is amplifying the alert.",
+      href: "/admin/finance",
+    },
+    {
+      title: "Insurance & risk",
+      description: "Open policy, renewal, and claims posture when the alert has risk implications.",
+      href: "/admin/insurance",
+    },
+    {
+      title: "High-severity incidents",
+      description: "Jump into open incident exceptions when the alert needs operational intervention.",
+      href: "/admin/incidents?scope=open&severity=level_4",
+    },
+  ];
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -88,15 +107,33 @@ export default function ExecutiveAlertsPage() {
             <div>
               <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Exception Engine</p>
               <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
-                Action Center
+                Executive Alerts
               </h2>
-              <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">Workflow routing and executive intervention queue</p>
+              <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">Workflow routing and leadership intervention queue</p>
+              <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-zinc-400">
+                {ownerConfig.roleLabel} drill-in: review open exceptions, decide the intervention lane, and move into finance, insurance, or incident risk without dropping back to the operator home.
+              </p>
             </div>
             <div className="hidden md:block">
               <ExecutiveHubNav />
             </div>
           </div>
         </header>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {decisionLinks.map((item) => (
+            <Link
+              key={item.title}
+              href={item.href}
+              className="rounded-[1.5rem] border border-slate-200/70 bg-white/70 p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg dark:border-white/5 dark:bg-white/[0.03] dark:hover:border-indigo-500/30"
+            >
+              <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">
+                {item.title}
+              </h3>
+              <p className="mt-3 text-sm leading-relaxed text-slate-700 dark:text-zinc-300">{item.description}</p>
+            </Link>
+          ))}
+        </div>
 
         {error && (
           <p className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-500">
@@ -134,7 +171,7 @@ export default function ExecutiveAlertsPage() {
 
         <div className="flex justify-between items-center mb-4 mt-8">
            <h3 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
-             Triage Queue
+             Decision Queue
            </h3>
            <Button type="button" variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
             Refresh Queue

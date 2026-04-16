@@ -377,7 +377,7 @@ export default function ExecutiveOverviewPage() {
               <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white flex items-center gap-3">
                 <Activity className="h-5 w-5 text-indigo-500" /> Portfolio Health
               </h3>
-              <Link className="px-4 py-2 rounded-full border border-slate-200 dark:border-white/10 text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2 tap-responsive bg-white dark:bg-black/40 shadow-sm" href="/executive/reports">
+              <Link className="px-4 py-2 rounded-full border border-slate-200 dark:border-white/10 text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2 tap-responsive bg-white dark:bg-black/40 shadow-sm" href="/admin/executive/reports">
                 Detailed Views <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>

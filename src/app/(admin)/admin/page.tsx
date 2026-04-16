@@ -282,6 +282,7 @@ export default function AdminDashboardPage() {
     workflows.dischargeReadyToComplete +
     workflows.familyTriagePending +
     workflows.familyConferencesUpcoming;
+  const adminConfig = getRoleDashboardConfig(appRole);
 
   return (
     <div className="space-y-10 pb-12 overflow-x-hidden">
@@ -297,6 +298,9 @@ export default function AdminDashboardPage() {
           </h1>
           <p className="text-slate-600 dark:text-zinc-400 font-medium tracking-wide mt-2">
             {snapshot.headlineName} &middot; <span className="opacity-70 dark:opacity-50">{scopeLabel}</span>
+          </p>
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-zinc-400">
+            {adminConfig.roleLabel} home: work urgent facility actions first, then clear blocked workflows, then move into resident watchlist and recent critical activity.
           </p>
         </div>
         
@@ -316,7 +320,35 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
+      <div className="rounded-[2rem] border border-slate-200/60 bg-white/60 p-5 shadow-sm backdrop-blur-3xl dark:border-white/5 dark:bg-white/[0.02]">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">Facility Priorities</p>
+            <h2 className="mt-1 text-lg font-display font-medium text-slate-900 dark:text-white">
+              {adminConfig.firstScreenPriority.join(" · ").replace(/_/g, " ")}
+            </h2>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {adminConfig.primaryTaskLanes.map((lane) => (
+              <span
+                key={lane}
+                className="rounded-full border border-slate-200/70 bg-slate-100/70 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-400"
+              >
+                {lane.replace(/_/g, " ")}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* ─── FLOATING TRIAGE CARDS ────────────────────────────────────────────── */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between border-b border-slate-200/50 dark:border-white/10 pb-3">
+          <div>
+            <h2 className="text-xl font-display font-medium text-slate-900 dark:text-white">Urgent Now</h2>
+            <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">The fastest route into facility-day exceptions that need immediate review.</p>
+          </div>
+        </div>
       <MotionList className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MotionItem>
           <TriageMetricCard 
@@ -359,10 +391,12 @@ export default function AdminDashboardPage() {
           />
         </MotionItem>
       </MotionList>
+      </div>
 
       <div className="space-y-4">
         <div className="flex items-center justify-between border-b border-slate-200/50 dark:border-white/10 pb-3">
           <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">Blocked Workflows</p>
             <h2 className="text-xl font-display font-medium text-slate-900 dark:text-white">Workflow Convergence</h2>
             <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">Cross-lane backlog state across doctrine, incidents, admissions, referrals, discharge, and family workflows.</p>
           </div>
@@ -444,7 +478,8 @@ export default function AdminDashboardPage() {
           <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.02] shadow-sm backdrop-blur-3xl overflow-hidden relative">
             <div className="p-8 pb-4 flex flex-row items-center justify-between border-b border-slate-100 dark:border-white/5">
               <div>
-                <h2 className="text-2xl font-display font-medium text-slate-900 dark:text-white flex items-center gap-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">Recent Critical Activity</p>
+                <h2 className="mt-1 text-2xl font-display font-medium text-slate-900 dark:text-white flex items-center gap-3">
                   <Activity className="w-6 h-6 text-indigo-500" />
                   Primary Inbox
                   {totalActionable > 0 && (
@@ -578,7 +613,8 @@ export default function AdminDashboardPage() {
         {/* ─── SIDEBAR & CAPACITY ──────────────────────────────────────────────── */}
         <div className="space-y-6">
           <div className="glass-panel rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-white/60 dark:bg-white/[0.01] backdrop-blur-3xl p-6 lg:p-8 shadow-sm">
-            <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white mb-6 flex items-center justify-between">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">Resident Watchlist</p>
+            <h3 className="mt-1 text-xl font-display font-medium text-slate-900 dark:text-white mb-6 flex items-center justify-between">
                Acuity Watchlist
                <Link href="/admin/residents?acuity=watchlist" className="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 hover:underline">Watchlist Roster</Link>
             </h3>
@@ -615,7 +651,8 @@ export default function AdminDashboardPage() {
           </div>
           
           <div className="glass-panel rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/80 dark:bg-white/[0.015] backdrop-blur-3xl p-6 lg:p-8 shadow-sm">
-             <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white mb-6">
+             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">Capacity Follow-through</p>
+             <h3 className="mt-1 text-xl font-display font-medium text-slate-900 dark:text-white mb-6">
                 Pipeline & Capacity
              </h3>
              <div className="space-y-4">

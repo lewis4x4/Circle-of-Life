@@ -17,10 +17,12 @@ import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 
 export default function AdminFinanceHubPage() {
   const demo = isDemoMode();
   const supabase = createClient();
+  const ownerConfig = getRoleDashboardConfig("owner");
   const [postedCount, setPostedCount] = useState<number | null>(null);
   const [unpostedInvoices, setUnpostedInvoices] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -85,6 +87,9 @@ export default function AdminFinanceHubPage() {
             <p className="text-sm text-slate-600 dark:text-slate-400">
               Entity and facility general ledger (Module 17) — chart of accounts, journal entries, ledger.
             </p>
+            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-zinc-400">
+              {ownerConfig.roleLabel} drill-in: use finance to confirm whether portfolio pressure is operational, billing-timing, or period-close related.
+            </p>
           </div>
         </div>
         {demo ? (
@@ -93,12 +98,29 @@ export default function AdminFinanceHubPage() {
           </div>
         ) : null}
 
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {[
+            { title: "Executive alerts", description: "Return to the leadership exception queue after checking the ledger context.", href: "/admin/executive/alerts" },
+            { title: "Insurance & risk", description: "Open policies and claims when a finance issue has risk or reserve implications.", href: "/admin/insurance" },
+            { title: "Executive reports", description: "Move into saved executive reporting without leaving the owner decision lane.", href: "/admin/executive/reports" },
+          ].map((item) => (
+            <Link
+              key={item.title}
+              href={item.href}
+              className="rounded-[1.5rem] border border-slate-200/70 bg-white/70 p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg dark:border-white/5 dark:bg-white/[0.03] dark:hover:border-indigo-500/30"
+            >
+              <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">{item.title}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-slate-700 dark:text-zinc-300">{item.description}</p>
+            </Link>
+          ))}
+        </div>
+
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4" staggerMs={75}>
           <div className="col-span-1 h-[160px]">
             <V2Card hoverColor="slate" className="flex flex-col">
               <div className="mb-2">
-                <h3 className="text-base font-display font-semibold text-slate-900 dark:text-slate-100">Quick links</h3>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400">Manage GL data for your organization.</p>
+                <h3 className="text-base font-display font-semibold text-slate-900 dark:text-slate-100">Finance controls</h3>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400">Leadership drill-ins for GL truth, period status, and posting confidence.</p>
               </div>
               <div className="flex flex-col gap-1 text-[11px] overflow-y-auto flex-1">
                 <Link className="text-indigo-600 dark:text-indigo-400 font-mono uppercase tracking-widest hover:text-indigo-500 transition-colors" href="/admin/finance/chart-of-accounts">
