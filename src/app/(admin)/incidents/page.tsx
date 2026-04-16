@@ -172,23 +172,43 @@ export default function AdminIncidentsKanbanPage() {
   const pressureBacklogHref =
     visibleRows.some((row) => row.openObligations > 0 || row.rootCausePending || row.carePlanPending)
       ? severityFilter === "all"
-        ? "/admin/incidents/obligations"
-        : `/admin/incidents/obligations?severity=${severityFilter}`
+        ? scopeFilter === "all"
+          ? "/admin/incidents/obligations"
+          : `/admin/incidents/obligations?scope=${scopeFilter}`
+        : scopeFilter === "all"
+          ? `/admin/incidents/obligations?severity=${severityFilter}`
+          : `/admin/incidents/obligations?severity=${severityFilter}&scope=${scopeFilter}`
       : visibleRows.some((row) => row.escalatedFollowups > 0)
         ? severityFilter === "all"
-          ? "/admin/incidents/overdue-followups?filter=escalated"
-          : `/admin/incidents/overdue-followups?filter=escalated&severity=${severityFilter}`
+          ? scopeFilter === "all"
+            ? "/admin/incidents/overdue-followups?filter=escalated"
+            : `/admin/incidents/overdue-followups?filter=escalated&scope=${scopeFilter}`
+          : scopeFilter === "all"
+            ? `/admin/incidents/overdue-followups?filter=escalated&severity=${severityFilter}`
+            : `/admin/incidents/overdue-followups?filter=escalated&severity=${severityFilter}&scope=${scopeFilter}`
         : visibleRows.some((row) => row.overdueFollowups > 0)
           ? severityFilter === "all"
-            ? "/admin/incidents/overdue-followups"
-            : `/admin/incidents/overdue-followups?severity=${severityFilter}`
+            ? scopeFilter === "all"
+              ? "/admin/incidents/overdue-followups"
+              : `/admin/incidents/overdue-followups?scope=${scopeFilter}`
+            : scopeFilter === "all"
+              ? `/admin/incidents/overdue-followups?severity=${severityFilter}`
+              : `/admin/incidents/overdue-followups?severity=${severityFilter}&scope=${scopeFilter}`
           : visibleRows.some((row) => row.unassignedFollowups > 0)
             ? severityFilter === "all"
-              ? "/admin/incidents/followups?filter=unassigned"
-              : `/admin/incidents/followups?filter=unassigned&severity=${severityFilter}`
+              ? scopeFilter === "all"
+                ? "/admin/incidents/followups?filter=unassigned"
+                : `/admin/incidents/followups?filter=unassigned&scope=${scopeFilter}`
+              : scopeFilter === "all"
+                ? `/admin/incidents/followups?filter=unassigned&severity=${severityFilter}`
+                : `/admin/incidents/followups?filter=unassigned&severity=${severityFilter}&scope=${scopeFilter}`
             : severityFilter === "all"
-              ? "/admin/incidents/followups"
-              : `/admin/incidents/followups?severity=${severityFilter}`;
+              ? scopeFilter === "all"
+                ? "/admin/incidents/followups"
+                : `/admin/incidents/followups?scope=${scopeFilter}`
+              : scopeFilter === "all"
+                ? `/admin/incidents/followups?severity=${severityFilter}`
+                : `/admin/incidents/followups?severity=${severityFilter}&scope=${scopeFilter}`;
   const level4BadgeHref =
     severityFilter === "level_4"
       ? scopeFilter === "all"
@@ -217,27 +237,57 @@ export default function AdminIncidentsKanbanPage() {
               {rows.filter(r => r.severity === "level_4" && r.status !== "closed").length} Level-4 Exceptions
             </Badge>
           </Link>
-          <Link href={severityFilter === "all" ? "/admin/incidents/overdue-followups" : `/admin/incidents/overdue-followups?severity=${severityFilter}`}>
+          <Link href={severityFilter === "all"
+            ? scopeFilter === "all"
+              ? "/admin/incidents/overdue-followups"
+              : `/admin/incidents/overdue-followups?scope=${scopeFilter}`
+            : scopeFilter === "all"
+              ? `/admin/incidents/overdue-followups?severity=${severityFilter}`
+              : `/admin/incidents/overdue-followups?severity=${severityFilter}&scope=${scopeFilter}`}>
             <Badge variant="outline" className="h-8 px-3 border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 cursor-pointer">
               {visibleRows.reduce((sum, row) => sum + row.overdueFollowups, 0)} Overdue follow-ups
             </Badge>
           </Link>
-          <Link href={severityFilter === "all" ? "/admin/incidents/overdue-followups?filter=escalated" : `/admin/incidents/overdue-followups?filter=escalated&severity=${severityFilter}`}>
+          <Link href={severityFilter === "all"
+            ? scopeFilter === "all"
+              ? "/admin/incidents/overdue-followups?filter=escalated"
+              : `/admin/incidents/overdue-followups?filter=escalated&scope=${scopeFilter}`
+            : scopeFilter === "all"
+              ? `/admin/incidents/overdue-followups?filter=escalated&severity=${severityFilter}`
+              : `/admin/incidents/overdue-followups?filter=escalated&severity=${severityFilter}&scope=${scopeFilter}`}>
             <Badge variant="outline" className="h-8 px-3 border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 cursor-pointer">
               {visibleRows.reduce((sum, row) => sum + row.escalatedFollowups, 0)} Escalated follow-ups
             </Badge>
           </Link>
-          <Link href={severityFilter === "all" ? "/admin/incidents/followups" : `/admin/incidents/followups?severity=${severityFilter}`}>
+          <Link href={severityFilter === "all"
+            ? scopeFilter === "all"
+              ? "/admin/incidents/followups"
+              : `/admin/incidents/followups?scope=${scopeFilter}`
+            : scopeFilter === "all"
+              ? `/admin/incidents/followups?severity=${severityFilter}`
+              : `/admin/incidents/followups?severity=${severityFilter}&scope=${scopeFilter}`}>
             <Badge variant="outline" className="h-8 px-3 border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 cursor-pointer">
               {visibleRows.reduce((sum, row) => sum + row.openFollowups, 0)} Open follow-ups
             </Badge>
           </Link>
-          <Link href={severityFilter === "all" ? "/admin/incidents/obligations" : `/admin/incidents/obligations?severity=${severityFilter}`}>
+          <Link href={severityFilter === "all"
+            ? scopeFilter === "all"
+              ? "/admin/incidents/obligations"
+              : `/admin/incidents/obligations?scope=${scopeFilter}`
+            : scopeFilter === "all"
+              ? `/admin/incidents/obligations?severity=${severityFilter}`
+              : `/admin/incidents/obligations?severity=${severityFilter}&scope=${scopeFilter}`}>
             <Badge variant="outline" className="h-8 px-3 border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer">
               {visibleRows.filter((row) => row.openObligations > 0 || row.rootCausePending || row.carePlanPending).length} Lifecycle blockers
             </Badge>
           </Link>
-          <Link href={severityFilter === "all" ? "/admin/incidents/followups?filter=unassigned" : `/admin/incidents/followups?filter=unassigned&severity=${severityFilter}`}>
+          <Link href={severityFilter === "all"
+            ? scopeFilter === "all"
+              ? "/admin/incidents/followups?filter=unassigned"
+              : `/admin/incidents/followups?filter=unassigned&scope=${scopeFilter}`
+            : scopeFilter === "all"
+              ? `/admin/incidents/followups?filter=unassigned&severity=${severityFilter}`
+              : `/admin/incidents/followups?filter=unassigned&severity=${severityFilter}&scope=${scopeFilter}`}>
             <Badge variant="outline" className="h-8 px-3 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 cursor-pointer">
               {visibleRows.reduce((sum, row) => sum + row.unassignedFollowups, 0)} Unassigned follow-ups
             </Badge>

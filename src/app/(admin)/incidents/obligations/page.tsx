@@ -21,12 +21,14 @@ import { cn } from "@/lib/utils";
 
 type QueueFilter = "all" | "notifications" | "regulatory" | "rca" | "care_plan";
 type SeverityFilter = "all" | "level_1" | "level_2" | "level_3" | "level_4";
+type ScopeFilter = "all" | "active" | "open";
 
 type IncidentRow = {
   id: string;
   incidentNumber: string;
   residentName: string;
   severity: string;
+  status: string;
   occurredAt: string;
   openObligations: string[];
   missingNotificationActions: Array<{
@@ -48,6 +50,7 @@ type IncidentMini = {
   incident_number: string;
   resident_id: string | null;
   severity: string;
+  status: string;
   occurred_at: string;
   nurse_notified: boolean;
   administrator_notified: boolean;
@@ -79,6 +82,7 @@ export default function AdminIncidentObligationsPage() {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
+  const [scopeFilter, setScopeFilter] = useState<ScopeFilter>("all");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -87,7 +91,7 @@ export default function AdminIncidentObligationsPage() {
       let incidentsQuery = supabase
         .from("incidents")
         .select(
-          "id, incident_number, resident_id, severity, occurred_at, nurse_notified, administrator_notified, owner_notified, physician_notified, family_notified, ahca_reportable, ahca_reported, insurance_reportable, insurance_reported, care_plan_updated, resolved_at",
+          "id, incident_number, resident_id, severity, status, occurred_at, nurse_notified, administrator_notified, owner_notified, physician_notified, family_notified, ahca_reportable, ahca_reported, insurance_reportable, insurance_reported, care_plan_updated, resolved_at",
         )
         .is("deleted_at", null)
         .order("occurred_at", { ascending: false })
@@ -214,6 +218,7 @@ export default function AdminIncidentObligationsPage() {
             incidentNumber: row.incident_number,
             residentName,
             severity: row.severity,
+            status: row.status,
             occurredAt: row.occurred_at,
             openObligations,
             missingNotificationActions,
@@ -254,6 +259,15 @@ export default function AdminIncidentObligationsPage() {
     setSeverityFilter("all");
   }, [searchParams]);
 
+  useEffect(() => {
+    const requestedScope = searchParams.get("scope");
+    if (requestedScope === "active" || requestedScope === "open") {
+      setScopeFilter(requestedScope);
+      return;
+    }
+    setScopeFilter("all");
+  }, [searchParams]);
+
   const updateIncident = useCallback(
     async (incidentId: string, patch: Record<string, boolean | string>, successMessage: string) => {
       setActionLoading(`${incidentId}:${successMessage}`);
@@ -289,6 +303,11 @@ export default function AdminIncidentObligationsPage() {
 
   const visibleRows = rows.filter((row) => {
     const matchesSeverity = severityFilter === "all" || row.severity === severityFilter;
+    const matchesScope =
+      scopeFilter === "all" ||
+      (scopeFilter === "active"
+        ? row.status !== "closed" && row.status !== "resolved"
+        : row.status === "open" || row.status === "investigating");
     const matchesQueueFilter =
       queueFilter === "notifications"
         ? row.missingNotificationActions.length > 0
@@ -299,7 +318,7 @@ export default function AdminIncidentObligationsPage() {
             : queueFilter === "care_plan"
               ? row.carePlanPending
               : true;
-    return matchesSeverity && matchesQueueFilter;
+    return matchesSeverity && matchesScope && matchesQueueFilter;
   });
 
   return (
@@ -368,8 +387,22 @@ export default function AdminIncidentObligationsPage() {
               <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
                 Severity filter: {severityFilter.replace("level_", "L")}
               </Badge>
+              {scopeFilter !== "all" ? (
+                <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+                  Scope: {scopeFilter === "open" ? "open only" : "active only"}
+                </Badge>
+              ) : null}
               <Link href="/admin/incidents/obligations" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
-                Clear severity
+                Clear filters
+              </Link>
+            </div>
+          ) : scopeFilter !== "all" ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+                Scope: {scopeFilter === "open" ? "open only" : "active only"}
+              </Badge>
+              <Link href="/admin/incidents/obligations" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
+                Clear filters
               </Link>
             </div>
           ) : null}

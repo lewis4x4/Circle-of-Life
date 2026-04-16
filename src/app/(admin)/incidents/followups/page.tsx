@@ -34,6 +34,7 @@ type FollowupRow = {
   incidentId: string;
   incidentNumber: string;
   incidentSeverity: string;
+  incidentStatus: string;
   residentName: string;
   taskType: string;
   description: string;
@@ -49,8 +50,9 @@ type FollowupRow = {
 
 type QueueFilter = "all" | "overdue" | "escalated" | "due_24h" | "unassigned" | "assigned_to_me";
 type SeverityFilter = "all" | "level_1" | "level_2" | "level_3" | "level_4";
+type ScopeFilter = "all" | "active" | "open";
 
-type IncidentMini = { id: string; incident_number: string; resident_id: string | null; severity: string };
+type IncidentMini = { id: string; incident_number: string; resident_id: string | null; severity: string; status: string };
 type ResidentMini = { id: string; first_name: string | null; last_name: string | null };
 type ProfileMini = { id: string; full_name: string | null };
 
@@ -68,6 +70,7 @@ export default function AdminIncidentFollowupsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
+  const [scopeFilter, setScopeFilter] = useState<ScopeFilter>("all");
   const [assigneeOptions, setAssigneeOptions] = useState<IncidentFollowupAssigneeOption[]>([]);
   const [assigneeDrafts, setAssigneeDrafts] = useState<Record<string, string>>({});
 
@@ -109,7 +112,7 @@ export default function AdminIncidentFollowupsPage() {
       const assigneeIds = [...new Set(followups.map((row) => row.assigned_to).filter(Boolean))] as string[];
 
       const [incidentsResult, residentsResult, assigneesResult] = await Promise.all([
-        supabase.from("incidents").select("id, incident_number, resident_id, severity").in("id", incidentIds),
+        supabase.from("incidents").select("id, incident_number, resident_id, severity, status").in("id", incidentIds),
         residentIds.length > 0
           ? supabase.from("residents").select("id, first_name, last_name").in("id", residentIds)
           : Promise.resolve({ data: [], error: null }),
@@ -139,6 +142,7 @@ export default function AdminIncidentFollowupsPage() {
             incidentId: row.incident_id,
             incidentNumber: incidentById.get(row.incident_id)?.incident_number ?? "Incident",
             incidentSeverity: incidentById.get(row.incident_id)?.severity ?? "level_1",
+            incidentStatus: incidentById.get(row.incident_id)?.status ?? "",
             residentName,
             taskType: row.task_type.replace(/_/g, " "),
             description: row.description,
@@ -195,6 +199,15 @@ export default function AdminIncidentFollowupsPage() {
       return;
     }
     setSeverityFilter("all");
+  }, [searchParams]);
+
+  useEffect(() => {
+    const requestedScope = searchParams.get("scope");
+    if (requestedScope === "active" || requestedScope === "open") {
+      setScopeFilter(requestedScope);
+      return;
+    }
+    setScopeFilter("all");
   }, [searchParams]);
 
   useEffect(() => {
@@ -295,6 +308,11 @@ export default function AdminIncidentFollowupsPage() {
   const visibleRows = rows.filter((row) => {
     const matchesSeverity =
       severityFilter === "all" || row.incidentSeverity === severityFilter;
+    const matchesScope =
+      scopeFilter === "all" ||
+      (scopeFilter === "active"
+        ? row.incidentStatus !== "closed" && row.incidentStatus !== "resolved"
+        : row.incidentStatus === "open" || row.incidentStatus === "investigating");
     const matchesQueueFilter =
       queueFilter === "overdue"
         ? row.urgency === "overdue"
@@ -307,7 +325,7 @@ export default function AdminIncidentFollowupsPage() {
               : queueFilter === "assigned_to_me"
                 ? !!user && row.assignedToId === user.id
                 : true;
-    return matchesSeverity && matchesQueueFilter;
+    return matchesSeverity && matchesScope && matchesQueueFilter;
   });
 
   const assigneePressure = Array.from(
@@ -468,8 +486,22 @@ export default function AdminIncidentFollowupsPage() {
               <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
                 Severity filter: {severityFilter.replace("level_", "L")}
               </Badge>
+              {scopeFilter !== "all" ? (
+                <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+                  Scope: {scopeFilter === "open" ? "open only" : "active only"}
+                </Badge>
+              ) : null}
               <Link href="/admin/incidents/followups" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
-                Clear severity
+                Clear filters
+              </Link>
+            </div>
+          ) : scopeFilter !== "all" ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+                Scope: {scopeFilter === "open" ? "open only" : "active only"}
+              </Badge>
+              <Link href="/admin/incidents/followups" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
+                Clear filters
               </Link>
             </div>
           ) : null}
