@@ -19,7 +19,7 @@ export function Cockpit() {
   const [activeResident, setActiveResident] = useState<ResidentItem | null>(null);
   const [incidentOpen, setIncidentOpen]     = useState(false);
 
-  const { shift, passes, residents, tape, loading, error } = useShiftCurrent();
+  const { userId, shift, passes, residents, tape, shiftId, loading, error } = useShiftCurrent();
 
   if (loading) {
     return (
@@ -102,6 +102,9 @@ export function Cockpit() {
       {/* Incident capture modal */}
       {incidentOpen && (
         <IncidentModal
+          userId={userId}
+          shiftId={shiftId}
+          shiftType={shift.shiftType}
           residents={residents}
           onClose={() => setIncidentOpen(false)}
         />

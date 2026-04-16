@@ -6,11 +6,13 @@ import type { MedPassItem } from "@/components/med-tech/PassCard";
 import type { ResidentItem } from "@/components/med-tech/ResidentRail";
 import type { TapeEvent } from "@/components/med-tech/ShiftTape";
 import type { ShiftBarProps } from "@/components/med-tech/ShiftBar";
+import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type R = Record<string, any>;
 
 interface ShiftData {
+  userId: string;
   shift: ShiftBarProps;
   passes: MedPassItem[];
   residents: ResidentItem[];
@@ -76,7 +78,8 @@ async function q(table: string, select: string, filters: Record<string, any> = {
 
 export function useShiftCurrent(): ShiftData {
   const [data, setData] = useState<ShiftData>({
-    shift: { techName: "", techInitials: "", shiftLabel: "", unitLabel: "Oakridge ALF", assignedCount: 0, elapsedLabel: "00:00" },
+    userId: "",
+    shift: { techName: "", techInitials: "", shiftLabel: "", unitLabel: "Oakridge ALF", assignedCount: 0, elapsedLabel: "00:00", shiftType: "day" },
     passes: [], residents: [], tape: [], shiftId: "", loading: true, error: null,
   });
 
@@ -177,13 +180,16 @@ export function useShiftCurrent(): ShiftData {
       const endH = fmtTime(shift.shift_end);
       const isPM = new Date(shift.shift_start).getHours() >= 12;
 
+      const shiftType = currentShiftForTimezone("America/New_York");
       setData({
+        userId: user.id,
         shift: {
           techName: fullName, techInitials: initials,
           shiftLabel: `${isPM ? "PM" : "AM"} · ${startH} - ${endH}`,
           unitLabel: "Oakridge ALF",
           assignedCount: resItems.length,
           elapsedLabel: elapsed(shift.clocked_in_at),
+          shiftType,
         },
         passes: passItems, residents: resItems, tape: tapeItems,
         shiftId: shift.id, loading: false, error: null,

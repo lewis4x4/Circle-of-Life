@@ -22,6 +22,7 @@ export interface ShiftBarProps {
   unitLabel: string;
   assignedCount: number;
   elapsedLabel: string;
+  shiftType: "day" | "evening" | "night" | "custom";
 }
 
 export function ShiftBar({
@@ -31,6 +32,7 @@ export function ShiftBar({
   unitLabel,
   assignedCount,
   elapsedLabel,
+  shiftType,
 }: ShiftBarProps) {
   const [now, setNow] = useState(new Date());
   const [menuOpen, setMenuOpen] = useState(false);
@@ -93,7 +95,7 @@ export function ShiftBar({
             <div className="text-left">
               <div className="text-sm font-semibold text-white">{techName}</div>
               <div className="text-xs text-slate-400">
-                {shiftLabel} · {unitLabel}
+                {shiftLabel} · {unitLabel} · {shiftType.toUpperCase()}
               </div>
             </div>
             <ChevronDown className={`w-3.5 h-3.5 text-slate-500 transition-transform ${menuOpen ? "rotate-180" : ""}`} />

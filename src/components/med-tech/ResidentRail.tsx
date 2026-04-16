@@ -1,6 +1,7 @@
 "use client";
 
 import { Camera } from "lucide-react";
+import Link from "next/link";
 
 export interface ResidentItem {
   id: string;
@@ -69,12 +70,20 @@ export function ResidentRail({
       </div>
 
       <div className="p-4 border-t border-slate-800 bg-slate-950/80">
-        <button
-          onClick={onIncidentClick}
-          className="w-full rounded-xl bg-gradient-to-br from-orange-600 to-rose-600 hover:from-orange-500 hover:to-rose-500 active:scale-95 text-white text-sm font-semibold py-3 flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 transition"
-        >
-          <Camera className="w-4 h-4" /> Capture Incident
-        </button>
+        <div className="grid grid-cols-2 gap-2">
+          <Link
+            href="/med-tech/controlled-count"
+            className="rounded-xl border border-teal-500/30 bg-teal-950/40 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-teal-200 transition hover:bg-teal-900/50"
+          >
+            Controlled Count
+          </Link>
+          <button
+            onClick={onIncidentClick}
+            className="rounded-xl bg-gradient-to-br from-orange-600 to-rose-600 hover:from-orange-500 hover:to-rose-500 active:scale-95 text-white text-sm font-semibold py-3 flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 transition"
+          >
+            <Camera className="w-4 h-4" /> Capture Incident
+          </button>
+        </div>
       </div>
     </div>
   );
