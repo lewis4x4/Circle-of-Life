@@ -19,6 +19,23 @@ const CAREGIVER_ROOT_ALIAS_PREFIXES = [
   "/resident",
 ] as const;
 
+const HOUSEKEEPER_ALLOWED_PREFIXES = [
+  "/caregiver",
+  "/caregiver/housekeeper",
+  "/caregiver/clock",
+  "/caregiver/schedules",
+  "/caregiver/me",
+  "/caregiver/policies",
+  "/clock",
+  "/me",
+] as const;
+
+function isHousekeeperAllowedPath(pathname: string): boolean {
+  return HOUSEKEEPER_ALLOWED_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
 export function isCaregiverShellPath(pathname: string): boolean {
   if (pathname === "/caregiver" || pathname.startsWith("/caregiver/")) {
     return true;
@@ -44,6 +61,9 @@ export function caregiverShellAccessRedirect(request: NextRequest, user: User | 
 
   const role = getAppRoleFromClaims(user);
   if (role === "caregiver" || role === "housekeeper") {
+    if (role === "housekeeper" && !isHousekeeperAllowedPath(nextUrl.pathname)) {
+      return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
+    }
     return null;
   }
   if (role === "family") {

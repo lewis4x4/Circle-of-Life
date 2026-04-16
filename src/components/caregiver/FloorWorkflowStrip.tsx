@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { cn } from "@/lib/utils";
 
 type WorkflowKey = "meds" | "tasks" | "rounds" | "followups" | "prn" | "incident" | "handoff";
@@ -24,6 +27,10 @@ export function FloorWorkflowStrip({
   title: string;
   description: string;
 }) {
+  const { appRole, user, loading } = useHavenAuth();
+  const effectiveRole = getAppRoleFromClaims(user) || (loading ? "" : appRole);
+  const homeHref = effectiveRole ? getDashboardRouteForRole(effectiveRole) : null;
+
   return (
     <div className="rounded-[1.5rem] border border-white/5 bg-white/[0.03] px-4 py-4 backdrop-blur-xl shadow-inner">
       <div className="mb-3">
@@ -32,6 +39,18 @@ export function FloorWorkflowStrip({
         <p className="mt-1 text-xs leading-relaxed text-zinc-400">{description}</p>
       </div>
       <div className="flex flex-wrap gap-2">
+        {homeHref ? (
+          <Link
+            href={homeHref}
+            className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-200 transition-colors hover:border-emerald-400/60 hover:bg-emerald-500/20"
+          >
+            Shift home
+          </Link>
+        ) : (
+          <span className="rounded-full border border-white/10 bg-black/30 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">
+            Resolving home
+          </span>
+        )}
         {WORKFLOW_LINKS.map((item) => {
           const isActive = item.key === active;
           return (
