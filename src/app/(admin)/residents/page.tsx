@@ -207,12 +207,12 @@ export default function AdminResidentsPage() {
     [rows.length],
   );
 
-  const activeCount = rows.filter((row) => row.status === "active").length;
-  const highAcuityCount = rows.filter((row) => row.acuity === 3).length;
+  const residentsInViewCount = filteredRows.length;
+  const highAcuityInViewCount = filteredRows.filter((row) => row.acuity === 3).length;
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={highAcuityCount > 0} />
+      <AmbientMatrix hasCriticals={highAcuityInViewCount > 0} />
       
       <div className="relative z-10 space-y-6">
         
@@ -224,7 +224,7 @@ export default function AdminResidentsPage() {
              </div>
              <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
                 Resident Hub
-                {highAcuityCount > 0 && <PulseDot colorClass="bg-rose-500" />}
+                {highAcuityInViewCount > 0 && <PulseDot colorClass="bg-rose-500" />}
              </h1>
              <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400">
                Unified census view with acuity & ADL scope.
@@ -241,24 +241,24 @@ export default function AdminResidentsPage() {
           <div className="h-[160px] lg:col-span-2">
             <V2Card hoverColor="emerald">
               <Sparkline colorClass="text-emerald-500" variant={1} />
-              <MonolithicWatermark value={activeCount} className="text-emerald-900/5 dark:text-emerald-100/5 opacity-50" />
+              <MonolithicWatermark value={residentsInViewCount} className="text-emerald-900/5 dark:text-emerald-100/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2 font-bold">
-                  <Users className="h-4 w-4" /> Total Census
+                  <Users className="h-4 w-4" /> Residents In View
                 </h3>
-                <p className="text-6xl font-display font-medium tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-500 dark:from-white dark:to-slate-400 pb-1">{activeCount}</p>
+                <p className="text-6xl font-display font-medium tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-500 dark:from-white dark:to-slate-400 pb-1">{residentsInViewCount}</p>
               </div>
             </V2Card>
           </div>
           <div className="h-[160px] lg:col-span-2">
             <V2Card hoverColor="rose" className="border-rose-500/20 dark:border-rose-500/20 shadow-[0_8px_30px_rgba(244,63,94,0.05)]">
               <Sparkline colorClass="text-rose-500" variant={4} />
-              <MonolithicWatermark value={highAcuityCount} className="text-rose-600/5 dark:text-rose-400/5 opacity-50" />
+              <MonolithicWatermark value={highAcuityInViewCount} className="text-rose-600/5 dark:text-rose-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2 font-bold">
-                  High Acuity Profile
+                  High Acuity In View
                 </h3>
-                <p className="text-6xl font-display font-medium tracking-tight text-rose-600 dark:text-rose-400 pb-1">{highAcuityCount}</p>
+                <p className="text-6xl font-display font-medium tracking-tight text-rose-600 dark:text-rose-400 pb-1">{highAcuityInViewCount}</p>
               </div>
             </V2Card>
           </div>
