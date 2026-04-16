@@ -314,7 +314,7 @@ export default function AdminReferralsInAdmissionsPage() {
                 Phase filter: {phaseFilter === "complete" ? "stable" : phaseFilter.replace(/_/g, " ")}
               </Badge>
               <Link href="/admin/referrals/in-admissions" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
-                Clear filter
+                Clear phase filter
               </Link>
             </div>
           ) : null}

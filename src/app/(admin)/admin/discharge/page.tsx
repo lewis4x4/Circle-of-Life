@@ -422,7 +422,7 @@ export default function AdminDischargeHubPage() {
                  Phase filter: {phaseFilter === "ready_to_complete" ? "ready to complete" : phaseFilter.replace(/_/g, " ")}
                </Badge>
                <Link href="/admin/discharge" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
-                 Clear filter
+                 Clear phase filter
                </Link>
              </div>
            ) : null}
