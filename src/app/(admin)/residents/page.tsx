@@ -169,25 +169,46 @@ export default function AdminResidentsPage() {
     return [{ value: "all", label: "All Units" }, ...distinctUnits.map((name) => ({ value: name, label: name }))];
   }, [rows]);
 
-  const filteredRows = useMemo(() => {
-    const loweredSearch = search.trim().toLowerCase();
-    return rows.filter((row) => {
-      const matchesSearch =
-        loweredSearch.length === 0 ||
-        row.name.toLowerCase().includes(loweredSearch) ||
-        row.room.toLowerCase().includes(loweredSearch) ||
-        row.careSummary.toLowerCase().includes(loweredSearch);
-      const matchesAcuity =
-        acuity === "all" || (acuity === "watchlist" ? row.acuity === 2 || row.acuity === 3 : String(row.acuity) === acuity);
-      const matchesUnit = unit === "all" || row.unit === unit;
-      const matchesAdl = adl === "all" || row.adlStatus === adl;
-      const matchesStatus =
-        status === "all" ||
-        (status === "away" ? row.status === "hospital" || row.status === "loa" : row.status === status);
+  const applyResidentFilters = useCallback(
+    (
+      input: ResidentRow[],
+      overrides?: Partial<{
+        search: string;
+        acuity: string;
+        unit: string;
+        adl: string;
+        status: string;
+      }>,
+    ) => {
+      const effectiveSearch = overrides?.search ?? search;
+      const effectiveAcuity = overrides?.acuity ?? acuity;
+      const effectiveUnit = overrides?.unit ?? unit;
+      const effectiveAdl = overrides?.adl ?? adl;
+      const effectiveStatus = overrides?.status ?? status;
+      const loweredSearch = effectiveSearch.trim().toLowerCase();
 
-      return matchesSearch && matchesAcuity && matchesUnit && matchesAdl && matchesStatus;
-    });
-  }, [rows, search, acuity, unit, adl, status]);
+      return input.filter((row) => {
+        const matchesSearch =
+          loweredSearch.length === 0 ||
+          row.name.toLowerCase().includes(loweredSearch) ||
+          row.room.toLowerCase().includes(loweredSearch) ||
+          row.careSummary.toLowerCase().includes(loweredSearch);
+        const matchesAcuity =
+          effectiveAcuity === "all" ||
+          (effectiveAcuity === "watchlist" ? row.acuity === 2 || row.acuity === 3 : String(row.acuity) === effectiveAcuity);
+        const matchesUnit = effectiveUnit === "all" || row.unit === effectiveUnit;
+        const matchesAdl = effectiveAdl === "all" || row.adlStatus === effectiveAdl;
+        const matchesStatus =
+          effectiveStatus === "all" ||
+          (effectiveStatus === "away" ? row.status === "hospital" || row.status === "loa" : row.status === effectiveStatus);
+
+        return matchesSearch && matchesAcuity && matchesUnit && matchesAdl && matchesStatus;
+      });
+    },
+    [search, acuity, unit, adl, status],
+  );
+
+  const filteredRows = useMemo(() => applyResidentFilters(rows), [applyResidentFilters, rows]);
 
   const listEmptyCopy = useMemo(
     () =>
@@ -274,28 +295,36 @@ export default function AdminResidentsPage() {
             value: acuity,
             onChange: setAcuity,
             options: [
-              { value: "all", label: "All Acuity" },
-              { value: "watchlist", label: "Watchlist (2-3)" },
-              { value: "1", label: "Acuity 1" },
-              { value: "2", label: "Acuity 2" },
-              { value: "3", label: "Acuity 3" },
+              { value: "all", label: `All Acuity (${applyResidentFilters(rows, { acuity: "all" }).length})` },
+              { value: "watchlist", label: `Watchlist (2-3) (${applyResidentFilters(rows, { acuity: "watchlist" }).length})` },
+              { value: "1", label: `Acuity 1 (${applyResidentFilters(rows, { acuity: "1" }).length})` },
+              { value: "2", label: `Acuity 2 (${applyResidentFilters(rows, { acuity: "2" }).length})` },
+              { value: "3", label: `Acuity 3 (${applyResidentFilters(rows, { acuity: "3" }).length})` },
             ],
           },
           {
             id: "unit",
             value: unit,
             onChange: setUnit,
-            options: unitOptions,
+            options: [
+              { value: "all", label: `All Units (${applyResidentFilters(rows, { unit: "all" }).length})` },
+              ...unitOptions
+                .filter((option) => option.value !== "all")
+                .map((option) => ({
+                  value: option.value,
+                  label: `${option.label} (${applyResidentFilters(rows, { unit: option.value }).length})`,
+                })),
+            ],
           },
           {
             id: "adl",
             value: adl,
             onChange: setAdl,
             options: [
-              { value: "all", label: "All ADL Status" },
-              { value: "independent", label: "Independent" },
-              { value: "assisted", label: "Assisted" },
-              { value: "dependent", label: "Dependent" },
+              { value: "all", label: `All ADL Status (${applyResidentFilters(rows, { adl: "all" }).length})` },
+              { value: "independent", label: `Independent (${applyResidentFilters(rows, { adl: "independent" }).length})` },
+              { value: "assisted", label: `Assisted (${applyResidentFilters(rows, { adl: "assisted" }).length})` },
+              { value: "dependent", label: `Dependent (${applyResidentFilters(rows, { adl: "dependent" }).length})` },
             ],
           },
           {
@@ -303,11 +332,11 @@ export default function AdminResidentsPage() {
             value: status,
             onChange: setStatus,
             options: [
-              { value: "all", label: "All Residency Status" },
-              { value: "active", label: "Active" },
-              { value: "hospital", label: "Hospital" },
-              { value: "loa", label: "LOA" },
-              { value: "away", label: "Hospital / LOA" },
+              { value: "all", label: `All Residency Status (${applyResidentFilters(rows, { status: "all" }).length})` },
+              { value: "active", label: `Active (${applyResidentFilters(rows, { status: "active" }).length})` },
+              { value: "hospital", label: `Hospital (${applyResidentFilters(rows, { status: "hospital" }).length})` },
+              { value: "loa", label: `LOA (${applyResidentFilters(rows, { status: "loa" }).length})` },
+              { value: "away", label: `Hospital / LOA (${applyResidentFilters(rows, { status: "away" }).length})` },
             ],
           },
         ]}
