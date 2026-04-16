@@ -135,18 +135,23 @@ export default function AdminStaffingConsolePage() {
     setWindowFilter("all");
   }, [searchParams]);
 
-  const snapshotIdsInOrder = useMemo(() => snapshots.map((s) => s.id), [snapshots]);
-  const visibleSnapshots = useMemo(() => {
+  const windowScopedSnapshots = useMemo(() => {
     return snapshots.filter((snapshot) => {
-      const matchesCompliance =
-        complianceFilter === "all" ||
-        (complianceFilter === "non_compliant" ? !snapshot.isCompliant : snapshot.isCompliant);
-      const matchesWindow =
+      return (
         windowFilter === "all" ||
-        new Date(snapshot.snapshotAt).getTime() >= Date.now() - 24 * 3_600_000;
-      return matchesCompliance && matchesWindow;
+        new Date(snapshot.snapshotAt).getTime() >= Date.now() - 24 * 3_600_000
+      );
     });
-  }, [complianceFilter, snapshots, windowFilter]);
+  }, [snapshots, windowFilter]);
+
+  const visibleSnapshots = useMemo(() => {
+    return windowScopedSnapshots.filter((snapshot) => {
+      return (
+        complianceFilter === "all" ||
+        (complianceFilter === "non_compliant" ? !snapshot.isCompliant : snapshot.isCompliant)
+      );
+    });
+  }, [complianceFilter, windowScopedSnapshots]);
 
   const exportStaffingSnapshotsCsv = useCallback(async () => {
     setExportingCsv(true);
@@ -413,9 +418,9 @@ export default function AdminStaffingConsolePage() {
                    {windowFilter === "24h" ? "Recent Ratio Snapshots (24h)" : "Recent Ratio Snapshots (Historical)"}
                  </p>
                  {([
-                   { value: "all", label: `All (${snapshots.length})` },
-                   { value: "non_compliant", label: `Non-compliant (${snapshots.filter((s) => !s.isCompliant).length})` },
-                   { value: "compliant", label: `Compliant (${snapshots.filter((s) => s.isCompliant).length})` },
+                   { value: "all", label: `All (${windowScopedSnapshots.length})` },
+                   { value: "non_compliant", label: `Non-compliant (${windowScopedSnapshots.filter((s) => !s.isCompliant).length})` },
+                   { value: "compliant", label: `Compliant (${windowScopedSnapshots.filter((s) => s.isCompliant).length})` },
                  ] as Array<{ value: ComplianceFilter; label: string }>).map((option) => (
                    <button
                      key={option.value}
