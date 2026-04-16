@@ -6,6 +6,8 @@ import { ArrowLeft, Banknote, Loader2 } from "lucide-react";
 
 import { fetchFamilyPaymentsList, formatUsd, type FamilyPaymentRow } from "@/lib/family/family-billing-data";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
+import { fetchFamilyLinkedResidentSummary } from "@/lib/family/family-linked-residents";
+import { FamilySectionIntro } from "@/components/family/FamilySectionIntro";
 
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -18,6 +20,7 @@ export default function FamilyPaymentsPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<FamilyPaymentRow[]>([]);
+  const [residentSummary, setResidentSummary] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -31,12 +34,18 @@ export default function FamilyPaymentsPage() {
       return;
     }
     try {
-      const result = await fetchFamilyPaymentsList(supabase);
-      if (!result.ok) {
-        setLoadError(result.error);
+      const [paymentsResult, residentResult] = await Promise.all([
+        fetchFamilyPaymentsList(supabase),
+        fetchFamilyLinkedResidentSummary(supabase),
+      ]);
+      if (!paymentsResult.ok) {
+        setLoadError(paymentsResult.error);
         setRows([]);
       } else {
-        setRows(result.rows);
+        setRows(paymentsResult.rows);
+      }
+      if (residentResult.ok) {
+        setResidentSummary(residentResult.data.residentSummary);
       }
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : "Could not load payments.");
@@ -82,49 +91,44 @@ export default function FamilyPaymentsPage() {
 
   return (
     <div className="space-y-4 pb-16 md:pb-0">
-      <Link
-        href="/family/billing"
-        className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-stone-600 hover:text-stone-900")}
-      >
+      <FamilySectionIntro
+        active="billing"
+        title="Payments"
+        description="A simple record of posted payments for the people linked to your account."
+        residentSummary={residentSummary || undefined}
+      />
+      <Link href="/family/billing" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-stone-600 hover:text-stone-900")}>
         <ArrowLeft className="h-4 w-4" />
-        Billing summary
+        Back to billing summary
       </Link>
 
-      <Card className="border-stone-200 bg-white text-stone-900">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-xl font-display">
-            <Banknote className="h-6 w-6 text-orange-600" />
-            Payments
-          </CardTitle>
-          <CardDescription>
-            Posted payments visible for linked residents. This page is for review only and does not start new payments.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="glass-card-light rounded-[2rem] p-6 md:p-8 bg-white/70">
+        <div className="mb-5 flex items-center gap-3">
+          <Banknote className="h-6 w-6 text-amber-600" />
+          <div>
+            <h2 className="text-2xl font-serif text-stone-800">Payments</h2>
+            <p className="text-sm text-stone-500">Posted payments visible for linked residents. This page is for review only.</p>
+          </div>
+        </div>
+        <div className="mb-4">
           <Badge variant="outline" className="border-emerald-300 bg-emerald-50 text-emerald-800">
             Read-only history
           </Badge>
-        </CardContent>
-      </Card>
-
-      <Card className="border-stone-200 bg-white text-stone-900">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Recent payments</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
+        </div>
+        <div className="space-y-3">
           {rows.length === 0 ? (
-            <p className="py-6 text-center text-sm text-stone-600">
+            <p className="py-10 text-center text-sm text-stone-600">
               No payments are visible right now, or your current family access does not include payment history.
             </p>
           ) : (
             rows.map((p) => (
               <div
                 key={p.id}
-                className="flex flex-col gap-1 rounded-lg border border-stone-200 bg-stone-50 p-3 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-1 rounded-[1.5rem] border border-stone-200 bg-white/60 p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
-                  <p className="text-sm font-semibold text-stone-900">{formatUsd(p.amount)}</p>
-                  <p className="text-xs text-stone-600">
+                  <p className="text-lg font-serif text-stone-900">{formatUsd(p.amount)}</p>
+                  <p className="text-sm text-stone-600">
                     {p.dateLabel} · {p.methodLabel}
                   </p>
                   <p className="text-xs text-stone-500">{p.residentName}</p>
@@ -133,8 +137,8 @@ export default function FamilyPaymentsPage() {
               </div>
             ))
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

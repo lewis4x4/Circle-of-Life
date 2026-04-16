@@ -10,6 +10,7 @@ import {
   type FamilyResidentCarePlanView,
 } from "@/lib/family/family-care-plan-data";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
+import { FamilySectionIntro } from "@/components/family/FamilySectionIntro";
 
 export default function FamilyCarePlanPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -86,17 +87,12 @@ export default function FamilyCarePlanPage() {
 
   return (
     <div className="pb-8 flex flex-col items-center max-w-3xl mx-auto w-full px-4 pt-12 md:pt-20">
-      
-      {/* HEADER */}
-      <div className="text-center mb-12">
-        <div className="w-16 h-16 mx-auto bg-rose-100 rounded-[1.5rem] flex items-center justify-center rounded-tl-sm rotate-3 transform mb-6 shadow-sm">
-           <HeartPulse className="w-8 h-8 text-rose-500 -rotate-3" />
-        </div>
-        <h1 className="text-4xl md:text-5xl font-serif text-stone-800 tracking-tight mb-3">Care Summary</h1>
-        <p className="text-stone-500 max-w-lg mx-auto text-base">
-          A plain-language view of the care approach guiding daily support and clinical attention.
-        </p>
-      </div>
+      <FamilySectionIntro
+        active="care"
+        title="Care Summary"
+        description="A plain-language view of the current care approach, what the team is watching, and how support is structured day to day."
+        residentSummary={data.residents.length === 1 ? data.residents[0]?.residentName : data.residents.length > 1 ? `${data.residents[0]?.residentName ?? "Your loved one"} and others` : undefined}
+      />
 
       <div className="w-full space-y-12">
          {data.residents.length === 0 ? (
@@ -115,12 +111,12 @@ export default function FamilyCarePlanPage() {
            <div className="mb-4 flex items-center justify-between gap-2">
              <p className="inline-flex items-center gap-2 text-sm font-semibold text-stone-800 uppercase tracking-widest">
                <ShieldCheck className="h-4 w-4 text-emerald-500" />
-               Visibility Scope
+               How to use this page
              </p>
              <span className="px-3 py-1 rounded-full bg-stone-100 text-stone-500 text-[10px] font-bold uppercase tracking-wider">Read-only</span>
            </div>
            <p className="mb-6 text-sm text-stone-600 leading-relaxed max-w-xl">
-             This view reflects the care information the team has chosen to share for your linked residents. If anything feels unclear, send a message and they can walk you through it.
+             This is a shared care summary, not the team&apos;s full internal clinical chart. If anything feels unclear, ask a question and they can give you more context.
            </p>
            <div className="flex flex-wrap gap-3">
              <button

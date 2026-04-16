@@ -5,6 +5,8 @@ import { CalendarDays, Clock, Loader2, MapPin } from "lucide-react";
 
 import { fetchFamilyCalendarEvents, type FamilyCalendarEventRow } from "@/lib/family/family-calendar-data";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
+import { fetchFamilyLinkedResidentSummary } from "@/lib/family/family-linked-residents";
+import { FamilySectionIntro } from "@/components/family/FamilySectionIntro";
 
 export default function FamilyCalendarPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -12,6 +14,7 @@ export default function FamilyCalendarPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<FamilyCalendarEventRow[]>([]);
+  const [residentSummary, setResidentSummary] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -25,12 +28,18 @@ export default function FamilyCalendarPage() {
       return;
     }
     try {
-      const result = await fetchFamilyCalendarEvents(supabase);
-      if (!result.ok) {
-        setLoadError(result.error);
+      const [calendarResult, residentResult] = await Promise.all([
+        fetchFamilyCalendarEvents(supabase),
+        fetchFamilyLinkedResidentSummary(supabase),
+      ]);
+      if (!calendarResult.ok) {
+        setLoadError(calendarResult.error);
         setRows([]);
       } else {
-        setRows(result.rows);
+        setRows(calendarResult.rows);
+      }
+      if (residentResult.ok) {
+        setResidentSummary(residentResult.data.residentSummary);
       }
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : "Could not load calendar.");
@@ -79,17 +88,12 @@ export default function FamilyCalendarPage() {
 
   return (
     <div className="pb-8 flex flex-col items-center max-w-3xl mx-auto w-full px-4 pt-12 md:pt-20">
-      
-      {/* HEADER */}
-      <div className="text-center mb-16">
-        <div className="w-16 h-16 mx-auto bg-violet-100 rounded-[1.5rem] flex items-center justify-center rounded-tr-sm -rotate-3 transform mb-6 shadow-sm">
-           <CalendarDays className="w-8 h-8 text-violet-500 rotate-3" />
-        </div>
-        <h1 className="text-4xl md:text-5xl font-serif text-stone-800 tracking-tight mb-3">Upcoming Moments</h1>
-        <p className="text-stone-500 max-w-lg mx-auto text-base">
-          Shared activities and events happening around your loved one&apos;s day. Private visits or appointments may appear later as more scheduling connections come online.
-        </p>
-      </div>
+      <FamilySectionIntro
+        active="calendar"
+        title="Upcoming Moments"
+        description="Shared activities and events happening around your loved one&apos;s day."
+        residentSummary={residentSummary || undefined}
+      />
 
       <div className="w-full space-y-6">
         {rows.length === 0 ? (

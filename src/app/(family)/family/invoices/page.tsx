@@ -11,6 +11,8 @@ import {
   type FamilyBillingContext,
 } from "@/lib/family/family-billing-data";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
+import { fetchFamilyLinkedResidentSummary } from "@/lib/family/family-linked-residents";
+import { FamilySectionIntro } from "@/components/family/FamilySectionIntro";
 
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -29,6 +31,7 @@ export default function FamilyInvoicesPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<FamilyBillingContext | null>(null);
+  const [residentSummary, setResidentSummary] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -42,12 +45,18 @@ export default function FamilyInvoicesPage() {
       return;
     }
     try {
-      const result = await fetchFamilyBillingContext(supabase);
-      if (!result.ok) {
-        setLoadError(result.error);
+      const [invoiceResult, residentResult] = await Promise.all([
+        fetchFamilyBillingContext(supabase),
+        fetchFamilyLinkedResidentSummary(supabase),
+      ]);
+      if (!invoiceResult.ok) {
+        setLoadError(invoiceResult.error);
         setData(null);
       } else {
-        setData(result.data);
+        setData(invoiceResult.data);
+      }
+      if (residentResult.ok) {
+        setResidentSummary(residentResult.data.residentSummary);
       }
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : "Could not load invoices.");
@@ -95,56 +104,54 @@ export default function FamilyInvoicesPage() {
 
   return (
     <div className="space-y-4 pb-16 md:pb-0">
-      <Link
-        href="/family/billing"
-        className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-stone-600 hover:text-stone-900")}
-      >
+      <FamilySectionIntro
+        active="billing"
+        title="Invoices"
+        description="Every visible statement in one place, with due dates and current balances."
+        residentSummary={residentSummary || undefined}
+      />
+      <Link href="/family/billing" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-stone-600 hover:text-stone-900")}>
         <ArrowLeft className="h-4 w-4" />
-        Billing summary
+        Back to billing summary
       </Link>
 
-      <Card className="border-stone-200 bg-white text-stone-900">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-xl font-display">
-            <FileText className="h-6 w-6 text-orange-600" />
-            Invoices
-          </CardTitle>
-          <CardDescription>
-            Statements available for your linked residents. Open balance across visible invoices:{" "}
-            <span className="font-medium text-stone-800">{formatUsd(data.totalBalanceDue)}</span>.
-          </CardDescription>
-        </CardHeader>
-      </Card>
-
-      <Card className="border-stone-200 bg-white text-stone-900">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">All invoices</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
+      <div className="glass-card-light rounded-[2rem] p-6 md:p-8 bg-white/70">
+        <div className="mb-5 flex items-center gap-3">
+          <FileText className="h-6 w-6 text-amber-600" />
+          <div>
+            <h2 className="text-2xl font-serif text-stone-800">Invoices</h2>
+            <p className="text-sm text-stone-500">
+              Open balance across visible invoices: <span className="font-semibold text-stone-700">{formatUsd(data.totalBalanceDue)}</span>
+            </p>
+          </div>
+        </div>
+        <div className="space-y-3">
           {data.invoices.length === 0 ? (
-            <p className="py-6 text-center text-sm text-stone-600">
+            <p className="py-10 text-center text-sm text-stone-600">
               No invoices are visible right now, or your current family access does not include billing records.
             </p>
           ) : (
             data.invoices.map((inv) => (
-              <div key={inv.id} className="rounded-lg border border-stone-200 bg-stone-50 p-3">
-                <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-stone-900">{inv.invoiceNumber}</p>
+              <div key={inv.id} className="rounded-[1.5rem] border border-stone-200 bg-white/60 p-5 shadow-sm">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">{inv.invoiceNumber}</p>
+                    <p className="text-lg font-serif text-stone-800">{inv.periodLabel}</p>
+                  </div>
                   <Badge className={invoiceStatusBadgeClass(inv.status)}>{inv.statusLabel}</Badge>
                 </div>
-                <p className="mb-2 text-xs text-stone-500">{inv.residentName}</p>
-                <div className="grid gap-1 text-xs text-stone-600 sm:grid-cols-3">
-                  <span>Period: {inv.periodLabel}</span>
-                  <span>Total: {formatUsd(inv.total)}</span>
-                  <span>
+                <div className="pt-3 border-t border-stone-100 text-sm text-stone-600 space-y-1">
+                  <p>{inv.residentName}</p>
+                  <p>Total: {formatUsd(inv.total)}</p>
+                  <p>
                     {inv.status === "paid" ? "Paid in full" : `Due ${formatDue(inv.dueDate)} · Balance ${formatUsd(inv.balanceDue)}`}
-                  </span>
+                  </p>
                 </div>
               </div>
             ))
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

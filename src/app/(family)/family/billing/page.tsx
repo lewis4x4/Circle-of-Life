@@ -6,6 +6,8 @@ import { CreditCard, FileText, Loader2, ShieldCheck, Banknote } from "lucide-rea
 
 import { fetchFamilyBillingContext, formatUsd, type FamilyBillingContext } from "@/lib/family/family-billing-data";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
+import { fetchFamilyLinkedResidentSummary } from "@/lib/family/family-linked-residents";
+import { FamilySectionIntro } from "@/components/family/FamilySectionIntro";
 
 import { cn } from "@/lib/utils";
 
@@ -21,6 +23,7 @@ export default function FamilyBillingSummaryPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<FamilyBillingContext | null>(null);
+  const [residentSummary, setResidentSummary] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -34,12 +37,18 @@ export default function FamilyBillingSummaryPage() {
       return;
     }
     try {
-      const result = await fetchFamilyBillingContext(supabase);
-      if (!result.ok) {
-        setLoadError(result.error);
+      const [billingResult, residentResult] = await Promise.all([
+        fetchFamilyBillingContext(supabase),
+        fetchFamilyLinkedResidentSummary(supabase),
+      ]);
+      if (!billingResult.ok) {
+        setLoadError(billingResult.error);
         setData(null);
       } else {
-        setData(result.data);
+        setData(billingResult.data);
+      }
+      if (residentResult.ok) {
+        setResidentSummary(residentResult.data.residentSummary);
       }
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : "Could not load billing.");
@@ -100,17 +109,12 @@ export default function FamilyBillingSummaryPage() {
 
   return (
     <div className="pb-8 flex flex-col items-center max-w-3xl mx-auto w-full px-4 pt-12 md:pt-20">
-      
-      {/* HEADER */}
-      <div className="text-center mb-16">
-        <div className="w-16 h-16 mx-auto bg-amber-100 rounded-[1.5rem] flex items-center justify-center rounded-tl-sm rotate-3 transform mb-6 shadow-sm">
-           <Banknote className="w-8 h-8 text-amber-600 -rotate-3" />
-        </div>
-        <h1 className="text-4xl md:text-5xl font-serif text-stone-800 tracking-tight mb-3">Billing Summary</h1>
-        <p className="text-stone-500 max-w-lg mx-auto text-base">
-          A calm overview of invoices and payments visible to your account.
-        </p>
-      </div>
+      <FamilySectionIntro
+        active="billing"
+        title="Billing Summary"
+        description="A calm overview of statements and payment history that are visible to your account."
+        residentSummary={residentSummary || undefined}
+      />
 
       <div className="w-full space-y-12">
          {/* Financial Overview Blocks */}
@@ -168,11 +172,11 @@ export default function FamilyBillingSummaryPage() {
            <div className="mb-4 flex items-center justify-between gap-2">
              <p className="inline-flex items-center gap-2 text-sm font-semibold text-stone-800 uppercase tracking-widest">
                <ShieldCheck className="h-4 w-4 text-emerald-500" />
-               Billing Access
+               What you can do here
              </p>
            </div>
            <p className="mb-6 text-sm text-stone-600 leading-relaxed max-w-xl">
-             This space is read-only today. You can review statements and payment history here, while any payment action still happens off-platform.
+             This space is read-only today. You can review statements and payment history here, then follow your facility&apos;s existing payment path if something is due.
            </p>
            <div className="flex flex-wrap gap-3">
              <Link

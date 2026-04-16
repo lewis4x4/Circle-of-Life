@@ -11,6 +11,7 @@ import {
   type FamilyMessageRow,
 } from "@/lib/family/family-messages-data";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
+import { FamilySectionIntro } from "@/components/family/FamilySectionIntro";
 
 import { cn } from "@/lib/utils";
 
@@ -147,17 +148,12 @@ export default function FamilyMessagesPage() {
 
   return (
     <div className="pb-8 flex flex-col items-center max-w-3xl mx-auto w-full px-4 pt-12 md:pt-20">
-      
-      {/* HEADER */}
-      <div className="text-center mb-12">
-        <div className="w-16 h-16 mx-auto bg-stone-100 rounded-full flex items-center justify-center mb-6 shadow-inner ring-4 ring-white">
-           <MessageSquare className="w-8 h-8 text-stone-700" />
-        </div>
-        <h1 className="text-4xl md:text-5xl font-serif text-stone-800 tracking-tight mb-3">Messages</h1>
-        <p className="text-stone-500 max-w-lg mx-auto text-base">
-          Secure notes with your loved one&apos;s care team.
-        </p>
-      </div>
+      <FamilySectionIntro
+        active="messages"
+        title="Messages"
+        description="A calm place to ask questions, share updates, and keep the conversation anchored to your loved one."
+        residentSummary={residents.length === 1 ? residents[0]?.displayName : residents.length > 1 ? `${residents[0]?.displayName ?? "Your loved one"} and others` : undefined}
+      />
 
       <div className="w-full space-y-6">
          {/* VISIBILITY SCOPE */}
@@ -165,6 +161,9 @@ export default function FamilyMessagesPage() {
             <p className="inline-flex items-center justify-center gap-2 text-sm text-stone-600 font-medium w-full">
                <ShieldCheck className="h-5 w-5 text-emerald-500" />
                Messages are private, time-stamped, and visible to the care team.
+            </p>
+            <p className="mt-2 text-sm text-stone-500">
+              Use messages for context and questions. Urgent medical concerns should still be directed to the facility right away.
             </p>
          </div>
 
@@ -181,7 +180,7 @@ export default function FamilyMessagesPage() {
              <div className="px-6 py-4 border-b border-stone-100 bg-stone-50/50 flex flex-wrap items-center justify-between gap-4">
                {residents.length > 1 ? (
                  <div className="flex items-center gap-3">
-                   <span className="text-xs font-bold uppercase tracking-widest text-stone-400">Target</span>
+                   <span className="text-xs font-bold uppercase tracking-widest text-stone-400">Conversation for</span>
                    <select
                      className="bg-transparent font-serif text-lg text-stone-800 cursor-pointer focus:outline-none"
                      value={selectedResidentId ?? ""}
@@ -194,7 +193,7 @@ export default function FamilyMessagesPage() {
                  </div>
                ) : (
                  <div className="flex items-center gap-3">
-                   <span className="text-xs font-bold uppercase tracking-widest text-stone-400">Target</span>
+                   <span className="text-xs font-bold uppercase tracking-widest text-stone-400">Conversation for</span>
                    <span className="font-serif text-lg text-stone-800">{residents[0]?.displayName}</span>
                  </div>
                )}
