@@ -107,7 +107,8 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
     firstScreenPriority: ["communications", "coordination", "follow_through"],
     suppressedSections: ["clinical_risk_rollups", "finance_risk", "staffing_exceptions"],
     mobileTabletExpectation: "desktop-first",
-    visibleGroups: ["Command", "Pipeline"],
+    visibleGroups: ["Command", "Pipeline", "Clinical Ops", "Workforce", "Knowledge"],
+    visibleItemKeys: ["referrals", "admissions", "family-messages", "residents", "transportation", "staff", "kb-admin"],
     sections: {
       heroStats: true, quickActions: true, criticalUpdates: false,
       compliance: false, financials: false, watchlist: false,
@@ -123,6 +124,7 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
     suppressedSections: ["enterprise_rollup", "finance_risk"],
     mobileTabletExpectation: "desktop-first",
     visibleGroups: ["Command", "Clinical Ops", "Pipeline"],
+    visibleItemKeys: ["admissions", "family-messages", "residents", "care-plans", "assessments"],
     sections: {
       heroStats: true, quickActions: true, criticalUpdates: true,
       compliance: false, financials: false, watchlist: true,
@@ -138,6 +140,7 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
     suppressedSections: ["enterprise_rollup", "family_billing"],
     mobileTabletExpectation: "desktop-first",
     visibleGroups: ["Command", "Clinical Ops", "Quality & Risk"],
+    visibleItemKeys: ["residents", "med-tech", "medication-errors", "incidents-new", "incidents"],
     sections: {
       heroStats: true, quickActions: true, criticalUpdates: true,
       compliance: true, financials: false, watchlist: true,

@@ -36,6 +36,7 @@ The work landed as a set of coherent role packages instead of one monolithic red
 5. family depth and cross-page product coherence
 6. specialist route convergence for nurse and other admin-eligible specialist returns
 7. limited-shell convergence for maintenance and broker roles
+8. admin-specialist navigation convergence for front desk, coordinator, and nurse
 
 Browser validation was run against the role homes and the key floor/family routes needed by the acceptance gates.
 
@@ -201,6 +202,16 @@ Delivered:
 - broker now lands in `/admin/insurance`
 - `/admin` no longer acts as a generic fallback for roles whose defined home already lives elsewhere
 - the shared admin shell now supports per-role nav-item narrowing so limited-shell specialists only see the module lanes they are supposed to operate
+
+### Workstream H — Admin Specialist Nav Contract
+
+**Status:** complete
+
+Delivered:
+
+- front desk, coordinator, and nurse now see explicit specialist home entries inside the shared admin shell
+- the admin shell now narrows visible menu items for those roles to the modules their dashboards already promise
+- `/admin/care-plans/reviews-due` now exists as a real coordinator destination instead of a dead route referenced by the coordinator dashboard and compliance flows
 
 ---
 

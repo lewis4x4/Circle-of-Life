@@ -22,6 +22,7 @@ import {
   UserCog,
   CreditCard,
   ClipboardCheck,
+  ClipboardList,
   Award,
   GraduationCap,
   Utensils,
@@ -54,9 +55,11 @@ import {
   ShieldCheck,
   Zap,
   Hotel,
+  House,
   BookOpen,
   BrainCircuit,
   MessageSquare,
+  type LucideIcon,
 } from "lucide-react";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { FACILITY_LIST_TTL_MS, useFacilityStore } from "@/hooks/useFacilityStore";
@@ -73,6 +76,27 @@ import {
 import { SurveyVisitModeBar } from "@/components/compliance/SurveyVisitModeBar";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
+
+type AdminNavItem = {
+  key: string;
+  href: string;
+  label: string;
+  enabled: boolean;
+  icon: LucideIcon;
+};
+
+function getRoleHomeLabel(appRole: string, roleLabel: string): string {
+  switch (appRole) {
+    case "admin_assistant":
+      return "Front desk home";
+    case "coordinator":
+      return "Coordinator home";
+    case "nurse":
+      return "Medication home";
+    default:
+      return `${roleLabel} home`;
+  }
+}
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -173,8 +197,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       icon: Stethoscope,
       items: [
         { key: "residents", href: "/admin/residents", label: "Resident roster", enabled: true, icon: Users },
+        { key: "care-plans", href: "/admin/care-plans/reviews-due", label: "Care plan reviews", enabled: true, icon: ClipboardList },
         { key: "assessments", href: "/admin/assessments/overdue", label: "Clinical Desk (Assessments)", enabled: true, icon: ClipboardCheck },
         { key: "rounding", href: "/admin/rounding", label: "Smart Rounding", enabled: true, icon: Clock },
+        { key: "med-tech", href: "/med-tech", label: "Med-Tech cockpit", enabled: true, icon: Pill },
+        { key: "medication-errors", href: "/admin/medications/errors", label: "Medication errors", enabled: true, icon: ShieldAlert },
         { key: "medications", href: "/admin/medications", label: "Medication management", enabled: true, icon: Pill },
         { key: "dietary", href: "/admin/dietary", label: "Dietary & Nutrition", enabled: true, icon: Utensils },
         { key: "transportation", href: "/admin/transportation", label: "Transportation log", enabled: true, icon: Bus },
@@ -231,7 +258,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   const navGroups = useMemo(() => {
     const visibleKeySet = roleConfig.visibleItemKeys ? new Set(roleConfig.visibleItemKeys) : null;
-    return allNavGroups
+    const baseGroups = allNavGroups
       .filter((group) => roleConfig.visibleGroups.includes(group.group))
       .map((group) => ({
         ...group,
@@ -240,7 +267,41 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           : group.items,
       }))
       .filter((group) => group.items.length > 0);
-  }, [allNavGroups, roleConfig.visibleGroups, roleConfig.visibleItemKeys]);
+
+    if (roleConfig.route === "/admin" || baseGroups.length === 0) {
+      return baseGroups;
+    }
+
+    const homeItem: AdminNavItem = {
+      key: "role-home",
+      href: roleConfig.route,
+      label: getRoleHomeLabel(appRole, roleConfig.roleLabel),
+      enabled: true,
+      icon: House,
+    };
+
+    const preferredHomeGroup = roleConfig.visibleGroups.includes("Command")
+      ? "Command"
+      : baseGroups[0]?.group;
+
+    if (!preferredHomeGroup) {
+      return baseGroups;
+    }
+
+    const existingGroup = baseGroups.find((group) => group.group === preferredHomeGroup);
+    if (existingGroup) {
+      return baseGroups.map((group) =>
+        group.group === preferredHomeGroup ? { ...group, items: [homeItem, ...group.items] } : group,
+      );
+    }
+
+    const groupTemplate = allNavGroups.find((group) => group.group === preferredHomeGroup);
+    if (!groupTemplate) {
+      return baseGroups;
+    }
+
+    return [{ ...groupTemplate, items: [homeItem] }, ...baseGroups];
+  }, [allNavGroups, appRole, roleConfig.roleLabel, roleConfig.route, roleConfig.visibleGroups, roleConfig.visibleItemKeys]);
 
   // Determine active group for styling the top-nav pill
   const activeGroup = useMemo(() => {
