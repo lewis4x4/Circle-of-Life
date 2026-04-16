@@ -1,6 +1,6 @@
 # Slice 2 Closeout Record
 
-**Status:** ENGINEERING CLOSEOUT COMPLETE, BROWSER QA HOLD  
+**Status:** PASS WITH CAVEATS  
 **Roadmap source:** [29-col-demo-roadmap.md](/Users/brianlewis/Circle%20of%20Life/Circle-of-Life/docs/specs/29-col-demo-roadmap.md)  
 **Execution plan:** [31-slice2-execution-plan.md](/Users/brianlewis/Circle%20of%20Life/Circle-of-Life/docs/specs/31-slice2-execution-plan.md)  
 **Slice:** `Workflow Convergence`  
@@ -11,21 +11,18 @@
 
 ## Verdict
 
-Slice 2 is **functionally complete from an engineering / workflow-convergence perspective** and should now move into a focused **browser-level QA pass** before it is formally closed.
+Slice 2 is **formally closed at PASS WITH CAVEATS**.
+
+The browser-backed closeout pass was completed against the live command surface and its filtered destination pages. That pass surfaced two real runtime mismatches, both of which are now fixed:
+
+1. `/admin` was querying `incidents` with invalid `incident_status` enum values in the dashboard snapshot
+2. `/admin/incidents/followups`, `/admin/incidents/overdue-followups`, and `/admin/incidents/obligations` were linked from the command surface but did not exist under the admin-prefixed route tree
 
 Recommended disposition:
 
 - **Engineering implementation:** PASS
 - **Workflow convergence:** PASS
-- **Browser / runtime closeout:** REQUIRED BEFORE FORMAL SLICE CLOSURE
-
-This means the correct next step is not more open-ended convergence coding.
-It is:
-
-1. run the Slice 2 browser pass
-2. capture any final runtime mismatches
-3. fix only the stragglers that survive browser validation
-4. close Slice 2 formally
+- **Browser-backed closeout:** PASS WITH CAVEATS
 
 ---
 
@@ -110,7 +107,7 @@ Delivered:
 
 ### 5. The command surface can answer “what changed, what is blocked, and what happens next”
 
-**Status:** MOSTLY PASS, browser confirmation required
+**Status:** PASS WITH CAVEATS
 
 What shipped:
 
@@ -121,7 +118,8 @@ What shipped:
 
 Residual risk:
 
-- needs browser validation to confirm the runtime experience matches the code-side intent
+- no further Slice 2 command-surface/runtime mismatch was confirmed after the closeout browser pass
+- the remaining caveat is operational auth drift on the target project, not a workflow-convergence defect in Slice 2
 
 ---
 
@@ -169,25 +167,22 @@ Residual risk:
   - better alignment between cards, inbox items, and destination pages
 - staffing credential blockers now come from live certification + staff data rather than hardcoded placeholder rows
 - staffing shift-gap panel now derives from live schedule-assignment pressure instead of hardcoded placeholder rows
+- staffing summary card now uses live ratio / required-ratio snapshot data instead of mock HPPD values
+- admin incident backlog links now resolve to real admin-prefixed follow-up / overdue / obligations pages
+- `/admin` no longer fails on `incident_status` enum mismatch during snapshot loading
 
 ---
 
 ## Remaining Work
 
-This is the actual closeout work left:
+There is no remaining Slice 2 implementation blocker.
 
-### Required before formal closure
+The remaining caveat is operational:
 
-1. **Browser verification**
-   - `/admin`
-   - doctrine queue entry points
-   - incident board and backlog handoffs
-   - admissions / referrals / discharge filtered views
-   - family filtered views
-   - resident / staffing / certification / med-error filtered destinations
-
-2. **Final runtime fixes**
-   - only if the browser pass surfaces real mismatches
+1. **Target-project demo auth drift**
+   - the historical pilot credential matrix in repo docs no longer authenticated on the target project at closeout time
+   - browser QA was completed by repairing an admin-capable demo login (`admin@circleoflifealf.com`) so the Slice 2 routes could be verified
+   - this should be tracked as an auth/runbook maintenance issue, not as a Slice 2 workflow-convergence reopen
 
 ### Not required before moving to the next slice
 
@@ -200,6 +195,6 @@ This is the actual closeout work left:
 
 ## Current Recommendation
 
-Run the browser pass now.
+Move to Slice 3.
 
-If the browser pass comes back clean or with only tiny stragglers, Slice 2 should be closed formally and work should move to the next slice from a clean base.
+Keep the auth caveat in mind if a later acceptance pass depends on the old pilot login matrix; that issue is operational and separate from Slice 2 closure.

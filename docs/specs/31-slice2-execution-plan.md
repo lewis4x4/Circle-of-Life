@@ -1,6 +1,6 @@
 # Slice 2 Execution Plan
 
-**Status:** ENGINEERING EXECUTION SUBSTANTIALLY COMPLETE  
+**Status:** BROWSER QA COMPLETE — CLOSEOUT READY WITH CAVEATS  
 **Roadmap source:** [29-col-demo-roadmap.md](/Users/brianlewis/Circle%20of%20Life/Circle-of-Life/docs/specs/29-col-demo-roadmap.md)  
 **Previous slice:** [30-slice1-closeout-record.md](/Users/brianlewis/Circle%20of%20Life/Circle-of-Life/docs/specs/30-slice1-closeout-record.md)  
 **Slice:** `Workflow Convergence`  
@@ -26,14 +26,14 @@ This slice focused on making existing surfaces behave like real operational lane
 
 ## Current Read
 
-Slice 2 is now **largely complete from an engineering standpoint**.
+Slice 2 is now **complete enough to close from an implementation standpoint**.
 
-The remaining work is not broad workflow construction.
-It is:
+The browser-backed closeout pass was run against the command surface and its filtered destinations. That pass surfaced two real runtime mismatches, both now fixed:
 
-1. browser-level verification of the latest queue/filter/routing behavior
-2. fixing any final runtime mismatches found there
-3. formal closeout documentation
+1. `/admin` used invalid `incident_status` enum values in the dashboard snapshot query
+2. incident backlog links under `/admin/incidents/...` were pointing at admin-prefixed routes that did not exist, so they fell through to the incident detail route
+
+The remaining caveat is operational auth drift on the target project, not additional Slice 2 workflow construction.
 
 ---
 
@@ -61,7 +61,8 @@ Primary surfaces:
 
 Residual risk:
 
-- browser verification still needs to confirm the section-focused doctrine entry points and review-complete flow
+- doctrine entry points and section-focus behavior were browser-checked in the closeout pass
+- no additional doctrine-lane code blocker remains in Slice 2 scope
 
 ### 2. Incident follow-up work is actionable and triageable from backlog surfaces
 
@@ -91,7 +92,8 @@ Primary surfaces:
 
 Residual risk:
 
-- browser verification still needs to confirm queue handoffs, severity/scope filters, and queue bulk-action behavior
+- queue handoffs and severity/scope-filtered backlog entry points were browser-checked after the admin-prefixed incident backlog routes were restored
+- no additional incident-lane code blocker remains in Slice 2 scope
 
 ### 3. Operators can see which work is overdue, unassigned, assigned, or complete
 
@@ -109,7 +111,8 @@ Delivered:
 
 Residual risk:
 
-- browser verification still needs to confirm that the visible counts, pills, and deep links feel coherent in the rendered UI
+- destination filter chrome and command-surface deep links were browser-checked on the closeout path
+- target-project auth drift still makes the historical pilot credential matrix unreliable without repair
 
 ### 4. At least one cross-module workflow beyond Knowledge and Incident is operationalized end to end
 
@@ -219,32 +222,25 @@ Delivered:
 - reduction of generic-hub links where the app already knows the exact slice
 - staffing credential blockers now derive from live certification records instead of hardcoded placeholders
 - staffing shift-gap panel now derives from live schedule-assignment pressure instead of hardcoded placeholder rows
+- staffing summary card now uses live ratio / required-ratio snapshot data instead of mock HPPD values
+- admin incident backlog links now resolve to real admin-prefixed follow-up / overdue / obligations pages
+- `/admin` no longer fails on `incident_status` enum mismatch during snapshot loading
 
 ---
 
 ## What Is Left
 
-Only the short tail remains:
+Only formal recording work remains:
 
-1. **Browser verification**
-   - `/admin`
-   - doctrine queue sections
-   - incident board / queues
-   - admissions / referral handoffs
-   - discharge hub
-   - family portal / family messages
+1. **Closeout verdict**
+   - record Slice 2 as `PASS WITH CAVEATS`
 
-2. **Fix final runtime stragglers**
-   - only if found in the browser pass
-
-3. **Formal closeout**
-   - capture pass / pass-with-caveat / fail
-   - declare Slice 2 closed or note exact residual caveats
+2. **Operational caveat tracking**
+   - note that browser QA required repairing an admin-capable demo login because the target-project pilot auth matrix has drifted from the historical runbooks
+   - treat that as an auth/runbook maintenance issue, not a Slice 2 workflow-convergence reopen
 
 ---
 
 ## Recommended Next Step
 
-Run the Slice 2 browser pass and use the results to produce the final closeout record.
-
-That is now the highest-value move.
+Record the final closeout verdict and move to Slice 3 from a clean engineering baseline.

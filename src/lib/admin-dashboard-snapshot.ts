@@ -596,7 +596,7 @@ export async function fetchAdminDashboardSnapshot(
     .from("incidents" as never)
     .select("id, severity, nurse_notified, administrator_notified, owner_notified, physician_notified, family_notified, ahca_reportable, ahca_reported, insurance_reportable, insurance_reported, care_plan_updated, resolved_at")
     .is("deleted_at", null)
-    .in("status", ["open", "investigating", "in_review", "regulatory_review", "resolved"]);
+    .in("status", ["open", "investigating", "resolved"]);
 
   let incidentRcaQuery = supabase
     .from("incident_rca" as never)
