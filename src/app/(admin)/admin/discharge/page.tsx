@@ -6,6 +6,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ClipboardList, DoorOpen, ArrowRight, Loader2 } from "lucide-react";
 
 import { DischargeHubNav } from "./discharge-hub-nav";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
@@ -407,6 +409,16 @@ export default function AdminDischargeHubPage() {
                </button>
              ))}
            </div>
+           {phaseFilter !== "all" ? (
+             <div className="relative z-10 mb-4 flex flex-wrap items-center gap-2">
+               <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+                 Phase filter: {phaseFilter === "ready_to_complete" ? "ready to complete" : phaseFilter.replace(/_/g, " ")}
+               </Badge>
+               <Link href="/admin/discharge" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
+                 Clear filter
+               </Link>
+             </div>
+           ) : null}
 
            <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Resident</div>

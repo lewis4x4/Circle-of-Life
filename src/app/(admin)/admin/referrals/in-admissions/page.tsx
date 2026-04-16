@@ -308,6 +308,16 @@ export default function AdminReferralsInAdmissionsPage() {
               </button>
             ))}
           </div>
+          {phaseFilter !== "all" ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+                Phase filter: {phaseFilter === "complete" ? "stable" : phaseFilter.replace(/_/g, " ")}
+              </Badge>
+              <Link href="/admin/referrals/in-admissions" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
+                Clear filter
+              </Link>
+            </div>
+          ) : null}
 
         <div className="grid gap-4">
           {visibleRows.length === 0 ? (
