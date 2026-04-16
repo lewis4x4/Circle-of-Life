@@ -264,7 +264,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         ...group,
         items: visibleKeySet
           ? group.items.filter((item) => visibleKeySet.has(item.key))
-          : group.items,
+          : group.items.filter((item) => (roleConfig.route === "/admin" ? true : item.key !== "dashboard")),
       }))
       .filter((group) => group.items.length > 0);
 

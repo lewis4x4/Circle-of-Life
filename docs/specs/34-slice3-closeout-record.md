@@ -155,6 +155,7 @@ Confirmed by browser checks on:
 - the med-tech auth helper now matches live runtime behavior for nurse, facility admin, housekeeper, and logged-out users
 - `/admin` now resolves admin/specialist roles to their real home server-side instead of rendering the generic command center first and correcting client-side afterward
 - `/onboarding` now behaves like a true shell boundary instead of a partly-open admin catchall
+- roles with dedicated admin-side homes no longer see a misleading `Triage Inbox` nav item that simply redirects back to those homes
 
 ---
 
@@ -204,6 +205,10 @@ Browser verification:
   - front desk `/onboarding` -> `/admin/assistant-dashboard`
   - housekeeper `/onboarding` -> `/caregiver/housekeeper`
   - family `/onboarding` -> `/family`
+  - facility admin `/onboarding` -> `/admin`
+  - owner command nav omits `Triage Inbox`
+  - org admin command nav omits `Triage Inbox`
+  - facility admin command nav still shows `Triage Inbox`
 
 Operational verification:
 

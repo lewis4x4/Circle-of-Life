@@ -42,6 +42,7 @@ The work landed as a set of coherent role packages instead of one monolithic red
 11. med-tech shell convergence at the proxy layer
 12. server-side admin home convergence
 13. onboarding shell convergence
+14. admin command-nav parity for dedicated-home roles
 
 Browser validation was run against the role homes and the key floor/family routes needed by the acceptance gates.
 
@@ -272,6 +273,16 @@ Delivered:
   - the dedicated `onboarding` role
   - org-level admin roles (`owner`, `org_admin`)
 - other roles now bounce to their actual homes instead of older generic shell targets
+- facility admin now explicitly bounces back to `/admin` rather than inheriting org-level onboarding access
+
+### Workstream N — Admin Command Nav Parity
+
+**Status:** complete
+
+Delivered:
+
+- roles whose canonical home is no longer `/admin` no longer see a misleading `Triage Inbox` command item that only redirects back to their own home
+- facility admin still keeps the `Triage Inbox` item because `/admin` remains its real home
 
 ---
 
