@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Loader2, Stethoscope } from "lucide-react";
 
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
@@ -59,6 +61,7 @@ export default function CaregiverResidentConditionChangePage() {
     organizationId: string;
     timeZone: string;
   } | null>(null);
+  const [homeHref, setHomeHref] = useState("/caregiver");
   const [residentLabel, setResidentLabel] = useState<string | null>(null);
   const [rows, setRows] = useState<ConditionRow[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -69,6 +72,17 @@ export default function CaregiverResidentConditionChangePage() {
   const [nurseNotified, setNurseNotified] = useState(false);
 
   const idOk = isValidFacilityIdForQuery(residentId);
+
+  useEffect(() => {
+    void (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        setHomeHref(getDashboardRouteForRole(getAppRoleFromClaims(user)));
+      }
+    })();
+  }, [supabase]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -194,7 +208,7 @@ export default function CaregiverResidentConditionChangePage() {
     return (
       <div className="space-y-4">
         <Link
-          href="/caregiver"
+          href={homeHref}
           className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-zinc-400 hover:text-white")}
         >
           <ArrowLeft className="h-4 w-4" />
@@ -227,7 +241,7 @@ export default function CaregiverResidentConditionChangePage() {
       <div className="space-y-3">
         <div className="rounded-lg border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-100">{loadError}</div>
         <Link
-          href="/caregiver"
+          href={homeHref}
           className="inline-flex h-11 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-4 text-sm font-medium text-zinc-200 hover:bg-zinc-800"
         >
           Back to shift home

@@ -44,6 +44,7 @@ The work landed as a set of coherent role packages instead of one monolithic red
 13. onboarding shell convergence
 14. admin command-nav parity for dedicated-home roles
 15. caregiver support-lane home-link parity
+16. caregiver resident-detail recovery parity
 
 Browser validation was run against the role homes and the key floor/family routes needed by the acceptance gates.
 
@@ -293,6 +294,15 @@ Delivered:
 
 - the canonical caregiver support routes now send housekeeper users back to `/caregiver/housekeeper` instead of generic `/caregiver`
 - facility-admin and owner support/admin recovery links already respect their role homes; this pass closes the same parity gap on the floor-side support lane
+
+### Workstream P — Caregiver Resident-Detail Recovery Parity
+
+**Status:** complete
+
+Delivered:
+
+- the canonical resident detail subroutes now send housekeeper users back to `/caregiver/housekeeper` instead of generic `/caregiver`
+- invalid-state resident recovery now respects the same role-home contract as the rest of the floor workflow
 
 ---
 

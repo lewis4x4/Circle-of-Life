@@ -157,6 +157,7 @@ Confirmed by browser checks on:
 - `/onboarding` now behaves like a true shell boundary instead of a partly-open admin catchall
 - roles with dedicated admin-side homes no longer see a misleading `Triage Inbox` nav item that simply redirects back to those homes
 - housekeeper support routes now return to `/caregiver/housekeeper` instead of generic `/caregiver`
+- invalid-state caregiver resident detail routes now return to the correct shift home for both caregiver and housekeeper
 
 ---
 
@@ -212,6 +213,8 @@ Browser verification:
   - facility admin command nav still shows `Triage Inbox`
   - housekeeper `/caregiver/clock` -> `Back to shift home` -> `/caregiver/housekeeper`
   - housekeeper `/caregiver/schedules` -> `Back to shift home` -> `/caregiver/housekeeper`
+  - housekeeper invalid resident detail -> `Shift home` -> `/caregiver/housekeeper`
+  - caregiver invalid resident detail -> `Shift home` -> `/caregiver`
 
 Operational verification:
 
