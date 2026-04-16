@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { FileText, Loader2 } from "lucide-react";
 
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient } from "@/lib/supabase/client";
 import { fetchPendingPoliciesForUser, resolveAckFacilityId } from "@/lib/pending-policies";
 import type { PendingPolicySummary } from "@/lib/pending-policies";
@@ -16,6 +18,7 @@ export default function CaregiverPendingPoliciesPage() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<PendingPolicySummary[]>([]);
+  const [homeHref, setHomeHref] = useState("/caregiver");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -27,6 +30,7 @@ export default function CaregiverPendingPoliciesPage() {
         setRows([]);
         return;
       }
+      setHomeHref(getDashboardRouteForRole(getAppRoleFromClaims(user)));
       const facId = await resolveAckFacilityId(supabase, user.id);
       if (!facId) {
         setRows([]);
@@ -57,6 +61,13 @@ export default function CaregiverPendingPoliciesPage() {
         <h1 className="mt-2 font-display text-xl font-semibold text-zinc-100">Policies to acknowledge</h1>
         <p className="mt-1 text-sm text-zinc-400">Read and confirm each policy required for your facility.</p>
       </div>
+
+      <Link
+        href={homeHref}
+        className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800")}
+      >
+        Back to shift home
+      </Link>
 
       {loading ? (
         <div className="flex items-center gap-2 text-zinc-400">

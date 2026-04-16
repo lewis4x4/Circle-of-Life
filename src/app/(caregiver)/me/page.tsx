@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, LogOut, UserCircle2 } from "lucide-react";
 
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { fetchPendingPoliciesForUser, resolveAckFacilityId } from "@/lib/pending-policies";
 import type { Database } from "@/types/database";
@@ -31,6 +33,7 @@ export default function CaregiverMePage() {
   const [illSubmitting, setIllSubmitting] = useState(false);
   const [illMsg, setIllMsg] = useState<string | null>(null);
   const [pendingPolicyCount, setPendingPolicyCount] = useState(0);
+  const [homeHref, setHomeHref] = useState("/caregiver");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -45,6 +48,7 @@ export default function CaregiverMePage() {
         setPendingPolicyCount(0);
         return;
       }
+      setHomeHref(getDashboardRouteForRole(getAppRoleFromClaims(user)));
       const pr = await supabase.from("user_profiles").select("app_role").eq("id", user.id).maybeSingle();
       if (!pr.error && pr.data) setProfile(pr.data as ProfileRow);
       const st = await supabase
@@ -239,6 +243,13 @@ export default function CaregiverMePage() {
               End your session on this device.
             </p>
          </div>
+
+         <Link
+           href={homeHref}
+           className="mb-4 inline-flex h-12 w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-[11px] uppercase tracking-widest font-mono font-bold text-zinc-300 hover:bg-white/[0.08] hover:text-white transition-colors tap-responsive shadow-inner"
+         >
+           Back to shift home
+         </Link>
          
          <Button
             type="button"
