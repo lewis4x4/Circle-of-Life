@@ -2,6 +2,7 @@ import type { User } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { getAppRoleFromClaims, isAdminEligibleAppRole } from "@/lib/auth/app-role";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
 /**
  * Top-level URL segments served from `src/app/(admin)/` (route group does not appear in URL).
@@ -53,7 +54,7 @@ export function adminShellAccessRedirect(request: NextRequest, user: User | null
 
   const role = getAppRoleFromClaims(user);
   if (role === "caregiver" || role === "housekeeper") {
-    return NextResponse.redirect(new URL("/caregiver", nextUrl.origin));
+    return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
   }
   if (role === "family") {
     return NextResponse.redirect(new URL("/family", nextUrl.origin));

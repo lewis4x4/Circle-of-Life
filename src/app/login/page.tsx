@@ -81,7 +81,7 @@ export default function LoginPage() {
     if (isOnboardingAppRole(role)) return "/onboarding";
     if (isMedTechRole(role)) return "/med-tech";
     if (isDietaryRole(role)) return "/dietary";
-    if (role === "caregiver") return "/caregiver";
+    if (role === "caregiver" || role === "housekeeper") return getDashboardRouteForRole(role);
     if (role === "family") return "/family";
     if (isAdminEligibleAppRole(role)) return getDashboardRouteForRole(role);
     return null;

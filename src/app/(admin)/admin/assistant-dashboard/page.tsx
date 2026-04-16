@@ -51,7 +51,7 @@ export default function AssistantDashboardPage() {
       {/* Hero Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard title="Census" value={brief.censusCount} icon={Users} urgency="normal" subLabel="Active residents" href="/admin/residents" />
-        <StatCard title="Pending Docs" value={brief.pendingDocs} icon={FileText} urgency={brief.pendingDocs > 0 ? "critical" : "normal"} subLabel={brief.pendingDocs > 0 ? "Awaiting action" : "All processed"} href="/admin/documents" />
+        <StatCard title="Pending Docs" value={brief.pendingDocs} icon={FileText} urgency={brief.pendingDocs > 0 ? "critical" : "normal"} subLabel={brief.pendingDocs > 0 ? "Awaiting action" : "All processed"} href="/admin/knowledge/admin" />
         <StatCard title="Unread Messages" value={brief.unreadMessages} icon={MessageSquare} urgency={brief.unreadMessages > 0 ? "critical" : "normal"} subLabel={brief.unreadMessages > 0 ? "Needs response" : "All read"} href="/admin/family-messages" />
         <StatCard title="Transport Today" value={brief.transportationToday} icon={Truck} urgency="normal" subLabel="Scheduled trips" href="/admin/transportation" />
       </div>

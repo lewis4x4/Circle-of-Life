@@ -50,18 +50,18 @@ export default function CoordinatorDashboardPage() {
 
       {/* Hero Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Active Care Plans" value={brief.activeCarePlans} icon={ClipboardList} urgency="normal" subLabel="Currently active" href="/admin/care-plans" />
-        <StatCard title="Reviews Due (14d)" value={brief.reviewsDue14d} icon={CalendarClock} urgency={brief.reviewsDue14d > 0 ? "critical" : "normal"} subLabel={brief.reviewsDue14d > 0 ? "Attention needed" : "All current"} href="/admin/care-plans" />
-        <StatCard title="Pending Assessments" value={brief.pendingAssessments} icon={FileCheck} urgency={brief.pendingAssessments > 0 ? "critical" : "normal"} subLabel={brief.pendingAssessments > 0 ? "Awaiting completion" : "None pending"} href="/admin/assessments" />
+        <StatCard title="Active Care Plans" value={brief.activeCarePlans} icon={ClipboardList} urgency="normal" subLabel="Currently active" href="/admin/care-plans/reviews-due" />
+        <StatCard title="Reviews Due (14d)" value={brief.reviewsDue14d} icon={CalendarClock} urgency={brief.reviewsDue14d > 0 ? "critical" : "normal"} subLabel={brief.reviewsDue14d > 0 ? "Attention needed" : "All current"} href="/admin/care-plans/reviews-due" />
+        <StatCard title="Pending Assessments" value={brief.pendingAssessments} icon={FileCheck} urgency={brief.pendingAssessments > 0 ? "critical" : "normal"} subLabel={brief.pendingAssessments > 0 ? "Awaiting completion" : "None pending"} href="/admin/assessments/overdue" />
         <StatCard title="Family Messages" value={brief.unreadFamilyMessages} icon={MessageSquare} urgency={brief.unreadFamilyMessages > 0 ? "critical" : "normal"} subLabel={brief.unreadFamilyMessages > 0 ? "Unread messages" : "All read"} href="/admin/family-messages" />
       </div>
 
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <ActionTile label="Care Plans" href="/admin/care-plans" gradient="bg-indigo-500" />
-        <ActionTile label="Assessments" href="/admin/assessments" gradient="bg-violet-500" />
+        <ActionTile label="Care Plans" href="/admin/care-plans/reviews-due" gradient="bg-indigo-500" />
+        <ActionTile label="Assessments" href="/admin/assessments/overdue" gradient="bg-violet-500" />
         <ActionTile label="Family Messages" href="/admin/family-messages" gradient="bg-teal-500" />
-        <ActionTile label="Admissions" href="/admin/residents?status=inquiry" gradient="bg-amber-500" />
+        <ActionTile label="Admissions" href="/admin/admissions" gradient="bg-amber-500" />
       </div>
 
       {/* Bottom sections */}

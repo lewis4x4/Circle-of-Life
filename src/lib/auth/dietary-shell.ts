@@ -2,6 +2,7 @@ import type { User } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { getAppRoleFromClaims, isAdminEligibleAppRole, isDietaryRole } from "@/lib/auth/app-role";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
 export function isDietaryShellPath(pathname: string): boolean {
   return pathname === "/dietary" || pathname.startsWith("/dietary/");
@@ -28,7 +29,7 @@ export function dietaryShellAccessRedirect(
     return NextResponse.redirect(new URL("/med-tech", nextUrl.origin));
   }
   if (role === "caregiver" || role === "housekeeper") {
-    return NextResponse.redirect(new URL("/caregiver", nextUrl.origin));
+    return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
   }
   if (role === "family") {
     return NextResponse.redirect(new URL("/family", nextUrl.origin));

@@ -28,7 +28,8 @@ export function isCaregiverShellPath(pathname: string): boolean {
 }
 
 /**
- * Caregiver UI requires a session and `caregiver` role. Other known roles go to their shells.
+ * Caregiver UI requires a session and a floor role (`caregiver` or `housekeeper`).
+ * Other known roles go to their shells.
  */
 export function caregiverShellAccessRedirect(request: NextRequest, user: User | null): NextResponse | null {
   const nextUrl = request.nextUrl;
@@ -41,7 +42,7 @@ export function caregiverShellAccessRedirect(request: NextRequest, user: User | 
   }
 
   const role = getAppRoleFromClaims(user);
-  if (role === "caregiver") {
+  if (role === "caregiver" || role === "housekeeper") {
     return null;
   }
   if (role === "family") {

@@ -3,19 +3,22 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Pill, ClipboardList, AlertTriangle, User } from "lucide-react";
+import { Home, Pill, ClipboardList, AlertTriangle, Clock3, User } from "lucide-react";
 import { useTheme } from "next-themes";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 import { createClient } from "@/lib/supabase/client";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 
 export function CaregiverShell({ children }: { children: React.ReactNode }) {
   const { setTheme } = useTheme();
   const pathname = usePathname();
   const themeSet = useRef(false);
+  const { appRole } = useHavenAuth();
   const [facilityName, setFacilityName] = useState("Facility");
   const [shiftLabel, setShiftLabel] = useState("Shift");
+  const isHousekeeper = appRole === "housekeeper";
 
   useEffect(() => {
     const supabase = createClient();
@@ -65,30 +68,55 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
       {/* Tablet Side Navigation Rail */}
       <nav className="hidden md:flex flex-col w-20 border-r border-white/5 bg-black/40 backdrop-blur-xl z-50 fixed inset-y-0 left-0 pt-4 pb-6">
         <div className="flex-1 flex flex-col items-center gap-6 mt-4">
-          <SideNavItem
-            icon={<Home className="w-6 h-6" />}
-            label="Home"
-            href="/caregiver"
-            active={pathname === "/caregiver"}
-          />
-          <SideNavItem
-            icon={<Pill className="w-6 h-6" />}
-            label="Meds"
-            href="/caregiver/meds"
-            active={pathname.startsWith("/caregiver/meds")}
-          />
-          <SideNavItem
-            icon={<ClipboardList className="w-6 h-6" />}
-            label="Rounds"
-            href="/caregiver/rounds"
-            active={pathname.startsWith("/caregiver/rounds")}
-          />
-          <SideNavItem
-            icon={<AlertTriangle className="w-6 h-6" />}
-            label="Report"
-            href="/caregiver/incident-draft"
-            active={pathname.startsWith("/caregiver/incident-draft")}
-          />
+          {!isHousekeeper ? (
+            <>
+              <SideNavItem
+                icon={<Home className="w-6 h-6" />}
+                label="Home"
+                href="/caregiver"
+                active={pathname === "/caregiver"}
+              />
+              <SideNavItem
+                icon={<Pill className="w-6 h-6" />}
+                label="Meds"
+                href="/caregiver/meds"
+                active={pathname.startsWith("/caregiver/meds")}
+              />
+              <SideNavItem
+                icon={<ClipboardList className="w-6 h-6" />}
+                label="Rounds"
+                href="/caregiver/rounds"
+                active={pathname.startsWith("/caregiver/rounds")}
+              />
+              <SideNavItem
+                icon={<AlertTriangle className="w-6 h-6" />}
+                label="Report"
+                href="/caregiver/incident-draft"
+                active={pathname.startsWith("/caregiver/incident-draft")}
+              />
+            </>
+          ) : (
+            <>
+              <SideNavItem
+                icon={<Home className="w-6 h-6" />}
+                label="Home"
+                href="/caregiver/housekeeper"
+                active={pathname.startsWith("/caregiver/housekeeper")}
+              />
+              <SideNavItem
+                icon={<Clock3 className="w-6 h-6" />}
+                label="Clock"
+                href="/caregiver/clock"
+                active={pathname.startsWith("/caregiver/clock")}
+              />
+              <SideNavItem
+                icon={<ClipboardList className="w-6 h-6" />}
+                label="Schedule"
+                href="/caregiver/schedules"
+                active={pathname.startsWith("/caregiver/schedules")}
+              />
+            </>
+          )}
         </div>
         <div className="flex flex-col items-center">
           <SideNavItem
@@ -131,27 +159,46 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
         <TabItem
           icon={<Home className="w-6 h-6" />}
           label="Home"
-          href="/caregiver"
-          active={pathname === "/caregiver"}
+          href={isHousekeeper ? "/caregiver/housekeeper" : "/caregiver"}
+          active={isHousekeeper ? pathname.startsWith("/caregiver/housekeeper") : pathname === "/caregiver"}
         />
-        <TabItem
-          icon={<Pill className="w-6 h-6" />}
-          label="Meds"
-          href="/caregiver/meds"
-          active={pathname.startsWith("/caregiver/meds")}
-        />
-        <TabItem
-          icon={<ClipboardList className="w-6 h-6" />}
-          label="Rounds"
-          href="/caregiver/rounds"
-          active={pathname.startsWith("/caregiver/rounds")}
-        />
-        <TabItem
-          icon={<AlertTriangle className="w-6 h-6" />}
-          label="Report"
-          href="/caregiver/incident-draft"
-          active={pathname.startsWith("/caregiver/incident-draft")}
-        />
+        {!isHousekeeper ? (
+          <>
+            <TabItem
+              icon={<Pill className="w-6 h-6" />}
+              label="Meds"
+              href="/caregiver/meds"
+              active={pathname.startsWith("/caregiver/meds")}
+            />
+            <TabItem
+              icon={<ClipboardList className="w-6 h-6" />}
+              label="Rounds"
+              href="/caregiver/rounds"
+              active={pathname.startsWith("/caregiver/rounds")}
+            />
+            <TabItem
+              icon={<AlertTriangle className="w-6 h-6" />}
+              label="Report"
+              href="/caregiver/incident-draft"
+              active={pathname.startsWith("/caregiver/incident-draft")}
+            />
+          </>
+        ) : (
+          <>
+            <TabItem
+              icon={<Clock3 className="w-6 h-6" />}
+              label="Clock"
+              href="/caregiver/clock"
+              active={pathname.startsWith("/caregiver/clock")}
+            />
+            <TabItem
+              icon={<ClipboardList className="w-6 h-6" />}
+              label="Schedule"
+              href="/caregiver/schedules"
+              active={pathname.startsWith("/caregiver/schedules")}
+            />
+          </>
+        )}
         <TabItem
           icon={<User className="w-6 h-6" />}
           label="Me"

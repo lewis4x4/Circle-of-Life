@@ -2,6 +2,7 @@ import type { User } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { getAppRoleFromClaims, isAdminEligibleAppRole } from "@/lib/auth/app-role";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
 /** Family portal lives under `src/app/(family)/family/`. */
 export function isFamilyShellPath(pathname: string): boolean {
@@ -25,8 +26,8 @@ export function familyShellAccessRedirect(request: NextRequest, user: User | nul
   if (role === "family") {
     return null;
   }
-  if (role === "caregiver") {
-    return NextResponse.redirect(new URL("/caregiver", nextUrl.origin));
+  if (role === "caregiver" || role === "housekeeper") {
+    return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
   }
   if (isAdminEligibleAppRole(role)) {
     return NextResponse.redirect(new URL("/admin", nextUrl.origin));
