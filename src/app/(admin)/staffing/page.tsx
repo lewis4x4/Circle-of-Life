@@ -70,6 +70,19 @@ type SupabaseStaffWarningMini = {
   staff_role: string;
 };
 
+type SupabaseShiftGapRow = {
+  id: string;
+  staff_id: string;
+  shift_date: string;
+  shift_type: Database["public"]["Enums"]["shift_type"];
+  status: Database["public"]["Enums"]["shift_assignment_status"];
+};
+
+type SupabaseStaffGapMini = {
+  id: string;
+  staff_role: string;
+};
+
 type StaffingSnapshotCsvRow = Database["public"]["Tables"]["staffing_ratio_snapshots"]["Row"];
 type QueryError = { message: string };
 type QueryResult<T> = { data: T[] | null; error: QueryError | null };
@@ -114,6 +127,7 @@ export default function AdminStaffingConsolePage() {
   const { selectedFacilityId } = useFacilityStore();
   const [snapshots, setSnapshots] = useState<SnapshotRow[]>([]);
   const [certWarnings, setCertWarnings] = useState<CertWarning[]>([]);
+  const [shiftGaps, setShiftGaps] = useState<ShiftGap[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
@@ -125,15 +139,18 @@ export default function AdminStaffingConsolePage() {
     setIsLoading(true);
     setError(null);
     try {
-      const [liveSnapshots, liveCertWarnings] = await Promise.all([
+      const [liveSnapshots, liveCertWarnings, liveShiftGaps] = await Promise.all([
         fetchSnapshotsFromSupabase(selectedFacilityId),
         fetchExpiredCertificationWarnings(selectedFacilityId),
+        fetchShiftAssignmentGaps(selectedFacilityId),
       ]);
       setSnapshots(liveSnapshots);
       setCertWarnings(liveCertWarnings);
+      setShiftGaps(liveShiftGaps);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load staffing metrics");
       setCertWarnings([]);
+      setShiftGaps([]);
     } finally {
       setIsLoading(false);
     }
@@ -234,12 +251,6 @@ export default function AdminStaffingConsolePage() {
 
   const targetHPPD = 3.5;
   const actualHPPD = 3.2; // Example value
-
-  // Hardcoded UI Mocks to satisfy "Exception-First" rule until schema adds roster scheduling tables
-  const shiftGaps: ShiftGap[] = [
-    { id: "1", date: "Today", shift: "Night (11p-7a)", role: "CNA", shortage: 2, urgency: "critical" },
-    { id: "2", date: "Tomorrow", shift: "Day (7a-3p)", role: "RN", shortage: 1, urgency: "warning" },
-  ];
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-12">
@@ -576,4 +587,86 @@ function mapDbStaffRoleToLabel(role: string): string {
   if (normalized === "rn") return "RN";
   if (normalized === "lpn") return "LPN";
   return normalized.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+async function fetchShiftAssignmentGaps(selectedFacilityId: string | null): Promise<ShiftGap[]> {
+  const supabase = createClient();
+  const now = new Date();
+  const todayIso = now.toISOString().slice(0, 10);
+  const inTwoDays = new Date(now);
+  inTwoDays.setDate(inTwoDays.getDate() + 2);
+  const endDateIso = inTwoDays.toISOString().slice(0, 10);
+
+  let shiftsQuery = supabase
+    .from("shift_assignments" as never)
+    .select("id, staff_id, shift_date, shift_type, status")
+    .is("deleted_at", null)
+    .gte("shift_date", todayIso)
+    .lte("shift_date", endDateIso)
+    .in("status", ["assigned", "swap_requested", "called_out", "no_show"])
+    .order("shift_date", { ascending: true });
+
+  if (isValidFacilityIdForQuery(selectedFacilityId)) {
+    shiftsQuery = shiftsQuery.eq("facility_id", selectedFacilityId);
+  }
+
+  const shiftsRes = (await shiftsQuery) as unknown as QueryResult<SupabaseShiftGapRow>;
+  const shiftRows = shiftsRes.data ?? [];
+  if (shiftsRes.error) throw shiftsRes.error;
+  if (shiftRows.length === 0) return [];
+
+  const staffIds = [...new Set(shiftRows.map((row) => row.staff_id))];
+  const staffRes = (await supabase
+    .from("staff" as never)
+    .select("id, staff_role")
+    .in("id", staffIds)
+    .is("deleted_at", null)) as unknown as QueryResult<SupabaseStaffGapMini>;
+  const staffRows = staffRes.data ?? [];
+  if (staffRes.error) throw staffRes.error;
+
+  const roleByStaffId = new Map(staffRows.map((row: SupabaseStaffGapMini) => [row.id, mapDbStaffRoleToLabel(row.staff_role)] as const));
+  const grouped = new Map<string, ShiftGap>();
+
+  for (const row of shiftRows) {
+    const role = roleByStaffId.get(row.staff_id) ?? "Staff";
+    const urgency: ShiftGap["urgency"] =
+      row.status === "called_out" || row.status === "no_show" ? "critical" : "warning";
+    const key = `${row.shift_date}:${row.shift_type}:${role}:${urgency}`;
+    const existing = grouped.get(key);
+    if (existing) {
+      existing.shortage += 1;
+      continue;
+    }
+    grouped.set(key, {
+      id: key,
+      date: formatShiftDateLabel(row.shift_date),
+      shift: formatShiftTypeLabel(row.shift_type),
+      role,
+      shortage: 1,
+      urgency,
+    });
+  }
+
+  return [...grouped.values()].sort((a, b) => {
+    if (a.urgency !== b.urgency) return a.urgency === "critical" ? -1 : 1;
+    return a.date.localeCompare(b.date);
+  });
+}
+
+function formatShiftDateLabel(shiftDate: string): string {
+  const today = new Date();
+  const currentDate = today.toISOString().slice(0, 10);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowIso = tomorrow.toISOString().slice(0, 10);
+  if (shiftDate === currentDate) return "Today";
+  if (shiftDate === tomorrowIso) return "Tomorrow";
+  return format(new Date(`${shiftDate}T12:00:00`), "MMM d");
+}
+
+function formatShiftTypeLabel(shiftType: Database["public"]["Enums"]["shift_type"]): string {
+  if (shiftType === "day") return "Day (7a-3p)";
+  if (shiftType === "evening") return "Evening (3p-11p)";
+  if (shiftType === "night") return "Night (11p-7a)";
+  return "Custom";
 }
