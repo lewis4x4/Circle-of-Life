@@ -154,6 +154,7 @@ Confirmed by browser checks on:
 - `/med-tech` is now part of the server-side shell contract instead of relying only on client-side guards
 - the med-tech auth helper now matches live runtime behavior for nurse, facility admin, housekeeper, and logged-out users
 - `/admin` now resolves admin/specialist roles to their real home server-side instead of rendering the generic command center first and correcting client-side afterward
+- `/onboarding` now behaves like a true shell boundary instead of a partly-open admin catchall
 
 ---
 
@@ -198,6 +199,11 @@ Browser verification:
   - maintenance `/admin` -> `/admin/facilities`
   - broker `/admin` -> `/admin/insurance`
   - facility admin `/admin` stays `/admin`
+  - owner `/onboarding` stays `/onboarding`
+  - org admin `/onboarding` stays `/onboarding`
+  - front desk `/onboarding` -> `/admin/assistant-dashboard`
+  - housekeeper `/onboarding` -> `/caregiver/housekeeper`
+  - family `/onboarding` -> `/family`
 
 Operational verification:
 

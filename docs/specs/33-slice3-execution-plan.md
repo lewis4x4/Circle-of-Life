@@ -41,6 +41,7 @@ The work landed as a set of coherent role packages instead of one monolithic red
 10. dietary role-contract convergence
 11. med-tech shell convergence at the proxy layer
 12. server-side admin home convergence
+13. onboarding shell convergence
 
 Browser validation was run against the role homes and the key floor/family routes needed by the acceptance gates.
 
@@ -260,6 +261,17 @@ Delivered:
 - owner and org admin now stay on `/admin/executive` when they hit `/admin`
 - front desk, coordinator, nurse, maintenance, and broker now resolve directly to their role homes when they hit `/admin`
 - facility admin remains the one role whose canonical admin home is still `/admin`
+
+### Workstream M — Onboarding Shell Convergence
+
+**Status:** complete
+
+Delivered:
+
+- `/onboarding` now clearly belongs only to:
+  - the dedicated `onboarding` role
+  - org-level admin roles (`owner`, `org_admin`)
+- other roles now bounce to their actual homes instead of older generic shell targets
 
 ---
 
