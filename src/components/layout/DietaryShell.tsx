@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { getAppRoleFromClaims, isDietaryRole, isAdminEligibleAppRole } from "@/lib/auth/app-role";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
 /**
  * DietaryShell — dedicated full-bleed shell for the Dietary Command Deck.
@@ -54,8 +55,8 @@ export function DietaryShell({ children }: { children: React.ReactNode }) {
     // Redirect non-dietary roles to their shells
     if (role === "med_tech") {
       router.replace("/med-tech");
-    } else if (role === "caregiver") {
-      router.replace("/caregiver");
+    } else if (role === "caregiver" || role === "housekeeper") {
+      router.replace(getDashboardRouteForRole(role));
     } else if (role === "family") {
       router.replace("/family");
     } else {
@@ -64,7 +65,9 @@ export function DietaryShell({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   useEffect(() => {
-    void checkAccess();
+    queueMicrotask(() => {
+      void checkAccess();
+    });
   }, [checkAccess]);
 
   if (checking || !authorized) {

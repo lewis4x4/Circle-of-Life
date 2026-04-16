@@ -149,6 +149,8 @@ Confirmed by browser checks on:
 - front desk, coordinator, and nurse now get explicit specialist-home entries and narrowed menu lanes inside the shared admin shell
 - `/admin/care-plans/reviews-due` now exists as a real coordinator-facing care plan review queue instead of a dead linked path
 - `/admin/dietary-dashboard` now resolves to the canonical dietary surfaces instead of remaining a stale unreachable duplicate
+- the role contract now correctly models dietary’s home as `/dietary` instead of an admin-shell dashboard
+- housekeeper wrong-shell visits to `/dietary` now return to `/caregiver/housekeeper` instead of `/login`
 
 ---
 
@@ -179,6 +181,8 @@ Browser verification:
   - nurse shell menu -> specialist home + med-tech / medication-error links
   - dietary stale alias `/admin/dietary-dashboard` -> `/dietary`
   - admin stale alias `/admin/dietary-dashboard` -> `/admin/dietary`
+  - dietary login -> `/dietary`
+  - housekeeper wrong-shell bounce from `/dietary` -> `/caregiver/housekeeper`
 
 Operational verification:
 

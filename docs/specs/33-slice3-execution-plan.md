@@ -38,6 +38,7 @@ The work landed as a set of coherent role packages instead of one monolithic red
 7. limited-shell convergence for maintenance and broker roles
 8. admin-specialist navigation convergence for front desk, coordinator, and nurse
 9. stale specialist-route convergence for dietary
+10. dietary role-contract convergence
 
 Browser validation was run against the role homes and the key floor/family routes needed by the acceptance gates.
 
@@ -223,6 +224,16 @@ Delivered:
 - `/admin/dietary-dashboard` no longer acts like a stale duplicate specialist page
 - dietary users hitting that stale path are now redirected to the canonical `/dietary` command deck
 - admin users hitting that stale path are redirected to the canonical `/admin/dietary` hub
+
+### Workstream J — Dietary Role Contract Convergence
+
+**Status:** complete
+
+Delivered:
+
+- the central dashboard-routing contract now reflects the actual dietary home as `/dietary`
+- dietary is modeled as its own shell in the role contract instead of as an admin-shell role
+- housekeeper users who hit `/dietary` are now redirected back to `/caregiver/housekeeper` instead of falling through to `/login`
 
 ---
 

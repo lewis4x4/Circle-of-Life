@@ -7,7 +7,7 @@ export interface DashboardConfig {
   /** Landing route for this role */
   route: string;
   /** Which shell to use */
-  shell: "admin" | "caregiver" | "family" | "med-tech";
+  shell: "admin" | "caregiver" | "family" | "med-tech" | "dietary";
   /** Human-facing role label for dashboards and shell framing */
   roleLabel: string;
   /** Primary task lanes this role should see first */
@@ -148,17 +148,15 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
     },
   },
   dietary: {
-    route: "/admin/dietary",
-    shell: "admin",
+    route: "/dietary",
+    shell: "dietary",
     roleLabel: "Dietary",
     primaryTaskLanes: ["dietary"],
     firstScreenPriority: ["diet_orders", "clinical_review", "service_readiness"],
     suppressedSections: ["enterprise_rollup", "incident_backlog", "family_billing"],
     mobileTabletExpectation: "desktop-first",
-    visibleGroups: ["Command"],
-    sections: {
-      heroStats: true, quickActions: true, dietary: true,
-    },
+    visibleGroups: [],
+    sections: {},
   },
   maintenance_role: {
     route: "/admin/facilities",
@@ -258,6 +256,6 @@ export function getRoleDashboardConfig(role: string): DashboardConfig {
 }
 
 /** Returns which shell a role should use. */
-export function getShellForRole(role: string): "admin" | "caregiver" | "family" | "med-tech" {
+export function getShellForRole(role: string): "admin" | "caregiver" | "family" | "med-tech" | "dietary" {
   return DASHBOARD_CONFIGS[role]?.shell ?? "admin";
 }
