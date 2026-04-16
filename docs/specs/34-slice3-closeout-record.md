@@ -232,6 +232,10 @@ Browser verification:
   - compliance deficiency analysis `Back to Dashboard` now resolves by admin role:
     - owner -> `/admin/executive`
     - facility admin -> `/admin`
+  - search-tools settings now always exposes `Back to Dashboard`, including denied-state rendering
+  - search-tools settings `Back to Dashboard` resolves by admin role:
+    - owner -> `/admin/executive`
+    - facility admin -> `/admin`
 
 Operational verification:
 

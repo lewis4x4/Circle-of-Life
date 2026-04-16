@@ -343,6 +343,18 @@ Delivered:
 - facility admin still returns to `/admin`
 - the page now matches the same role-home contract already used on other admin recovery links
 
+### Workstream T — Search-Tools Settings Recovery Parity
+
+**Status:** complete
+
+Delivered:
+
+- the search-tools settings page now exposes a visible `Back to Dashboard` escape hatch even when the permission guard falls back
+- the escape hatch resolves from the signed-in admin role after hydration:
+  - owner / org-admin -> `/admin/executive`
+  - facility admin -> `/admin`
+- this keeps the settings surface from trapping users inside a denied or utility-only page with no clear role-home return
+
 ---
 
 ## What Is Left
