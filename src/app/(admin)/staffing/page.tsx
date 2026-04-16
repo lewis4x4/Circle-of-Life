@@ -409,7 +409,9 @@ export default function AdminStaffingConsolePage() {
             
             <div className="mt-4 glass-panel p-5 rounded-2xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40">
                <div className="mb-4 flex flex-wrap items-center gap-2">
-                 <p className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500">Recent Ratio Snapshots (Historical)</p>
+                 <p className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500">
+                   {windowFilter === "24h" ? "Recent Ratio Snapshots (24h)" : "Recent Ratio Snapshots (Historical)"}
+                 </p>
                  {([
                    { value: "all", label: `All (${snapshots.length})` },
                    { value: "non_compliant", label: `Non-compliant (${snapshots.filter((s) => !s.isCompliant).length})` },
