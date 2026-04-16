@@ -249,8 +249,27 @@ export default function AdminStaffingConsolePage() {
     );
   }
 
-  const targetHPPD = 3.5;
-  const actualHPPD = 3.2; // Example value
+  const latestVisibleSnapshot = visibleSnapshots[0] ?? null;
+  const currentRatio = latestVisibleSnapshot?.ratio ?? null;
+  const requiredRatio = latestVisibleSnapshot?.requiredRatio ?? null;
+  const ratioDelta =
+    currentRatio != null && requiredRatio != null
+      ? currentRatio - requiredRatio
+      : null;
+  const ratioCardTone =
+    latestVisibleSnapshot == null
+      ? "text-slate-500"
+      : latestVisibleSnapshot.isCompliant
+        ? "text-emerald-500"
+        : "text-amber-500";
+  const ratioStatusCopy =
+    latestVisibleSnapshot == null
+      ? "No staffing snapshot is available for the current slice."
+      : ratioDelta != null && ratioDelta > 0
+        ? `${ratioDelta.toFixed(1)} above the required ratio on the latest ${latestVisibleSnapshot.shift} snapshot.`
+        : ratioDelta != null
+          ? `${Math.abs(ratioDelta).toFixed(1)} below the required ratio on the latest ${latestVisibleSnapshot.shift} snapshot.`
+          : "Latest staffing snapshot loaded for this slice.";
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-12">
@@ -269,7 +288,7 @@ export default function AdminStaffingConsolePage() {
             {(shiftGaps.length > 0 || certWarnings.length > 0) && <PulseDot colorClass="bg-rose-500" />}
           </h2>
           <p className="mt-1 text-sm font-mono text-slate-500 dark:text-slate-400">
-            Real-time HPPD variance, schedule gaps, and compliance warnings.
+            Real-time staffing ratio variance, schedule gaps, and compliance warnings.
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">
@@ -323,20 +342,33 @@ export default function AdminStaffingConsolePage() {
 
       {/* Exception Metrics (Top Grid) */}
       <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4 relative z-10 mb-8" staggerMs={75}>
-        {/* Metric 1: HPPD */}
+        {/* Metric 1: Staffing ratio */}
         <div className="h-[160px]">
           <V2Card hoverColor="blue">
             <Sparkline colorClass="text-blue-500" variant={3} />
              <div className="relative z-10 flex flex-col h-full justify-between">
-               <span className="text-[10px] font-mono tracking-widest uppercase flex items-center gap-2 text-slate-500"><Activity className="w-3.5 h-3.5" /> Current HPPD</span>
+               <span className="text-[10px] font-mono tracking-widest uppercase flex items-center gap-2 text-slate-500"><Activity className="w-3.5 h-3.5" /> Current Ratio</span>
                <div>
                   <div className="mt-2 flex items-baseline gap-3">
-                    <span className={cn("text-5xl font-mono tracking-tighter pb-1", actualHPPD < targetHPPD ? "text-amber-500" : "text-emerald-500")}>
-                      {actualHPPD}
+                    <span className={cn("text-5xl font-mono tracking-tighter pb-1", ratioCardTone)}>
+                      {currentRatio != null ? currentRatio.toFixed(1) : "—"}
                     </span>
-                    <span className="text-xs font-mono text-slate-400 uppercase tracking-widest">vs {targetHPPD} Target</span>
+                    <span className="text-xs font-mono text-slate-400 uppercase tracking-widest">
+                      {requiredRatio != null ? `vs ${requiredRatio.toFixed(1)} required` : "No live snapshot"}
+                    </span>
                   </div>
-                  <p className="mt-1 text-[10px] uppercase font-mono tracking-widest text-amber-500 font-bold">-0.3 variance across active shifts. Risk of missing state minimums.</p>
+                  <p
+                    className={cn(
+                      "mt-1 text-[10px] uppercase font-mono tracking-widest font-bold",
+                      latestVisibleSnapshot == null
+                        ? "text-slate-500"
+                        : latestVisibleSnapshot.isCompliant
+                          ? "text-emerald-500"
+                          : "text-amber-500",
+                    )}
+                  >
+                    {ratioStatusCopy}
+                  </p>
                </div>
              </div>
           </V2Card>
