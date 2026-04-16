@@ -269,7 +269,7 @@ export default function AdminReferralsInAdmissionsPage() {
             </p>
           </div>
           <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
-            {rows.length} active handoff{rows.length === 1 ? "" : "s"}
+            {phaseFilter === "all" ? rows.length : visibleRows.length} {phaseFilter === "all" ? "active" : "visible"} handoff{(phaseFilter === "all" ? rows.length : visibleRows.length) === 1 ? "" : "s"}
           </Badge>
         </div>
       </div>

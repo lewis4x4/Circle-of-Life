@@ -246,9 +246,16 @@ export default function AdminDischargeHubPage() {
            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
                SYS: Pipeline
            </div>
-           <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-              Discharge & Transition
-           </h1>
+           <div className="flex flex-wrap items-center gap-3">
+             <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+                Discharge & Transition
+             </h1>
+             {phaseFilter !== "all" ? (
+               <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+                 {featuredRows.length} visible
+               </Badge>
+             ) : null}
+           </div>
            <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400">
              Medication reconciliation records and discharge planning.
            </p>
