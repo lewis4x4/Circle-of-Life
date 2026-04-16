@@ -272,6 +272,9 @@ export default function AdminStaffingConsolePage() {
       </header>
       {complianceFilter !== "all" || windowFilter !== "all" ? (
         <div className="relative z-10 flex items-center gap-2 pl-1">
+          <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
+            {visibleSnapshots.length} visible
+          </Badge>
           {complianceFilter !== "all" ? (
             <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
               Compliance filter: {complianceFilter === "non_compliant" ? "non-compliant only" : "compliant only"}

@@ -394,6 +394,9 @@ export default function AdminCertificationsPage() {
       />
       {(timeline !== DEFAULT_FILTERS.timeline || dbStatus !== DEFAULT_FILTERS.dbStatus || windowFilter !== DEFAULT_FILTERS.window) ? (
         <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
+            {filteredRows.length} visible
+          </Badge>
           {timeline !== DEFAULT_FILTERS.timeline ? (
             <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
               Timeline: {timeline.replace(/_/g, " ")}
