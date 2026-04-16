@@ -342,7 +342,15 @@ export default function AdminIncidentsKanbanPage() {
                   Open backlog
                 </Link>
                 <Link
-                  href={severityFilter === "all" ? "/admin/incidents/obligations" : `/admin/incidents/obligations?severity=${severityFilter}`}
+                  href={
+                    severityFilter === "all"
+                      ? scopeFilter === "all"
+                        ? "/admin/incidents/obligations"
+                        : `/admin/incidents/obligations?scope=${scopeFilter}`
+                      : scopeFilter === "all"
+                        ? `/admin/incidents/obligations?severity=${severityFilter}`
+                        : `/admin/incidents/obligations?severity=${severityFilter}&scope=${scopeFilter}`
+                  }
                   className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-blue-300 bg-white/70 text-blue-800 hover:bg-white dark:border-blue-800 dark:bg-black/20 dark:text-blue-200 dark:hover:bg-black/30")}
                 >
                   Work obligations
