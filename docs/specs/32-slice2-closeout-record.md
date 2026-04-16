@@ -168,6 +168,7 @@ Residual risk:
   - less misleading summary copy
   - better alignment between cards, inbox items, and destination pages
 - staffing credential blockers now come from live certification + staff data rather than hardcoded placeholder rows
+- staffing shift-gap panel still contains hardcoded shortage rows; browser QA should treat that as an active residual mismatch until it is replaced with live schedule-gap derivation
 
 ---
 

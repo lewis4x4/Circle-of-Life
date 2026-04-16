@@ -219,6 +219,10 @@ Delivered:
 - reduction of generic-hub links where the app already knows the exact slice
 - staffing credential blockers now derive from live certification records instead of hardcoded placeholders
 
+Known residual runtime mismatch still visible in code:
+
+- staffing shift-gap panel still uses hardcoded placeholder shortage rows pending a real schedule-gap derivation source
+
 ---
 
 ## What Is Left
