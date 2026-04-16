@@ -16,6 +16,7 @@ import {
 } from "@/lib/validation/caregiver-incident";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
+import { FloorWorkflowStrip } from "@/components/caregiver/FloorWorkflowStrip";
 
 const CATEGORY_LABELS: Record<(typeof caregiverIncidentCategoryValues)[number], string> = {
   fall_with_injury: "Fall with injury",
@@ -336,6 +337,12 @@ function CaregiverIncidentDraftPageInner() {
              >
                RETURN TO SHIFT
              </Link>
+             <Link
+               href="/caregiver/followups"
+               className="h-14 px-8 rounded-2xl flex items-center justify-center font-bold tracking-wide transition-all border border-white/10 bg-white/10 text-zinc-200 hover:bg-white/20 hover:text-white tap-responsive shadow-inner"
+             >
+               OPEN FOLLOW-UPS
+             </Link>
              <button
                type="button"
                className="h-14 px-8 rounded-2xl flex items-center justify-center font-bold tracking-wide transition-all border border-white/10 bg-black/40 text-zinc-300 hover:bg-white/10 hover:text-white tap-responsive shadow-inner"
@@ -354,6 +361,11 @@ function CaregiverIncidentDraftPageInner() {
 
   return (
     <div className="max-w-[900px] mx-auto pb-8 space-y-8">
+      <FloorWorkflowStrip
+        active="incident"
+        title="File the exception cleanly, then return to the active floor queue or hand it into follow-up."
+        description="Use this lane when a floor event becomes a formal incident. Keep the report factual here, then move the next action into follow-ups or handoff."
+      />
       
       {/* ─── HEADER ──────────────────────────────────────────────────────────── */}
       <div className="text-center md:text-left mb-6 md:mb-12">

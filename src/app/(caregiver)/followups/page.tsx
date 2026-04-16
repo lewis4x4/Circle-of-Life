@@ -11,6 +11,7 @@ import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client
 
 import { Badge } from "@/components/ui/badge";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { FloorWorkflowStrip } from "@/components/caregiver/FloorWorkflowStrip";
 
 type OpenCondition = {
   id: string;
@@ -132,6 +133,11 @@ export default function CaregiverFollowupsPage() {
 
   return (
     <div className="space-y-4 max-w-3xl mx-auto">
+      <FloorWorkflowStrip
+        active="followups"
+        title="Review condition-change reports, then move the resident into the next clinical or shift-handoff action."
+        description="Use this lane to keep change reports visible, then escalate through incident reporting or carry them into handoff when the next shift needs clarity."
+      />
       <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-white/5 bg-gradient-to-br from-teal-950/40 via-slate-900/40 to-black/60 backdrop-blur-3xl shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
         <h3 className="flex items-center gap-3 text-2xl font-display font-semibold text-white tracking-wide">
           <div className="w-10 h-10 rounded-full bg-teal-500/20 flex items-center justify-center border border-teal-500/30">
@@ -140,7 +146,7 @@ export default function CaregiverFollowupsPage() {
           Condition Follow-ups
         </h3>
         <p className="text-sm font-mono text-teal-200/60 mt-4 max-w-xl">
-          Open condition change reports for your facility (resolve in the clinical / nurse workflow).
+          Open condition change reports for your facility. Review, document, and hand off anything the clinical lead or next shift must see.
         </p>
       </div>
 

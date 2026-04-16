@@ -15,6 +15,7 @@ import {
 } from "@/lib/caregiver/emar-queue";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
+import { FloorWorkflowStrip } from "@/components/caregiver/FloorWorkflowStrip";
 
 type ResidentMini = {
   id: string;
@@ -270,6 +271,11 @@ export default function CaregiverMedsPage() {
 
   return (
     <div className="max-w-[1000px] mx-auto pb-6 space-y-6">
+      <FloorWorkflowStrip
+        active="meds"
+        title="Stay in the medication lane while the pass window is active."
+        description="Use controlled count for reconciliation, PRN follow-up for effectiveness checks, and incident report when a medication exception becomes a reportable event."
+      />
       
       {/* ─── HIGHLIGHT BAR ─────────────────────────────────────────────────── */}
       <Link

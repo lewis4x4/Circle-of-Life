@@ -1,16 +1,57 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Pill, ClipboardList, AlertTriangle, User } from "lucide-react";
 import { useTheme } from "next-themes";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
+import { createClient } from "@/lib/supabase/client";
+import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 
 export function CaregiverShell({ children }: { children: React.ReactNode }) {
   const { setTheme } = useTheme();
   const pathname = usePathname();
   const themeSet = useRef(false);
+  const [facilityName, setFacilityName] = useState("Facility");
+  const [shiftLabel, setShiftLabel] = useState("Shift");
+
+  useEffect(() => {
+    const supabase = createClient();
+    let cancelled = false;
+    void (async () => {
+      const resolved = await loadCaregiverFacilityContext(supabase);
+      if (!resolved.ok || cancelled) return;
+      const shiftType = currentShiftForTimezone(resolved.ctx.timeZone);
+      const label =
+        shiftType === "day"
+          ? "Day Shift (7A - 3P)"
+          : shiftType === "evening"
+            ? "Evening Shift (3P - 11P)"
+            : "Night Shift (11P - 7A)";
+      setFacilityName(resolved.ctx.facilityName ?? "Facility");
+      setShiftLabel(label);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const isDeeperWorkflowPage = useMemo(
+    () =>
+      pathname !== "/caregiver" &&
+      [
+        "/caregiver/tasks",
+        "/caregiver/rounds",
+        "/caregiver/meds",
+        "/caregiver/followups",
+        "/caregiver/prn-followup",
+        "/caregiver/incident-draft",
+        "/caregiver/handoff",
+      ].some((route) => pathname.startsWith(route)),
+    [pathname],
+  );
 
   useEffect(() => {
     if (!themeSet.current) {
@@ -44,7 +85,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
           />
           <SideNavItem
             icon={<AlertTriangle className="w-6 h-6" />}
-            label="Alert"
+            label="Report"
             href="/caregiver/incident-draft"
             active={pathname.startsWith("/caregiver/incident-draft")}
           />
@@ -63,8 +104,8 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
         {/* Shift Header */}
         <header className="sticky top-0 z-40 bg-black/20 backdrop-blur-xl border-b border-white/5 px-4 md:px-8 py-3 md:py-4 flex justify-between items-center">
           <div>
-            <h1 className="text-lg md:text-xl font-display font-semibold tracking-tight text-white leading-tight">Oakridge ALF</h1>
-            <p className="text-xs md:text-sm text-zinc-400 font-medium tracking-wide uppercase mt-0.5">Night Shift (11P - 7A)</p>
+            <h1 className="text-lg md:text-xl font-display font-semibold tracking-tight text-white leading-tight">{facilityName}</h1>
+            <p className="text-xs md:text-sm text-zinc-400 font-medium tracking-wide uppercase mt-0.5">{shiftLabel}</p>
           </div>
           <div className="flex items-center gap-4">
             <PilotFeedbackLauncher shellKind="caregiver" compact />
@@ -81,7 +122,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
 
         {/* Scrollable Content View */}
         <main className="flex-1 p-4 md:p-8">
-          {children}
+          <div className={isDeeperWorkflowPage ? "space-y-4" : undefined}>{children}</div>
         </main>
       </div>
 
@@ -107,7 +148,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
         />
         <TabItem
           icon={<AlertTriangle className="w-6 h-6" />}
-          label="Alert"
+          label="Report"
           href="/caregiver/incident-draft"
           active={pathname.startsWith("/caregiver/incident-draft")}
         />

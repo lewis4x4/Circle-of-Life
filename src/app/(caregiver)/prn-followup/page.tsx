@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { Label } from "@/components/ui/label";
+import { FloorWorkflowStrip } from "@/components/caregiver/FloorWorkflowStrip";
 
 type MedJoin = {
   medication_name: string;
@@ -212,6 +213,11 @@ export default function CaregiverPrnFollowupPage() {
 
   return (
     <div className="space-y-4 max-w-3xl mx-auto">
+      <FloorWorkflowStrip
+        active="prn"
+        title="Close the loop after PRN administration before the shift turns over."
+        description="Document effectiveness here, then move back to meds or into handoff if the resident still needs attention."
+      />
       <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-white/5 bg-gradient-to-br from-violet-950/40 via-slate-900/40 to-black/60 backdrop-blur-3xl shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
         <h3 className="flex items-center gap-3 text-2xl font-display font-semibold text-white tracking-wide">
           <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center border border-violet-500/30">

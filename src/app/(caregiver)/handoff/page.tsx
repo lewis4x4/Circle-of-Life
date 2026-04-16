@@ -8,6 +8,7 @@ import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client
 
 import { Badge } from "@/components/ui/badge";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { FloorWorkflowStrip } from "@/components/caregiver/FloorWorkflowStrip";
 
 type HandoffRow = {
   id: string;
@@ -115,6 +116,11 @@ export default function CaregiverHandoffPage() {
 
   return (
     <div className="space-y-4">
+      <FloorWorkflowStrip
+        active="handoff"
+        title="Use handoff as the final floor lane after meds, checks, and unresolved follow-up work are clear."
+        description="This is where the next shift should understand what matters now. If something still needs action, link it back to meds, follow-ups, or incident reporting before turnover."
+      />
       <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-white/5 bg-gradient-to-br from-indigo-950/40 via-slate-900/40 to-black/60 backdrop-blur-3xl shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>

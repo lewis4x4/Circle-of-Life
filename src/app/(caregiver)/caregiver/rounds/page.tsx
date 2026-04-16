@@ -7,6 +7,7 @@ import { AlertTriangle, CheckCircle2, Clock3, Loader2, RefreshCw } from "lucide-
 import { RoundingTaskCard, type RoundingTaskCardData } from "@/components/rounding/RoundingTaskCard";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
+import { FloorWorkflowStrip } from "@/components/caregiver/FloorWorkflowStrip";
 
 type TaskApiRow = {
   id: string;
@@ -108,6 +109,11 @@ export default function CaregiverRoundsPage() {
 
   return (
     <div className="max-w-[800px] mx-auto pb-6 space-y-6">
+      <FloorWorkflowStrip
+        active="rounds"
+        title="Work due checks first, then move back into tasks or meds as the shift demands."
+        description="Rounds is the time-bound safety queue. Use it for due-now checks, then return to the ADL queue for routine work or to meds when a pass window opens."
+      />
       
       {/* ─── HEADER ──────────────────────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
