@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Loader2 } from "lucide-react";
 
 import { useDietaryToday } from "@/hooks/dietary/useDietaryToday";
@@ -48,6 +49,39 @@ export function CommandDeck() {
       <div className="pointer-events-none fixed -bottom-40 -right-40 w-96 h-96 rounded-full bg-rose-600/10 blur-3xl" />
 
       <ServiceBar data={service_bar} />
+
+      <div className="px-4 pb-4 md:px-6">
+        <div className="rounded-[1.75rem] border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-xl">
+          <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">
+            <span>Kitchen priorities</span>
+            <span className="text-stone-600">/</span>
+            <span>{tickets.length} tray tickets</span>
+            <span className="text-stone-600">/</span>
+            <span>{fortification.length} fortify</span>
+            <span className="text-stone-600">/</span>
+            <span>{npo.length} npo</span>
+            <span className="text-stone-600">/</span>
+            <span>{refusals.length} refusals</span>
+          </div>
+          <p className="mt-2 text-sm text-stone-300">
+            Keep service timing, tray execution, resident dietary watch items, and HACCP logging in one kitchen lane.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link
+              href="/admin/dietary"
+              className="rounded-full border border-white/10 bg-black/30 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-stone-300 transition hover:border-white/20 hover:text-white"
+            >
+              Diet orders hub
+            </Link>
+            <Link
+              href="/admin/dietary/clinical-review"
+              className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-amber-200 transition hover:bg-amber-500/20"
+            >
+              Clinical review
+            </Link>
+          </div>
+        </div>
+      </div>
 
       <div className="flex-1 flex min-h-0">
         <TrayLine services={services} tickets={tickets} onOpen={setActiveTicket} />

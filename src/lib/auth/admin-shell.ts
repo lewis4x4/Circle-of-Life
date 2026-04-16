@@ -22,7 +22,6 @@ const ADMIN_SHELL_SEGMENTS = [
   "/payroll",
   "/certifications",
   "/training",
-  "/dietary",
   "/transportation",
   "/reputation",
   "/assessments",
