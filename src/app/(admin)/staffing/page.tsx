@@ -333,7 +333,7 @@ export default function AdminStaffingConsolePage() {
 
         {/* Metric 3: Certifications */}
         <div className="h-[160px]">
-          <V2Card hoverColor="amber" className="border-amber-500/20 shadow-[inset_0_0_15px_rgba(245,158,11,0.05)] bg-amber-500/5">
+          <V2Card href="/admin/certifications?timeline=expired" hoverColor="amber" className="border-amber-500/20 shadow-[inset_0_0_15px_rgba(245,158,11,0.05)] bg-amber-500/5">
              <MonolithicWatermark value={certWarnings.length.toString()} className="text-amber-500/10" />
              <div className="relative z-10 flex flex-col h-full justify-between">
                <span className="text-[10px] font-mono tracking-widest uppercase flex items-center gap-2 text-amber-500"><FileWarning className="w-3.5 h-3.5" /> Expired Credentials</span>
