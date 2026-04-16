@@ -381,6 +381,19 @@ Delivered:
   - owner / org-admin -> `/admin/executive`
   - facility admin -> `/admin`
 
+### Workstream W — Executive Route Boundary Enforcement
+
+**Status:** complete
+
+Delivered:
+
+- owner and org-admin still retain `/admin/executive` and its subroutes as their dedicated portfolio surface
+- non-executive admin roles are now redirected away from executive routes at the shell boundary:
+  - facility admin -> `/admin`
+  - nurse -> `/admin/nurse-dashboard`
+  - other specialist admin roles -> their existing role homes
+- this closes a real Slice 3 role-fit gap where facility-admin and specialist roles could still sit inside owner-only executive pages by direct URL
+
 ---
 
 ## What Is Left

@@ -1,7 +1,7 @@
 import type { User } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
-import { getAppRoleFromClaims, isAdminEligibleAppRole, isDietaryRole } from "@/lib/auth/app-role";
+import { getAppRoleFromClaims, isAdminEligibleAppRole, isDietaryRole, isOrgAdminAppRole } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
 /**
@@ -71,6 +71,15 @@ export function adminShellAccessRedirect(request: NextRequest, user: User | null
 
   const roleHome = getDashboardRouteForRole(role);
   if (nextUrl.pathname === "/admin" && roleHome !== "/admin") {
+    return NextResponse.redirect(new URL(roleHome, nextUrl.origin));
+  }
+
+  const isExecutiveShellPath =
+    nextUrl.pathname === "/admin/executive" ||
+    nextUrl.pathname.startsWith("/admin/executive/") ||
+    nextUrl.pathname === "/executive" ||
+    nextUrl.pathname.startsWith("/executive/");
+  if (isExecutiveShellPath && !isOrgAdminAppRole(role)) {
     return NextResponse.redirect(new URL(roleHome, nextUrl.origin));
   }
 

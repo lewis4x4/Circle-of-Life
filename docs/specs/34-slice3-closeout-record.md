@@ -246,6 +246,10 @@ Browser verification:
   - reporting hub `Back to Dashboard` resolves by role:
     - owner -> `/admin/executive`
     - facility admin -> `/admin`
+  - executive routes now enforce role-home boundaries:
+    - owner stays on `/admin/executive`
+    - facility admin visiting `/admin/executive` -> `/admin`
+    - nurse visiting `/admin/executive` -> `/admin/nurse-dashboard`
 
 Operational verification:
 
