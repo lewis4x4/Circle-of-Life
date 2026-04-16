@@ -196,12 +196,12 @@ export default function AdminResidentsPage() {
         whenDatasetEmpty: {
           title: "No residents in this scope",
           description:
-            "Live census returned no active residents for the selected facility. Use Add resident or choose a different facility.",
+            "Live resident roster returned no residents for the selected facility. Use Add resident or choose a different facility.",
         },
         whenFiltersExcludeAll: {
           title: "No residents match the current filters",
           description:
-            "Try broadening acuity, unit, or ADL criteria. Live census data is scoped by your current facility selection.",
+            "Try broadening search, acuity, unit, ADL, or residency status filters. Live resident data is scoped by your current facility selection.",
         },
       }),
     [rows.length],
