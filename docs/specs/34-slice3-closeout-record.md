@@ -236,6 +236,11 @@ Browser verification:
   - search-tools settings `Back to Dashboard` resolves by admin role:
     - owner -> `/admin/executive`
     - facility admin -> `/admin`
+  - user-management settings now exposes `Back to Dashboard` as a page-local recovery link
+  - user-management settings `Back to Dashboard` resolves by role:
+    - owner -> `/admin/executive`
+    - facility admin -> `/admin`
+    - nurse -> `/admin/nurse-dashboard`
 
 Operational verification:
 

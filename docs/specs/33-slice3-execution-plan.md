@@ -355,6 +355,19 @@ Delivered:
   - facility admin -> `/admin`
 - this keeps the settings surface from trapping users inside a denied or utility-only page with no clear role-home return
 
+### Workstream U — User-Management Settings Recovery Parity
+
+**Status:** complete
+
+Delivered:
+
+- the user-management settings page now exposes a visible `Back to Dashboard` recovery link above the page content
+- the recovery link resolves from the signed-in admin role after hydration:
+  - owner / org-admin -> `/admin/executive`
+  - facility admin -> `/admin`
+  - nurse -> `/admin/nurse-dashboard`
+- this keeps the settings surface aligned with the same role-home contract already applied to other admin utility pages
+
 ---
 
 ## What Is Left

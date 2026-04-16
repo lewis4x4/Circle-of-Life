@@ -5,17 +5,40 @@
 
 "use client";
 
-import { useState, useCallback } from "react";
+import Link from "next/link";
+import { useState, useCallback, useEffect } from "react";
 import { UserListView } from "@/components/admin/users/UserListView";
 import { UserCreateDialog } from "@/components/admin/users/UserCreateDialog";
 import { UserEditSheet } from "@/components/admin/users/UserEditSheet";
 import { PermissionGuard } from "@/components/admin/users/PermissionGuard";
-import { Users, UserPlus } from "lucide-react";
+import { ArrowLeft, Users, UserPlus } from "lucide-react";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
+import { createClient } from "@/lib/supabase/client";
 
 export default function UserManagementPage() {
+  const supabase = createClient();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [homeHref, setHomeHref] = useState("/admin");
+
+  useEffect(() => {
+    void (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setHomeHref("/admin");
+        return;
+      }
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("app_role")
+        .eq("id", user.id)
+        .maybeSingle();
+      setHomeHref(profile?.app_role ? getDashboardRouteForRole(profile.app_role) : "/admin");
+    })();
+  }, [supabase]);
 
   const handleUserCreated = useCallback(() => {
     setRefreshKey((k) => k + 1);
@@ -58,8 +81,17 @@ export default function UserManagementPage() {
   }, []);
 
   return (
-    <PermissionGuard feature="user_management" level="view" fallback={<AccessDenied />}>
-      <div className="space-y-6 p-6">
+    <div className="space-y-6 p-6">
+      <div className="flex justify-end">
+        <Link
+          href={homeHref}
+          className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest font-mono text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back to Dashboard
+        </Link>
+      </div>
+      <PermissionGuard feature="user_management" level="view" fallback={<AccessDenied />}>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -104,8 +136,8 @@ export default function UserManagementPage() {
             onClose={handleUserUpdated}
           />
         )}
-      </div>
-    </PermissionGuard>
+      </PermissionGuard>
+    </div>
   );
 }
 
