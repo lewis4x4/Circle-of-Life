@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as Sentry from "@sentry/nextjs";
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
+import { createClient } from "@/lib/supabase/client";
 
 export default function AdminError({
   error,
@@ -11,9 +14,27 @@ export default function AdminError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const supabase = useMemo(() => createClient(), []);
+  const [homeHref, setHomeHref] = useState("/admin");
+
   useEffect(() => {
     Sentry.captureException(error);
   }, [error]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!cancelled && user) {
+        setHomeHref(getDashboardRouteForRole(getAppRoleFromClaims(user)));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase]);
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center p-8">
@@ -38,7 +59,7 @@ export default function AdminError({
             Try again
           </button>
           <Link
-            href="/admin"
+            href={homeHref}
             className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             Dashboard

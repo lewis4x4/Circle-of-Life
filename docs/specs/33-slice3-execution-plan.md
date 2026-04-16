@@ -45,6 +45,7 @@ The work landed as a set of coherent role packages instead of one monolithic red
 14. admin command-nav parity for dedicated-home roles
 15. caregiver support-lane home-link parity
 16. caregiver resident-detail recovery parity
+17. shared error-boundary home-link parity
 
 Browser validation was run against the role homes and the key floor/family routes needed by the acceptance gates.
 
@@ -303,6 +304,15 @@ Delivered:
 
 - the canonical resident detail subroutes now send housekeeper users back to `/caregiver/housekeeper` instead of generic `/caregiver`
 - invalid-state resident recovery now respects the same role-home contract as the rest of the floor workflow
+
+### Workstream Q — Shared Error-Boundary Home-Link Parity
+
+**Status:** complete
+
+Delivered:
+
+- the shared admin error boundary now returns each admin-side role to its actual home instead of hardcoding `/admin`
+- the shared caregiver error boundary now returns housekeeper to `/caregiver/housekeeper` instead of hardcoding `/caregiver`
 
 ---
 

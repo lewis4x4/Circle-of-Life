@@ -158,6 +158,7 @@ Confirmed by browser checks on:
 - roles with dedicated admin-side homes no longer see a misleading `Triage Inbox` nav item that simply redirects back to those homes
 - housekeeper support routes now return to `/caregiver/housekeeper` instead of generic `/caregiver`
 - invalid-state caregiver resident detail routes now return to the correct shift home for both caregiver and housekeeper
+- shared admin and caregiver error boundaries now return to role-appropriate homes instead of generic shell roots
 
 ---
 
@@ -215,6 +216,8 @@ Browser verification:
   - housekeeper `/caregiver/schedules` -> `Back to shift home` -> `/caregiver/housekeeper`
   - housekeeper invalid resident detail -> `Shift home` -> `/caregiver/housekeeper`
   - caregiver invalid resident detail -> `Shift home` -> `/caregiver`
+  - admin error boundary home link now resolves from the signed-in role
+  - caregiver error boundary home link now resolves from the signed-in role
 
 Operational verification:
 
