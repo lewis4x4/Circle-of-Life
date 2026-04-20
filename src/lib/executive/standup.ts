@@ -113,6 +113,25 @@ export type StandupPublishReadiness = {
   blockers: string[];
 };
 
+export type StandupComparisonFacility = {
+  facilityId: string | null;
+  facilityName: string;
+  pressureFrom: number;
+  pressureTo: number;
+  pressureDelta: number;
+  concernFrom: string;
+  concernTo: string;
+  metricDeltas: string[];
+};
+
+export type StandupComparison = {
+  fromWeek: string;
+  toWeek: string;
+  headline: string;
+  portfolioDeltas: string[];
+  facilityComparisons: StandupComparisonFacility[];
+};
+
 export type StandupFacilityAction = {
   facilityId: string | null;
   facilityName: string;
@@ -695,6 +714,67 @@ export function evaluateStandupPublishReadiness(
   return {
     canPublish: blockers.length === 0,
     blockers,
+  };
+}
+
+export function buildStandupComparison(
+  fromDetail: StandupSnapshotDetail,
+  toDetail: StandupSnapshotDetail,
+): StandupComparison {
+  const fromTotals = fromDetail.facilities.find((facility) => facility.facilityId == null) ?? null;
+  const toTotals = toDetail.facilities.find((facility) => facility.facilityId == null) ?? null;
+  const portfolioDeltas = [
+    deltaLine("AR", toTotals?.metrics.current_ar_cents.valueNumeric ?? null, fromTotals?.metrics.current_ar_cents.valueNumeric ?? null, formatCurrencyFromCents),
+    deltaLine("Census", toTotals?.metrics.current_total_census.valueNumeric ?? null, fromTotals?.metrics.current_total_census.valueNumeric ?? null),
+    deltaLine("Open beds", toTotals?.metrics.total_beds_open.valueNumeric ?? null, fromTotals?.metrics.total_beds_open.valueNumeric ?? null),
+    deltaLine("Hospital / rehab", toTotals?.metrics.hospital_and_rehab_total.valueNumeric ?? null, fromTotals?.metrics.hospital_and_rehab_total.valueNumeric ?? null),
+    deltaLine("Callouts", toTotals?.metrics.callouts_last_week.valueNumeric ?? null, fromTotals?.metrics.callouts_last_week.valueNumeric ?? null),
+    deltaLine("Overtime", toTotals?.metrics.overtime_hours.valueNumeric ?? null, fromTotals?.metrics.overtime_hours.valueNumeric ?? null, (value) => value == null ? "—" : `${value.toFixed(2)} hrs`),
+  ].filter((line): line is string => Boolean(line));
+
+  const fromByFacilityId = new Map(fromDetail.facilities.filter((facility) => facility.facilityId != null).map((facility) => [facility.facilityId, facility] as const));
+  const toByFacilityId = new Map(toDetail.facilities.filter((facility) => facility.facilityId != null).map((facility) => [facility.facilityId, facility] as const));
+  const facilityIds = Array.from(new Set([...fromByFacilityId.keys(), ...toByFacilityId.keys()]));
+
+  const facilityComparisons = facilityIds
+    .map((facilityId) => {
+      const fromFacility = fromByFacilityId.get(facilityId) ?? null;
+      const toFacility = toByFacilityId.get(facilityId) ?? null;
+      const facilityName = toFacility?.facilityName ?? fromFacility?.facilityName ?? "Facility";
+      const pressureFrom = fromFacility?.pressureScore ?? 0;
+      const pressureTo = toFacility?.pressureScore ?? 0;
+      const metricDeltas = [
+        deltaLine("AR", toFacility?.metrics.current_ar_cents.valueNumeric ?? null, fromFacility?.metrics.current_ar_cents.valueNumeric ?? null, formatCurrencyFromCents),
+        deltaLine("Census", toFacility?.metrics.current_total_census.valueNumeric ?? null, fromFacility?.metrics.current_total_census.valueNumeric ?? null),
+        deltaLine("Open beds", toFacility?.metrics.total_beds_open.valueNumeric ?? null, fromFacility?.metrics.total_beds_open.valueNumeric ?? null),
+        deltaLine("Callouts", toFacility?.metrics.callouts_last_week.valueNumeric ?? null, fromFacility?.metrics.callouts_last_week.valueNumeric ?? null),
+        deltaLine("Open positions", toFacility?.metrics.current_open_positions.valueNumeric ?? null, fromFacility?.metrics.current_open_positions.valueNumeric ?? null),
+      ].filter((line): line is string => Boolean(line));
+
+      return {
+        facilityId,
+        facilityName,
+        pressureFrom,
+        pressureTo,
+        pressureDelta: pressureTo - pressureFrom,
+        concernFrom: fromFacility?.topConcern ?? "No prior concern",
+        concernTo: toFacility?.topConcern ?? "No current concern",
+        metricDeltas,
+      };
+    })
+    .sort((a, b) => Math.abs(b.pressureDelta) - Math.abs(a.pressureDelta) || b.pressureTo - a.pressureTo || a.facilityName.localeCompare(b.facilityName));
+
+  const highestShift = facilityComparisons[0];
+  const headline = highestShift
+    ? `${highestShift.facilityName} changed the most between ${fromDetail.snapshot.weekOf} and ${toDetail.snapshot.weekOf}.`
+    : `Comparison ready for ${fromDetail.snapshot.weekOf} versus ${toDetail.snapshot.weekOf}.`;
+
+  return {
+    fromWeek: fromDetail.snapshot.weekOf,
+    toWeek: toDetail.snapshot.weekOf,
+    headline,
+    portfolioDeltas,
+    facilityComparisons,
   };
 }
 

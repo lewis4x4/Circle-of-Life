@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Check, Copy, History, Loader2, Sparkles, Upload } from "lucide-react";
 
 import { ExecutiveHubNav } from "../../executive-hub-nav";
@@ -32,6 +33,7 @@ function badgeClass(status: string): string {
 }
 
 export default function ExecutiveStandupHistoryPage() {
+  const searchParams = useSearchParams();
   const supabase = useMemo(() => createClient(), []);
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -44,6 +46,8 @@ export default function ExecutiveStandupHistoryPage() {
   const [importJobsError, setImportJobsError] = useState<string | null>(null);
   const [workbookPath, setWorkbookPath] = useState("/Users/brianlewis/Downloads/2026 Standup Call Log.xlsx");
   const [copiedImport, setCopiedImport] = useState(false);
+  const [compareFromWeek, setCompareFromWeek] = useState("");
+  const [compareToWeek, setCompareToWeek] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -110,6 +114,17 @@ export default function ExecutiveStandupHistoryPage() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (rows.length === 0) return;
+    const fromQuery = searchParams.get("from");
+    const toQuery = searchParams.get("to");
+    const weekSet = new Set(rows.map((row) => row.weekOf));
+    const newest = rows[0]?.weekOf ?? "";
+    const previous = rows[1]?.weekOf ?? rows[0]?.weekOf ?? "";
+    setCompareFromWeek(fromQuery && weekSet.has(fromQuery) ? fromQuery : previous);
+    setCompareToWeek(toQuery && weekSet.has(toQuery) ? toQuery : newest);
+  }, [rows, searchParams]);
+
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
@@ -169,51 +184,110 @@ export default function ExecutiveStandupHistoryPage() {
             ) : null}
           </Card>
         ) : (
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            {rows.map((row) => (
-              <Card key={row.id} className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm transition-shadow hover:shadow-md dark:border-white/10 dark:bg-white/[0.03]">
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <CardTitle className="text-xl">{row.weekOf}</CardTitle>
-                      <CardDescription className="mt-1">
-                        Generated {new Date(row.generatedAt).toLocaleString()}
-                        {row.publishedAt ? ` · Published ${new Date(row.publishedAt).toLocaleString()}` : ""}
-                      </CardDescription>
-                    </div>
-                    <Badge variant="outline" className={badgeClass(row.status)}>
-                      {row.status}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Completeness</div>
-                      <div className="mt-1 font-semibold text-slate-900 dark:text-white">{row.completenessPct.toFixed(0)}%</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Confidence</div>
-                      <div className="mt-1 font-semibold capitalize text-slate-900 dark:text-white">{row.confidenceBand}</div>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Link
-                      href={`/admin/executive/standup/${row.weekOf}`}
-                      className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-slate-700 transition-colors hover:bg-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10"
-                    >
-                      Open week
-                    </Link>
-                    <Link
-                      href={`/admin/executive/standup/${row.weekOf}/board`}
-                      className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-indigo-700 transition-colors hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/15"
-                    >
-                      Board packet
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="space-y-4">
+            <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <CardHeader>
+                <CardTitle className="text-lg">Compare published weeks</CardTitle>
+                <CardDescription>Replace spreadsheet side-by-side review with an in-app change comparison across any two weekly packets.</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4 lg:grid-cols-[1fr_1fr_auto]">
+                <div className="space-y-2">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">From week</div>
+                  <select
+                    className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-black/20"
+                    value={compareFromWeek}
+                    onChange={(event) => setCompareFromWeek(event.target.value)}
+                  >
+                    {rows.map((row) => (
+                      <option key={`from-${row.id}`} value={row.weekOf}>{row.weekOf}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">To week</div>
+                  <select
+                    className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-black/20"
+                    value={compareToWeek}
+                    onChange={(event) => setCompareToWeek(event.target.value)}
+                  >
+                    {rows.map((row) => (
+                      <option key={`to-${row.id}`} value={row.weekOf}>{row.weekOf}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-end">
+                  <Link
+                    href={compareFromWeek && compareToWeek && compareFromWeek !== compareToWeek ? `/admin/executive/standup/compare?from=${encodeURIComponent(compareFromWeek)}&to=${encodeURIComponent(compareToWeek)}` : "#"}
+                    aria-disabled={!compareFromWeek || !compareToWeek || compareFromWeek === compareToWeek}
+                    className={`inline-flex h-10 items-center justify-center rounded-full px-4 text-xs font-semibold uppercase tracking-widest ${
+                      !compareFromWeek || !compareToWeek || compareFromWeek === compareToWeek
+                        ? "pointer-events-none border border-slate-200 bg-slate-100 text-slate-400 dark:border-white/10 dark:bg-white/5 dark:text-zinc-500"
+                        : "border border-indigo-200 bg-indigo-50 text-indigo-700 transition-colors hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/15"
+                    }`}
+                  >
+                    Compare weeks
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {rows.map((row, index) => {
+                const compareTarget = rows[index + 1]?.weekOf ?? null;
+                return (
+                  <Card key={row.id} className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm transition-shadow hover:shadow-md dark:border-white/10 dark:bg-white/[0.03]">
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <CardTitle className="text-xl">{row.weekOf}</CardTitle>
+                          <CardDescription className="mt-1">
+                            Generated {new Date(row.generatedAt).toLocaleString()}
+                            {row.publishedAt ? ` · Published ${new Date(row.publishedAt).toLocaleString()}` : ""}
+                          </CardDescription>
+                        </div>
+                        <Badge variant="outline" className={badgeClass(row.status)}>
+                          {row.status}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Completeness</div>
+                          <div className="mt-1 font-semibold text-slate-900 dark:text-white">{row.completenessPct.toFixed(0)}%</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Confidence</div>
+                          <div className="mt-1 font-semibold capitalize text-slate-900 dark:text-white">{row.confidenceBand}</div>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Link
+                          href={`/admin/executive/standup/${row.weekOf}`}
+                          className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-slate-700 transition-colors hover:bg-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10"
+                        >
+                          Open week
+                        </Link>
+                        <Link
+                          href={`/admin/executive/standup/${row.weekOf}/board`}
+                          className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-indigo-700 transition-colors hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/15"
+                        >
+                          Board packet
+                        </Link>
+                        {compareTarget ? (
+                          <Link
+                            href={`/admin/executive/standup/compare?from=${encodeURIComponent(compareTarget)}&to=${encodeURIComponent(row.weekOf)}`}
+                            className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200 dark:hover:bg-emerald-500/15"
+                          >
+                            Compare previous
+                          </Link>
+                        ) : null}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
         )}
 
