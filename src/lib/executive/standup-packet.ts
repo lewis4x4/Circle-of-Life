@@ -1,0 +1,134 @@
+import {
+  buildStandupComparison,
+  buildStandupNarrative,
+  STANDUP_SECTION_LABELS,
+  type StandupComparison,
+  type StandupMetricRow,
+  type StandupSectionKey,
+  type StandupSnapshotDetail,
+} from "@/lib/executive/standup";
+
+export type StandupPacketMetric = {
+  key: string;
+  label: string;
+  description: string;
+  fromValue: string;
+  toValue: string;
+  delta: string;
+  sourceMode: string;
+  confidenceBand: string;
+};
+
+export type StandupPacketSection = {
+  sectionKey: StandupSectionKey;
+  sectionLabel: string;
+  metrics: StandupPacketMetric[];
+};
+
+export type StandupPacketDocument = {
+  title: string;
+  weekOf: string;
+  generatedAt: string;
+  publishedAt: string;
+  generatedBy: string;
+  publishedBy: string;
+  status: string;
+  confidenceBand: string;
+  completenessPct: number;
+  version: number;
+  narrative: ReturnType<typeof buildStandupNarrative>;
+  comparison: StandupComparison | null;
+  sections: StandupPacketSection[];
+  methodology: string[];
+};
+
+const USD = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+
+function formatMetricValue(metric: StandupMetricRow | undefined): string {
+  if (!metric) return "—";
+  if (metric.valueText?.trim()) return metric.valueText.trim();
+  if (metric.valueNumeric == null) return "—";
+  if (metric.valueType === "currency") return USD.format(metric.valueNumeric / 100);
+  if (metric.valueType === "hours") return `${metric.valueNumeric.toFixed(2)} hrs`;
+  if (metric.valueType === "percent") return `${metric.valueNumeric.toFixed(1)}%`;
+  return `${metric.valueNumeric}`;
+}
+
+function formatMetricDelta(left: StandupMetricRow | undefined, right: StandupMetricRow | undefined): string {
+  if (!left || !right || left.valueNumeric == null || right.valueNumeric == null) return "—";
+  const delta = right.valueNumeric - left.valueNumeric;
+  if (delta === 0) return "No change";
+  if (right.valueType === "currency") return `${delta > 0 ? "+" : "-"}${USD.format(Math.abs(delta) / 100)}`;
+  if (right.valueType === "hours") return `${delta > 0 ? "+" : "-"}${Math.abs(delta).toFixed(2)} hrs`;
+  if (right.valueType === "percent") return `${delta > 0 ? "+" : "-"}${Math.abs(delta).toFixed(1)}%`;
+  return `${delta > 0 ? "+" : "-"}${Math.abs(delta)}`;
+}
+
+function methodologyNotes(): string[] {
+  return [
+    "Current AR and uncollected AR totals come from open invoice balances in the selected organization scope.",
+    "Average rent is derived from current-month invoices, with resident monthly rate fallback when invoice coverage is incomplete.",
+    "Bed availability uses standup bed classifications plus temporary block status so open-bed math reflects real placement constraints.",
+    "Forecast rows represent planned commitments for the week and should not be read as live census or discharge facts.",
+    "Low-confidence or manual values are intentionally labeled to preserve packet trust when upstream system data is incomplete.",
+  ];
+}
+
+export function buildStandupPacketDocument(
+  detail: StandupSnapshotDetail,
+  previous: StandupSnapshotDetail | null,
+): StandupPacketDocument {
+  const narrative = buildStandupNarrative(detail, previous);
+  const comparison = previous ? buildStandupComparison(previous, detail) : null;
+  const currentTotals = detail.facilities.find((facility) => facility.facilityId == null) ?? null;
+  const previousTotals = previous?.facilities.find((facility) => facility.facilityId == null) ?? null;
+
+  const sections = (Object.entries(STANDUP_SECTION_LABELS) as Array<[StandupSectionKey, string]>).map(([sectionKey, sectionLabel]) => {
+    const metricKeys = Array.from(
+      new Set(
+        detail.facilities.flatMap((facility) =>
+          Object.keys(facility.metrics).filter((metricKey) => facility.metrics[metricKey].sectionKey === sectionKey),
+        ),
+      ),
+    );
+
+    const metrics = metricKeys.map((metricKey) => {
+      const currentMetric = currentTotals?.metrics[metricKey];
+      const previousMetric = previousTotals?.metrics[metricKey];
+      const sample = currentMetric ?? previousMetric;
+      return {
+        key: metricKey,
+        label: sample?.label ?? metricKey,
+        description: sample?.description ?? "",
+        fromValue: formatMetricValue(previousMetric),
+        toValue: formatMetricValue(currentMetric),
+        delta: formatMetricDelta(previousMetric, currentMetric),
+        sourceMode: currentMetric?.sourceMode ?? sample?.sourceMode ?? "manual",
+        confidenceBand: currentMetric?.confidenceBand ?? sample?.confidenceBand ?? "low",
+      };
+    });
+
+    return {
+      sectionKey,
+      sectionLabel,
+      metrics,
+    };
+  });
+
+  return {
+    title: "Executive Standup Pack",
+    weekOf: detail.snapshot.weekOf,
+    generatedAt: detail.snapshot.generatedAt,
+    publishedAt: detail.snapshot.publishedAt ?? "Not yet",
+    generatedBy: detail.snapshot.generatedByName ?? detail.snapshot.generatedById ?? "System",
+    publishedBy: detail.snapshot.publishedByName ?? detail.snapshot.publishedById ?? "Not published",
+    status: detail.snapshot.status,
+    confidenceBand: detail.snapshot.confidenceBand,
+    completenessPct: detail.snapshot.completenessPct,
+    version: detail.snapshot.publishedVersion,
+    narrative,
+    comparison,
+    sections,
+    methodology: methodologyNotes(),
+  };
+}

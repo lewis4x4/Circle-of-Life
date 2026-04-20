@@ -7,6 +7,7 @@ import { Printer, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { buildStandupPacketDocument } from "@/lib/executive/standup-packet";
 import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { downloadTextFile } from "@/lib/onboarding/download";
@@ -82,6 +83,7 @@ export default function ExecutiveStandupBoardPage() {
   const facilities = useMemo(() => (detail?.facilities ?? []).filter((facility) => facility.facilityId != null), [detail]);
   const totals = useMemo(() => (detail?.facilities ?? []).find((facility) => facility.facilityId == null) ?? null, [detail]);
   const narrative = useMemo(() => (detail ? buildStandupNarrative(detail, previousDetail) : null), [detail, previousDetail]);
+  const packet = useMemo(() => (detail ? buildStandupPacketDocument(detail, previousDetail) : null), [detail, previousDetail]);
 
   const sectionMetricKeys = useMemo(() => {
     const keys = new Map<StandupSectionKey, string[]>();
@@ -170,7 +172,7 @@ export default function ExecutiveStandupBoardPage() {
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Haven executive standup</p>
                   <h2 className="mt-2 text-4xl font-semibold tracking-tight">Week of {detail.snapshot.weekOf}</h2>
                   <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600">
-                    Published ownership packet with portfolio scorecard, facility ranking, and workbook-equivalent section detail.
+                    Published ownership packet with portfolio scorecard, facility ranking, executive actions, and workbook-equivalent section detail.
                   </p>
                 </div>
                 <div className="text-right text-sm text-slate-600">
@@ -342,11 +344,9 @@ export default function ExecutiveStandupBoardPage() {
                   <CardTitle>Methodology</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm text-slate-700">
-                  <p>AR metrics come from open invoice balances in scope.</p>
-                  <p>Average rent uses current-month invoices, with resident monthly rate fallback when invoice coverage is incomplete.</p>
-                  <p>Bed availability reflects standup bed classes plus temporary bed blocks.</p>
-                  <p>Forecast rows are weekly commitments, not live facts.</p>
-                  <p>Low-confidence rows remain visible so the packet stays trustworthy about its own limits.</p>
+                  {(packet?.methodology ?? []).map((item) => (
+                    <p key={item}>{item}</p>
+                  ))}
                 </CardContent>
               </Card>
             </section>
