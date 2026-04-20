@@ -6,6 +6,11 @@ import {
   fetchPreviousPublishedStandupSnapshotDetail,
   fetchStandupSnapshotDetail,
 } from "@/lib/executive/standup";
+import {
+  executiveStandupPdfStoragePath,
+  looksLikeStorageObjectPath,
+  REPORT_EXPORT_BUCKET,
+} from "@/lib/reports/export-storage";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 
@@ -61,6 +66,21 @@ export async function GET(
     return NextResponse.json({ error: "Standup packet not found" }, { status: 404 });
   }
 
+  if (looksLikeStorageObjectPath(detail.snapshot.pdfAttachmentPath)) {
+    const cached = await admin.storage.from(REPORT_EXPORT_BUCKET).download(detail.snapshot.pdfAttachmentPath);
+    if (!cached.error && cached.data) {
+      const bytes = new Uint8Array(await cached.data.arrayBuffer());
+      return new NextResponse(bytes, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="executive-standup-${detail.snapshot.weekOf}.pdf"`,
+          "Cache-Control": "private, no-store",
+        },
+      });
+    }
+  }
+
   const html = buildStandupBoardPrintHtml(detail, previous);
   const url = new URL(request.url);
   const reportId = url.searchParams.get("reportId")?.trim() || null;
@@ -84,6 +104,29 @@ export async function GET(
         left: "0.35in",
       },
     });
+    const storagePath = executiveStandupPdfStoragePath(
+      profile.organization_id,
+      detail.snapshot.weekOf,
+      detail.snapshot.publishedVersion,
+    );
+
+    const upload = await admin.storage
+      .from(REPORT_EXPORT_BUCKET)
+      .upload(storagePath, pdf, {
+        contentType: "application/pdf",
+        upsert: true,
+      });
+    if (upload.error) {
+      console.error("[standup-pdf] storage", upload.error);
+    } else {
+      await admin
+        .from("exec_standup_snapshots" as never)
+        .update({
+          pdf_attachment_path: storagePath,
+        } as never)
+        .eq("id", detail.snapshot.id)
+        .eq("organization_id", profile.organization_id);
+    }
 
     if (reportId) {
       const { data: runRow, error: runErr } = await admin
@@ -108,7 +151,7 @@ export async function GET(
           report_run_id: runRow.id,
           export_format: "pdf",
           file_name: `executive-standup-${detail.snapshot.weekOf}.pdf`,
-          storage_path: `/api/executive/standup/${encodeURIComponent(detail.snapshot.weekOf)}/pdf`,
+          storage_path: upload.error ? `/api/executive/standup/${encodeURIComponent(detail.snapshot.weekOf)}/pdf` : storagePath,
           delivered_to_json: {
             delivery: "download",
             kind: "executive_standup_board_packet",
@@ -121,7 +164,7 @@ export async function GET(
         .from("exec_saved_reports")
         .update({
           last_generated_at: new Date().toISOString(),
-          last_output_storage_path: `/api/executive/standup/${encodeURIComponent(detail.snapshot.weekOf)}/pdf`,
+          last_output_storage_path: upload.error ? `/api/executive/standup/${encodeURIComponent(detail.snapshot.weekOf)}/pdf` : storagePath,
         })
         .eq("id", reportId)
         .eq("organization_id", profile.organization_id);
