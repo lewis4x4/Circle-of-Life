@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { buildStandupPacketDocument } from "@/lib/executive/standup-packet";
 import type { Database } from "@/types/database";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
@@ -890,16 +891,6 @@ function formatMetricDisplay(metric: StandupMetricRow | undefined): string {
 function formatDateTimeDisplay(value: string | null): string {
   if (!value) return "—";
   return new Date(value).toLocaleString();
-}
-
-function buildStandupMethodologyNotes(): string[] {
-  return [
-    "Current AR and uncollected AR totals come from open invoice balances in the selected organization scope.",
-    "Average rent is derived from current-month invoices, with resident monthly rate fallback when invoice coverage is incomplete.",
-    "Bed availability uses standup bed classifications plus temporary block status so open-bed math reflects real placement constraints.",
-    "Forecast rows represent planned commitments for the week and should not be read as live census or discharge facts.",
-    "Low-confidence or manual values are intentionally labeled to preserve packet trust when upstream system data is incomplete.",
-  ];
 }
 
 function deltaLine(label: string, current: number | null, previous: number | null, formatter?: (value: number | null) => string): string | null {
@@ -1950,53 +1941,97 @@ export function buildStandupBoardPrintHtml(
   detail: StandupSnapshotDetail,
   previous: StandupSnapshotDetail | null,
 ): string {
+  const packet = buildStandupPacketDocument(detail, previous);
   const facilities = detail.facilities.filter((facility) => facility.facilityId != null);
   const totals = detail.facilities.find((facility) => facility.facilityId == null) ?? null;
-  const narrative = buildStandupNarrative(detail, previous);
-  const comparison = previous ? buildStandupComparison(previous, detail) : null;
-  const methodologyNotes = buildStandupMethodologyNotes();
-  const generatedBy = detail.snapshot.generatedByName ?? detail.snapshot.generatedById ?? "System";
-  const publishedBy = detail.snapshot.publishedByName ?? detail.snapshot.publishedById ?? "Not published";
+  const generatedBy = packet.generatedBy;
+  const publishedBy = packet.publishedBy;
 
-  const metricRows = (Object.entries(STANDUP_SECTION_LABELS) as Array<[StandupSectionKey, string]>)
-    .map(([sectionKey, sectionLabel]) => {
-      const keys = Array.from(
-        new Set(
-          detail.facilities.flatMap((facility) =>
-            Object.keys(facility.metrics).filter((metricKey) => facility.metrics[metricKey].sectionKey === sectionKey),
-          ),
-        ),
-      );
-      if (keys.length === 0) return "";
+  const sectionBlocks = packet.sections
+    .map(
+      (section) => `
+        <section class="section">
+          <div class="section-header">
+            <div>
+              <div class="eyebrow">${escapeHtml(section.sectionLabel)}</div>
+              <h3>${escapeHtml(section.sectionLabel)}</h3>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Previous</th>
+                <th>Current</th>
+                <th>Delta</th>
+                <th>Source</th>
+                <th>Confidence</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${section.metrics
+                .map(
+                  (metric) => `
+                    <tr>
+                      <td>
+                        <div class="metric-label">${escapeHtml(metric.label)}</div>
+                        <div class="metric-desc">${escapeHtml(metric.description)}</div>
+                      </td>
+                      <td><div class="value">${escapeHtml(metric.fromValue)}</div></td>
+                      <td><div class="value">${escapeHtml(metric.toValue)}</div></td>
+                      <td><div class="delta">${escapeHtml(metric.delta)}</div></td>
+                      <td><div class="meta">${escapeHtml(metric.sourceMode)}</div></td>
+                      <td><div class="meta">${escapeHtml(metric.confidenceBand)}</div></td>
+                    </tr>
+                  `,
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </section>
+      `,
+    )
+    .join("");
 
-      const rows = keys
-        .map((metricKey) => {
-          const sample = facilities.find((facility) => facility.metrics[metricKey])?.metrics[metricKey] ?? totals?.metrics[metricKey];
-          if (!sample) return "";
-          const facilityCells = facilities
-            .map(
-              (facility) =>
-                `<td><div class="value">${escapeHtml(formatMetricDisplay(facility.metrics[metricKey]))}</div><div class="meta">${escapeHtml(
-                  `${facility.metrics[metricKey].sourceMode} · ${facility.metrics[metricKey].confidenceBand}`,
-                )}</div></td>`,
-            )
-            .join("");
-          const totalCell = totals
-            ? `<td><div class="value">${escapeHtml(formatMetricDisplay(totals.metrics[metricKey]))}</div><div class="meta">${escapeHtml(
-                `${totals.metrics[metricKey].sourceMode} · ${totals.metrics[metricKey].confidenceBand}`,
-              )}</div></td>`
-            : "";
-          return `<tr><td><div class="metric-label">${escapeHtml(sample.label)}</div><div class="metric-desc">${escapeHtml(
-            sample.description,
-          )}</div></td>${facilityCells}${totalCell}</tr>`;
-        })
-        .join("");
-
-      const facilityHeaders = facilities.map((facility) => `<th>${escapeHtml(facility.facilityName)}</th>`).join("");
-      const totalsHeader = totals ? "<th>Totals</th>" : "";
-
-      return `<section class="section"><h3>${escapeHtml(sectionLabel)}</h3><table><thead><tr><th>Metric</th>${facilityHeaders}${totalsHeader}</tr></thead><tbody>${rows}</tbody></table></section>`;
-    })
+  const appendixRows = packet.appendixSections
+    .map(
+      (section) => `
+        <section class="section">
+          <h3>${escapeHtml(section.sectionLabel)}</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                ${facilities.map((facility) => `<th>${escapeHtml(facility.facilityName)}</th>`).join("")}
+                ${totals ? "<th>Totals</th>" : ""}
+              </tr>
+            </thead>
+            <tbody>
+              ${section.metrics
+                .map((metric) => {
+                  const sample = facilities.find((facility) => facility.metrics[metric.key])?.metrics[metric.key] ?? totals?.metrics[metric.key];
+                  if (!sample) return "";
+                  const facilityCells = facilities
+                    .map(
+                      (facility) =>
+                        `<td><div class="value">${escapeHtml(formatMetricDisplay(facility.metrics[metric.key]))}</div><div class="meta">${escapeHtml(
+                          `${facility.metrics[metric.key].sourceMode} · ${facility.metrics[metric.key].confidenceBand}`,
+                        )}</div></td>`,
+                    )
+                    .join("");
+                  const totalCell = totals
+                    ? `<td><div class="value">${escapeHtml(formatMetricDisplay(totals.metrics[metric.key]))}</div><div class="meta">${escapeHtml(
+                        `${totals.metrics[metric.key].sourceMode} · ${totals.metrics[metric.key].confidenceBand}`,
+                      )}</div></td>`
+                    : "";
+                  return `<tr><td><div class="metric-label">${escapeHtml(sample.label)}</div><div class="metric-desc">${escapeHtml(sample.description)}</div></td>${facilityCells}${totalCell}</tr>`;
+                })
+                .join("")}
+            </tbody>
+          </table>
+        </section>
+      `,
+    )
     .join("");
 
   const facilityRanking = facilities
@@ -2013,30 +2048,38 @@ export function buildStandupBoardPrintHtml(
   const portfolioSummary = totals
     ? `
       <div class="summary-grid">
-        <div class="summary-card"><div class="summary-label">Current AR</div><div class="summary-value">${escapeHtml(formatMetricDisplay(totals.metrics.current_ar_cents))}</div></div>
-        <div class="summary-card"><div class="summary-label">Census</div><div class="summary-value">${escapeHtml(formatMetricDisplay(totals.metrics.current_total_census))}</div></div>
-        <div class="summary-card"><div class="summary-label">Open Beds</div><div class="summary-value">${escapeHtml(formatMetricDisplay(totals.metrics.total_beds_open))}</div></div>
-        <div class="summary-card"><div class="summary-label">Hospital/Rehab</div><div class="summary-value">${escapeHtml(formatMetricDisplay(totals.metrics.hospital_and_rehab_total))}</div></div>
+        ${packet.summaryCards
+          .map(
+            (card) => `
+              <div class="summary-card">
+                <div class="summary-label">${escapeHtml(card.label)}</div>
+                <div class="summary-value">${escapeHtml(card.value)}</div>
+                <div class="summary-delta">${escapeHtml(card.delta)}</div>
+              </div>
+            `,
+          )
+          .join("")}
       </div>
     `
     : "";
 
-  const narrativeBullets = narrative.bullets.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
-  const narrativeChanges = narrative.changes.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
-  const narrativeQuality = narrative.dataQuality.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
-  const narrativeActions = narrative.actions.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
-  const methodologyList = methodologyNotes.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
-  const reviewNotesBlock = detail.snapshot.reviewNotes
-    ? `<div class="panel"><h2>Review notes</h2><p>${escapeHtml(detail.snapshot.reviewNotes)}</p></div>`
+  const narrativeBullets = packet.narrative.bullets.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  const narrativeChanges = packet.topChanges.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  const narrativeQuality = packet.qualityFlags.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  const narrativeActions = packet.topActions.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  const methodologyList = packet.methodology.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  const legendList = packet.legend.map((item) => `<li><strong>${escapeHtml(item.label)}</strong>: ${escapeHtml(item.description)}</li>`).join("");
+  const reviewNotesBlock = packet.reviewNotes
+    ? `<div class="panel"><h2>Review notes</h2><p>${escapeHtml(packet.reviewNotes)}</p></div>`
     : "";
-  const draftNotesBlock = detail.snapshot.draftNotes
-    ? `<div class="panel"><h2>Draft notes</h2><p>${escapeHtml(detail.snapshot.draftNotes)}</p></div>`
+  const draftNotesBlock = packet.draftNotes
+    ? `<div class="panel"><h2>Draft notes</h2><p>${escapeHtml(packet.draftNotes)}</p></div>`
     : "";
-  const facilityActionPanels = narrative.facilityActions
+  const facilityActionPanels = packet.narrative.facilityActions
     .slice(0, 6)
     .map(
       (action) => `
-        <div class="panel">
+        <div class="spotlight-card">
           <h2>${escapeHtml(action.facilityName)} <span style="font-size:12px;color:#64748b;">Pressure ${action.pressureScore}</span></h2>
           <div class="meta">${escapeHtml(action.topConcern)}</div>
           <h2 style="margin-top: 14px;">Why red</h2>
@@ -2049,14 +2092,14 @@ export function buildStandupBoardPrintHtml(
       `,
     )
     .join("");
-  const comparisonPanels = comparison
-    ? comparison.facilityComparisons
+  const comparisonPanels = packet.comparison
+    ? packet.comparison.facilityComparisons
         .slice(0, 6)
         .map(
           (facility) => `
-            <div class="panel">
+            <div class="spotlight-card">
               <h2>${escapeHtml(facility.facilityName)} <span style="font-size:12px;color:#64748b;">${facility.pressureDelta > 0 ? "+" : ""}${facility.pressureDelta} pressure</span></h2>
-              <div class="meta">${escapeHtml(comparison.fromWeek)}: ${escapeHtml(facility.concernFrom)} · ${escapeHtml(comparison.toWeek)}: ${escapeHtml(facility.concernTo)}</div>
+              <div class="meta">${escapeHtml(packet.comparison!.fromWeek)}: ${escapeHtml(facility.concernFrom)} · ${escapeHtml(packet.comparison!.toWeek)}: ${escapeHtml(facility.concernTo)}</div>
               <ul style="margin-top: 14px;">${(facility.metricDeltas.length > 0 ? facility.metricDeltas : ["No material metric shifts for this facility."]).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
             </div>
           `,
@@ -2071,39 +2114,61 @@ export function buildStandupBoardPrintHtml(
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Executive Standup Pack — ${escapeHtml(detail.snapshot.weekOf)}</title>
     <style>
-      body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin: 0; color: #0f172a; background: #f8fafc; }
+      :root {
+        --bg: #f5f6fb;
+        --ink: #111827;
+        --muted: #667085;
+        --line: #dbe2f0;
+        --brand-1: #0f172a;
+        --brand-2: #172554;
+        --brand-3: #4338ca;
+        --card: #ffffff;
+        --accent: #0f766e;
+        --danger: #991b1b;
+      }
+      body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin: 0; color: var(--ink); background: var(--bg); }
       .packet { max-width: 1120px; margin: 0 auto; }
-      .page { background: #fff; min-height: 100vh; padding: 36px; box-sizing: border-box; page-break-after: always; }
+      .page { background: var(--card); min-height: 100vh; padding: 36px; box-sizing: border-box; page-break-after: always; }
       .page:last-child { page-break-after: auto; }
-      h1 { font-size: 2.4rem; margin: 0 0 12px; letter-spacing: -0.03em; }
-      h2 { font-size: 1.125rem; margin: 0 0 10px; }
-      h3 { font-size: 1.4rem; margin: 0 0 14px; letter-spacing: -0.02em; }
-      .eyebrow { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: #64748b; font-weight: 700; margin-bottom: 8px; }
-      .meta { font-size: 13px; color: #475569; }
-      .hero { border-bottom: 1px solid #cbd5e1; padding-bottom: 18px; margin-bottom: 28px; display: flex; justify-content: space-between; gap: 24px; }
-      .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 18px 0 28px; }
-      .summary-card { border: 1px solid #cbd5e1; border-radius: 16px; padding: 16px; }
-      .summary-label { font-size: 11px; text-transform: uppercase; letter-spacing: .14em; color: #64748b; font-weight: 700; }
-      .summary-value { margin-top: 8px; font-size: 28px; font-weight: 700; }
-      .narrative-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 18px; margin-bottom: 28px; }
-      .panel { border: 1px solid #cbd5e1; border-radius: 18px; padding: 18px; }
-      .headline { font-size: 1.2rem; font-weight: 700; margin-bottom: 10px; }
+      h1 { font-size: 2.8rem; margin: 0 0 12px; letter-spacing: -0.04em; line-height: 0.95; }
+      h2 { font-size: 1.05rem; margin: 0 0 10px; letter-spacing: -0.01em; }
+      h3 { font-size: 1.55rem; margin: 0 0 14px; letter-spacing: -0.03em; }
+      .eyebrow { font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-bottom: 8px; }
+      .meta { font-size: 13px; color: var(--muted); }
+      .hero { border-bottom: 1px solid var(--line); padding-bottom: 22px; margin-bottom: 30px; display: flex; justify-content: space-between; gap: 24px; }
+      .focus-band { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; margin: 18px 0 30px; }
+      .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 22px 0 30px; }
+      .summary-card { border: 1px solid var(--line); border-radius: 18px; padding: 18px; background: linear-gradient(180deg, #fff 0%, #fbfcff 100%); }
+      .summary-label { font-size: 10px; text-transform: uppercase; letter-spacing: .18em; color: var(--muted); font-weight: 700; }
+      .summary-value { margin-top: 10px; font-size: 30px; font-weight: 800; letter-spacing: -0.03em; }
+      .summary-delta { margin-top: 8px; font-size: 12px; color: var(--brand-3); font-weight: 700; }
+      .narrative-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 18px; margin-bottom: 28px; }
+      .panel { border: 1px solid var(--line); border-radius: 20px; padding: 20px; background: #fff; }
+      .spotlight-card { border: 1px solid var(--line); border-radius: 20px; padding: 20px; background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%); }
+      .headline { font-size: 1.45rem; font-weight: 800; margin-bottom: 14px; letter-spacing: -0.03em; line-height: 1.05; }
       ul { margin: 0; padding-left: 18px; }
       li { margin: 0 0 8px; }
       table { width: 100%; border-collapse: collapse; }
-      th, td { border-bottom: 1px solid #e2e8f0; padding: 10px 12px; text-align: left; vertical-align: top; }
-      th { font-size: 11px; text-transform: uppercase; letter-spacing: .16em; color: #64748b; }
+      th, td { border-bottom: 1px solid var(--line); padding: 12px 12px; text-align: left; vertical-align: top; }
+      th { font-size: 10px; text-transform: uppercase; letter-spacing: .18em; color: var(--muted); }
       .metric-label { font-weight: 600; }
-      .metric-desc { margin-top: 4px; color: #64748b; font-size: 12px; }
+      .metric-desc { margin-top: 4px; color: var(--muted); font-size: 12px; }
       .value { font-weight: 600; }
-      .section { margin-top: 28px; }
-      .legend { margin-top: 24px; font-size: 12px; color: #475569; }
-      .cover { background: linear-gradient(180deg, #0f172a 0%, #111827 60%, #172554 100%); color: #f8fafc; display: flex; flex-direction: column; justify-content: space-between; }
+      .delta { font-weight: 700; color: var(--brand-3); }
+      .section { margin-top: 30px; }
+      .section-header { display:flex; align-items:end; justify-content:space-between; gap:18px; margin-bottom: 14px; }
+      .cover { background:
+          radial-gradient(circle at top right, rgba(99,102,241,.22), transparent 32%),
+          radial-gradient(circle at bottom left, rgba(14,165,233,.16), transparent 28%),
+          linear-gradient(180deg, var(--brand-1) 0%, #111827 56%, var(--brand-2) 100%);
+        color: #f8fafc; display: flex; flex-direction: column; justify-content: space-between; }
       .cover .eyebrow, .cover .meta { color: rgba(248,250,252,.78); }
-      .cover h1 { color: #fff; font-size: 3.2rem; }
+      .cover h1 { color: #fff; font-size: 3.6rem; }
+      .brand-lockup { display:flex; align-items:center; gap:14px; margin-bottom: 18px; }
+      .brand-mark { width: 52px; height: 52px; border-radius: 16px; background: linear-gradient(180deg, #6366f1 0%, #4338ca 100%); color:#fff; display:flex; align-items:center; justify-content:center; font-size: 28px; font-weight: 800; box-shadow: 0 16px 34px rgba(67,56,202,.35); }
       .cover-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 22px; }
-      .cover-card { border: 1px solid rgba(255,255,255,.12); border-radius: 18px; padding: 18px; background: rgba(255,255,255,.04); }
-      .page-number { margin-top: 18px; font-size: 12px; color: #64748b; }
+      .cover-card { border: 1px solid rgba(255,255,255,.12); border-radius: 22px; padding: 20px; background: rgba(255,255,255,.05); backdrop-filter: blur(12px); }
+      .page-number { margin-top: 18px; font-size: 12px; color: var(--muted); }
       @media print {
         body { background: #fff; }
         .page { padding: 22px; min-height: auto; }
@@ -2114,10 +2179,16 @@ export function buildStandupBoardPrintHtml(
     <div class="packet">
       <section class="page cover">
         <div>
-          <div class="eyebrow">Haven executive standup packet</div>
-          <h1>Executive Standup Pack</h1>
-          <div class="meta">Week of ${escapeHtml(detail.snapshot.weekOf)} · Version ${detail.snapshot.publishedVersion}</div>
-          <div class="meta" style="margin-top:10px;">A fixed executive operating packet for owner and board review.</div>
+          <div class="brand-lockup">
+            <div class="brand-mark">H</div>
+            <div>
+              <div class="eyebrow">Haven executive standup packet</div>
+              <div class="meta">Circle of Life portfolio operating system</div>
+            </div>
+          </div>
+          <h1>${escapeHtml(packet.title)}</h1>
+          <div class="meta">Week of ${escapeHtml(packet.weekOf)} · Version ${packet.version}</div>
+          <div class="meta" style="margin-top:10px;">${escapeHtml(packet.subtitle)}. Designed for ownership, board review, and operational follow-through.</div>
         </div>
         <div class="cover-grid">
           <div class="cover-card">
@@ -2139,34 +2210,52 @@ export function buildStandupBoardPrintHtml(
         <div>
           <div class="eyebrow">Haven executive standup</div>
           <h1>Executive Summary</h1>
-          <div class="meta">Week of ${escapeHtml(detail.snapshot.weekOf)} · Status ${escapeHtml(detail.snapshot.status)} · Version ${detail.snapshot.publishedVersion}</div>
+          <div class="meta">Week of ${escapeHtml(packet.weekOf)} · Status ${escapeHtml(packet.status)} · Version ${packet.version}</div>
         </div>
         <div class="meta">
-          <div>Confidence: <strong>${escapeHtml(detail.snapshot.confidenceBand)}</strong></div>
-          <div>Completeness: <strong>${detail.snapshot.completenessPct.toFixed(0)}%</strong></div>
-          <div>Version: <strong>${detail.snapshot.publishedVersion}</strong></div>
+          <div>Confidence: <strong>${escapeHtml(packet.confidenceBand)}</strong></div>
+          <div>Completeness: <strong>${packet.completenessPct.toFixed(0)}%</strong></div>
+          <div>Version: <strong>${packet.version}</strong></div>
         </div>
+      </div>
+
+      <div class="focus-band">
+        <div class="panel">
+          <div class="eyebrow">Primary focus</div>
+          <div class="headline">${escapeHtml(packet.focusStatement)}</div>
+          <div class="meta">This is the single highest-value read from the packet right now.</div>
+        </div>
+        ${
+          packet.spotlightFacility
+            ? `<div class="spotlight-card">
+                <div class="eyebrow">Facility spotlight</div>
+                <div class="headline">${escapeHtml(packet.spotlightFacility.facilityName)}</div>
+                <div class="meta">${escapeHtml(packet.spotlightFacility.topConcern)} · Pressure ${packet.spotlightFacility.pressureScore}</div>
+                <ul style="margin-top: 14px;">${packet.spotlightFacility.interventions.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+              </div>`
+            : ""
+        }
       </div>
 
       ${portfolioSummary}
 
       <div class="narrative-grid">
         <div class="panel">
-          <div class="headline">${escapeHtml(narrative.headline)}</div>
-          <h2>Executive insights</h2>
+          <div class="headline">${escapeHtml(packet.narrative.headline)}</div>
+          <h2>What matters now</h2>
           <ul>${narrativeBullets || "<li>No narrative insights available.</li>"}</ul>
-          <h2 style="margin-top: 18px;">Changes since last published week</h2>
+          <h2 style="margin-top: 18px;">What changed</h2>
           <ul>${narrativeChanges || "<li>No prior published week available for comparison.</li>"}</ul>
-          <h2 style="margin-top: 18px;">Intervention queue</h2>
+          <h2 style="margin-top: 18px;">What to do</h2>
           <ul>${narrativeActions || "<li>No intervention recommendations.</li>"}</ul>
         </div>
         <div class="panel">
-          <h2>Facility ranking</h2>
+          <h2>Pressure ranking</h2>
           <table>
             <thead><tr><th>#</th><th>Facility</th><th>Top concern</th><th>Pressure</th></tr></thead>
             <tbody>${facilityRanking}</tbody>
           </table>
-          <h2 style="margin-top: 18px;">Data quality</h2>
+          <h2 style="margin-top: 18px;">Trust notes</h2>
           <ul>${narrativeQuality || "<li>No data quality warnings.</li>"}</ul>
         </div>
       </div>
@@ -2198,11 +2287,11 @@ export function buildStandupBoardPrintHtml(
         <div class="hero">
           <div>
             <div class="eyebrow">Workbook detail</div>
-            <h1>Section Detail</h1>
-            <div class="meta">Workbook-equivalent tables with values, trust markers, and facility/totals structure.</div>
+            <h1>Operating Detail</h1>
+            <div class="meta">Decision-relevant section pages with only meaningful metrics promoted into the primary packet.</div>
           </div>
         </div>
-        ${metricRows}
+        ${sectionBlocks}
         <div class="page-number">Page 4+</div>
       </section>
 
@@ -2217,13 +2306,7 @@ export function buildStandupBoardPrintHtml(
         <div class="narrative-grid">
           <div class="panel">
             <h2>Legend</h2>
-            <ul>
-              <li><strong>auto</strong>: live system fact from structured source data</li>
-              <li><strong>forecast</strong>: planned expectation for the standup week</li>
-              <li><strong>manual</strong>: hand-entered value retained for trust and auditability</li>
-              <li><strong>hybrid</strong>: computed with fallback review or partial system dependency</li>
-              <li><strong>high / medium / low confidence</strong>: operator trust signal for the displayed metric</li>
-            </ul>
+            <ul>${legendList}</ul>
           </div>
           <div class="panel">
             <h2>Methodology</h2>
@@ -2237,24 +2320,35 @@ export function buildStandupBoardPrintHtml(
         <div class="page-number">Appendix</div>
       </section>
       ${
-        comparison
+        packet.comparison
           ? `<section class="page">
         <div class="hero">
           <div>
             <div class="eyebrow">Comparison appendix</div>
             <h1>Week-over-Week Movement</h1>
-            <div class="meta">${escapeHtml(comparison.headline)}</div>
+            <div class="meta">${escapeHtml(packet.comparison.headline)}</div>
           </div>
         </div>
         <div class="panel" style="margin-bottom: 18px;">
           <h2>Portfolio deltas</h2>
-          <ul>${(comparison.portfolioDeltas.length > 0 ? comparison.portfolioDeltas : ["No material portfolio deltas between these weeks."]).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+          <ul>${(packet.comparison.portfolioDeltas.length > 0 ? packet.comparison.portfolioDeltas : ["No material portfolio deltas between these weeks."]).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
         </div>
         ${comparisonPanels ? `<div class="narrative-grid" style="grid-template-columns: 1fr 1fr;">${comparisonPanels}</div>` : ""}
         <div class="page-number">Comparison appendix</div>
       </section>`
           : ""
       }
+      <section class="page">
+        <div class="hero">
+          <div>
+            <div class="eyebrow">Workbook appendix</div>
+            <h1>Full Workbook Appendix</h1>
+            <div class="meta">Complete facility-by-facility section detail, including low-signal rows that are intentionally kept out of the primary executive packet.</div>
+          </div>
+        </div>
+        ${appendixRows}
+        <div class="page-number">Workbook appendix</div>
+      </section>
     </div>
   </body>
 </html>`;

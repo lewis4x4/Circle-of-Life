@@ -38,8 +38,18 @@ export type StandupPacketSection = {
   metrics: StandupPacketMetric[];
 };
 
+export type StandupPacketFacilitySpotlight = {
+  facilityName: string;
+  pressureScore: number;
+  topConcern: string;
+  whyRed: string[];
+  varianceFlags: string[];
+  interventions: string[];
+};
+
 export type StandupPacketDocument = {
   title: string;
+  subtitle: string;
   weekOf: string;
   generatedAt: string;
   publishedAt: string;
@@ -53,9 +63,15 @@ export type StandupPacketDocument = {
   legend: StandupPacketLegendItem[];
   draftNotes: string | null;
   reviewNotes: string | null;
+  focusStatement: string;
+  topChanges: string[];
+  topActions: string[];
+  qualityFlags: string[];
+  spotlightFacility: StandupPacketFacilitySpotlight | null;
   narrative: ReturnType<typeof buildStandupNarrative>;
   comparison: StandupComparison | null;
   sections: StandupPacketSection[];
+  appendixSections: StandupPacketSection[];
   methodology: string[];
 };
 
@@ -101,6 +117,18 @@ function legendItems(): StandupPacketLegendItem[] {
   ];
 }
 
+function isMeaningfulPacketMetric(metric: StandupPacketMetric): boolean {
+  return metric.toValue !== "—" || metric.fromValue !== "—";
+}
+
+function summarizeFocusStatement(
+  narrative: ReturnType<typeof buildStandupNarrative>,
+): string {
+  if (narrative.actions.length > 0) return narrative.actions[0];
+  if (narrative.bullets.length > 0) return narrative.bullets[0];
+  return "Portfolio stable; continue using the packet to monitor change, trust, and intervention priority.";
+}
+
 export function buildStandupPacketDocument(
   detail: StandupSnapshotDetail,
   previous: StandupSnapshotDetail | null,
@@ -110,7 +138,7 @@ export function buildStandupPacketDocument(
   const currentTotals = detail.facilities.find((facility) => facility.facilityId == null) ?? null;
   const previousTotals = previous?.facilities.find((facility) => facility.facilityId == null) ?? null;
 
-  const sections = (Object.entries(STANDUP_SECTION_LABELS) as Array<[StandupSectionKey, string]>).map(([sectionKey, sectionLabel]) => {
+  const appendixSections = (Object.entries(STANDUP_SECTION_LABELS) as Array<[StandupSectionKey, string]>).map(([sectionKey, sectionLabel]) => {
     const metricKeys = Array.from(
       new Set(
         detail.facilities.flatMap((facility) =>
@@ -142,6 +170,13 @@ export function buildStandupPacketDocument(
     };
   });
 
+  const sections = appendixSections
+    .map((section) => ({
+      ...section,
+      metrics: section.metrics.filter(isMeaningfulPacketMetric),
+    }))
+    .filter((section) => section.metrics.length > 0);
+
   const summaryMetricKeys = [
     "current_ar_cents",
     "current_total_census",
@@ -163,8 +198,20 @@ export function buildStandupPacketDocument(
     };
   });
 
+  const spotlightFacility = narrative.facilityActions[0]
+    ? {
+        facilityName: narrative.facilityActions[0].facilityName,
+        pressureScore: narrative.facilityActions[0].pressureScore,
+        topConcern: narrative.facilityActions[0].topConcern,
+        whyRed: narrative.facilityActions[0].whyRed,
+        varianceFlags: narrative.facilityActions[0].varianceFlags,
+        interventions: narrative.facilityActions[0].interventions,
+      }
+    : null;
+
   return {
     title: "Executive Standup Pack",
+    subtitle: "Owner and board operating packet",
     weekOf: detail.snapshot.weekOf,
     generatedAt: detail.snapshot.generatedAt,
     publishedAt: detail.snapshot.publishedAt ?? "Not yet",
@@ -178,9 +225,15 @@ export function buildStandupPacketDocument(
     legend: legendItems(),
     draftNotes: detail.snapshot.draftNotes,
     reviewNotes: detail.snapshot.reviewNotes,
+    focusStatement: summarizeFocusStatement(narrative),
+    topChanges: narrative.changes.slice(0, 3),
+    topActions: narrative.actions.slice(0, 3),
+    qualityFlags: narrative.dataQuality.slice(0, 3),
+    spotlightFacility,
     narrative,
     comparison,
     sections,
+    appendixSections,
     methodology: methodologyNotes(),
   };
 }

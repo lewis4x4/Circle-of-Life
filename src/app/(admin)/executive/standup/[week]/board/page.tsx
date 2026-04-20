@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { Printer, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildStandupPacketDocument } from "@/lib/executive/standup-packet";
 import { downloadBlobFromUrl } from "@/lib/download-blob";
 import { createClient } from "@/lib/supabase/client";
@@ -164,9 +164,10 @@ export default function ExecutiveStandupBoardPage() {
               <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-300">Haven executive standup packet</p>
-                  <h2 className="mt-3 text-5xl font-semibold tracking-tight">Week of {detail.snapshot.weekOf}</h2>
+                  <h2 className="mt-3 text-5xl font-semibold tracking-tight">{packet?.title ?? "Executive Standup Pack"}</h2>
+                  <p className="mt-2 text-sm uppercase tracking-[0.18em] text-slate-400">Week of {detail.snapshot.weekOf}</p>
                   <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-300">
-                    Published ownership packet with portfolio scorecard, facility ranking, executive actions, and workbook-equivalent section detail.
+                    {packet?.subtitle ?? "Owner and board operating packet"}. Designed for fast comprehension, defensible trust, and immediate action.
                   </p>
                   <div className="mt-8 grid gap-4 sm:grid-cols-3">
                     <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
@@ -197,6 +198,32 @@ export default function ExecutiveStandupBoardPage() {
                   </div>
                 </div>
               </div>
+            </section>
+
+            <section className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+              <Card className="border-slate-200 shadow-none">
+                <CardHeader>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Primary focus</div>
+                  <CardTitle className="text-3xl tracking-tight">{packet?.focusStatement ?? "No focus statement available."}</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-slate-600">
+                  Executive packet summary for the current week. This is the fastest read on what leadership should pay attention to right now.
+                </CardContent>
+              </Card>
+              {packet?.spotlightFacility ? (
+                <Card className="border-slate-200 shadow-none">
+                  <CardHeader>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Facility spotlight</div>
+                    <CardTitle className="text-3xl tracking-tight">{packet.spotlightFacility.facilityName}</CardTitle>
+                    <CardDescription>{packet.spotlightFacility.topConcern}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm text-slate-700">
+                    {packet.spotlightFacility.interventions.map((item) => (
+                      <p key={item}>{item}</p>
+                    ))}
+                  </CardContent>
+                </Card>
+              ) : null}
             </section>
 
             <section className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
@@ -465,6 +492,50 @@ export default function ExecutiveStandupBoardPage() {
                 </section>
               );
             })}
+
+            <section className="space-y-4">
+              <h3 className="text-2xl font-semibold tracking-tight">Workbook appendix</h3>
+              {packet?.appendixSections.map((section) => {
+                if (section.metrics.length === 0) return null;
+                return (
+                  <Card key={`appendix-${section.sectionKey}`} className="border-slate-200 shadow-none">
+                    <CardHeader>
+                      <CardTitle>{section.sectionLabel}</CardTitle>
+                      <CardDescription>Full section listing, including low-signal or incomplete rows intentionally kept out of the primary packet.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="overflow-x-auto">
+                      <table className="min-w-full border-collapse text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-300">
+                            <th className="px-3 py-2 text-left font-semibold text-slate-600">Metric</th>
+                            <th className="px-3 py-2 text-left font-semibold text-slate-600">Previous</th>
+                            <th className="px-3 py-2 text-left font-semibold text-slate-600">Current</th>
+                            <th className="px-3 py-2 text-left font-semibold text-slate-600">Delta</th>
+                            <th className="px-3 py-2 text-left font-semibold text-slate-600">Source</th>
+                            <th className="px-3 py-2 text-left font-semibold text-slate-600">Confidence</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {section.metrics.map((metric) => (
+                            <tr key={`appendix-${metric.key}`} className="border-b border-slate-100 align-top">
+                              <td className="px-3 py-3">
+                                <div className="font-medium text-slate-900">{metric.label}</div>
+                                <div className="mt-1 text-xs text-slate-500">{metric.description}</div>
+                              </td>
+                              <td className="px-3 py-3 font-semibold text-slate-900">{metric.fromValue}</td>
+                              <td className="px-3 py-3 font-semibold text-slate-900">{metric.toValue}</td>
+                              <td className="px-3 py-3 text-indigo-600">{metric.delta}</td>
+                              <td className="px-3 py-3 text-slate-700">{metric.sourceMode}</td>
+                              <td className="px-3 py-3 text-slate-700">{metric.confidenceBand}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </section>
           </div>
         )}
       </div>
