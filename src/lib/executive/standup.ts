@@ -1934,6 +1934,7 @@ export function buildStandupBoardPrintHtml(
   const facilities = detail.facilities.filter((facility) => facility.facilityId != null);
   const totals = detail.facilities.find((facility) => facility.facilityId == null) ?? null;
   const narrative = buildStandupNarrative(detail, previous);
+  const comparison = previous ? buildStandupComparison(previous, detail) : null;
   const methodologyNotes = buildStandupMethodologyNotes();
   const generatedBy = detail.snapshot.generatedByName ?? detail.snapshot.generatedById ?? "System";
   const publishedBy = detail.snapshot.publishedByName ?? detail.snapshot.publishedById ?? "Not published";
@@ -2029,6 +2030,20 @@ export function buildStandupBoardPrintHtml(
       `,
     )
     .join("");
+  const comparisonPanels = comparison
+    ? comparison.facilityComparisons
+        .slice(0, 6)
+        .map(
+          (facility) => `
+            <div class="panel">
+              <h2>${escapeHtml(facility.facilityName)} <span style="font-size:12px;color:#64748b;">${facility.pressureDelta > 0 ? "+" : ""}${facility.pressureDelta} pressure</span></h2>
+              <div class="meta">${escapeHtml(comparison.fromWeek)}: ${escapeHtml(facility.concernFrom)} · ${escapeHtml(comparison.toWeek)}: ${escapeHtml(facility.concernTo)}</div>
+              <ul style="margin-top: 14px;">${(facility.metricDeltas.length > 0 ? facility.metricDeltas : ["No material metric shifts for this facility."]).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+            </div>
+          `,
+        )
+        .join("")
+    : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -2202,6 +2217,25 @@ export function buildStandupBoardPrintHtml(
         </div>
         <div class="page-number">Appendix</div>
       </section>
+      ${
+        comparison
+          ? `<section class="page">
+        <div class="hero">
+          <div>
+            <div class="eyebrow">Comparison appendix</div>
+            <h1>Week-over-Week Movement</h1>
+            <div class="meta">${escapeHtml(comparison.headline)}</div>
+          </div>
+        </div>
+        <div class="panel" style="margin-bottom: 18px;">
+          <h2>Portfolio deltas</h2>
+          <ul>${(comparison.portfolioDeltas.length > 0 ? comparison.portfolioDeltas : ["No material portfolio deltas between these weeks."]).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+        </div>
+        ${comparisonPanels ? `<div class="narrative-grid" style="grid-template-columns: 1fr 1fr;">${comparisonPanels}</div>` : ""}
+        <div class="page-number">Comparison appendix</div>
+      </section>`
+          : ""
+      }
     </div>
   </body>
 </html>`;

@@ -351,6 +351,45 @@ export default function ExecutiveStandupBoardPage() {
               </Card>
             </section>
 
+            {packet?.comparison ? (
+              <section className="space-y-4">
+                <h3 className="text-2xl font-semibold tracking-tight">Comparison appendix</h3>
+                <Card className="border-slate-200 shadow-none">
+                  <CardHeader>
+                    <CardTitle>{packet.comparison.headline}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm text-slate-700">
+                    {(packet.comparison.portfolioDeltas.length > 0 ? packet.comparison.portfolioDeltas : ["No material portfolio deltas between these weeks."]).map((item) => (
+                      <p key={item}>{item}</p>
+                    ))}
+                  </CardContent>
+                </Card>
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  {packet.comparison.facilityComparisons.slice(0, 6).map((facility) => (
+                    <Card key={facility.facilityId} className="border-slate-200 shadow-none">
+                      <CardHeader>
+                        <CardTitle className="flex items-center justify-between gap-3">
+                          <span>{facility.facilityName}</span>
+                          <span className="text-sm font-medium text-slate-500">
+                            {facility.pressureDelta > 0 ? "+" : ""}{facility.pressureDelta} pressure
+                          </span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3 text-sm text-slate-700">
+                        <p>{packet.comparison!.fromWeek}: {facility.concernFrom}</p>
+                        <p>{packet.comparison!.toWeek}: {facility.concernTo}</p>
+                        <ul className="space-y-1">
+                          {(facility.metricDeltas.length > 0 ? facility.metricDeltas : ["No material metric shifts for this facility."]).map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
             {(Object.entries(STANDUP_SECTION_LABELS) as Array<[StandupSectionKey, string]>).map(([sectionKey, sectionLabel]) => {
               const metricKeys = sectionMetricKeys.get(sectionKey) ?? [];
               if (metricKeys.length === 0) return null;
