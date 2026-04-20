@@ -8,6 +8,7 @@ import { Printer, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildStandupPacketDocument } from "@/lib/executive/standup-packet";
+import { downloadBlobFromUrl } from "@/lib/download-blob";
 import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { downloadTextFile } from "@/lib/onboarding/download";
@@ -29,6 +30,7 @@ export default function ExecutiveStandupBoardPage() {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [savingBoardReport, setSavingBoardReport] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const week = typeof params?.week === "string" ? params.week : "";
 
@@ -98,6 +100,22 @@ export default function ExecutiveStandupBoardPage() {
     }
   }
 
+  async function onDownloadPdf() {
+    if (!detail) return;
+    setDownloadingPdf(true);
+    setError(null);
+    try {
+      await downloadBlobFromUrl(
+        `/api/executive/standup/${encodeURIComponent(detail.snapshot.weekOf)}/pdf`,
+        `executive-standup-${detail.snapshot.weekOf}.pdf`,
+      );
+    } catch (downloadError) {
+      setError(downloadError instanceof Error ? downloadError.message : "Could not generate standup PDF.");
+    } finally {
+      setDownloadingPdf(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-white text-slate-950">
       <div className="mx-auto max-w-6xl px-6 py-8 print:px-4">
@@ -115,6 +133,9 @@ export default function ExecutiveStandupBoardPage() {
             <Button type="button" onClick={() => window.print()}>
               <Printer className="mr-2 h-4 w-4" />
               Print / Save PDF
+            </Button>
+            <Button type="button" variant="outline" onClick={() => void onDownloadPdf()} disabled={downloadingPdf}>
+              {downloadingPdf ? "Generating PDF…" : "Download PDF"}
             </Button>
             <Button type="button" variant="outline" onClick={onExportBoardPacket}>
               Export HTML packet

@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { fetchExecutiveKpiSnapshot, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
+import { downloadBlobFromUrl } from "@/lib/download-blob";
 import {
   buildStandupBoardPrintHtml,
   fetchPreviousPublishedStandupSnapshotDetail,
@@ -411,6 +412,28 @@ export default function ExecutiveSavedReportsPage() {
     }
   }
 
+  async function onDownloadBoardPacketPdf(report: ReportRow) {
+    if (!canManage) return;
+    setBusyId(report.id);
+    setError(null);
+    try {
+      const { weekOf } = parseReportParameters(report.parameters);
+      if (!weekOf) {
+        setError("Saved packet is missing its standup week.");
+        return;
+      }
+      await downloadBlobFromUrl(
+        `/api/executive/standup/${encodeURIComponent(weekOf)}/pdf`,
+        `executive-standup-${weekOf}.pdf`,
+      );
+      await persistLastGenerated(report.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not download board packet PDF.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function onEnhancedReport(report: ReportRow) {
     if (!canManage || !orgId) return;
     setBusyId(report.id);
@@ -633,6 +656,15 @@ export default function ExecutiveSavedReportsPage() {
                               onClick={() => void onPrintPdf(r)}
                             >
                               {busyId === r.id ? "Working…" : "Print / PDF"}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={busyId !== null}
+                              onClick={() => void onDownloadBoardPacketPdf(r)}
+                            >
+                              {busyId === r.id ? "Working…" : "Download PDF"}
                             </Button>
                             <Button
                               type="button"
