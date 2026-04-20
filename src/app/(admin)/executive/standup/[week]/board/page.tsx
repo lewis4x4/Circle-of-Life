@@ -134,29 +134,47 @@ export default function ExecutiveStandupBoardPage() {
           <div className="text-sm text-slate-500">No standup data found for this week.</div>
         ) : (
           <div className="space-y-8">
-            <header className="border-b border-slate-200 pb-6">
-              <div className="flex items-start justify-between gap-6">
+            <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 px-8 py-10 text-white shadow-none">
+              <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Haven executive standup</p>
-                  <h2 className="mt-2 text-4xl font-semibold tracking-tight">Week of {detail.snapshot.weekOf}</h2>
-                  <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600">
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-300">Haven executive standup packet</p>
+                  <h2 className="mt-3 text-5xl font-semibold tracking-tight">Week of {detail.snapshot.weekOf}</h2>
+                  <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-300">
                     Published ownership packet with portfolio scorecard, facility ranking, executive actions, and workbook-equivalent section detail.
                   </p>
+                  <div className="mt-8 grid gap-4 sm:grid-cols-3">
+                    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Status</div>
+                      <div className="mt-2 text-xl font-semibold capitalize">{detail.snapshot.status}</div>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Confidence</div>
+                      <div className="mt-2 text-xl font-semibold capitalize">{detail.snapshot.confidenceBand}</div>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Completeness</div>
+                      <div className="mt-2 text-xl font-semibold">{detail.snapshot.completenessPct.toFixed(0)}%</div>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right text-sm text-slate-600">
-                  <div>Status: <span className="font-semibold capitalize text-slate-900">{detail.snapshot.status}</span></div>
-                  <div>Generated: {new Date(detail.snapshot.generatedAt).toLocaleString()}</div>
-                  <div>Prepared by: {detail.snapshot.generatedByName ?? detail.snapshot.generatedById ?? "System"}</div>
-                  <div>Published: {detail.snapshot.publishedAt ? new Date(detail.snapshot.publishedAt).toLocaleString() : "Not yet"}</div>
-                  <div>Published by: {detail.snapshot.publishedByName ?? detail.snapshot.publishedById ?? "Not published"}</div>
-                  <div>Confidence: <span className="font-semibold capitalize text-slate-900">{detail.snapshot.confidenceBand}</span></div>
-                  <div>Version: <span className="font-semibold text-slate-900">{detail.snapshot.publishedVersion}</span></div>
+                <div className="grid gap-4">
+                  <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-5 text-sm text-slate-200">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Prepared</div>
+                    <div className="mt-2 text-xl font-semibold text-white">{detail.snapshot.generatedByName ?? detail.snapshot.generatedById ?? "System"}</div>
+                    <div className="mt-2">{new Date(detail.snapshot.generatedAt).toLocaleString()}</div>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-5 text-sm text-slate-200">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Published</div>
+                    <div className="mt-2 text-xl font-semibold text-white">{detail.snapshot.publishedByName ?? detail.snapshot.publishedById ?? "Not published"}</div>
+                    <div className="mt-2">{detail.snapshot.publishedAt ? new Date(detail.snapshot.publishedAt).toLocaleString() : "Not yet"}</div>
+                    <div className="mt-2 text-slate-400">Version {detail.snapshot.publishedVersion}</div>
+                  </div>
                 </div>
               </div>
-            </header>
+            </section>
 
-            <section className="grid grid-cols-2 gap-4 md:grid-cols-4">
-              {packet?.summaryCards.slice(0, 4).map((card) => {
+            <section className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+              {packet?.summaryCards.map((card) => {
                 if (!card) return null;
                 return (
                   <Card key={card.key} className="border-slate-200 shadow-none">
@@ -166,6 +184,7 @@ export default function ExecutiveStandupBoardPage() {
                     <CardContent>
                       <div className="text-2xl font-semibold text-slate-900">{card.value}</div>
                       <div className="mt-2 text-sm text-indigo-600">{card.delta}</div>
+                      <div className="mt-2 text-[11px] uppercase tracking-[0.14em] text-slate-500">{card.confidenceBand} confidence</div>
                     </CardContent>
                   </Card>
                 );
