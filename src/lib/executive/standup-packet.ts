@@ -19,6 +19,19 @@ export type StandupPacketMetric = {
   confidenceBand: string;
 };
 
+export type StandupPacketSummaryCard = {
+  key: string;
+  label: string;
+  value: string;
+  delta: string;
+  confidenceBand: string;
+};
+
+export type StandupPacketLegendItem = {
+  label: string;
+  description: string;
+};
+
 export type StandupPacketSection = {
   sectionKey: StandupSectionKey;
   sectionLabel: string;
@@ -36,6 +49,10 @@ export type StandupPacketDocument = {
   confidenceBand: string;
   completenessPct: number;
   version: number;
+  summaryCards: StandupPacketSummaryCard[];
+  legend: StandupPacketLegendItem[];
+  draftNotes: string | null;
+  reviewNotes: string | null;
   narrative: ReturnType<typeof buildStandupNarrative>;
   comparison: StandupComparison | null;
   sections: StandupPacketSection[];
@@ -71,6 +88,16 @@ function methodologyNotes(): string[] {
     "Bed availability uses standup bed classifications plus temporary block status so open-bed math reflects real placement constraints.",
     "Forecast rows represent planned commitments for the week and should not be read as live census or discharge facts.",
     "Low-confidence or manual values are intentionally labeled to preserve packet trust when upstream system data is incomplete.",
+  ];
+}
+
+function legendItems(): StandupPacketLegendItem[] {
+  return [
+    { label: "auto", description: "Live system fact from structured source data." },
+    { label: "forecast", description: "Planned expectation for the standup week." },
+    { label: "manual", description: "Operator-entered value retained for trust and auditability." },
+    { label: "hybrid", description: "Computed with fallback review or partial system dependency." },
+    { label: "high / medium / low confidence", description: "Trust signal for the displayed metric." },
   ];
 }
 
@@ -115,6 +142,27 @@ export function buildStandupPacketDocument(
     };
   });
 
+  const summaryMetricKeys = [
+    "current_ar_cents",
+    "current_total_census",
+    "total_beds_open",
+    "hospital_and_rehab_total",
+    "callouts_last_week",
+    "current_open_positions",
+  ];
+  const summaryCards = summaryMetricKeys.map((metricKey) => {
+    const currentMetric = currentTotals?.metrics[metricKey];
+    const previousMetric = previousTotals?.metrics[metricKey];
+    const sample = currentMetric ?? previousMetric;
+    return {
+      key: metricKey,
+      label: sample?.label ?? metricKey,
+      value: formatMetricValue(currentMetric),
+      delta: formatMetricDelta(previousMetric, currentMetric),
+      confidenceBand: currentMetric?.confidenceBand ?? sample?.confidenceBand ?? "low",
+    };
+  });
+
   return {
     title: "Executive Standup Pack",
     weekOf: detail.snapshot.weekOf,
@@ -126,6 +174,10 @@ export function buildStandupPacketDocument(
     confidenceBand: detail.snapshot.confidenceBand,
     completenessPct: detail.snapshot.completenessPct,
     version: detail.snapshot.publishedVersion,
+    summaryCards,
+    legend: legendItems(),
+    draftNotes: detail.snapshot.draftNotes,
+    reviewNotes: detail.snapshot.reviewNotes,
     narrative,
     comparison,
     sections,

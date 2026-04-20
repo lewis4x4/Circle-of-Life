@@ -13,26 +13,11 @@ import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { downloadTextFile } from "@/lib/onboarding/download";
 import {
   buildStandupBoardPrintHtml,
-  buildStandupNarrative,
   fetchPreviousPublishedStandupSnapshotDetail,
   saveStandupBoardReport,
   fetchStandupSnapshotDetail,
-  STANDUP_SECTION_LABELS,
-  type StandupMetricRow,
-  type StandupSectionKey,
   type StandupSnapshotDetail,
 } from "@/lib/executive/standup";
-
-const USD = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-
-function formatMetricValue(metric: StandupMetricRow): string {
-  if (metric.valueText?.trim()) return metric.valueText.trim();
-  if (metric.valueNumeric == null) return "—";
-  if (metric.valueType === "currency") return USD.format(metric.valueNumeric / 100);
-  if (metric.valueType === "hours") return `${metric.valueNumeric.toFixed(2)} hrs`;
-  if (metric.valueType === "percent") return `${metric.valueNumeric.toFixed(1)}%`;
-  return `${metric.valueNumeric}`;
-}
 
 export default function ExecutiveStandupBoardPage() {
   const params = useParams<{ week: string }>();
@@ -80,24 +65,7 @@ export default function ExecutiveStandupBoardPage() {
     void load();
   }, [load]);
 
-  const facilities = useMemo(() => (detail?.facilities ?? []).filter((facility) => facility.facilityId != null), [detail]);
-  const totals = useMemo(() => (detail?.facilities ?? []).find((facility) => facility.facilityId == null) ?? null, [detail]);
-  const narrative = useMemo(() => (detail ? buildStandupNarrative(detail, previousDetail) : null), [detail, previousDetail]);
   const packet = useMemo(() => (detail ? buildStandupPacketDocument(detail, previousDetail) : null), [detail, previousDetail]);
-
-  const sectionMetricKeys = useMemo(() => {
-    const keys = new Map<StandupSectionKey, string[]>();
-    if (!detail) return keys;
-    for (const facility of detail.facilities) {
-      for (const key of Object.keys(facility.metrics)) {
-        const metric = facility.metrics[key];
-        if (!keys.has(metric.sectionKey)) keys.set(metric.sectionKey, []);
-        const arr = keys.get(metric.sectionKey)!;
-        if (!arr.includes(key)) arr.push(key);
-      }
-    }
-    return keys;
-  }, [detail]);
 
   function onExportBoardPacket() {
     if (!detail) return;
@@ -188,16 +156,16 @@ export default function ExecutiveStandupBoardPage() {
             </header>
 
             <section className="grid grid-cols-2 gap-4 md:grid-cols-4">
-              {["current_ar_cents", "current_total_census", "total_beds_open", "hospital_and_rehab_total"].map((metricKey) => {
-                const metric = totals?.metrics[metricKey];
-                if (!metric) return null;
+              {packet?.summaryCards.slice(0, 4).map((card) => {
+                if (!card) return null;
                 return (
-                  <Card key={metricKey} className="border-slate-200 shadow-none">
+                  <Card key={card.key} className="border-slate-200 shadow-none">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">{metric.label}</CardTitle>
+                      <CardTitle className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">{card.label}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-semibold text-slate-900">{formatMetricValue(metric)}</div>
+                      <div className="text-2xl font-semibold text-slate-900">{card.value}</div>
+                      <div className="mt-2 text-sm text-indigo-600">{card.delta}</div>
                     </CardContent>
                   </Card>
                 );
@@ -210,7 +178,7 @@ export default function ExecutiveStandupBoardPage() {
                   <CardTitle>Facility ranking</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {facilities
+                  {detail?.facilities.filter((facility) => facility.facilityId != null)
                     .slice()
                     .sort((a, b) => b.pressureScore - a.pressureScore)
                     .map((facility, index) => (
@@ -233,10 +201,10 @@ export default function ExecutiveStandupBoardPage() {
                   <CardTitle>Executive insights</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm text-slate-700">
-                  {narrative ? (
+                  {packet ? (
                     <>
-                      <p className="font-semibold">{narrative.headline}</p>
-                      {(narrative.bullets.length > 0 ? narrative.bullets : ["No narrative insights available."]).map((insight) => (
+                      <p className="font-semibold">{packet.narrative.headline}</p>
+                      {(packet.narrative.bullets.length > 0 ? packet.narrative.bullets : ["No narrative insights available."]).map((insight) => (
                         <p key={insight}>{insight}</p>
                       ))}
                     </>
@@ -247,14 +215,14 @@ export default function ExecutiveStandupBoardPage() {
               </Card>
             </section>
 
-            {narrative ? (
+            {packet ? (
               <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 <Card className="border-slate-200 shadow-none">
                   <CardHeader>
                     <CardTitle>Changes since last published week</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm text-slate-700">
-                    {(narrative.changes.length > 0 ? narrative.changes : ["No prior published week available for comparison."]).map((item) => (
+                    {(packet.narrative.changes.length > 0 ? packet.narrative.changes : ["No prior published week available for comparison."]).map((item) => (
                       <p key={item}>{item}</p>
                     ))}
                   </CardContent>
@@ -264,7 +232,7 @@ export default function ExecutiveStandupBoardPage() {
                     <CardTitle>Data quality</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm text-slate-700">
-                    {(narrative.dataQuality.length > 0 ? narrative.dataQuality : ["No data quality warnings."]).map((item) => (
+                    {(packet.narrative.dataQuality.length > 0 ? packet.narrative.dataQuality : ["No data quality warnings."]).map((item) => (
                       <p key={item}>{item}</p>
                     ))}
                   </CardContent>
@@ -274,7 +242,7 @@ export default function ExecutiveStandupBoardPage() {
                     <CardTitle>Intervention queue</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm text-slate-700">
-                    {(narrative.actions.length > 0 ? narrative.actions : ["No intervention recommendations."]).map((item) => (
+                    {(packet.narrative.actions.length > 0 ? packet.narrative.actions : ["No intervention recommendations."]).map((item) => (
                       <p key={item}>{item}</p>
                     ))}
                   </CardContent>
@@ -282,11 +250,11 @@ export default function ExecutiveStandupBoardPage() {
               </section>
             ) : null}
 
-            {narrative && narrative.facilityActions.length > 0 ? (
+            {packet && packet.narrative.facilityActions.length > 0 ? (
               <section className="space-y-4">
                 <h3 className="text-2xl font-semibold tracking-tight">Why this is red</h3>
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  {narrative.facilityActions.slice(0, 6).map((action) => (
+                  {packet.narrative.facilityActions.slice(0, 6).map((action) => (
                     <Card key={action.facilityId} className="border-slate-200 shadow-none">
                       <CardHeader>
                         <CardTitle className="flex items-center justify-between gap-3">
@@ -332,11 +300,9 @@ export default function ExecutiveStandupBoardPage() {
                   <CardTitle>Legend</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm text-slate-700">
-                  <p><strong>auto</strong>: live system fact from structured source data</p>
-                  <p><strong>forecast</strong>: planned expectation for the standup week</p>
-                  <p><strong>manual</strong>: operator-entered value retained for trust and auditability</p>
-                  <p><strong>hybrid</strong>: computed with fallback review or partial system dependency</p>
-                  <p><strong>high / medium / low confidence</strong>: trust signal for the displayed metric</p>
+                  {(packet?.legend ?? []).map((item) => (
+                    <p key={item.label}><strong>{item.label}</strong>: {item.description}</p>
+                  ))}
                 </CardContent>
               </Card>
               <Card className="border-slate-200 shadow-none">
@@ -350,6 +316,31 @@ export default function ExecutiveStandupBoardPage() {
                 </CardContent>
               </Card>
             </section>
+
+            {packet?.reviewNotes || packet?.draftNotes ? (
+              <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                {packet.reviewNotes ? (
+                  <Card className="border-slate-200 shadow-none">
+                    <CardHeader>
+                      <CardTitle>Review notes</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-sm text-slate-700">
+                      <p>{packet.reviewNotes}</p>
+                    </CardContent>
+                  </Card>
+                ) : null}
+                {packet.draftNotes ? (
+                  <Card className="border-slate-200 shadow-none">
+                    <CardHeader>
+                      <CardTitle>Draft notes</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-sm text-slate-700">
+                      <p>{packet.draftNotes}</p>
+                    </CardContent>
+                  </Card>
+                ) : null}
+              </section>
+            ) : null}
 
             {packet?.comparison ? (
               <section className="space-y-4">
@@ -390,49 +381,36 @@ export default function ExecutiveStandupBoardPage() {
               </section>
             ) : null}
 
-            {(Object.entries(STANDUP_SECTION_LABELS) as Array<[StandupSectionKey, string]>).map(([sectionKey, sectionLabel]) => {
-              const metricKeys = sectionMetricKeys.get(sectionKey) ?? [];
-              if (metricKeys.length === 0) return null;
+            {packet?.sections.map((section) => {
+              if (section.metrics.length === 0) return null;
               return (
-                <section key={sectionKey}>
-                  <h3 className="mb-4 text-2xl font-semibold tracking-tight">{sectionLabel}</h3>
+                <section key={section.sectionKey}>
+                  <h3 className="mb-4 text-2xl font-semibold tracking-tight">{section.sectionLabel}</h3>
                   <div className="overflow-x-auto">
                     <table className="min-w-full border-collapse text-sm">
                       <thead>
                         <tr className="border-b border-slate-300">
                           <th className="px-3 py-2 text-left font-semibold text-slate-600">Metric</th>
-                          {facilities.map((facility) => (
-                            <th key={facility.facilityId} className="px-3 py-2 text-left font-semibold text-slate-600">{facility.facilityName}</th>
-                          ))}
-                          {totals ? <th className="px-3 py-2 text-left font-semibold text-slate-600">Totals</th> : null}
+                          <th className="px-3 py-2 text-left font-semibold text-slate-600">Previous</th>
+                          <th className="px-3 py-2 text-left font-semibold text-slate-600">Current</th>
+                          <th className="px-3 py-2 text-left font-semibold text-slate-600">Delta</th>
+                          <th className="px-3 py-2 text-left font-semibold text-slate-600">Source</th>
+                          <th className="px-3 py-2 text-left font-semibold text-slate-600">Confidence</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {metricKeys.map((metricKey) => {
-                          const sample = facilities.find((facility) => facility.metrics[metricKey])?.metrics[metricKey] ?? totals?.metrics[metricKey];
-                          if (!sample) return null;
+                        {section.metrics.map((metric) => {
                           return (
-                            <tr key={metricKey} className="border-b border-slate-100 align-top">
+                            <tr key={metric.key} className="border-b border-slate-100 align-top">
                               <td className="px-3 py-3">
-                                <div className="font-medium text-slate-900">{sample.label}</div>
-                                <div className="mt-1 text-xs text-slate-500">{sample.description}</div>
+                                <div className="font-medium text-slate-900">{metric.label}</div>
+                                <div className="mt-1 text-xs text-slate-500">{metric.description}</div>
                               </td>
-                              {facilities.map((facility) => (
-                                <td key={`${facility.facilityId}:${metricKey}`} className="px-3 py-3">
-                                  <div className="font-semibold text-slate-900">{formatMetricValue(facility.metrics[metricKey])}</div>
-                                  <div className="mt-1 text-[11px] uppercase tracking-[0.14em] text-slate-500">
-                                    {facility.metrics[metricKey].sourceMode} · {facility.metrics[metricKey].confidenceBand}
-                                  </div>
-                                </td>
-                              ))}
-                              {totals ? (
-                                <td className="px-3 py-3">
-                                  <div className="font-semibold text-slate-900">{formatMetricValue(totals.metrics[metricKey])}</div>
-                                  <div className="mt-1 text-[11px] uppercase tracking-[0.14em] text-slate-500">
-                                    {totals.metrics[metricKey].sourceMode} · {totals.metrics[metricKey].confidenceBand}
-                                  </div>
-                                </td>
-                              ) : null}
+                              <td className="px-3 py-3 font-semibold text-slate-900">{metric.fromValue}</td>
+                              <td className="px-3 py-3 font-semibold text-slate-900">{metric.toValue}</td>
+                              <td className="px-3 py-3 text-indigo-600">{metric.delta}</td>
+                              <td className="px-3 py-3 text-slate-700">{metric.sourceMode}</td>
+                              <td className="px-3 py-3 text-slate-700">{metric.confidenceBand}</td>
                             </tr>
                           );
                         })}
