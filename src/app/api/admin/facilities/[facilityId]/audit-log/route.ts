@@ -6,6 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
 import { auditLogQuerySchema } from "@/lib/validation/facility-admin";
 
+import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
+
 interface RouteContext {
   params: Promise<{ facilityId: string }>;
 }
@@ -48,6 +50,7 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
   const offset = (page - 1) * per_page;
 
   const admin = actor.admin;
+  const untypedAdmin = asUntypedAdmin(admin);
 
   // Verify facility exists and belongs to org
   const { data: facility } = await admin
@@ -63,7 +66,7 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
 
   try {
     // Build query
-    let query = (admin as any)
+    let query = untypedAdmin
       .from("facility_audit_log")
       .select(
         "id, table_name, record_id, action, field_name, old_value, new_value, changed_by, changed_at, ip_address, user_agent",

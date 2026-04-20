@@ -11,6 +11,8 @@ import { patchRateVersionSchema } from "@/lib/validation/facility-admin";
 
 const uuidSchema = z.string().uuid();
 
+import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
+
 interface RouteContext {
   params: Promise<{ facilityId: string; rateId: string }>;
 }
@@ -63,6 +65,7 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
   }
 
   const admin = actor.admin;
+  const untypedAdmin = asUntypedAdmin(admin);
 
   const { data: facility } = await admin
     .from("facilities")
@@ -75,7 +78,7 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
 
-  const { data: existing, error: fetchErr } = await (admin as any)
+  const { data: existing, error: fetchErr } = await untypedAdmin
     .from("rate_schedule_versions")
     .select("id, facility_id, organization_id")
     .eq("id", rateId)
@@ -88,7 +91,7 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
     return NextResponse.json({ error: "Rate version not found" }, { status: 404 });
   }
 
-  const { data: updated, error: updErr } = await (admin as any)
+  const { data: updated, error: updErr } = await untypedAdmin
     .from("rate_schedule_versions")
     .update({
       rate_confirmed: parsed.data.rate_confirmed,

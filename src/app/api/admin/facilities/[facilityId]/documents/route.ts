@@ -7,6 +7,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
 import { documentMetadataSchema } from "@/lib/validation/facility-admin";
 
+import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
+
 interface RouteContext {
   params: Promise<{ facilityId: string }>;
 }
@@ -20,6 +22,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
 
   const { facilityId } = await ctx.params;
   const admin = actor.admin;
+  const untypedAdmin = asUntypedAdmin(admin);
   if (!(await actorCanAccessFacility(actor, facilityId))) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
@@ -37,7 +40,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   }
 
   // List documents ordered by uploaded_at desc
-  const { data: documents, error } = await (admin as any)
+  const { data: documents, error } = await untypedAdmin
     .from("facility_documents")
     .select(
       "id, document_category, document_name, file_path, file_size_bytes, mime_type, expiration_date, alert_yellow_days, alert_red_days, notes, uploaded_at, uploaded_by, updated_at",
@@ -70,6 +73,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
   }
 
   const admin = actor.admin;
+  const untypedAdmin = asUntypedAdmin(admin);
 
   // Verify facility exists and belongs to org
   const { data: facility } = await admin
@@ -131,7 +135,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
     }
 
     // Create metadata record
-    const { data: docRecord, error: insertErr } = await (admin as any)
+    const { data: docRecord, error: insertErr } = await untypedAdmin
       .from("facility_documents")
       .insert({
         facility_id: facilityId,

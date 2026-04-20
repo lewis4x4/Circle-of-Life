@@ -8,6 +8,8 @@ import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-au
 import { thresholdSchema } from "@/lib/validation/facility-admin";
 import { z } from "zod";
 
+import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
+
 interface RouteContext {
   params: Promise<{ facilityId: string }>;
 }
@@ -21,6 +23,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
 
   const { facilityId } = await ctx.params;
   const admin = actor.admin;
+  const untypedAdmin = asUntypedAdmin(admin);
   if (!(await actorCanAccessFacility(actor, facilityId))) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
@@ -38,7 +41,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   }
 
   // List thresholds
-  const { data: thresholds, error } = await (admin as any)
+  const { data: thresholds, error } = await untypedAdmin
     .from("facility_operational_thresholds")
     .select("id, threshold_type, yellow_threshold, red_threshold, notify_roles, enabled, created_at, updated_at")
     .eq("facility_id", facilityId);
@@ -92,6 +95,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
   const thresholds = parsed.data;
 
   const admin = actor.admin;
+  const untypedAdmin = asUntypedAdmin(admin);
 
   // Verify facility exists and belongs to org
   const { data: facility } = await admin
@@ -112,7 +116,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
     for (const threshold of thresholds) {
       if (threshold.id) {
         // Update existing
-        const { data: updated, error: updateErr } = await (admin as any)
+        const { data: updated, error: updateErr } = await untypedAdmin
           .from("facility_operational_thresholds")
           .update({
             yellow_threshold: threshold.yellow_threshold,
@@ -136,7 +140,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
         results.push(updated);
       } else {
         // Create new (upsert by threshold_type)
-        const { data: existing } = await (admin as any)
+        const { data: existing } = await untypedAdmin
           .from("facility_operational_thresholds")
           .select("id")
           .eq("facility_id", facilityId)
@@ -145,7 +149,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
 
         if (existing) {
           // Update existing by type
-          const { data: updated, error: updateErr } = await (admin as any)
+          const { data: updated, error: updateErr } = await untypedAdmin
             .from("facility_operational_thresholds")
             .update({
               yellow_threshold: threshold.yellow_threshold,
@@ -168,7 +172,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
           results.push(updated);
         } else {
           // Create new
-          const { data: created, error: insertErr } = await (admin as any)
+          const { data: created, error: insertErr } = await untypedAdmin
             .from("facility_operational_thresholds")
             .insert({
               facility_id: facilityId,

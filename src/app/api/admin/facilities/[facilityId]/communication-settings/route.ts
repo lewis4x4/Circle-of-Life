@@ -10,6 +10,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
 import { communicationSettingsSchema } from "@/lib/validation/facility-admin";
 
+import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
+
 interface RouteContext {
   params: Promise<{ facilityId: string }>;
 }
@@ -23,6 +25,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
 
   const { facilityId } = await ctx.params;
   const admin = actor.admin;
+  const untypedAdmin = asUntypedAdmin(admin);
   if (!(await actorCanAccessFacility(actor, facilityId))) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
@@ -40,7 +43,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   }
 
   // Fetch communication settings
-  const { data: settings, error } = await (admin as any)
+  const { data: settings, error } = await untypedAdmin
     .from("facility_communication_settings")
     .select("*")
     .eq("facility_id", facilityId)
@@ -121,6 +124,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
   }
 
   const admin = actor.admin;
+  const untypedAdmin = asUntypedAdmin(admin);
 
   // Verify facility exists and belongs to org
   const { data: facility } = await admin
@@ -136,7 +140,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
 
   try {
     // Fetch existing settings
-    const { data: existing } = await (admin as any)
+    const { data: existing } = await untypedAdmin
       .from("facility_communication_settings")
       .select("id")
       .eq("facility_id", facilityId)
@@ -146,7 +150,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
 
     if (existing) {
       // Update existing
-      const { data: updated, error: updateErr } = await (admin as any)
+      const { data: updated, error: updateErr } = await untypedAdmin
         .from("facility_communication_settings")
         .update({
           ...(updates as Record<string, unknown>),
@@ -167,7 +171,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
       return NextResponse.json({ data: updated });
     } else {
       // Create new
-      const { data: created, error: insertErr } = await (admin as any)
+      const { data: created, error: insertErr } = await untypedAdmin
         .from("facility_communication_settings")
         .insert({
           facility_id: facilityId,

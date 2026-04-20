@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/admin/executive", label: "Overview" },
+  { href: "/admin/executive/standup", label: "Standup Pack" },
+  { href: "/admin/executive/standup/history", label: "Standup History" },
   { href: "/admin/executive/ceo", label: "CEO View" },
   { href: "/admin/executive/cfo", label: "CFO View" },
   { href: "/admin/executive/coo", label: "COO View" },

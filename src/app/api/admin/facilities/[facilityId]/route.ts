@@ -7,6 +7,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
 import { updateFacilitySchema } from "@/lib/validation/facility-admin";
 
+import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
+
 interface RouteContext {
   params: Promise<{ facilityId: string }>;
 }
@@ -22,6 +24,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
 
   const { facilityId } = await ctx.params;
   const admin = actor.admin;
+  const untypedAdmin = asUntypedAdmin(admin);
 
   if (!actor.organization_id) {
     return NextResponse.json({ error: "Profile has no organization context" }, { status: 403 });
@@ -68,14 +71,15 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   }
 
   // Bed census for header / overview
-  const { data: beds } = await (admin as any)
+  const { data: beds } = await untypedAdmin
     .from("beds")
     .select("is_occupied")
     .eq("facility_id", facilityId);
 
+  const typedBeds = (beds ?? []) as unknown as Array<{ is_occupied: boolean }>;
   let occupancy_count = 0;
-  const total_beds = beds?.length ?? 0;
-  for (const b of (beds ?? []) as { is_occupied: boolean }[]) {
+  const total_beds = typedBeds.length;
+  for (const b of typedBeds) {
     if (b.is_occupied) occupancy_count++;
   }
 

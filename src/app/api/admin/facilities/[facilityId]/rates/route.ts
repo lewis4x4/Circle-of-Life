@@ -7,6 +7,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
 import { createRateSchema, listRatesQuerySchema } from "@/lib/validation/facility-admin";
 
+import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
+
 interface RouteContext {
   params: Promise<{ facilityId: string }>;
 }
@@ -20,6 +22,7 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
 
   const { facilityId } = await ctx.params;
   const admin = actor.admin;
+  const untypedAdmin = asUntypedAdmin(admin);
   if (!(await actorCanAccessFacility(actor, facilityId))) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
@@ -59,7 +62,7 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
   const { rate_type, active_only } = parsed.data;
 
   // Build query
-  let query = (admin as any)
+  let query = untypedAdmin
     .from("rate_schedule_versions")
     .select(
       "id, facility_id, rate_type, amount_cents, effective_from, effective_to, rate_confirmed, approved_by, approved_at, notes, created_at",
@@ -119,6 +122,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
   const { rate_type, amount_cents, effective_from, notes, rate_confirmed } = parsed.data;
 
   const admin = actor.admin;
+  const untypedAdmin = asUntypedAdmin(admin);
 
   // Verify facility exists and belongs to org
   const { data: facility } = await admin
@@ -139,7 +143,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
     previousDate.setDate(previousDate.getDate() - 1);
     const effective_to = previousDate.toISOString().split("T")[0];
 
-    await (admin as any)
+    await untypedAdmin
       .from("rate_schedule_versions")
       .update({ effective_to, updated_at: new Date().toISOString() })
       .eq("facility_id", facilityId)
@@ -148,7 +152,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
       .is("deleted_at", null);
 
     // Create new rate
-    const { data: newRate, error: insertErr } = await (admin as any)
+    const { data: newRate, error: insertErr } = await untypedAdmin
       .from("rate_schedule_versions")
       .insert({
         facility_id: facilityId,

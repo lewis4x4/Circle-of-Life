@@ -51,6 +51,9 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 - `/admin/quality` (Phase 5 — `10-quality-metrics.md`)
 - `/admin/quality/measures/new`
 - `/admin/executive` (Phase 3 Module 24 v1 — `24-executive-intelligence.md`)
+- `/admin/executive/standup` (Module 24A — weekly frozen standup packet + live owner operating dashboard)
+- `/admin/executive/standup/history`
+- `/admin/executive/standup/[week]`
 - `/admin/executive/entity`
 - `/admin/executive/entity/[id]`
 - `/admin/executive/facility/[id]`
@@ -240,4 +243,3 @@ This replaces `"/facilities/:id/*"` as a UI routing pattern. Keep `facility_id` 
 1. One-week Admin UI scaffold sprint (route shells + shared patterns).
 2. Resume backend modules in order: `07 -> 11 -> 16`.
 3. As each backend module lands, replace mock/adaptor data for matching Admin routes.
-

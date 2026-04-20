@@ -7,6 +7,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
 import { surveyHistorySchema } from "@/lib/validation/facility-admin";
 
+import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
+
 interface RouteContext {
   params: Promise<{ facilityId: string }>;
 }
@@ -20,6 +22,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
 
   const { facilityId } = await ctx.params;
   const admin = actor.admin;
+  const untypedAdmin = asUntypedAdmin(admin);
   if (!(await actorCanAccessFacility(actor, facilityId))) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
@@ -37,7 +40,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   }
 
   // List surveys ordered by survey_date desc
-  const { data: surveys, error } = await (admin as any)
+  const { data: surveys, error } = await untypedAdmin
     .from("facility_survey_history")
     .select(
       "id, survey_date, survey_type, result, citation_count, citation_details, poc_submitted_date, poc_accepted_date, surveyor_names, document_id, notes, created_at, created_by, updated_at",
@@ -88,6 +91,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
   const data = parsed.data;
 
   const admin = actor.admin;
+  const untypedAdmin = asUntypedAdmin(admin);
 
   // Verify facility exists and belongs to org
   const { data: facility } = await admin
@@ -103,7 +107,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
 
   // Verify document exists (if provided)
   if (data.document_id) {
-    const { data: doc } = await (admin as any)
+    const { data: doc } = await untypedAdmin
       .from("facility_documents")
       .select("id")
       .eq("id", data.document_id)
@@ -117,7 +121,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
 
   try {
     // Create survey
-    const { data: survey, error: insertErr } = await (admin as any)
+    const { data: survey, error: insertErr } = await untypedAdmin
       .from("facility_survey_history")
       .insert({
         facility_id: facilityId,

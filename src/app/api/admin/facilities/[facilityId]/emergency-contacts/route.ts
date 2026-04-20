@@ -7,6 +7,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
 import { emergencyContactSchema } from "@/lib/validation/facility-admin";
 
+import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
+
 interface RouteContext {
   params: Promise<{ facilityId: string }>;
 }
@@ -20,6 +22,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
 
   const { facilityId } = await ctx.params;
   const admin = actor.admin;
+  const untypedAdmin = asUntypedAdmin(admin);
   if (!(await actorCanAccessFacility(actor, facilityId))) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
@@ -37,7 +40,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   }
 
   // List contacts ordered by sort_order
-  const { data: contacts, error } = await (admin as any)
+  const { data: contacts, error } = await untypedAdmin
     .from("facility_emergency_contacts")
     .select(
       "id, contact_category, contact_name, phone_primary, phone_secondary, address, distance_miles, drive_time_minutes, account_number, notes, sort_order, created_at, updated_at",
@@ -88,6 +91,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
   const data = parsed.data;
 
   const admin = actor.admin;
+  const untypedAdmin = asUntypedAdmin(admin);
 
   // Verify facility exists and belongs to org
   const { data: facility } = await admin
@@ -103,7 +107,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
 
   try {
     // Create contact
-    const { data: contact, error: insertErr } = await (admin as any)
+    const { data: contact, error: insertErr } = await untypedAdmin
       .from("facility_emergency_contacts")
       .insert({
         facility_id: facilityId,

@@ -79,7 +79,15 @@ export function adminShellAccessRedirect(request: NextRequest, user: User | null
     nextUrl.pathname.startsWith("/admin/executive/") ||
     nextUrl.pathname === "/executive" ||
     nextUrl.pathname.startsWith("/executive/");
-  if (isExecutiveShellPath && !isOrgAdminAppRole(role)) {
+  const isExecutiveStandupPath =
+    nextUrl.pathname === "/admin/executive/standup" ||
+    nextUrl.pathname.startsWith("/admin/executive/standup/") ||
+    nextUrl.pathname === "/executive/standup" ||
+    nextUrl.pathname.startsWith("/executive/standup/");
+  if (isExecutiveShellPath && !isExecutiveStandupPath && !isOrgAdminAppRole(role)) {
+    return NextResponse.redirect(new URL(roleHome, nextUrl.origin));
+  }
+  if (isExecutiveStandupPath && !(role === "facility_admin" || isOrgAdminAppRole(role))) {
     return NextResponse.redirect(new URL(roleHome, nextUrl.origin));
   }
 

@@ -7,6 +7,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
 import { timelineEventSchema } from "@/lib/validation/facility-admin";
 
+import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
+
 interface RouteContext {
   params: Promise<{ facilityId: string }>;
 }
@@ -20,6 +22,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
 
   const { facilityId } = await ctx.params;
   const admin = actor.admin;
+  const untypedAdmin = asUntypedAdmin(admin);
   if (!(await actorCanAccessFacility(actor, facilityId))) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
@@ -37,7 +40,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   }
 
   // List events ordered by event_date desc
-  const { data: events, error } = await (admin as any)
+  const { data: events, error } = await untypedAdmin
     .from("facility_timeline_events")
     .select("id, event_date, event_type, title, description, document_id, created_at, created_by")
     .eq("facility_id", facilityId)
@@ -86,6 +89,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
   const data = parsed.data;
 
   const admin = actor.admin;
+  const untypedAdmin = asUntypedAdmin(admin);
 
   // Verify facility exists and belongs to org
   const { data: facility } = await admin
@@ -101,7 +105,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
 
   // Verify document exists (if provided)
   if (data.document_id) {
-    const { data: doc } = await (admin as any)
+    const { data: doc } = await untypedAdmin
       .from("facility_documents")
       .select("id")
       .eq("id", data.document_id)
@@ -115,7 +119,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
 
   try {
     // Create event
-    const { data: event, error: insertErr } = await (admin as any)
+    const { data: event, error: insertErr } = await untypedAdmin
       .from("facility_timeline_events")
       .insert({
         facility_id: facilityId,

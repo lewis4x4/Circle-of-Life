@@ -6,6 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { listActorAccessibleFacilityIds, requireAdminApiActor } from "@/lib/admin/api-auth";
 import { listFacilitiesQuerySchema } from "@/lib/validation/facility-admin";
 
+import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
+
 // ── GET: List Facilities ──────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
@@ -15,6 +17,7 @@ export async function GET(request: NextRequest) {
   }
   const { actor } = auth;
   const admin = actor.admin;
+  const untypedAdmin = asUntypedAdmin(admin);
 
   // Parse query params
   const url = new URL(request.url);
@@ -103,13 +106,14 @@ export async function GET(request: NextRequest) {
 
   if (facilityIds.length > 0) {
     // Get occupancy from beds
-    const { data: beds } = await (admin as any)
+    const { data: beds } = await untypedAdmin
       .from("beds")
       .select("facility_id, is_occupied")
       .in("facility_id", facilityIds);
 
+    const typedBeds = (beds ?? []) as unknown as Array<{ facility_id: string; is_occupied: boolean }>;
     if (beds) {
-      for (const bed of beds as { facility_id: string; is_occupied: boolean }[]) {
+      for (const bed of typedBeds) {
         if (!statsMap[bed.facility_id]) {
           statsMap[bed.facility_id] = {
             occupancy_count: 0,
@@ -126,14 +130,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Get alert counts
-    const { data: alerts } = await (admin as any)
+    const { data: alerts } = await untypedAdmin
       .from("facility_operational_thresholds")
       .select("facility_id")
       .in("facility_id", facilityIds)
       .eq("enabled", true);
 
+    const typedAlerts = (alerts ?? []) as unknown as Array<{ facility_id: string }>;
     if (alerts) {
-      for (const alert of alerts) {
+      for (const alert of typedAlerts) {
         if (!statsMap[alert.facility_id]) {
           statsMap[alert.facility_id] = {
             occupancy_count: 0,
