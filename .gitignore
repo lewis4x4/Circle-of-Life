@@ -61,6 +61,7 @@ supabase/functions/deno.lock
 
 # Local IDE / agent plans (optional; keep out of shared repo unless explicitly curated)
 .cursor/plans/
+.claude/
 .omx/
 
 # vercel

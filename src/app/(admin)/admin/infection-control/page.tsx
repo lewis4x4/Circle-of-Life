@@ -191,7 +191,7 @@ export default function AdminInfectionControlHubPage() {
       {activeOut > 0 && !loading && (
         <div className="flex items-start gap-2 rounded-lg border border-amber-200/80 bg-amber-50/50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>There is an active outbreak in this facility scope. Review outbreak records in Supabase-backed lists (detail views coming).</span>
+          <span>There is an active outbreak in this facility scope. Open the related surveillance record to jump into the outbreak detail workflow.</span>
         </div>
       )}
       </div>
