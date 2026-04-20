@@ -187,6 +187,8 @@ export default function ExecutiveSavedReportsPage() {
   const [newName, setNewName] = useState("");
   const [newTemplate, setNewTemplate] = useState<ExecTemplate>("custom");
   const [newFacilityId, setNewFacilityId] = useState<string>("");
+  const standupPacketRows = rows.filter(isStandupBoardPacketReport);
+  const otherRows = rows.filter((row) => !isStandupBoardPacketReport(row));
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -572,6 +574,87 @@ export default function ExecutiveSavedReportsPage() {
       )}
 
       {canManage && !loading && (
+        <>
+        {standupPacketRows.length > 0 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Standup packet archive</CardTitle>
+              <CardDescription>
+                Weekly board packets saved from the Executive Standup workflow. These entries preserve week, version, confidence, and publish context.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Week</TableHead>
+                    <TableHead>Packet metadata</TableHead>
+                    <TableHead>Published</TableHead>
+                    <TableHead>Last opened</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {standupPacketRows.map((r) => {
+                    const parsed = parseReportParameters(r.parameters);
+                    return (
+                      <TableRow key={r.id}>
+                        <TableCell className="font-medium">{parsed.weekOf ?? r.name}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-2">
+                            {parsed.version != null ? <Badge variant="outline">v{parsed.version}</Badge> : null}
+                            {parsed.confidenceBand ? <Badge variant="outline">{parsed.confidenceBand} confidence</Badge> : null}
+                            {parsed.status ? <Badge variant="outline">{parsed.status}</Badge> : null}
+                            {parsed.completenessPct != null ? <Badge variant="outline">{parsed.completenessPct.toFixed(0)}% complete</Badge> : null}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-slate-600 dark:text-slate-400">
+                          {parsed.publishedAt ? new Date(parsed.publishedAt).toLocaleString() : "Not yet"}
+                        </TableCell>
+                        <TableCell className="text-slate-600 dark:text-slate-400">
+                          {r.last_generated_at ? new Date(r.last_generated_at).toLocaleString() : "—"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex flex-wrap justify-end gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="secondary"
+                              disabled={busyId !== null}
+                              onClick={() => void onOpenBoardPacket(r)}
+                            >
+                              {busyId === r.id ? "Working…" : "Open packet"}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={busyId !== null}
+                              onClick={() => void onPrintPdf(r)}
+                            >
+                              {busyId === r.id ? "Working…" : "Print / PDF"}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive"
+                              disabled={busyId !== null}
+                              onClick={() => void onDelete(r)}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        ) : null}
+
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Your reports</CardTitle>
@@ -580,7 +663,7 @@ export default function ExecutiveSavedReportsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {rows.length === 0 ? (
+            {otherRows.length === 0 ? (
               <p className="text-sm text-slate-500 dark:text-slate-400">No saved reports yet.</p>
             ) : (
               <Table>
@@ -594,54 +677,29 @@ export default function ExecutiveSavedReportsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rows.map((r) => {
+                  {otherRows.map((r) => {
                     const scopeLabel = scopeLabelFor(r);
-                    const standupPacket = isStandupBoardPacketReport(r);
                     return (
                       <TableRow key={r.id}>
                         <TableCell className="font-medium">{r.name}</TableCell>
                         <TableCell>
-                          <div className="flex flex-wrap gap-2">
-                            <Badge variant="outline">{standupPacket ? "Standup board packet" : TEMPLATE_LABELS[r.template]}</Badge>
-                            {standupPacket && parseReportParameters(r.parameters).version != null ? (
-                              <Badge variant="outline">v{parseReportParameters(r.parameters).version}</Badge>
-                            ) : null}
-                            {standupPacket && parseReportParameters(r.parameters).confidenceBand ? (
-                              <Badge variant="outline">{parseReportParameters(r.parameters).confidenceBand} confidence</Badge>
-                            ) : null}
-                          </div>
+                          <Badge variant="outline">{TEMPLATE_LABELS[r.template]}</Badge>
                         </TableCell>
                         <TableCell className="text-slate-600 dark:text-slate-400">{scopeLabel}</TableCell>
                         <TableCell className="text-slate-600 dark:text-slate-400">
-                          {standupPacket && parseReportParameters(r.parameters).publishedAt
-                            ? `Published ${new Date(parseReportParameters(r.parameters).publishedAt!).toLocaleString()}`
-                            : r.last_generated_at
-                              ? new Date(r.last_generated_at).toLocaleString()
-                              : "—"}
+                          {r.last_generated_at ? new Date(r.last_generated_at).toLocaleString() : "—"}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex flex-wrap justify-end gap-2">
-                            {standupPacket ? (
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="secondary"
-                                disabled={busyId !== null}
-                                onClick={() => void onOpenBoardPacket(r)}
-                              >
-                                {busyId === r.id ? "Working…" : "Open packet"}
-                              </Button>
-                            ) : (
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="secondary"
-                                disabled={busyId !== null}
-                                onClick={() => void onGenerateCsv(r)}
-                              >
-                                {busyId === r.id ? "Working…" : "Download CSV"}
-                              </Button>
-                            )}
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="secondary"
+                              disabled={busyId !== null}
+                              onClick={() => void onGenerateCsv(r)}
+                            >
+                              {busyId === r.id ? "Working…" : "Download CSV"}
+                            </Button>
                             <Button
                               type="button"
                               size="sm"
@@ -651,19 +709,17 @@ export default function ExecutiveSavedReportsPage() {
                             >
                               {busyId === r.id ? "Working…" : "Print / PDF"}
                             </Button>
-                            {!standupPacket ? (
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                disabled={busyId !== null}
-                                onClick={() => void onEnhancedReport(r)}
-                                className="border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10"
-                              >
-                                <Sparkles className="mr-1 h-3 w-3" />
-                                {busyId === r.id ? "Working…" : "Enhanced"}
-                              </Button>
-                            ) : null}
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={busyId !== null}
+                              onClick={() => void onEnhancedReport(r)}
+                              className="border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10"
+                            >
+                              <Sparkles className="mr-1 h-3 w-3" />
+                              {busyId === r.id ? "Working…" : "Enhanced"}
+                            </Button>
                             <Button
                               type="button"
                               size="sm"
@@ -684,6 +740,7 @@ export default function ExecutiveSavedReportsPage() {
             )}
           </CardContent>
         </Card>
+        </>
       )}
     </div>
   );
