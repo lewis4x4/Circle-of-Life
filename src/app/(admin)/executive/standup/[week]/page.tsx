@@ -22,6 +22,7 @@ import {
   fetchPreviousPublishedStandupSnapshotDetail,
   publishStandupSnapshot,
   saveStandupMetricInput,
+  saveStandupBoardReport,
   standupMetricDefinitionByKey,
   type StandupMetricRow,
   type StandupSectionKey,
@@ -64,6 +65,7 @@ export default function ExecutiveStandupWeekDetailPage() {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
+  const [savingBoardReport, setSavingBoardReport] = useState(false);
   const [edits, setEdits] = useState<Record<string, string>>({});
   const [reviewNotesDraft, setReviewNotesDraft] = useState("");
 
@@ -202,6 +204,26 @@ export default function ExecutiveStandupWeekDetailPage() {
     downloadTextFile(`executive-standup-${detail.snapshot.weekOf}.html`, html, "text/html;charset=utf-8");
   }
 
+  async function onSaveBoardReport() {
+    if (!detail || !user?.id || !organizationId) {
+      setError("Sign in required.");
+      return;
+    }
+    setSavingBoardReport(true);
+    setError(null);
+    try {
+      await saveStandupBoardReport(supabase, {
+        organizationId,
+        userId: user.id,
+        weekOf: detail.snapshot.weekOf,
+      });
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Could not save board packet report.");
+    } finally {
+      setSavingBoardReport(false);
+    }
+  }
+
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
@@ -238,6 +260,10 @@ export default function ExecutiveStandupWeekDetailPage() {
                   <Button type="button" variant="outline" onClick={onExportBoardPacket}>
                     <FileSpreadsheet className="mr-2 h-4 w-4" />
                     Export board packet
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => void onSaveBoardReport()} disabled={savingBoardReport}>
+                    {savingBoardReport ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Save in executive reports
                   </Button>
                   <Button type="button" onClick={() => void onPublish()} disabled={!canPublish || detail.snapshot.status !== "draft" || publishing}>
                     {publishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}

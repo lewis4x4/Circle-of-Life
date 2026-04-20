@@ -14,6 +14,7 @@ import {
   buildStandupBoardPrintHtml,
   buildStandupNarrative,
   fetchPreviousPublishedStandupSnapshotDetail,
+  saveStandupBoardReport,
   fetchStandupSnapshotDetail,
   STANDUP_SECTION_LABELS,
   type StandupMetricRow,
@@ -39,6 +40,9 @@ export default function ExecutiveStandupBoardPage() {
   const [previousDetail, setPreviousDetail] = useState<StandupSnapshotDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [savingBoardReport, setSavingBoardReport] = useState(false);
 
   const week = typeof params?.week === "string" ? params.week : "";
 
@@ -53,6 +57,9 @@ export default function ExecutiveStandupBoardPage() {
     try {
       const ctx = await loadFinanceRoleContext(supabase);
       if (!ctx.ok) throw new Error(ctx.error);
+      setOrganizationId(ctx.ctx.organizationId);
+      const { data: authData } = await supabase.auth.getUser();
+      setUserId(authData.user?.id ?? null);
       const [snapshot, previous] = await Promise.all([
         fetchStandupSnapshotDetail(supabase, ctx.ctx.organizationId, week),
         fetchPreviousPublishedStandupSnapshotDetail(supabase, ctx.ctx.organizationId, week),
@@ -96,6 +103,26 @@ export default function ExecutiveStandupBoardPage() {
     downloadTextFile(`executive-standup-${detail.snapshot.weekOf}.html`, html, "text/html;charset=utf-8");
   }
 
+  async function onSaveBoardReport() {
+    if (!detail || !organizationId || !userId) {
+      setError("Sign in required.");
+      return;
+    }
+    setSavingBoardReport(true);
+    setError(null);
+    try {
+      await saveStandupBoardReport(supabase, {
+        organizationId,
+        userId,
+        weekOf: detail.snapshot.weekOf,
+      });
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Could not save board packet report.");
+    } finally {
+      setSavingBoardReport(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-white text-slate-950">
       <div className="mx-auto max-w-6xl px-6 py-8 print:px-4">
@@ -116,6 +143,9 @@ export default function ExecutiveStandupBoardPage() {
             </Button>
             <Button type="button" variant="outline" onClick={onExportBoardPacket}>
               Export HTML packet
+            </Button>
+            <Button type="button" variant="outline" onClick={() => void onSaveBoardReport()} disabled={savingBoardReport}>
+              {savingBoardReport ? "Saving…" : "Save in executive reports"}
             </Button>
             <Link
               href={`/admin/executive/standup/${week}`}

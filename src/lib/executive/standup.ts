@@ -58,6 +58,19 @@ export type StandupHistoryItem = {
   confidenceBand: "high" | "medium" | "low";
 };
 
+export type StandupImportJob = {
+  id: string;
+  sourceFileName: string;
+  sourceKind: "xlsx" | "csv" | "manual";
+  status: "queued" | "running" | "completed" | "failed";
+  importedWeekCount: number;
+  importedMetricCount: number;
+  startedAt: string | null;
+  finishedAt: string | null;
+  errorText: string | null;
+  createdAt: string;
+};
+
 export type StandupSnapshotDetail = {
   snapshot: {
     id: string;
@@ -162,6 +175,19 @@ type SnapshotDetailRow = SnapshotMini & {
   draft_notes: string | null;
   review_notes: string | null;
   published_version: number;
+};
+
+type StandupImportJobRow = {
+  id: string;
+  source_file_name: string;
+  source_kind: "xlsx" | "csv" | "manual";
+  status: "queued" | "running" | "completed" | "failed";
+  imported_week_count: number;
+  imported_metric_count: number;
+  started_at: string | null;
+  finished_at: string | null;
+  error_text: string | null;
+  created_at: string;
 };
 
 type SnapshotMetricDbRow = {
@@ -630,6 +656,84 @@ export async function fetchStandupHistory(
     completenessPct: row.completeness_pct,
     confidenceBand: row.confidence_band,
   }));
+}
+
+export async function fetchStandupImportJobs(
+  supabase: SupabaseClient<Database>,
+  organizationId: string,
+  limit = 10,
+): Promise<StandupImportJob[]> {
+  const { data, error } = await supabase
+    .from("exec_standup_import_jobs" as never)
+    .select("id, source_file_name, source_kind, status, imported_week_count, imported_metric_count, started_at, finished_at, error_text, created_at")
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw new Error(error.message);
+  return ((data as StandupImportJobRow[] | null) ?? []).map((row) => ({
+    id: row.id,
+    sourceFileName: row.source_file_name,
+    sourceKind: row.source_kind,
+    status: row.status,
+    importedWeekCount: row.imported_week_count,
+    importedMetricCount: row.imported_metric_count,
+    startedAt: row.started_at,
+    finishedAt: row.finished_at,
+    errorText: row.error_text,
+    createdAt: row.created_at,
+  }));
+}
+
+export function buildStandupImportCommand(workbookPath: string, organizationId?: string | null): string {
+  const orgPrefix = organizationId ? `HAVEN_ORGANIZATION_ID="${organizationId}" ` : "";
+  return `${orgPrefix}NEXT_PUBLIC_SUPABASE_URL="$NEXT_PUBLIC_SUPABASE_URL" SUPABASE_SERVICE_ROLE_KEY="$SUPABASE_SERVICE_ROLE_KEY" python3 scripts/import-executive-standup-workbook.py "${workbookPath}"`;
+}
+
+export async function saveStandupBoardReport(
+  supabase: SupabaseClient<Database>,
+  input: {
+    organizationId: string;
+    userId: string;
+    weekOf: string;
+  },
+): Promise<string> {
+  const existing = await supabase
+    .from("exec_saved_reports")
+    .select("id")
+    .eq("organization_id", input.organizationId)
+    .eq("template", "custom")
+    .contains("parameters", {
+      kind: "executive_standup_board_packet",
+      weekOf: input.weekOf,
+    })
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (existing.error) throw new Error(existing.error.message);
+  if (existing.data?.id) return existing.data.id;
+
+  const insert = await supabase
+    .from("exec_saved_reports")
+    .insert({
+      organization_id: input.organizationId,
+      created_by: input.userId,
+      name: `Executive Standup Board Packet — ${input.weekOf}`,
+      template: "custom",
+      parameters: {
+        kind: "executive_standup_board_packet",
+        weekOf: input.weekOf,
+      },
+    })
+    .select("id")
+    .single();
+
+  if (insert.error || !insert.data?.id) {
+    throw new Error(insert.error?.message ?? "Could not save board packet report.");
+  }
+
+  return insert.data.id;
 }
 
 export async function fetchPreviousPublishedStandupSnapshotDetail(

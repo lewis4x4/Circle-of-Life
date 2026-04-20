@@ -21,6 +21,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { fetchExecutiveKpiSnapshot, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
+import {
+  buildStandupBoardPrintHtml,
+  fetchPreviousPublishedStandupSnapshotDetail,
+  fetchStandupSnapshotDetail,
+} from "@/lib/executive/standup";
 import { canMutateFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { createClient } from "@/lib/supabase/client";
 import type { Database, Json } from "@/types/database";
@@ -35,12 +40,14 @@ const TEMPLATE_LABELS: Record<ExecTemplate, string> = {
   custom: "Custom",
 };
 
-function parseReportParameters(raw: Json): { facilityId: string | null } {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { facilityId: null };
+function parseReportParameters(raw: Json): { facilityId: string | null; kind: string | null; weekOf: string | null } {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { facilityId: null, kind: null, weekOf: null };
   const o = raw as Record<string, unknown>;
   const fid = o.facilityId;
-  if (typeof fid === "string" && fid.length > 0) return { facilityId: fid };
-  return { facilityId: null };
+  const kind = typeof o.kind === "string" && o.kind.length > 0 ? o.kind : null;
+  const weekOf = typeof o.weekOf === "string" && o.weekOf.length > 0 ? o.weekOf : null;
+  if (typeof fid === "string" && fid.length > 0) return { facilityId: fid, kind, weekOf };
+  return { facilityId: null, kind, weekOf };
 }
 
 function escapeCsvCell(value: string): string {
@@ -135,6 +142,10 @@ function buildExecutiveKpiPrintHtml(props: {
 <table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>${bodyRows}</tbody></table>
 <p class="foot">Haven — Executive KPI snapshot (live aggregates). Use your browser &ldquo;Print&rdquo; dialog and choose &ldquo;Save as PDF&rdquo; if available.</p>
 </body></html>`;
+}
+
+function isStandupBoardPacketReport(report: ReportRow): boolean {
+  return parseReportParameters(report.parameters).kind === "executive_standup_board_packet";
 }
 
 export default function ExecutiveSavedReportsPage() {
@@ -257,13 +268,30 @@ export default function ExecutiveSavedReportsPage() {
   }
 
   function scopeLabelFor(report: ReportRow): string {
-    const { facilityId } = parseReportParameters(report.parameters);
+    const { facilityId, kind, weekOf } = parseReportParameters(report.parameters);
+    if (kind === "executive_standup_board_packet" && weekOf) return `Week of ${weekOf}`;
     if (!facilityId) return "Organization";
     return facilities.find((f) => f.id === facilityId)?.name ?? "Facility";
   }
 
+  async function buildStandupPacketHtml(report: ReportRow): Promise<string> {
+    if (!orgId) throw new Error("Organization scope is required.");
+    const { weekOf } = parseReportParameters(report.parameters);
+    if (!weekOf) throw new Error("Standup week is missing from the saved report.");
+    const [detail, previous] = await Promise.all([
+      fetchStandupSnapshotDetail(supabase, orgId, weekOf),
+      fetchPreviousPublishedStandupSnapshotDetail(supabase, orgId, weekOf),
+    ]);
+    if (!detail) throw new Error(`No standup snapshot found for week ${weekOf}.`);
+    return buildStandupBoardPrintHtml(detail, previous);
+  }
+
   async function onGenerateCsv(report: ReportRow) {
     if (!canManage || !orgId) return;
+    if (isStandupBoardPacketReport(report)) {
+      setError("Standup board packets export as board HTML or Print/PDF, not CSV.");
+      return;
+    }
     setBusyId(report.id);
     setError(null);
     try {
@@ -285,6 +313,27 @@ export default function ExecutiveSavedReportsPage() {
     setBusyId(report.id);
     setError(null);
     try {
+      if (isStandupBoardPacketReport(report)) {
+        const html = await buildStandupPacketHtml(report);
+        const w = window.open("", "_blank", "noopener,noreferrer");
+        if (!w) {
+          setError("Pop-up blocked. Allow pop-ups for this site to print or save as PDF.");
+          return;
+        }
+        w.document.write(html);
+        w.document.close();
+        w.focus();
+        const trigger = () => { try { w.print(); } catch { /* ignore */ } };
+        if (w.document.readyState === "complete") {
+          setTimeout(trigger, 0);
+        } else {
+          const onLoad = () => { setTimeout(trigger, 0); w.removeEventListener("load", onLoad); };
+          w.addEventListener("load", onLoad);
+        }
+        await persistLastGenerated(report.id);
+        return;
+      }
+
       const { facilityId } = parseReportParameters(report.parameters);
       const kpi = await fetchExecutiveKpiSnapshot(supabase, orgId, facilityId);
       const html = buildExecutiveKpiPrintHtml({
@@ -316,11 +365,34 @@ export default function ExecutiveSavedReportsPage() {
     }
   }
 
+  async function onOpenBoardPacket(report: ReportRow) {
+    if (!canManage) return;
+    setBusyId(report.id);
+    setError(null);
+    try {
+      const { weekOf } = parseReportParameters(report.parameters);
+      if (!weekOf) {
+        setError("Saved packet is missing its standup week.");
+        return;
+      }
+      window.open(`/admin/executive/standup/${weekOf}/board`, "_blank", "noopener,noreferrer");
+      await persistLastGenerated(report.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not open board packet.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function onEnhancedReport(report: ReportRow) {
     if (!canManage || !orgId) return;
     setBusyId(report.id);
     setError(null);
     try {
+      if (isStandupBoardPacketReport(report)) {
+        await onOpenBoardPacket(report);
+        return;
+      }
       const { facilityId } = parseReportParameters(report.parameters);
       const res = await authorizedEdgeFetch("exec-report-generator", {
         method: "POST",
@@ -499,11 +571,12 @@ export default function ExecutiveSavedReportsPage() {
                 <TableBody>
                   {rows.map((r) => {
                     const scopeLabel = scopeLabelFor(r);
+                    const standupPacket = isStandupBoardPacketReport(r);
                     return (
                       <TableRow key={r.id}>
                         <TableCell className="font-medium">{r.name}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{TEMPLATE_LABELS[r.template]}</Badge>
+                          <Badge variant="outline">{standupPacket ? "Standup board packet" : TEMPLATE_LABELS[r.template]}</Badge>
                         </TableCell>
                         <TableCell className="text-slate-600 dark:text-slate-400">{scopeLabel}</TableCell>
                         <TableCell className="text-slate-600 dark:text-slate-400">
@@ -513,15 +586,27 @@ export default function ExecutiveSavedReportsPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex flex-wrap justify-end gap-2">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="secondary"
-                              disabled={busyId !== null}
-                              onClick={() => void onGenerateCsv(r)}
-                            >
-                              {busyId === r.id ? "Working…" : "Download CSV"}
-                            </Button>
+                            {standupPacket ? (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="secondary"
+                                disabled={busyId !== null}
+                                onClick={() => void onOpenBoardPacket(r)}
+                              >
+                                {busyId === r.id ? "Working…" : "Open packet"}
+                              </Button>
+                            ) : (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="secondary"
+                                disabled={busyId !== null}
+                                onClick={() => void onGenerateCsv(r)}
+                              >
+                                {busyId === r.id ? "Working…" : "Download CSV"}
+                              </Button>
+                            )}
                             <Button
                               type="button"
                               size="sm"
@@ -531,17 +616,19 @@ export default function ExecutiveSavedReportsPage() {
                             >
                               {busyId === r.id ? "Working…" : "Print / PDF"}
                             </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              disabled={busyId !== null}
-                              onClick={() => void onEnhancedReport(r)}
-                              className="border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10"
-                            >
-                              <Sparkles className="mr-1 h-3 w-3" />
-                              {busyId === r.id ? "Working…" : "Enhanced"}
-                            </Button>
+                            {!standupPacket ? (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                disabled={busyId !== null}
+                                onClick={() => void onEnhancedReport(r)}
+                                className="border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10"
+                              >
+                                <Sparkles className="mr-1 h-3 w-3" />
+                                {busyId === r.id ? "Working…" : "Enhanced"}
+                              </Button>
+                            ) : null}
                             <Button
                               type="button"
                               size="sm"

@@ -52,9 +52,9 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 - `/admin/quality/measures/new`
 - `/admin/executive` (Phase 3 Module 24 v1 — `24-executive-intelligence.md`)
 - `/admin/executive/standup` (Module 24A — weekly frozen standup packet + live owner operating dashboard)
-- `/admin/executive/standup/history`
+- `/admin/executive/standup/history` (archive + workbook import runbook + import job status)
 - `/admin/executive/standup/[week]`
-- `/admin/executive/standup/[week]/board`
+- `/admin/executive/standup/[week]/board` (board packet preview / print / saved-report entry point)
 - `/admin/executive/entity`
 - `/admin/executive/entity/[id]`
 - `/admin/executive/facility/[id]`

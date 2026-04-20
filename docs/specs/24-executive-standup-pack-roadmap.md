@@ -190,6 +190,7 @@ Deliverables:
 
 - migration `188`
 - importer script/service for workbook blocks
+- history-page import runbook + recent import job status
 - imported snapshot history
 - imported rows marked as manual lineage
 
@@ -198,6 +199,7 @@ Acceptance:
 - imported January–April sample weeks show correctly in history
 - imported metrics are labeled as imported/manual
 - week-over-week comparison works across imported data
+- owner/admin can see whether the last workbook import completed or failed without leaving the app
 
 ### S3 — Dashboard and PDF core
 
@@ -212,12 +214,14 @@ Deliverables:
 - `/admin/executive/standup/[week]`
 - board-style PDF renderer
 - confidence/freshness/source badges
+- board packet saved-report handoff into `/admin/executive/reports`
 
 Acceptance:
 
 - owner can open a live standup dashboard
 - owner can open a published historical week
 - owner can export a board-ready PDF
+- owner/admin can save a weekly board packet into executive saved reports and reopen it later
 
 ### S4 — Missing operational models
 

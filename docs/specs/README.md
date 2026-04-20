@@ -8,9 +8,9 @@
 - **Timezone:** America/New_York (all facilities in North Florida)
 - **Critical:** Confirm Pro plan with signed BAA before any PHI enters. Confirm Point-in-Time Recovery enabled.
 
-## Current state (reconciled 2026-04-10)
+## Current state (reconciled 2026-04-20)
 
-**Repo migrations:** **`001`–`120`** — verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release.
+**Repo migrations:** **`001`–`192`** — verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release.
 
 **Remote migration parity:** Re-run `supabase migration list` after **`120`** ships to remote. Authoritative record: [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
 
@@ -33,6 +33,8 @@
 **Important:** Code and migrations have **outpaced** formal Phase 1 acceptance. **Do not** treat “migrations applied” or “routes exist” as equivalent to **Track A closed** or **production-ready** for PHI.
 
 **Next free migration number:** **`193`** — use for all new DDL after updating this README and the relevant spec.
+
+**Executive Standup status:** Slice 3 is in repo: workbook import jobs + importer script, history-page import runbook + recent import job status, board packet preview/export, and executive saved-report handoff for weekly standup packets. Remote parity still depends on applying migrations `185`–`192`.
 
 **Post–Phase 6 work already in repo (`096`–`109`)** — see [Post–Phase 6 shipped work](#postphase-6-shipped-work-migrations-096109) below. Older roadmap drafts that reserved `096`+ for “digital twin” or “maintenance” are **obsolete**; those migration numbers are now consumed as listed.
 

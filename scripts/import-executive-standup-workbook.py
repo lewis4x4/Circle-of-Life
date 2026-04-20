@@ -3,15 +3,15 @@
 Import the legacy standup workbook into exec_standup_* tables.
 
 Usage:
-  NEXT_PUBLIC_SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
+  HAVEN_ORGANIZATION_ID=... NEXT_PUBLIC_SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
   python3 scripts/import-executive-standup-workbook.py "/path/to/2026 Standup Call Log.xlsx"
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
-import sys
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
@@ -21,7 +21,7 @@ from typing import Any
 from openpyxl import load_workbook
 
 
-ORG_ID = "00000000-0000-0000-0000-000000000001"
+DEFAULT_ORG_ID = "00000000-0000-0000-0000-000000000001"
 FACILITY_NAMES = ["Homewood", "Oakridge", "Rising Oaks", "Plantation", "Grande Cypress"]
 METRIC_MAP = {
     "Goal": "ar_goal_cents",
@@ -51,6 +51,7 @@ METRIC_MAP = {
 class Context:
     url: str
     key: str
+    organization_id: str
     facility_name_to_id: dict[str, str]
     import_job_id: str
 
@@ -119,12 +120,12 @@ def parse_numeric(value: Any) -> float | None:
     return None
 
 
-def get_or_create_import_job(file_name: str) -> str:
+def get_or_create_import_job(organization_id: str, file_name: str) -> str:
     row = rest_request(
         "POST",
         "exec_standup_import_jobs",
         payload={
-            "organization_id": ORG_ID,
+            "organization_id": organization_id,
             "source_file_name": file_name,
             "status": "running",
             "started_at": datetime.utcnow().isoformat(),
@@ -145,12 +146,12 @@ def update_import_job(import_job_id: str, **fields: Any) -> None:
     )
 
 
-def fetch_facilities() -> dict[str, str]:
+def fetch_facilities(organization_id: str) -> dict[str, str]:
     rows = rest_request(
         "GET",
         "facilities",
         query={
-            "organization_id": f"eq.{ORG_ID}",
+            "organization_id": f"eq.{organization_id}",
             "deleted_at": "is.null",
             "select": "id,name",
         },
@@ -158,12 +159,12 @@ def fetch_facilities() -> dict[str, str]:
     return {row["name"]: row["id"] for row in rows}
 
 
-def upsert_snapshot(week_of: str, import_job_id: str) -> str:
+def upsert_snapshot(organization_id: str, week_of: str, import_job_id: str) -> str:
     existing = rest_request(
         "GET",
         "exec_standup_snapshots",
         query={
-            "organization_id": f"eq.{ORG_ID}",
+            "organization_id": f"eq.{organization_id}",
             "week_of": f"eq.{week_of}",
             "deleted_at": "is.null",
             "select": "id",
@@ -194,7 +195,7 @@ def upsert_snapshot(week_of: str, import_job_id: str) -> str:
         "POST",
         "exec_standup_snapshots",
         payload={
-            "organization_id": ORG_ID,
+            "organization_id": organization_id,
             "week_of": week_of,
             "status": "published",
             "generated_at": datetime.utcnow().isoformat(),
@@ -209,11 +210,17 @@ def upsert_snapshot(week_of: str, import_job_id: str) -> str:
     return created[0]["id"]
 
 
-def import_workbook(path: str) -> None:
+def import_workbook(path: str, organization_id: str) -> None:
     wb = load_workbook(path, data_only=True)
-    import_job_id = get_or_create_import_job(os.path.basename(path))
-    facility_map = fetch_facilities()
-    ctx = Context(url=env("NEXT_PUBLIC_SUPABASE_URL"), key=env("SUPABASE_SERVICE_ROLE_KEY"), facility_name_to_id=facility_map, import_job_id=import_job_id)
+    import_job_id = get_or_create_import_job(organization_id, os.path.basename(path))
+    facility_map = fetch_facilities(organization_id)
+    ctx = Context(
+        url=env("NEXT_PUBLIC_SUPABASE_URL"),
+        key=env("SUPABASE_SERVICE_ROLE_KEY"),
+        organization_id=organization_id,
+        facility_name_to_id=facility_map,
+        import_job_id=import_job_id,
+    )
 
     imported_weeks = 0
     imported_metrics = 0
@@ -228,7 +235,7 @@ def import_workbook(path: str) -> None:
                     i += 1
                     continue
 
-                snapshot_id = upsert_snapshot(week_of, import_job_id)
+                snapshot_id = upsert_snapshot(organization_id, week_of, import_job_id)
                 metric_rows = []
                 j = i + 2
                 while j < len(rows):
@@ -245,7 +252,7 @@ def import_workbook(path: str) -> None:
                             raw_value = rows[j][offset] if offset < len(rows[j]) else None
                             metric_rows.append({
                                 "snapshot_id": snapshot_id,
-                                "organization_id": ORG_ID,
+                                "organization_id": organization_id,
                                 "facility_id": facility_id,
                                 "section_key": infer_section(metric_key),
                                 "metric_key": metric_key,
@@ -263,7 +270,7 @@ def import_workbook(path: str) -> None:
                         total_value = rows[j][6] if len(rows[j]) > 6 else None
                         metric_rows.append({
                             "snapshot_id": snapshot_id,
-                            "organization_id": ORG_ID,
+                            "organization_id": organization_id,
                             "facility_id": None,
                             "section_key": infer_section(metric_key),
                             "metric_key": metric_key,
@@ -333,9 +340,15 @@ def infer_section(metric_key: str) -> str:
 
 
 def main() -> None:
-    if len(sys.argv) != 2:
-        raise SystemExit("Usage: python3 scripts/import-executive-standup-workbook.py '/path/to/workbook.xlsx'")
-    import_workbook(sys.argv[1])
+    parser = argparse.ArgumentParser(description="Import the legacy standup workbook into exec_standup_* tables.")
+    parser.add_argument("path", help="Absolute or relative path to the workbook .xlsx file.")
+    parser.add_argument(
+        "--org-id",
+        default=os.environ.get("HAVEN_ORGANIZATION_ID", DEFAULT_ORG_ID),
+        help="Target organization UUID. Defaults to HAVEN_ORGANIZATION_ID or the demo organization id.",
+    )
+    args = parser.parse_args()
+    import_workbook(args.path, args.org_id)
 
 
 if __name__ == "__main__":
