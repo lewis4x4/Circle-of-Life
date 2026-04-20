@@ -17,13 +17,16 @@ import { downloadTextFile } from "@/lib/onboarding/download";
 import {
   buildStandupBoardPrintHtml,
   buildStandupNarrative,
+  evaluateStandupPublishReadiness,
   STANDUP_SECTION_LABELS,
   fetchStandupSnapshotDetail,
   fetchPreviousPublishedStandupSnapshotDetail,
   publishStandupSnapshot,
+  saveStandupSnapshotNotes,
   saveStandupMetricInput,
   saveStandupBoardReport,
   standupMetricDefinitionByKey,
+  summarizeStandupSections,
   type StandupMetricRow,
   type StandupSectionKey,
   type StandupSnapshotDetail,
@@ -66,7 +69,9 @@ export default function ExecutiveStandupWeekDetailPage() {
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [savingBoardReport, setSavingBoardReport] = useState(false);
+  const [savingNotes, setSavingNotes] = useState(false);
   const [edits, setEdits] = useState<Record<string, string>>({});
+  const [draftNotesDraft, setDraftNotesDraft] = useState("");
   const [reviewNotesDraft, setReviewNotesDraft] = useState("");
 
   const week = typeof params?.week === "string" ? params.week : "";
@@ -92,6 +97,7 @@ export default function ExecutiveStandupWeekDetailPage() {
       setPreviousDetail(previous);
       setCanPublish(canMutateFinance(ctx.ctx.appRole));
       setEdits({});
+      setDraftNotesDraft(snapshot?.snapshot.draftNotes ?? "");
       setReviewNotesDraft(snapshot?.snapshot.reviewNotes ?? "");
     } catch (loadError) {
       setDetail(null);
@@ -148,6 +154,14 @@ export default function ExecutiveStandupWeekDetailPage() {
     return detail ? buildStandupNarrative(detail, previousDetail) : null;
   }, [detail, previousDetail]);
 
+  const sectionStatuses = useMemo(() => {
+    return detail ? summarizeStandupSections(detail) : [];
+  }, [detail]);
+
+  const publishReadiness = useMemo(() => {
+    return detail ? evaluateStandupPublishReadiness(detail, reviewNotesDraft) : { canPublish: false, blockers: ["Standup detail is unavailable."] };
+  }, [detail, reviewNotesDraft]);
+
   async function onSaveMetric(facilityId: string, metricKey: string, metric: StandupMetricRow) {
     if (!detail || !user?.id || !organizationId) {
       setError("Sign in required.");
@@ -182,6 +196,10 @@ export default function ExecutiveStandupWeekDetailPage() {
       setError("Sign in required.");
       return;
     }
+    if (!publishReadiness.canPublish) {
+      setError(publishReadiness.blockers[0] ?? "Standup is not ready to publish.");
+      return;
+    }
     setPublishing(true);
     setError(null);
     try {
@@ -195,6 +213,28 @@ export default function ExecutiveStandupWeekDetailPage() {
       setError(publishError instanceof Error ? publishError.message : "Could not publish standup snapshot.");
     } finally {
       setPublishing(false);
+    }
+  }
+
+  async function onSaveNotes() {
+    if (!detail || !user?.id) {
+      setError("Sign in required.");
+      return;
+    }
+    setSavingNotes(true);
+    setError(null);
+    try {
+      await saveStandupSnapshotNotes(supabase, {
+        snapshotId: detail.snapshot.id,
+        userId: user.id,
+        draftNotes: draftNotesDraft.trim() || null,
+        reviewNotes: reviewNotesDraft.trim() || null,
+      });
+      await load();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Could not save standup notes.");
+    } finally {
+      setSavingNotes(false);
     }
   }
 
@@ -265,7 +305,7 @@ export default function ExecutiveStandupWeekDetailPage() {
                     {savingBoardReport ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                     Save in executive reports
                   </Button>
-                  <Button type="button" onClick={() => void onPublish()} disabled={!canPublish || detail.snapshot.status !== "draft" || publishing}>
+                  <Button type="button" onClick={() => void onPublish()} disabled={!canPublish || detail.snapshot.status !== "draft" || publishing || !publishReadiness.canPublish}>
                     {publishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
                     Publish week
                   </Button>
@@ -450,16 +490,80 @@ export default function ExecutiveStandupWeekDetailPage() {
 
             <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
               <CardHeader>
-                <CardTitle className="text-lg">Review notes</CardTitle>
-                <CardDescription>These notes are stored with the published weekly packet.</CardDescription>
+                <CardTitle className="text-lg">Section completion</CardTitle>
+                <CardDescription>Each section closes independently so the standup week can be reviewed like a lightweight executive close.</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="grid gap-4 xl:grid-cols-3">
+                {sectionStatuses.map((section) => (
+                  <div key={section.sectionKey} className="rounded-xl border border-slate-200/80 p-4 dark:border-white/10">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="font-semibold text-slate-900 dark:text-white">{section.sectionLabel}</div>
+                        <div className="mt-1 text-sm text-slate-500 dark:text-zinc-400">
+                          {section.totalRows} rows · {section.autoRows} auto · {section.manualRows} manual · {section.forecastRows} forecast
+                        </div>
+                      </div>
+                      <Badge variant="outline">{section.status.replace(/_/g, " ")}</Badge>
+                    </div>
+                    <div className="mt-3 text-sm text-slate-700 dark:text-zinc-300">
+                      {section.unresolvedRows > 0 ? `${section.unresolvedRows} unresolved rows.` : "No unresolved rows."}
+                      {section.lowConfidenceRows > 0 ? ` ${section.lowConfidenceRows} low-confidence rows still require review.` : ""}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <CardHeader>
+                <CardTitle className="text-lg">Publish gating</CardTitle>
+                <CardDescription>Published weeks stay immutable, so the draft must clear these checks before publish.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className={`rounded-xl border px-4 py-3 text-sm ${publishReadiness.canPublish ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300" : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300"}`}>
+                  {publishReadiness.canPublish ? "This packet is ready to publish." : "This packet still has publish blockers."}
+                </div>
+                <ul className="space-y-2 text-sm text-slate-700 dark:text-zinc-300">
+                  {(publishReadiness.blockers.length > 0 ? publishReadiness.blockers : ["No blockers."]).map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <CardHeader>
+                <CardTitle className="text-lg">Draft notes</CardTitle>
+                <CardDescription>Internal prep notes for admins before the week is published.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <textarea
+                  className="min-h-[120px] w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 px-4 py-3 text-sm"
+                  value={draftNotesDraft}
+                  onChange={(event) => setDraftNotesDraft(event.target.value)}
+                  placeholder="Working notes, unresolved follow-ups, or prep context for this week's packet."
+                />
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <CardHeader>
+                <CardTitle className="text-lg">Review notes</CardTitle>
+                <CardDescription>These notes are required and stored with the published weekly packet.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
                 <textarea
                   className="min-h-[120px] w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 px-4 py-3 text-sm"
                   value={reviewNotesDraft}
                   onChange={(event) => setReviewNotesDraft(event.target.value)}
                   placeholder="Add owner/admin review notes, context, or board commentary."
                 />
+                <div className="flex justify-end">
+                  <Button type="button" variant="outline" onClick={() => void onSaveNotes()} disabled={savingNotes}>
+                    {savingNotes ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Save notes
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 

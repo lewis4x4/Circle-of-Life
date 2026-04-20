@@ -96,6 +96,23 @@ export type StandupNarrative = {
   facilityActions: StandupFacilityAction[];
 };
 
+export type StandupSectionStatus = {
+  sectionKey: StandupSectionKey;
+  sectionLabel: string;
+  totalRows: number;
+  autoRows: number;
+  manualRows: number;
+  forecastRows: number;
+  unresolvedRows: number;
+  lowConfidenceRows: number;
+  status: "ready" | "needs_manual" | "needs_forecast" | "needs_review";
+};
+
+export type StandupPublishReadiness = {
+  canPublish: boolean;
+  blockers: string[];
+};
+
 export type StandupFacilityAction = {
   facilityId: string | null;
   facilityName: string;
@@ -611,6 +628,74 @@ export function buildStandupInsights(facilities: StandupFacilityLive[]): string[
   }
 
   return insights.slice(0, 3);
+}
+
+export function summarizeStandupSections(detail: StandupSnapshotDetail): StandupSectionStatus[] {
+  return (Object.entries(STANDUP_SECTION_LABELS) as Array<[StandupSectionKey, string]>).map(([sectionKey, sectionLabel]) => {
+    const rows = detail.facilities
+      .filter((facility) => facility.facilityId != null)
+      .flatMap((facility) =>
+        Object.values(facility.metrics).filter((metric) => metric.sectionKey === sectionKey),
+      );
+
+    const autoRows = rows.filter((metric) => metric.sourceMode === "auto").length;
+    const manualRows = rows.filter((metric) => metric.sourceMode === "manual").length;
+    const forecastRows = rows.filter((metric) => metric.sourceMode === "forecast").length;
+    const unresolvedRows = rows.filter((metric) => metric.valueNumeric == null && !(metric.valueText?.trim())).length;
+    const lowConfidenceRows = rows.filter((metric) => metric.confidenceBand === "low").length;
+
+    let status: StandupSectionStatus["status"] = "ready";
+    if (rows.some((metric) => metric.sourceMode === "manual" && metric.valueNumeric == null && !(metric.valueText?.trim()))) {
+      status = "needs_manual";
+    } else if (rows.some((metric) => metric.sourceMode === "forecast" && metric.valueNumeric == null && !(metric.valueText?.trim()))) {
+      status = "needs_forecast";
+    } else if (lowConfidenceRows > 0 || rows.some((metric) => metric.sourceMode === "manual" || metric.sourceMode === "forecast" || metric.sourceMode === "hybrid")) {
+      status = "needs_review";
+    }
+
+    return {
+      sectionKey,
+      sectionLabel,
+      totalRows: rows.length,
+      autoRows,
+      manualRows,
+      forecastRows,
+      unresolvedRows,
+      lowConfidenceRows,
+      status,
+    };
+  });
+}
+
+export function evaluateStandupPublishReadiness(
+  detail: StandupSnapshotDetail,
+  reviewNotes: string,
+): StandupPublishReadiness {
+  const blockers: string[] = [];
+  const sections = summarizeStandupSections(detail);
+  const unresolved = sections.reduce((acc, section) => acc + section.unresolvedRows, 0);
+  const lowConfidence = sections.reduce((acc, section) => acc + section.lowConfidenceRows, 0);
+
+  if (detail.snapshot.status !== "draft") {
+    blockers.push("Only draft weeks can be published.");
+  }
+  if (unresolved > 0) {
+    blockers.push(`${unresolved} metric cells are still unresolved.`);
+  }
+  if (!reviewNotes.trim()) {
+    blockers.push("Review notes are required before publish.");
+  }
+  if (detail.snapshot.completenessPct < 85) {
+    blockers.push(`Completeness is ${detail.snapshot.completenessPct.toFixed(0)}%; target is at least 85% before publish.`);
+  }
+  if (lowConfidence > 0) {
+    blockers.push(`${lowConfidence} metric cells remain low confidence and require review.`);
+  }
+
+  return {
+    canPublish: blockers.length === 0,
+    blockers,
+  };
 }
 
 export function currentStandupWeekOf(): string {
@@ -1631,6 +1716,28 @@ export async function publishStandupSnapshot(
     } as never)
     .eq("id", input.snapshotId)
     .eq("status", "draft");
+
+  const result = res as unknown as { error: { message: string } | null };
+  if (result.error) throw new Error(result.error.message);
+}
+
+export async function saveStandupSnapshotNotes(
+  supabase: SupabaseClient<Database>,
+  input: {
+    snapshotId: string;
+    userId: string;
+    draftNotes?: string | null;
+    reviewNotes?: string | null;
+  },
+): Promise<void> {
+  const res = await supabase
+    .from("exec_standup_snapshots" as never)
+    .update({
+      draft_notes: input.draftNotes ?? null,
+      review_notes: input.reviewNotes ?? null,
+      updated_by: input.userId,
+    } as never)
+    .eq("id", input.snapshotId);
 
   const result = res as unknown as { error: { message: string } | null };
   if (result.error) throw new Error(result.error.message);
