@@ -11,11 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
+import { downloadBlobFromUrl } from "@/lib/download-blob";
 import { useAuth } from "@/hooks/useAuth";
 import { canMutateFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { downloadTextFile } from "@/lib/onboarding/download";
 import {
   buildStandupBoardPrintHtml,
+  buildStandupPdfUrl,
   buildStandupNarrative,
   evaluateStandupPublishReadiness,
   STANDUP_SECTION_LABELS,
@@ -70,6 +72,7 @@ export default function ExecutiveStandupWeekDetailPage() {
   const [publishing, setPublishing] = useState(false);
   const [savingBoardReport, setSavingBoardReport] = useState(false);
   const [savingNotes, setSavingNotes] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [edits, setEdits] = useState<Record<string, string>>({});
   const [draftNotesDraft, setDraftNotesDraft] = useState("");
   const [reviewNotesDraft, setReviewNotesDraft] = useState("");
@@ -205,6 +208,7 @@ export default function ExecutiveStandupWeekDetailPage() {
     try {
       await publishStandupSnapshot(supabase, {
         snapshotId: detail.snapshot.id,
+        weekOf: detail.snapshot.weekOf,
         userId: user.id,
         reviewNotes: reviewNotesDraft.trim() || null,
       });
@@ -235,6 +239,22 @@ export default function ExecutiveStandupWeekDetailPage() {
       setError(saveError instanceof Error ? saveError.message : "Could not save standup notes.");
     } finally {
       setSavingNotes(false);
+    }
+  }
+
+  async function onDownloadPdf() {
+    if (!detail) return;
+    setDownloadingPdf(true);
+    setError(null);
+    try {
+      await downloadBlobFromUrl(
+        buildStandupPdfUrl(detail.snapshot.weekOf),
+        `executive-standup-${detail.snapshot.weekOf}.pdf`,
+      );
+    } catch (downloadError) {
+      setError(downloadError instanceof Error ? downloadError.message : "Could not download standup PDF.");
+    } finally {
+      setDownloadingPdf(false);
     }
   }
 
@@ -305,6 +325,10 @@ export default function ExecutiveStandupWeekDetailPage() {
                   <Button type="button" variant="outline" onClick={onExportBoardPacket}>
                     <FileSpreadsheet className="mr-2 h-4 w-4" />
                     Export board packet
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => void onDownloadPdf()} disabled={downloadingPdf}>
+                    {downloadingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
+                    Download PDF
                   </Button>
                   <Button type="button" variant="outline" onClick={() => void onSaveBoardReport()} disabled={savingBoardReport}>
                     {savingBoardReport ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}

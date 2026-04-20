@@ -87,6 +87,7 @@ export type StandupSnapshotDetail = {
     draftNotes: string | null;
     reviewNotes: string | null;
     publishedVersion: number;
+    pdfAttachmentPath: string | null;
   };
   facilities: StandupFacilityLive[];
 };
@@ -229,6 +230,7 @@ type SnapshotDetailRow = SnapshotMini & {
   draft_notes: string | null;
   review_notes: string | null;
   published_version: number;
+  pdf_attachment_path: string | null;
 };
 
 type UserProfileMini = {
@@ -984,6 +986,10 @@ export function buildStandupImportCommand(workbookPath: string, organizationId?:
   return `${orgPrefix}NEXT_PUBLIC_SUPABASE_URL="$NEXT_PUBLIC_SUPABASE_URL" SUPABASE_SERVICE_ROLE_KEY="$SUPABASE_SERVICE_ROLE_KEY" python3 scripts/import-executive-standup-workbook.py "${workbookPath}"`;
 }
 
+export function buildStandupPdfUrl(weekOf: string): string {
+  return `/api/executive/standup/${encodeURIComponent(weekOf)}/pdf`;
+}
+
 export async function saveStandupBoardReport(
   supabase: SupabaseClient<Database>,
   input: {
@@ -1069,7 +1075,7 @@ export async function fetchStandupSnapshotDetail(
   const [snapshotRes, facilitiesRes] = await Promise.all([
     supabase
       .from("exec_standup_snapshots" as never)
-      .select("id, week_of, status, generated_at, generated_by, published_at, published_by, completeness_pct, confidence_band, draft_notes, review_notes, published_version")
+      .select("id, week_of, status, generated_at, generated_by, published_at, published_by, completeness_pct, confidence_band, draft_notes, review_notes, published_version, pdf_attachment_path")
       .eq("organization_id", organizationId)
       .eq("week_of", weekOf)
       .is("deleted_at", null)
@@ -1125,6 +1131,7 @@ export async function fetchStandupSnapshotDetail(
       draftNotes: snapshotResult.data.draft_notes,
       reviewNotes: snapshotResult.data.review_notes,
       publishedVersion: snapshotResult.data.published_version,
+      pdfAttachmentPath: snapshotResult.data.pdf_attachment_path,
     },
     facilities: composeSnapshotFacilities(facilitiesResult.data ?? [], metricsResult.data ?? []),
   };
@@ -1831,6 +1838,7 @@ export async function publishStandupSnapshot(
   supabase: SupabaseClient<Database>,
   input: {
     snapshotId: string;
+    weekOf: string;
     userId: string;
     reviewNotes?: string | null;
   },
@@ -1843,6 +1851,7 @@ export async function publishStandupSnapshot(
       published_at: now,
       published_by: input.userId,
       review_notes: input.reviewNotes ?? null,
+      pdf_attachment_path: buildStandupPdfUrl(input.weekOf),
       updated_by: input.userId,
     } as never)
     .eq("id", input.snapshotId)

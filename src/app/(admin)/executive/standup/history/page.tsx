@@ -11,10 +11,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
+import { downloadBlobFromUrl } from "@/lib/download-blob";
 import { useAuth } from "@/hooks/useAuth";
 import { canCreateDraftFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import {
   buildStandupImportCommand,
+  buildStandupPdfUrl,
   currentStandupWeekOf,
   fetchStandupHistory,
   fetchStandupImportJobs,
@@ -46,6 +48,7 @@ export default function ExecutiveStandupHistoryPage() {
   const [importJobsError, setImportJobsError] = useState<string | null>(null);
   const [workbookPath, setWorkbookPath] = useState("/Users/brianlewis/Downloads/2026 Standup Call Log.xlsx");
   const [copiedImport, setCopiedImport] = useState(false);
+  const [downloadingPdfWeek, setDownloadingPdfWeek] = useState<string | null>(null);
   const [compareFromWeek, setCompareFromWeek] = useState("");
   const [compareToWeek, setCompareToWeek] = useState("");
 
@@ -107,6 +110,18 @@ export default function ExecutiveStandupHistoryPage() {
       setError(createError instanceof Error ? createError.message : "Could not create standup draft.");
     } finally {
       setCreatingDraft(false);
+    }
+  }
+
+  async function onDownloadPdf(weekOf: string) {
+    setDownloadingPdfWeek(weekOf);
+    setError(null);
+    try {
+      await downloadBlobFromUrl(buildStandupPdfUrl(weekOf), `executive-standup-${weekOf}.pdf`);
+    } catch (downloadError) {
+      setError(downloadError instanceof Error ? downloadError.message : "Could not download standup PDF.");
+    } finally {
+      setDownloadingPdfWeek(null);
     }
   }
 
@@ -274,6 +289,16 @@ export default function ExecutiveStandupHistoryPage() {
                         >
                           Board packet
                         </Link>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="rounded-full text-xs font-semibold uppercase tracking-widest"
+                          disabled={downloadingPdfWeek === row.weekOf}
+                          onClick={() => void onDownloadPdf(row.weekOf)}
+                        >
+                          {downloadingPdfWeek === row.weekOf ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
+                          Download PDF
+                        </Button>
                         {compareTarget ? (
                           <Link
                             href={`/admin/executive/standup/compare?from=${encodeURIComponent(compareTarget)}&to=${encodeURIComponent(row.weekOf)}`}
