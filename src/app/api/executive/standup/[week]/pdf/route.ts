@@ -7,6 +7,7 @@ import {
   fetchStandupSnapshotDetail,
 } from "@/lib/executive/standup";
 import {
+  EXECUTIVE_STANDUP_PACKET_RENDER_VERSION,
   executiveStandupPdfStoragePath,
   looksLikeStorageObjectPath,
   REPORT_EXPORT_BUCKET,
@@ -66,7 +67,13 @@ export async function GET(
     return NextResponse.json({ error: "Standup packet not found" }, { status: 404 });
   }
 
-  if (looksLikeStorageObjectPath(detail.snapshot.pdfAttachmentPath)) {
+  const storagePath = executiveStandupPdfStoragePath(
+    profile.organization_id,
+    detail.snapshot.weekOf,
+    detail.snapshot.publishedVersion,
+  );
+
+  if (looksLikeStorageObjectPath(detail.snapshot.pdfAttachmentPath) && detail.snapshot.pdfAttachmentPath === storagePath) {
     const cached = await admin.storage.from(REPORT_EXPORT_BUCKET).download(detail.snapshot.pdfAttachmentPath);
     if (!cached.error && cached.data) {
       const bytes = new Uint8Array(await cached.data.arrayBuffer());
@@ -107,12 +114,6 @@ export async function GET(
         left: "0.35in",
       },
     });
-    const storagePath = executiveStandupPdfStoragePath(
-      profile.organization_id,
-      detail.snapshot.weekOf,
-      detail.snapshot.publishedVersion,
-    );
-
     const upload = await admin.storage
       .from(REPORT_EXPORT_BUCKET)
       .upload(storagePath, pdf, {
@@ -159,6 +160,7 @@ export async function GET(
             delivery: "download",
             kind: "executive_standup_board_packet",
             weekOf: detail.snapshot.weekOf,
+            renderVersion: EXECUTIVE_STANDUP_PACKET_RENDER_VERSION,
           },
         });
       }
