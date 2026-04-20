@@ -77,7 +77,11 @@ export type StandupSnapshotDetail = {
     weekOf: string;
     status: string;
     generatedAt: string;
+    generatedById: string | null;
+    generatedByName: string | null;
     publishedAt: string | null;
+    publishedById: string | null;
+    publishedByName: string | null;
     completenessPct: number;
     confidenceBand: "high" | "medium" | "low";
     draftNotes: string | null;
@@ -219,10 +223,17 @@ type SnapshotMini = {
 
 type SnapshotDetailRow = SnapshotMini & {
   week_of: string;
+  generated_by: string | null;
   published_at: string | null;
+  published_by: string | null;
   draft_notes: string | null;
   review_notes: string | null;
   published_version: number;
+};
+
+type UserProfileMini = {
+  id: string;
+  full_name: string;
 };
 
 type StandupImportJobRow = {
@@ -874,6 +885,21 @@ function formatMetricDisplay(metric: StandupMetricRow | undefined): string {
   return `${metric.valueNumeric}`;
 }
 
+function formatDateTimeDisplay(value: string | null): string {
+  if (!value) return "—";
+  return new Date(value).toLocaleString();
+}
+
+function buildStandupMethodologyNotes(): string[] {
+  return [
+    "Current AR and uncollected AR totals come from open invoice balances in the selected organization scope.",
+    "Average rent is derived from current-month invoices, with resident monthly rate fallback when invoice coverage is incomplete.",
+    "Bed availability uses standup bed classifications plus temporary block status so open-bed math reflects real placement constraints.",
+    "Forecast rows represent planned commitments for the week and should not be read as live census or discharge facts.",
+    "Low-confidence or manual values are intentionally labeled to preserve packet trust when upstream system data is incomplete.",
+  ];
+}
+
 function deltaLine(label: string, current: number | null, previous: number | null, formatter?: (value: number | null) => string): string | null {
   if (current == null || previous == null || current === previous) return null;
   const delta = current - previous;
@@ -1033,7 +1059,7 @@ export async function fetchStandupSnapshotDetail(
   const [snapshotRes, facilitiesRes] = await Promise.all([
     supabase
       .from("exec_standup_snapshots" as never)
-      .select("id, week_of, status, generated_at, published_at, completeness_pct, confidence_band, draft_notes, review_notes, published_version")
+      .select("id, week_of, status, generated_at, generated_by, published_at, published_by, completeness_pct, confidence_band, draft_notes, review_notes, published_version")
       .eq("organization_id", organizationId)
       .eq("week_of", weekOf)
       .is("deleted_at", null)
@@ -1053,6 +1079,17 @@ export async function fetchStandupSnapshotDetail(
   if (facilitiesResult.error) throw new Error(facilitiesResult.error.message);
   if (!snapshotResult.data) return null;
 
+  const profileIds = Array.from(new Set([snapshotResult.data.generated_by, snapshotResult.data.published_by].filter((value): value is string => Boolean(value))));
+  const profileRes = profileIds.length > 0
+    ? ((await supabase
+        .from("user_profiles" as never)
+        .select("id, full_name")
+        .in("id", profileIds)
+        .is("deleted_at", null)) as unknown as { data: UserProfileMini[] | null; error: { message: string } | null })
+    : { data: [] as UserProfileMini[], error: null };
+  if (profileRes.error) throw new Error(profileRes.error.message);
+  const profileById = new Map((profileRes.data ?? []).map((profile) => [profile.id, profile.full_name] as const));
+
   const metricsRes = await supabase
     .from("exec_standup_snapshot_metrics" as never)
     .select("id, facility_id, section_key, metric_key, metric_label, value_numeric, value_text, source_mode, confidence_band, freshness_at, source_ref_json, override_note")
@@ -1068,7 +1105,11 @@ export async function fetchStandupSnapshotDetail(
       weekOf: snapshotResult.data.week_of,
       status: snapshotResult.data.status,
       generatedAt: snapshotResult.data.generated_at,
+      generatedById: snapshotResult.data.generated_by,
+      generatedByName: snapshotResult.data.generated_by ? profileById.get(snapshotResult.data.generated_by) ?? null : null,
       publishedAt: snapshotResult.data.published_at,
+      publishedById: snapshotResult.data.published_by,
+      publishedByName: snapshotResult.data.published_by ? profileById.get(snapshotResult.data.published_by) ?? null : null,
       completenessPct: snapshotResult.data.completeness_pct,
       confidenceBand: snapshotResult.data.confidence_band,
       draftNotes: snapshotResult.data.draft_notes,
@@ -1893,6 +1934,9 @@ export function buildStandupBoardPrintHtml(
   const facilities = detail.facilities.filter((facility) => facility.facilityId != null);
   const totals = detail.facilities.find((facility) => facility.facilityId == null) ?? null;
   const narrative = buildStandupNarrative(detail, previous);
+  const methodologyNotes = buildStandupMethodologyNotes();
+  const generatedBy = detail.snapshot.generatedByName ?? detail.snapshot.generatedById ?? "System";
+  const publishedBy = detail.snapshot.publishedByName ?? detail.snapshot.publishedById ?? "Not published";
 
   const metricRows = (Object.entries(STANDUP_SECTION_LABELS) as Array<[StandupSectionKey, string]>)
     .map(([sectionKey, sectionLabel]) => {
@@ -1961,6 +2005,13 @@ export function buildStandupBoardPrintHtml(
   const narrativeChanges = narrative.changes.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
   const narrativeQuality = narrative.dataQuality.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
   const narrativeActions = narrative.actions.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  const methodologyList = methodologyNotes.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  const reviewNotesBlock = detail.snapshot.reviewNotes
+    ? `<div class="panel"><h2>Review notes</h2><p>${escapeHtml(detail.snapshot.reviewNotes)}</p></div>`
+    : "";
+  const draftNotesBlock = detail.snapshot.draftNotes
+    ? `<div class="panel"><h2>Draft notes</h2><p>${escapeHtml(detail.snapshot.draftNotes)}</p></div>`
+    : "";
   const facilityActionPanels = narrative.facilityActions
     .slice(0, 6)
     .map(
@@ -1986,11 +2037,13 @@ export function buildStandupBoardPrintHtml(
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Executive Standup Pack — ${escapeHtml(detail.snapshot.weekOf)}</title>
     <style>
-      body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin: 0; color: #0f172a; background: #fff; }
-      .page { max-width: 1120px; margin: 0 auto; padding: 32px; }
-      h1 { font-size: 2rem; margin: 0 0 12px; }
+      body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin: 0; color: #0f172a; background: #f8fafc; }
+      .packet { max-width: 1120px; margin: 0 auto; }
+      .page { background: #fff; min-height: 100vh; padding: 36px; box-sizing: border-box; page-break-after: always; }
+      .page:last-child { page-break-after: auto; }
+      h1 { font-size: 2.4rem; margin: 0 0 12px; letter-spacing: -0.03em; }
       h2 { font-size: 1.125rem; margin: 0 0 10px; }
-      h3 { font-size: 1.25rem; margin: 0 0 12px; }
+      h3 { font-size: 1.4rem; margin: 0 0 14px; letter-spacing: -0.02em; }
       .eyebrow { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: #64748b; font-weight: 700; margin-bottom: 8px; }
       .meta { font-size: 13px; color: #475569; }
       .hero { border-bottom: 1px solid #cbd5e1; padding-bottom: 18px; margin-bottom: 28px; display: flex; justify-content: space-between; gap: 24px; }
@@ -2011,18 +2064,48 @@ export function buildStandupBoardPrintHtml(
       .value { font-weight: 600; }
       .section { margin-top: 28px; }
       .legend { margin-top: 24px; font-size: 12px; color: #475569; }
-      @media print { .page { padding: 20px; } }
+      .cover { background: linear-gradient(180deg, #0f172a 0%, #111827 60%, #172554 100%); color: #f8fafc; display: flex; flex-direction: column; justify-content: space-between; }
+      .cover .eyebrow, .cover .meta { color: rgba(248,250,252,.78); }
+      .cover h1 { color: #fff; font-size: 3.2rem; }
+      .cover-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 22px; }
+      .cover-card { border: 1px solid rgba(255,255,255,.12); border-radius: 18px; padding: 18px; background: rgba(255,255,255,.04); }
+      .page-number { margin-top: 18px; font-size: 12px; color: #64748b; }
+      @media print {
+        body { background: #fff; }
+        .page { padding: 22px; min-height: auto; }
+      }
     </style>
   </head>
   <body>
-    <div class="page">
+    <div class="packet">
+      <section class="page cover">
+        <div>
+          <div class="eyebrow">Haven executive standup packet</div>
+          <h1>Executive Standup Pack</h1>
+          <div class="meta">Week of ${escapeHtml(detail.snapshot.weekOf)} · Version ${detail.snapshot.publishedVersion}</div>
+          <div class="meta" style="margin-top:10px;">A fixed executive operating packet for owner and board review.</div>
+        </div>
+        <div class="cover-grid">
+          <div class="cover-card">
+            <div class="eyebrow">Prepared</div>
+            <div style="font-size: 1.5rem; font-weight: 700;">${escapeHtml(generatedBy)}</div>
+            <div class="meta">Generated ${escapeHtml(formatDateTimeDisplay(detail.snapshot.generatedAt))}</div>
+          </div>
+          <div class="cover-card">
+            <div class="eyebrow">Published</div>
+            <div style="font-size: 1.5rem; font-weight: 700;">${escapeHtml(publishedBy)}</div>
+            <div class="meta">Published ${escapeHtml(formatDateTimeDisplay(detail.snapshot.publishedAt))}</div>
+            <div class="meta">Confidence ${escapeHtml(detail.snapshot.confidenceBand)} · Completeness ${detail.snapshot.completenessPct.toFixed(0)}%</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page">
       <div class="hero">
         <div>
           <div class="eyebrow">Haven executive standup</div>
-          <h1>Week of ${escapeHtml(detail.snapshot.weekOf)}</h1>
-          <div class="meta">Status: ${escapeHtml(detail.snapshot.status)} · Generated: ${escapeHtml(
-            new Date(detail.snapshot.generatedAt).toLocaleString(),
-          )} · Published: ${escapeHtml(detail.snapshot.publishedAt ? new Date(detail.snapshot.publishedAt).toLocaleString() : "Not yet")}</div>
+          <h1>Executive Summary</h1>
+          <div class="meta">Week of ${escapeHtml(detail.snapshot.weekOf)} · Status ${escapeHtml(detail.snapshot.status)} · Version ${detail.snapshot.publishedVersion}</div>
         </div>
         <div class="meta">
           <div>Confidence: <strong>${escapeHtml(detail.snapshot.confidenceBand)}</strong></div>
@@ -2054,13 +2137,71 @@ export function buildStandupBoardPrintHtml(
         </div>
       </div>
 
-      ${facilityActionPanels ? `<div class="narrative-grid" style="grid-template-columns: 1fr 1fr;">${facilityActionPanels}</div>` : ""}
+      ${reviewNotesBlock || draftNotesBlock ? `<div class="narrative-grid" style="grid-template-columns: 1fr 1fr;">${reviewNotesBlock}${draftNotesBlock}</div>` : ""}
+      <div class="page-number">Page 2</div>
+      </section>
 
-      ${metricRows}
+      <section class="page">
+        <div class="hero">
+          <div>
+            <div class="eyebrow">Facility pressure</div>
+            <h1>Facility Ranking & Actions</h1>
+            <div class="meta">Who needs attention first, why, and what action should follow now.</div>
+          </div>
+        </div>
+        <div class="panel" style="margin-bottom: 22px;">
+          <h2>Facility ranking</h2>
+          <table>
+            <thead><tr><th>#</th><th>Facility</th><th>Top concern</th><th>Pressure</th></tr></thead>
+            <tbody>${facilityRanking}</tbody>
+          </table>
+        </div>
+        ${facilityActionPanels ? `<div class="narrative-grid" style="grid-template-columns: 1fr 1fr;">${facilityActionPanels}</div>` : ""}
+        <div class="page-number">Page 3</div>
+      </section>
 
-      <div class="legend">
-        Source legend: auto = live system fact, forecast = planned expectation, manual = hand-entered, hybrid = computed with fallback review.
-      </div>
+      <section class="page">
+        <div class="hero">
+          <div>
+            <div class="eyebrow">Workbook detail</div>
+            <h1>Section Detail</h1>
+            <div class="meta">Workbook-equivalent tables with values, trust markers, and facility/totals structure.</div>
+          </div>
+        </div>
+        ${metricRows}
+        <div class="page-number">Page 4+</div>
+      </section>
+
+      <section class="page">
+        <div class="hero">
+          <div>
+            <div class="eyebrow">Trust & methodology</div>
+            <h1>Data Quality, Legend, and Methodology</h1>
+            <div class="meta">Trust notes for interpreting the packet correctly.</div>
+          </div>
+        </div>
+        <div class="narrative-grid">
+          <div class="panel">
+            <h2>Legend</h2>
+            <ul>
+              <li><strong>auto</strong>: live system fact from structured source data</li>
+              <li><strong>forecast</strong>: planned expectation for the standup week</li>
+              <li><strong>manual</strong>: hand-entered value retained for trust and auditability</li>
+              <li><strong>hybrid</strong>: computed with fallback review or partial system dependency</li>
+              <li><strong>high / medium / low confidence</strong>: operator trust signal for the displayed metric</li>
+            </ul>
+          </div>
+          <div class="panel">
+            <h2>Methodology</h2>
+            <ul>${methodologyList}</ul>
+          </div>
+        </div>
+        <div class="panel" style="margin-top: 18px;">
+          <h2>Lineage rules</h2>
+          <p>Every metric in this packet should be interpreted with its source mode, confidence band, freshness, and override state. Low-confidence or manual rows are shown intentionally rather than hidden so the owner can trust the packet’s limitations as well as its numbers.</p>
+        </div>
+        <div class="page-number">Appendix</div>
+      </section>
     </div>
   </body>
 </html>`;

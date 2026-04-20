@@ -176,8 +176,11 @@ export default function ExecutiveStandupBoardPage() {
                 <div className="text-right text-sm text-slate-600">
                   <div>Status: <span className="font-semibold capitalize text-slate-900">{detail.snapshot.status}</span></div>
                   <div>Generated: {new Date(detail.snapshot.generatedAt).toLocaleString()}</div>
+                  <div>Prepared by: {detail.snapshot.generatedByName ?? detail.snapshot.generatedById ?? "System"}</div>
                   <div>Published: {detail.snapshot.publishedAt ? new Date(detail.snapshot.publishedAt).toLocaleString() : "Not yet"}</div>
+                  <div>Published by: {detail.snapshot.publishedByName ?? detail.snapshot.publishedById ?? "Not published"}</div>
                   <div>Confidence: <span className="font-semibold capitalize text-slate-900">{detail.snapshot.confidenceBand}</span></div>
+                  <div>Version: <span className="font-semibold text-slate-900">{detail.snapshot.publishedVersion}</span></div>
                 </div>
               </div>
             </header>
@@ -320,6 +323,33 @@ export default function ExecutiveStandupBoardPage() {
                 </div>
               </section>
             ) : null}
+
+            <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <Card className="border-slate-200 shadow-none">
+                <CardHeader>
+                  <CardTitle>Legend</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm text-slate-700">
+                  <p><strong>auto</strong>: live system fact from structured source data</p>
+                  <p><strong>forecast</strong>: planned expectation for the standup week</p>
+                  <p><strong>manual</strong>: operator-entered value retained for trust and auditability</p>
+                  <p><strong>hybrid</strong>: computed with fallback review or partial system dependency</p>
+                  <p><strong>high / medium / low confidence</strong>: trust signal for the displayed metric</p>
+                </CardContent>
+              </Card>
+              <Card className="border-slate-200 shadow-none">
+                <CardHeader>
+                  <CardTitle>Methodology</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm text-slate-700">
+                  <p>AR metrics come from open invoice balances in scope.</p>
+                  <p>Average rent uses current-month invoices, with resident monthly rate fallback when invoice coverage is incomplete.</p>
+                  <p>Bed availability reflects standup bed classes plus temporary bed blocks.</p>
+                  <p>Forecast rows are weekly commitments, not live facts.</p>
+                  <p>Low-confidence rows remain visible so the packet stays trustworthy about its own limits.</p>
+                </CardContent>
+              </Card>
+            </section>
 
             {(Object.entries(STANDUP_SECTION_LABELS) as Array<[StandupSectionKey, string]>).map(([sectionKey, sectionLabel]) => {
               const metricKeys = sectionMetricKeys.get(sectionKey) ?? [];
