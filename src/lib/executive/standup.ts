@@ -74,6 +74,13 @@ export type StandupSnapshotDetail = {
   facilities: StandupFacilityLive[];
 };
 
+export type StandupNarrative = {
+  headline: string;
+  bullets: string[];
+  changes: string[];
+  dataQuality: string[];
+};
+
 type FacilityMini = {
   id: string;
   name: string;
@@ -555,6 +562,33 @@ function aggregateSnapshotMetricValue(metricKey: string, facilityRows: SnapshotM
   return sum(numericValues);
 }
 
+function formatCurrencyFromCents(value: number | null): string {
+  if (value == null) return "—";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(value / 100);
+}
+
+function formatMetricDisplay(metric: StandupMetricRow | undefined): string {
+  if (!metric) return "—";
+  if (metric.valueText?.trim()) return metric.valueText.trim();
+  if (metric.valueNumeric == null) return "—";
+  if (metric.valueType === "currency") return formatCurrencyFromCents(metric.valueNumeric);
+  if (metric.valueType === "hours") return `${metric.valueNumeric.toFixed(2)} hrs`;
+  if (metric.valueType === "percent") return `${metric.valueNumeric.toFixed(1)}%`;
+  return `${metric.valueNumeric}`;
+}
+
+function deltaLine(label: string, current: number | null, previous: number | null, formatter?: (value: number | null) => string): string | null {
+  if (current == null || previous == null || current === previous) return null;
+  const delta = current - previous;
+  const direction = delta > 0 ? "up" : "down";
+  const amount = formatter ? formatter(Math.abs(delta)) : `${Math.abs(delta)}`;
+  return `${label} is ${direction} ${amount} versus the prior published week.`;
+}
+
 export async function fetchStandupSnapshotForWeek(
   supabase: SupabaseClient<Database>,
   organizationId: string,
@@ -596,6 +630,28 @@ export async function fetchStandupHistory(
     completenessPct: row.completeness_pct,
     confidenceBand: row.confidence_band,
   }));
+}
+
+export async function fetchPreviousPublishedStandupSnapshotDetail(
+  supabase: SupabaseClient<Database>,
+  organizationId: string,
+  weekOf: string,
+): Promise<StandupSnapshotDetail | null> {
+  const { data, error } = await supabase
+    .from("exec_standup_snapshots" as never)
+    .select("week_of")
+    .eq("organization_id", organizationId)
+    .eq("status", "published")
+    .lt("week_of", weekOf)
+    .is("deleted_at", null)
+    .order("week_of", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  const prevWeek = (data as { week_of: string } | null)?.week_of;
+  if (!prevWeek) return null;
+  return fetchStandupSnapshotDetail(supabase, organizationId, prevWeek);
 }
 
 export async function fetchStandupSnapshotDetail(
@@ -1372,4 +1428,226 @@ export async function publishStandupSnapshot(
 
   const result = res as unknown as { error: { message: string } | null };
   if (result.error) throw new Error(result.error.message);
+}
+
+export function buildStandupNarrative(
+  current: StandupSnapshotDetail,
+  previous: StandupSnapshotDetail | null,
+): StandupNarrative {
+  const currentFacilities = current.facilities.filter((facility) => facility.facilityId != null);
+  const totals = current.facilities.find((facility) => facility.facilityId == null);
+  const previousTotals = previous?.facilities.find((facility) => facility.facilityId == null) ?? null;
+  const topFacility = [...currentFacilities].sort((a, b) => b.pressureScore - a.pressureScore)[0] ?? null;
+  const unresolved = currentFacilities.flatMap((facility) => Object.values(facility.metrics)).filter((metric) => metric.valueNumeric == null && !(metric.valueText?.trim()));
+
+  const bullets = buildStandupInsights(current.facilities);
+  const changes = [
+    deltaLine(
+      "Open AR",
+      totals?.metrics.current_ar_cents.valueNumeric ?? null,
+      previousTotals?.metrics.current_ar_cents.valueNumeric ?? null,
+      formatCurrencyFromCents,
+    ),
+    deltaLine(
+      "Census",
+      totals?.metrics.current_total_census.valueNumeric ?? null,
+      previousTotals?.metrics.current_total_census.valueNumeric ?? null,
+    ),
+    deltaLine(
+      "Open beds",
+      totals?.metrics.total_beds_open.valueNumeric ?? null,
+      previousTotals?.metrics.total_beds_open.valueNumeric ?? null,
+    ),
+    deltaLine(
+      "Callouts",
+      totals?.metrics.callouts_last_week.valueNumeric ?? null,
+      previousTotals?.metrics.callouts_last_week.valueNumeric ?? null,
+    ),
+  ].filter((line): line is string => Boolean(line));
+
+  const dataQuality: string[] = [];
+  if (unresolved.length > 0) {
+    dataQuality.push(`${unresolved.length} metric cells are still unresolved in the current packet.`);
+  }
+  const lowConfidence = currentFacilities.flatMap((facility) => Object.values(facility.metrics)).filter((metric) => metric.confidenceBand === "low");
+  if (lowConfidence.length > 0) {
+    dataQuality.push(`${lowConfidence.length} metric cells are marked low confidence and should be reviewed before publishing.`);
+  }
+
+  const headline = topFacility
+    ? `${topFacility.facilityName} is the highest-pressure facility this week.`
+    : "Portfolio packet is ready for executive review.";
+
+  return {
+    headline,
+    bullets,
+    changes,
+    dataQuality,
+  };
+}
+
+export function buildStandupBoardPrintHtml(
+  detail: StandupSnapshotDetail,
+  previous: StandupSnapshotDetail | null,
+): string {
+  const facilities = detail.facilities.filter((facility) => facility.facilityId != null);
+  const totals = detail.facilities.find((facility) => facility.facilityId == null) ?? null;
+  const narrative = buildStandupNarrative(detail, previous);
+
+  const metricRows = (Object.entries(STANDUP_SECTION_LABELS) as Array<[StandupSectionKey, string]>)
+    .map(([sectionKey, sectionLabel]) => {
+      const keys = Array.from(
+        new Set(
+          detail.facilities.flatMap((facility) =>
+            Object.keys(facility.metrics).filter((metricKey) => facility.metrics[metricKey].sectionKey === sectionKey),
+          ),
+        ),
+      );
+      if (keys.length === 0) return "";
+
+      const rows = keys
+        .map((metricKey) => {
+          const sample = facilities.find((facility) => facility.metrics[metricKey])?.metrics[metricKey] ?? totals?.metrics[metricKey];
+          if (!sample) return "";
+          const facilityCells = facilities
+            .map(
+              (facility) =>
+                `<td><div class="value">${escapeHtml(formatMetricDisplay(facility.metrics[metricKey]))}</div><div class="meta">${escapeHtml(
+                  `${facility.metrics[metricKey].sourceMode} · ${facility.metrics[metricKey].confidenceBand}`,
+                )}</div></td>`,
+            )
+            .join("");
+          const totalCell = totals
+            ? `<td><div class="value">${escapeHtml(formatMetricDisplay(totals.metrics[metricKey]))}</div><div class="meta">${escapeHtml(
+                `${totals.metrics[metricKey].sourceMode} · ${totals.metrics[metricKey].confidenceBand}`,
+              )}</div></td>`
+            : "";
+          return `<tr><td><div class="metric-label">${escapeHtml(sample.label)}</div><div class="metric-desc">${escapeHtml(
+            sample.description,
+          )}</div></td>${facilityCells}${totalCell}</tr>`;
+        })
+        .join("");
+
+      const facilityHeaders = facilities.map((facility) => `<th>${escapeHtml(facility.facilityName)}</th>`).join("");
+      const totalsHeader = totals ? "<th>Totals</th>" : "";
+
+      return `<section class="section"><h3>${escapeHtml(sectionLabel)}</h3><table><thead><tr><th>Metric</th>${facilityHeaders}${totalsHeader}</tr></thead><tbody>${rows}</tbody></table></section>`;
+    })
+    .join("");
+
+  const facilityRanking = facilities
+    .slice()
+    .sort((a, b) => b.pressureScore - a.pressureScore)
+    .map(
+      (facility, index) =>
+        `<tr><td>${index + 1}</td><td>${escapeHtml(facility.facilityName)}</td><td>${escapeHtml(
+          facility.topConcern,
+        )}</td><td>${facility.pressureScore}</td></tr>`,
+    )
+    .join("");
+
+  const portfolioSummary = totals
+    ? `
+      <div class="summary-grid">
+        <div class="summary-card"><div class="summary-label">Current AR</div><div class="summary-value">${escapeHtml(formatMetricDisplay(totals.metrics.current_ar_cents))}</div></div>
+        <div class="summary-card"><div class="summary-label">Census</div><div class="summary-value">${escapeHtml(formatMetricDisplay(totals.metrics.current_total_census))}</div></div>
+        <div class="summary-card"><div class="summary-label">Open Beds</div><div class="summary-value">${escapeHtml(formatMetricDisplay(totals.metrics.total_beds_open))}</div></div>
+        <div class="summary-card"><div class="summary-label">Hospital/Rehab</div><div class="summary-value">${escapeHtml(formatMetricDisplay(totals.metrics.hospital_and_rehab_total))}</div></div>
+      </div>
+    `
+    : "";
+
+  const narrativeBullets = narrative.bullets.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  const narrativeChanges = narrative.changes.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  const narrativeQuality = narrative.dataQuality.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+
+  return `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Executive Standup Pack — ${escapeHtml(detail.snapshot.weekOf)}</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin: 0; color: #0f172a; background: #fff; }
+      .page { max-width: 1120px; margin: 0 auto; padding: 32px; }
+      h1 { font-size: 2rem; margin: 0 0 12px; }
+      h2 { font-size: 1.125rem; margin: 0 0 10px; }
+      h3 { font-size: 1.25rem; margin: 0 0 12px; }
+      .eyebrow { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: #64748b; font-weight: 700; margin-bottom: 8px; }
+      .meta { font-size: 13px; color: #475569; }
+      .hero { border-bottom: 1px solid #cbd5e1; padding-bottom: 18px; margin-bottom: 28px; display: flex; justify-content: space-between; gap: 24px; }
+      .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 18px 0 28px; }
+      .summary-card { border: 1px solid #cbd5e1; border-radius: 16px; padding: 16px; }
+      .summary-label { font-size: 11px; text-transform: uppercase; letter-spacing: .14em; color: #64748b; font-weight: 700; }
+      .summary-value { margin-top: 8px; font-size: 28px; font-weight: 700; }
+      .narrative-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 18px; margin-bottom: 28px; }
+      .panel { border: 1px solid #cbd5e1; border-radius: 18px; padding: 18px; }
+      .headline { font-size: 1.2rem; font-weight: 700; margin-bottom: 10px; }
+      ul { margin: 0; padding-left: 18px; }
+      li { margin: 0 0 8px; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { border-bottom: 1px solid #e2e8f0; padding: 10px 12px; text-align: left; vertical-align: top; }
+      th { font-size: 11px; text-transform: uppercase; letter-spacing: .16em; color: #64748b; }
+      .metric-label { font-weight: 600; }
+      .metric-desc { margin-top: 4px; color: #64748b; font-size: 12px; }
+      .value { font-weight: 600; }
+      .section { margin-top: 28px; }
+      .legend { margin-top: 24px; font-size: 12px; color: #475569; }
+      @media print { .page { padding: 20px; } }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="hero">
+        <div>
+          <div class="eyebrow">Haven executive standup</div>
+          <h1>Week of ${escapeHtml(detail.snapshot.weekOf)}</h1>
+          <div class="meta">Status: ${escapeHtml(detail.snapshot.status)} · Generated: ${escapeHtml(
+            new Date(detail.snapshot.generatedAt).toLocaleString(),
+          )} · Published: ${escapeHtml(detail.snapshot.publishedAt ? new Date(detail.snapshot.publishedAt).toLocaleString() : "Not yet")}</div>
+        </div>
+        <div class="meta">
+          <div>Confidence: <strong>${escapeHtml(detail.snapshot.confidenceBand)}</strong></div>
+          <div>Completeness: <strong>${detail.snapshot.completenessPct.toFixed(0)}%</strong></div>
+          <div>Version: <strong>${detail.snapshot.publishedVersion}</strong></div>
+        </div>
+      </div>
+
+      ${portfolioSummary}
+
+      <div class="narrative-grid">
+        <div class="panel">
+          <div class="headline">${escapeHtml(narrative.headline)}</div>
+          <h2>Executive insights</h2>
+          <ul>${narrativeBullets || "<li>No narrative insights available.</li>"}</ul>
+          <h2 style="margin-top: 18px;">Changes since last published week</h2>
+          <ul>${narrativeChanges || "<li>No prior published week available for comparison.</li>"}</ul>
+        </div>
+        <div class="panel">
+          <h2>Facility ranking</h2>
+          <table>
+            <thead><tr><th>#</th><th>Facility</th><th>Top concern</th><th>Pressure</th></tr></thead>
+            <tbody>${facilityRanking}</tbody>
+          </table>
+          <h2 style="margin-top: 18px;">Data quality</h2>
+          <ul>${narrativeQuality || "<li>No data quality warnings.</li>"}</ul>
+        </div>
+      </div>
+
+      ${metricRows}
+
+      <div class="legend">
+        Source legend: auto = live system fact, forecast = planned expectation, manual = hand-entered, hybrid = computed with fallback review.
+      </div>
+    </div>
+  </body>
+</html>`;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }

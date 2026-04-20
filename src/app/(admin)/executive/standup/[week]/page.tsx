@@ -13,9 +13,13 @@ import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { canMutateFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { downloadTextFile } from "@/lib/onboarding/download";
 import {
+  buildStandupBoardPrintHtml,
+  buildStandupNarrative,
   STANDUP_SECTION_LABELS,
   fetchStandupSnapshotDetail,
+  fetchPreviousPublishedStandupSnapshotDetail,
   publishStandupSnapshot,
   saveStandupMetricInput,
   standupMetricDefinitionByKey,
@@ -53,6 +57,7 @@ export default function ExecutiveStandupWeekDetailPage() {
   const supabase = useMemo(() => createClient(), []);
   const { user } = useAuth();
   const [detail, setDetail] = useState<StandupSnapshotDetail | null>(null);
+  const [previousDetail, setPreviousDetail] = useState<StandupSnapshotDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [canPublish, setCanPublish] = useState(false);
@@ -60,6 +65,7 @@ export default function ExecutiveStandupWeekDetailPage() {
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [edits, setEdits] = useState<Record<string, string>>({});
+  const [reviewNotesDraft, setReviewNotesDraft] = useState("");
 
   const week = typeof params?.week === "string" ? params.week : "";
 
@@ -76,12 +82,18 @@ export default function ExecutiveStandupWeekDetailPage() {
       const ctx = await loadFinanceRoleContext(supabase);
       if (!ctx.ok) throw new Error(ctx.error);
       setOrganizationId(ctx.ctx.organizationId);
-      const snapshot = await fetchStandupSnapshotDetail(supabase, ctx.ctx.organizationId, week);
+      const [snapshot, previous] = await Promise.all([
+        fetchStandupSnapshotDetail(supabase, ctx.ctx.organizationId, week),
+        fetchPreviousPublishedStandupSnapshotDetail(supabase, ctx.ctx.organizationId, week),
+      ]);
       setDetail(snapshot);
+      setPreviousDetail(previous);
       setCanPublish(canMutateFinance(ctx.ctx.appRole));
       setEdits({});
+      setReviewNotesDraft(snapshot?.snapshot.reviewNotes ?? "");
     } catch (loadError) {
       setDetail(null);
+      setPreviousDetail(null);
       setError(loadError instanceof Error ? loadError.message : "Could not load standup detail.");
     } finally {
       setLoading(false);
@@ -130,6 +142,10 @@ export default function ExecutiveStandupWeekDetailPage() {
     );
   }, [detail, facilities]);
 
+  const narrative = useMemo(() => {
+    return detail ? buildStandupNarrative(detail, previousDetail) : null;
+  }, [detail, previousDetail]);
+
   async function onSaveMetric(facilityId: string, metricKey: string, metric: StandupMetricRow) {
     if (!detail || !user?.id || !organizationId) {
       setError("Sign in required.");
@@ -167,13 +183,23 @@ export default function ExecutiveStandupWeekDetailPage() {
     setPublishing(true);
     setError(null);
     try {
-      await publishStandupSnapshot(supabase, { snapshotId: detail.snapshot.id, userId: user.id });
+      await publishStandupSnapshot(supabase, {
+        snapshotId: detail.snapshot.id,
+        userId: user.id,
+        reviewNotes: reviewNotesDraft.trim() || null,
+      });
       await load();
     } catch (publishError) {
       setError(publishError instanceof Error ? publishError.message : "Could not publish standup snapshot.");
     } finally {
       setPublishing(false);
     }
+  }
+
+  function onExportBoardPacket() {
+    if (!detail) return;
+    const html = buildStandupBoardPrintHtml(detail, previousDetail);
+    downloadTextFile(`executive-standup-${detail.snapshot.weekOf}.html`, html, "text/html;charset=utf-8");
   }
 
   return (
@@ -209,6 +235,10 @@ export default function ExecutiveStandupWeekDetailPage() {
                     <FileSpreadsheet className="mr-2 h-4 w-4" />
                     Board preview
                   </Link>
+                  <Button type="button" variant="outline" onClick={onExportBoardPacket}>
+                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                    Export board packet
+                  </Button>
                   <Button type="button" onClick={() => void onPublish()} disabled={!canPublish || detail.snapshot.status !== "draft" || publishing}>
                     {publishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
                     Publish week
@@ -276,6 +306,41 @@ export default function ExecutiveStandupWeekDetailPage() {
               </Card>
             </div>
 
+            {narrative ? (
+              <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+                <CardHeader>
+                  <CardTitle className="text-lg">Executive narrative</CardTitle>
+                  <CardDescription>{narrative.headline}</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-6 lg:grid-cols-3">
+                  <div>
+                    <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Current week</div>
+                    <ul className="space-y-2 text-sm text-slate-700 dark:text-zinc-300">
+                      {narrative.bullets.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Changes</div>
+                    <ul className="space-y-2 text-sm text-slate-700 dark:text-zinc-300">
+                      {(narrative.changes.length > 0 ? narrative.changes : ["No prior published week available for comparison."]).map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Data quality</div>
+                    <ul className="space-y-2 text-sm text-slate-700 dark:text-zinc-300">
+                      {(narrative.dataQuality.length > 0 ? narrative.dataQuality : ["No data quality warnings."]).map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : null}
+
             <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
               <CardHeader>
                 <CardTitle className="text-lg">Weekly close status</CardTitle>
@@ -298,6 +363,21 @@ export default function ExecutiveStandupWeekDetailPage() {
                   <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Unresolved</div>
                   <div className="mt-1 text-xl font-semibold text-rose-600 dark:text-rose-400">{summaryCounts.unresolved}</div>
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <CardHeader>
+                <CardTitle className="text-lg">Review notes</CardTitle>
+                <CardDescription>These notes are stored with the published weekly packet.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <textarea
+                  className="min-h-[120px] w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 px-4 py-3 text-sm"
+                  value={reviewNotesDraft}
+                  onChange={(event) => setReviewNotesDraft(event.target.value)}
+                  placeholder="Add owner/admin review notes, context, or board commentary."
+                />
               </CardContent>
             </Card>
 

@@ -17,6 +17,15 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 
 type LeadDetail = Database["public"]["Tables"]["referral_leads"]["Row"] & {
   referral_sources: { name: string } | null;
+  tour_scheduled_for: string | null;
+  tour_completed_at: string | null;
+  tour_owner_user_id: string | null;
+};
+
+type LeadUpdatePatch = Partial<Database["public"]["Tables"]["referral_leads"]["Update"]> & {
+  tour_scheduled_for?: string | null;
+  tour_completed_at?: string | null;
+  tour_owner_user_id?: string | null;
 };
 
 type EditableLeadStatus = Exclude<Database["public"]["Enums"]["referral_lead_status"], "merged">;
@@ -58,6 +67,8 @@ export default function AdminReferralLeadDetailPage() {
   const [linkedAdmissionCaseId, setLinkedAdmissionCaseId] = useState<string | null>(null);
   const [statusDraft, setStatusDraft] = useState<EditableLeadStatus>("new");
   const [notesDraft, setNotesDraft] = useState("");
+  const [tourScheduledDraft, setTourScheduledDraft] = useState("");
+  const [tourCompletedDraft, setTourCompletedDraft] = useState("");
   const [actionLoading, setActionLoading] = useState<"status" | "notes" | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
@@ -88,6 +99,12 @@ export default function AdminReferralLeadDetailPage() {
       setLead(leadRow);
       setStatusDraft((leadRow?.status as EditableLeadStatus | undefined) ?? "new");
       setNotesDraft(leadRow?.notes ?? "");
+      setTourScheduledDraft(
+        leadRow?.tour_scheduled_for ? new Date(leadRow.tour_scheduled_for).toISOString().slice(0, 16) : "",
+      );
+      setTourCompletedDraft(
+        leadRow?.tour_completed_at ? new Date(leadRow.tour_completed_at).toISOString().slice(0, 16) : "",
+      );
       if (leadRow) {
         const { data: admissionCase } = await supabase
           .from("admission_cases")
@@ -117,7 +134,7 @@ export default function AdminReferralLeadDetailPage() {
   const cannotSetConverted = Boolean(lead && !lead.converted_resident_id);
 
   async function updateLead(
-    patch: Partial<Database["public"]["Tables"]["referral_leads"]["Update"]>,
+    patch: LeadUpdatePatch,
     kind: "status" | "notes",
     successMessage: string,
   ) {
@@ -299,6 +316,51 @@ export default function AdminReferralLeadDetailPage() {
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Email</dt>
                   <dd className="mt-0.5 break-all text-slate-900 dark:text-slate-100">{lead.email ?? "—"}</dd>
+                </div>
+                <div className="sm:col-span-2">
+                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Tour workflow</dt>
+                  <dd className="mt-2 space-y-3 rounded-lg border border-slate-200/70 bg-slate-50/60 px-4 py-4 dark:border-white/10 dark:bg-white/[0.03]">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <label className="space-y-1">
+                        <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Tour scheduled for</span>
+                        <input
+                          type="datetime-local"
+                          value={tourScheduledDraft}
+                          onChange={(event) => setTourScheduledDraft(event.target.value)}
+                          className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </label>
+                      <label className="space-y-1">
+                        <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Tour completed at</span>
+                        <input
+                          type="datetime-local"
+                          value={tourCompletedDraft}
+                          onChange={(event) => setTourCompletedDraft(event.target.value)}
+                          className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </label>
+                    </div>
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={actionLoading === "status"}
+                        onClick={() =>
+                          void updateLead(
+                            {
+                              tour_scheduled_for: tourScheduledDraft ? new Date(tourScheduledDraft).toISOString() : null,
+                              tour_completed_at: tourCompletedDraft ? new Date(tourCompletedDraft).toISOString() : null,
+                              tour_owner_user_id: user?.id ?? null,
+                            },
+                            "status",
+                            "Tour workflow saved.",
+                          )
+                        }
+                      >
+                        {actionLoading === "status" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save tour details"}
+                      </Button>
+                    </div>
+                  </dd>
                 </div>
                 <div className="sm:col-span-2">
                   <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Notes</dt>

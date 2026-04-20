@@ -9,7 +9,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
-import { buildStandupInsights, fetchStandupSnapshotDetail, STANDUP_SECTION_LABELS, type StandupMetricRow, type StandupSectionKey, type StandupSnapshotDetail } from "@/lib/executive/standup";
+import { downloadTextFile } from "@/lib/onboarding/download";
+import {
+  buildStandupBoardPrintHtml,
+  buildStandupNarrative,
+  fetchPreviousPublishedStandupSnapshotDetail,
+  fetchStandupSnapshotDetail,
+  STANDUP_SECTION_LABELS,
+  type StandupMetricRow,
+  type StandupSectionKey,
+  type StandupSnapshotDetail,
+} from "@/lib/executive/standup";
 
 const USD = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
@@ -26,6 +36,7 @@ export default function ExecutiveStandupBoardPage() {
   const params = useParams<{ week: string }>();
   const supabase = useMemo(() => createClient(), []);
   const [detail, setDetail] = useState<StandupSnapshotDetail | null>(null);
+  const [previousDetail, setPreviousDetail] = useState<StandupSnapshotDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,10 +53,15 @@ export default function ExecutiveStandupBoardPage() {
     try {
       const ctx = await loadFinanceRoleContext(supabase);
       if (!ctx.ok) throw new Error(ctx.error);
-      const snapshot = await fetchStandupSnapshotDetail(supabase, ctx.ctx.organizationId, week);
+      const [snapshot, previous] = await Promise.all([
+        fetchStandupSnapshotDetail(supabase, ctx.ctx.organizationId, week),
+        fetchPreviousPublishedStandupSnapshotDetail(supabase, ctx.ctx.organizationId, week),
+      ]);
       setDetail(snapshot);
+      setPreviousDetail(previous);
     } catch (loadError) {
       setDetail(null);
+      setPreviousDetail(null);
       setError(loadError instanceof Error ? loadError.message : "Could not load board packet.");
     } finally {
       setLoading(false);
@@ -58,7 +74,7 @@ export default function ExecutiveStandupBoardPage() {
 
   const facilities = useMemo(() => (detail?.facilities ?? []).filter((facility) => facility.facilityId != null), [detail]);
   const totals = useMemo(() => (detail?.facilities ?? []).find((facility) => facility.facilityId == null) ?? null, [detail]);
-  const insights = useMemo(() => (detail ? buildStandupInsights(detail.facilities) : []), [detail]);
+  const narrative = useMemo(() => (detail ? buildStandupNarrative(detail, previousDetail) : null), [detail, previousDetail]);
 
   const sectionMetricKeys = useMemo(() => {
     const keys = new Map<StandupSectionKey, string[]>();
@@ -73,6 +89,12 @@ export default function ExecutiveStandupBoardPage() {
     }
     return keys;
   }, [detail]);
+
+  function onExportBoardPacket() {
+    if (!detail) return;
+    const html = buildStandupBoardPrintHtml(detail, previousDetail);
+    downloadTextFile(`executive-standup-${detail.snapshot.weekOf}.html`, html, "text/html;charset=utf-8");
+  }
 
   return (
     <div className="min-h-screen bg-white text-slate-950">
@@ -91,6 +113,9 @@ export default function ExecutiveStandupBoardPage() {
             <Button type="button" onClick={() => window.print()}>
               <Printer className="mr-2 h-4 w-4" />
               Print / Save PDF
+            </Button>
+            <Button type="button" variant="outline" onClick={onExportBoardPacket}>
+              Export HTML packet
             </Button>
             <Link
               href={`/admin/executive/standup/${week}`}
@@ -173,10 +198,44 @@ export default function ExecutiveStandupBoardPage() {
                   <CardTitle>Executive insights</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm text-slate-700">
-                  {insights.length > 0 ? insights.map((insight) => <p key={insight}>{insight}</p>) : <p>No insight summary available yet.</p>}
+                  {narrative ? (
+                    <>
+                      <p className="font-semibold">{narrative.headline}</p>
+                      {(narrative.bullets.length > 0 ? narrative.bullets : ["No narrative insights available."]).map((insight) => (
+                        <p key={insight}>{insight}</p>
+                      ))}
+                    </>
+                  ) : (
+                    <p>No insight summary available yet.</p>
+                  )}
                 </CardContent>
               </Card>
             </section>
+
+            {narrative ? (
+              <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <Card className="border-slate-200 shadow-none">
+                  <CardHeader>
+                    <CardTitle>Changes since last published week</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm text-slate-700">
+                    {(narrative.changes.length > 0 ? narrative.changes : ["No prior published week available for comparison."]).map((item) => (
+                      <p key={item}>{item}</p>
+                    ))}
+                  </CardContent>
+                </Card>
+                <Card className="border-slate-200 shadow-none">
+                  <CardHeader>
+                    <CardTitle>Data quality</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm text-slate-700">
+                    {(narrative.dataQuality.length > 0 ? narrative.dataQuality : ["No data quality warnings."]).map((item) => (
+                      <p key={item}>{item}</p>
+                    ))}
+                  </CardContent>
+                </Card>
+              </section>
+            ) : null}
 
             {(Object.entries(STANDUP_SECTION_LABELS) as Array<[StandupSectionKey, string]>).map(([sectionKey, sectionLabel]) => {
               const metricKeys = sectionMetricKeys.get(sectionKey) ?? [];

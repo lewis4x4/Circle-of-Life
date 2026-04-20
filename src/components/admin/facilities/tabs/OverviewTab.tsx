@@ -1,8 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Loader2, Calendar, Phone, Mail, AlertTriangle, Clock } from "lucide-react";
 import { useFacility } from "@/hooks/useFacility";
+import { useFacilityBedAvailability } from "@/hooks/useFacilityBedAvailability";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { OccupancyGauge } from "../shared/OccupancyGauge";
 
 interface OverviewTabProps {
@@ -11,6 +13,9 @@ interface OverviewTabProps {
 
 export function OverviewTab({ facilityId }: OverviewTabProps) {
   const { facility, isLoading, error } = useFacility(facilityId);
+  const { rows: beds, isLoading: bedsLoading, error: bedsError, isSaving: bedsSaving, canEdit, updateBed } = useFacilityBedAvailability(facilityId);
+  const { appRole } = useHavenAuth();
+  const [blockedReasonDrafts, setBlockedReasonDrafts] = useState<Record<string, string>>({});
 
   if (isLoading) {
     return (
@@ -152,6 +157,123 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
             </div>
           )}
         </div>
+      </div>
+
+      <div className="rounded-2xl border border-white/5 bg-slate-900/50 backdrop-blur p-6 space-y-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-semibold text-white">Standup bed availability model</h3>
+            <p className="mt-1 text-sm text-slate-400">
+              These settings drive the standup bed-by-category breakdown. Keep them current as rooms change or are blocked.
+            </p>
+          </div>
+          <div className="text-[10px] uppercase tracking-widest font-mono text-slate-500">
+            {canEdit ? `${appRole.replace(/_/g, " ")} can edit` : "Read only"}
+          </div>
+        </div>
+
+        {bedsLoading ? (
+          <div className="flex items-center gap-2 text-sm text-slate-400">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading bed inventory…
+          </div>
+        ) : bedsError ? (
+          <p className="text-sm text-rose-400">{bedsError}</p>
+        ) : beds.length === 0 ? (
+          <p className="text-sm text-slate-400">No beds found for this facility.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/10 text-left text-[10px] uppercase tracking-widest text-slate-500">
+                  <th className="px-3 py-2">Room</th>
+                  <th className="px-3 py-2">Bed</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Standup class</th>
+                  <th className="px-3 py-2">Blocked</th>
+                  <th className="px-3 py-2">Reason</th>
+                  <th className="px-3 py-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {beds.map((bed) => (
+                  <tr key={bed.id} className="border-b border-white/5 align-top">
+                    <td className="px-3 py-3 text-slate-200">{bed.room_number}</td>
+                    <td className="px-3 py-3 text-slate-200">{bed.bed_label}</td>
+                    <td className="px-3 py-3 text-slate-400">{bed.current_resident_id ? "Occupied" : bed.status}</td>
+                    <td className="px-3 py-3">
+                      <select
+                        className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100"
+                        value={bed.standup_availability_class ?? ""}
+                        disabled={!canEdit || bedsSaving}
+                        onChange={(event) =>
+                          void updateBed(bed.id, {
+                            standup_availability_class:
+                              event.target.value === ""
+                                ? null
+                                : (event.target.value as "private" | "sp_female" | "sp_male" | "sp_flexible"),
+                            is_temporarily_blocked: bed.is_temporarily_blocked,
+                            blocked_reason: blockedReasonDrafts[bed.id] ?? bed.blocked_reason,
+                          })
+                        }
+                      >
+                        <option value="">Unset</option>
+                        <option value="private">Private</option>
+                        <option value="sp_female">SP Female</option>
+                        <option value="sp_male">SP Male</option>
+                        <option value="sp_flexible">SP Flexible</option>
+                      </select>
+                    </td>
+                    <td className="px-3 py-3">
+                      <label className="inline-flex items-center gap-2 text-slate-300">
+                        <input
+                          type="checkbox"
+                          checked={bed.is_temporarily_blocked}
+                          disabled={!canEdit || bedsSaving}
+                          onChange={(event) =>
+                            void updateBed(bed.id, {
+                              standup_availability_class: bed.standup_availability_class,
+                              is_temporarily_blocked: event.target.checked,
+                              blocked_reason: blockedReasonDrafts[bed.id] ?? bed.blocked_reason,
+                            })
+                          }
+                        />
+                        Yes
+                      </label>
+                    </td>
+                    <td className="px-3 py-3">
+                      <input
+                        className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100"
+                        value={blockedReasonDrafts[bed.id] ?? bed.blocked_reason ?? ""}
+                        disabled={!canEdit || bedsSaving}
+                        placeholder="Blocked reason"
+                        onChange={(event) =>
+                          setBlockedReasonDrafts((current) => ({ ...current, [bed.id]: event.target.value }))
+                        }
+                      />
+                    </td>
+                    <td className="px-3 py-3">
+                      <button
+                        type="button"
+                        className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-widest text-slate-200 hover:bg-white/5 disabled:opacity-50"
+                        disabled={!canEdit || bedsSaving}
+                        onClick={() =>
+                          void updateBed(bed.id, {
+                            standup_availability_class: bed.standup_availability_class,
+                            is_temporarily_blocked: bed.is_temporarily_blocked,
+                            blocked_reason: blockedReasonDrafts[bed.id] ?? bed.blocked_reason,
+                          })
+                        }
+                      >
+                        Save
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

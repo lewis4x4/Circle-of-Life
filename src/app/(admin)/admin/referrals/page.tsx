@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { ClipboardList, Download, Search, UserPlus, ArrowRight } from "lucide-react";
+import { ClipboardList, Download, Search, UserPlus, ArrowRight, Loader2 } from "lucide-react";
 
 import { ReferralsHubNav } from "./referrals-hub-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 type ReferralLeadStatus = Database["public"]["Enums"]["referral_lead_status"];
 
@@ -51,6 +52,16 @@ type AdmissionMini = {
   financial_clearance_at: string | null;
   physician_orders_received_at: string | null;
   bed_id: string | null;
+};
+
+type OutreachRow = {
+  id: string;
+  activity_type: string;
+  status: string;
+  scheduled_for: string | null;
+  performed_for_week: string | null;
+  external_partner_name: string | null;
+  notes: string | null;
 };
 
 const LEAD_STATUS_FILTERS: { value: "all" | ReferralLeadStatus; label: string }[] = [
@@ -168,6 +179,13 @@ export default function AdminReferralsHubPage() {
   const [exportingCsv, setExportingCsv] = useState(false);
   const [statusFilter, setStatusFilter] = useState<"all" | ReferralLeadStatus>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [outreachRows, setOutreachRows] = useState<OutreachRow[]>([]);
+  const [activityType, setActivityType] = useState("provider_visit");
+  const [activityStatus, setActivityStatus] = useState("planned");
+  const [scheduledFor, setScheduledFor] = useState(() => new Date().toISOString().slice(0, 16));
+  const [partnerName, setPartnerName] = useState("");
+  const [activityNotes, setActivityNotes] = useState("");
+  const [savingActivity, setSavingActivity] = useState(false);
 
   const filteredRows = useMemo(() => {
     if (statusFilter === "all") return rows;
@@ -221,18 +239,29 @@ export default function AdminReferralsHubPage() {
     }
 
     try {
-      const { data: list, error: listErr } = await supabase
-        .from("referral_leads")
-        .select(
-          "id, first_name, last_name, status, updated_at, email, phone, external_reference, notes, referral_sources(name)",
-        )
-        .eq("facility_id", selectedFacilityId)
-        .is("deleted_at", null)
-        .order("updated_at", { ascending: false });
+      const [{ data: list, error: listErr }, { data: outreachList, error: outreachErr }] = await Promise.all([
+        supabase
+          .from("referral_leads")
+          .select(
+            "id, first_name, last_name, status, updated_at, email, phone, external_reference, notes, referral_sources(name)",
+          )
+          .eq("facility_id", selectedFacilityId)
+          .is("deleted_at", null)
+          .order("updated_at", { ascending: false }),
+        supabase
+          .from("referral_outreach_activities" as never)
+          .select("id, activity_type, status, scheduled_for, performed_for_week, external_partner_name, notes")
+          .eq("facility_id", selectedFacilityId)
+          .is("deleted_at", null)
+          .order("scheduled_for", { ascending: false })
+          .limit(8),
+      ]);
 
       if (listErr) throw listErr;
+      if (outreachErr) throw outreachErr;
       const leadRows = (list ?? []) as LeadRow[];
       setRows(leadRows);
+      setOutreachRows((outreachList ?? []) as OutreachRow[]);
 
       const leadIds = leadRows.map((row) => row.id);
       let inAdmissionsCount = 0;
@@ -361,6 +390,7 @@ export default function AdminReferralsHubPage() {
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : "Could not load referrals.");
       setRows([]);
+      setOutreachRows([]);
       setHl7Counts({ pending: 0, failed: 0 });
       setActiveAdmissionCaseByLeadId({});
       setCounts({ new: 0, pipeline: 0, converted: 0, attention: 0, inAdmissions: 0, handoffBlocked: 0, handoffReady: 0, handoffOnboarding: 0 });
@@ -518,6 +548,114 @@ export default function AdminReferralsHubPage() {
           </div>
         </V2Card>
       </div>
+
+      {!noFacility ? (
+        <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2rem] bg-white/50 dark:bg-black/20 shadow-sm backdrop-blur-3xl overflow-hidden p-6">
+          <div className="mb-5 flex items-start justify-between gap-4">
+            <div>
+              <p className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Outreach & provider activity</p>
+              <p className="mt-1 text-sm text-slate-600 dark:text-zinc-400 tracking-wide">
+                Log the provider, facility, and event activity that should feed the weekly standup instead of typing those rows manually.
+              </p>
+            </div>
+            <Badge className="border-none bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">Standup source</Badge>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
+            <div className="grid gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <select
+                  className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-sm"
+                  value={activityType}
+                  onChange={(e) => setActivityType(e.target.value)}
+                >
+                  <option value="provider_visit">Provider visit</option>
+                  <option value="home_health_provider">Home health provider</option>
+                  <option value="facility_outreach">Facility outreach</option>
+                  <option value="community_event">Community event</option>
+                  <option value="digital_outreach">Digital outreach</option>
+                </select>
+                <select
+                  className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-sm"
+                  value={activityStatus}
+                  onChange={(e) => setActivityStatus(e.target.value)}
+                >
+                  <option value="planned">Planned</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              <input
+                type="datetime-local"
+                className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-sm"
+                value={scheduledFor}
+                onChange={(e) => setScheduledFor(e.target.value)}
+              />
+              <input
+                className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-sm"
+                placeholder="Partner / facility / event name"
+                value={partnerName}
+                onChange={(e) => setPartnerName(e.target.value)}
+              />
+              <textarea
+                className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-sm"
+                rows={3}
+                placeholder="Notes"
+                value={activityNotes}
+                onChange={(e) => setActivityNotes(e.target.value)}
+              />
+              <Button
+                type="button"
+                disabled={savingActivity}
+                onClick={() => void createOutreachActivity({
+                  supabase,
+                  selectedFacilityId,
+                  activityType,
+                  activityStatus,
+                  scheduledFor,
+                  partnerName,
+                  activityNotes,
+                  setLoadError,
+                  setSavingActivity,
+                  onSaved: async () => {
+                    setPartnerName("");
+                    setActivityNotes("");
+                    await load();
+                  },
+                })}
+              >
+                {savingActivity ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Save activity
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              {outreachRows.length === 0 ? (
+                <p className="text-sm text-slate-500 dark:text-zinc-400">No outreach/provider activity logged yet for this facility.</p>
+              ) : (
+                outreachRows.map((row) => (
+                  <div key={row.id} className="rounded-xl border border-slate-200/70 dark:border-white/10 px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="font-medium text-slate-900 dark:text-white">
+                          {row.external_partner_name ?? row.activity_type.replace(/_/g, " ")}
+                        </div>
+                        <div className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-400">
+                          {row.activity_type.replace(/_/g, " ")} · {row.status}
+                        </div>
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-zinc-400">
+                        {row.scheduled_for ? new Date(row.scheduled_for).toLocaleString() : row.performed_for_week ?? "—"}
+                      </div>
+                    </div>
+                    {row.notes ? <p className="mt-2 text-sm text-slate-600 dark:text-zinc-300">{row.notes}</p> : null}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {!noFacility ? (
         <div className="glass-panel border-amber-200/60 dark:border-amber-500/20 rounded-[2rem] bg-amber-50/50 dark:bg-amber-950/20 shadow-sm backdrop-blur-3xl overflow-hidden p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -763,4 +901,73 @@ export default function AdminReferralsHubPage() {
 
     </div>
   );
+}
+
+async function createOutreachActivity(input: {
+  supabase: ReturnType<typeof createClient>;
+  selectedFacilityId: string | null;
+  activityType: string;
+  activityStatus: string;
+  scheduledFor: string;
+  partnerName: string;
+  activityNotes: string;
+  setLoadError: (value: string | null) => void;
+  setSavingActivity: (value: boolean) => void;
+  onSaved: () => Promise<void>;
+}) {
+  const {
+    supabase,
+    selectedFacilityId,
+    activityType,
+    activityStatus,
+    scheduledFor,
+    partnerName,
+    activityNotes,
+    setLoadError,
+    setSavingActivity,
+    onSaved,
+  } = input;
+  if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) return;
+  setSavingActivity(true);
+  setLoadError(null);
+  try {
+    const facilityRes = await supabase
+      .from("facilities" as never)
+      .select("organization_id")
+      .eq("id", selectedFacilityId)
+      .is("deleted_at", null)
+      .maybeSingle() as unknown as { data: { organization_id: string } | null; error: { message: string } | null };
+    if (facilityRes.error || !facilityRes.data?.organization_id) throw new Error("Could not resolve organization.");
+    const authRes = await supabase.auth.getUser();
+    const userId = authRes.data.user?.id;
+    if (!userId) throw new Error("Sign in required.");
+
+    const weekStart = new Date(scheduledFor || new Date().toISOString());
+    const day = weekStart.getDay();
+    const offset = day === 0 ? -6 : 1 - day;
+    weekStart.setDate(weekStart.getDate() + offset);
+    weekStart.setHours(0, 0, 0, 0);
+
+    const insertRes = await supabase
+      .from("referral_outreach_activities" as never)
+      .insert({
+        organization_id: facilityRes.data.organization_id,
+        facility_id: selectedFacilityId,
+        owner_user_id: userId,
+        activity_type: activityType,
+        status: activityStatus,
+        scheduled_for: scheduledFor ? new Date(scheduledFor).toISOString() : null,
+        performed_for_week: weekStart.toISOString().slice(0, 10),
+        external_partner_name: partnerName.trim() || null,
+        notes: activityNotes.trim() || null,
+        created_by: userId,
+        updated_by: userId,
+      } as never) as unknown as { error: { message: string } | null };
+    if (insertRes.error) throw insertRes.error;
+    await onSaved();
+  } catch (err) {
+    setLoadError(err instanceof Error ? err.message : "Could not save outreach activity.");
+  } finally {
+    setSavingActivity(false);
+  }
 }
