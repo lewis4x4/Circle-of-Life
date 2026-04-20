@@ -84,13 +84,16 @@ export async function GET(
   const html = buildStandupBoardPrintHtml(detail, previous);
   const url = new URL(request.url);
   const reportId = url.searchParams.get("reportId")?.trim() || null;
+  const playwrightWsEndpoint = process.env.PLAYWRIGHT_WS_ENDPOINT?.trim();
 
   let browser;
   try {
-    browser = await chromium.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    browser = playwrightWsEndpoint
+      ? await chromium.connect(playwrightWsEndpoint)
+      : await chromium.launch({
+          headless: true,
+          args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        });
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle" });
     await page.emulateMedia({ media: "print" });
