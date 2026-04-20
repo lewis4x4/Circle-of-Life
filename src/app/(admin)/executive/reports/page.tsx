@@ -40,14 +40,39 @@ const TEMPLATE_LABELS: Record<ExecTemplate, string> = {
   custom: "Custom",
 };
 
-function parseReportParameters(raw: Json): { facilityId: string | null; kind: string | null; weekOf: string | null } {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { facilityId: null, kind: null, weekOf: null };
+function parseReportParameters(raw: Json): {
+  facilityId: string | null;
+  kind: string | null;
+  weekOf: string | null;
+  status: string | null;
+  confidenceBand: string | null;
+  version: number | null;
+  publishedAt: string | null;
+  completenessPct: number | null;
+} {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return {
+      facilityId: null,
+      kind: null,
+      weekOf: null,
+      status: null,
+      confidenceBand: null,
+      version: null,
+      publishedAt: null,
+      completenessPct: null,
+    };
+  }
   const o = raw as Record<string, unknown>;
   const fid = o.facilityId;
   const kind = typeof o.kind === "string" && o.kind.length > 0 ? o.kind : null;
   const weekOf = typeof o.weekOf === "string" && o.weekOf.length > 0 ? o.weekOf : null;
-  if (typeof fid === "string" && fid.length > 0) return { facilityId: fid, kind, weekOf };
-  return { facilityId: null, kind, weekOf };
+  const status = typeof o.status === "string" && o.status.length > 0 ? o.status : null;
+  const confidenceBand = typeof o.confidenceBand === "string" && o.confidenceBand.length > 0 ? o.confidenceBand : null;
+  const version = typeof o.version === "number" ? o.version : null;
+  const publishedAt = typeof o.publishedAt === "string" && o.publishedAt.length > 0 ? o.publishedAt : null;
+  const completenessPct = typeof o.completenessPct === "number" ? o.completenessPct : null;
+  if (typeof fid === "string" && fid.length > 0) return { facilityId: fid, kind, weekOf, status, confidenceBand, version, publishedAt, completenessPct };
+  return { facilityId: null, kind, weekOf, status, confidenceBand, version, publishedAt, completenessPct };
 }
 
 function escapeCsvCell(value: string): string {
@@ -576,13 +601,23 @@ export default function ExecutiveSavedReportsPage() {
                       <TableRow key={r.id}>
                         <TableCell className="font-medium">{r.name}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{standupPacket ? "Standup board packet" : TEMPLATE_LABELS[r.template]}</Badge>
+                          <div className="flex flex-wrap gap-2">
+                            <Badge variant="outline">{standupPacket ? "Standup board packet" : TEMPLATE_LABELS[r.template]}</Badge>
+                            {standupPacket && parseReportParameters(r.parameters).version != null ? (
+                              <Badge variant="outline">v{parseReportParameters(r.parameters).version}</Badge>
+                            ) : null}
+                            {standupPacket && parseReportParameters(r.parameters).confidenceBand ? (
+                              <Badge variant="outline">{parseReportParameters(r.parameters).confidenceBand} confidence</Badge>
+                            ) : null}
+                          </div>
                         </TableCell>
                         <TableCell className="text-slate-600 dark:text-slate-400">{scopeLabel}</TableCell>
                         <TableCell className="text-slate-600 dark:text-slate-400">
-                          {r.last_generated_at
-                            ? new Date(r.last_generated_at).toLocaleString()
-                            : "—"}
+                          {standupPacket && parseReportParameters(r.parameters).publishedAt
+                            ? `Published ${new Date(parseReportParameters(r.parameters).publishedAt!).toLocaleString()}`
+                            : r.last_generated_at
+                              ? new Date(r.last_generated_at).toLocaleString()
+                              : "—"}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex flex-wrap justify-end gap-2">

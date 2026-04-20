@@ -990,6 +990,11 @@ export async function saveStandupBoardReport(
     organizationId: string;
     userId: string;
     weekOf: string;
+    status?: string;
+    confidenceBand?: "high" | "medium" | "low";
+    version?: number;
+    publishedAt?: string | null;
+    completenessPct?: number;
   },
 ): Promise<string> {
   const existing = await supabase
@@ -1017,6 +1022,11 @@ export async function saveStandupBoardReport(
       parameters: {
         kind: "executive_standup_board_packet",
         weekOf: input.weekOf,
+        status: input.status ?? null,
+        confidenceBand: input.confidenceBand ?? null,
+        version: input.version ?? null,
+        publishedAt: input.publishedAt ?? null,
+        completenessPct: input.completenessPct ?? null,
       },
     })
     .select("id")

@@ -85,6 +85,11 @@ export default function ExecutiveStandupBoardPage() {
         organizationId,
         userId,
         weekOf: detail.snapshot.weekOf,
+        status: detail.snapshot.status,
+        confidenceBand: detail.snapshot.confidenceBand,
+        version: detail.snapshot.publishedVersion,
+        publishedAt: detail.snapshot.publishedAt,
+        completenessPct: detail.snapshot.completenessPct,
       });
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Could not save board packet report.");
