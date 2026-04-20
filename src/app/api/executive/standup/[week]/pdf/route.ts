@@ -183,7 +183,14 @@ export async function GET(
     });
   } catch (error) {
     console.error("[standup-pdf] render", error);
-    return NextResponse.json({ error: "Could not generate standup PDF." }, { status: 500 });
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json(
+      {
+        error: "Could not generate standup PDF.",
+        detail: message,
+      },
+      { status: 500 },
+    );
   } finally {
     await browser?.close();
   }
