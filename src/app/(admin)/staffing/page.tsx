@@ -88,7 +88,15 @@ type QueryError = { message: string };
 type QueryResult<T> = { data: T[] | null; error: QueryError | null };
 type StaffOptionRow = { id: string; first_name: string; last_name: string };
 type StaffOption = { id: string; label: string };
-type RequisitionRow = { id: string; role_title: string; status: string; target_hire_date: string | null; department: string | null };
+type RequisitionStatus = "draft" | "open" | "interviewing" | "offered" | "filled" | "cancelled";
+type RequisitionRow = { id: string; role_title: string; status: RequisitionStatus; target_hire_date: string | null; department: string | null };
+type AttendanceEventRow = {
+  id: string;
+  event_type: string;
+  occurred_at: string;
+  reason: string | null;
+  staff: { first_name: string; last_name: string } | null;
+};
 
 function buildStaffingSnapshotsCsv(rows: StaffingSnapshotCsvRow[]): string {
   const header = [
@@ -137,6 +145,7 @@ export default function AdminStaffingConsolePage() {
   const [csvExportError, setCsvExportError] = useState<string | null>(null);
   const [staffOptions, setStaffOptions] = useState<StaffOption[]>([]);
   const [requisitionRows, setRequisitionRows] = useState<RequisitionRow[]>([]);
+  const [attendanceRows, setAttendanceRows] = useState<AttendanceEventRow[]>([]);
   const [attendanceStaffId, setAttendanceStaffId] = useState("");
   const [attendanceEventType, setAttendanceEventType] = useState("callout");
   const [attendanceOccurredAt, setAttendanceOccurredAt] = useState(() => new Date().toISOString().slice(0, 16));
@@ -147,6 +156,8 @@ export default function AdminStaffingConsolePage() {
   const [requisitionDepartment, setRequisitionDepartment] = useState("");
   const [requisitionTargetHireDate, setRequisitionTargetHireDate] = useState("");
   const [requisitionSaving, setRequisitionSaving] = useState(false);
+  const [requisitionStatusDrafts, setRequisitionStatusDrafts] = useState<Record<string, RequisitionStatus>>({});
+  const [requisitionUpdatingId, setRequisitionUpdatingId] = useState<string | null>(null);
   const [complianceFilter, setComplianceFilter] = useState<ComplianceFilter>("all");
   const [windowFilter, setWindowFilter] = useState<WindowFilter>("all");
 
@@ -154,24 +165,30 @@ export default function AdminStaffingConsolePage() {
     setIsLoading(true);
     setError(null);
     try {
-      const [liveSnapshots, liveCertWarnings, liveShiftGaps, liveStaffOptions, liveRequisitions] = await Promise.all([
+      const [liveSnapshots, liveCertWarnings, liveShiftGaps, liveStaffOptions, liveRequisitions, liveAttendance] = await Promise.all([
         fetchSnapshotsFromSupabase(selectedFacilityId),
         fetchExpiredCertificationWarnings(selectedFacilityId),
         fetchShiftAssignmentGaps(selectedFacilityId),
         fetchStaffOptions(selectedFacilityId),
         fetchStaffRequisitions(selectedFacilityId),
+        fetchAttendanceEvents(selectedFacilityId),
       ]);
       setSnapshots(liveSnapshots);
       setCertWarnings(liveCertWarnings);
       setShiftGaps(liveShiftGaps);
       setStaffOptions(liveStaffOptions);
       setRequisitionRows(liveRequisitions);
+      setAttendanceRows(liveAttendance);
+      setRequisitionStatusDrafts(
+        Object.fromEntries(liveRequisitions.map((row) => [row.id, row.status])),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load staffing metrics");
       setCertWarnings([]);
       setShiftGaps([]);
       setStaffOptions([]);
       setRequisitionRows([]);
+      setAttendanceRows([]);
     } finally {
       setIsLoading(false);
     }
@@ -498,6 +515,30 @@ export default function AdminStaffingConsolePage() {
               Save attendance event
             </Button>
           </div>
+
+          <div className="mt-5 space-y-2">
+            <div className="text-xs font-mono uppercase tracking-widest text-slate-500 dark:text-zinc-400">Recent attendance events</div>
+            {attendanceRows.length === 0 ? (
+              <p className="text-xs font-mono text-slate-500 dark:text-zinc-400">No attendance events recorded yet for this scope.</p>
+            ) : (
+              attendanceRows.map((row) => (
+                <div key={row.id} className="rounded-xl border border-white/10 px-3 py-2 text-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="font-medium text-slate-100">
+                        {row.staff ? `${row.staff.first_name} ${row.staff.last_name}` : "Staff member"}
+                      </div>
+                      <div className="text-xs uppercase tracking-widest text-slate-400">
+                        {row.event_type.replace(/_/g, " ")}
+                      </div>
+                    </div>
+                    <div className="text-xs text-slate-400">{new Date(row.occurred_at).toLocaleString()}</div>
+                  </div>
+                  {row.reason ? <div className="mt-2 text-xs text-slate-400">{row.reason}</div> : null}
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
         <div className="glass-panel p-5 rounded-2xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40">
@@ -563,12 +604,44 @@ export default function AdminStaffingConsolePage() {
               <p className="text-xs font-mono text-slate-500 dark:text-zinc-400">No open requisitions in this scope.</p>
             ) : (
               requisitionRows.map((row) => (
-                <div key={row.id} className="flex items-center justify-between rounded-xl border border-white/10 px-3 py-2 text-sm">
-                  <div>
-                    <div className="font-medium text-slate-100">{row.role_title}</div>
-                    <div className="text-xs text-slate-400">{row.department ?? "No department"} · {row.status}</div>
+                <div key={row.id} className="rounded-xl border border-white/10 px-3 py-3 text-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="font-medium text-slate-100">{row.role_title}</div>
+                      <div className="text-xs text-slate-400">{row.department ?? "No department"} · current status {row.status}</div>
+                    </div>
+                    <div className="text-xs text-slate-400">{row.target_hire_date ?? "No target date"}</div>
                   </div>
-                  <div className="text-xs text-slate-400">{row.target_hire_date ?? "No target date"}</div>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <select
+                      className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs uppercase tracking-widest text-slate-100"
+                      value={requisitionStatusDrafts[row.id] ?? row.status}
+                      onChange={(e) => setRequisitionStatusDrafts((current) => ({ ...current, [row.id]: e.target.value as RequisitionStatus }))}
+                    >
+                      <option value="open">Open</option>
+                      <option value="interviewing">Interviewing</option>
+                      <option value="offered">Offered</option>
+                      <option value="filled">Filled</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={requisitionUpdatingId === row.id || (requisitionStatusDrafts[row.id] ?? row.status) === row.status}
+                      onClick={() => void updateStaffRequisitionStatus({
+                        supabase,
+                        requisitionId: row.id,
+                        status: requisitionStatusDrafts[row.id] ?? row.status,
+                        setError,
+                        setRequisitionUpdatingId,
+                        onSaved: load,
+                      })}
+                    >
+                      {requisitionUpdatingId === row.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      Save status
+                    </Button>
+                  </div>
                 </div>
               ))
             )}
@@ -888,8 +961,21 @@ async function fetchStaffRequisitions(selectedFacilityId: string | null): Promis
     .select("id, role_title, status, target_hire_date, department")
     .eq("facility_id", selectedFacilityId)
     .is("deleted_at", null)
-    .in("status", ["open", "interviewing", "offered"])
     .order("opened_at", { ascending: false })) as unknown as QueryResult<RequisitionRow>;
+  if (res.error) throw res.error;
+  return res.data ?? [];
+}
+
+async function fetchAttendanceEvents(selectedFacilityId: string | null): Promise<AttendanceEventRow[]> {
+  if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) return [];
+  const supabase = createClient();
+  const res = (await supabase
+    .from("staff_attendance_events" as never)
+    .select("id, event_type, occurred_at, reason, staff:staff_id(first_name, last_name)")
+    .eq("facility_id", selectedFacilityId)
+    .is("deleted_at", null)
+    .order("occurred_at", { ascending: false })
+    .limit(8)) as unknown as QueryResult<AttendanceEventRow>;
   if (res.error) throw res.error;
   return res.data ?? [];
 }
@@ -1008,5 +1094,37 @@ async function createStaffRequisition(input: {
     setError(err instanceof Error ? err.message : "Could not create requisition.");
   } finally {
     setRequisitionSaving(false);
+  }
+}
+
+async function updateStaffRequisitionStatus(input: {
+  supabase: ReturnType<typeof createClient>;
+  requisitionId: string;
+  status: RequisitionStatus;
+  setError: (value: string | null) => void;
+  setRequisitionUpdatingId: (value: string | null) => void;
+  onSaved: () => Promise<void>;
+}) {
+  const { supabase, requisitionId, status, setError, setRequisitionUpdatingId, onSaved } = input;
+  setRequisitionUpdatingId(requisitionId);
+  setError(null);
+  try {
+    const authRes = await supabase.auth.getUser();
+    const userId = authRes.data.user?.id;
+    if (!userId) throw new Error("Sign in required.");
+
+    const res = (await supabase
+      .from("staff_requisitions" as never)
+      .update({
+        status,
+        updated_by: userId,
+      } as never)
+      .eq("id", requisitionId)) as unknown as { error: QueryError | null };
+    if (res.error) throw res.error;
+    await onSaved();
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "Could not update requisition.");
+  } finally {
+    setRequisitionUpdatingId(null);
   }
 }

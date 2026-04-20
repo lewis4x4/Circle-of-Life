@@ -54,6 +54,19 @@ function formatTs(iso: string | null) {
   }
 }
 
+function syncTourStatus(
+  currentStatus: EditableLeadStatus,
+  scheduledIso: string | null,
+  completedIso: string | null,
+): EditableLeadStatus {
+  if (["application_pending", "waitlisted", "converted", "lost"].includes(currentStatus)) {
+    return currentStatus;
+  }
+  if (completedIso) return "tour_completed";
+  if (scheduledIso) return currentStatus === "new" ? "tour_scheduled" : currentStatus === "contacted" ? "tour_scheduled" : currentStatus;
+  return currentStatus;
+}
+
 export default function AdminReferralLeadDetailPage() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
@@ -346,15 +359,21 @@ export default function AdminReferralLeadDetailPage() {
                         variant="outline"
                         disabled={actionLoading === "status"}
                         onClick={() =>
-                          void updateLead(
-                            {
-                              tour_scheduled_for: tourScheduledDraft ? new Date(tourScheduledDraft).toISOString() : null,
-                              tour_completed_at: tourCompletedDraft ? new Date(tourCompletedDraft).toISOString() : null,
-                              tour_owner_user_id: user?.id ?? null,
-                            },
-                            "status",
-                            "Tour workflow saved.",
-                          )
+                          void (() => {
+                            const scheduledIso = tourScheduledDraft ? new Date(tourScheduledDraft).toISOString() : null;
+                            const completedIso = tourCompletedDraft ? new Date(tourCompletedDraft).toISOString() : null;
+                            const nextStatus = syncTourStatus(statusDraft, scheduledIso, completedIso);
+                            return updateLead(
+                              {
+                                status: nextStatus,
+                                tour_scheduled_for: scheduledIso,
+                                tour_completed_at: completedIso,
+                                tour_owner_user_id: user?.id ?? null,
+                              },
+                              "status",
+                              nextStatus === statusDraft ? "Tour workflow saved." : `Tour workflow saved and status moved to ${formatStatus(nextStatus)}.`,
+                            );
+                          })()
                         }
                       >
                         {actionLoading === "status" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save tour details"}

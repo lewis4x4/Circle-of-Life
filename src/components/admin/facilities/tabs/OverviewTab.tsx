@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Loader2, Calendar, Phone, Mail, AlertTriangle, Clock } from "lucide-react";
 import { useFacility } from "@/hooks/useFacility";
 import { useFacilityBedAvailability } from "@/hooks/useFacilityBedAvailability";
@@ -16,6 +16,28 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
   const { rows: beds, isLoading: bedsLoading, error: bedsError, isSaving: bedsSaving, canEdit, updateBed } = useFacilityBedAvailability(facilityId);
   const { appRole } = useHavenAuth();
   const [blockedReasonDrafts, setBlockedReasonDrafts] = useState<Record<string, string>>({});
+  const [bedFilter, setBedFilter] = useState<"all" | "open" | "blocked" | "unclassified">("all");
+
+  const bedSummary = useMemo(() => {
+    const openBeds = beds.filter((bed) => !bed.current_resident_id && !bed.is_temporarily_blocked && bed.status === "available");
+    return {
+      private: openBeds.filter((bed) => bed.standup_availability_class === "private").length,
+      spFemale: openBeds.filter((bed) => bed.standup_availability_class === "sp_female").length,
+      spMale: openBeds.filter((bed) => bed.standup_availability_class === "sp_male").length,
+      spFlexible: openBeds.filter((bed) => bed.standup_availability_class === "sp_flexible").length,
+      blocked: beds.filter((bed) => bed.is_temporarily_blocked).length,
+      unclassified: beds.filter((bed) => !bed.current_resident_id && !bed.standup_availability_class).length,
+    };
+  }, [beds]);
+
+  const filteredBeds = useMemo(() => {
+    return beds.filter((bed) => {
+      if (bedFilter === "open") return !bed.current_resident_id && !bed.is_temporarily_blocked && bed.status === "available";
+      if (bedFilter === "blocked") return bed.is_temporarily_blocked;
+      if (bedFilter === "unclassified") return !bed.current_resident_id && !bed.standup_availability_class;
+      return true;
+    });
+  }, [bedFilter, beds]);
 
   if (isLoading) {
     return (
@@ -182,6 +204,45 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
         ) : beds.length === 0 ? (
           <p className="text-sm text-slate-400">No beds found for this facility.</p>
         ) : (
+          <div className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-6">
+              {[
+                ["Private open", bedSummary.private],
+                ["SP female", bedSummary.spFemale],
+                ["SP male", bedSummary.spMale],
+                ["SP flexible", bedSummary.spFlexible],
+                ["Blocked", bedSummary.blocked],
+                ["Needs class", bedSummary.unclassified],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
+                  <div className="text-[10px] uppercase tracking-widest text-slate-500">{label}</div>
+                  <div className="mt-2 text-2xl font-semibold text-slate-100">{value}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {[
+                ["all", "All beds"],
+                ["open", "Open only"],
+                ["blocked", "Blocked"],
+                ["unclassified", "Needs class"],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setBedFilter(value as "all" | "open" | "blocked" | "unclassified")}
+                  className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest transition ${
+                    bedFilter === value
+                      ? "border-teal-400 bg-teal-500/15 text-teal-200"
+                      : "border-white/10 bg-black/20 text-slate-400 hover:bg-white/5"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
@@ -196,7 +257,7 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
                 </tr>
               </thead>
               <tbody>
-                {beds.map((bed) => (
+                {filteredBeds.map((bed) => (
                   <tr key={bed.id} className="border-b border-white/5 align-top">
                     <td className="px-3 py-3 text-slate-200">{bed.room_number}</td>
                     <td className="px-3 py-3 text-slate-200">{bed.bed_label}</td>
@@ -272,6 +333,7 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
                 ))}
               </tbody>
             </table>
+          </div>
           </div>
         )}
       </div>

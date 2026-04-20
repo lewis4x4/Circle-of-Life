@@ -33,6 +33,8 @@ type LeadRow = Pick<
   | "external_reference"
   | "notes"
 > & {
+  tour_scheduled_for: string | null;
+  tour_completed_at: string | null;
   referral_sources: { name: string } | null;
 };
 
@@ -180,6 +182,7 @@ export default function AdminReferralsHubPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | ReferralLeadStatus>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [outreachRows, setOutreachRows] = useState<OutreachRow[]>([]);
+  const [outreachStatusDrafts, setOutreachStatusDrafts] = useState<Record<string, string>>({});
   const [activityType, setActivityType] = useState("provider_visit");
   const [activityStatus, setActivityStatus] = useState("planned");
   const [scheduledFor, setScheduledFor] = useState(() => new Date().toISOString().slice(0, 16));
@@ -226,6 +229,13 @@ export default function AdminReferralsHubPage() {
       .slice(0, 60);
   }, [activeAdmissionCaseByLeadId, displayRows]);
 
+  const upcomingTours = useMemo(() => {
+    return rows
+      .filter((row) => row.tour_scheduled_for && row.status !== "lost" && row.status !== "merged")
+      .sort((a, b) => new Date(a.tour_scheduled_for!).getTime() - new Date(b.tour_scheduled_for!).getTime())
+      .slice(0, 6);
+  }, [rows]);
+
   const load = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
@@ -240,14 +250,14 @@ export default function AdminReferralsHubPage() {
 
     try {
       const [{ data: list, error: listErr }, { data: outreachList, error: outreachErr }] = await Promise.all([
-        supabase
-          .from("referral_leads")
+        (supabase
+          .from("referral_leads" as never)
           .select(
-            "id, first_name, last_name, status, updated_at, email, phone, external_reference, notes, referral_sources(name)",
+            "id, first_name, last_name, status, updated_at, email, phone, external_reference, notes, tour_scheduled_for, tour_completed_at, referral_sources(name)",
           )
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
-          .order("updated_at", { ascending: false }),
+          .order("updated_at", { ascending: false })) as unknown as Promise<{ data: LeadRow[] | null; error: { message: string } | null }>,
         supabase
           .from("referral_outreach_activities" as never)
           .select("id, activity_type, status, scheduled_for, performed_for_week, external_partner_name, notes")
@@ -262,6 +272,7 @@ export default function AdminReferralsHubPage() {
       const leadRows = (list ?? []) as LeadRow[];
       setRows(leadRows);
       setOutreachRows((outreachList ?? []) as OutreachRow[]);
+      setOutreachStatusDrafts(Object.fromEntries(((outreachList ?? []) as OutreachRow[]).map((row) => [row.id, row.status])));
 
       const leadIds = leadRows.map((row) => row.id);
       let inAdmissionsCount = 0;
@@ -553,6 +564,44 @@ export default function AdminReferralsHubPage() {
         <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2rem] bg-white/50 dark:bg-black/20 shadow-sm backdrop-blur-3xl overflow-hidden p-6">
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
+              <p className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Upcoming tours</p>
+              <p className="mt-1 text-sm text-slate-600 dark:text-zinc-400 tracking-wide">
+                Tour scheduling now lives on the lead record, so this queue becomes the operational source for the standup tour forecast.
+              </p>
+            </div>
+            <Badge className="border-none bg-indigo-500/10 text-indigo-600 dark:text-indigo-300">Standup source</Badge>
+          </div>
+
+          {upcomingTours.length === 0 ? (
+            <p className="text-sm text-slate-500 dark:text-zinc-400">No tours are currently scheduled in this facility pipeline.</p>
+          ) : (
+            <div className="grid gap-3 lg:grid-cols-2">
+              {upcomingTours.map((row) => (
+                <Link
+                  key={row.id}
+                  href={`/admin/referrals/${row.id}`}
+                  className="rounded-xl border border-slate-200/70 dark:border-white/10 px-4 py-3 transition hover:border-indigo-300 dark:hover:border-indigo-400/40"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="font-medium text-slate-900 dark:text-white">{row.first_name} {row.last_name}</div>
+                      <div className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-400">{formatStatus(row.status)}</div>
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-zinc-400">
+                      {row.tour_scheduled_for ? new Date(row.tour_scheduled_for).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "—"}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      {!noFacility ? (
+        <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2rem] bg-white/50 dark:bg-black/20 shadow-sm backdrop-blur-3xl overflow-hidden p-6">
+          <div className="mb-5 flex items-start justify-between gap-4">
+            <div>
               <p className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Outreach & provider activity</p>
               <p className="mt-1 text-sm text-slate-600 dark:text-zinc-400 tracking-wide">
                 Log the provider, facility, and event activity that should feed the weekly standup instead of typing those rows manually.
@@ -649,6 +698,35 @@ export default function AdminReferralsHubPage() {
                       </div>
                     </div>
                     {row.notes ? <p className="mt-2 text-sm text-slate-600 dark:text-zinc-300">{row.notes}</p> : null}
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <select
+                        className="rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-xs uppercase tracking-widest"
+                        value={outreachStatusDrafts[row.id] ?? row.status}
+                        onChange={(e) => setOutreachStatusDrafts((current) => ({ ...current, [row.id]: e.target.value }))}
+                      >
+                        <option value="planned">Planned</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={savingActivity || (outreachStatusDrafts[row.id] ?? row.status) === row.status}
+                        onClick={() =>
+                          void updateOutreachActivityStatus({
+                            supabase,
+                            activityId: row.id,
+                            status: outreachStatusDrafts[row.id] ?? row.status,
+                            setLoadError,
+                            setSavingActivity,
+                            onSaved: load,
+                          })
+                        }
+                      >
+                        Save status
+                      </Button>
+                    </div>
                   </div>
                 ))
               )}
@@ -872,13 +950,18 @@ export default function AdminReferralsHubPage() {
 
                           <div className="flex flex-row justify-between lg:justify-end items-center">
                             <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Updated</span>
-                            <div className="flex flex-col items-end">
-                              <span className="text-[11px] font-mono tracking-wide text-slate-500 dark:text-zinc-500">
-                                {new Date(r.updated_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                          <div className="flex flex-col items-end">
+                            <span className="text-[11px] font-mono tracking-wide text-slate-500 dark:text-zinc-500">
+                              {new Date(r.updated_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                            </span>
+                            {r.tour_scheduled_for ? (
+                              <span className="text-[11px] text-indigo-700 dark:text-indigo-300">
+                                Tour {new Date(r.tour_scheduled_for).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
                               </span>
-                              {linkedAdmissionCaseId ? (
-                                <span className="text-[11px] text-amber-700 dark:text-amber-300">
-                                  {handoffPhase === "blocked"
+                            ) : null}
+                            {linkedAdmissionCaseId ? (
+                              <span className="text-[11px] text-amber-700 dark:text-amber-300">
+                                {handoffPhase === "blocked"
                                     ? "Admissions handoff blocked"
                                     : handoffPhase === "ready"
                                       ? "Admissions handoff ready"
@@ -967,6 +1050,38 @@ async function createOutreachActivity(input: {
     await onSaved();
   } catch (err) {
     setLoadError(err instanceof Error ? err.message : "Could not save outreach activity.");
+  } finally {
+    setSavingActivity(false);
+  }
+}
+
+async function updateOutreachActivityStatus(input: {
+  supabase: ReturnType<typeof createClient>;
+  activityId: string;
+  status: string;
+  setLoadError: (value: string | null) => void;
+  setSavingActivity: (value: boolean) => void;
+  onSaved: () => Promise<void>;
+}) {
+  const { supabase, activityId, status, setLoadError, setSavingActivity, onSaved } = input;
+  setSavingActivity(true);
+  setLoadError(null);
+  try {
+    const authRes = await supabase.auth.getUser();
+    const userId = authRes.data.user?.id;
+    if (!userId) throw new Error("Sign in required.");
+
+    const res = await supabase
+      .from("referral_outreach_activities" as never)
+      .update({
+        status,
+        updated_by: userId,
+      } as never)
+      .eq("id", activityId) as unknown as { error: { message: string } | null };
+    if (res.error) throw res.error;
+    await onSaved();
+  } catch (err) {
+    setLoadError(err instanceof Error ? err.message : "Could not update outreach activity.");
   } finally {
     setSavingActivity(false);
   }
