@@ -243,7 +243,7 @@ export default function ExecutiveStandupBoardPage() {
             </section>
 
             {narrative ? (
-              <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 <Card className="border-slate-200 shadow-none">
                   <CardHeader>
                     <CardTitle>Changes since last published week</CardTitle>
@@ -264,6 +264,60 @@ export default function ExecutiveStandupBoardPage() {
                     ))}
                   </CardContent>
                 </Card>
+                <Card className="border-slate-200 shadow-none">
+                  <CardHeader>
+                    <CardTitle>Intervention queue</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm text-slate-700">
+                    {(narrative.actions.length > 0 ? narrative.actions : ["No intervention recommendations."]).map((item) => (
+                      <p key={item}>{item}</p>
+                    ))}
+                  </CardContent>
+                </Card>
+              </section>
+            ) : null}
+
+            {narrative && narrative.facilityActions.length > 0 ? (
+              <section className="space-y-4">
+                <h3 className="text-2xl font-semibold tracking-tight">Why this is red</h3>
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  {narrative.facilityActions.slice(0, 6).map((action) => (
+                    <Card key={action.facilityId} className="border-slate-200 shadow-none">
+                      <CardHeader>
+                        <CardTitle className="flex items-center justify-between gap-3">
+                          <span>{action.facilityName}</span>
+                          <span className="text-sm font-medium text-slate-500">Pressure {action.pressureScore}</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4 text-sm text-slate-700">
+                        <div>
+                          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Why red</div>
+                          <ul className="mt-2 space-y-1">
+                            {(action.whyRed.length > 0 ? action.whyRed : ["No active red flags beyond the summary concern."]).map((item) => (
+                              <li key={item}>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Variance flags</div>
+                          <ul className="mt-2 space-y-1">
+                            {(action.varianceFlags.length > 0 ? action.varianceFlags : ["No material week-over-week delta against the prior published packet."]).map((item) => (
+                              <li key={item}>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Interventions</div>
+                          <ul className="mt-2 space-y-1">
+                            {action.interventions.map((item) => (
+                              <li key={item}>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </section>
             ) : null}
 

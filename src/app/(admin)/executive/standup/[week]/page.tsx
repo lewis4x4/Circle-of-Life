@@ -338,7 +338,7 @@ export default function ExecutiveStandupWeekDetailPage() {
                   <CardTitle className="text-lg">Executive narrative</CardTitle>
                   <CardDescription>{narrative.headline}</CardDescription>
                 </CardHeader>
-                <CardContent className="grid gap-6 lg:grid-cols-3">
+                <CardContent className="grid gap-6 lg:grid-cols-4">
                   <div>
                     <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Current week</div>
                     <ul className="space-y-2 text-sm text-slate-700 dark:text-zinc-300">
@@ -363,6 +363,62 @@ export default function ExecutiveStandupWeekDetailPage() {
                       ))}
                     </ul>
                   </div>
+                  <div>
+                    <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Actions</div>
+                    <ul className="space-y-2 text-sm text-slate-700 dark:text-zinc-300">
+                      {(narrative.actions.length > 0 ? narrative.actions : ["No intervention recommendations."]).map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : null}
+
+            {narrative && narrative.facilityActions.length > 0 ? (
+              <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+                <CardHeader>
+                  <CardTitle className="text-lg">Why Is This Red?</CardTitle>
+                  <CardDescription>Per-facility pressure reasons, variance flags, and intervention recommendations.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4 xl:grid-cols-3">
+                  {narrative.facilityActions.slice(0, 6).map((action) => (
+                    <div key={action.facilityId} className="rounded-xl border border-slate-200/80 p-4 dark:border-white/10">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="font-semibold text-slate-900 dark:text-white">{action.facilityName}</div>
+                          <div className="mt-1 text-sm text-slate-500 dark:text-zinc-400">{action.topConcern}</div>
+                        </div>
+                        <Badge variant="outline">Pressure {action.pressureScore}</Badge>
+                      </div>
+                      <div className="mt-4 space-y-3">
+                        <div>
+                          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Why red</div>
+                          <ul className="mt-2 space-y-1 text-sm text-slate-700 dark:text-zinc-300">
+                            {(action.whyRed.length > 0 ? action.whyRed : ["No active red flags beyond the headline concern."]).map((item) => (
+                              <li key={item}>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Variance flags</div>
+                          <ul className="mt-2 space-y-1 text-sm text-slate-700 dark:text-zinc-300">
+                            {(action.varianceFlags.length > 0 ? action.varianceFlags : ["No material deltas versus the prior published week."]).map((item) => (
+                              <li key={item}>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Recommended actions</div>
+                          <ul className="mt-2 space-y-1 text-sm text-slate-700 dark:text-zinc-300">
+                            {action.interventions.map((item) => (
+                              <li key={item}>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </CardContent>
               </Card>
             ) : null}

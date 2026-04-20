@@ -14,13 +14,16 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { useAuth } from "@/hooks/useAuth";
 import { canCreateDraftFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import {
+  buildStandupActionEngine,
   STANDUP_METRIC_DEFINITIONS,
   STANDUP_SECTION_LABELS,
   currentStandupWeekOf,
   fetchExecutiveStandupLive,
+  fetchPreviousPublishedStandupSnapshotDetail,
   fetchStandupSnapshotForWeek,
   generateExecutiveStandupDraft,
   type ExecutiveStandupLive,
+  type StandupFacilityAction,
   type StandupMetricRow,
   type StandupSectionKey,
 } from "@/lib/executive/standup";
@@ -57,6 +60,7 @@ export default function ExecutiveStandupPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [live, setLive] = useState<ExecutiveStandupLive | null>(null);
+  const [actions, setActions] = useState<StandupFacilityAction[]>([]);
   const [draftStatus, setDraftStatus] = useState<{
     id: string;
     status: string;
@@ -78,12 +82,14 @@ export default function ExecutiveStandupPage() {
         throw new Error(ctx.error);
       }
 
-      const [liveData, snapshot] = await Promise.all([
+      const [liveData, snapshot, previousPublished] = await Promise.all([
         fetchExecutiveStandupLive(supabase, ctx.ctx.organizationId, selectedFacilityId),
         fetchStandupSnapshotForWeek(supabase, ctx.ctx.organizationId, weekOf),
+        fetchPreviousPublishedStandupSnapshotDetail(supabase, ctx.ctx.organizationId, weekOf),
       ]);
 
       setLive(liveData);
+      setActions(buildStandupActionEngine(liveData.facilities, previousPublished?.facilities ?? null));
       setDraftStatus(
         snapshot
           ? {
@@ -98,6 +104,7 @@ export default function ExecutiveStandupPage() {
       setCanCreateDraft(canCreateDraftFinance(ctx.ctx.appRole));
     } catch (loadError) {
       setLive(null);
+      setActions([]);
       setDraftStatus(null);
       setCanCreateDraft(false);
       setError(loadError instanceof Error ? loadError.message : "Could not load executive standup.");
@@ -113,6 +120,8 @@ export default function ExecutiveStandupPage() {
   const facilityCards = useMemo(() => {
     return (live?.facilities ?? []).filter((facility) => facility.facilityId != null).slice(0, 5);
   }, [live]);
+
+  const leadActions = useMemo(() => actions.slice(0, 3), [actions]);
 
   const totalRow = useMemo(() => {
     return (live?.facilities ?? []).find((facility) => facility.facilityId == null) ?? null;
@@ -269,10 +278,74 @@ export default function ExecutiveStandupPage() {
                       <div className="flex items-center justify-between"><span>Open beds</span><span className="font-semibold">{formatMetricValue(facility.metrics.total_beds_open)}</span></div>
                       <div className="flex items-center justify-between"><span>Hospital / rehab</span><span className="font-semibold">{formatMetricValue(facility.metrics.hospital_and_rehab_total)}</span></div>
                       <div className="flex items-center justify-between"><span>Overtime</span><span className="font-semibold">{formatMetricValue(facility.metrics.overtime_hours)}</span></div>
+                      <div className="pt-2">
+                        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Why red</div>
+                        <ul className="mt-2 space-y-1 text-xs">
+                          {(actions.find((row) => row.facilityId === facility.facilityId)?.whyRed.length
+                            ? actions.find((row) => row.facilityId === facility.facilityId)?.whyRed
+                            : ["No active red flags beyond the current summary."])?.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
           </div>
+        </section>
+
+        <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+          <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white">Intervention queue</CardTitle>
+              <CardDescription>Highest-leverage actions derived from the current facility pressure board.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {leadActions.length === 0 ? (
+                <div className="text-sm text-slate-500 dark:text-zinc-400">No intervention recommendations yet.</div>
+              ) : (
+                leadActions.map((action) => (
+                  <div key={action.facilityId} className="rounded-xl border border-slate-200/80 px-4 py-3 dark:border-white/10">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="font-semibold text-slate-900 dark:text-white">{action.facilityName}</div>
+                        <div className="mt-1 text-sm text-slate-500 dark:text-zinc-400">{action.topConcern}</div>
+                      </div>
+                      <Badge variant="outline">Pressure {action.pressureScore}</Badge>
+                    </div>
+                    <ul className="mt-3 space-y-1 text-sm text-slate-700 dark:text-zinc-300">
+                      {action.interventions.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white">Variance flags</CardTitle>
+              <CardDescription>Week-over-week shifts versus the last published packet.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {leadActions.length === 0 ? (
+                <div className="text-sm text-slate-500 dark:text-zinc-400">No variance comparison available yet.</div>
+              ) : (
+                leadActions.map((action) => (
+                  <div key={`${action.facilityId}-variance`} className="rounded-xl border border-slate-200/80 px-4 py-3 dark:border-white/10">
+                    <div className="font-semibold text-slate-900 dark:text-white">{action.facilityName}</div>
+                    <ul className="mt-2 space-y-1 text-sm text-slate-700 dark:text-zinc-300">
+                      {(action.varianceFlags.length > 0 ? action.varianceFlags : ["No material week-over-week deltas from the last published packet."]).map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
         </section>
 
         <section className="space-y-4">

@@ -92,6 +92,18 @@ export type StandupNarrative = {
   bullets: string[];
   changes: string[];
   dataQuality: string[];
+  actions: string[];
+  facilityActions: StandupFacilityAction[];
+};
+
+export type StandupFacilityAction = {
+  facilityId: string | null;
+  facilityName: string;
+  pressureScore: number;
+  topConcern: string;
+  whyRed: string[];
+  varianceFlags: string[];
+  interventions: string[];
 };
 
 type FacilityMini = {
@@ -485,6 +497,96 @@ function computePressureScore(metrics: Record<string, StandupMetricRow>): { scor
   }
 
   return { score, topConcern };
+}
+
+function buildPressureReasons(metrics: Record<string, StandupMetricRow>): string[] {
+  const reasons: string[] = [];
+  const currentAr = metrics.current_ar_cents.valueNumeric ?? 0;
+  const totalBedsOpen = metrics.total_beds_open.valueNumeric ?? 0;
+  const hospitalAndRehab = metrics.hospital_and_rehab_total.valueNumeric ?? 0;
+  const terminations = metrics.terminations_last_week.valueNumeric ?? 0;
+  const overtime = metrics.overtime_hours.valueNumeric ?? 0;
+  const callouts = metrics.callouts_last_week.valueNumeric ?? 0;
+  const openPositions = metrics.current_open_positions.valueNumeric ?? 0;
+
+  if (currentAr > 150_000_00) reasons.push(`Open AR is elevated at ${formatCurrencyFromCents(currentAr)}.`);
+  if (totalBedsOpen === 0) reasons.push("No beds are currently open.");
+  if (hospitalAndRehab >= 3) reasons.push(`${hospitalAndRehab} residents are in hospital or rehab status.`);
+  if (terminations > 0) reasons.push(`${terminations} terminations were recorded in the last week.`);
+  if (overtime >= 20) reasons.push(`Overtime reached ${metrics.overtime_hours.valueNumeric?.toFixed(2) ?? overtime} hours.`);
+  if (callouts >= 3) reasons.push(`${callouts} callouts were logged in the last week.`);
+  if (openPositions >= 2) reasons.push(`${openPositions} open positions are still unfilled.`);
+
+  return reasons;
+}
+
+function buildFacilityVarianceFlags(
+  current: StandupFacilityLive,
+  previous: StandupFacilityLive | null,
+): string[] {
+  if (!previous) return [];
+
+  const flags = [
+    deltaLine("AR", current.metrics.current_ar_cents.valueNumeric ?? null, previous.metrics.current_ar_cents.valueNumeric ?? null, formatCurrencyFromCents),
+    deltaLine("Census", current.metrics.current_total_census.valueNumeric ?? null, previous.metrics.current_total_census.valueNumeric ?? null),
+    deltaLine("Open beds", current.metrics.total_beds_open.valueNumeric ?? null, previous.metrics.total_beds_open.valueNumeric ?? null),
+    deltaLine("Callouts", current.metrics.callouts_last_week.valueNumeric ?? null, previous.metrics.callouts_last_week.valueNumeric ?? null),
+    deltaLine("Overtime", current.metrics.overtime_hours.valueNumeric ?? null, previous.metrics.overtime_hours.valueNumeric ?? null, (value) => value == null ? "—" : `${value.toFixed(2)} hrs`),
+    deltaLine("Open positions", current.metrics.current_open_positions.valueNumeric ?? null, previous.metrics.current_open_positions.valueNumeric ?? null),
+  ].filter((flag): flag is string => Boolean(flag));
+
+  return flags.slice(0, 4);
+}
+
+function buildFacilityInterventions(metrics: Record<string, StandupMetricRow>): string[] {
+  const interventions: string[] = [];
+  const currentAr = metrics.current_ar_cents.valueNumeric ?? 0;
+  const totalBedsOpen = metrics.total_beds_open.valueNumeric ?? 0;
+  const hospitalAndRehab = metrics.hospital_and_rehab_total.valueNumeric ?? 0;
+  const overtime = metrics.overtime_hours.valueNumeric ?? 0;
+  const callouts = metrics.callouts_last_week.valueNumeric ?? 0;
+  const openPositions = metrics.current_open_positions.valueNumeric ?? 0;
+
+  if (currentAr > 150_000_00) {
+    interventions.push("Review the largest receivable balances, payer holds, and collection assignments today.");
+  }
+  if (totalBedsOpen === 0 || hospitalAndRehab >= 3) {
+    interventions.push("Confirm discharge/return timing and release blocked beds before accepting additional move-ins.");
+  }
+  if (callouts >= 3 || overtime >= 20 || openPositions >= 2) {
+    interventions.push("Escalate staffing coverage: PRN/agency fill, requisition follow-up, and shift rebalancing today.");
+  }
+  if (interventions.length === 0) {
+    interventions.push("Maintain current operating plan and monitor changes at the next standup refresh.");
+  }
+
+  return interventions.slice(0, 3);
+}
+
+export function buildStandupActionEngine(
+  currentFacilities: StandupFacilityLive[],
+  previousFacilities?: StandupFacilityLive[] | null,
+): StandupFacilityAction[] {
+  const previousByFacilityId = new Map((previousFacilities ?? []).map((facility) => [facility.facilityId, facility] as const));
+
+  return currentFacilities
+    .filter((facility) => facility.facilityId != null)
+    .map((facility) => {
+      const previous = previousByFacilityId.get(facility.facilityId) ?? null;
+      const whyRed = buildPressureReasons(facility.metrics);
+      const varianceFlags = buildFacilityVarianceFlags(facility, previous);
+      const interventions = buildFacilityInterventions(facility.metrics);
+      return {
+        facilityId: facility.facilityId,
+        facilityName: facility.facilityName,
+        pressureScore: facility.pressureScore,
+        topConcern: facility.topConcern,
+        whyRed,
+        varianceFlags,
+        interventions,
+      };
+    })
+    .sort((a, b) => b.pressureScore - a.pressureScore || a.facilityName.localeCompare(b.facilityName));
 }
 
 export function buildStandupInsights(facilities: StandupFacilityLive[]): string[] {
@@ -1545,6 +1647,7 @@ export function buildStandupNarrative(
   const unresolved = currentFacilities.flatMap((facility) => Object.values(facility.metrics)).filter((metric) => metric.valueNumeric == null && !(metric.valueText?.trim()));
 
   const bullets = buildStandupInsights(current.facilities);
+  const facilityActions = buildStandupActionEngine(current.facilities, previous?.facilities ?? null);
   const changes = [
     deltaLine(
       "Open AR",
@@ -1582,11 +1685,17 @@ export function buildStandupNarrative(
     ? `${topFacility.facilityName} is the highest-pressure facility this week.`
     : "Portfolio packet is ready for executive review.";
 
+  const actions = facilityActions
+    .slice(0, 3)
+    .map((facility) => `${facility.facilityName}: ${facility.interventions[0] ?? "No intervention recommendation."}`);
+
   return {
     headline,
     bullets,
     changes,
     dataQuality,
+    actions,
+    facilityActions,
   };
 }
 
@@ -1664,6 +1773,24 @@ export function buildStandupBoardPrintHtml(
   const narrativeBullets = narrative.bullets.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
   const narrativeChanges = narrative.changes.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
   const narrativeQuality = narrative.dataQuality.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  const narrativeActions = narrative.actions.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  const facilityActionPanels = narrative.facilityActions
+    .slice(0, 6)
+    .map(
+      (action) => `
+        <div class="panel">
+          <h2>${escapeHtml(action.facilityName)} <span style="font-size:12px;color:#64748b;">Pressure ${action.pressureScore}</span></h2>
+          <div class="meta">${escapeHtml(action.topConcern)}</div>
+          <h2 style="margin-top: 14px;">Why red</h2>
+          <ul>${(action.whyRed.length > 0 ? action.whyRed : ["No active red flags beyond the summary concern."]).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+          <h2 style="margin-top: 14px;">Variance flags</h2>
+          <ul>${(action.varianceFlags.length > 0 ? action.varianceFlags : ["No material week-over-week delta against the prior published packet."]).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+          <h2 style="margin-top: 14px;">Interventions</h2>
+          <ul>${action.interventions.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+        </div>
+      `,
+    )
+    .join("");
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -1726,6 +1853,8 @@ export function buildStandupBoardPrintHtml(
           <ul>${narrativeBullets || "<li>No narrative insights available.</li>"}</ul>
           <h2 style="margin-top: 18px;">Changes since last published week</h2>
           <ul>${narrativeChanges || "<li>No prior published week available for comparison.</li>"}</ul>
+          <h2 style="margin-top: 18px;">Intervention queue</h2>
+          <ul>${narrativeActions || "<li>No intervention recommendations.</li>"}</ul>
         </div>
         <div class="panel">
           <h2>Facility ranking</h2>
@@ -1737,6 +1866,8 @@ export function buildStandupBoardPrintHtml(
           <ul>${narrativeQuality || "<li>No data quality warnings.</li>"}</ul>
         </div>
       </div>
+
+      ${facilityActionPanels ? `<div class="narrative-grid" style="grid-template-columns: 1fr 1fr;">${facilityActionPanels}</div>` : ""}
 
       ${metricRows}
 
