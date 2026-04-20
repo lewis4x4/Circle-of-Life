@@ -130,7 +130,7 @@ Current README says next free migration number is **`179`**. Use that sequence.
 | `188_executive_standup_import_jobs.sql` | S2 | Workbook import jobs / import status / archive references |
 | `189_staff_attendance_callouts.sql` | S4 | Attendance / callout events |
 | `190_staff_requisitions.sql` | S4 | Open positions / requisitions |
-| `191_referral_outreach_activities.sql` | S4 | Outreach and provider activity logging |
+| `191_referral_outreach_activities.sql` | S4 | Outreach and provider activity logging + tour scheduling fields |
 | `192_bed_inventory_classification.sql` | S4 | Bed type / flexibility / private availability normalization |
 
 Notes:
@@ -150,7 +150,7 @@ Goal:
 
 Deliverables:
 
-- migration `179`
+- migration `185`
 - seeded metric registry
 - metric definitions doc appendix
 - totals behavior defined per metric
@@ -168,7 +168,7 @@ Goal:
 
 Deliverables:
 
-- migrations `180` and `181`
+- migrations `186` and `187`
 - draft/publish/archive states
 - weekly manual and forecast entry support
 - immutable published snapshots
@@ -188,7 +188,7 @@ Goal:
 
 Deliverables:
 
-- migration `182`
+- migration `188`
 - importer script/service for workbook blocks
 - imported snapshot history
 - imported rows marked as manual lineage

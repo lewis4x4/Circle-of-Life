@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { CheckCircle2, Loader2, Save } from "lucide-react";
+import { CheckCircle2, FileSpreadsheet, Loader2, Save } from "lucide-react";
 
 import { ExecutiveHubNav } from "../../executive-hub-nav";
 import { Badge } from "@/components/ui/badge";
@@ -115,6 +115,21 @@ export default function ExecutiveStandupWeekDetailPage() {
     return keys;
   }, [detail]);
 
+  const summaryCounts = useMemo(() => {
+    if (!detail) return { manual: 0, forecast: 0, auto: 0, unresolved: 0 };
+    const rows = facilities.flatMap((facility) => Object.values(facility.metrics));
+    return rows.reduce(
+      (acc, metric) => {
+        if (metric.sourceMode === "manual") acc.manual += 1;
+        else if (metric.sourceMode === "forecast") acc.forecast += 1;
+        else acc.auto += 1;
+        if (metric.valueNumeric == null && !(metric.valueText?.trim())) acc.unresolved += 1;
+        return acc;
+      },
+      { manual: 0, forecast: 0, auto: 0, unresolved: 0 },
+    );
+  }, [detail, facilities]);
+
   async function onSaveMetric(facilityId: string, metricKey: string, metric: StandupMetricRow) {
     if (!detail || !user?.id || !organizationId) {
       setError("Sign in required.");
@@ -187,6 +202,13 @@ export default function ExecutiveStandupWeekDetailPage() {
                     {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     Refresh
                   </Button>
+                  <Link
+                    href={`/admin/executive/standup/${week}/board`}
+                    className="inline-flex h-10 items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-4 text-xs font-semibold uppercase tracking-widest text-slate-700 transition-colors hover:bg-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10"
+                  >
+                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                    Board preview
+                  </Link>
                   <Button type="button" onClick={() => void onPublish()} disabled={!canPublish || detail.snapshot.status !== "draft" || publishing}>
                     {publishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
                     Publish week
@@ -253,6 +275,31 @@ export default function ExecutiveStandupWeekDetailPage() {
                 </CardHeader>
               </Card>
             </div>
+
+            <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <CardHeader>
+                <CardTitle className="text-lg">Weekly close status</CardTitle>
+                <CardDescription>Track the unresolved rows before publishing the standup packet.</CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Auto rows</div>
+                  <div className="mt-1 text-xl font-semibold text-slate-900 dark:text-white">{summaryCounts.auto}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Manual rows</div>
+                  <div className="mt-1 text-xl font-semibold text-slate-900 dark:text-white">{summaryCounts.manual}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Forecast rows</div>
+                  <div className="mt-1 text-xl font-semibold text-slate-900 dark:text-white">{summaryCounts.forecast}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Unresolved</div>
+                  <div className="mt-1 text-xl font-semibold text-rose-600 dark:text-rose-400">{summaryCounts.unresolved}</div>
+                </div>
+              </CardContent>
+            </Card>
 
             {(Object.entries(STANDUP_SECTION_LABELS) as Array<[StandupSectionKey, string]>).map(([sectionKey, sectionLabel]) => {
               const metricKeys = sectionMetricKeys.get(sectionKey) ?? [];

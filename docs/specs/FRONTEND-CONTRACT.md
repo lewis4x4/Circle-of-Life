@@ -54,6 +54,7 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 - `/admin/executive/standup` (Module 24A — weekly frozen standup packet + live owner operating dashboard)
 - `/admin/executive/standup/history`
 - `/admin/executive/standup/[week]`
+- `/admin/executive/standup/[week]/board`
 - `/admin/executive/entity`
 - `/admin/executive/entity/[id]`
 - `/admin/executive/facility/[id]`

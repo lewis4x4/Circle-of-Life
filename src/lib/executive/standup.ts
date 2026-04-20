@@ -94,6 +94,7 @@ type ResidentMini = {
   facility_id: string;
   status: string | null;
   discharge_target_date: string | null;
+  monthly_total_rate?: number | null;
 };
 
 type StaffMini = {
@@ -105,6 +106,39 @@ type TimeRecordMini = {
   facility_id: string;
   overtime_hours: number | null;
   clock_in: string;
+};
+
+type BedMini = {
+  facility_id: string;
+  status: string | null;
+  current_resident_id: string | null;
+  standup_availability_class: "private" | "sp_female" | "sp_male" | "sp_flexible" | null;
+  is_temporarily_blocked: boolean | null;
+};
+
+type AttendanceEventMini = {
+  facility_id: string;
+  event_type: "callout" | "late_callout" | "no_show" | "left_early" | "attendance_note";
+  occurred_at: string;
+};
+
+type RequisitionMini = {
+  facility_id: string;
+  status: "draft" | "open" | "interviewing" | "offered" | "filled" | "cancelled";
+};
+
+type AdmissionCaseMini = {
+  facility_id: string;
+  status: string;
+  target_move_in_date: string | null;
+};
+
+type OutreachActivityMini = {
+  facility_id: string;
+  activity_type: "home_health_provider" | "provider_visit" | "facility_outreach" | "community_event" | "digital_outreach";
+  status: "planned" | "completed" | "cancelled";
+  scheduled_for: string | null;
+  performed_for_week: string | null;
 };
 
 type SnapshotMini = {
@@ -177,7 +211,7 @@ export const STANDUP_METRIC_DEFINITIONS: StandupMetricDefinition[] = [
     sectionKey: "ar_census",
     label: "Average Rent",
     valueType: "currency",
-    sourceMode: "hybrid",
+    sourceMode: "auto",
     description: "Average current-month billed revenue per invoiced resident.",
   },
   {
@@ -193,7 +227,7 @@ export const STANDUP_METRIC_DEFINITIONS: StandupMetricDefinition[] = [
     sectionKey: "bed_availability",
     label: "SP Female Beds Open",
     valueType: "count",
-    sourceMode: "hybrid",
+    sourceMode: "auto",
     description: "Semi-private female-designated beds currently available.",
   },
   {
@@ -201,7 +235,7 @@ export const STANDUP_METRIC_DEFINITIONS: StandupMetricDefinition[] = [
     sectionKey: "bed_availability",
     label: "SP Male Beds Open",
     valueType: "count",
-    sourceMode: "hybrid",
+    sourceMode: "auto",
     description: "Semi-private male-designated beds currently available.",
   },
   {
@@ -209,7 +243,7 @@ export const STANDUP_METRIC_DEFINITIONS: StandupMetricDefinition[] = [
     sectionKey: "bed_availability",
     label: "SP Male or Female Beds Open",
     valueType: "count",
-    sourceMode: "hybrid",
+    sourceMode: "auto",
     description: "Semi-private flexible beds currently available.",
   },
   {
@@ -217,7 +251,7 @@ export const STANDUP_METRIC_DEFINITIONS: StandupMetricDefinition[] = [
     sectionKey: "bed_availability",
     label: "Private Beds Open",
     valueType: "count",
-    sourceMode: "hybrid",
+    sourceMode: "auto",
     description: "Private beds currently available.",
   },
   {
@@ -257,7 +291,7 @@ export const STANDUP_METRIC_DEFINITIONS: StandupMetricDefinition[] = [
     sectionKey: "staffing",
     label: "Call Outs Last Week",
     valueType: "count",
-    sourceMode: "hybrid",
+    sourceMode: "auto",
     description: "Attendance-related callouts recorded in the prior week.",
   },
   {
@@ -273,7 +307,7 @@ export const STANDUP_METRIC_DEFINITIONS: StandupMetricDefinition[] = [
     sectionKey: "staffing",
     label: "Current Open Positions",
     valueType: "count",
-    sourceMode: "manual",
+    sourceMode: "auto",
     description: "Current open requisitions / vacancies.",
   },
   {
@@ -289,7 +323,7 @@ export const STANDUP_METRIC_DEFINITIONS: StandupMetricDefinition[] = [
     sectionKey: "marketing",
     label: "Tours Expected",
     valueType: "count",
-    sourceMode: "forecast",
+    sourceMode: "auto",
     description: "Expected tours for the current standup week.",
   },
   {
@@ -297,7 +331,7 @@ export const STANDUP_METRIC_DEFINITIONS: StandupMetricDefinition[] = [
     sectionKey: "marketing",
     label: "Activities on the calendar to be completed by Home Health Providers",
     valueType: "count",
-    sourceMode: "manual",
+    sourceMode: "auto",
     description: "Provider calendar activities expected during the week.",
   },
   {
@@ -305,7 +339,7 @@ export const STANDUP_METRIC_DEFINITIONS: StandupMetricDefinition[] = [
     sectionKey: "marketing",
     label: "Outreach & Engagements (Providers, Facilities, Events)",
     valueType: "count",
-    sourceMode: "manual",
+    sourceMode: "auto",
     description: "Outreach and engagement activities for the standup week.",
   },
 ];
@@ -382,6 +416,8 @@ function computePressureScore(metrics: Record<string, StandupMetricRow>): { scor
   const hospitalAndRehab = metrics.hospital_and_rehab_total.valueNumeric ?? 0;
   const terminations = metrics.terminations_last_week.valueNumeric ?? 0;
   const overtime = metrics.overtime_hours.valueNumeric ?? 0;
+  const callouts = metrics.callouts_last_week.valueNumeric ?? 0;
+  const openPositions = metrics.current_open_positions.valueNumeric ?? 0;
 
   let score = 0;
   let topConcern = "Stable operating picture";
@@ -406,8 +442,40 @@ function computePressureScore(metrics: Record<string, StandupMetricRow>): { scor
     score += 1;
     topConcern = "Overtime pressure is building";
   }
+  if (callouts >= 3) {
+    score += 1;
+    topConcern = "Callout volume is elevated";
+  }
+  if (openPositions >= 2) {
+    score += 1;
+    topConcern = "Open positions are affecting coverage";
+  }
 
   return { score, topConcern };
+}
+
+export function buildStandupInsights(facilities: StandupFacilityLive[]): string[] {
+  const liveFacilities = facilities.filter((facility) => facility.facilityId != null);
+  const top = [...liveFacilities].sort((a, b) => b.pressureScore - a.pressureScore).slice(0, 3);
+  const insights: string[] = [];
+
+  if (top.length > 0) {
+    insights.push(`${top[0].facilityName} is the highest-pressure facility right now: ${top[0].topConcern}.`);
+  }
+
+  const highestAr = [...liveFacilities].sort(
+    (a, b) => (b.metrics.current_ar_cents.valueNumeric ?? 0) - (a.metrics.current_ar_cents.valueNumeric ?? 0),
+  )[0];
+  if (highestAr && (highestAr.metrics.current_ar_cents.valueNumeric ?? 0) > 0) {
+    insights.push(`${highestAr.facilityName} has the highest open AR at ${highestAr.metrics.current_ar_cents.valueNumeric ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(highestAr.metrics.current_ar_cents.valueNumeric / 100) : "—"}.`);
+  }
+
+  const noBedFlex = liveFacilities.filter((facility) => (facility.metrics.total_beds_open.valueNumeric ?? 0) === 0);
+  if (noBedFlex.length > 0) {
+    insights.push(`${noBedFlex.map((facility) => facility.facilityName).join(", ")} currently has no open bed capacity.`);
+  }
+
+  return insights.slice(0, 3);
 }
 
 export function currentStandupWeekOf(): string {
@@ -622,7 +690,7 @@ export async function fetchExecutiveStandupLive(
 
   let residentsQ = supabase
     .from("residents" as never)
-    .select("facility_id, status, discharge_target_date")
+    .select("facility_id, status, discharge_target_date, monthly_total_rate")
     .eq("organization_id", organizationId)
     .is("deleted_at", null)
     .limit(5000);
@@ -641,26 +709,86 @@ export async function fetchExecutiveStandupLive(
     .is("deleted_at", null)
     .limit(5000);
 
+  let bedsQ = supabase
+    .from("beds" as never)
+    .select("facility_id, status, current_resident_id, standup_availability_class, is_temporarily_blocked")
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .limit(5000);
+
+  let attendanceQ = supabase
+    .from("staff_attendance_events" as never)
+    .select("facility_id, event_type, occurred_at")
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .limit(5000);
+
+  let requisitionsQ = supabase
+    .from("staff_requisitions" as never)
+    .select("facility_id, status")
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .limit(5000);
+
+  let admissionCasesQ = supabase
+    .from("admission_cases" as never)
+    .select("facility_id, status, target_move_in_date")
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .limit(5000);
+
+  let outreachQ = supabase
+    .from("referral_outreach_activities" as never)
+    .select("facility_id, activity_type, status, scheduled_for, performed_for_week")
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .limit(5000);
+
+  let referralToursQ = supabase
+    .from("referral_leads" as never)
+    .select("facility_id, status, tour_scheduled_for")
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .limit(5000);
+
   if (facilityIds.length > 0 && !isValidFacilityIdForQuery(facilityId)) {
     invoicesQ = invoicesQ.in("facility_id", facilityIds);
     residentsQ = residentsQ.in("facility_id", facilityIds);
     staffQ = staffQ.in("facility_id", facilityIds);
     timeQ = timeQ.in("facility_id", facilityIds);
+    bedsQ = bedsQ.in("facility_id", facilityIds);
+    attendanceQ = attendanceQ.in("facility_id", facilityIds);
+    requisitionsQ = requisitionsQ.in("facility_id", facilityIds);
+    admissionCasesQ = admissionCasesQ.in("facility_id", facilityIds);
+    outreachQ = outreachQ.in("facility_id", facilityIds);
+    referralToursQ = referralToursQ.in("facility_id", facilityIds);
   } else if (isValidFacilityIdForQuery(facilityId)) {
     invoicesQ = invoicesQ.eq("facility_id", facilityId);
     residentsQ = residentsQ.eq("facility_id", facilityId);
     staffQ = staffQ.eq("facility_id", facilityId);
     timeQ = timeQ.eq("facility_id", facilityId);
+    bedsQ = bedsQ.eq("facility_id", facilityId);
+    attendanceQ = attendanceQ.eq("facility_id", facilityId);
+    requisitionsQ = requisitionsQ.eq("facility_id", facilityId);
+    admissionCasesQ = admissionCasesQ.eq("facility_id", facilityId);
+    outreachQ = outreachQ.eq("facility_id", facilityId);
+    referralToursQ = referralToursQ.eq("facility_id", facilityId);
   }
 
-  const [invoicesRes, residentsRes, staffRes, timeRes] = await Promise.all([
+  const [invoicesRes, residentsRes, staffRes, timeRes, bedsRes, attendanceRes, requisitionsRes, admissionCasesRes, outreachRes, referralToursRes] = await Promise.all([
     invoicesQ as unknown as Promise<{ data: InvoiceMini[] | null; error: { message: string } | null }>,
     residentsQ as unknown as Promise<{ data: ResidentMini[] | null; error: { message: string } | null }>,
     staffQ as unknown as Promise<{ data: StaffMini[] | null; error: { message: string } | null }>,
     timeQ as unknown as Promise<{ data: TimeRecordMini[] | null; error: { message: string } | null }>,
+    bedsQ as unknown as Promise<{ data: BedMini[] | null; error: { message: string } | null }>,
+    attendanceQ as unknown as Promise<{ data: AttendanceEventMini[] | null; error: { message: string } | null }>,
+    requisitionsQ as unknown as Promise<{ data: RequisitionMini[] | null; error: { message: string } | null }>,
+    admissionCasesQ as unknown as Promise<{ data: AdmissionCaseMini[] | null; error: { message: string } | null }>,
+    outreachQ as unknown as Promise<{ data: OutreachActivityMini[] | null; error: { message: string } | null }>,
+    referralToursQ as unknown as Promise<{ data: Array<{ facility_id: string; status: string; tour_scheduled_for: string | null }> | null; error: { message: string } | null }>,
   ]);
 
-  for (const result of [invoicesRes, residentsRes, staffRes, timeRes]) {
+  for (const result of [invoicesRes, residentsRes, staffRes, timeRes, bedsRes, attendanceRes, requisitionsRes, admissionCasesRes, outreachRes, referralToursRes]) {
     if (result.error) throw new Error(result.error.message);
   }
 
@@ -668,6 +796,12 @@ export async function fetchExecutiveStandupLive(
   const residentRows = residentsRes.data ?? [];
   const staffRows = staffRes.data ?? [];
   const timeRows = timeRes.data ?? [];
+  const bedRows = bedsRes.data ?? [];
+  const attendanceRows = attendanceRes.data ?? [];
+  const requisitionRows = requisitionsRes.data ?? [];
+  const admissionCaseRows = admissionCasesRes.data ?? [];
+  const outreachRows = outreachRes.data ?? [];
+  const referralTourRows = referralToursRes.data ?? [];
 
   const liveFacilities = facilities.map<StandupFacilityLive>((facility) => {
     const metrics = initializeMetricMap();
@@ -675,6 +809,12 @@ export async function fetchExecutiveStandupLive(
     const facilityResidents = residentRows.filter((row) => row.facility_id === facility.id);
     const facilityStaff = staffRows.filter((row) => row.facility_id === facility.id);
     const facilityTime = timeRows.filter((row) => row.facility_id === facility.id);
+    const facilityBeds = bedRows.filter((row) => row.facility_id === facility.id);
+    const facilityAttendance = attendanceRows.filter((row) => row.facility_id === facility.id);
+    const facilityRequisitions = requisitionRows.filter((row) => row.facility_id === facility.id);
+    const facilityAdmissionCases = admissionCaseRows.filter((row) => row.facility_id === facility.id);
+    const facilityOutreach = outreachRows.filter((row) => row.facility_id === facility.id);
+    const facilityTours = referralTourRows.filter((row) => row.facility_id === facility.id);
 
     const currentArCents = sum(facilityInvoices.map((row) => Math.max(0, row.balance_due ?? 0)));
     const overdueArCents = sum(
@@ -683,27 +823,75 @@ export async function fetchExecutiveStandupLive(
         .map((row) => Math.max(0, row.balance_due ?? 0)),
     );
     const currentTotalCensus = facilityResidents.filter((row) => ["active", "hospital_hold", "loa"].includes(row.status ?? "")).length;
-    const totalBedsOpen = Math.max(0, (facility.total_licensed_beds ?? 0) - currentTotalCensus);
+    const openBeds = facilityBeds.filter((row) => row.current_resident_id == null && !row.is_temporarily_blocked && (row.status ?? "available") === "available");
+    const totalBedsOpen = facilityBeds.length > 0 ? openBeds.length : Math.max(0, (facility.total_licensed_beds ?? 0) - currentTotalCensus);
+    const spFemaleBedsOpen = openBeds.filter((row) => row.standup_availability_class === "sp_female").length;
+    const spMaleBedsOpen = openBeds.filter((row) => row.standup_availability_class === "sp_male").length;
+    const spFlexibleBedsOpen = openBeds.filter((row) => row.standup_availability_class === "sp_flexible").length;
+    const privateBedsOpen = openBeds.filter((row) => row.standup_availability_class === "private").length;
     const hospitalAndRehab = facilityResidents.filter((row) => ["hospital_hold", "loa"].includes(row.status ?? "")).length;
+    const admissionsExpected = facilityAdmissionCases.filter((row) => {
+      if (!row.target_move_in_date || row.status === "cancelled") return false;
+      return row.target_move_in_date >= toIsoDate(weekStart) && row.target_move_in_date <= toIsoDate(thisWeekEnd);
+    }).length;
     const expectedDischarges = facilityResidents.filter((row) => {
       if (!row.discharge_target_date) return false;
       return row.discharge_target_date >= toIsoDate(weekStart) && row.discharge_target_date <= toIsoDate(thisWeekEnd);
+    }).length;
+    const calloutsLastWeek = facilityAttendance.filter((row) => {
+      return row.occurred_at >= `${toIsoDate(prevWeekStart)}T00:00:00.000Z`
+        && row.occurred_at <= `${toIsoDate(prevWeekEnd)}T23:59:59.999Z`
+        && ["callout", "late_callout", "no_show", "left_early"].includes(row.event_type);
     }).length;
     const terminationsLastWeek = facilityStaff.filter((row) => {
       if (!row.termination_date) return false;
       return row.termination_date >= toIsoDate(prevWeekStart) && row.termination_date <= toIsoDate(prevWeekEnd);
     }).length;
+    const currentOpenPositions = facilityRequisitions.filter((row) => ["open", "interviewing", "offered"].includes(row.status)).length;
     const overtimeHours = Math.round(
       facilityTime
         .filter((row) => row.clock_in >= `${toIsoDate(prevWeekStart)}T00:00:00.000Z` && row.clock_in <= `${toIsoDate(prevWeekEnd)}T23:59:59.999Z`)
         .reduce((acc, row) => acc + (row.overtime_hours ?? 0), 0) * 100,
     ) / 100;
+    const toursExpected = facilityTours.filter((row) => {
+      if (!row.tour_scheduled_for || ["lost", "merged"].includes(row.status)) return false;
+      return row.tour_scheduled_for >= `${toIsoDate(weekStart)}T00:00:00.000Z`
+        && row.tour_scheduled_for <= `${toIsoDate(thisWeekEnd)}T23:59:59.999Z`;
+    }).length;
+    const providerActivitiesExpected = facilityOutreach.filter((row) => {
+      if (row.status === "cancelled" || row.activity_type !== "home_health_provider") return false;
+      return row.performed_for_week === toIsoDate(weekStart)
+        || (row.scheduled_for != null
+          && row.scheduled_for >= `${toIsoDate(weekStart)}T00:00:00.000Z`
+          && row.scheduled_for <= `${toIsoDate(thisWeekEnd)}T23:59:59.999Z`);
+    }).length;
+    const outreachEngagements = facilityOutreach.filter((row) => {
+      if (row.status === "cancelled" || row.activity_type === "home_health_provider") return false;
+      return row.performed_for_week === toIsoDate(weekStart)
+        || (row.scheduled_for != null
+          && row.scheduled_for >= `${toIsoDate(weekStart)}T00:00:00.000Z`
+          && row.scheduled_for <= `${toIsoDate(thisWeekEnd)}T23:59:59.999Z`);
+    }).length;
 
     const currentMonthInvoices = facilityInvoices.filter((row) => row.period_start?.startsWith(toIsoDate(monthStart).slice(0, 7)));
-    const averageRentCents =
+    const residentRateRows = facilityResidents
+      .map((row) => row.monthly_total_rate)
+      .filter((value): value is number => value != null && value > 0);
+    const averageRentFromInvoices =
       currentMonthInvoices.length > 0
         ? Math.round(sum(currentMonthInvoices.map((row) => row.total ?? 0)) / currentMonthInvoices.length)
         : null;
+    const averageRentFromRates =
+      residentRateRows.length > 0
+        ? Math.round(sum(residentRateRows) / residentRateRows.length)
+        : null;
+    const averageRentCents = averageRentFromInvoices ?? averageRentFromRates;
+    const averageRentConfidence: "high" | "medium" | "low" =
+      averageRentFromInvoices != null && currentMonthInvoices.length >= Math.max(1, currentTotalCensus)
+        ? "high"
+        : averageRentFromInvoices != null || averageRentFromRates != null
+          ? "medium"
+          : "low";
 
     metrics.current_ar_cents = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "current_ar_cents")!,
@@ -719,8 +907,17 @@ export async function fetchExecutiveStandupLive(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "average_rent_cents")!,
       averageRentCents,
       {
-        confidenceBand: averageRentCents == null ? "low" : "medium",
-        sourceRefJson: averageRentCents == null ? [] : [{ table: "invoices", mode: "current_month_average_total" }],
+        confidenceBand: averageRentConfidence,
+        sourceRefJson:
+          averageRentFromInvoices != null
+            ? [{ table: "invoices", mode: "current_month_average_total" }]
+            : averageRentFromRates != null
+              ? [{ table: "residents", field: "monthly_total_rate" }]
+              : [],
+        overrideNote:
+          averageRentFromInvoices != null && currentMonthInvoices.length < Math.max(1, currentTotalCensus)
+            ? "Computed from partial invoice coverage; review confidence before publishing."
+            : null,
       },
     );
     metrics.uncollected_ar_total_cents = metricTemplate(
@@ -731,7 +928,27 @@ export async function fetchExecutiveStandupLive(
     metrics.total_beds_open = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "total_beds_open")!,
       totalBedsOpen,
-      { sourceRefJson: [{ table: "facilities", field: "total_licensed_beds" }, { table: "residents", field: "status" }] },
+      { sourceRefJson: facilityBeds.length > 0 ? [{ table: "beds", field: "standup_availability_class" }] : [{ table: "facilities", field: "total_licensed_beds" }, { table: "residents", field: "status" }] },
+    );
+    metrics.sp_female_beds_open = metricTemplate(
+      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "sp_female_beds_open")!,
+      spFemaleBedsOpen,
+      { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }] },
+    );
+    metrics.sp_male_beds_open = metricTemplate(
+      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "sp_male_beds_open")!,
+      spMaleBedsOpen,
+      { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }] },
+    );
+    metrics.sp_flexible_beds_open = metricTemplate(
+      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "sp_flexible_beds_open")!,
+      spFlexibleBedsOpen,
+      { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }] },
+    );
+    metrics.private_beds_open = metricTemplate(
+      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "private_beds_open")!,
+      privateBedsOpen,
+      { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }] },
     );
     metrics.hospital_and_rehab_total = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "hospital_and_rehab_total")!,
@@ -751,15 +968,49 @@ export async function fetchExecutiveStandupLive(
         overrideNote: expectedDischarges > 0 ? "Derived from resident discharge target dates for the standup week." : "No discharge targets recorded for this week.",
       },
     );
+    metrics.admissions_expected = metricTemplate(
+      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "admissions_expected")!,
+      admissionsExpected,
+      {
+        confidenceBand: admissionsExpected > 0 ? "medium" : "low",
+        sourceRefJson: [{ table: "admission_cases", field: "target_move_in_date" }],
+        overrideNote: admissionsExpected > 0 ? "Derived from admission cases targeting move-in during the standup week." : "No admission cases target this standup week.",
+      },
+    );
+    metrics.callouts_last_week = metricTemplate(
+      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "callouts_last_week")!,
+      calloutsLastWeek,
+      { sourceRefJson: [{ table: "staff_attendance_events", event_types: ["callout", "late_callout", "no_show", "left_early"] }] },
+    );
     metrics.terminations_last_week = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "terminations_last_week")!,
       terminationsLastWeek,
       { sourceRefJson: [{ table: "staff", field: "termination_date" }] },
     );
+    metrics.current_open_positions = metricTemplate(
+      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "current_open_positions")!,
+      currentOpenPositions,
+      { sourceRefJson: [{ table: "staff_requisitions", open_statuses: ["open", "interviewing", "offered"] }] },
+    );
     metrics.overtime_hours = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "overtime_hours")!,
       overtimeHours,
       { sourceRefJson: [{ table: "time_records", field: "overtime_hours" }] },
+    );
+    metrics.tours_expected = metricTemplate(
+      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "tours_expected")!,
+      toursExpected,
+      { sourceRefJson: [{ table: "referral_leads", field: "tour_scheduled_for" }] },
+    );
+    metrics.provider_activities_expected = metricTemplate(
+      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "provider_activities_expected")!,
+      providerActivitiesExpected,
+      { sourceRefJson: [{ table: "referral_outreach_activities", activity_type: "home_health_provider" }] },
+    );
+    metrics.outreach_engagements = metricTemplate(
+      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "outreach_engagements")!,
+      outreachEngagements,
+      { sourceRefJson: [{ table: "referral_outreach_activities", mode: "non_provider" }] },
     );
 
     const { score, topConcern } = computePressureScore(metrics);
@@ -784,6 +1035,9 @@ export async function fetchExecutiveStandupLive(
 
   const totalMetrics = initializeMetricMap();
   const totalCurrentMonthInvoices = invoiceRows.filter((row) => row.period_start?.startsWith(toIsoDate(monthStart).slice(0, 7)));
+  const totalResidentRateRows = residentRows
+    .map((row) => row.monthly_total_rate)
+    .filter((value): value is number => value != null && value > 0);
   for (const definition of STANDUP_METRIC_DEFINITIONS) {
     const numericValues = liveFacilities
       .map((facility) => facility.metrics[definition.key]?.valueNumeric)
@@ -795,7 +1049,9 @@ export async function fetchExecutiveStandupLive(
         : definition.key === "average_rent_cents"
           ? totalCurrentMonthInvoices.length > 0
             ? Math.round(sum(totalCurrentMonthInvoices.map((row) => row.total ?? 0)) / totalCurrentMonthInvoices.length)
-            : null
+            : totalResidentRateRows.length > 0
+              ? Math.round(sum(totalResidentRateRows) / totalResidentRateRows.length)
+              : null
           : sum(numericValues);
 
     totalMetrics[definition.key] = metricTemplate(definition, aggregateValue, {

@@ -2,15 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { History, Loader2 } from "lucide-react";
+import { History, Loader2, Sparkles } from "lucide-react";
 
 import { ExecutiveHubNav } from "../../executive-hub-nav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
-import { fetchStandupHistory, type StandupHistoryItem } from "@/lib/executive/standup";
+import { useAuth } from "@/hooks/useAuth";
+import { canCreateDraftFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { currentStandupWeekOf, fetchStandupHistory, generateExecutiveStandupDraft, type StandupHistoryItem } from "@/lib/executive/standup";
 
 function badgeClass(status: string): string {
   if (status === "published") return "border-emerald-200 bg-emerald-50 text-emerald-700";
@@ -20,9 +21,13 @@ function badgeClass(status: string): string {
 
 export default function ExecutiveStandupHistoryPage() {
   const supabase = useMemo(() => createClient(), []);
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<StandupHistoryItem[]>([]);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [canCreateDraft, setCanCreateDraft] = useState(false);
+  const [creatingDraft, setCreatingDraft] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -30,6 +35,8 @@ export default function ExecutiveStandupHistoryPage() {
     try {
       const ctx = await loadFinanceRoleContext(supabase);
       if (!ctx.ok) throw new Error(ctx.error);
+      setOrganizationId(ctx.ctx.organizationId);
+      setCanCreateDraft(canCreateDraftFinance(ctx.ctx.appRole));
       const data = await fetchStandupHistory(supabase, ctx.ctx.organizationId, 52);
       setRows(data);
     } catch (loadError) {
@@ -39,6 +46,23 @@ export default function ExecutiveStandupHistoryPage() {
       setLoading(false);
     }
   }, [supabase]);
+
+  async function onGenerateDraft() {
+    if (!organizationId || !user?.id) {
+      setError("Sign in required.");
+      return;
+    }
+    setCreatingDraft(true);
+    setError(null);
+    try {
+      await generateExecutiveStandupDraft(supabase, organizationId, user.id, null);
+      await load();
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : "Could not create standup draft.");
+    } finally {
+      setCreatingDraft(false);
+    }
+  }
 
   useEffect(() => {
     void load();
@@ -65,6 +89,12 @@ export default function ExecutiveStandupHistoryPage() {
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Refresh
             </Button>
+            {rows.length === 0 && canCreateDraft ? (
+              <Button type="button" onClick={() => void onGenerateDraft()} disabled={creatingDraft}>
+                {creatingDraft ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                Generate first draft
+              </Button>
+            ) : null}
           </div>
         </header>
 
@@ -87,6 +117,14 @@ export default function ExecutiveStandupHistoryPage() {
               <CardTitle>No standup weeks yet</CardTitle>
               <CardDescription>Generate the first weekly draft from the standup pack page.</CardDescription>
             </CardHeader>
+            {canCreateDraft ? (
+              <CardContent>
+                <Button type="button" onClick={() => void onGenerateDraft()} disabled={creatingDraft}>
+                  {creatingDraft ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                  Generate first draft for {currentStandupWeekOf()}
+                </Button>
+              </CardContent>
+            ) : null}
           </Card>
         ) : (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
