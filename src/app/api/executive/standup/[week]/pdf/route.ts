@@ -12,7 +12,7 @@ import { createServiceRoleClient } from "@/lib/supabase/service-role";
 export const runtime = "nodejs";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ week: string }> },
 ) {
   const { week } = await context.params;
@@ -62,6 +62,8 @@ export async function GET(
   }
 
   const html = buildStandupBoardPrintHtml(detail, previous);
+  const url = new URL(request.url);
+  const reportId = url.searchParams.get("reportId")?.trim() || null;
 
   let browser;
   try {
@@ -82,6 +84,48 @@ export async function GET(
         left: "0.35in",
       },
     });
+
+    if (reportId) {
+      const { data: runRow, error: runErr } = await admin
+        .from("report_runs")
+        .insert({
+          organization_id: profile.organization_id,
+          source_type: "pack",
+          source_id: reportId,
+          status: "completed",
+          generated_by_user_id: user.id,
+          runtime_classification: "standup_packet_pdf",
+          run_scope_json: { weekOf: detail.snapshot.weekOf },
+          filter_snapshot_json: { weekOf: detail.snapshot.weekOf },
+          completed_at: new Date().toISOString(),
+        })
+        .select("id")
+        .single();
+
+      if (!runErr && runRow?.id) {
+        await admin.from("report_exports").insert({
+          organization_id: profile.organization_id,
+          report_run_id: runRow.id,
+          export_format: "pdf",
+          file_name: `executive-standup-${detail.snapshot.weekOf}.pdf`,
+          storage_path: `/api/executive/standup/${encodeURIComponent(detail.snapshot.weekOf)}/pdf`,
+          delivered_to_json: {
+            delivery: "download",
+            kind: "executive_standup_board_packet",
+            weekOf: detail.snapshot.weekOf,
+          },
+        });
+      }
+
+      await admin
+        .from("exec_saved_reports")
+        .update({
+          last_generated_at: new Date().toISOString(),
+          last_output_storage_path: `/api/executive/standup/${encodeURIComponent(detail.snapshot.weekOf)}/pdf`,
+        })
+        .eq("id", reportId)
+        .eq("organization_id", profile.organization_id);
+    }
 
     return new NextResponse(new Uint8Array(pdf), {
       status: 200,

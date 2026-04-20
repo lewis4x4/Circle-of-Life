@@ -423,7 +423,7 @@ export default function ExecutiveSavedReportsPage() {
         return;
       }
       await downloadBlobFromUrl(
-        `/api/executive/standup/${encodeURIComponent(weekOf)}/pdf`,
+        `/api/executive/standup/${encodeURIComponent(weekOf)}/pdf?reportId=${encodeURIComponent(report.id)}`,
         `executive-standup-${weekOf}.pdf`,
       );
       await persistLastGenerated(report.id);
