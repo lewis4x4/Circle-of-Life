@@ -16,7 +16,9 @@ import { ExecutiveHubNav } from "./executive-hub-nav";
 
 import type { ExecutiveAlertRow } from "@/lib/exec-alerts";
 import { isDemoMode } from "@/lib/demo-mode";
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
+import { useAuth } from "@/hooks/useAuth";
 
 interface AlertWithFacility extends ExecutiveAlertRow {
   facilities?: { name: string } | null;
@@ -25,7 +27,8 @@ interface AlertWithFacility extends ExecutiveAlertRow {
 export default function ExecutiveOverviewPage() {
   const demo = isDemoMode();
   const supabase = createClient();
-  const ownerConfig = getRoleDashboardConfig("owner");
+  const { user } = useAuth();
+  const roleConfig = getRoleDashboardConfig(getAppRoleFromClaims(user));
   const [, setLoading] = useState(true);
   const [, setError] = useState<string | null>(null);
 
@@ -200,7 +203,7 @@ export default function ExecutiveOverviewPage() {
                 Enterprise Portfolio Overview
               </p>
               <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-zinc-400">
-                {ownerConfig.roleLabel} home: see portfolio movement, exception pressure, and the next leadership decision without dropping into facility-operator queue noise.
+                {roleConfig.roleLabel} home: see portfolio movement, exception pressure, and the next leadership decision without dropping into facility-operator queue noise.
               </p>
             </div>
             <div className="hidden md:block">
@@ -219,7 +222,7 @@ export default function ExecutiveOverviewPage() {
             <div>
               <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white">Enterprise Priorities</h3>
               <p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">
-                {ownerConfig.firstScreenPriority.join(" · ").replace(/_/g, " ")}
+                {roleConfig.firstScreenPriority.join(" · ").replace(/_/g, " ")}
               </p>
             </div>
           </div>

@@ -49,7 +49,7 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
     firstScreenPriority: ["portfolio_health", "executive_alerts", "finance_risk", "facility_comparison", "drill_ins"],
     suppressedSections: ["facility_operator_backlog", "admissions_queue_noise", "family_triage_queue_noise"],
     mobileTabletExpectation: "desktop-first",
-    visibleGroups: ["Command", "Quality & Risk", "Knowledge", "Finance"],
+    visibleGroups: ["Command", "Pipeline", "Clinical Ops", "Quality & Risk", "Knowledge", "Workforce", "Finance"],
     sections: {
       heroStats: true, quickActions: true, criticalUpdates: true,
       compliance: true, financials: true, watchlist: true,

@@ -12,34 +12,41 @@ export type CaregiverFacilityContext = {
 
 type ProfileRow = { organization_id: string; app_role: string };
 
-/**
- * Resolves the signed-in caregiver's primary facility and org for floor workflows (eMAR, clock, schedules).
- * Mirrors incident-draft facility resolution.
- */
-export async function loadCaregiverFacilityContext(
-  supabase: SupabaseClient<Database>,
-): Promise<{ ok: true; ctx: CaregiverFacilityContext } | { ok: false; error: string }> {
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-  if (userError) return { ok: false, error: userError.message };
-  if (!user) return { ok: false, error: "You need to sign in." };
+type CaregiverFacilityContextInput = {
+  userId: string;
+  organizationId?: string | null;
+  appRole?: string | null;
+};
 
-  const profileResult = await supabase
-    .from("user_profiles")
-    .select("organization_id, app_role")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (profileResult.error) {
-    const errObj = profileResult.error as unknown as Record<string, unknown>;
-    const pgCode = errObj.code ?? "";
-    const hint = errObj.hint ?? "";
-    const detail = errObj.details ?? "";
-    console.error("[Haven] user_profiles query failed", { message: profileResult.error.message, pgCode, hint, detail, userId: user.id });
-    return { ok: false, error: `${profileResult.error.message}${pgCode ? ` (${pgCode})` : ""}` };
+export async function loadCaregiverFacilityContextForUser(
+  supabase: SupabaseClient<Database>,
+  { userId, organizationId, appRole }: CaregiverFacilityContextInput,
+): Promise<{ ok: true; ctx: CaregiverFacilityContext } | { ok: false; error: string }> {
+  let profile: ProfileRow | null =
+    organizationId && appRole
+      ? {
+          organization_id: organizationId,
+          app_role: appRole,
+        }
+      : null;
+
+  if (!profile) {
+    const profileResult = await supabase
+      .from("user_profiles")
+      .select("organization_id, app_role")
+      .eq("id", userId)
+      .maybeSingle();
+    if (profileResult.error) {
+      const errObj = profileResult.error as unknown as Record<string, unknown>;
+      const pgCode = errObj.code ?? "";
+      const hint = errObj.hint ?? "";
+      const detail = errObj.details ?? "";
+      console.error("[Haven] user_profiles query failed", { message: profileResult.error.message, pgCode, hint, detail, userId });
+      return { ok: false, error: `${profileResult.error.message}${pgCode ? ` (${pgCode})` : ""}` };
+    }
+    profile = profileResult.data as ProfileRow | null;
   }
-  const profile = profileResult.data as ProfileRow | null;
+
   if (!profile?.organization_id) {
     return { ok: false, error: "Your profile is missing an organization. Contact an administrator." };
   }
@@ -70,7 +77,7 @@ export async function loadCaregiverFacilityContext(
     const accessResult = await supabase
       .from("user_facility_access")
       .select("facility_id")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .is("revoked_at", null)
       .limit(1)
       .maybeSingle();
@@ -110,4 +117,20 @@ export async function loadCaregiverFacilityContext(
       timeZone,
     },
   };
+}
+
+/**
+ * Resolves the signed-in caregiver's primary facility and org for floor workflows (eMAR, clock, schedules).
+ * Mirrors incident-draft facility resolution.
+ */
+export async function loadCaregiverFacilityContext(
+  supabase: SupabaseClient<Database>,
+): Promise<{ ok: true; ctx: CaregiverFacilityContext } | { ok: false; error: string }> {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+  if (userError) return { ok: false, error: userError.message };
+  if (!user) return { ok: false, error: "You need to sign in." };
+  return loadCaregiverFacilityContextForUser(supabase, { userId: user.id });
 }

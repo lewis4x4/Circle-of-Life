@@ -9,7 +9,7 @@ import React, {
   useState,
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, withSupabaseAuthLockRetry } from "@/lib/supabase/client";
 
 export type HavenAuthContextValue = {
   user: User | null;
@@ -33,51 +33,64 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    const {
-      data: { session: s },
-    } = await supabase.auth.getSession();
-    setSession(s ?? null);
-    const u = s?.user ?? null;
-    setUser(u);
+    setLoading(true);
+    try {
+      const {
+        data: { session: s },
+      } = await withSupabaseAuthLockRetry(() => supabase.auth.getSession());
+      setSession(s ?? null);
+      const u = s?.user ?? null;
+      setUser(u);
 
-    if (!u) {
+      if (!u) {
+        setAppRole("facility_admin");
+        setOrganizationId(null);
+        return;
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from("user_profiles")
+        .select("app_role, organization_id")
+        .eq("id", u.id)
+        .maybeSingle();
+
+      if (profileError) {
+        const errObj = profileError as unknown as Record<string, unknown>;
+        console.error("[HavenAuth] user_profiles query failed", {
+          message: profileError.message,
+          code: errObj.code,
+          hint: errObj.hint,
+          userId: u.id,
+        });
+      }
+
+      const roleFromMeta = u.app_metadata?.app_role as string | undefined;
+      setAppRole((profile?.app_role as string) ?? roleFromMeta ?? "facility_admin");
+      setOrganizationId((profile?.organization_id as string) ?? null);
+    } catch (error) {
+      console.error("[HavenAuth] Failed to resolve browser session", error);
+      setSession(null);
+      setUser(null);
       setAppRole("facility_admin");
       setOrganizationId(null);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const { data: profile, error: profileError } = await supabase
-      .from("user_profiles")
-      .select("app_role, organization_id")
-      .eq("id", u.id)
-      .maybeSingle();
-
-    if (profileError) {
-      const errObj = profileError as unknown as Record<string, unknown>;
-      console.error("[HavenAuth] user_profiles query failed", {
-        message: profileError.message,
-        code: errObj.code,
-        hint: errObj.hint,
-        userId: u.id,
-      });
-    }
-
-    const roleFromMeta = u.app_metadata?.app_role as string | undefined;
-    setAppRole((profile?.app_role as string) ?? roleFromMeta ?? "facility_admin");
-    setOrganizationId((profile?.organization_id as string) ?? null);
-    setLoading(false);
   }, [supabase]);
 
   useEffect(() => {
+    const safeLoad = async () => {
+      await load();
+    };
+
     queueMicrotask(() => {
-      void load();
+      void safeLoad();
     });
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(() => {
       queueMicrotask(() => {
-        void load();
+        void safeLoad();
       });
     });
     return () => subscription.unsubscribe();

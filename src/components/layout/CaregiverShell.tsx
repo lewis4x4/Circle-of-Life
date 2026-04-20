@@ -7,7 +7,7 @@ import { Home, Pill, ClipboardList, AlertTriangle, Clock3, User } from "lucide-r
 import { useTheme } from "next-themes";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 import { createClient } from "@/lib/supabase/client";
-import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+import { loadCaregiverFacilityContextForUser } from "@/lib/caregiver/facility-context";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
@@ -18,32 +18,46 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const themeSet = useRef(false);
-  const { appRole, user } = useHavenAuth();
+  const { appRole, loading, organizationId, user } = useHavenAuth();
   const [facilityName, setFacilityName] = useState("Facility");
   const [shiftLabel, setShiftLabel] = useState("Shift");
   const effectiveRole = getAppRoleFromClaims(user) || appRole;
   const isHousekeeper = effectiveRole === "housekeeper";
 
   useEffect(() => {
+    if (loading || !user?.id) {
+      return;
+    }
+
     const supabase = createClient();
     let cancelled = false;
     void (async () => {
-      const resolved = await loadCaregiverFacilityContext(supabase);
-      if (!resolved.ok || cancelled) return;
-      const shiftType = currentShiftForTimezone(resolved.ctx.timeZone);
-      const label =
-        shiftType === "day"
-          ? "Day Shift (7A - 3P)"
-          : shiftType === "evening"
-            ? "Evening Shift (3P - 11P)"
-            : "Night Shift (11P - 7A)";
-      setFacilityName(resolved.ctx.facilityName ?? "Facility");
-      setShiftLabel(label);
+      try {
+        const resolved = await loadCaregiverFacilityContextForUser(supabase, {
+          userId: user.id,
+          organizationId,
+          appRole: effectiveRole,
+        });
+        if (!resolved.ok || cancelled) return;
+        const shiftType = currentShiftForTimezone(resolved.ctx.timeZone);
+        const label =
+          shiftType === "day"
+            ? "Day Shift (7A - 3P)"
+            : shiftType === "evening"
+              ? "Evening Shift (3P - 11P)"
+              : "Night Shift (11P - 7A)";
+        setFacilityName(resolved.ctx.facilityName ?? "Facility");
+        setShiftLabel(label);
+      } catch (error) {
+        if (!cancelled) {
+          console.error("[CaregiverShell] Failed to load caregiver facility context", error);
+        }
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [effectiveRole, loading, organizationId, user?.id]);
 
   const isDeeperWorkflowPage = useMemo(
     () =>

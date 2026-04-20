@@ -16,11 +16,14 @@ import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function AdminInsuranceHubPage() {
   const supabase = createClient();
-  const ownerConfig = getRoleDashboardConfig("owner");
+  const { user } = useAuth();
+  const roleConfig = getRoleDashboardConfig(getAppRoleFromClaims(user));
   const [activePolicies, setActivePolicies] = useState<number | null>(null);
   const [renewalsInFlight, setRenewalsInFlight] = useState<number | null>(null);
   const [openClaims, setOpenClaims] = useState<number | null>(null);
@@ -142,7 +145,7 @@ export default function AdminInsuranceHubPage() {
               Corporate policies, renewals, claims, COIs, and workers’ compensation (Module 18).
             </p>
             <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-zinc-400">
-              {ownerConfig.roleLabel} drill-in: keep policy posture, claims movement, and renewal exposure close to the executive exception flow.
+              {roleConfig.roleLabel} drill-in: keep policy posture, claims movement, and renewal exposure close to the executive exception flow.
             </p>
           </div>
         </div>

@@ -17,12 +17,15 @@ import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function AdminFinanceHubPage() {
   const demo = isDemoMode();
   const supabase = createClient();
-  const ownerConfig = getRoleDashboardConfig("owner");
+  const { user } = useAuth();
+  const roleConfig = getRoleDashboardConfig(getAppRoleFromClaims(user));
   const [postedCount, setPostedCount] = useState<number | null>(null);
   const [unpostedInvoices, setUnpostedInvoices] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,7 +91,7 @@ export default function AdminFinanceHubPage() {
               Entity and facility general ledger (Module 17) — chart of accounts, journal entries, ledger.
             </p>
             <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-zinc-400">
-              {ownerConfig.roleLabel} drill-in: use finance to confirm whether portfolio pressure is operational, billing-timing, or period-close related.
+              {roleConfig.roleLabel} drill-in: use finance to confirm whether portfolio pressure is operational, billing-timing, or period-close related.
             </p>
           </div>
         </div>
@@ -102,7 +105,7 @@ export default function AdminFinanceHubPage() {
           {[
             { title: "Executive alerts", description: "Return to the leadership exception queue after checking the ledger context.", href: "/admin/executive/alerts" },
             { title: "Insurance & risk", description: "Open policies and claims when a finance issue has risk or reserve implications.", href: "/admin/insurance" },
-            { title: "Executive reports", description: "Move into saved executive reporting without leaving the owner decision lane.", href: "/admin/executive/reports" },
+            { title: "Executive reports", description: `Move into saved executive reporting without leaving the ${roleConfig.roleLabel.toLowerCase()} decision lane.`, href: "/admin/executive/reports" },
           ].map((item) => (
             <Link
               key={item.title}

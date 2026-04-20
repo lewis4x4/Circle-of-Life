@@ -8,6 +8,7 @@ import { Loader2, LogOut, UserCircle2 } from "lucide-react";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { fetchPendingPoliciesForUser, resolveAckFacilityId } from "@/lib/pending-policies";
 import type { Database } from "@/types/database";
 import { CaregiverSupportStrip } from "@/components/caregiver/CaregiverSupportStrip";
@@ -24,6 +25,7 @@ type StaffMini = Pick<
 export default function CaregiverMePage() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
+  const { appRole, loading: authLoading, user } = useHavenAuth();
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState<string | null>(null);
   const [profile, setProfile] = useState<ProfileRow | null>(null);
@@ -36,11 +38,12 @@ export default function CaregiverMePage() {
   const [homeHref, setHomeHref] = useState("/caregiver");
 
   const load = useCallback(async () => {
+    if (authLoading) {
+      return;
+    }
+
     setLoading(true);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       setEmail(user?.email ?? null);
       if (!user) {
         setProfile(null);
@@ -48,7 +51,7 @@ export default function CaregiverMePage() {
         setPendingPolicyCount(0);
         return;
       }
-      setHomeHref(getDashboardRouteForRole(getAppRoleFromClaims(user)));
+      setHomeHref(getDashboardRouteForRole(getAppRoleFromClaims(user) || appRole));
       const pr = await supabase.from("user_profiles").select("app_role").eq("id", user.id).maybeSingle();
       if (!pr.error && pr.data) setProfile(pr.data as ProfileRow);
       const st = await supabase
@@ -67,23 +70,28 @@ export default function CaregiverMePage() {
       } else {
         setPendingPolicyCount(0);
       }
+    } catch (error) {
+      console.error("[CaregiverMePage] Failed to load caregiver profile", error);
+      setProfile(null);
+      setStaff(null);
+      setPendingPolicyCount(0);
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [appRole, authLoading, supabase, user]);
 
   useEffect(() => {
+    if (authLoading) {
+      return;
+    }
     void load();
-  }, [load]);
+  }, [authLoading, load]);
 
   async function submitIllness() {
     if (!staff) return;
     setIllSubmitting(true);
     setIllMsg(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) {
         setIllMsg("Not signed in.");
         return;

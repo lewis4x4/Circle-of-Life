@@ -13,7 +13,9 @@ import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchExecutiveAlerts, acknowledgeExecutiveAlert, type ExecutiveAlertRow } from "@/lib/exec-alerts";
 import { cn } from "@/lib/utils";
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
+import { useAuth } from "@/hooks/useAuth";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
@@ -25,7 +27,8 @@ interface AlertWithFacility extends ExecutiveAlertRow {
 
 export default function ExecutiveAlertsPage() {
   const supabase = createClient();
-  const ownerConfig = getRoleDashboardConfig("owner");
+  const { user } = useAuth();
+  const roleConfig = getRoleDashboardConfig(getAppRoleFromClaims(user));
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<ExecutiveAlertRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,7 +114,7 @@ export default function ExecutiveAlertsPage() {
               </h2>
               <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">Workflow routing and leadership intervention queue</p>
               <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-zinc-400">
-                {ownerConfig.roleLabel} drill-in: review open exceptions, decide the intervention lane, and move into finance, insurance, or incident risk without dropping back to the operator home.
+                {roleConfig.roleLabel} drill-in: review open exceptions, decide the intervention lane, and move into finance, insurance, or incident risk without dropping back to the operator home.
               </p>
             </div>
             <div className="hidden md:block">
