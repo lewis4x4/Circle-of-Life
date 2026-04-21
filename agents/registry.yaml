@@ -41,7 +41,7 @@ agents:
     id: qa_agent
     playbook: agents/playbooks/qa-agent.md
     mandatory_when: always
-    expected_outputs: [build green, lint optional advisory]
+    expected_outputs: [build green, "lint strict by default; explicit local advisory override allowed when documented"]
     pass_criteria: Root build and optional web build succeed when applicable.
 
   cdo_agent:

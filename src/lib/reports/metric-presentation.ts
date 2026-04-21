@@ -222,6 +222,30 @@ export const METRIC_PRESENTATION: Record<string, MetricPresentation> = {
     groupOrder: 37,
     format: "percent",
   },
+  assuranceFacilitiesCriticalToday: {
+    label: "Facilities in critical band today",
+    group: "Resident assurance heat",
+    groupOrder: 38,
+    format: "integer",
+  },
+  assuranceFacilitiesElevatedOrCriticalToday: {
+    label: "Facilities elevated or critical today",
+    group: "Resident assurance heat",
+    groupOrder: 38,
+    format: "integer",
+  },
+  assurancePortfolioPeakHeat7d: {
+    label: "Portfolio peak heat (7 days)",
+    group: "Resident assurance heat",
+    groupOrder: 38,
+    format: "integer",
+  },
+  assurancePortfolioAvgLatestHeat: {
+    label: "Average latest facility heat",
+    group: "Resident assurance heat",
+    groupOrder: 38,
+    format: "decimal",
+  },
   // Training (extended)
   activeStaffCount: {
     label: "Active staff (org scope)",

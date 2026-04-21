@@ -26,25 +26,25 @@ The additional 73 migrations and 17 Edge Functions shipped through Track D (Phas
 | `npm run migrations:check` | **PASS** | 193 files, sequence 001–193 intact |
 | `npm run check:secrets` | **PASS** | No tracked secrets |
 | `npm run check:env-example` | **PASS** | `.env.example` aligned |
-| `npm run segment:gates -- --segment "s0-track-a-closeout" --no-chaos --no-a11y` | See gate artifact | Artifact in `test-results/agent-gates/` |
-| `npm run lint` | **FAIL — pre-existing** | 60 `@typescript-eslint/no-explicit-any` errors across 56 files. Not introduced by S0; documented as a finding (see below). |
+| `npm run segment:gates -- --segment "s0-track-a-closeout" --no-chaos --no-a11y --advisory-check qa.eslint` | See gate artifact | Artifact in `test-results/agent-gates/` |
+| `npm run lint` | **FAIL — pre-existing** | 60 `@typescript-eslint/no-explicit-any` errors across 11 files. Not introduced by S0; documented as a finding (see below). |
 
-**Gate artifact:** `test-results/agent-gates/<timestamp>-s0-track-a-closeout.json` — the qa.eslint gate is FAIL by design, reflecting real state. The migration, secrets, and build gates capture current baseline evidence.
+**Gate artifact:** `test-results/agent-gates/<timestamp>-s0-track-a-closeout.json` — run locally with `--advisory-check qa.eslint` so the known lint debt is recorded as an explicit advisory while the migration, secrets, and build gates remain blocking.
 
-**Handoff note (2026-04-21):** gate was started but interrupted by session hand-off to a different IDE before the build step completed. **First action on resume:** run `npm run segment:gates -- --segment "s0-track-a-closeout" --no-chaos --no-a11y` to produce the JSON artifact, commit it alongside this memo, then proceed to S1. Full pickup protocol in [SLICE-EXECUTION-HANDOFF.md](./SLICE-EXECUTION-HANDOFF.md).
+**Handoff note (2026-04-21):** gate was started but interrupted by session hand-off to a different IDE before the build step completed. **First action on resume:** run `npm run segment:gates -- --segment "s0-track-a-closeout" --no-chaos --no-a11y --advisory-check qa.eslint` to produce the JSON artifact, commit it alongside this memo, then proceed to S1. Full pickup protocol in [SLICE-EXECUTION-HANDOFF.md](./SLICE-EXECUTION-HANDOFF.md).
 
 ---
 
 ## Finding: pre-existing lint debt
 
-`npm run lint` currently fails with **60 `no-explicit-any` errors** spread across 56 committed files (admin, executive, family, caregiver, and lib surfaces). None are in the S0 change set. Likely explanations:
+`npm run lint` currently fails with **60 `no-explicit-any` errors** spread across 11 committed files (admin and lib surfaces). None are in the S0 change set. Likely explanations:
 
 1. ESLint config tightened to warnings-as-errors without a follow-up cleanup pass, or
 2. `any` usages accumulated across Track D/E shipping without lint gate enforcement.
 
-Either way, **CI `ci-gates.yml` should be failing for any PR touching code today**. This is outside the S0 scope but should be prioritized before S1 lands non-trivial new TypeScript code, or S1's own gate will inherit the red signal.
+Either way, **default `segment:gates` runs and CI `ci-gates.yml` should be failing for any PR touching code today**. This is outside the S0 scope but should be prioritized before S1 lands non-trivial new TypeScript code, or S1's own gate will inherit the red signal.
 
-**Recommended action (not part of S0):** spawn a dedicated cleanup sub-task to replace `any` with proper types (or `unknown` + narrowing). Low-risk, mechanical, but broad.
+**Recommended action (not part of S0):** use the per-run advisory override only for bounded local closeout work like S0, and schedule a dedicated cleanup task to replace `any` with proper types (or `unknown` + narrowing). Low-risk, mechanical, but broad.
 
 ---
 

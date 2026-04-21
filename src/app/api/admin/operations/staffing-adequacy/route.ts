@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Check authentication
   const {
@@ -15,17 +15,17 @@ export async function GET(request: Request) {
 
   // Get user's role and accessible facilities
   const { data: userData, error: userError } = await supabase
-    .from("user_facility_access" as never)
+    .from("user_facility_access" as any)
     .select("app_role, facility_id")
     .eq("user_id", user.id)
-    .single();
+    .single() as { data: { app_role: string; facility_id: string | null } | null; error: any };
 
   if (userError || !userData) {
     return NextResponse.json({ error: "Access denied" }, { status: 403 });
   }
 
-  const appRole = userData.app_role as string;
-  const userFacilityId = userData.facility_id as string | null;
+  const appRole = userData.app_role;
+  const userFacilityId = userData.facility_id;
 
   // Parse query params
   const { searchParams } = new URL(request.url);
@@ -46,10 +46,10 @@ export async function GET(request: Request) {
 
   // Get facility info for timezone
   const { data: facility, error: facilityError } = await supabase
-    .from("facilities" as never)
+    .from("facilities" as any)
     .select("name, timezone, total_licensed_beds")
     .eq("id", targetFacilityId)
-    .single();
+    .single() as { data: { name: string; timezone: string | null; total_licensed_beds: number } | null; error: any };
 
   if (facilityError || !facility) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
@@ -80,7 +80,7 @@ export async function GET(request: Request) {
 
   // Get resident count and acuity
   const { data: residents, error: residentsError } = await supabase
-    .from("residents" as never)
+    .from("residents" as any)
     .select("acuity_level")
     .is("deleted_at", null)
     .in("status", ["active", "hospital_hold", "loa"])
@@ -95,7 +95,7 @@ export async function GET(request: Request) {
 
   // Get scheduled staff count (simplified - actual implementation would use shift schedules)
   const { data: staff, error: staffError } = await supabase
-    .from("staff" as never)
+    .from("staff" as any)
     .select("id, primary_role")
     .is("deleted_at", null)
     .eq("employment_status", "active")
@@ -111,11 +111,11 @@ export async function GET(request: Request) {
 
   // Get required ratio from facility_ratio_rules
   const { data: ratioRule } = await supabase
-    .from("facility_ratio_rules" as never)
+    .from("facility_ratio_rules" as any)
     .select("required_ratio")
     .eq("facility_id", targetFacilityId)
     .is("deleted_at", null)
-    .single();
+    .single() as { data: { required_ratio: number } | null; error: any };
 
   const requiredRatio = ratioRule?.required_ratio || 0.10; // Default 1:10
 
@@ -125,13 +125,13 @@ export async function GET(request: Request) {
 
   // Get pending task count for current shift
   const { data: tasks } = await supabase
-    .from("operation_task_instances" as never)
+    .from("operation_task_instances" as any)
     .select("id, priority, estimated_minutes, status")
     .is("deleted_at", null)
     .eq("facility_id", targetFacilityId)
     .eq("assigned_shift_date", today.toISOString().slice(0, 10))
     .eq("assigned_shift", currentShift)
-    .in("status", ["pending", "in_progress"]);
+    .in("status", ["pending", "in_progress"]) as { data: Array<{ id: string; priority: string; estimated_minutes: number; status: string }> | null; error: any };
 
   const pendingTaskCount = tasks?.filter((t: any) => t.status === "pending").length || 0;
   const highPriorityTaskCount = tasks?.filter((t: any) => t.priority === "critical" || t.priority === "high").length || 0;

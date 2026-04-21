@@ -5,7 +5,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { id } = await params;
 
   // Check authentication
@@ -26,11 +26,11 @@ export async function PATCH(
 
   // Check task exists
   const { data: task, error: taskError } = await supabase
-    .from("operation_task_instances" as never)
+    .from("operation_task_instances" as any)
     .select("id, status, assigned_to, facility_id, template_id, due_at")
     .eq("id", id)
     .is("deleted_at", null)
-    .single();
+    .single() as { data: { id: string; status: string; assigned_to: string | null; facility_id: string; template_id: string; due_at: string | null } | null; error: any };
 
   if (taskError || !task) {
     return NextResponse.json({ error: "Task not found" }, { status: 404 });
@@ -39,12 +39,12 @@ export async function PATCH(
   // Check if user can update (assigned to or admin role)
   if (task.assigned_to !== user.id) {
     const { data: userData } = await supabase
-      .from("user_facility_access" as never)
+      .from("user_facility_access" as any)
       .select("app_role")
       .eq("user_id", user.id)
-      .single();
+      .single() as { data: { app_role: string } | null; error: any };
 
-    const appRole = userData?.app_role;
+    const appRole = userData?.app_role || "";
     const adminRoles = ["owner", "org_admin", "coo", "facility_administrator"];
 
     if (!adminRoles.includes(appRole)) {
@@ -57,7 +57,7 @@ export async function PATCH(
 
   // Update task status to completed
   const { error: updateError } = await supabase
-    .from("operation_task_instances" as never)
+    .from("operation_task_instances" as any)
     .update({
       status: "completed",
       completed_at: new Date().toISOString(),
@@ -78,7 +78,7 @@ export async function PATCH(
   }
 
   // Write to operation audit log
-  await supabase.from("operation_audit_log" as never).insert({
+  await supabase.from("operation_audit_log" as any).insert({
     organization_id: null, // Will be filled by trigger
     facility_id: task.facility_id,
     task_instance_id: id,
@@ -87,7 +87,7 @@ export async function PATCH(
     to_status: "completed",
     actor_id: user.id,
     event_notes: completion_notes || "Completed via Today view",
-    event_data: { sla_met, auto_verified: true } as never,
+    event_data: { sla_met: slaMet, auto_verified: true } as any,
   });
 
   return NextResponse.json({ success: true });

@@ -4,6 +4,7 @@
  */
 
 import { createClient } from "@/lib/supabase/client";
+import { fetchResidentAssuranceCommandBrief } from "@/lib/resident-assurance/command-center-brief";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
 export type NurseMedicationBrief = {
@@ -13,6 +14,12 @@ export type NurseMedicationBrief = {
   controlledDiscrepancies: number;
   missedDosesToday: number;
   prnGiven24h: number;
+  residentAssurance: {
+    activeWatches: number;
+    openEscalations: number;
+    openIntegrityFlags: number;
+    criticalSafetyResidents: number;
+  };
   watchlistResidents: Array<{
     id: string;
     name: string;
@@ -41,6 +48,7 @@ export async function fetchNurseMedicationBrief(
     controlledRes,
     missedRes,
     prnRes,
+    residentAssurance,
   ] = await Promise.all([
     f(supabase.from("resident_medications" as never).select("id", { count: "exact", head: true }))
       .eq("status", "active")
@@ -67,6 +75,7 @@ export async function fetchNurseMedicationBrief(
       .gte("scheduled_time", yesterday24h)
       .eq("status", "given")
       .is("deleted_at", null),
+    fetchResidentAssuranceCommandBrief(facilityId),
   ]);
 
   const activeMedications = (activeMedsRes as any).count ?? 0;
@@ -85,6 +94,17 @@ export async function fetchNurseMedicationBrief(
     controlledDiscrepancies,
     missedDosesToday,
     prnGiven24h,
-    watchlistResidents: [],
+    residentAssurance: {
+      activeWatches: residentAssurance.activeWatches,
+      openEscalations: residentAssurance.openEscalations,
+      openIntegrityFlags: residentAssurance.openIntegrityFlags,
+      criticalSafetyResidents: residentAssurance.criticalSafetyResidents,
+    },
+    watchlistResidents: residentAssurance.highRiskResidents.map((resident) => ({
+      id: resident.id,
+      name: resident.name,
+      room: "—",
+      reason: `${resident.riskTier} risk · score ${resident.score}`,
+    })),
   };
 }

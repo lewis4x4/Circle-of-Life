@@ -19,6 +19,78 @@ function inferExceptionType(payload: CompletionPayload): ObservationExceptionTyp
   return null;
 }
 
+function lateEntrySeverity(delayMinutes: number, exceptionPresent: boolean): "medium" | "high" | "critical" {
+  let severity: "medium" | "high" | "critical" = "medium";
+  if (delayMinutes >= 240) {
+    severity = "critical";
+  } else if (delayMinutes >= 60) {
+    severity = "high";
+  }
+
+  if (exceptionPresent && severity === "medium") {
+    severity = "high";
+  }
+  if (exceptionPresent && severity === "high" && delayMinutes >= 120) {
+    severity = "critical";
+  }
+
+  return severity;
+}
+
+function lateEntryFlagType(delayMinutes: number, exceptionPresent: boolean) {
+  if (exceptionPresent) return "late_entry_with_exception";
+  if (delayMinutes >= 240) return "late_entry_over_4h";
+  if (delayMinutes >= 60) return "late_entry_over_60m";
+  return "late_entry_review";
+}
+
+function suspiciousPatternSeverity(sameMinuteCount: number, recentWindowCount: number): "high" | "critical" {
+  if (sameMinuteCount >= 6 || recentWindowCount >= 12) {
+    return "critical";
+  }
+  return "high";
+}
+
+function suspiciousPatternFlagType(sameMinuteCount: number, recentWindowCount: number) {
+  if (recentWindowCount >= 8) return "high_velocity_documentation";
+  if (sameMinuteCount >= 3) return "same_minute_batch_entry";
+  return "pattern_review";
+}
+
+function payloadSignature(input: {
+  quickStatus: ObservationQuickStatus;
+  residentLocation?: string | null;
+  residentPosition?: string | null;
+  residentState?: string | null;
+  distressPresent?: boolean;
+  breathingConcern?: boolean;
+  painConcern?: boolean;
+  toiletingAssisted?: boolean;
+  hydrationOffered?: boolean;
+  repositioned?: boolean;
+  skinConcernObserved?: boolean;
+  fallHazardObserved?: boolean;
+  refusedAssistance?: boolean;
+  interventionCodes?: string[];
+}) {
+  return JSON.stringify({
+    quickStatus: input.quickStatus,
+    residentLocation: (input.residentLocation ?? "").trim().toLowerCase(),
+    residentPosition: (input.residentPosition ?? "").trim().toLowerCase(),
+    residentState: (input.residentState ?? "").trim().toLowerCase(),
+    distressPresent: input.distressPresent ?? false,
+    breathingConcern: input.breathingConcern ?? false,
+    painConcern: input.painConcern ?? false,
+    toiletingAssisted: input.toiletingAssisted ?? false,
+    hydrationOffered: input.hydrationOffered ?? false,
+    repositioned: input.repositioned ?? false,
+    skinConcernObserved: input.skinConcernObserved ?? false,
+    fallHazardObserved: input.fallHazardObserved ?? false,
+    refusedAssistance: input.refusedAssistance ?? false,
+    interventionCodes: (input.interventionCodes ?? []).slice().sort(),
+  });
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -105,6 +177,9 @@ export async function POST(
   const now = new Date();
   const entryMode: ObservationEntryMode =
     observedAt.getTime() < now.getTime() - 5 * 60 * 1000 ? "late" : "live";
+  if (entryMode === "late" && !body.lateReason?.trim()) {
+    return NextResponse.json({ error: "lateReason is required for late entries" }, { status: 400 });
+  }
   const exceptionType = inferExceptionType(body);
   const exceptionPresent = !!exceptionType;
   const completionStatus = getCompletionTaskStatus({
@@ -173,6 +248,178 @@ export async function POST(
     }
   }
 
+  let integrityFlagCreated = false;
+  let suspiciousPatternFlagCreated = false;
+  if (entryMode === "late") {
+    const delayMinutes = Math.max(1, Math.round((now.getTime() - observedAt.getTime()) / 60000));
+    const { error: integrityFlagError } = await context.admin
+      .from("resident_observation_integrity_flags")
+      .insert({
+        organization_id: task.organization_id,
+        entity_id: task.entity_id,
+        facility_id: task.facility_id,
+        resident_id: task.resident_id,
+        log_id: insertedLog.id,
+        staff_id: staffId,
+        flag_type: lateEntryFlagType(delayMinutes, exceptionPresent),
+        severity: lateEntrySeverity(delayMinutes, exceptionPresent),
+        status: "open",
+        disposition_note: `Auto-created from a late observation entry (${delayMinutes} min after observation). Reason: ${body.lateReason?.trim()}`,
+        updated_by: context.userId,
+      });
+
+    if (integrityFlagError) {
+      console.error("[rounding/tasks/complete] insert integrity flag", integrityFlagError);
+    } else {
+      integrityFlagCreated = true;
+    }
+  }
+
+  const sameMinuteStart = new Date(now);
+  sameMinuteStart.setSeconds(0, 0);
+  const sameMinuteEnd = new Date(sameMinuteStart.getTime() + 60_000);
+  const recentPatternStart = new Date(now.getTime() - 5 * 60_000);
+  const repeatedPatternStart = new Date(now.getTime() - 15 * 60_000);
+
+  const { data: recentLogs, error: recentLogsError } = await context.admin
+    .from("resident_observation_logs")
+    .select("id, entered_at")
+    .eq("organization_id", task.organization_id)
+    .eq("facility_id", task.facility_id)
+    .eq("staff_id", staffId)
+    .is("deleted_at", null)
+    .gte("entered_at", recentPatternStart.toISOString())
+    .lte("entered_at", sameMinuteEnd.toISOString());
+
+  if (recentLogsError) {
+    console.error("[rounding/tasks/complete] recent logs", recentLogsError);
+  } else {
+    const recentWindowCount = (recentLogs ?? []).length;
+    const sameMinuteCount = (recentLogs ?? []).filter((row) => {
+      const enteredAt = new Date(row.entered_at).getTime();
+      return enteredAt >= sameMinuteStart.getTime() && enteredAt < sameMinuteEnd.getTime();
+    }).length;
+
+    if (sameMinuteCount >= 3 || recentWindowCount >= 8) {
+      const { error: suspiciousFlagError } = await context.admin
+        .from("resident_observation_integrity_flags")
+        .insert({
+          organization_id: task.organization_id,
+          entity_id: task.entity_id,
+          facility_id: task.facility_id,
+          resident_id: task.resident_id,
+          log_id: insertedLog.id,
+          staff_id: staffId,
+          flag_type: suspiciousPatternFlagType(sameMinuteCount, recentWindowCount),
+          severity: suspiciousPatternSeverity(sameMinuteCount, recentWindowCount),
+          status: "open",
+          disposition_note:
+            `Auto-created from a suspicious documentation pattern: ${sameMinuteCount} entries in the same minute and ${recentWindowCount} entries in the last 5 minutes.`,
+          updated_by: context.userId,
+        });
+
+      if (suspiciousFlagError) {
+        console.error("[rounding/tasks/complete] insert suspicious integrity flag", suspiciousFlagError);
+      } else {
+        suspiciousPatternFlagCreated = true;
+      }
+    }
+  }
+
+  const { data: repeatedPatternLogs, error: repeatedPatternError } = await context.admin
+    .from("resident_observation_logs")
+    .select(`
+      id,
+      resident_id,
+      quick_status,
+      resident_location,
+      resident_position,
+      resident_state,
+      distress_present,
+      breathing_concern,
+      pain_concern,
+      toileting_assisted,
+      hydration_offered,
+      repositioned,
+      skin_concern_observed,
+      fall_hazard_observed,
+      refused_assistance,
+      intervention_codes,
+      entered_at
+    `)
+    .eq("organization_id", task.organization_id)
+    .eq("facility_id", task.facility_id)
+    .eq("staff_id", staffId)
+    .is("deleted_at", null)
+    .gte("entered_at", repeatedPatternStart.toISOString())
+    .lte("entered_at", now.toISOString());
+
+  if (repeatedPatternError) {
+    console.error("[rounding/tasks/complete] repeated pattern logs", repeatedPatternError);
+  } else {
+    const targetSignature = payloadSignature(body);
+    const matchingResidents = new Set(
+      ((repeatedPatternLogs ?? []) as Array<{
+        resident_id: string;
+        quick_status: ObservationQuickStatus;
+        resident_location: string | null;
+        resident_position: string | null;
+        resident_state: string | null;
+        distress_present: boolean;
+        breathing_concern: boolean;
+        pain_concern: boolean;
+        toileting_assisted: boolean;
+        hydration_offered: boolean;
+        repositioned: boolean;
+        skin_concern_observed: boolean;
+        fall_hazard_observed: boolean;
+        refused_assistance: boolean;
+        intervention_codes: string[];
+      }>).filter((row) => payloadSignature({
+        quickStatus: row.quick_status,
+        residentLocation: row.resident_location,
+        residentPosition: row.resident_position,
+        residentState: row.resident_state,
+        distressPresent: row.distress_present,
+        breathingConcern: row.breathing_concern,
+        painConcern: row.pain_concern,
+        toiletingAssisted: row.toileting_assisted,
+        hydrationOffered: row.hydration_offered,
+        repositioned: row.repositioned,
+        skinConcernObserved: row.skin_concern_observed,
+        fallHazardObserved: row.fall_hazard_observed,
+        refusedAssistance: row.refused_assistance,
+        interventionCodes: row.intervention_codes,
+      }) === targetSignature).map((row) => row.resident_id),
+    );
+
+    if (matchingResidents.size >= 3) {
+      const severity = matchingResidents.size >= 5 ? "critical" : "high";
+      const { error: repeatedFlagError } = await context.admin
+        .from("resident_observation_integrity_flags")
+        .insert({
+          organization_id: task.organization_id,
+          entity_id: task.entity_id,
+          facility_id: task.facility_id,
+          resident_id: task.resident_id,
+          log_id: insertedLog.id,
+          staff_id: staffId,
+          flag_type: "identical_payload_multi_resident",
+          severity,
+          status: "open",
+          disposition_note:
+            `Auto-created from repeated identical payload signatures across ${matchingResidents.size} residents within 15 minutes.`,
+          updated_by: context.userId,
+        });
+
+      if (repeatedFlagError) {
+        console.error("[rounding/tasks/complete] insert repeated payload integrity flag", repeatedFlagError);
+      } else {
+        suspiciousPatternFlagCreated = true;
+      }
+    }
+  }
+
   const { error: taskUpdateError } = await context.admin
     .from("resident_observation_tasks")
     .update({
@@ -192,5 +439,7 @@ export async function POST(
     taskId: task.id,
     logId: insertedLog.id,
     status: completionStatus,
+    integrityFlagCreated,
+    suspiciousPatternFlagCreated,
   });
 }

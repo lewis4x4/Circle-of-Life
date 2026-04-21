@@ -13,6 +13,12 @@ import { buttonVariants } from "@/components/ui/button";
 import { fetchExecutiveKpiSnapshot, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
 import { computeTotalCostOfRisk, type TcorSnapshot } from "@/lib/insurance/compute-tcor";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import {
+  fetchResidentAssuranceCommandBrief,
+  fetchResidentAssuranceFacilityTrendSeries,
+  type ResidentAssuranceCommandBrief,
+  type ResidentAssuranceFacilityTrendRow,
+} from "@/lib/resident-assurance/command-center-brief";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +60,8 @@ export default function ExecutiveFacilityDetailPage() {
   const [entityName, setEntityName] = useState<string | null>(null);
   const [kpi, setKpi] = useState<ExecKpiPayload | null>(null);
   const [tcor, setTcor] = useState<TcorSnapshot | null>(null);
+  const [assurance, setAssurance] = useState<ResidentAssuranceCommandBrief | null>(null);
+  const [assuranceTrend, setAssuranceTrend] = useState<ResidentAssuranceFacilityTrendRow | null>(null);
 
   const load = useCallback(async () => {
     if (!facilityId) {
@@ -95,20 +103,26 @@ export default function ExecutiveFacilityDetailPage() {
       const { data: ent } = await supabase.from("entities").select("name").eq("id", fac.entity_id).maybeSingle();
       setEntityName((ent as { name: string } | null)?.name ?? null);
 
-      const [kpiData, tcorResult] = await Promise.all([
+      const [kpiData, tcorResult, assuranceResult, assuranceTrendRows] = await Promise.all([
         fetchExecutiveKpiSnapshot(supabase, ctx.ctx.organizationId, facilityId),
         computeTotalCostOfRisk(supabase, {
           organizationId: ctx.ctx.organizationId,
           entityId: fac.entity_id,
         }),
+        fetchResidentAssuranceCommandBrief(facilityId),
+        fetchResidentAssuranceFacilityTrendSeries(supabase, ctx.ctx.organizationId, 7),
       ]);
       setKpi(kpiData);
       setTcor(tcorResult.ok ? tcorResult.snapshot : null);
+      setAssurance(assuranceResult);
+      setAssuranceTrend(assuranceTrendRows.find((row) => row.facilityId === facilityId) ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to load facility.");
       setFacilityName(null);
       setKpi(null);
       setTcor(null);
+      setAssurance(null);
+      setAssuranceTrend(null);
     } finally {
       setLoading(false);
     }
@@ -187,6 +201,81 @@ export default function ExecutiveFacilityDetailPage() {
           </CardHeader>
           <CardContent>
             <KpiStrip kpi={kpi} />
+          </CardContent>
+        </Card>
+      )}
+
+      {!loading && !error && assurance && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Resident Assurance</CardTitle>
+            <CardDescription>
+              Watch load, escalation pressure, integrity review, and resident safety-score risk for this facility.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline">{assurance.activeWatches} active watches</Badge>
+              <Badge variant="outline">{assurance.pendingWatchApprovals} pending approvals</Badge>
+              <Badge variant="outline">{assurance.openEscalations} open escalations</Badge>
+              <Badge variant="outline">{assurance.openIntegrityFlags} open integrity flags</Badge>
+              <Badge variant="outline">{assurance.criticalSafetyResidents} critical safety residents</Badge>
+            </div>
+            <div className="flex flex-col gap-2 text-sm">
+              <Link className="text-primary underline-offset-4 hover:underline" href="/admin/rounding/watches">
+                Open watch center
+              </Link>
+              <Link className="text-primary underline-offset-4 hover:underline" href="/admin/rounding/escalations">
+                Open escalation queue
+              </Link>
+              <Link className="text-primary underline-offset-4 hover:underline" href="/admin/rounding/integrity">
+                Open integrity review
+              </Link>
+              <Link className="text-primary underline-offset-4 hover:underline" href="/admin/rounding/safety">
+                Open safety scores
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {!loading && !error && assuranceTrend && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Resident Assurance Trend</CardTitle>
+            <CardDescription>
+              Seven-day heat trend for watch starts, escalations, integrity flags, and critical safety score pressure.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-7 gap-2">
+              {assuranceTrend.points.map((point) => (
+                <div key={point.date} className="rounded-lg border border-slate-200/80 bg-slate-50/60 p-3 text-center dark:border-slate-800 dark:bg-slate-900/40">
+                  <div className="mx-auto flex h-20 w-8 items-end justify-center">
+                    <div
+                      className={cn(
+                        "w-full rounded-t-md",
+                        point.heatBand === "critical"
+                          ? "bg-rose-500"
+                          : point.heatBand === "elevated"
+                            ? "bg-orange-500"
+                            : point.heatBand === "watch"
+                              ? "bg-amber-500"
+                              : "bg-emerald-500",
+                      )}
+                      style={{ height: `${Math.max(10, Math.min(100, point.heatScore * 7))}%` }}
+                    />
+                  </div>
+                  <p className="mt-2 text-[10px] font-mono text-slate-500 dark:text-slate-400">{point.date.slice(5)}</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{point.heatScore}</p>
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2 text-sm text-slate-600 dark:text-slate-400">
+              <Badge variant="outline">Latest {assuranceTrend.latestHeatScore}</Badge>
+              <Badge variant="outline">Peak {assuranceTrend.peakHeatScore}</Badge>
+              <Badge variant="outline">Avg {assuranceTrend.avgHeatScore.toFixed(1)}</Badge>
+            </div>
           </CardContent>
         </Card>
       )}

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { fetchExecutiveKpiSnapshot } from "@/lib/exec-kpi-snapshot";
+import { fetchResidentAssuranceFacilityTrendSeries } from "@/lib/resident-assurance/command-center-brief";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database, Json } from "@/types/database";
 
@@ -428,6 +429,51 @@ async function runResidentAssuranceRounding(params: ExecuteParams): Promise<Repo
   };
 }
 
+async function runResidentAssuranceHeatTrend(params: ExecuteParams): Promise<ReportExecutionResult> {
+  const { supabase, organizationId } = params;
+  const trendRows = await fetchResidentAssuranceFacilityTrendSeries(supabase, organizationId, 7);
+
+  const latestCritical = trendRows.filter((row) => {
+    const latest = row.points[row.points.length - 1];
+    return latest?.heatBand === "critical";
+  }).length;
+  const latestElevatedOrCritical = trendRows.filter((row) => {
+    const latest = row.points[row.points.length - 1];
+    return latest?.heatBand === "critical" || latest?.heatBand === "elevated";
+  }).length;
+  const portfolioPeakHeat7d = trendRows.reduce((max, row) => Math.max(max, row.peakHeatScore), 0);
+  const avgLatestHeat =
+    trendRows.length > 0
+      ? Math.round((trendRows.reduce((sum, row) => sum + row.latestHeatScore, 0) / trendRows.length) * 10) / 10
+      : 0;
+
+  const rows = trendRows.flatMap((row) =>
+    row.points.map((point) => ({
+      facility_name: row.facilityName,
+      date: point.date,
+      heat_band: point.heatBand,
+      heat_score: point.heatScore,
+      watch_starts: point.watchStarts,
+      escalations: point.escalations,
+      integrity_flags: point.integrityFlags,
+      critical_residents: point.criticalResidents,
+    })),
+  );
+
+  return {
+    summary: [
+      { metricKey: "assuranceFacilitiesCriticalToday", value: latestCritical },
+      { metricKey: "assuranceFacilitiesElevatedOrCriticalToday", value: latestElevatedOrCritical },
+      { metricKey: "assurancePortfolioPeakHeat7d", value: portfolioPeakHeat7d },
+      { metricKey: "assurancePortfolioAvgLatestHeat", value: avgLatestHeat },
+    ],
+    rows,
+    footnotes: [
+      "Heat score combines watch starts, open escalations, open integrity flags, and critical/high resident safety pressure by facility-day.",
+    ],
+  };
+}
+
 async function runTrainingCertificationExpiry(params: ExecuteParams): Promise<ReportExecutionResult> {
   const { supabase, organizationId, facilityId } = params;
   const facilityScoped = isValidFacilityIdForQuery(facilityId);
@@ -545,6 +591,7 @@ const EXECUTOR_REGISTRY: Record<string, Executor> = {
   "overtime-labor-pressure": runOvertimeLaborPressure,
   "medication-exception-report": runMedicationExceptionReport,
   "resident-assurance-rounding-compliance": runResidentAssuranceRounding,
+  "resident-assurance-heat-trend": runResidentAssuranceHeatTrend,
   "ar-aging-summary": runArAgingSummary,
   "training-certification-expiry": runTrainingCertificationExpiry,
   "survey-readiness-summary": runSurveyReadinessSummary,

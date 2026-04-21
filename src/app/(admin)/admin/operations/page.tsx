@@ -250,22 +250,22 @@ export default function OperationsTodayPage() {
 
     const { adequacy_score, adequacy_rating } = adequacy;
     let bgColor = "bg-green-100 text-green-800 border-green-200";
-    let icon = CheckCircle2;
+    let Icon = CheckCircle2;
 
     if (adequacy_score < 70) {
       bgColor = "bg-red-100 text-red-800 border-red-200";
-      icon = AlertTriangle;
+      Icon = AlertTriangle;
     } else if (adequacy_score < 85) {
       bgColor = "bg-yellow-100 text-yellow-800 border-yellow-200";
-      icon = Clock;
+      Icon = Clock;
     } else if (adequacy_score < 95) {
       bgColor = "bg-blue-100 text-blue-800 border-blue-200";
-      icon = BarChart3;
+      Icon = BarChart3;
     }
 
     return (
       <Badge className={cn(bgColor, "flex items-center gap-2 px-3 py-2 border rounded-lg font-medium")}>
-        <icon className="h-4 w-4" />
+        <Icon className="h-4 w-4" />
         <span>{adequacy_score}%</span>
         <span className="text-xs opacity-70 ml-2">{adequacy_rating}</span>
       </Badge>

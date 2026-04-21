@@ -8,6 +8,8 @@ import path from "node:path";
 import process from "node:process";
 
 const root = process.cwd();
+const GITLEAKS_PROBE_TIMEOUT_MS = 3_000;
+const DOCKER_PROBE_TIMEOUT_MS = 5_000;
 
 function gitHasCommits() {
   try {
@@ -20,14 +22,25 @@ function gitHasCommits() {
 const isCi = process.env.CI === "true" || process.env.GITHUB_ACTIONS === "true";
 const skip = process.env.SKIP_GITLEAKS === "1";
 
+function probeCommand(cmd, args, timeout) {
+  const result = spawnSync(cmd, args, {
+    encoding: "utf8",
+    stdio: "pipe",
+    timeout,
+  });
+  return {
+    ok: !result.error && result.status === 0,
+    timedOut: result.error?.code === "ETIMEDOUT",
+    error: result.error?.message ?? null,
+  };
+}
+
 function hasGitleaks() {
-  const r = spawnSync("gitleaks", ["version"], { encoding: "utf8" });
-  return !r.error && r.status === 0;
+  return probeCommand("gitleaks", ["version"], GITLEAKS_PROBE_TIMEOUT_MS).ok;
 }
 
 function dockerOk() {
-  const r = spawnSync("docker", ["info"], { encoding: "utf8", stdio: "pipe" });
-  return r.status === 0;
+  return probeCommand("docker", ["info"], DOCKER_PROBE_TIMEOUT_MS).ok;
 }
 
 function gitleaksArgs() {
@@ -89,12 +102,16 @@ function runGitleaksDocker() {
 
 function main() {
   if (skip) {
+    if (isCi) {
+      console.error("[gitleaks] FAIL: SKIP_GITLEAKS=1 is local-only and may not be used in CI.");
+      process.exit(1);
+    }
     console.log("[gitleaks] SKIP: SKIP_GITLEAKS=1");
     process.exit(0);
   }
 
   const bin = hasGitleaks();
-  const dock = dockerOk();
+  const dock = bin ? false : dockerOk();
 
   if (!bin && !dock) {
     if (isCi) {

@@ -57,6 +57,13 @@ export default function NurseDashboardPage() {
         <StatCard title="Controlled Counts" value={brief.controlledDiscrepancies} icon={ShieldCheck} urgency={brief.controlledDiscrepancies > 0 ? "critical" : "normal"} subLabel={brief.controlledDiscrepancies > 0 ? "Discrepancies found" : "All verified"} href="/med-tech/controlled-count" />
       </div>
 
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard title="Active Watches" value={brief.residentAssurance.activeWatches} icon={ShieldCheck} urgency={brief.residentAssurance.activeWatches > 0 ? "normal" : "normal"} subLabel="Residents under active watch" href="/admin/rounding/watches" />
+        <StatCard title="Open Escalations" value={brief.residentAssurance.openEscalations} icon={AlertTriangle} urgency={brief.residentAssurance.openEscalations > 0 ? "critical" : "normal"} subLabel={brief.residentAssurance.openEscalations > 0 ? "Requires supervisor review" : "No active escalations"} href="/admin/rounding/escalations" />
+        <StatCard title="Integrity Flags" value={brief.residentAssurance.openIntegrityFlags} icon={FileWarning} urgency={brief.residentAssurance.openIntegrityFlags > 0 ? "critical" : "normal"} subLabel={brief.residentAssurance.openIntegrityFlags > 0 ? "Late-entry review pending" : "Documentation lane clear"} href="/admin/rounding/integrity" />
+        <StatCard title="Critical Safety" value={brief.residentAssurance.criticalSafetyResidents} icon={Zap} urgency={brief.residentAssurance.criticalSafetyResidents > 0 ? "critical" : "normal"} subLabel={brief.residentAssurance.criticalSafetyResidents > 0 ? "Immediate attention needed" : "No critical safety scores"} href="/admin/rounding/safety" />
+      </div>
+
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <ActionTile label="Open Med Pass" href="/med-tech" gradient="bg-teal-500" />
@@ -99,7 +106,7 @@ export default function NurseDashboardPage() {
                 <div key={r.id} className="flex items-center justify-between p-4 rounded-[1.5rem] bg-white border border-slate-100 dark:bg-white/[0.03] dark:border-white/5 shadow-sm">
                   <div>
                     <span className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">{r.name}</span>
-                    <span className="text-xs font-medium text-slate-500 dark:text-zinc-500 ml-2">Room {r.room}</span>
+                    <span className="text-xs font-medium text-slate-500 dark:text-zinc-500 ml-2">{r.room === "—" ? "Safety watch" : `Room ${r.room}`}</span>
                   </div>
                   <span className="text-xs font-medium text-amber-700 dark:text-amber-400">{r.reason}</span>
                 </div>

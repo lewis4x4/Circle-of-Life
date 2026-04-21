@@ -4,12 +4,14 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
+  AlertTriangle,
   ClipboardList,
   Eye,
   FileBarChart,
   Play,
   RefreshCw,
   Shield,
+  ShieldAlert,
   UserPlus,
 } from "lucide-react";
 
@@ -37,6 +39,7 @@ type OverviewSummary = {
   activeWatches: number;
   pendingApprovals: number;
   openEscalations: number;
+  openIntegrityFlags: number;
 };
 
 const DEMO_SUMMARY: OverviewSummary = {
@@ -51,6 +54,7 @@ const DEMO_SUMMARY: OverviewSummary = {
   activeWatches: 4,
   pendingApprovals: 1,
   openEscalations: 3,
+  openIntegrityFlags: 2,
 };
 
 export default function AdminRoundingHubPage() {
@@ -71,7 +75,7 @@ export default function AdminRoundingHubPage() {
     }
 
     try {
-      const [plansRes, tasksRes, watchesRes, escalationsRes] = await Promise.all([
+      const [plansRes, tasksRes, watchesRes, escalationsRes, integrityRes] = await Promise.all([
         supabase
           .from("resident_observation_plans")
           .select("id")
@@ -97,12 +101,19 @@ export default function AdminRoundingHubPage() {
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
           .in("status", ["open", "in_progress"]),
+        supabase
+          .from("resident_observation_integrity_flags")
+          .select("id", { count: "exact", head: true })
+          .eq("facility_id", selectedFacilityId)
+          .is("deleted_at", null)
+          .in("status", ["open", "in_progress"]),
       ]);
 
       if (plansRes.error) throw plansRes.error;
       if (tasksRes.error) throw tasksRes.error;
       if (watchesRes.error) throw watchesRes.error;
       if (escalationsRes.error) throw escalationsRes.error;
+      if (integrityRes.error) throw integrityRes.error;
 
       const planCount = plansRes.data?.length ?? 0;
       const taskRows = tasksRes.data ?? [];
@@ -132,6 +143,7 @@ export default function AdminRoundingHubPage() {
           activeWatches,
           pendingApprovals,
           openEscalations: escalationsRes.count ?? 0,
+          openIntegrityFlags: integrityRes.count ?? 0,
         });
       }
     } catch {
@@ -298,6 +310,28 @@ export default function AdminRoundingHubPage() {
             metrics={[
               { label: "Active", value: String(summary.activeWatches) },
               { label: "Pending", value: String(summary.pendingApprovals) },
+            ]}
+          />
+          <ActionCard
+            href="/admin/rounding/escalations"
+            title="Escalation Queue"
+            description="Move overdue and missed checks into active review, then resolve or dismiss them with preserved audit context."
+            icon={<AlertTriangle className="h-5 w-5" />}
+            hoverColor="rose"
+            metrics={[
+              { label: "Open", value: String(summary.openEscalations) },
+              { label: "Urgent", value: String(summary.urgentTasks) },
+            ]}
+          />
+          <ActionCard
+            href="/admin/rounding/integrity"
+            title="Integrity Review"
+            description="Review late-entry and documentation-quality flags before rounding evidence turns into an auditability gap."
+            icon={<ShieldAlert className="h-5 w-5" />}
+            hoverColor="indigo"
+            metrics={[
+              { label: "Open", value: String(summary.openIntegrityFlags) },
+              { label: "Late", value: `${Math.round((1 - summary.onTimeRate) * 100)}%` },
             ]}
           />
         </KineticGrid>

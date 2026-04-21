@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Check authentication
   const {
@@ -26,22 +26,22 @@ export async function POST(request: NextRequest) {
 
   // Get user's role
   const { data: userData } = await supabase
-    .from("user_facility_access" as never)
+    .from("user_facility_access" as any)
     .select("app_role")
     .eq("user_id", user.id)
-    .single();
+    .single() as { data: { app_role: string } | null; error: any };
 
-  const appRole = userData?.app_role;
+  const appRole = userData?.app_role || "";
   const adminRoles = ["owner", "org_admin", "coo", "facility_administrator", "don"];
 
   // Check tasks exist and user can update them
   const { data: tasks, error: tasksError } = await supabase
-    .from("operation_task_instances" as never)
+    .from("operation_task_instances" as any)
     .select("id, status, assigned_to, due_at, facility_id")
     .in("id", task_ids)
-    .is("deleted_at", null);
+    .is("deleted_at", null) as { data: Array<{ id: string; status: string; assigned_to: string | null; due_at: string | null; facility_id: string }> | null; error: any };
 
-  if (tasksError) {
+  if (tasksError || !tasks) {
     console.error("[OCE Bulk Complete] Error:", tasksError);
     return NextResponse.json({ error: "Failed to load tasks" }, { status: 500 });
   }
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
   // Bulk update tasks
   const now = new Date().toISOString();
   const { error: updateError } = await supabase
-    .from("operation_task_instances" as never)
+    .from("operation_task_instances" as any)
     .update({
       status: "completed",
       completed_at: now,
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
 
   // Write audit log entries for each task
   for (const task of updatableTasks) {
-    await supabase.from("operation_audit_log" as never).insert({
+    await supabase.from("operation_audit_log" as any).insert({
       organization_id: null,
       facility_id: task.facility_id,
       task_instance_id: task.id,
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       to_status: "completed",
       actor_id: user.id,
       event_notes: completion_notes || "Bulk completed (end of shift)",
-      event_data: { bulk_complete: true } as never,
+      event_data: { bulk_complete: true } as any,
     });
   }
 

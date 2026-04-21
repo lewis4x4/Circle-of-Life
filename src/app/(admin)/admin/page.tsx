@@ -161,6 +161,7 @@ export default function AdminDashboardPage() {
       : null,
   ].filter((item): item is LocalInboxItem => item !== null);
   const workflows = snapshot.workflowQueues;
+  const assurance = snapshot.residentAssurance;
   const topStripActionable = staffingGaps + medExceptions + complianceAlerts;
   const incidentLifecycleBacklog =
     workflows.incidentOpenObligations + workflows.incidentRootCausePending + workflows.incidentCarePlanPending;
@@ -287,7 +288,11 @@ export default function AdminDashboardPage() {
     workflows.dischargePharmacistReview +
     workflows.dischargeReadyToComplete +
     workflows.familyTriagePending +
-    workflows.familyConferencesUpcoming;
+    workflows.familyConferencesUpcoming +
+    assurance.pendingWatchApprovals +
+    assurance.openEscalations +
+    assurance.openIntegrityFlags +
+    assurance.criticalSafetyResidents;
   const adminConfig = getRoleDashboardConfig(appRole);
 
   return (
@@ -472,6 +477,58 @@ export default function AdminDashboardPage() {
               href={familyPrimaryHref}
               urgency={workflows.familyTriagePending > 0 ? "high" : workflows.familyConferencesUpcoming > 0 ? "medium" : "normal"}
               subLabel={`${workflows.familyTriagePending} triage · ${workflows.familyConferencesUpcoming} conferences`}
+            />
+          </MotionItem>
+        </MotionList>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-200/50 dark:border-white/10 pb-3">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">Resident Assurance</p>
+            <h2 className="text-xl font-display font-medium text-slate-900 dark:text-white">Safety Command Rollup</h2>
+            <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">Watch load, escalation pressure, integrity review, and safety-score risk in one lane.</p>
+          </div>
+        </div>
+        <MotionList className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <MotionItem>
+            <TriageMetricCard
+              title="Watch Center"
+              value={assurance.activeWatches > 0 ? assurance.activeWatches : assurance.pendingWatchApprovals}
+              icon={ShieldAlert}
+              href={assurance.pendingWatchApprovals > 0 ? "/admin/rounding/watches" : "/admin/rounding/watches"}
+              urgency={assurance.pendingWatchApprovals > 0 ? "high" : assurance.activeWatches > 0 ? "medium" : "normal"}
+              subLabel={`${assurance.activeWatches} active · ${assurance.pendingWatchApprovals} pending approval`}
+            />
+          </MotionItem>
+          <MotionItem>
+            <TriageMetricCard
+              title="Escalation Queue"
+              value={assurance.openEscalations}
+              icon={AlertCircle}
+              href="/admin/rounding/escalations"
+              urgency={assurance.openEscalations > 0 ? "critical" : "normal"}
+              subLabel={assurance.openEscalations > 0 ? "Overdue or missed checks need review" : "No active escalations"}
+            />
+          </MotionItem>
+          <MotionItem>
+            <TriageMetricCard
+              title="Integrity Review"
+              value={assurance.openIntegrityFlags}
+              icon={NotebookPen}
+              href="/admin/rounding/integrity"
+              urgency={assurance.openIntegrityFlags > 0 ? "high" : "normal"}
+              subLabel={assurance.openIntegrityFlags > 0 ? "Late-entry and evidence flags open" : "No open integrity flags"}
+            />
+          </MotionItem>
+          <MotionItem>
+            <TriageMetricCard
+              title="Safety Scores"
+              value={assurance.criticalSafetyResidents}
+              icon={HeartPulse}
+              href="/admin/rounding/safety"
+              urgency={assurance.criticalSafetyResidents > 0 ? "critical" : assurance.highOrCriticalSafetyResidents > 0 ? "high" : "normal"}
+              subLabel={`${assurance.highOrCriticalSafetyResidents} high or critical residents`}
             />
           </MotionItem>
         </MotionList>

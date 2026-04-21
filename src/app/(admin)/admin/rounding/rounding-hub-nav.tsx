@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  AlertTriangle,
   ClipboardList,
   Eye,
   FileBarChart,
   LayoutDashboard,
   Plus,
   Shield,
+  ShieldAlert,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -19,6 +21,8 @@ const NAV_ITEMS = [
   { href: "/admin/rounding/plans", label: "Plans", icon: ClipboardList },
   { href: "/admin/rounding/plans/new", label: "New Plan", icon: Plus },
   { href: "/admin/rounding/watches", label: "Watches", icon: Shield },
+  { href: "/admin/rounding/escalations", label: "Escalations", icon: AlertTriangle },
+  { href: "/admin/rounding/integrity", label: "Integrity", icon: ShieldAlert },
   { href: "/admin/rounding/reports", label: "Reports", icon: FileBarChart },
 ] as const;
 

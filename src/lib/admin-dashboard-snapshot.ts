@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligations";
+import { fetchResidentAssuranceCommandBrief } from "@/lib/resident-assurance/command-center-brief";
 
 type QueryError = { message: string };
 type QueryResult<T> = { data: T | null; error: QueryError | null };
@@ -72,6 +73,14 @@ export type AdminDashboardSnapshot = {
     dischargeReadyToComplete: number;
     familyTriagePending: number;
     familyConferencesUpcoming: number;
+  };
+  residentAssurance: {
+    activeWatches: number;
+    pendingWatchApprovals: number;
+    openEscalations: number;
+    openIntegrityFlags: number;
+    criticalSafetyResidents: number;
+    highOrCriticalSafetyResidents: number;
   };
   workflowInbox: WorkflowInboxItem[];
   censusPreview: DashboardCensusRow[];
@@ -448,6 +457,7 @@ export async function fetchAdminDashboardSnapshot(
   selectedFacilityId: string | null,
 ): Promise<AdminDashboardSnapshot> {
   const supabase = createClient();
+  const residentAssuranceBriefPromise = fetchResidentAssuranceCommandBrief(selectedFacilityId);
 
   let facilitiesQuery = supabase
     .from("facilities" as never)
@@ -660,6 +670,7 @@ export async function fetchAdminDashboardSnapshot(
     dischargeQueueRes,
     familyTriageRes,
     familyConferenceRes,
+    residentAssuranceBrief,
   ] = await Promise.all([
     facilitiesQuery as unknown as Promise<QueryResult<SupabaseFacilityRow[]>>,
     residentsCountQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
@@ -682,6 +693,7 @@ export async function fetchAdminDashboardSnapshot(
     dischargeQueueQuery as unknown as Promise<QueryResult<SupabaseDischargeMini[]>>,
     familyTriageQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
     familyConferenceQuery as unknown as Promise<QueryResult<SupabaseFamilyConferenceMini[]>>,
+    residentAssuranceBriefPromise,
   ]);
 
   const firstError = [
@@ -910,6 +922,14 @@ export async function fetchAdminDashboardSnapshot(
       dischargeReadyToComplete,
       familyTriagePending,
       familyConferencesUpcoming,
+    },
+    residentAssurance: {
+      activeWatches: residentAssuranceBrief.activeWatches,
+      pendingWatchApprovals: residentAssuranceBrief.pendingWatchApprovals,
+      openEscalations: residentAssuranceBrief.openEscalations,
+      openIntegrityFlags: residentAssuranceBrief.openIntegrityFlags,
+      criticalSafetyResidents: residentAssuranceBrief.criticalSafetyResidents,
+      highOrCriticalSafetyResidents: residentAssuranceBrief.highOrCriticalSafetyResidents,
     },
     workflowInbox: buildWorkflowInbox({
       doctrinePendingReview: pendingDoctrineDocs.length,

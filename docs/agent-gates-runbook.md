@@ -29,13 +29,16 @@ Duplicated in `docs/mission-statement.md`, `AGENTS.md`, `CLAUDE.md`, `CODEX.md`,
 ### Segment gates CLI
 
 ```bash
-npm run segment:gates -- --segment "your-segment-id" [--ui] [--no-chaos] [--no-a11y] [--design-advisory]
+npm run segment:gates -- --segment "your-segment-id" [--ui] [--no-chaos] [--no-a11y] [--design-advisory] [--advisory-check "<check-id>"]
 ```
 
 - **`--ui`** — runs `design:review` and **`a11y:routes`** (axe) unless `--no-a11y` (requires app at `BASE_URL`).
 - **`--no-chaos`** — skips `stress:test`.
 - **`--no-a11y`** — with `--ui`, skips axe (design still runs).
 - **`--design-advisory`** — design failures become **advisory** (non-blocking); axe remains required when `--ui` unless `--no-a11y`.
+- **`--advisory-check "<check-id>"`** — repeatable. Downgrades a failing named check to **advisory** for that run only. Default behavior remains strict; CI should not use this. Current local debt example: `--advisory-check "qa.eslint"`.
+
+Checks stream prefixed output live. Quiet commands emit a 30-second `still running` heartbeat so long builds and migration replays do not look hung.
 
 ### Environment (gates)
 
@@ -44,7 +47,7 @@ npm run segment:gates -- --segment "your-segment-id" [--ui] [--no-chaos] [--no-a
 | `CI=true` | Gitleaks must run (install binary or use Docker) |
 | `REQUIRE_PG_VERIFY=1` | Docker migration replay is **blocking** if it fails or Docker is unavailable (set in CI workflow) |
 | `SKIP_PG_VERIFY=1` | Skip Docker migration verify (local only; conflicts with `REQUIRE_PG_VERIFY=1`) |
-| `SKIP_GITLEAKS=1` | Skip gitleaks (local only; **not** for CI) |
+| `SKIP_GITLEAKS=1` | Skip gitleaks (local only; **not** for CI). The runner records `security.gitleaks` as **skipped**, not passed. |
 | `FAIL_ON_NEXT_DEPRECATIONS=1` | Fail gates if `next build` reports the middleware → proxy deprecation |
 
 GitHub Actions: `.github/workflows/ci-gates.yml` runs gates with `CI=true` and `REQUIRE_PG_VERIFY=1`.

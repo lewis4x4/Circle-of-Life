@@ -73,6 +73,15 @@ export const PHASE1_TEMPLATE_SEED: Phase1TemplateSeed[] = [
     tags: ["Clinical", "Compliance", "Risk"],
   },
   {
+    slug: "resident-assurance-heat-trend",
+    name: "Resident Assurance Heat Trend",
+    category: "Executive",
+    description: "7-day watch, escalation, integrity, and critical-safety pressure by facility.",
+    audience: "CEO, COO, Regional Leader, Administrator",
+    defaultRange: "Last 7 days",
+    tags: ["Executive", "Clinical", "Risk", "Trend"],
+  },
+  {
     slug: "ar-aging-summary",
     name: "AR Aging Summary",
     category: "Financial",

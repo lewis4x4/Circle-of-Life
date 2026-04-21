@@ -5,7 +5,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { id } = await params;
 
   // Check authentication
@@ -30,11 +30,11 @@ export async function PATCH(
 
   // Check task exists
   const { data: task, error: taskError } = await supabase
-    .from("operation_task_instances" as never)
+    .from("operation_task_instances" as any)
     .select("id, status, assigned_to, facility_id, assigned_shift_date")
     .eq("id", id)
     .is("deleted_at", null)
-    .single();
+    .single() as { data: { id: string; status: string; assigned_to: string | null; facility_id: string; assigned_shift_date: string; template_id: string; template_name: string; template_category: string; assigned_role: string | null } | null; error: any };
 
   if (taskError || !task) {
     return NextResponse.json({ error: "Task not found" }, { status: 404 });
@@ -43,12 +43,12 @@ export async function PATCH(
   // Check if user can update (assigned to or admin role)
   if (task.assigned_to !== user.id) {
     const { data: userData } = await supabase
-      .from("user_facility_access" as never)
+      .from("user_facility_access" as any)
       .select("app_role")
       .eq("user_id", user.id)
-      .single();
+      .single() as { data: { app_role: string } | null; error: any };
 
-    const appRole = userData?.app_role;
+    const appRole = userData?.app_role || "";
     const adminRoles = ["owner", "org_admin", "coo", "facility_administrator"];
 
     if (!adminRoles.includes(appRole)) {
@@ -58,7 +58,7 @@ export async function PATCH(
 
   // Create new task instance for deferred date
   const { data: newTask, error: newTaskError } = await supabase
-    .from("operation_task_instances" as never)
+    .from("operation_task_instances" as any)
     .insert({
       organization_id: null, // Will be filled by default or from template
       facility_id: task.facility_id,
@@ -76,16 +76,18 @@ export async function PATCH(
       created_by: user.id,
     })
     .select()
-    .single();
+    .single() as { data: { id: string } | null; error: any };
 
-  if (newTaskError) {
+  if (newTaskError || !newTask) {
     console.error("[OCE Task Defer] Error creating new task:", newTaskError);
     return NextResponse.json({ error: "Failed to create deferred task" }, { status: 500 });
   }
 
+  const newTaskId = newTask.id;
+
   // Update original task to cancelled
   const { error: updateError } = await supabase
-    .from("operation_task_instances" as never)
+    .from("operation_task_instances" as any)
     .update({
       status: "cancelled",
       cancellation_reason: cancellation_reason || "Deferred to new date",
@@ -100,7 +102,7 @@ export async function PATCH(
   }
 
   // Write to operation audit log
-  await supabase.from("operation_audit_log" as never).insert({
+  await supabase.from("operation_audit_log" as any).insert({
     organization_id: null,
     facility_id: task.facility_id,
     task_instance_id: id,
@@ -108,9 +110,9 @@ export async function PATCH(
     from_status: task.status,
     to_status: "cancelled",
     actor_id: user.id,
-    event_notes: `Deferred to ${deferred_until}. New task created: ${newTask.id}`,
-    event_data: { deferred_to: deferred_until, new_task_id: newTask.id } as never,
+    event_notes: `Deferred to ${deferred_until}. New task created: ${newTaskId}`,
+    event_data: { deferred_to: deferred_until, new_task_id: newTaskId } as any,
   });
 
-  return NextResponse.json({ success: true, new_task_id: newTask.id });
+  return NextResponse.json({ success: true, new_task_id: newTaskId });
 }

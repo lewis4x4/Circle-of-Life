@@ -3,7 +3,7 @@
  * Deterministic segment gate runner. Writes JSON to test-results/agent-gates/.
  *
  * Usage:
- *   node scripts/agent-gates/run-segment-gates.mjs --segment "<id>" [--ui] [--no-chaos] [--no-a11y] [--design-advisory]
+ *   node scripts/agent-gates/run-segment-gates.mjs --segment "<id>" [--ui] [--no-chaos] [--no-a11y] [--design-advisory] [--advisory-check "<id>"]
  *
  * npm:
  *   npm run segment:gates -- --segment "seg-001" --ui
@@ -23,6 +23,7 @@ import path from "node:path";
 import process from "node:process";
 
 const root = process.cwd();
+const HEARTBEAT_MS = 30_000;
 
 // Module-level reference so signal handlers can reach the preview child even
 // if the `if (args.ui)` try/finally block never runs (SIGINT, SIGTERM, crash).
@@ -121,6 +122,7 @@ function parseArgs(argv) {
     noChaos: false,
     noA11y: false,
     designAdvisory: false,
+    advisoryChecks: [],
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -134,6 +136,8 @@ function parseArgs(argv) {
       out.noA11y = true;
     } else if (a === "--design-advisory") {
       out.designAdvisory = true;
+    } else if (a === "--advisory-check" && argv[i + 1]) {
+      out.advisoryChecks.push(argv[++i]);
     }
   }
   return out;
@@ -143,9 +147,41 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+function logCheck(checkId, message) {
+  console.log(`[segment:gates][${checkId}] ${message}`);
+}
+
+function createPrefixedLineForwarder(checkId, streamName, sink) {
+  const prefix = `[segment:gates][${checkId}][${streamName}]`;
+  let buffer = "";
+
+  return {
+    push(chunk) {
+      buffer += chunk;
+      let newlineIndex = buffer.indexOf("\n");
+      while (newlineIndex !== -1) {
+        const line = buffer.slice(0, newlineIndex);
+        sink.write(`${prefix} ${line}\n`);
+        buffer = buffer.slice(newlineIndex + 1);
+        newlineIndex = buffer.indexOf("\n");
+      }
+    },
+    flush() {
+      if (buffer.length > 0) {
+        sink.write(`${prefix} ${buffer}\n`);
+        buffer = "";
+      }
+    },
+  };
+}
+
 function run(cmd, args, opts = {}) {
   return new Promise((resolve) => {
     const start = Date.now();
+    const label = opts.label ?? "command";
+    const stream = opts.stream ?? true;
+    const heartbeatMs = opts.heartbeatMs ?? HEARTBEAT_MS;
+    const commandText = opts.commandText ?? [cmd, ...args].join(" ");
     const child = spawn(cmd, args, {
       cwd: opts.cwd ?? root,
       shell: false,
@@ -153,23 +189,65 @@ function run(cmd, args, opts = {}) {
     });
     let stdout = "";
     let stderr = "";
+    let lastOutputAt = start;
+    let lastHeartbeatAt = start;
+    let settled = false;
+
+    const stdoutForwarder = createPrefixedLineForwarder(label, "stdout", process.stdout);
+    const stderrForwarder = createPrefixedLineForwarder(label, "stderr", process.stderr);
+
+    const heartbeat = setInterval(() => {
+      if (!stream) return;
+      const now = Date.now();
+      if (
+        now - lastOutputAt >= heartbeatMs &&
+        now - lastHeartbeatAt >= heartbeatMs
+      ) {
+        logCheck(
+          label,
+          `still running elapsed_ms=${now - start} command="${commandText}"`,
+        );
+        lastHeartbeatAt = now;
+      }
+    }, 1_000);
+
     child.stdout?.on("data", (d) => {
-      stdout += d.toString();
+      const text = d.toString();
+      stdout += text;
+      lastOutputAt = Date.now();
+      if (stream) stdoutForwarder.push(text);
     });
     child.stderr?.on("data", (d) => {
-      stderr += d.toString();
+      const text = d.toString();
+      stderr += text;
+      lastOutputAt = Date.now();
+      if (stream) stderrForwarder.push(text);
     });
-    child.on("close", (code) => {
-      resolve({
+
+    const finalize = (payload) => {
+      if (settled) return;
+      settled = true;
+      clearInterval(heartbeat);
+      if (stream) {
+        stdoutForwarder.flush();
+        stderrForwarder.flush();
+      }
+      resolve(payload);
+    };
+
+    child.on("close", (code, signal) => {
+      finalize({
         code: code ?? 1,
+        signal: signal ?? null,
         duration_ms: Date.now() - start,
         stdout,
         stderr,
       });
     });
     child.on("error", (err) => {
-      resolve({
+      finalize({
         code: 1,
+        signal: null,
         duration_ms: Date.now() - start,
         stdout,
         stderr: `${stderr}\n${err.message}`,
@@ -178,9 +256,13 @@ function run(cmd, args, opts = {}) {
   });
 }
 
-async function npmRun(script, cwd = root) {
+async function npmRun(script, cwd = root, opts = {}) {
   const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
-  return run(npmCmd, ["run", script, "--silent"], { cwd });
+  return run(npmCmd, ["run", script, "--silent"], {
+    cwd,
+    commandText: `npm run ${script}`,
+    ...opts,
+  });
 }
 
 async function waitForHttpOk(url, timeoutMs) {
@@ -197,12 +279,71 @@ async function waitForHttpOk(url, timeoutMs) {
   throw new Error(`[segment:gates] preview server did not respond in time: ${url}`);
 }
 
-async function nodeRun(relScript) {
-  return run(process.execPath, [path.join(root, relScript)], { cwd: root });
+async function nodeRun(relScript, opts = {}) {
+  return run(process.execPath, [path.join(root, relScript)], {
+    cwd: root,
+    commandText: `node ${relScript}`,
+    ...opts,
+  });
 }
 
 function webAppExists() {
   return fs.existsSync(path.join(root, "apps", "web", "package.json"));
+}
+
+function applyAdvisoryOverride(check, advisoryCheckIds) {
+  if (check.status !== "failed" || !advisoryCheckIds.has(check.id)) {
+    return check;
+  }
+  return {
+    ...check,
+    status: "advisory",
+    advisory_override: true,
+    advisory_reason: `Downgraded by --advisory-check ${check.id}`,
+  };
+}
+
+function finishCheck(check) {
+  const parts = [`status=${check.status}`, `required=${check.required}`];
+  if (typeof check.duration_ms === "number") {
+    parts.push(`duration_ms=${check.duration_ms}`);
+  }
+  if (check.advisory_override) {
+    parts.push("advisory_override=true");
+  }
+  logCheck(check.id, `finish ${parts.join(" ")}`);
+}
+
+function recordCheck(checks, advisoryCheckIds, check) {
+  const finalCheck = applyAdvisoryOverride(check, advisoryCheckIds);
+  finishCheck(finalCheck);
+  checks.push(finalCheck);
+  return finalCheck;
+}
+
+async function executeCommandCheck(checks, advisoryCheckIds, options) {
+  logCheck(options.id, `start ${options.command}`);
+  const result = await options.invoke();
+  const baseCheck = options.mapResult
+    ? options.mapResult(result)
+    : {
+        status: result.code === 0 ? "passed" : "failed",
+        duration_ms: result.duration_ms,
+        stdout: result.stdout,
+        stderr: result.stderr,
+      };
+
+  return recordCheck(checks, advisoryCheckIds, {
+    id: options.id,
+    required: options.required ?? true,
+    command: options.command,
+    ...baseCheck,
+  });
+}
+
+function executeStaticCheck(checks, advisoryCheckIds, check) {
+  logCheck(check.id, `start ${check.command}`);
+  return recordCheck(checks, advisoryCheckIds, check);
 }
 
 async function main() {
@@ -225,102 +366,83 @@ async function main() {
   };
 
   const checks = [];
+  const advisoryCheckIds = new Set(args.advisoryChecks);
 
   // --- Hygiene & security (automated) ---
-  const envEx = await nodeRun("scripts/check-env-example.mjs");
-  checks.push({
+  await executeCommandCheck(checks, advisoryCheckIds, {
     id: "hygiene.env-example",
-    required: true,
-    status: envEx.code === 0 ? "passed" : "failed",
     command: "node scripts/check-env-example.mjs",
-    duration_ms: envEx.duration_ms,
-    stdout: envEx.stdout,
-    stderr: envEx.stderr,
+    invoke: () =>
+      nodeRun("scripts/check-env-example.mjs", { label: "hygiene.env-example" }),
   });
 
-  const sec = await nodeRun("scripts/check-tracked-secrets.mjs");
-  checks.push({
+  await executeCommandCheck(checks, advisoryCheckIds, {
     id: "hygiene.tracked-secrets-scan",
-    required: true,
-    status: sec.code === 0 ? "passed" : "failed",
     command: "node scripts/check-tracked-secrets.mjs",
-    duration_ms: sec.duration_ms,
-    stdout: sec.stdout,
-    stderr: sec.stderr,
+    invoke: () =>
+      nodeRun("scripts/check-tracked-secrets.mjs", {
+        label: "hygiene.tracked-secrets-scan",
+      }),
   });
 
-  const audit = await npmRun("audit:ci");
-  checks.push({
+  await executeCommandCheck(checks, advisoryCheckIds, {
     id: "hygiene.npm-audit",
-    required: true,
-    status: audit.code === 0 ? "passed" : "failed",
     command: "npm run audit:ci",
-    duration_ms: audit.duration_ms,
-    stdout: audit.stdout,
-    stderr: audit.stderr,
+    invoke: () => npmRun("audit:ci", root, { label: "hygiene.npm-audit" }),
   });
 
-  const gitleaks = await npmRun("secrets:gitleaks");
-  checks.push({
+  await executeCommandCheck(checks, advisoryCheckIds, {
     id: "security.gitleaks",
-    required: true,
-    status: gitleaks.code === 0 ? "passed" : "failed",
     command: "npm run secrets:gitleaks",
-    duration_ms: gitleaks.duration_ms,
-    stdout: gitleaks.stdout,
-    stderr: gitleaks.stderr,
+    invoke: () => npmRun("secrets:gitleaks", root, { label: "security.gitleaks" }),
+    mapResult: (result) => {
+      const combinedOutput = `${result.stdout}\n${result.stderr}`;
+      const skipped = /^\[gitleaks\] SKIP:/m.test(combinedOutput);
+      return {
+        required: !skipped,
+        status: skipped ? "skipped" : result.code === 0 ? "passed" : "failed",
+        duration_ms: result.duration_ms,
+        stdout: result.stdout,
+        stderr: result.stderr,
+      };
+    },
   });
 
-  const lint = await npmRun("lint");
-  checks.push({
+  await executeCommandCheck(checks, advisoryCheckIds, {
     id: "qa.eslint",
-    required: true,
-    status: lint.code === 0 ? "passed" : "failed",
     command: "npm run lint",
-    duration_ms: lint.duration_ms,
-    stdout: lint.stdout,
-    stderr: lint.stderr,
+    invoke: () => npmRun("lint", root, { label: "qa.eslint" }),
   });
 
-  const mig = await npmRun("migrations:check");
-  checks.push({
+  await executeCommandCheck(checks, advisoryCheckIds, {
     id: "qa.migration-sequence",
-    required: true,
-    status: mig.code === 0 ? "passed" : "failed",
     command: "npm run migrations:check",
-    duration_ms: mig.duration_ms,
-    stdout: mig.stdout,
-    stderr: mig.stderr,
+    invoke: () =>
+      npmRun("migrations:check", root, { label: "qa.migration-sequence" }),
   });
 
   const requirePgVerify = process.env.REQUIRE_PG_VERIFY === "1";
-  const pgVerify = await npmRun("migrations:verify:pg");
-  checks.push({
+  await executeCommandCheck(checks, advisoryCheckIds, {
     id: "qa.migrations-apply-postgres",
     required: requirePgVerify,
-    status: pgVerify.code === 0 ? "passed" : "failed",
     command: "npm run migrations:verify:pg",
-    duration_ms: pgVerify.duration_ms,
-    stdout: pgVerify.stdout,
-    stderr: pgVerify.stderr,
+    invoke: () =>
+      npmRun("migrations:verify:pg", root, {
+        label: "qa.migrations-apply-postgres",
+      }),
   });
 
-  const build = await npmRun("build");
-  checks.push({
+  const build = await executeCommandCheck(checks, advisoryCheckIds, {
     id: "qa.root-build",
-    required: true,
-    status: build.code === 0 ? "passed" : "failed",
     command: "npm run build",
-    duration_ms: build.duration_ms,
-    stdout: build.stdout,
-    stderr: build.stderr,
+    invoke: () => npmRun("build", root, { label: "qa.root-build" }),
   });
 
   const failOnNext = process.env.FAIL_ON_NEXT_DEPRECATIONS === "1";
   const combinedBuildErr = `${build.stderr}\n${build.stdout}`;
   const nextSignal =
     /middleware-to-proxy|middleware file convention is deprecated/i.test(combinedBuildErr);
-  checks.push({
+  executeStaticCheck(checks, advisoryCheckIds, {
     id: "hygiene.nextjs-deprecation-signal",
     required: failOnNext,
     status: nextSignal ? (failOnNext ? "failed" : "advisory") : "passed",
@@ -332,18 +454,13 @@ async function main() {
 
   if (webAppExists()) {
     const webRoot = path.join(root, "apps", "web");
-    const webBuild = await npmRun("build", webRoot);
-    checks.push({
+    await executeCommandCheck(checks, advisoryCheckIds, {
       id: "qa.web-build",
-      required: true,
-      status: webBuild.code === 0 ? "passed" : "failed",
       command: "npm run build (apps/web)",
-      duration_ms: webBuild.duration_ms,
-      stdout: webBuild.stdout,
-      stderr: webBuild.stderr,
+      invoke: () => npmRun("build", webRoot, { label: "qa.web-build" }),
     });
   } else {
-    checks.push({
+    executeStaticCheck(checks, advisoryCheckIds, {
       id: "qa.web-build",
       required: false,
       status: "skipped",
@@ -353,7 +470,7 @@ async function main() {
   }
 
   if (args.noChaos) {
-    checks.push({
+    executeStaticCheck(checks, advisoryCheckIds, {
       id: "chaos.stress-suite",
       required: false,
       status: "skipped",
@@ -361,15 +478,10 @@ async function main() {
       stdout: "skipped (--no-chaos)",
     });
   } else {
-    const stress = await npmRun("stress:test");
-    checks.push({
+    await executeCommandCheck(checks, advisoryCheckIds, {
       id: "chaos.stress-suite",
-      required: true,
-      status: stress.code === 0 ? "passed" : "failed",
       command: "npm run stress:test",
-      duration_ms: stress.duration_ms,
-      stdout: stress.stdout,
-      stderr: stress.stderr,
+      invoke: () => npmRun("stress:test", root, { label: "chaos.stress-suite" }),
     });
   }
 
@@ -420,37 +532,34 @@ async function main() {
         }
       }
 
-      const design = await npmRun("design:review");
-      const required = !args.designAdvisory;
-      const ok = design.code === 0;
-      let status = "passed";
-      if (!ok) {
-        status = args.designAdvisory ? "advisory" : "failed";
-      }
-      checks.push({
+      await executeCommandCheck(checks, advisoryCheckIds, {
         id: "cdo.design-review",
-        required,
-        status,
         command: "npm run design:review",
-        duration_ms: design.duration_ms,
-        stdout: design.stdout,
-        stderr: design.stderr,
-        artifacts: [path.join(root, "test-results", "design-review", "report.json")],
+        required: !args.designAdvisory,
+        invoke: () => npmRun("design:review", root, { label: "cdo.design-review" }),
+        mapResult: (result) => ({
+          status:
+            result.code === 0
+              ? "passed"
+              : args.designAdvisory
+                ? "advisory"
+                : "failed",
+          duration_ms: result.duration_ms,
+          stdout: result.stdout,
+          stderr: result.stderr,
+          artifacts: [path.join(root, "test-results", "design-review", "report.json")],
+        }),
       });
 
       if (!args.noA11y) {
-        const a11y = await npmRun("a11y:routes");
-        checks.push({
+        await executeCommandCheck(checks, advisoryCheckIds, {
           id: "cdo.a11y-axe",
-          required,
-          status: a11y.code === 0 ? "passed" : "failed",
           command: "npm run a11y:routes",
-          duration_ms: a11y.duration_ms,
-          stdout: a11y.stdout,
-          stderr: a11y.stderr,
+          required: true,
+          invoke: () => npmRun("a11y:routes", root, { label: "cdo.a11y-axe" }),
         });
       } else {
-        checks.push({
+        executeStaticCheck(checks, advisoryCheckIds, {
           id: "cdo.a11y-axe",
           required: false,
           status: "skipped",
@@ -466,14 +575,14 @@ async function main() {
       }
     }
   } else {
-    checks.push({
+    executeStaticCheck(checks, advisoryCheckIds, {
       id: "cdo.design-review",
       required: false,
       status: "skipped",
       command: "npm run design:review",
       stdout: "skipped (pass --ui to enable)",
     });
-    checks.push({
+    executeStaticCheck(checks, advisoryCheckIds, {
       id: "cdo.a11y-axe",
       required: false,
       status: "skipped",

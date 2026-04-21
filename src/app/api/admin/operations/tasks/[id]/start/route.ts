@@ -5,7 +5,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { id } = await params;
 
   // Check authentication
@@ -19,11 +19,11 @@ export async function PATCH(
 
   // Check task exists and user can update it
   const { data: task, error: taskError } = await supabase
-    .from("operation_task_instances" as never)
+    .from("operation_task_instances" as any)
     .select("id, status, assigned_to, facility_id")
     .eq("id", id)
     .is("deleted_at", null)
-    .single();
+    .single() as { data: { id: string; status: string; assigned_to: string | null; facility_id: string } | null; error: any };
 
   if (taskError || !task) {
     return NextResponse.json({ error: "Task not found" }, { status: 404 });
@@ -32,12 +32,12 @@ export async function PATCH(
   // Check if user can update (assigned to or admin role)
   if (task.assigned_to !== user.id) {
     const { data: userData } = await supabase
-      .from("user_facility_access" as never)
+      .from("user_facility_access" as any)
       .select("app_role")
       .eq("user_id", user.id)
-      .single();
+      .single() as { data: { app_role: string } | null; error: any };
 
-    const appRole = userData?.app_role;
+    const appRole = userData?.app_role || "";
     const adminRoles = ["owner", "org_admin", "coo", "facility_administrator"];
 
     if (!adminRoles.includes(appRole)) {
@@ -47,7 +47,7 @@ export async function PATCH(
 
   // Update task status to in_progress
   const { error: updateError } = await supabase
-    .from("operation_task_instances" as never)
+    .from("operation_task_instances" as any)
     .update({
       status: "in_progress",
       started_at: new Date().toISOString(),

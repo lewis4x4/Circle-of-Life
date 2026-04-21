@@ -19,6 +19,13 @@ import { isDemoMode } from "@/lib/demo-mode";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import { useAuth } from "@/hooks/useAuth";
+import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import {
+  fetchResidentAssuranceFacilityHeatMap,
+  fetchResidentAssuranceFacilityTrendSeries,
+  type ResidentAssuranceFacilityTrendRow,
+  type ResidentAssuranceFacilityRollup,
+} from "@/lib/resident-assurance/command-center-brief";
 
 interface AlertWithFacility extends ExecutiveAlertRow {
   facilities?: { name: string } | null;
@@ -40,11 +47,16 @@ export default function ExecutiveOverviewPage() {
 
   // Portfolio Facilities
   const [facilities, setFacilities] = useState<{ id: string; name: string }[]>([]);
+  const [assuranceHeatMap, setAssuranceHeatMap] = useState<ResidentAssuranceFacilityRollup[]>([]);
+  const [assuranceTrends, setAssuranceTrends] = useState<ResidentAssuranceFacilityTrendRow[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
+      const ctx = await loadFinanceRoleContext(supabase);
+      if (!ctx.ok) throw new Error(ctx.error);
+
       // 1. Fetch latest snapshots from the synthetic data
       const { data: snapData, error: snapErr } = await supabase
         .from("exec_metric_snapshots")
@@ -78,6 +90,7 @@ export default function ExecutiveOverviewPage() {
       const { data: alertData, error: alertErr } = await supabase
         .from("exec_alerts")
         .select("*, facilities(name)")
+        .eq("organization_id", ctx.ctx.organizationId)
         .eq("status", "open")
         .order("severity", { ascending: false })
         .limit(5);
@@ -126,6 +139,7 @@ export default function ExecutiveOverviewPage() {
       const { data: facData, error: facErr } = await supabase
         .from("facilities")
         .select("id, name")
+        .eq("organization_id", ctx.ctx.organizationId)
         .is("deleted_at", null)
         .order("name", { ascending: true });
         
@@ -141,6 +155,120 @@ export default function ExecutiveOverviewPage() {
         ]);
       } else {
         setFacilities([]);
+      }
+
+      const [assuranceRows, assuranceTrendRows] = await Promise.all([
+        fetchResidentAssuranceFacilityHeatMap(supabase, ctx.ctx.organizationId),
+        fetchResidentAssuranceFacilityTrendSeries(supabase, ctx.ctx.organizationId, 7),
+      ]);
+      if (assuranceRows.length > 0) {
+        setAssuranceHeatMap(assuranceRows);
+      } else if (demo) {
+        setAssuranceHeatMap([
+          {
+            facilityId: "f1",
+            facilityName: "Grande Cypress ALF",
+            activeWatches: 3,
+            pendingWatchApprovals: 0,
+            openEscalations: 0,
+            openIntegrityFlags: 1,
+            criticalSafetyResidents: 0,
+            highOrCriticalSafetyResidents: 1,
+            heatScore: 3,
+            heatBand: "watch",
+          },
+          {
+            facilityId: "f2",
+            facilityName: "Homewood Lodge ALF",
+            activeWatches: 5,
+            pendingWatchApprovals: 1,
+            openEscalations: 2,
+            openIntegrityFlags: 1,
+            criticalSafetyResidents: 1,
+            highOrCriticalSafetyResidents: 2,
+            heatScore: 13,
+            heatBand: "critical",
+          },
+          {
+            facilityId: "f3",
+            facilityName: "Oakridge ALF",
+            activeWatches: 4,
+            pendingWatchApprovals: 1,
+            openEscalations: 1,
+            openIntegrityFlags: 2,
+            criticalSafetyResidents: 1,
+            highOrCriticalSafetyResidents: 3,
+            heatScore: 12,
+            heatBand: "critical",
+          },
+          {
+            facilityId: "f4",
+            facilityName: "Plantation ALF",
+            activeWatches: 2,
+            pendingWatchApprovals: 0,
+            openEscalations: 1,
+            openIntegrityFlags: 0,
+            criticalSafetyResidents: 0,
+            highOrCriticalSafetyResidents: 1,
+            heatScore: 4,
+            heatBand: "watch",
+          },
+          {
+            facilityId: "f5",
+            facilityName: "Rising Oaks ALF",
+            activeWatches: 1,
+            pendingWatchApprovals: 0,
+            openEscalations: 0,
+            openIntegrityFlags: 0,
+            criticalSafetyResidents: 0,
+            highOrCriticalSafetyResidents: 0,
+            heatScore: 0,
+            heatBand: "stable",
+          },
+        ]);
+      } else {
+        setAssuranceHeatMap([]);
+      }
+
+      if (assuranceTrendRows.length > 0) {
+        setAssuranceTrends(assuranceTrendRows);
+      } else if (demo) {
+        setAssuranceTrends([
+          {
+            facilityId: "f1",
+            facilityName: "Grande Cypress ALF",
+            latestHeatScore: 3,
+            peakHeatScore: 5,
+            avgHeatScore: 2.7,
+            points: [
+              { date: "2026-04-15", watchStarts: 1, escalations: 0, integrityFlags: 0, criticalResidents: 0, heatScore: 1, heatBand: "stable" },
+              { date: "2026-04-16", watchStarts: 1, escalations: 0, integrityFlags: 0, criticalResidents: 0, heatScore: 1, heatBand: "stable" },
+              { date: "2026-04-17", watchStarts: 2, escalations: 0, integrityFlags: 0, criticalResidents: 0, heatScore: 2, heatBand: "stable" },
+              { date: "2026-04-18", watchStarts: 1, escalations: 1, integrityFlags: 0, criticalResidents: 0, heatScore: 4, heatBand: "watch" },
+              { date: "2026-04-19", watchStarts: 1, escalations: 0, integrityFlags: 1, criticalResidents: 0, heatScore: 3, heatBand: "watch" },
+              { date: "2026-04-20", watchStarts: 0, escalations: 0, integrityFlags: 0, criticalResidents: 0, heatScore: 0, heatBand: "stable" },
+              { date: "2026-04-21", watchStarts: 1, escalations: 0, integrityFlags: 1, criticalResidents: 0, heatScore: 3, heatBand: "watch" },
+            ],
+          },
+          {
+            facilityId: "f2",
+            facilityName: "Homewood Lodge ALF",
+            latestHeatScore: 9,
+            peakHeatScore: 14,
+            avgHeatScore: 8.4,
+            points: [
+              { date: "2026-04-15", watchStarts: 2, escalations: 1, integrityFlags: 0, criticalResidents: 0, heatScore: 5, heatBand: "watch" },
+              { date: "2026-04-16", watchStarts: 3, escalations: 1, integrityFlags: 1, criticalResidents: 0, heatScore: 8, heatBand: "elevated" },
+              { date: "2026-04-17", watchStarts: 2, escalations: 2, integrityFlags: 1, criticalResidents: 1, heatScore: 14, heatBand: "critical" },
+              { date: "2026-04-18", watchStarts: 1, escalations: 1, integrityFlags: 1, criticalResidents: 1, heatScore: 10, heatBand: "elevated" },
+              { date: "2026-04-19", watchStarts: 1, escalations: 1, integrityFlags: 0, criticalResidents: 1, heatScore: 8, heatBand: "elevated" },
+              { date: "2026-04-20", watchStarts: 1, escalations: 0, integrityFlags: 1, criticalResidents: 1, heatScore: 7, heatBand: "elevated" },
+              { date: "2026-04-21", watchStarts: 1, escalations: 1, integrityFlags: 1, criticalResidents: 0, heatScore: 6, heatBand: "watch" },
+            ],
+          },
+        ]);
+      } else {
+        setAssuranceTrends([]);
       }
 
     } catch (e) {
@@ -184,6 +312,20 @@ export default function ExecutiveOverviewPage() {
       stat: `${alerts.filter((alert) => alert.category === "incident").length} related alerts`,
     },
   ];
+
+  const assuranceBandClass: Record<ResidentAssuranceFacilityRollup["heatBand"], string> = {
+    stable: "border-emerald-200 dark:border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/10",
+    watch: "border-amber-200 dark:border-amber-500/20 bg-amber-50/50 dark:bg-amber-950/10",
+    elevated: "border-orange-200 dark:border-orange-500/20 bg-orange-50/50 dark:bg-orange-950/10",
+    critical: "border-rose-200 dark:border-rose-500/20 bg-rose-50/60 dark:bg-rose-950/15",
+  };
+
+  const assuranceBandText: Record<ResidentAssuranceFacilityRollup["heatBand"], string> = {
+    stable: "text-emerald-700 dark:text-emerald-300",
+    watch: "text-amber-700 dark:text-amber-300",
+    elevated: "text-orange-700 dark:text-orange-300",
+    critical: "text-rose-700 dark:text-rose-300",
+  };
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-8 pb-12 overflow-x-hidden">
@@ -462,6 +604,129 @@ export default function ExecutiveOverviewPage() {
           </div>
         </div>
 
+        <section className="space-y-4">
+          <div className="flex justify-between items-center border-b border-slate-200/50 dark:border-white/10 pb-4">
+            <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white flex items-center gap-3">
+              <Activity className="h-5 w-5 text-rose-500" /> Resident Assurance Heat Map
+            </h3>
+            <Link className="px-4 py-2 rounded-full border border-slate-200 dark:border-white/10 text-xs font-bold uppercase tracking-widest text-rose-600 dark:text-rose-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2 tap-responsive bg-white dark:bg-black/40 shadow-sm" href="/admin/rounding">
+              Open assurance hub <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid gap-3">
+            {assuranceHeatMap.map((row) => (
+              <Link
+                key={row.facilityId}
+                href={`/admin/executive/facility/${row.facilityId}`}
+                className={cn(
+                  "grid grid-cols-1 gap-4 rounded-[1.5rem] border p-5 shadow-sm transition-colors hover:bg-white dark:hover:bg-white/[0.05] md:grid-cols-[2fr_repeat(5,minmax(0,1fr))]",
+                  assuranceBandClass[row.heatBand],
+                )}
+              >
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">
+                    {row.heatBand}
+                  </p>
+                  <h4 className="mt-1 text-base font-semibold text-slate-900 dark:text-white">{row.facilityName}</h4>
+                </div>
+                <HeatMetric label="Watches" value={row.activeWatches} />
+                <HeatMetric label="Pending" value={row.pendingWatchApprovals} />
+                <HeatMetric label="Escalations" value={row.openEscalations} danger={row.openEscalations > 0} />
+                <HeatMetric label="Integrity" value={row.openIntegrityFlags} danger={row.openIntegrityFlags > 0} />
+                <div className="flex items-center justify-between md:justify-end">
+                  <div className="flex flex-col items-start md:items-end">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Critical risk</span>
+                    <span className={cn("text-2xl font-display tabular-nums", assuranceBandText[row.heatBand])}>{row.criticalSafetyResidents}</span>
+                    <span className="text-xs text-slate-500 dark:text-zinc-500">{row.highOrCriticalSafetyResidents} high+critical</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <div className="flex justify-between items-center border-b border-slate-200/50 dark:border-white/10 pb-4">
+            <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white flex items-center gap-3">
+              <Activity className="h-5 w-5 text-cyan-500" /> Resident Assurance Trend (7d)
+            </h3>
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-slate-500 dark:text-zinc-400">Daily heat pressure by facility</p>
+              <Link
+                href="/admin/reports/run/template/resident-assurance-heat-trend"
+                className="px-4 py-2 rounded-full border border-slate-200 dark:border-white/10 text-xs font-bold uppercase tracking-widest text-cyan-600 dark:text-cyan-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2 tap-responsive bg-white dark:bg-black/40 shadow-sm"
+              >
+                Run report <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {assuranceTrends.map((row) => (
+              <Link
+                key={row.facilityId}
+                href={`/admin/executive/facility/${row.facilityId}`}
+                className="grid grid-cols-1 gap-4 rounded-[1.5rem] border border-slate-200/70 bg-white/70 p-5 shadow-sm transition-colors hover:bg-white dark:border-white/5 dark:bg-white/[0.03] dark:hover:bg-white/[0.05] lg:grid-cols-[1.6fr_2.4fr_0.8fr_0.8fr_0.8fr]"
+              >
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Facility</p>
+                  <h4 className="mt-1 text-base font-semibold text-slate-900 dark:text-white">{row.facilityName}</h4>
+                </div>
+                <div className="flex items-end gap-2">
+                  {row.points.map((point) => (
+                    <div key={`${row.facilityId}:${point.date}`} className="flex flex-1 flex-col items-center gap-2">
+                      <div className="flex h-24 w-full items-end">
+                        <div
+                          className={cn(
+                            "w-full rounded-t-md",
+                            point.heatBand === "critical"
+                              ? "bg-rose-500"
+                              : point.heatBand === "elevated"
+                                ? "bg-orange-500"
+                                : point.heatBand === "watch"
+                                  ? "bg-amber-500"
+                                  : "bg-emerald-500",
+                          )}
+                          style={{ height: `${Math.max(10, Math.min(100, point.heatScore * 7))}%` }}
+                          title={`${point.date}: heat ${point.heatScore}`}
+                        />
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-500 dark:text-zinc-500">
+                        {point.date.slice(5)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <HeatMetric label="Latest" value={row.latestHeatScore} danger={row.latestHeatScore >= 7} />
+                <HeatMetric label="Peak" value={row.peakHeatScore} danger={row.peakHeatScore >= 7} />
+                <HeatMetric label="Avg" value={Number(row.avgHeatScore.toFixed(1))} danger={row.avgHeatScore >= 7} />
+              </Link>
+            ))}
+          </div>
+        </section>
+
+      </div>
+    </div>
+  );
+}
+
+function HeatMetric({
+  label,
+  value,
+  danger = false,
+}: {
+  label: string;
+  value: number;
+  danger?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between md:justify-end">
+      <div className="flex flex-col items-start md:items-end">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">{label}</span>
+        <span className={cn("text-2xl font-display tabular-nums text-slate-900 dark:text-white", danger && "text-rose-600 dark:text-rose-300")}>
+          {value}
+        </span>
       </div>
     </div>
   );

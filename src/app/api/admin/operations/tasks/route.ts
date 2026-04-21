@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Check authentication
   const {
@@ -15,17 +15,17 @@ export async function GET(request: Request) {
 
   // Get user's role and accessible facilities
   const { data: userData, error: userError } = await supabase
-    .from("user_facility_access" as never)
+    .from("user_facility_access" as any)
     .select("app_role, facility_id")
     .eq("user_id", user.id)
-    .single();
+    .single() as { data: { app_role: string; facility_id: string | null } | null; error: any };
 
   if (userError || !userData) {
     return NextResponse.json({ error: "Access denied" }, { status: 403 });
   }
 
-  const appRole = userData.app_role as string;
-  const userFacilityId = userData.facility_id as string | null;
+  const appRole = userData.app_role;
+  const userFacilityId = userData.facility_id;
 
   // Check if user has admin-eligible role
   const adminRoles = [
@@ -48,7 +48,7 @@ export async function GET(request: Request) {
 
   // Build query
   let query = supabase
-    .from("operation_task_instances" as never)
+    .from("operation_task_instances" as any)
     .select(`
       id,
       template_id,

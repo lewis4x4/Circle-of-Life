@@ -102,6 +102,40 @@ type SupabaseProfileMini = {
   full_name: string | null;
 };
 
+type IncidentWatchInstance = {
+  id: string;
+  status: string;
+  starts_at: string;
+  ends_at: string | null;
+  triggered_by_type: string;
+  triggered_by_id: string | null;
+  resident_watch_protocols?: { name: string } | null;
+  taskSummary: {
+    total: number;
+    open: number;
+    overdue: number;
+    missed: number;
+  };
+  events: Array<{
+    id: string;
+    event_type: string;
+    occurred_at: string;
+    note: string | null;
+  }>;
+};
+
+type IncidentAssuranceEscalation = {
+  id: string;
+  task_id: string;
+  escalation_level: number;
+  escalation_type: string;
+  status: string;
+  triggered_at: string;
+  resolution_note: string | null;
+  task_status: string;
+  task_due_at: string;
+};
+
 type QueryError = { message: string };
 type QueryResult<T> = { data: T | null; error: QueryError | null };
 type QueryListResult<T> = { data: T[] | null; error: QueryError | null };
@@ -129,6 +163,8 @@ type DetailView = {
     hoursOverdue: number;
     escalationLevel: FollowupEscalationLevel;
   }>;
+  watchInstances: IncidentWatchInstance[];
+  assuranceEscalations: IncidentAssuranceEscalation[];
 };
 
 export default function AdminIncidentDetailPage() {
@@ -241,6 +277,8 @@ export default function AdminIncidentDetailPage() {
 
   const { incident, residentName, reporterName, categoryUi, severityUi, statusUi, rcaInvestigation, followups } =
     detail;
+  const watchInstances = detail.watchInstances;
+  const assuranceEscalations = detail.assuranceEscalations;
   const openObligations = buildIncidentOpenObligations(incident);
   const workflowSummary = buildIncidentWorkflowSummary(incident, rcaInvestigation, followups, openObligations);
 
@@ -511,6 +549,155 @@ export default function AdminIncidentDetailPage() {
             )}
           </CardContent>
         </Card>
+
+        {watchInstances.length > 0 ? (
+          <Card className="border-cyan-200/60 shadow-soft dark:border-cyan-900/30 lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 font-display text-lg">
+                <GitBranch className="h-4 w-4 text-cyan-600" />
+                Resident Assurance Timeline
+              </CardTitle>
+              <CardDescription>
+                Watch activity automatically or manually linked to this incident.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {watchInstances.map((watch) => (
+                <div
+                  key={watch.id}
+                  className="rounded-lg border border-cyan-200/60 bg-cyan-50/40 p-4 dark:border-cyan-900/40 dark:bg-cyan-950/10"
+                >
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className="border-cyan-300 bg-cyan-50 text-cyan-800 dark:border-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-200"
+                        >
+                          {watch.resident_watch_protocols?.name ?? "Watch protocol"}
+                        </Badge>
+                        <Badge variant="outline" className="font-normal">
+                          {watch.status.replace(/_/g, " ")}
+                        </Badge>
+                        <Badge variant="outline" className="font-normal">
+                          {watch.triggered_by_type.replace(/_/g, " ")}
+                        </Badge>
+                      </div>
+                      <div className="grid gap-2 text-sm sm:grid-cols-2">
+                        <DetailRow label="Started" value={formatTs(watch.starts_at)} />
+                        <DetailRow label="Ends" value={watch.ends_at ? formatTs(watch.ends_at) : "Open-ended"} />
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Link
+                        href="/admin/rounding/watches"
+                        className={cn(
+                          buttonVariants({ variant: "outline", size: "sm" }),
+                          "border-cyan-300 bg-white/70 dark:border-cyan-900/40 dark:bg-slate-950/40",
+                        )}
+                      >
+                        Open watch center
+                      </Link>
+                      {(watch.taskSummary.overdue > 0 || watch.taskSummary.missed > 0) ? (
+                        <Link
+                          href="/admin/rounding/escalations"
+                          className={cn(
+                            buttonVariants({ variant: "outline", size: "sm" }),
+                            "border-rose-300 bg-white/70 dark:border-rose-900/40 dark:bg-slate-950/40",
+                          )}
+                        >
+                          Review escalations
+                        </Link>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Badge variant="outline" className="border-slate-200 bg-white text-slate-700 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-200">
+                      {watch.taskSummary.total} total task{watch.taskSummary.total === 1 ? "" : "s"}
+                    </Badge>
+                    <Badge variant="outline" className="border-slate-200 bg-white text-slate-700 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-200">
+                      {watch.taskSummary.open} open
+                    </Badge>
+                    <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                      {watch.taskSummary.overdue} overdue
+                    </Badge>
+                    <Badge variant="outline" className="border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
+                      {watch.taskSummary.missed} missed
+                    </Badge>
+                  </div>
+
+                  {watch.events.length > 0 ? (
+                    <div className="mt-4 space-y-2">
+                      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Watch events</p>
+                      <ul className="space-y-2 text-sm text-slate-700 dark:text-slate-300">
+                        {watch.events.map((event) => (
+                          <li key={event.id} className="rounded-md border border-slate-200/80 bg-white/70 px-3 py-2 dark:border-slate-800 dark:bg-slate-950/40">
+                            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                              <span className="font-medium">{event.event_type.replace(/_/g, " ")}</span>
+                              <span className="text-xs text-slate-500 dark:text-slate-400">{formatTs(event.occurred_at)}</span>
+                            </div>
+                            {event.note ? <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{event.note}</p> : null}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {assuranceEscalations.length > 0 ? (
+          <Card className="border-rose-200/60 shadow-soft dark:border-rose-900/30 lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 font-display text-lg">
+                <AlertTriangle className="h-4 w-4 text-rose-600" />
+                Active Resident Assurance Escalations
+              </CardTitle>
+              <CardDescription>
+                Open supervision work triggered by observation tasks linked to this incident.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {assuranceEscalations.map((escalation) => (
+                <div
+                  key={escalation.id}
+                  className="rounded-lg border border-rose-200/60 bg-rose-50/50 p-4 dark:border-rose-900/30 dark:bg-rose-950/10"
+                >
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline" className="border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
+                          Level {escalation.escalation_level}
+                        </Badge>
+                        <Badge variant="outline">{escalation.escalation_type.replace(/_/g, " ")}</Badge>
+                        <Badge variant="outline">{escalation.status.replace(/_/g, " ")}</Badge>
+                        <Badge variant="outline">{escalation.task_status.replace(/_/g, " ")}</Badge>
+                      </div>
+                      <p className="text-sm text-slate-700 dark:text-slate-300">
+                        Triggered {formatTs(escalation.triggered_at)} · Task due {formatTs(escalation.task_due_at)}
+                      </p>
+                      {escalation.resolution_note ? (
+                        <p className="text-sm text-slate-600 dark:text-slate-400">{escalation.resolution_note}</p>
+                      ) : null}
+                    </div>
+                    <Link
+                      href="/admin/rounding/escalations"
+                      className={cn(
+                        buttonVariants({ variant: "outline", size: "sm" }),
+                        "border-rose-300 bg-white/70 dark:border-rose-900/40 dark:bg-slate-950/40",
+                      )}
+                    >
+                      Open escalation queue
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        ) : null}
         <Card className="border-slate-200/70 shadow-soft dark:border-slate-800">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-display text-lg">
@@ -1096,6 +1283,106 @@ async function fetchIncidentDetail(
     rcaInvestigation = rcaResult.data.investigation_status === "complete" ? "complete" : "draft";
   }
 
+  const watchResult = (await supabase
+    .from("resident_watch_instances" as never)
+    .select("id, status, starts_at, ends_at, triggered_by_type, triggered_by_id, resident_watch_protocols(name)")
+    .eq("triggered_by_id", incidentId)
+    .is("deleted_at", null)
+    .order("starts_at", { ascending: false })) as unknown as QueryListResult<{
+    id: string;
+    status: string;
+    starts_at: string;
+    ends_at: string | null;
+    triggered_by_type: string;
+    triggered_by_id: string | null;
+    resident_watch_protocols?: { name: string } | null;
+  }>;
+  if (watchResult.error) throw watchResult.error;
+  const watchRows = watchResult.data ?? [];
+
+  const watchIds = watchRows.map((row) => row.id);
+  const taskResult = watchIds.length
+    ? ((await supabase
+        .from("resident_observation_tasks" as never)
+        .select("id, watch_instance_id, status, due_at")
+        .in("watch_instance_id", watchIds)
+        .is("deleted_at", null)) as unknown as QueryListResult<{ id: string; watch_instance_id: string | null; status: string; due_at: string }>)
+    : ({ data: [], error: null } as QueryListResult<{ id: string; watch_instance_id: string | null; status: string; due_at: string }>);
+  if (taskResult.error) throw taskResult.error;
+
+  const eventResult = watchIds.length
+    ? ((await supabase
+        .from("resident_watch_events" as never)
+        .select("id, watch_instance_id, event_type, occurred_at, note")
+        .in("watch_instance_id", watchIds)
+        .order("occurred_at", { ascending: false })) as unknown as QueryListResult<{
+        id: string;
+        watch_instance_id: string;
+        event_type: string;
+        occurred_at: string;
+        note: string | null;
+      }>)
+    : ({ data: [], error: null } as QueryListResult<{
+        id: string;
+        watch_instance_id: string;
+        event_type: string;
+        occurred_at: string;
+        note: string | null;
+      }>);
+  if (eventResult.error) throw eventResult.error;
+
+  const taskSummaryByWatch = new Map<string, IncidentWatchInstance["taskSummary"]>();
+  for (const row of taskResult.data ?? []) {
+    if (!row.watch_instance_id) continue;
+    const summary = taskSummaryByWatch.get(row.watch_instance_id) ?? { total: 0, open: 0, overdue: 0, missed: 0 };
+    summary.total += 1;
+    if (!["completed_on_time", "completed_late", "excused"].includes(row.status)) summary.open += 1;
+    if (row.status === "overdue" || row.status === "critically_overdue") summary.overdue += 1;
+    if (row.status === "missed") summary.missed += 1;
+    taskSummaryByWatch.set(row.watch_instance_id, summary);
+  }
+
+  const taskById = new Map((taskResult.data ?? []).map((row) => [row.id, row] as const));
+  const taskIds = Array.from(taskById.keys());
+  const assuranceEscalationResult = taskIds.length
+    ? ((await supabase
+        .from("resident_observation_escalations" as never)
+        .select("id, task_id, escalation_level, escalation_type, status, triggered_at, resolution_note")
+        .in("task_id", taskIds)
+        .in("status", ["open", "in_progress"])
+        .is("deleted_at", null)
+        .order("triggered_at", { ascending: false })) as unknown as QueryListResult<{
+        id: string;
+        task_id: string;
+        escalation_level: number;
+        escalation_type: string;
+        status: string;
+        triggered_at: string;
+        resolution_note: string | null;
+      }>)
+    : ({ data: [], error: null } as QueryListResult<{
+        id: string;
+        task_id: string;
+        escalation_level: number;
+        escalation_type: string;
+        status: string;
+        triggered_at: string;
+        resolution_note: string | null;
+      }>);
+  if (assuranceEscalationResult.error) throw assuranceEscalationResult.error;
+
+  const eventsByWatch = new Map<string, IncidentWatchInstance["events"]>();
+  for (const row of eventResult.data ?? []) {
+    const list = eventsByWatch.get(row.watch_instance_id) ?? [];
+    list.push({
+      id: row.id,
+      event_type: row.event_type,
+      occurred_at: row.occurred_at,
+      note: row.note,
+    });
+    eventsByWatch.set(row.watch_instance_id, list);
+  }
+
   return {
     incident,
     residentName,
@@ -1105,6 +1392,28 @@ async function fetchIncidentDetail(
     statusUi: mapDbStatusToUi(incident.status),
     rcaInvestigation,
     followups,
+    watchInstances: watchRows.map((row) => ({
+      id: row.id,
+      status: row.status,
+      starts_at: row.starts_at,
+      ends_at: row.ends_at,
+      triggered_by_type: row.triggered_by_type,
+      triggered_by_id: row.triggered_by_id,
+      resident_watch_protocols: row.resident_watch_protocols ?? null,
+      taskSummary: taskSummaryByWatch.get(row.id) ?? { total: 0, open: 0, overdue: 0, missed: 0 },
+      events: eventsByWatch.get(row.id) ?? [],
+    })),
+    assuranceEscalations: (assuranceEscalationResult.data ?? []).map((row) => ({
+      id: row.id,
+      task_id: row.task_id,
+      escalation_level: row.escalation_level,
+      escalation_type: row.escalation_type,
+      status: row.status,
+      triggered_at: row.triggered_at,
+      resolution_note: row.resolution_note,
+      task_status: taskById.get(row.task_id)?.status ?? "unknown",
+      task_due_at: taskById.get(row.task_id)?.due_at ?? row.triggered_at,
+    })),
   };
 }
 
