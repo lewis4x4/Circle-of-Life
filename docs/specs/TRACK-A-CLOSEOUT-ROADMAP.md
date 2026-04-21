@@ -141,6 +141,8 @@ flowchart LR
 
 **Progress (2026-04-09):** **A1** + **A2** owner-verified: pilot JWTs, shells, and **RLS matrix** ([PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md), [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md)). **Next:** **A3** §B–§E UAT + **PH1-A04**, **A4** env/facility as needed, **A5** Pro/BAA/PITR, **A6** waivers.
 
+**Progress (2026-04-21, S0 closeout):** Track A reconciled with current repo state (**193 migrations**, **27 Edge Function folders**) and all 5 COL facilities now confirmed via insurance policy NSC101045. RLS-02's single-facility deferral no longer applies — multi-facility seed (migration `120`) has shipped. Remaining blockers crystallized in [S0-CLOSEOUT-MEMO.md](./S0-CLOSEOUT-MEMO.md): **A3** depth UAT, **A5** Pro/BAA/PITR, RLS-02 re-execute. A6 waiver review current (no new waivers). Finding: **pre-existing lint debt** — 60 `no-explicit-any` errors across 56 files, not from S0 scope; flagged for cleanup before S1 meaningful TypeScript lands.
+
 ---
 
 ## Quick commands (reference)

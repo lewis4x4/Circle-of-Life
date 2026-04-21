@@ -26,6 +26,8 @@
 
 **A6 review (2026-04-10):** **W-ADMIN-01** remains **valid** — list-first vs wizard coverage is still mixed across modules; expiry **2026-10-01** unchanged. No additional waivers opened; remediated table above unchanged.
 
+**A6 review (2026-04-21, S0 closeout):** **W-ADMIN-01** remains **valid** and unchanged (expiry **2026-10-01**). No new waivers opened. Note for tracker continuity: post-2026-04-10 work delivered **73 additional migrations (121–193)** and **17 additional Edge Function folders**; none introduced new Phase 1 waivers. S0 closeout memo: [S0-CLOSEOUT-MEMO.md](./S0-CLOSEOUT-MEMO.md).
+
 ---
 
 ## Roadmap linkage
