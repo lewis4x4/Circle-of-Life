@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "notebooklm-circle-of-life": {
+      "command": "/Users/brianlewis/.local/bin/notebooklm-mcp",
+      "args": [
+        "-c",
+        "/Users/brianlewis/.config/notebooklm-mcp/config-circle-of-life.toml",
+        "server"
+      ]
+    }
+  }
+}

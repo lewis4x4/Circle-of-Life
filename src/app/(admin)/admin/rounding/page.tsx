@@ -9,6 +9,7 @@ import {
   FileBarChart,
   Play,
   RefreshCw,
+  Shield,
   UserPlus,
 } from "lucide-react";
 
@@ -33,6 +34,9 @@ type OverviewSummary = {
   missedCount: number;
   completedCount: number;
   expectedCount: number;
+  activeWatches: number;
+  pendingApprovals: number;
+  openEscalations: number;
 };
 
 const DEMO_SUMMARY: OverviewSummary = {
@@ -44,6 +48,9 @@ const DEMO_SUMMARY: OverviewSummary = {
   missedCount: 3,
   completedCount: 87,
   expectedCount: 95,
+  activeWatches: 4,
+  pendingApprovals: 1,
+  openEscalations: 3,
 };
 
 export default function AdminRoundingHubPage() {
@@ -64,29 +71,49 @@ export default function AdminRoundingHubPage() {
     }
 
     try {
-      const { data: plans } = await supabase
-        .from("resident_observation_plans")
-        .select("id")
-        .eq("facility_id", selectedFacilityId)
-        .eq("status", "active")
-        .is("deleted_at", null);
+      const [plansRes, tasksRes, watchesRes, escalationsRes] = await Promise.all([
+        supabase
+          .from("resident_observation_plans")
+          .select("id")
+          .eq("facility_id", selectedFacilityId)
+          .eq("status", "active")
+          .is("deleted_at", null),
+        supabase
+          .from("resident_observation_tasks")
+          .select("id, status, due_at, grace_ends_at")
+          .eq("facility_id", selectedFacilityId)
+          .is("deleted_at", null)
+          .gte("due_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+          .order("due_at", { ascending: true })
+          .limit(200),
+        supabase
+          .from("resident_watch_instances")
+          .select("id, status")
+          .eq("facility_id", selectedFacilityId)
+          .is("deleted_at", null),
+        supabase
+          .from("resident_observation_escalations")
+          .select("id", { count: "exact", head: true })
+          .eq("facility_id", selectedFacilityId)
+          .is("deleted_at", null)
+          .in("status", ["open", "in_progress"]),
+      ]);
 
-      const { data: tasks } = await supabase
-        .from("resident_observation_tasks")
-        .select("id, status, due_at, grace_ends_at")
-        .eq("facility_id", selectedFacilityId)
-        .is("deleted_at", null)
-        .gte("due_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-        .order("due_at", { ascending: true })
-        .limit(200);
+      if (plansRes.error) throw plansRes.error;
+      if (tasksRes.error) throw tasksRes.error;
+      if (watchesRes.error) throw watchesRes.error;
+      if (escalationsRes.error) throw escalationsRes.error;
 
-      const planCount = plans?.length ?? 0;
-      const taskRows = tasks ?? [];
+      const planCount = plansRes.data?.length ?? 0;
+      const taskRows = tasksRes.data ?? [];
+      const watchRows = watchesRes.data ?? [];
       const completed = taskRows.filter((t) => (t.status as string).startsWith("completed"));
       const missed = taskRows.filter((t) => t.status === "missed");
       const urgent = taskRows.filter((t) => t.status === "critically_overdue" || t.status === "missed");
       const active = taskRows.filter((t) => !(t.status as string).startsWith("completed") && t.status !== "excused");
       const expected = taskRows.length;
+      const activeWatches = watchRows.filter((row) => row.status === "active").length;
+      const pendingApprovals = watchRows.filter((row) => row.status === "pending_approval").length;
 
       if (expected === 0) {
         setDemoFallbackActive(true);
@@ -102,6 +129,9 @@ export default function AdminRoundingHubPage() {
           missedCount: missed.length,
           completedCount: completed.length,
           expectedCount: expected,
+          activeWatches,
+          pendingApprovals,
+          openEscalations: escalationsRes.count ?? 0,
         });
       }
     } catch {
@@ -225,7 +255,7 @@ export default function AdminRoundingHubPage() {
           />
         </KineticGrid>
 
-        <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4" staggerMs={80} baseDelayMs={200}>
+        <KineticGrid className="grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4" staggerMs={80} baseDelayMs={200}>
           <ActionCard
             href="/admin/rounding/live"
             title="Live Board"
@@ -257,6 +287,17 @@ export default function AdminRoundingHubPage() {
             metrics={[
               { label: "Completed", value: String(summary.completedCount) },
               { label: "Expected", value: String(summary.expectedCount) },
+            ]}
+          />
+          <ActionCard
+            href="/admin/rounding/watches"
+            title="Watch Center"
+            description="Approve triggered watches, review active watch load, and close or pause monitoring windows without losing audit evidence."
+            icon={<Shield className="h-5 w-5" />}
+            hoverColor="rose"
+            metrics={[
+              { label: "Active", value: String(summary.activeWatches) },
+              { label: "Pending", value: String(summary.pendingApprovals) },
             ]}
           />
         </KineticGrid>

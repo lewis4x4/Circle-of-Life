@@ -8,6 +8,7 @@ import {
   FileBarChart,
   LayoutDashboard,
   Plus,
+  Shield,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -17,6 +18,7 @@ const NAV_ITEMS = [
   { href: "/admin/rounding/live", label: "Live Board", icon: Eye },
   { href: "/admin/rounding/plans", label: "Plans", icon: ClipboardList },
   { href: "/admin/rounding/plans/new", label: "New Plan", icon: Plus },
+  { href: "/admin/rounding/watches", label: "Watches", icon: Shield },
   { href: "/admin/rounding/reports", label: "Reports", icon: FileBarChart },
 ] as const;
 

@@ -70,6 +70,7 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 - `/admin/residents/[id]/care-plan`
 - `/admin/rounding`
 - `/admin/rounding/live`
+- `/admin/rounding/watches`
 - `/admin/rounding/plans`
 - `/admin/rounding/plans/new`
 - `/admin/rounding/plans/[id]`
