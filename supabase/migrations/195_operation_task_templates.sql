@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS operation_task_templates (
   -- Compliance mapping
   compliance_requirement TEXT, -- Reference to AHCA rule or internal policy
   survey_readiness_impact BOOLEAN NOT NULL DEFAULT false,
+  requires_dual_sign BOOLEAN NOT NULL DEFAULT false,
 
   -- Time tracking
   estimated_minutes INTEGER CHECK (estimated_minutes >= 0),
@@ -121,14 +122,14 @@ CREATE POLICY ott_select ON operation_task_templates
 CREATE POLICY ott_manage ON operation_task_templates
   FOR ALL USING (
     organization_id = haven.organization_id()
-    AND haven.app_role() IN ('owner', 'org_admin', 'coo')
+    AND haven.app_role() IN ('owner', 'org_admin')
   );
 
 CREATE POLICY ott_facility_read ON operation_task_templates
   FOR SELECT USING (
     organization_id = haven.organization_id()
     AND deleted_at IS NULL
-    AND haven.app_role() IN ('facility_administrator', 'don', 'lpn_supervisor')
+    AND haven.app_role() IN ('facility_admin', 'manager', 'coordinator', 'nurse')
     AND facility_id IN (SELECT haven.accessible_facility_ids())
   );
 

@@ -63,16 +63,13 @@ CREATE TABLE IF NOT EXISTS staffing_adequacy_snapshots (
 -- ============================================================================
 
 CREATE INDEX IF NOT EXISTS idx_sas_facility_date
-  ON staffing_adequacy_snapshots(facility_id, snapshot_date DESC)
-  WHERE snapshot_date >= CURRENT_DATE - INTERVAL '30 days';
+  ON staffing_adequacy_snapshots(facility_id, snapshot_date DESC);
 
 CREATE INDEX IF NOT EXISTS idx_sas_adequacy
-  ON staffing_adequacy_snapshots(adequacy_score, snapshot_date)
-  WHERE snapshot_date >= CURRENT_DATE - INTERVAL '30 days';
+  ON staffing_adequacy_snapshots(adequacy_score, snapshot_date);
 
 CREATE INDEX IF NOT EXISTS idx_sas_compliance
-  ON staffing_adequacy_snapshots(is_compliant, snapshot_date)
-  WHERE snapshot_date >= CURRENT_DATE - INTERVAL '30 days';
+  ON staffing_adequacy_snapshots(is_compliant, snapshot_date);
 
 -- ============================================================================
 -- RLS Policies

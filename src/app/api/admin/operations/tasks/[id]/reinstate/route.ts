@@ -36,36 +36,37 @@ export async function PATCH(
 
   const canMutate = await actorCanMutateTask(actor, task);
   if (!canMutate) {
-    return NextResponse.json({ error: "Not authorized to start this task" }, { status: 403 });
+    return NextResponse.json({ error: "Not authorized to reinstate this task" }, { status: 403 });
   }
 
   const now = new Date().toISOString();
   const { error: updateError } = await actor.admin
     .from("operation_task_instances" as any)
     .update({
-      status: "in_progress",
-      started_at: now,
+      status: "pending",
+      missed_at: null,
+      deferred_until: null,
       updated_at: now,
       updated_by: actor.id,
     })
     .eq("id", id);
 
   if (updateError) {
-    console.error("[operations/tasks/start] update", updateError);
-    return NextResponse.json({ error: "Failed to start task" }, { status: 500 });
+    console.error("[operations/tasks/reinstate] update", updateError);
+    return NextResponse.json({ error: "Failed to reinstate task" }, { status: 500 });
   }
 
   await actor.admin.from("operation_audit_log" as any).insert({
     organization_id: task.organization_id,
     facility_id: task.facility_id,
     task_instance_id: task.id,
-    event_type: "started",
+    event_type: "updated",
     from_status: task.status,
-    to_status: "in_progress",
+    to_status: "pending",
     actor_id: actor.id,
     actor_role: actor.appRole,
-    event_notes: "Started via operations queue",
-    event_data: { source: "admin-operations" },
+    event_notes: "Task reinstated from missed queue",
+    event_data: { source: "admin-operations-missed" },
   });
 
   return NextResponse.json({ success: true });

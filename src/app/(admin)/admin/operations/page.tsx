@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { CheckCircle2, Clock, AlertTriangle, Zap, Calendar, MoreHorizontal, Filter, BarChart3, Users, ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { OperationsViewNav } from "@/components/operations/OperationsViewNav";
+import { isOperationsViewRole } from "@/lib/operations/constants";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,6 +32,7 @@ type TaskInstance = {
   current_escalation_level: number;
   facility_id: string;
   facility_name: string;
+  days_overdue: number;
 };
 
 type AdequacySnapshot = {
@@ -105,12 +108,7 @@ export default function OperationsTodayPage() {
   // Redirect non-admin roles
   useEffect(() => {
     if (authLoading) return;
-    if (appRole !== "owner" && appRole !== "org_admin" && appRole !== "coo" &&
-        appRole !== "facility_administrator" && appRole !== "don" &&
-        appRole !== "lpn_supervisor" && appRole !== "medication_aide" &&
-        appRole !== "cna" && appRole !== "dietary_manager" &&
-        appRole !== "activities_director" && appRole !== "housekeeping" &&
-        appRole !== "hr_manager" && appRole !== "staffing_coordinator") {
+    if (!isOperationsViewRole(appRole)) {
       router.replace("/dashboard");
     }
   }, [appRole, authLoading, router]);
@@ -288,7 +286,7 @@ export default function OperationsTodayPage() {
   const pendingTasks = tasks.filter((t: TaskInstance) => t.status === "pending");
   const inProgressTasks = tasks.filter((t: TaskInstance) => t.status === "in_progress");
   const overdueTasks = tasks.filter((t: TaskInstance) =>
-    t.status === "pending" && t.due_at && new Date(t.due_at) < new Date()
+    (t.status === "pending" || t.status === "in_progress") && t.days_overdue > 0
   );
   const missedTasks = tasks.filter((t: TaskInstance) => t.status === "missed");
 
@@ -340,6 +338,8 @@ export default function OperationsTodayPage() {
           </Button>
         </div>
       </div>
+
+      <OperationsViewNav />
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-6 p-4 bg-muted/30 rounded-lg border">
@@ -420,7 +420,7 @@ export default function OperationsTodayPage() {
                   <h3 className="font-semibold mb-1">{task.template_name}</h3>
 
                   <div className="text-xs text-muted-foreground mb-3">
-                    {task.estimated_minutes}m
+                    {task.estimated_minutes ?? 0}m
                   </div>
 
                   <div className="flex items-center justify-between text-sm">
@@ -490,7 +490,7 @@ export default function OperationsTodayPage() {
                   <h3 className="font-semibold mb-1">{task.template_name}</h3>
 
                   <div className="text-xs text-muted-foreground mb-3">
-                    {task.estimated_minutes}m
+                    {task.estimated_minutes ?? 0}m
                   </div>
 
                   <div className="flex items-center justify-between text-sm">
@@ -550,7 +550,7 @@ export default function OperationsTodayPage() {
                       <StatusIcon className="h-3 w-3 text-blue-600" />
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {task.estimated_minutes}m
+                      {task.estimated_minutes ?? 0}m
                     </div>
                   </div>
 
@@ -649,7 +649,7 @@ export default function OperationsTodayPage() {
           <div className="bg-background rounded-lg shadow-xl max-w-lg w-full p-6">
             <h2 className="text-xl font-bold mb-4">Task Details</h2>
             <p className="text-muted-foreground mb-6">
-              Task detail modal to be implemented in S2.
+              Full task detail is deferred to a later OCE slice.
               Task ID: {selectedTaskId}
             </p>
             <div className="flex justify-end gap-3">

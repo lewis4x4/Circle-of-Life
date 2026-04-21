@@ -104,7 +104,7 @@ CREATE POLICY fa_select ON facility_assets
 CREATE POLICY fa_manage ON facility_assets
   FOR ALL USING (
     organization_id = haven.organization_id()
-    AND haven.app_role() IN ('owner', 'org_admin', 'coo', 'facility_administrator')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'manager', 'maintenance_role')
   );
 
 -- ============================================================================

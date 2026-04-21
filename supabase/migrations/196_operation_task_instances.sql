@@ -19,6 +19,9 @@ CREATE TABLE IF NOT EXISTS operation_task_instances (
   template_name TEXT NOT NULL,
   template_category TEXT NOT NULL,
   template_cadence_type TEXT NOT NULL,
+  priority TEXT NOT NULL DEFAULT 'normal' CHECK (priority IN ('critical', 'high', 'normal', 'low')),
+  license_threatening BOOLEAN NOT NULL DEFAULT false,
+  estimated_minutes INTEGER CHECK (estimated_minutes >= 0),
 
   -- Shift assignment
   assigned_shift_date DATE NOT NULL, -- The date this task is for
@@ -124,11 +127,11 @@ CREATE POLICY oti_update ON operation_task_instances
     AND (
       -- Can update if assigned to them
       assigned_to = auth.uid()
-      -- COO/owner/org_admin can update all in accessible facilities
-      OR haven.app_role() IN ('owner', 'org_admin', 'coo')
+      -- Operations admins can update all in accessible facilities
+      OR haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'manager', 'coordinator', 'admin_assistant', 'nurse', 'dietary', 'maintenance_role')
       -- Facility admins can update in their facility
       OR (
-        haven.app_role() = 'facility_administrator'
+        haven.app_role() = 'facility_admin'
         AND facility_id IN (SELECT haven.accessible_facility_ids())
       )
     )
@@ -137,7 +140,7 @@ CREATE POLICY oti_update ON operation_task_instances
 CREATE POLICY oti_delete ON operation_task_instances
   FOR DELETE USING (
     organization_id = haven.organization_id()
-    AND haven.app_role() IN ('owner', 'org_admin', 'coo')
+    AND haven.app_role() IN ('owner', 'org_admin')
   );
 
 -- ============================================================================

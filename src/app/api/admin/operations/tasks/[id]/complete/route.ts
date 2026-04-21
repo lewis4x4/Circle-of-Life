@@ -1,93 +1,91 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+
+import { actorCanMutateTask, requireOperationsActor } from "@/lib/operations/auth";
+
+type TaskRow = {
+  id: string;
+  organization_id: string;
+  facility_id: string;
+  assigned_to: string | null;
+  status: string;
+  due_at: string | null;
+};
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const supabase = await createClient();
-  const { id } = await params;
-
-  // Check authentication
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const actorResult = await requireOperationsActor();
+  if ("response" in actorResult) {
+    return actorResult.response;
   }
 
-  // Get request body
-  const body = await request.json();
-  const { completion_notes, completion_evidence_paths } = body as {
-    completion_notes?: string;
-    completion_evidence_paths?: string[];
-  };
+  const { actor } = actorResult;
+  const { id } = await params;
 
-  // Check task exists
-  const { data: task, error: taskError } = await supabase
+  let body: { completion_notes?: string; completion_evidence_paths?: string[] } = {};
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    body = {};
+  }
+
+  const { data, error } = await actor.admin
     .from("operation_task_instances" as any)
-    .select("id, status, assigned_to, facility_id, template_id, due_at")
+    .select("id, organization_id, facility_id, assigned_to, status, due_at")
     .eq("id", id)
     .is("deleted_at", null)
-    .single() as { data: { id: string; status: string; assigned_to: string | null; facility_id: string; template_id: string; due_at: string | null } | null; error: any };
+    .maybeSingle();
 
-  if (taskError || !task) {
+  const task = data as unknown as TaskRow | null;
+  if (error || !task) {
     return NextResponse.json({ error: "Task not found" }, { status: 404 });
   }
 
-  // Check if user can update (assigned to or admin role)
-  if (task.assigned_to !== user.id) {
-    const { data: userData } = await supabase
-      .from("user_facility_access" as any)
-      .select("app_role")
-      .eq("user_id", user.id)
-      .single() as { data: { app_role: string } | null; error: any };
-
-    const appRole = userData?.app_role || "";
-    const adminRoles = ["owner", "org_admin", "coo", "facility_administrator"];
-
-    if (!adminRoles.includes(appRole)) {
-      return NextResponse.json({ error: "Not authorized to complete this task" }, { status: 403 });
-    }
+  const canMutate = await actorCanMutateTask(actor, task);
+  if (!canMutate) {
+    return NextResponse.json({ error: "Not authorized to complete this task" }, { status: 403 });
   }
 
-  // Check if SLA met
-  const slaMet = task.due_at ? new Date(task.due_at) >= new Date() : true;
+  const now = new Date().toISOString();
+  const slaMet = task.due_at ? new Date(task.due_at) >= new Date(now) : true;
 
-  // Update task status to completed
-  const { error: updateError } = await supabase
+  const { error: updateError } = await actor.admin
     .from("operation_task_instances" as any)
     .update({
       status: "completed",
-      completed_at: new Date().toISOString(),
-      completion_notes: completion_notes || null,
-      completion_evidence_paths: completion_evidence_paths || [],
-      verified_by: user.id, // Auto-verify for now
-      verified_at: new Date().toISOString(),
+      completed_at: now,
+      completion_notes: body.completion_notes || null,
+      completion_evidence_paths: Array.isArray(body.completion_evidence_paths) ? body.completion_evidence_paths : [],
+      verified_by: actor.id,
+      verified_at: now,
       sla_met: slaMet,
-      sla_miss_reason: !slaMet ? "Completed after due time" : null,
-      updated_at: new Date().toISOString(),
-      updated_by: user.id,
+      sla_miss_reason: slaMet ? null : "Completed after due time",
+      updated_at: now,
+      updated_by: actor.id,
     })
     .eq("id", id);
 
   if (updateError) {
-    console.error("[OCE Task Complete] Error:", updateError);
+    console.error("[operations/tasks/complete] update", updateError);
     return NextResponse.json({ error: "Failed to complete task" }, { status: 500 });
   }
 
-  // Write to operation audit log
-  await supabase.from("operation_audit_log" as any).insert({
-    organization_id: null, // Will be filled by trigger
+  await actor.admin.from("operation_audit_log" as any).insert({
+    organization_id: task.organization_id,
     facility_id: task.facility_id,
-    task_instance_id: id,
+    task_instance_id: task.id,
     event_type: "completed",
     from_status: task.status,
     to_status: "completed",
-    actor_id: user.id,
-    event_notes: completion_notes || "Completed via Today view",
-    event_data: { sla_met: slaMet, auto_verified: true } as any,
+    actor_id: actor.id,
+    actor_role: actor.appRole,
+    event_notes: body.completion_notes || "Completed via operations queue",
+    event_data: {
+      sla_met: slaMet,
+      auto_verified: true,
+      evidence_count: Array.isArray(body.completion_evidence_paths) ? body.completion_evidence_paths.length : 0,
+    },
   });
 
   return NextResponse.json({ success: true });

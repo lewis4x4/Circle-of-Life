@@ -1,99 +1,103 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(request: NextRequest) {
-  const supabase = await createClient();
+import { actorCanMutateTask, requireOperationsActor } from "@/lib/operations/auth";
 
-  // Check authentication
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+type TaskRow = {
+  id: string;
+  organization_id: string;
+  facility_id: string;
+  assigned_to: string | null;
+  status: string;
+  due_at: string | null;
+};
+
+export async function POST(request: NextRequest) {
+  const actorResult = await requireOperationsActor();
+  if ("response" in actorResult) {
+    return actorResult.response;
   }
 
-  // Get request body
-  const body = await request.json();
-  const { task_ids, completion_notes } = body as {
-    task_ids?: string[];
-    completion_notes?: string;
-  };
+  const { actor } = actorResult;
 
-  if (!task_ids || !Array.isArray(task_ids) || task_ids.length === 0) {
+  let body: { task_ids?: string[]; completion_notes?: string } = {};
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    body = {};
+  }
+
+  if (!Array.isArray(body.task_ids) || body.task_ids.length === 0) {
     return NextResponse.json({ error: "task_ids array is required" }, { status: 400 });
   }
 
-  // Get user's role
-  const { data: userData } = await supabase
-    .from("user_facility_access" as any)
-    .select("app_role")
-    .eq("user_id", user.id)
-    .single() as { data: { app_role: string } | null; error: any };
-
-  const appRole = userData?.app_role || "";
-  const adminRoles = ["owner", "org_admin", "coo", "facility_administrator", "don"];
-
-  // Check tasks exist and user can update them
-  const { data: tasks, error: tasksError } = await supabase
+  const { data, error } = await actor.admin
     .from("operation_task_instances" as any)
-    .select("id, status, assigned_to, due_at, facility_id")
-    .in("id", task_ids)
-    .is("deleted_at", null) as { data: Array<{ id: string; status: string; assigned_to: string | null; due_at: string | null; facility_id: string }> | null; error: any };
+    .select("id, organization_id, facility_id, assigned_to, status, due_at")
+    .in("id", body.task_ids)
+    .is("deleted_at", null);
 
-  if (tasksError || !tasks) {
-    console.error("[OCE Bulk Complete] Error:", tasksError);
+  const tasks = (data ?? []) as unknown as TaskRow[];
+  if (error) {
+    console.error("[operations/tasks/bulk-complete] query", error);
     return NextResponse.json({ error: "Failed to load tasks" }, { status: 500 });
   }
 
-  // Filter tasks user can update
-  const updatableTasks = tasks.filter((task: any) =>
-    task.assigned_to === user.id || adminRoles.includes(appRole)
-  );
+  const updatableTasks: TaskRow[] = [];
+  for (const task of tasks) {
+    if (await actorCanMutateTask(actor, task)) {
+      updatableTasks.push(task);
+    }
+  }
 
   if (updatableTasks.length === 0) {
     return NextResponse.json({ error: "No tasks to update" }, { status: 400 });
   }
 
-  // Bulk update tasks
   const now = new Date().toISOString();
-  const { error: updateError } = await supabase
-    .from("operation_task_instances" as any)
-    .update({
-      status: "completed",
-      completed_at: now,
-      completion_notes: completion_notes || "End of shift bulk complete",
-      verified_by: user.id,
-      verified_at: now,
-      sla_met: true, // Assume met for bulk complete
-      updated_at: now,
-      updated_by: user.id,
-    })
-    .in("id", updatableTasks.map((t: any) => t.id));
+  let completedCount = 0;
 
-  if (updateError) {
-    console.error("[OCE Bulk Complete] Error:", updateError);
-    return NextResponse.json({ error: "Failed to complete tasks" }, { status: 500 });
-  }
-
-  // Write audit log entries for each task
   for (const task of updatableTasks) {
-    await supabase.from("operation_audit_log" as any).insert({
-      organization_id: null,
+    const slaMet = task.due_at ? new Date(task.due_at) >= new Date(now) : true;
+
+    const { error: updateError } = await actor.admin
+      .from("operation_task_instances" as any)
+      .update({
+        status: "completed",
+        completed_at: now,
+        completion_notes: body.completion_notes || "End of shift bulk complete",
+        verified_by: actor.id,
+        verified_at: now,
+        sla_met: slaMet,
+        sla_miss_reason: slaMet ? null : "Completed after due time",
+        updated_at: now,
+        updated_by: actor.id,
+      })
+      .eq("id", task.id);
+
+    if (updateError) {
+      console.error("[operations/tasks/bulk-complete] update", updateError);
+      continue;
+    }
+
+    completedCount += 1;
+
+    await actor.admin.from("operation_audit_log" as any).insert({
+      organization_id: task.organization_id,
       facility_id: task.facility_id,
       task_instance_id: task.id,
       event_type: "completed",
       from_status: task.status,
       to_status: "completed",
-      actor_id: user.id,
-      event_notes: completion_notes || "Bulk completed (end of shift)",
-      event_data: { bulk_complete: true } as any,
+      actor_id: actor.id,
+      actor_role: actor.appRole,
+      event_notes: body.completion_notes || "Bulk completed (end of shift)",
+      event_data: { bulk_complete: true, sla_met: slaMet },
     });
   }
 
   return NextResponse.json({
     success: true,
-    completed_count: updatableTasks.length,
-    requested_count: task_ids.length,
+    completed_count: completedCount,
+    requested_count: body.task_ids.length,
   });
 }

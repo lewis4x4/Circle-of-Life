@@ -44,16 +44,13 @@ CREATE INDEX IF NOT EXISTS idx_oal_task
   ON operation_audit_log(task_instance_id, created_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_oal_facility_date
-  ON operation_audit_log(facility_id, created_at DESC)
-  WHERE created_at >= CURRENT_DATE - INTERVAL '90 days';
+  ON operation_audit_log(facility_id, created_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_oal_event_type
-  ON operation_audit_log(event_type, created_at DESC)
-  WHERE created_at >= CURRENT_DATE - INTERVAL '90 days';
+  ON operation_audit_log(event_type, created_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_oal_actor
-  ON operation_audit_log(actor_id, created_at DESC)
-  WHERE created_at >= CURRENT_DATE - INTERVAL '90 days';
+  ON operation_audit_log(actor_id, created_at DESC);
 
 -- ============================================================================
 -- RLS Policies
