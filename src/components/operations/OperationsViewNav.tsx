@@ -12,6 +12,8 @@ const LINKS = [
   { href: "/admin/operations/quarter", label: "Quarter" },
   { href: "/admin/operations/year", label: "Year" },
   { href: "/admin/operations/calendar", label: "Calendar" },
+  { href: "/admin/operations/assets", label: "Assets" },
+  { href: "/admin/operations/vendors", label: "Vendors" },
   { href: "/admin/operations/overdue", label: "Overdue" },
   { href: "/admin/operations/missed", label: "Missed" },
 ] as const;
