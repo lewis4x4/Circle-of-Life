@@ -1,5 +1,5 @@
 export const REPORT_EXPORT_BUCKET = "report-exports";
-export const EXECUTIVE_STANDUP_PACKET_RENDER_VERSION = 2;
+export const EXECUTIVE_STANDUP_PACKET_RENDER_VERSION = 3;
 
 export function executiveStandupPdfStoragePath(
   organizationId: string,
