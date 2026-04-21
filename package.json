@@ -78,5 +78,8 @@
     "tailwindcss": "^4",
     "tsx": "^4.19.3",
     "typescript": "^5"
+  },
+  "overrides": {
+    "hono": "^4.12.14"
   }
 }

@@ -61,6 +61,50 @@ type CompletionDialogState = {
   notes: string;
 };
 
+type FacilityOrganizationRow = {
+  organization_id: string | null;
+};
+
+type EmergencyChecklistItemRow = {
+  id: string;
+  checklist_type: string;
+  title: string;
+  description: string | null;
+  frequency_days: number;
+  next_due_date: string;
+  last_completed_at: string | null;
+  last_completed_by: string | null;
+  last_participants: string[] | null;
+  last_notes: string | null;
+};
+
+type EmergencyChecklistCompletionInsert = {
+  checklist_item_id: string;
+  facility_id: string;
+  organization_id: string;
+  completed_by: string;
+  participants: string[];
+  notes: string | null;
+};
+
+type EmergencyChecklistItemCompletionUpdate = {
+  last_completed_at: string;
+  last_completed_by: string;
+  last_participants: string[];
+  last_notes: string | null;
+  next_due_date: string;
+};
+
+type EmergencyChecklistItemInsert = {
+  facility_id: string;
+  organization_id: string;
+  checklist_type: string;
+  title: string;
+  description: string | null;
+  frequency_days: number;
+  next_due_date: string;
+};
+
 const CHECKLIST_TYPES = [
   { value: "generator_test", label: "Generator Test", icon: Zap },
   { value: "fire_drill", label: "Fire Drill", icon: Flame },
@@ -107,18 +151,8 @@ export default function EmergencyPreparednessPage() {
     setError(null);
 
     try {
-      const { data, error: fetchError } = await (supabase as any)
-        .from("emergency_checklist_items")
-        .select("*")
-        .eq("facility_id", selectedFacilityId!)
-        .is("deleted_at", null)
-        .order("next_due_date", { ascending: true });
-
-      if (fetchError) {
-        throw new Error(fetchError.message);
-      }
-
-      setItems((data as ChecklistItem[]) || []);
+      const data = await fetchEmergencyChecklistItems(supabase, selectedFacilityId!);
+      setItems(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load checklist items");
     } finally {
@@ -154,33 +188,22 @@ export default function EmergencyPreparednessPage() {
         throw new Error("Not authenticated");
       }
 
-      const { data: itemData } = await supabase
-        .from("facilities")
-        .select("organization_id")
-        .eq("id", selectedFacilityId!)
-        .maybeSingle();
-
-      const organizationId = itemData?.organization_id;
+      const organizationId = await loadOrganizationIdForFacility(supabase, selectedFacilityId!);
 
       if (!organizationId) {
         throw new Error("Could not determine organization ID");
       }
 
       // Create completion record
-      const { error: completionError } = await (supabase as any)
-        .from("emergency_checklist_completions")
-        .insert({
-          checklist_item_id: completionDialog.itemId,
-          facility_id: selectedFacilityId!,
-          organization_id: organizationId,
-          completed_by: user.id,
-          participants: completionDialog.participants.split(",").map((p) => p.trim()).filter(Boolean),
-          notes: completionDialog.notes || null,
-        });
-
-      if (completionError) {
-        throw new Error(completionError.message);
-      }
+      const participants = completionDialog.participants.split(",").map((p) => p.trim()).filter(Boolean);
+      await insertEmergencyChecklistCompletion(supabase, {
+        checklist_item_id: completionDialog.itemId,
+        facility_id: selectedFacilityId!,
+        organization_id: organizationId,
+        completed_by: user.id,
+        participants,
+        notes: completionDialog.notes || null,
+      });
 
       // Update the checklist item
 
@@ -190,20 +213,17 @@ export default function EmergencyPreparednessPage() {
       const nextDueDate = new Date();
       nextDueDate.setDate(nextDueDate.getDate() + item.frequency_days);
 
-      const { error: updateError } = await (supabase as any)
-        .from("emergency_checklist_items")
-        .update({
+      await updateEmergencyChecklistItemCompletion(
+        supabase,
+        completionDialog.itemId,
+        {
           last_completed_at: new Date().toISOString(),
           last_completed_by: user.id,
-          last_participants: completionDialog.participants.split(",").map((p) => p.trim()).filter(Boolean),
+          last_participants: participants,
           last_notes: completionDialog.notes || null,
           next_due_date: nextDueDate.toISOString().split("T")[0],
-        })
-        .eq("id", completionDialog.itemId);
-
-      if (updateError) {
-        throw new Error(updateError.message);
-      }
+        }
+      );
 
       // Close dialog and reload
       setCompletionDialog({ open: false, itemId: null, participants: "", notes: "" });
@@ -222,13 +242,7 @@ export default function EmergencyPreparednessPage() {
     setError(null);
 
     try {
-      const { data: itemData } = await supabase
-        .from("facilities")
-        .select("organization_id")
-        .eq("id", selectedFacilityId!)
-        .maybeSingle();
-
-      const organizationId = itemData?.organization_id;
+      const organizationId = await loadOrganizationIdForFacility(supabase, selectedFacilityId!);
 
       if (!organizationId) {
         throw new Error("Could not determine organization ID");
@@ -237,21 +251,15 @@ export default function EmergencyPreparednessPage() {
       const nextDueDate = new Date();
       nextDueDate.setDate(nextDueDate.getDate() + newItemDialog.frequency);
 
-      const { error: insertError } = await (supabase as any)
-        .from("emergency_checklist_items")
-        .insert({
-          facility_id: selectedFacilityId!,
-          organization_id: organizationId,
-          checklist_type: newItemDialog.type,
-          title: newItemDialog.title,
-          description: newItemDialog.description || null,
-          frequency_days: newItemDialog.frequency,
-          next_due_date: nextDueDate.toISOString().split("T")[0],
-        });
-
-      if (insertError) {
-        throw new Error(insertError.message);
-      }
+      await insertEmergencyChecklistItem(supabase, {
+        facility_id: selectedFacilityId!,
+        organization_id: organizationId,
+        checklist_type: newItemDialog.type,
+        title: newItemDialog.title,
+        description: newItemDialog.description || null,
+        frequency_days: newItemDialog.frequency,
+        next_due_date: nextDueDate.toISOString().split("T")[0],
+      });
 
       // Close dialog and reload
       setNewItemDialog({
@@ -591,4 +599,111 @@ export default function EmergencyPreparednessPage() {
       )}
     </div>
   );
+}
+
+async function fetchEmergencyChecklistItems(
+  supabase: ReturnType<typeof createClient>,
+  facilityId: string,
+): Promise<ChecklistItem[]> {
+  const result = await supabase
+    .from("emergency_checklist_items" as never)
+    .select("*")
+    .eq("facility_id", facilityId)
+    .is("deleted_at", null)
+    .order("next_due_date", { ascending: true });
+
+  const { data, error } = result as unknown as {
+    data: EmergencyChecklistItemRow[] | null;
+    error: { message: string } | null;
+  };
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []).map((item) => ({
+    ...item,
+    overdue: getOverdueStatus(item.next_due_date),
+  }));
+}
+
+async function loadOrganizationIdForFacility(
+  supabase: ReturnType<typeof createClient>,
+  facilityId: string,
+): Promise<string | null> {
+  const result = await supabase
+    .from("facilities")
+    .select("organization_id")
+    .eq("id", facilityId)
+    .maybeSingle();
+
+  const { data, error } = result as unknown as {
+    data: FacilityOrganizationRow | null;
+    error: { message: string } | null;
+  };
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data?.organization_id ?? null;
+}
+
+async function insertEmergencyChecklistCompletion(
+  supabase: ReturnType<typeof createClient>,
+  payload: EmergencyChecklistCompletionInsert,
+) {
+  const result = await supabase
+    .from("emergency_checklist_completions" as never)
+    .insert(payload as never);
+
+  const { error } = result as unknown as {
+    error: { message: string } | null;
+  };
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+async function updateEmergencyChecklistItemCompletion(
+  supabase: ReturnType<typeof createClient>,
+  itemId: string,
+  payload: EmergencyChecklistItemCompletionUpdate,
+) {
+  const result = await supabase
+    .from("emergency_checklist_items" as never)
+    .update(payload as never)
+    .eq("id", itemId);
+
+  const { error } = result as unknown as {
+    error: { message: string } | null;
+  };
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+async function insertEmergencyChecklistItem(
+  supabase: ReturnType<typeof createClient>,
+  payload: EmergencyChecklistItemInsert,
+) {
+  const result = await supabase
+    .from("emergency_checklist_items" as never)
+    .insert(payload as never);
+
+  const { error } = result as unknown as {
+    error: { message: string } | null;
+  };
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+function getOverdueStatus(nextDueDate: string) {
+  const today = new Date();
+  const dueDate = new Date(nextDueDate);
+  return dueDate < today;
 }

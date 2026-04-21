@@ -12,7 +12,7 @@
 | `emar-missed-dose-check` | no | `POST` — opens **`exec_alerts`** for overdue scheduled eMAR rows. Auth: **`x-cron-secret`** = `EMAR_MISSED_DOSE_SECRET`. |
 | `exec-alert-evaluator` | no | `POST { "organization_id" }` — inserts **`exec_alerts`** from live KPI thresholds. Auth: **`x-cron-secret`** = `EXEC_ALERT_EVALUATOR_SECRET`. |
 | `process-referral-hl7-inbound` | no | `POST { "organization_id"?, "limit"? }` — minimal **MSH** parse for **`referral_hl7_inbound`** rows in **`pending`** → **`processed`** / **`failed`**; sets **`message_control_id`**, **`trigger_event`**, **`parse_error`**. Does **not** create **`referral_leads`**. Auth: **`x-cron-secret`** = `PROCESS_REFERRAL_HL7_INBOUND_SECRET`. |
-| `oce-task-scheduler` | no | `POST { "date_from"?, "date_to"?, "dry_run"?, "facility_id"?, "category"? }` — generates due **`operation_task_instances`** from active **`operation_task_templates`** across day/week/month/quarter/year cadences. Auth: either **`Authorization: Bearer <service_role>`** or **`x-cron-secret: <service_role>`**. No extra function secret required. |
+| `oce-task-scheduler` | no | `POST { "date_from"?, "date_to"?, "dry_run"?, "facility_id"?, "category"? }` — generates due **`operation_task_instances`** from active **`operation_task_templates`** across day/week/month/quarter/year cadences. Auth: **`x-cron-secret`** = `OCE_TASK_SCHEDULER_SECRET`. |
 | `ingest` | yes | `POST` multipart (`file`, …) or JSON `{ "document_id" }` re-index or `{ "document_id", "action": "regenerate_markdown" }` (re-download from storage, re-convert). Pipeline: extract → **Markdown IR** (`markdown_text`) → chunk → embed. Roles: **owner**, **org_admin**, **facility_admin**. Secrets: **`OPENAI_API_KEY`**, **`ANTHROPIC_API_KEY`** (Markdown conversion + summary + scanned PDF vision). |
 | `knowledge-agent` | yes | `POST { "message", "conversation_id"?, "workspace_id"? }` — Claude tool loop + **`retrieve_evidence`** RPC; SSE response. **`workspace_id`** defaults to caller org. Secrets: **`OPENAI_API_KEY`**, **`ANTHROPIC_API_KEY`**. |
 | `document-admin` | yes | `POST { "action": "update" \| "delete" \| "regenerate_markdown", "document_id", ... }` — metadata updates, soft-delete + storage remove, or **`regenerate_markdown`** (proxies to **`ingest`**). Roles: **owner**, **org_admin** only. |
@@ -78,6 +78,7 @@ Do **not** send `facility_id` and `organization_id` together.
 - `EMAR_MISSED_DOSE_SECRET` — required for `emar-missed-dose-check`.
 - `EXEC_ALERT_EVALUATOR_SECRET` — required for `exec-alert-evaluator`.
 - `PROCESS_REFERRAL_HL7_INBOUND_SECRET` — required for `process-referral-hl7-inbound`.
+- `OCE_TASK_SCHEDULER_SECRET` — required for `oce-task-scheduler`.
 - `FACILITY_EXPIRATION_SCANNER_SECRET` — required for `facility-expiration-scanner` (header `x-cron-secret`).
 - `GRACE_REDTEAM_SECRET` — required for `grace-redteam-nightly` (header `x-cron-secret`).
 

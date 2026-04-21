@@ -10,9 +10,7 @@
  *   "category"?: string | string[]
  * }
  *
- * Auth: either Authorization bearer token or x-cron-secret must match
- * SUPABASE_SERVICE_ROLE_KEY. This avoids introducing a new per-function secret
- * while keeping the endpoint private to trusted operators / schedulers.
+ * Auth: x-cron-secret must match OCE_TASK_SCHEDULER_SECRET.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
@@ -128,12 +126,10 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Method not allowed" }, 405, origin);
   }
 
-  const sharedSecret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  const expectedAuth = `Bearer ${sharedSecret}`;
-  const authHeader = req.headers.get("authorization");
+  const schedulerSecret = Deno.env.get("OCE_TASK_SCHEDULER_SECRET") ?? "";
   const cronSecret = req.headers.get("x-cron-secret");
-  if (!sharedSecret || (authHeader !== expectedAuth && cronSecret !== sharedSecret)) {
-    t.log({ event: "auth_failed", outcome: "error", error_message: "service role authorization required" });
+  if (!schedulerSecret || cronSecret !== schedulerSecret) {
+    t.log({ event: "auth_failed", outcome: "error", error_message: "scheduler secret mismatch" });
     return jsonResponse({ error: "Unauthorized" }, 401, origin);
   }
 
@@ -252,12 +248,10 @@ Deno.serve(async (req) => {
     ),
   );
 
-  const relevantAppRoles = Array.from(
-    new Set(
-      Object.values(assigneeCrosswalk)
-        .flat()
-        .concat(["owner", "org_admin"]),
-    ),
+  const relevantAppRoles = new Set(
+    Object.values(assigneeCrosswalk)
+      .flat()
+      .concat(["owner", "org_admin"]),
   );
 
   const { data: profileData, error: profileError } = await admin
@@ -265,10 +259,11 @@ Deno.serve(async (req) => {
     .select("id, organization_id, app_role, full_name")
     .eq("organization_id", COL_ORG_ID)
     .eq("is_active", true)
-    .in("app_role", relevantAppRoles)
     .is("deleted_at", null);
 
-  const profiles = (profileData ?? []) as ProfileRow[];
+  const profiles = ((profileData ?? []) as ProfileRow[]).filter((profile) =>
+    relevantAppRoles.has(profile.app_role)
+  );
   if (profileError) {
     t.log({ event: "profile_query_failed", outcome: "error", error_message: profileError.message });
     return jsonResponse({ error: "Failed to load operator profiles" }, 500, origin);

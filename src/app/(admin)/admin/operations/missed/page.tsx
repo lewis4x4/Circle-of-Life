@@ -95,6 +95,7 @@ export default function MissedTasksPage() {
 
   const criticalTasks = tasks.filter((t) => t.license_threatening);
   const nonCriticalTasks = tasks.filter((t) => !t.license_threatening);
+  const selectedTask = tasks.find((task) => task.id === selectedTaskId) ?? null;
 
   if (isLoading) {
     return (
@@ -291,15 +292,62 @@ export default function MissedTasksPage() {
       )}
 
       {/* Task detail modal */}
-      {selectedTaskId && (
+      {selectedTask && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-background rounded-lg shadow-xl max-w-lg w-full p-6">
             <h2 className="text-xl font-bold mb-4">Task Details</h2>
-            <p className="text-muted-foreground mb-6">
-              Task detail modal to be implemented in S2.
-              Task ID: {selectedTaskId}
-            </p>
+            <div className="space-y-3 text-sm mb-6">
+              <div>
+                <div className="font-semibold">{selectedTask.template_name}</div>
+                <div className="text-muted-foreground">
+                  {categoryLabels[selectedTask.template_category] || selectedTask.template_category}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="text-muted-foreground">Facility</div>
+                  <div>{selectedTask.facility_name}</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Priority</div>
+                  <div className="capitalize">{selectedTask.priority}</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Assigned Shift</div>
+                  <div>{selectedTask.assigned_shift}</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Assignee</div>
+                  <div>{selectedTask.assigned_to_name || "Unassigned"}</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Scheduled Date</div>
+                  <div>{new Date(selectedTask.assigned_shift_date).toLocaleDateString()}</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Missed At</div>
+                  <div>{selectedTask.missed_at ? new Date(selectedTask.missed_at).toLocaleString() : "—"}</div>
+                </div>
+              </div>
+              {selectedTask.due_at && (
+                <div>
+                  <div className="text-muted-foreground">Due At</div>
+                  <div>{new Date(selectedTask.due_at).toLocaleString()}</div>
+                </div>
+              )}
+              {selectedTask.license_threatening && (
+                <Badge className="bg-red-600 text-white">License-Threatening</Badge>
+              )}
+            </div>
             <div className="flex justify-end gap-3">
+              <Button
+                onClick={() => {
+                  void handleReinstate(selectedTask.id);
+                  setSelectedTaskId(null);
+                }}
+              >
+                Reinstate
+              </Button>
               <Button
                 variant="outline"
                 onClick={() => setSelectedTaskId(null)}

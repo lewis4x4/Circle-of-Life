@@ -202,10 +202,8 @@ export function FacilityDrillDown({
                 <h3 className="text-sm font-semibold text-slate-200 mb-3">
                   Trend Analysis
                 </h3>
-                <div className="bg-slate-800/50 border border-slate-700/30 rounded-xl p-4 h-48 flex items-center justify-center">
-                  <p className="text-xs text-slate-400">
-                    Trend chart rendering (component to be implemented)
-                  </p>
+                <div className="bg-slate-800/50 border border-slate-700/30 rounded-xl p-4">
+                  <FacilityTrendChart data={trendData} />
                 </div>
               </div>
             )}
@@ -268,6 +266,73 @@ export function FacilityDrillDown({
         </div>
       </div>
     </>
+  );
+}
+
+function FacilityTrendChart({ data }: { data: Array<{ date: string; value: number }> }) {
+  if (data.length === 0) return null;
+
+  const width = 640;
+  const height = 160;
+  const padding = 16;
+  const values = data.map((point) => point.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = Math.max(1, max - min);
+
+  const points = data.map((point, index) => {
+    const x = padding + (index / Math.max(1, data.length - 1)) * (width - padding * 2);
+    const y = height - padding - ((point.value - min) / span) * (height - padding * 2);
+    return { x, y, point };
+  });
+
+  const path = points
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
+    .join(" ");
+
+  return (
+    <div className="space-y-3">
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        className="h-40 w-full overflow-visible"
+        role="img"
+        aria-label="Facility trend analysis chart"
+      >
+        <defs>
+          <linearGradient id="facility-trend-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="rgb(99 102 241 / 0.45)" />
+            <stop offset="100%" stopColor="rgb(99 102 241 / 0.05)" />
+          </linearGradient>
+        </defs>
+        <path
+          d={`${path} L ${width - padding} ${height - padding} L ${padding} ${height - padding} Z`}
+          fill="url(#facility-trend-fill)"
+          stroke="none"
+        />
+        <path
+          d={path}
+          fill="none"
+          stroke="rgb(129 140 248)"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        {points.map(({ x, y, point }) => (
+          <g key={`${point.date}-${point.value}`}>
+            <circle cx={x} cy={y} r="4" fill="rgb(165 180 252)" />
+            <circle cx={x} cy={y} r="7" fill="transparent">
+              <title>{`${new Date(point.date).toLocaleDateString()}: ${point.value}`}</title>
+            </circle>
+          </g>
+        ))}
+      </svg>
+      <div className="flex items-center justify-between text-[11px] text-slate-400">
+        <span>{new Date(data[0].date).toLocaleDateString()}</span>
+        <span className="font-mono">Min {min}</span>
+        <span className="font-mono">Max {max}</span>
+        <span>{new Date(data[data.length - 1].date).toLocaleDateString()}</span>
+      </div>
+    </div>
   );
 }
 
