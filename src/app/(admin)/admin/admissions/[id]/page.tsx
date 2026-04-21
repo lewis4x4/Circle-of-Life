@@ -46,6 +46,22 @@ type BedOption = {
   bed_label: string;
 };
 
+type Form1823Record = {
+  id: string;
+  status: "pending" | "received" | "expired" | "renewal_due";
+  physician_name: string | null;
+  exam_date: string | null;
+  expiration_date: string | null;
+  updated_at: string;
+};
+
+type AdmissionChecklistItem = {
+  id: string;
+  received_at: string | null;
+  notes: string | null;
+  waived_reason: string | null;
+};
+
 function formatStatus(s: string) {
   return s.replace(/_/g, " ");
 }
@@ -70,6 +86,7 @@ function formatCents(value: number | null | undefined) {
 function admissionReadinessChecklist(
   row: CaseDetail,
   rateTerms: Database["public"]["Tables"]["admission_case_rate_terms"]["Row"][],
+  form1823Satisfied: boolean,
 ) {
   return [
     {
@@ -96,6 +113,11 @@ function admissionReadinessChecklist(
       key: "rate_terms",
       label: "Rate terms recorded",
       passed: rateTerms.length > 0,
+    },
+    {
+      key: "form_1823",
+      label: "Form 1823 received",
+      passed: form1823Satisfied,
     },
   ];
 }
@@ -155,6 +177,8 @@ export default function AdminAdmissionCaseDetailPage() {
   });
   const [rateSchedules, setRateSchedules] = useState<RateScheduleOption[]>([]);
   const [beds, setBeds] = useState<BedOption[]>([]);
+  const [form1823Record, setForm1823Record] = useState<Form1823Record | null>(null);
+  const [form1823ChecklistItem, setForm1823ChecklistItem] = useState<AdmissionChecklistItem | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
@@ -171,6 +195,11 @@ export default function AdminAdmissionCaseDetailPage() {
   const [effectiveDateDraft, setEffectiveDateDraft] = useState("");
   const [rateNotesDraft, setRateNotesDraft] = useState("");
   const [editingRateTermId, setEditingRateTermId] = useState<string | null>(null);
+  const [form1823StatusDraft, setForm1823StatusDraft] = useState<Form1823Record["status"]>("pending");
+  const [form1823PhysicianDraft, setForm1823PhysicianDraft] = useState("");
+  const [form1823ExamDateDraft, setForm1823ExamDateDraft] = useState("");
+  const [form1823ExpirationDraft, setForm1823ExpirationDraft] = useState("");
+  const [form1823NotesDraft, setForm1823NotesDraft] = useState("");
 
   const load = useCallback(async () => {
     if (!id) {
@@ -230,11 +259,34 @@ export default function AdminAdmissionCaseDetailPage() {
         setBeds([]);
       }
       if (caseRow?.resident_id) {
-        const [carePlansRes, medsRes, payersRes, consentsRes] = await Promise.all([
+        const [carePlansRes, medsRes, payersRes, consentsRes, form1823CaseRes, form1823ChecklistRes, form1823ResidentFallbackRes] = await Promise.all([
           supabase.from("care_plans").select("id", { count: "exact", head: true }).eq("resident_id", caseRow.resident_id).is("deleted_at", null),
           supabase.from("resident_medications").select("id", { count: "exact", head: true }).eq("resident_id", caseRow.resident_id).is("deleted_at", null),
           supabase.from("resident_payers").select("id", { count: "exact", head: true }).eq("resident_id", caseRow.resident_id).is("deleted_at", null),
           supabase.from("family_consent_records").select("id", { count: "exact", head: true }).eq("resident_id", caseRow.resident_id).is("deleted_at", null),
+          supabase
+            .from("form_1823_records" as never)
+            .select("id, status, physician_name, exam_date, expiration_date, updated_at")
+            .eq("admission_case_id", caseRow.id)
+            .is("deleted_at", null)
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          supabase
+            .from("admission_document_checklist_items" as never)
+            .select("id, received_at, notes, waived_reason")
+            .eq("admission_case_id", caseRow.id)
+            .eq("document_type", "form_1823")
+            .is("deleted_at", null)
+            .maybeSingle(),
+          supabase
+            .from("form_1823_records" as never)
+            .select("id, status, physician_name, exam_date, expiration_date, updated_at")
+            .eq("resident_id", caseRow.resident_id)
+            .is("deleted_at", null)
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
         ]);
         setOnboardingCounts({
           carePlans: carePlansRes.count ?? 0,
@@ -242,8 +294,24 @@ export default function AdminAdmissionCaseDetailPage() {
           payers: payersRes.count ?? 0,
           familyConsents: consentsRes.count ?? 0,
         });
+        const resolvedForm1823Record = ((form1823CaseRes.data ?? form1823ResidentFallbackRes.data) ?? null) as Form1823Record | null;
+        const resolvedChecklist = (form1823ChecklistRes.data ?? null) as AdmissionChecklistItem | null;
+        setForm1823Record(resolvedForm1823Record);
+        setForm1823ChecklistItem(resolvedChecklist);
+        setForm1823StatusDraft(resolvedForm1823Record?.status ?? "pending");
+        setForm1823PhysicianDraft(resolvedForm1823Record?.physician_name ?? "");
+        setForm1823ExamDateDraft(resolvedForm1823Record?.exam_date ?? "");
+        setForm1823ExpirationDraft(resolvedForm1823Record?.expiration_date ?? "");
+        setForm1823NotesDraft(resolvedChecklist?.notes ?? "");
       } else {
         setOnboardingCounts({ carePlans: 0, medications: 0, payers: 0, familyConsents: 0 });
+        setForm1823Record(null);
+        setForm1823ChecklistItem(null);
+        setForm1823StatusDraft("pending");
+        setForm1823PhysicianDraft("");
+        setForm1823ExamDateDraft("");
+        setForm1823ExpirationDraft("");
+        setForm1823NotesDraft("");
       }
     }
     setLoading(false);
@@ -265,15 +333,13 @@ export default function AdminAdmissionCaseDetailPage() {
     setActionError(null);
     setActionMessage(null);
     try {
-      const { error: updateError } = await supabase
-        .from("admission_cases")
-        .update({
-          ...patch,
-          updated_at: new Date().toISOString(),
-          updated_by: user?.id ?? null,
-        })
-        .eq("id", row.id);
-      if (updateError) throw updateError;
+      const response = await fetch(`/api/admin/workflows/admission-cases/${row.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result?.error || "Could not update admission case.");
       setActionMessage(successMessage);
       await load();
     } catch (err) {
@@ -283,9 +349,42 @@ export default function AdminAdmissionCaseDetailPage() {
     }
   }
 
-  const readiness = row ? admissionReadinessChecklist(row, rateTerms) : [];
+  async function saveForm1823() {
+    if (!row) return;
+    setActionLoading("form-1823");
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const response = await fetch(`/api/admin/workflows/admission-cases/${row.id}/form-1823`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: form1823StatusDraft,
+          physician_name: form1823PhysicianDraft.trim() || null,
+          exam_date: form1823ExamDateDraft || null,
+          expiration_date: form1823ExpirationDraft || null,
+          notes: form1823NotesDraft.trim() || null,
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result?.error || "Could not save Form 1823.");
+      setActionMessage(
+        form1823StatusDraft === "received"
+          ? "Form 1823 recorded and admission gate satisfied."
+          : "Form 1823 status saved."
+      );
+      await load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Could not save Form 1823.");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  const form1823Satisfied = Boolean(form1823Record?.status === "received" && form1823ChecklistItem?.received_at);
+  const readiness = row ? admissionReadinessChecklist(row, rateTerms, form1823Satisfied) : [];
   const canReserveBed = Boolean(row?.financial_clearance_at && row?.physician_orders_received_at && row?.bed_id);
-  const canAdvanceMoveIn = Boolean(canReserveBed && row?.target_move_in_date && rateTerms.length > 0);
+  const canAdvanceMoveIn = Boolean(canReserveBed && row?.target_move_in_date && rateTerms.length > 0 && form1823Satisfied);
   const onboarding = onboardingChecklist(onboardingCounts);
   const selectedRateSchedule = rateSchedules.find((schedule) => schedule.id === rateScheduleDraft) ?? null;
 
@@ -577,7 +676,8 @@ export default function AdminAdmissionCaseDetailPage() {
                     {!row.bed_id ? <li>Reserve or assign a bed.</li> : null}
                     {!row.target_move_in_date ? <li>Set a target move-in date.</li> : null}
                     {rateTerms.length === 0 ? <li>Add quoted rate terms for the admission package.</li> : null}
-                    {row.financial_clearance_at && row.physician_orders_received_at && row.bed_id && row.target_move_in_date && rateTerms.length > 0 ? (
+                    {!form1823Satisfied ? <li>Record Form 1823 as received before move-in.</li> : null}
+                    {row.financial_clearance_at && row.physician_orders_received_at && row.bed_id && row.target_move_in_date && rateTerms.length > 0 && form1823Satisfied ? (
                       <li>Core readiness items are in place. Advance this case through the move-in workflow.</li>
                     ) : null}
                   </ul>
@@ -602,6 +702,90 @@ export default function AdminAdmissionCaseDetailPage() {
                       {actionLoading === "Physician orders recorded." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Mark physician orders received"}
                     </Button>
                   </div>
+                <div className="rounded-2xl border border-indigo-200/70 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20 p-4 space-y-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-[10px] font-mono tracking-widest uppercase text-slate-500">Form 1823 gate</p>
+                      <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
+                        Move-in requires a received Form 1823 for this admission case.
+                      </p>
+                    </div>
+                    <span className={cn(
+                      "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-widest",
+                      form1823Satisfied
+                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                        : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+                    )}>
+                      {form1823Satisfied ? "Satisfied" : "Blocked"}
+                    </span>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="space-y-1">
+                      <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Status</span>
+                      <select
+                        value={form1823StatusDraft}
+                        onChange={(event) => setForm1823StatusDraft(event.target.value as Form1823Record["status"])}
+                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="received">Received</option>
+                        <option value="expired">Expired</option>
+                        <option value="renewal_due">Renewal due</option>
+                      </select>
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Physician name</span>
+                      <input
+                        type="text"
+                        value={form1823PhysicianDraft}
+                        onChange={(event) => setForm1823PhysicianDraft(event.target.value)}
+                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Exam date</span>
+                      <input
+                        type="date"
+                        value={form1823ExamDateDraft}
+                        onChange={(event) => setForm1823ExamDateDraft(event.target.value)}
+                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Expiration date</span>
+                      <input
+                        type="date"
+                        value={form1823ExpirationDraft}
+                        onChange={(event) => setForm1823ExpirationDraft(event.target.value)}
+                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </label>
+                  </div>
+                  <label className="space-y-1 block">
+                    <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Checklist notes</span>
+                    <textarea
+                      value={form1823NotesDraft}
+                      onChange={(event) => setForm1823NotesDraft(event.target.value)}
+                      rows={3}
+                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </label>
+                  <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
+                    <div>
+                      Latest record updated: {form1823Record ? formatTs(form1823Record.updated_at) : "—"}
+                      {" · "}
+                      Checklist received: {form1823ChecklistItem?.received_at ? formatTs(form1823ChecklistItem.received_at) : "—"}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={actionLoading === "form-1823"}
+                      onClick={() => void saveForm1823()}
+                    >
+                      {actionLoading === "form-1823" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Form 1823"}
+                    </Button>
+                  </div>
+                </div>
                 <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
                   <select
                     value={bedDraft}

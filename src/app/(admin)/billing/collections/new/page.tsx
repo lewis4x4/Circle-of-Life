@@ -179,33 +179,11 @@ export default function AdminNewCollectionActivityPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user?.id) {
-        setError("You must be signed in.");
-        return;
-      }
-
-      const resRow = (await supabase
-        .from("residents" as never)
-        .select("organization_id")
-        .eq("id", residentId)
-        .maybeSingle()) as {
-        data: { organization_id: string } | null;
-        error: QueryError | null;
-      };
-      if (resRow.error) throw resRow.error;
-      const orgId = resRow.data?.organization_id;
-      if (!orgId) throw new Error("Resident not found.");
-
       const payload: Record<string, unknown> = {
         resident_id: residentId,
         facility_id: selectedFacilityId,
-        organization_id: orgId,
         activity_type: activityType,
         activity_date: activityDate,
-        performed_by: user.id,
         description: description.trim(),
         outcome: outcome.trim() || null,
         follow_up_date: followUpDate.trim() || null,
@@ -215,8 +193,15 @@ export default function AdminNewCollectionActivityPage() {
         payload.invoice_id = invoiceId.trim();
       }
 
-      const ins = await supabase.from("collection_activities" as never).insert(payload as never);
-      if (ins.error) throw ins.error;
+      const response = await fetch("/api/admin/workflows/collection-activities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(result?.error || "Failed to save.");
+      }
       setSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save.");

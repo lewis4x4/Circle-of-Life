@@ -10,7 +10,7 @@
 
 ## Current state (reconciled 2026-04-20)
 
-**Repo migrations:** **`001`–`201`** — verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release.
+**Repo migrations:** **`001`–`203`** — verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release.
 
 **Remote migration parity:** Re-run `supabase migration list` after **`120`** ships to remote. Authoritative record: [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
 
@@ -32,7 +32,7 @@
 
 **Important:** Code and migrations have **outpaced** formal Phase 1 acceptance. **Do not** treat “migrations applied” or “routes exist” as equivalent to **Track A closed** or **production-ready** for PHI.
 
-**Next free migration number:** **`202`** — use for all new DDL after updating this README and the relevant spec.
+**Next free migration number:** **`204`** — use for all new DDL after updating this README and the relevant spec.
 
 **Executive Standup status:** Board-packet track is in repo: workbook import jobs + importer script, packet archive + compare workflow, close/publish gating, premium board packet composition, authenticated PDF route, storage-backed packet PDF artifact persistence, and packet PDF smoke validation. Remote parity now depends on applying migrations `185`–`193`, especially the `report-exports` storage bucket in migration `193`.
 

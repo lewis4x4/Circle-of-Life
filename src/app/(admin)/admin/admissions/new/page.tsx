@@ -266,26 +266,26 @@ export default function AdminAdmissionsNewPage() {
 
       // Create admission case
       const payload = {
-        organization_id: fac.organization_id,
         facility_id: selectedFacilityId,
         resident_id: finalResidentId,
         referral_lead_id: referralLeadId || null,
         bed_id: bedId || null,
         target_move_in_date: targetMoveIn || null,
         notes: notes.trim() || null,
-        status: "pending_clearance" as const,
-        created_by: user.id,
       };
 
-      const { data: inserted, error: insErr } = await supabase.from("admission_cases").insert(payload).select("id").single();
-      if (insErr) {
-        setError(insErr.message);
+      const response = await fetch("/api/admin/workflows/admission-cases", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result?.id) {
+        setError(result?.error || "Could not create admission case.");
         return;
       }
-      if (inserted?.id) {
-        router.push(`/admin/admissions/${inserted.id}`);
-        router.refresh();
-      }
+      router.push(`/admin/admissions/${result.id}`);
+      router.refresh();
     } finally {
       setSubmitting(false);
     }
