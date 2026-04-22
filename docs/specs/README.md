@@ -8,11 +8,11 @@
 - **Timezone:** America/New_York (all facilities in North Florida)
 - **Critical:** Confirm Pro plan with signed BAA before any PHI enters. Confirm Point-in-Time Recovery enabled.
 
-## Current state (reconciled 2026-04-20)
+## Current state (reconciled 2026-04-22)
 
-**Repo migrations:** **`001`–`203`** — verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release.
+**Repo migrations:** **`001`–`206`** — verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release.
 
-**Remote migration parity:** Re-run `supabase migration list` after **`120`** ships to remote. Authoritative record: [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
+**Remote migration parity:** Confirmed through **`206`** on 2026-04-22 via `supabase migration list`. Authoritative historical record for the earlier closeout window remains [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
 
 **Where acceptance stands**
 
@@ -32,7 +32,7 @@
 
 **Important:** Code and migrations have **outpaced** formal Phase 1 acceptance. **Do not** treat “migrations applied” or “routes exist” as equivalent to **Track A closed** or **production-ready** for PHI.
 
-**Next free migration number:** **`204`** — use for all new DDL after updating this README and the relevant spec.
+**Next free migration number:** **`207`** — use for all new DDL after updating this README and the relevant spec.
 
 **Executive Standup status:** Board-packet track is in repo: workbook import jobs + importer script, packet archive + compare workflow, close/publish gating, premium board packet composition, authenticated PDF route, storage-backed packet PDF artifact persistence, and packet PDF smoke validation. Remote parity now depends on applying migrations `185`–`193`, especially the `report-exports` storage bucket in migration `193`.
 
@@ -41,7 +41,7 @@
 ### What to do next (closeout order)
 
 1. **Track A** — **A1** (auth) + **A2** (RLS) owner-verified **2026-04-09**; **A3** real-auth UAT depth → **A4** env/seed → **A5** Pro/BAA/PITR → **A6** waiver review. Single roadmap: [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md). Production PHI still requires **A5** and remaining UAT rows.
-2. **Remote DB migration parity** — Repo sequence **`001`–`120`** (`npm run migrations:check`). Confirm the target project matches with `supabase migration list` after migration **`120`** is applied (`supabase db push`); record and dates: [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md). Re-run after any migration-adding PR.
+2. **Remote DB migration parity** — Repo sequence **`001`–`206`** (`npm run migrations:check`). Current linked remote matches through **`206`** (`supabase migration list` on 2026-04-22). Re-run after any migration-adding PR; historical early-environment notes remain in [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
 3. **Tracks B–C** — **Engineering complete (closed in repo)** per sections below. Remaining items are **operations** (deploy Edge functions, schedule crons, production monitoring) and **Track A UAT** — not open B/C code issues.
 4. **Track D** — **Segments D1–D10** (2026-04-09) + Enhanced **D12–D84** (incl. Module 11 hubs **D29** + **D80** (**staff roster CSV** **hub filter scope**) + **D30** + **D81** (**certifications CSV** **hub filter scope**) + **D31–D33** + **D82** (**schedule weeks CSV** **hub filter scope**) + **D32** + **D84** (**staffing snapshots CSV** **loaded batch scope**) + **D35–D36** + **D83** (**shift swap CSV** **hub filter scope**) + **D37** + **D60** (`/admin/time-records` **bulk approve**) + **D79** (**time-records CSV** **approval scope**), **D34** shared CSV helpers, payroll **D17–D18** + **D26** + **D73**–**D74** + **D58**–**D59** + **D64** + **D69** (`time_records` → lines + **hub batch filter/CSV/search** + **flat CSV** + **vendor handoff CSV** + **hours split CSV**), reputation **D19** + **D28** + **D44**–**D49** (Google OAuth + imports + cron + Yelp Fusion + **`POST /api/reputation/replies/[id]/post-google`** + **`POST /api/reputation/replies/[id]/post-yelp`**) + **D75** (**replies CSV** **status scope**), training **D20–D21** + **D38–D43** (catalog, completions, log form, **`117`** PDF RLS, **`118`** inservice tables + **hub / new session / inservice→completions**), referrals **D22** + **D27** + **D65**–**D68** + **D70**–**D72** (**HL7** queue **Copy raw** + **status filter** + **CSV respects filter** + **search**; **pipeline** **status filter** + **leads CSV** + **search**), dietary **D23** + **D77** (**hub status filter + CSV scope**) + **D50**–**D53** (`/admin/dietary/clinical-review` med–diet **hints** + **IDDSI labels in callouts**) + **D54**–**D55** (`next.config.ts` **`/<segment>` → `/admin/<segment>`** redirects for route-group hubs), transportation **D24–D25** + **D76** (**transport hub status filter + CSV scope**) + **D78** (**mileage approvals CSV scope**) + **D56**–**D57** + **D61**–**D66** (transport **calendar** month view + **`.ics` export** + request detail **Google + Outlook** + **single-trip `.ics`** + **calendar `?date=`** + **View on calendar**)) **shipped** (2026-04-09). Core operational visibility for Phase 6 modules 11, 12, 14, 15, 22, 23 is in repo. **Enhanced backlog (D85+):** [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md). Shipped history: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md). Run `segment:gates` per segment.
 5. **Track E** — New DDL starting at migration **`121`** only after specs exist and Tracks A–D are appropriately satisfied for your risk tolerance.
