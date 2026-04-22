@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, CheckCircle2, Home, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Home } from "lucide-react";
 
 import {
   AdminEmptyState,

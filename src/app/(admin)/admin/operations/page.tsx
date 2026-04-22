@@ -204,28 +204,6 @@ export default function OperationsTodayPage() {
     }
   };
 
-  const handleDeferTask = async (taskId: string) => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(8, 0, 0, 0);
-
-    try {
-      const response = await fetch(`/api/admin/operations/tasks/${taskId}/defer`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          deferred_until: tomorrow.toISOString(),
-          cancellation_reason: "Deferred from Today view",
-        }),
-      });
-      if (response.ok) {
-        void loadData();
-      }
-    } catch {
-      // Error toast would go here
-    }
-  };
-
   const handleEscalateTask = async (taskId: string) => {
     try {
       const response = await fetch(`/api/admin/operations/tasks/${taskId}/escalate`, {
@@ -311,8 +289,6 @@ export default function OperationsTodayPage() {
   const overdueTasks = tasks.filter((t: TaskInstance) =>
     (t.status === "pending" || t.status === "in_progress") && t.days_overdue > 0
   );
-  const missedTasks = tasks.filter((t: TaskInstance) => t.status === "missed");
-
   if (isLoading) {
     return (
       <div className="space-y-6 p-6">
@@ -417,7 +393,6 @@ export default function OperationsTodayPage() {
           </h2>
           <div className="grid gap-3 md:grid-cols-2">
             {overdueTasks.map((task) => {
-              const StatusIcon = statusIcons[task.status];
               return (
                 <div
                   key={task.id}
@@ -492,7 +467,6 @@ export default function OperationsTodayPage() {
           </h2>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {pendingTasks.map((task) => {
-              const StatusIcon = statusIcons[task.status];
               return (
                 <div
                   key={task.id}

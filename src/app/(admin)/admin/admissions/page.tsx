@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { UserPlus, Home, DoorOpen, MessageCircle, ArrowRight, Plus } from "lucide-react";
+import { UserPlus, Home, DoorOpen, MessageCircle, Plus } from "lucide-react";
 
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
@@ -174,6 +174,49 @@ function describeDischargePhase(row: DischargeRow): {
   };
 }
 
+function describeAdmissionPhase(
+  row: CaseRow,
+  onboardingState: Record<string, string[]>,
+): {
+  phase: AdmissionPhase;
+  nextActionLabel: string;
+  nextActionHref: string;
+  helperText: string;
+} {
+  const blockers = admissionBlockers(row);
+  if (blockers.length > 0) {
+    return {
+      phase: "blocked",
+      nextActionLabel: "Clear blockers",
+      nextActionHref: "/admin/admissions/blocked",
+      helperText: `Blockers: ${blockers.join(" · ")}`,
+    };
+  }
+  if (row.status !== "move_in") {
+    return {
+      phase: "ready",
+      nextActionLabel: "Advance move-in",
+      nextActionHref: "/admin/admissions/move-in-ready",
+      helperText: "Ready for next move-in step.",
+    };
+  }
+  const onboardingMissing = onboardingState[row.id] ?? [];
+  if (onboardingMissing.length > 0) {
+    return {
+      phase: "onboarding",
+      nextActionLabel: "Finish onboarding",
+      nextActionHref: "/admin/admissions/onboarding",
+      helperText: `Onboarding: ${onboardingMissing.join(" · ")}`,
+    };
+  }
+  return {
+    phase: "stable",
+    nextActionLabel: "Open onboarding",
+    nextActionHref: "/admin/admissions/onboarding",
+    helperText: "Move-in complete and downstream setup is clear.",
+  };
+}
+
 // Section component for lifecycle stages
 function LifecycleSection({
   title,
@@ -190,13 +233,6 @@ function LifecycleSection({
   allHref: string;
   children: React.ReactNode;
 }) {
-  const hoverGradient = {
-    emerald: "from-emerald-500/10 via-emerald-500/0",
-    indigo: "from-indigo-500/10 via-indigo-500/0",
-    rose: "from-rose-500/10 via-rose-500/0",
-    amber: "from-amber-500/10 via-amber-500/0",
-  }[color];
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between border-b border-slate-200/50 dark:border-white/10 pb-3">
@@ -517,46 +553,6 @@ export default function AdminAdmissionsHubPage() {
     void loadOnboardingState();
   }, [admissions, selectedFacilityId]);
 
-  function describeAdmissionPhase(row: CaseRow): {
-    phase: AdmissionPhase;
-    nextActionLabel: string;
-    nextActionHref: string;
-    helperText: string;
-  } {
-    const blockers = admissionBlockers(row);
-    if (blockers.length > 0) {
-      return {
-        phase: "blocked",
-        nextActionLabel: "Clear blockers",
-        nextActionHref: "/admin/admissions/blocked",
-        helperText: `Blockers: ${blockers.join(" · ")}`,
-      };
-    }
-    if (row.status !== "move_in") {
-      return {
-        phase: "ready",
-        nextActionLabel: "Advance move-in",
-        nextActionHref: "/admin/admissions/move-in-ready",
-        helperText: "Ready for next move-in step.",
-      };
-    }
-    const onboardingMissing = onboardingState[row.id] ?? [];
-    if (onboardingMissing.length > 0) {
-      return {
-        phase: "onboarding",
-        nextActionLabel: "Finish onboarding",
-        nextActionHref: "/admin/admissions/onboarding",
-        helperText: `Onboarding: ${onboardingMissing.join(" · ")}`,
-      };
-    }
-    return {
-      phase: "stable",
-      nextActionLabel: "Open onboarding",
-      nextActionHref: "/admin/admissions/onboarding",
-      helperText: "Move-in complete and downstream setup is clear.",
-    };
-  }
-
   const featuredAdmissions = useMemo(() => {
     const phaseOrder: Record<AdmissionPhase, number> = {
       blocked: 0,
@@ -566,8 +562,8 @@ export default function AdminAdmissionsHubPage() {
     };
     return [...admissions]
       .sort((a, b) => {
-        const phaseA = describeAdmissionPhase(a).phase;
-        const phaseB = describeAdmissionPhase(b).phase;
+        const phaseA = describeAdmissionPhase(a, onboardingState).phase;
+        const phaseB = describeAdmissionPhase(b, onboardingState).phase;
         const phaseDelta = phaseOrder[phaseA] - phaseOrder[phaseB];
         if (phaseDelta !== 0) return phaseDelta;
         return new Date(b.updated_at ?? 0).getTime() - new Date(a.updated_at ?? 0).getTime();
@@ -873,7 +869,7 @@ export default function AdminAdmissionsHubPage() {
             <MotionList className="space-y-3">
             {featuredAdmissions.map((r) => {
               const isPending = r.status === "pending_clearance";
-              const phase = describeAdmissionPhase(r);
+              const phase = describeAdmissionPhase(r, onboardingState);
               return (
                 <MotionItem key={r.id}>
                   <Link
