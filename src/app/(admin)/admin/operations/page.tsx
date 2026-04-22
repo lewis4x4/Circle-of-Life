@@ -220,6 +220,23 @@ export default function OperationsTodayPage() {
     }
   };
 
+  const handleEscalateTask = async (taskId: string) => {
+    try {
+      const response = await fetch(`/api/admin/operations/tasks/${taskId}/escalate`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reason: "Manual escalation from operations queue",
+        }),
+      });
+      if (response.ok) {
+        void loadData();
+      }
+    } catch {
+      // Error toast would go here
+    }
+  };
+
   const handleBulkComplete = async () => {
     const pendingTasks = tasks.filter((t: TaskInstance) => t.status === "pending" && t.assigned_to === user?.id);
     if (pendingTasks.length === 0) return;
@@ -440,6 +457,13 @@ export default function OperationsTodayPage() {
                       <Button
                         size="sm"
                         variant="outline"
+                        onClick={() => handleEscalateTask(task.id)}
+                      >
+                        Escalate
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
                         onClick={() => setSelectedTaskId(task.id)}
                       >
                         <MoreHorizontal className="h-4 w-4" />
@@ -509,6 +533,13 @@ export default function OperationsTodayPage() {
                       <Button
                         size="sm"
                         variant="outline"
+                        onClick={() => handleEscalateTask(task.id)}
+                      >
+                        Escalate
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
                         onClick={() => setSelectedTaskId(task.id)}
                       >
                         <MoreHorizontal className="h-4 w-4" />
@@ -568,6 +599,13 @@ export default function OperationsTodayPage() {
                         onClick={() => handleCompleteTask(task.id)}
                       >
                         Complete
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEscalateTask(task.id)}
+                      >
+                        Escalate
                       </Button>
                       <Button
                         size="sm"
