@@ -14,6 +14,8 @@
 
 **Remote migration parity:** Confirmed through **`206`** on 2026-04-22 via `supabase migration list`. Authoritative historical record for the earlier closeout window remains [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
 
+**Repo lint baseline:** Warning-free as of **2026-04-22**. `npm run lint` is now a blocking zero-warning check (`eslint src --max-warnings 0`), so future cleanup debt must be fixed in-slice rather than deferred.
+
 **Where acceptance stands**
 
 | Layer | Status | Authoritative file |
