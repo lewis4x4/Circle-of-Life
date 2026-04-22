@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, ShieldAlert, Siren, TrendingDown } from "lucide-react";
+import { AlertTriangle, ShieldAlert, Siren, TrendingDown } from "lucide-react";
 
 import {
   AdminEmptyState,
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { RiskHubNav } from "@/components/risk/RiskHubNav";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
@@ -248,6 +249,8 @@ export default function RiskCommandPage() {
 
   return (
     <div className="space-y-6">
+      <RiskHubNav />
+
       <div className="space-y-2">
         <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">{scopeLabel}</p>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -262,6 +265,9 @@ export default function RiskCommandPage() {
           <div className="flex flex-wrap gap-2">
             <Link className={buttonVariants({ variant: "outline", size: "sm" })} href="/admin/executive/alerts">
               Executive alerts
+            </Link>
+            <Link className={buttonVariants({ variant: "outline", size: "sm" })} href="/admin/risk/survey-bundle">
+              Survey bundle
             </Link>
             <Link className={buttonVariants({ variant: "outline", size: "sm" })} href="/admin/operations/overdue">
               Operations overdue
