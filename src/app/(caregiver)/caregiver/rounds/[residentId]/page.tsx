@@ -10,8 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+import { queueRoundingCompletion, shouldQueueRoundingRequest } from "@/lib/pwa/rounding-sync";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import type { CompletionPayload } from "@/lib/rounding/types";
+import { useRoundingOfflineSync } from "@/hooks/useRoundingOfflineSync";
 
 type TaskApiRow = {
   id: string;
@@ -26,6 +28,7 @@ function displayName(person?: { first_name: string | null; last_name: string | n
 
 export default function CaregiverResidentRoundPage() {
   const supabase = useMemo(() => createClient(), []);
+  const roundingSync = useRoundingOfflineSync();
   const params = useParams<{ residentId: string }>();
   const searchParams = useSearchParams();
   const residentId = params?.residentId ?? "";
@@ -92,23 +95,44 @@ export default function CaregiverResidentRoundPage() {
     setSubmitting(true);
     setLoadError(null);
     try {
+      if (!navigator.onLine) {
+        await queueRoundingCompletion(task.id, residentId, payload);
+        setSuccessMessage("Round queued for sync. It will upload automatically when the device reconnects.");
+        setTask(null);
+        return;
+      }
+
       const response = await fetch(`/api/rounding/tasks/${task.id}/complete`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const json = (await response.json()) as { error?: string };
+      if (response.status === 409) {
+        setSuccessMessage("Task already completed. Queue state refreshed.");
+        await roundingSync.refresh();
+        await load();
+        return;
+      }
       if (!response.ok) {
         throw new Error(json.error ?? "Could not complete round");
       }
       setSuccessMessage("Round saved successfully.");
       await load();
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : "Could not complete round.");
+      if (shouldQueueRoundingRequest(error)) {
+        await queueRoundingCompletion(task.id, residentId, payload);
+        setSuccessMessage("Connection lost. Round queued for sync and will upload automatically.");
+        setTask(null);
+      } else {
+        setLoadError(error instanceof Error ? error.message : "Could not complete round.");
+      }
     } finally {
       setSubmitting(false);
     }
   }
+
+  const taskQueuedLocally = Boolean(task && roundingSync.queuedTaskIdSet.has(task.id));
 
   if (loading) {
     return (
@@ -143,10 +167,14 @@ export default function CaregiverResidentRoundPage() {
         </Card>
       ) : null}
 
-      {!task ? (
+      {!task || taskQueuedLocally ? (
         <Card className="border-zinc-800 bg-zinc-950/70 text-zinc-100">
           <CardContent className="space-y-3 py-6">
-            <p className="text-sm text-zinc-300">No active round was found for this resident in the current facility scope.</p>
+            <p className="text-sm text-zinc-300">
+              {taskQueuedLocally
+                ? "This round is already queued for sync from this device."
+                : "No active round was found for this resident in the current facility scope."}
+            </p>
             <Link href="/caregiver/rounds">
               <Button className="min-h-11 bg-emerald-600 text-white hover:bg-emerald-500">Return to live queue</Button>
             </Link>

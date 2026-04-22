@@ -8,6 +8,7 @@ import { RoundingTaskCard, type RoundingTaskCardData } from "@/components/roundi
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { FloorWorkflowStrip } from "@/components/caregiver/FloorWorkflowStrip";
+import { useRoundingOfflineSync } from "@/hooks/useRoundingOfflineSync";
 
 type TaskApiRow = {
   id: string;
@@ -24,6 +25,7 @@ function displayName(person?: { first_name: string | null; last_name: string | n
 
 export default function CaregiverRoundsPage() {
   const supabase = useMemo(() => createClient(), []);
+  const roundingSync = useRoundingOfflineSync();
   const [facilityName, setFacilityName] = useState<string | null>(null);
   const [, setFacilityId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,13 +88,14 @@ export default function CaregiverRoundsPage() {
   }, [load]);
 
   const grouped = useMemo(() => {
+    const activeTasks = tasks.filter((task) => !roundingSync.queuedTaskIdSet.has(task.id));
     return {
-      urgent: tasks.filter((task) => task.derivedStatus === "critically_overdue" || task.derivedStatus === "missed"),
-      due: tasks.filter((task) => task.derivedStatus === "overdue" || task.derivedStatus === "due_now"),
-      next: tasks.filter((task) => task.derivedStatus === "due_soon" || task.derivedStatus === "upcoming"),
+      urgent: activeTasks.filter((task) => task.derivedStatus === "critically_overdue" || task.derivedStatus === "missed"),
+      due: activeTasks.filter((task) => task.derivedStatus === "overdue" || task.derivedStatus === "due_now"),
+      next: activeTasks.filter((task) => task.derivedStatus === "due_soon" || task.derivedStatus === "upcoming"),
       done: tasks.filter((task) => task.derivedStatus === "completed_on_time" || task.derivedStatus === "completed_late"),
     };
-  }, [tasks]);
+  }, [roundingSync.queuedTaskIdSet, tasks]);
 
   if (configError) {
     return <div className="rounded-xl border border-rose-800/60 bg-rose-950/40 px-6 py-4 text-sm text-rose-100 backdrop-blur-md">{configError}</div>;
@@ -131,8 +134,24 @@ export default function CaregiverRoundsPage() {
              <RefreshCw className="w-4 h-4 text-zinc-300" />
           </button>
           <div className="glass-panel px-4 py-2 rounded-full border border-white/10 text-xs font-semibold text-emerald-400 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,1)]"></span>
-            SYNCED
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                roundingSync.isSyncing
+                  ? "bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)]"
+                  : !roundingSync.online
+                    ? "bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,1)]"
+                    : roundingSync.pendingCount > 0
+                      ? "bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)]"
+                      : "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,1)]"
+              }`}
+            ></span>
+            {roundingSync.isSyncing
+              ? "SYNCING"
+              : !roundingSync.online
+                ? "OFFLINE"
+                : roundingSync.pendingCount > 0
+                  ? `QUEUED ${roundingSync.pendingCount}`
+                  : "SYNCED"}
           </div>
         </div>
       </div>
@@ -140,6 +159,13 @@ export default function CaregiverRoundsPage() {
       {loadError && (
         <div className="rounded-[1rem] border border-rose-800/60 bg-rose-950/30 px-5 py-4 text-sm text-rose-200">
           {loadError}
+        </div>
+      )}
+
+      {roundingSync.pendingCount > 0 && (
+        <div className="rounded-[1rem] border border-amber-700/50 bg-amber-950/20 px-5 py-4 text-sm text-amber-100">
+          {roundingSync.pendingCount} round{roundingSync.pendingCount === 1 ? "" : "s"} queued for sync.
+          {roundingSync.online ? " The service worker will keep retrying in the background." : " They will upload when the device reconnects."}
         </div>
       )}
 

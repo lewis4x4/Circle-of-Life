@@ -12,6 +12,7 @@ import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { isHousekeeperAllowedPath } from "@/lib/auth/caregiver-route-access";
+import { useRoundingOfflineSync } from "@/hooks/useRoundingOfflineSync";
 
 export function CaregiverShell({ children }: { children: React.ReactNode }) {
   const { setTheme } = useTheme();
@@ -23,6 +24,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
   const [shiftLabel, setShiftLabel] = useState("Shift");
   const effectiveRole = getAppRoleFromClaims(user) || appRole;
   const isHousekeeper = effectiveRole === "housekeeper";
+  const roundingSync = useRoundingOfflineSync();
 
   useEffect(() => {
     if (loading || !user?.id) {
@@ -161,10 +163,43 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
           </div>
           <div className="flex items-center gap-4">
             <PilotFeedbackLauncher shellKind="caregiver" compact />
-            <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 tap-responsive cursor-pointer hover:bg-white/10 transition-colors">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]"></span>
-              <span className="text-xs font-semibold text-zinc-200 uppercase tracking-widest">Sync</span>
-            </div>
+            <button
+              type="button"
+              onClick={() => void roundingSync.flush()}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border tap-responsive transition-colors ${
+                roundingSync.isSyncing
+                  ? "bg-amber-500/10 border-amber-500/30"
+                  : !roundingSync.online
+                    ? "bg-rose-500/10 border-rose-500/30"
+                    : roundingSync.pendingCount > 0
+                      ? "bg-amber-500/10 border-amber-500/30"
+                      : "bg-white/5 border-white/10 hover:bg-white/10"
+              }`}
+              aria-label="Sync queued caregiver rounds"
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  roundingSync.isSyncing
+                    ? "bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.8)]"
+                    : !roundingSync.online
+                      ? "bg-rose-400 shadow-[0_0_12px_rgba(251,113,133,0.8)]"
+                      : roundingSync.pendingCount > 0
+                        ? "bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.8)]"
+                        : "bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]"
+                }`}
+              ></span>
+              <span className="text-xs font-semibold text-zinc-200 uppercase tracking-widest">
+                {roundingSync.isSyncing
+                  ? "Syncing"
+                  : !roundingSync.online
+                    ? roundingSync.pendingCount > 0
+                      ? `Offline · ${roundingSync.pendingCount}`
+                      : "Offline"
+                    : roundingSync.pendingCount > 0
+                      ? `Queued · ${roundingSync.pendingCount}`
+                      : "Synced"}
+              </span>
+            </button>
             <button className="relative p-2 md:p-2.5 rounded-full bg-white/5 border border-white/10 text-zinc-300 hover:text-white tap-responsive hover:bg-white/10 transition-colors" aria-label="Alerts">
               <AlertTriangle className="w-4 h-4 md:w-5 md:h-5" />
               <span className="absolute top-0 right-0 md:top-0.5 md:right-0.5 w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]"></span>
