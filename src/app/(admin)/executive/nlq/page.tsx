@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import { ArrowLeft, Send, Loader2, Brain, Sparkles, MessageSquare, RotateCcw } from "lucide-react";
-import { SysLabel, TitleH1, Subtitle } from "@/components/ui/moonshot/typography";
+import { TitleH1, Subtitle } from "@/components/ui/moonshot/typography";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";

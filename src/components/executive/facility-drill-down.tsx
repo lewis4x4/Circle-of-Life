@@ -375,9 +375,9 @@ export function generateMockFacilityDrillDownData(
     ],
     alerts: [
       {
-        id: "alert-1",
+        id: `${facilityId}-alert-1`,
         severity: "critical" as const,
-        title: "High Risk Incident Pattern",
+        title: `${facilityName} high risk incident pattern`,
         description: "3 falls with injury in the past 7 days, exceeding expected baseline.",
         category: "Safety",
         createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),

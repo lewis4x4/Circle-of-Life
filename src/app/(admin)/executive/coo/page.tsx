@@ -1,16 +1,14 @@
 "use client";
 
-import React, { useState, useId } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import {
-  AlertTriangle, TrendingUp, TrendingDown, Clock, Wrench, Utensils,
-  Truck, Star, CheckCircle, XCircle, Users, Shield, Minus, Package,
-  Zap, Bell, MapPin, ArrowLeft, Brain
+  AlertTriangle, TrendingUp, Utensils,
+  CheckCircle, XCircle, Users, Shield, Minus,
+  Bell, ArrowLeft, Brain
 } from "lucide-react";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
-  ComposedChart, BarChart, Bar, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, Legend, AreaChart, Area
 } from "recharts";
 import { SysLabel, TitleH1, Subtitle } from "@/components/ui/moonshot/typography";
 import { ExecutiveNavV2 } from "@/components/executive/executive-nav-v2";
@@ -25,8 +23,6 @@ import { useExecRoleKpis } from "@/hooks/useExecRoleKpis";
 // ── PILL TABS ──
 const COO_TABS = ["Operations Hub", "Staffing", "Maintenance", "Dining", "Satisfaction", "Move Ops", "Vendors", "Readiness", "Haven Insight"];
 
-// ── FACILITIES ──
-const FACILITIES = ["Homewood Lodge", "Riverside Manor", "Cedar Park", "Oakview Heights", "Maple Creek"];
 const FAC_SHORT = ["Homewood", "Riverside", "Cedar Park", "Oakview", "Maple Creek"];
 
 // ── CHART COLORS ──
@@ -76,11 +72,6 @@ const COMPLAINTS = [
   { id: 4, facility: "Riverside", type: "Activities", description: "Weekend activities cancelled 2 weeks", severity: "medium", age: 4, status: "scheduled" },
   { id: 5, facility: "Oakview", type: "Communication", description: "Family not notified of med change 48hrs", severity: "high", age: 1, status: "investigating" },
 ];
-
-const STAFFING_TREND = Array.from({ length: 10 }, (_, i) => {
-  const months = ["Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr"];
-  return { month: months[i], fillRate: 88 + Math.sin(i*0.6)*4 + i*0.5, callOutRate: 6 - Math.cos(i*0.7)*2, agencyHours: 320 + Math.sin(i*0.9)*80, overtimeHours: 180 + Math.cos(i*0.5)*40 + i*8 };
-});
 
 const AGENCY_DATA = [
   { month: "Sep", fteHours: 124000, agencyHours: 850 },

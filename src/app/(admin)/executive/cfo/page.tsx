@@ -8,9 +8,9 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { TrendingUp, TrendingDown, Minus, CheckCircle, XCircle, AlertTriangle, ArrowLeft, Brain } from "lucide-react";
+import { ArrowLeft, Brain } from "lucide-react";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ComposedChart, Line, Area, AreaChart, PieChart, Pie, Cell, Legend,
 } from "recharts";
 import { SysLabel, TitleH1, Subtitle } from "@/components/ui/moonshot/typography";

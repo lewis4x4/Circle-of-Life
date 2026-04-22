@@ -9,12 +9,12 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import { ArrowLeft, TrendingUp, TrendingDown, Minus, Calculator, Sliders, RefreshCw } from "lucide-react";
+import { ArrowLeft, Calculator, Sliders, RefreshCw } from "lucide-react";
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ComposedChart, Line, Legend, BarChart, Bar,
 } from "recharts";
-import { SysLabel, TitleH1, Subtitle } from "@/components/ui/moonshot/typography";
+import { TitleH1, Subtitle } from "@/components/ui/moonshot/typography";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MetricCardMoonshot } from "@/components/executive/metric-card-moonshot";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
