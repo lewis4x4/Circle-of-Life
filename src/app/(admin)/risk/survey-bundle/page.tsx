@@ -12,6 +12,7 @@ import {
 import { RiskHubNav } from "@/components/risk/RiskHubNav";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { downloadBlobFromUrl } from "@/lib/download-blob";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { formatCents } from "@/lib/finance/format-cents";
@@ -417,6 +418,22 @@ export default function RiskSurveyBundlePage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={!packet}
+            onClick={() => {
+              if (!packet) return;
+              void downloadBlobFromUrl(
+                `/api/risk/survey-bundle/${encodeURIComponent(packet.facility.id)}/pdf`,
+                `${packet.facility.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-")}-survey-bundle.pdf`,
+              );
+            }}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            PDF
+          </Button>
           <Button
             type="button"
             variant="outline"

@@ -27,6 +27,7 @@
     "demo:pilot-readiness": "node scripts/demo/pilot-readiness.mjs",
     "demo:auth-smoke:real": "node scripts/demo/authenticated-smoke.mjs",
     "demo:standup-pdf-smoke": "node scripts/demo/standup-pdf-smoke.mjs",
+    "backfill:standup-csv": "node scripts/import-executive-standup-csv.mjs",
     "grace:evals": "tsx scripts/grace-safe-mode-evals.ts",
     "obsidian:validate": "node scripts/obsidian/validate-vault.mjs",
     "obsidian:compile": "node scripts/obsidian/compile-vault.mjs",

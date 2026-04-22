@@ -12,6 +12,7 @@ import {
 } from "@/components/common/admin-list-patterns";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { downloadBlobFromUrl } from "@/lib/download-blob";
 import { fetchExecutiveKpiSnapshot, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
 import {
   computeEntityInsuranceReadiness,
@@ -388,6 +389,15 @@ export default function ExecutiveLeaguePage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+            onClick={() => void downloadBlobFromUrl("/api/executive/league/pdf", "executive-league.pdf")}
+            disabled={rows.length === 0}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            League PDF
+          </button>
           <button
             type="button"
             className={buttonVariants({ variant: "outline", size: "sm" })}
