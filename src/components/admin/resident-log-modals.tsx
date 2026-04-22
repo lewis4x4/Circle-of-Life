@@ -9,7 +9,6 @@ import { zonedYmd } from "@/lib/caregiver/emar-queue";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 import { requestEvaluateVitals } from "@/lib/infection-control/request-evaluate-vitals";
 import { createClient } from "@/lib/supabase/client";
-import { adlTypeLabel, assistanceLabel } from "@/lib/caregiver/adl-form-options";
 import type { Database } from "@/types/database";
 
 import {
@@ -22,7 +21,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
 
 // ============================================================================
 // BEHAVIOR LOG MODAL
@@ -745,7 +743,6 @@ export function ConditionLogModal({
 // ============================================================================
 
 type DailyRow = Pick<Database["public"]["Tables"]["daily_logs"]["Row"], "id" | "log_date" | "shift" | "general_notes" | "logged_by">;
-type AdlRow = Pick<Database["public"]["Tables"]["adl_logs"]["Row"], "id" | "log_time" | "log_date" | "shift" | "adl_type" | "assistance_level" | "refused" | "notes">;
 
 function zonedTimeShort(now: Date, timeZone: string): string {
   return new Intl.DateTimeFormat("en-US", {
@@ -781,7 +778,6 @@ export function GeneralNoteModal({
     timeZone: string;
   } | null>(null);
   const [dailyHistory, setDailyHistory] = useState<DailyRow[]>([]);
-  const [adlRecent, setAdlRecent] = useState<AdlRow[]>([]);
 
   const [noteDraft, setNoteDraft] = useState("");
   const [temp, setTemp] = useState("");
@@ -791,33 +787,18 @@ export function GeneralNoteModal({
 
   const load = useCallback(async () => {
     if (!ctx) return;
-    const [dailyQ, adlQ] = await Promise.all([
-      supabase
-        .from("daily_logs")
-        .select("id, log_date, shift, general_notes, logged_by")
-        .eq("resident_id", residentId)
-        .eq("facility_id", ctx.facilityId)
-        .is("deleted_at", null)
-        .order("log_date", { ascending: false })
-        .limit(5),
-      supabase
-        .from("adl_logs")
-        .select("id, log_time, log_date, shift, adl_type, assistance_level, refused, notes")
-        .eq("resident_id", residentId)
-        .eq("facility_id", ctx.facilityId)
-        .is("deleted_at", null)
-        .order("log_time", { ascending: false })
-        .limit(5),
-    ]);
+    const dailyQ = await supabase
+      .from("daily_logs")
+      .select("id, log_date, shift, general_notes, logged_by")
+      .eq("resident_id", residentId)
+      .eq("facility_id", ctx.facilityId)
+      .is("deleted_at", null)
+      .order("log_date", { ascending: false })
+      .limit(5);
     if (dailyQ.error) {
       console.warn("[note modal] daily load error:", dailyQ.error.message);
     } else {
       setDailyHistory((dailyQ.data ?? []) as DailyRow[]);
-    }
-    if (adlQ.error) {
-      console.warn("[note modal] adl load error:", adlQ.error.message);
-    } else {
-      setAdlRecent((adlQ.data ?? []) as AdlRow[]);
     }
   }, [supabase, residentId, ctx]);
 
