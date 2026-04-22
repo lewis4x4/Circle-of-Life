@@ -25,6 +25,15 @@ import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 
 type CohortRow = Database["public"]["Tables"]["benchmark_cohorts"]["Row"];
+type CrossOperatorBenchmarkSettingRow = {
+  id: string;
+  enabled: boolean;
+  status: "requested" | "approved" | "declined";
+  requested_at: string;
+  approved_at: string | null;
+  terms_acknowledged_at: string | null;
+  notes: string | null;
+};
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
@@ -67,6 +76,8 @@ export default function ExecutiveBenchmarkCohortsPage() {
   const [orgId, setOrgId] = useState<string | null>(null);
   const [canManage, setCanManage] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [crossOperatorSetting, setCrossOperatorSetting] = useState<CrossOperatorBenchmarkSettingRow | null>(null);
+  const [crossOperatorBusy, setCrossOperatorBusy] = useState(false);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -100,7 +111,7 @@ export default function ExecutiveBenchmarkCohortsPage() {
       setOrgId(ctx.ctx.organizationId);
       setCanManage(canMutateFinance(ctx.ctx.appRole));
 
-      const [{ data: facs, error: fErr }, { data: cohorts, error: cErr }] = await Promise.all([
+      const [{ data: facs, error: fErr }, { data: cohorts, error: cErr }, crossOperatorResult] = await Promise.all([
         supabase
           .from("facilities")
           .select("id, name")
@@ -113,14 +124,22 @@ export default function ExecutiveBenchmarkCohortsPage() {
           .eq("organization_id", ctx.ctx.organizationId)
           .is("deleted_at", null)
           .order("name"),
+        supabase
+          .from("cross_operator_benchmark_settings" as never)
+          .select("id, enabled, status, requested_at, approved_at, terms_acknowledged_at, notes")
+          .eq("organization_id", ctx.ctx.organizationId)
+          .is("deleted_at", null)
+          .maybeSingle(),
       ]);
 
       if (fErr) throw new Error(fErr.message);
       if (cErr) throw new Error(cErr.message);
       setFacilities((facs ?? []).map((f) => ({ id: f.id, name: f.name })));
       setRows((cohorts ?? []) as CohortRow[]);
+      setCrossOperatorSetting((crossOperatorResult.data ?? null) as CrossOperatorBenchmarkSettingRow | null);
     } catch (e) {
       setRows([]);
+      setCrossOperatorSetting(null);
       setError(e instanceof Error ? e.message : "Unable to load benchmark cohorts.");
     } finally {
       setLoading(false);
@@ -223,6 +242,56 @@ export default function ExecutiveBenchmarkCohortsPage() {
     });
   }
 
+  async function requestCrossOperatorAccess() {
+    if (!canManage || !orgId) return;
+
+    setCrossOperatorBusy(true);
+    setError(null);
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+      if (userError) throw new Error(userError.message);
+      if (!user) throw new Error("Sign in required.");
+
+      if (crossOperatorSetting) {
+        const { error: updateError } = await supabase
+          .from("cross_operator_benchmark_settings" as never)
+          .update({
+            status: "requested",
+            enabled: false,
+            requested_at: new Date().toISOString(),
+            requested_by: user.id,
+            terms_acknowledged_at: new Date().toISOString(),
+            notes:
+              "Opt-in request recorded by executive benchmarks stub. External peer data remains disabled until a governed sharing program exists.",
+          } as never)
+          .eq("id", crossOperatorSetting.id)
+          .eq("organization_id", orgId);
+        if (updateError) throw new Error(updateError.message);
+      } else {
+        const { error: insertError } = await supabase.from("cross_operator_benchmark_settings" as never).insert({
+          organization_id: orgId,
+          enabled: false,
+          status: "requested",
+          requested_by: user.id,
+          requested_at: new Date().toISOString(),
+          terms_acknowledged_at: new Date().toISOString(),
+          notes:
+            "Opt-in request recorded by executive benchmarks stub. External peer data remains disabled until a governed sharing program exists.",
+        } as never);
+        if (insertError) throw new Error(insertError.message);
+      }
+
+      await load();
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : "Unable to record opt-in request.");
+    } finally {
+      setCrossOperatorBusy(false);
+    }
+  }
+
   async function runCohortComparison() {
     if (!orgId || !compareCohortId) return;
     const cohort = rows.find((r) => r.id === compareCohortId);
@@ -290,6 +359,71 @@ export default function ExecutiveBenchmarkCohortsPage() {
         <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </p>
+      )}
+
+      {!loading && (
+        <Card className="border-sky-200 bg-sky-50/70 dark:border-sky-900/40 dark:bg-sky-950/20">
+          <CardHeader>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="text-lg">Cross-operator benchmarking</CardTitle>
+                <CardDescription>
+                  Disabled by default. This stub records organization opt-in and keeps external peer comparisons blocked
+                  until a governed data-sharing program exists.
+                </CardDescription>
+              </div>
+              <Badge variant="secondary">
+                {crossOperatorSetting
+                  ? crossOperatorSetting.enabled
+                    ? "Approved"
+                    : crossOperatorSetting.status === "declined"
+                      ? "Declined"
+                      : "Requested"
+                  : "Not requested"}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-slate-700 dark:text-slate-300">
+            <p>
+              External peer KPIs are not available in Haven today. Opt-in only records governance intent, legal/privacy
+              acknowledgement, and approval state for a future benchmark feed.
+            </p>
+            <div className="grid gap-2 sm:grid-cols-3">
+              <div className="rounded-md border border-sky-200/70 bg-white/70 px-3 py-2 dark:border-sky-900/30 dark:bg-slate-950/40">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Request</p>
+                <p>{crossOperatorSetting?.requested_at ? new Date(crossOperatorSetting.requested_at).toLocaleString() : "Not recorded"}</p>
+              </div>
+              <div className="rounded-md border border-sky-200/70 bg-white/70 px-3 py-2 dark:border-sky-900/30 dark:bg-slate-950/40">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Terms acknowledged</p>
+                <p>
+                  {crossOperatorSetting?.terms_acknowledged_at
+                    ? new Date(crossOperatorSetting.terms_acknowledged_at).toLocaleString()
+                    : "Pending"}
+                </p>
+              </div>
+              <div className="rounded-md border border-sky-200/70 bg-white/70 px-3 py-2 dark:border-sky-900/30 dark:bg-slate-950/40">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Approval</p>
+                <p>{crossOperatorSetting?.approved_at ? new Date(crossOperatorSetting.approved_at).toLocaleString() : "Not approved"}</p>
+              </div>
+            </div>
+            {crossOperatorSetting?.notes ? (
+              <p className="rounded-md border border-slate-200 bg-white/80 px-3 py-2 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-300">
+                {crossOperatorSetting.notes}
+              </p>
+            ) : null}
+            {canManage ? (
+              <Button type="button" variant="outline" disabled={crossOperatorBusy} onClick={() => void requestCrossOperatorAccess()}>
+                {crossOperatorBusy
+                  ? "Recording…"
+                  : crossOperatorSetting?.status === "declined"
+                    ? "Resubmit opt-in"
+                    : crossOperatorSetting
+                      ? "Refresh opt-in request"
+                      : "Request opt-in"}
+              </Button>
+            ) : null}
+          </CardContent>
+        </Card>
       )}
 
       {!canManage && !loading && (
