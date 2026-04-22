@@ -7,7 +7,7 @@
     "build": "npm run migrations:check && npm run check:admin-shell && npm run check:memory-care && next build",
     "build:web": "npm run build",
     "start": "next start",
-    "lint": "eslint src",
+    "lint": "eslint src --max-warnings 0",
     "audit:ci": "npm audit --audit-level=high",
     "check:admin-shell": "node scripts/check-admin-shell-routes.mjs",
     "check:memory-care": "node scripts/check-memory-care.mjs",
