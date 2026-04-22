@@ -48,7 +48,7 @@ export async function PATCH(
   }
 
   const { data, error } = await actor.admin
-    .from("operation_task_instances" as any)
+    .from("operation_task_instances" as never)
     .select(`
       id,
       organization_id,
@@ -83,7 +83,7 @@ export async function PATCH(
   const now = new Date().toISOString();
 
   const { data: newTaskData, error: insertError } = await actor.admin
-    .from("operation_task_instances" as any)
+    .from("operation_task_instances" as never)
     .insert({
       organization_id: task.organization_id,
       facility_id: task.facility_id,
@@ -103,7 +103,7 @@ export async function PATCH(
       due_at: deferredUntil.toISOString(),
       created_by: actor.id,
       updated_by: actor.id,
-    })
+    } as never)
     .select("id")
     .single();
 
@@ -114,14 +114,14 @@ export async function PATCH(
   }
 
   const { error: updateError } = await actor.admin
-    .from("operation_task_instances" as any)
+    .from("operation_task_instances" as never)
     .update({
       status: "deferred",
       deferred_until: deferredUntil.toISOString(),
       cancellation_reason: body.cancellation_reason || "Deferred to a later queue date",
       updated_at: now,
       updated_by: actor.id,
-    })
+    } as never)
     .eq("id", id);
 
   if (updateError) {
@@ -129,7 +129,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Failed to update deferred task" }, { status: 500 });
   }
 
-  await actor.admin.from("operation_audit_log" as any).insert({
+  await actor.admin.from("operation_audit_log" as never).insert({
     organization_id: task.organization_id,
     facility_id: task.facility_id,
     task_instance_id: task.id,
@@ -144,7 +144,7 @@ export async function PATCH(
       new_task_id: newTask.id,
       source: "admin-operations",
     },
-  });
+  } as never);
 
   return NextResponse.json({ success: true, new_task_id: newTask.id });
 }

@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { data, error } = await actor.admin
-    .from("operation_task_instances" as any)
+    .from("operation_task_instances" as never)
     .select("id, organization_id, facility_id, assigned_to, status, due_at")
     .in("id", body.task_ids)
     .is("deleted_at", null);
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     const slaMet = task.due_at ? new Date(task.due_at) >= new Date(now) : true;
 
     const { error: updateError } = await actor.admin
-      .from("operation_task_instances" as any)
+      .from("operation_task_instances" as never)
       .update({
         status: "completed",
         completed_at: now,
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
         sla_miss_reason: slaMet ? null : "Completed after due time",
         updated_at: now,
         updated_by: actor.id,
-      })
+      } as never)
       .eq("id", task.id);
 
     if (updateError) {
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
 
     completedCount += 1;
 
-    await actor.admin.from("operation_audit_log" as any).insert({
+    await actor.admin.from("operation_audit_log" as never).insert({
       organization_id: task.organization_id,
       facility_id: task.facility_id,
       task_instance_id: task.id,
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       actor_role: actor.appRole,
       event_notes: body.completion_notes || "Bulk completed (end of shift)",
       event_data: { bulk_complete: true, sla_met: slaMet },
-    });
+    } as never);
   }
 
   return NextResponse.json({

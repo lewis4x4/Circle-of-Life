@@ -23,12 +23,22 @@ export type DietaryDashboardBrief = {
   }>;
 };
 
+type CountResponse = { count: number | null };
+type ScopedQuery<T> = { eq(column: string, value: string): T };
+type RecentDietChangeRow = {
+  id: string;
+  diet_type: string | null;
+  updated_at: string;
+  residents: { first_name: string | null; last_name: string | null } | null;
+};
+type DietBreakdownRow = { diet_type: string | null };
+
 export async function fetchDietaryDashboardBrief(
   facilityId: string | null,
 ): Promise<DietaryDashboardBrief> {
   const supabase = createClient();
 
-  const f = (q: any) =>
+  const f = <T extends ScopedQuery<T>>(q: T): T =>
     isValidFacilityIdForQuery(facilityId) ? q.eq("facility_id", facilityId) : q;
 
   const todayStart = new Date().toISOString().split("T")[0] + "T00:00:00";
@@ -64,16 +74,17 @@ export async function fetchDietaryDashboardBrief(
       .is("deleted_at", null),
   ]);
 
-  const recentDietChanges = (recentChangesRes as any).data?.map((d: any) => ({
-    id: d.id,
-    residentName: `${d.residents?.first_name ?? ""} ${d.residents?.last_name ?? ""}`.trim() || "Unknown",
-    changeType: d.diet_type ?? "Diet update",
-    changedAt: d.updated_at,
-  })) ?? [];
+  const recentDietChanges = ((recentChangesRes.data ?? []) as RecentDietChangeRow[]).map((dietChange) => ({
+    id: dietChange.id,
+    residentName:
+      `${dietChange.residents?.first_name ?? ""} ${dietChange.residents?.last_name ?? ""}`.trim() || "Unknown",
+    changeType: dietChange.diet_type ?? "Diet update",
+    changedAt: dietChange.updated_at,
+  }));
 
   // Aggregate diet type breakdown
   const dietCounts: Record<string, number> = {};
-  for (const row of (breakdownRes as any).data ?? []) {
+  for (const row of (breakdownRes.data ?? []) as DietBreakdownRow[]) {
     const dt = row.diet_type ?? "Unspecified";
     dietCounts[dt] = (dietCounts[dt] || 0) + 1;
   }
@@ -82,10 +93,10 @@ export async function fetchDietaryDashboardBrief(
     .sort((a, b) => b.count - a.count);
 
   return {
-    censusCount: (censusRes as any).count ?? 0,
-    specialDiets: (specialDietsRes as any).count ?? 0,
-    mealsToday: (mealsRes as any).count ?? 0,
-    dietChanges48h: (changesRes as any).count ?? 0,
+    censusCount: (censusRes as CountResponse).count ?? 0,
+    specialDiets: (specialDietsRes as CountResponse).count ?? 0,
+    mealsToday: (mealsRes as CountResponse).count ?? 0,
+    dietChanges48h: (changesRes as CountResponse).count ?? 0,
     recentDietChanges,
     specialDietBreakdown,
   };

@@ -28,12 +28,15 @@ export type NurseMedicationBrief = {
   }>;
 };
 
+type CountResponse = { count: number | null };
+type ScopedQuery<T> = { eq(column: string, value: string): T };
+
 export async function fetchNurseMedicationBrief(
   facilityId: string | null,
 ): Promise<NurseMedicationBrief> {
   const supabase = createClient();
 
-  const f = (q: any) =>
+  const f = <T extends ScopedQuery<T>>(q: T): T =>
     isValidFacilityIdForQuery(facilityId) ? q.eq("facility_id", facilityId) : q;
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
@@ -78,14 +81,14 @@ export async function fetchNurseMedicationBrief(
     fetchResidentAssuranceCommandBrief(facilityId),
   ]);
 
-  const activeMedications = (activeMedsRes as any).count ?? 0;
-  const emarTotal = (emarTodayRes as any).count ?? 0;
-  const emarGiven = (emarGivenRes as any).count ?? 0;
+  const activeMedications = (activeMedsRes as CountResponse).count ?? 0;
+  const emarTotal = (emarTodayRes as CountResponse).count ?? 0;
+  const emarGiven = (emarGivenRes as CountResponse).count ?? 0;
   const emarCompliancePct = emarTotal > 0 ? Math.round((emarGiven / emarTotal) * 100) : 100;
-  const medErrors7d = (medErrorsRes as any).count ?? 0;
-  const controlledDiscrepancies = (controlledRes as any).count ?? 0;
-  const missedDosesToday = (missedRes as any).count ?? 0;
-  const prnGiven24h = (prnRes as any).count ?? 0;
+  const medErrors7d = (medErrorsRes as CountResponse).count ?? 0;
+  const controlledDiscrepancies = (controlledRes as CountResponse).count ?? 0;
+  const missedDosesToday = (missedRes as CountResponse).count ?? 0;
+  const prnGiven24h = (prnRes as CountResponse).count ?? 0;
 
   return {
     activeMedications,

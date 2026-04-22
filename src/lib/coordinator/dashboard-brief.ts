@@ -17,12 +17,26 @@ export type CoordinatorDashboardBrief = {
   pendingAdmissions: Array<{ id: string; name: string; daysSinceInquiry: number }>;
 };
 
+type CountResponse = { count: number | null };
+type ScopedQuery<T> = { eq(column: string, value: string): T };
+type ReviewListRow = {
+  id: string;
+  next_review_date: string;
+  residents: { first_name: string | null; last_name: string | null } | null;
+};
+type PendingAdmissionRow = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  created_at: string;
+};
+
 export async function fetchCoordinatorDashboardBrief(
   facilityId: string | null,
 ): Promise<CoordinatorDashboardBrief> {
   const supabase = createClient();
 
-  const f = (q: any) =>
+  const f = <T extends ScopedQuery<T>>(q: T): T =>
     isValidFacilityIdForQuery(facilityId) ? q.eq("facility_id", facilityId) : q;
 
   const fourteenDays = new Date(Date.now() + 14 * 86400000).toISOString();
@@ -69,25 +83,26 @@ export async function fetchCoordinatorDashboardBrief(
       .limit(5),
   ]);
 
-  const carePlansDue = (reviewsListRes as any).data?.map((r: any) => ({
-    id: r.id,
-    residentName: `${r.residents?.first_name ?? ""} ${r.residents?.last_name ?? ""}`.trim() || "Unknown",
-    reviewDate: r.next_review_date,
-  })) ?? [];
+  const carePlansDue = ((reviewsListRes.data ?? []) as ReviewListRow[]).map((review) => ({
+    id: review.id,
+    residentName:
+      `${review.residents?.first_name ?? ""} ${review.residents?.last_name ?? ""}`.trim() || "Unknown",
+    reviewDate: review.next_review_date,
+  }));
 
-  const pendingAdmissions = (pendingListRes as any).data?.map((r: any) => ({
-    id: r.id,
-    name: `${r.first_name ?? ""} ${r.last_name ?? ""}`.trim() || "Unknown",
-    daysSinceInquiry: Math.round((Date.now() - new Date(r.created_at).getTime()) / 86400000),
-  })) ?? [];
+  const pendingAdmissions = ((pendingListRes.data ?? []) as PendingAdmissionRow[]).map((resident) => ({
+    id: resident.id,
+    name: `${resident.first_name ?? ""} ${resident.last_name ?? ""}`.trim() || "Unknown",
+    daysSinceInquiry: Math.round((Date.now() - new Date(resident.created_at).getTime()) / 86400000),
+  }));
 
   return {
-    activeCarePlans: (carePlansRes as any).count ?? 0,
-    reviewsDue14d: (reviewsDueRes as any).count ?? 0,
-    pendingAssessments: (assessmentsRes as any).count ?? 0,
-    unreadFamilyMessages: (messagesRes as any).count ?? 0,
-    activeAdmissions: (admissionsRes as any).count ?? 0,
-    recentConditionChanges: (conditionRes as any).count ?? 0,
+    activeCarePlans: (carePlansRes as CountResponse).count ?? 0,
+    reviewsDue14d: (reviewsDueRes as CountResponse).count ?? 0,
+    pendingAssessments: (assessmentsRes as CountResponse).count ?? 0,
+    unreadFamilyMessages: (messagesRes as CountResponse).count ?? 0,
+    activeAdmissions: (admissionsRes as CountResponse).count ?? 0,
+    recentConditionChanges: (conditionRes as CountResponse).count ?? 0,
     carePlansDue,
     pendingAdmissions,
   };

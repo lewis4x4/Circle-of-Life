@@ -23,12 +23,14 @@ export type HousekeeperDashboardBrief = {
   }>;
 };
 
+type RoomRow = { id: string; room_number: string };
+type TimeRecordRow = { clock_in: string | null; clock_out: string | null };
+
 export async function fetchHousekeepingBrief(
   facilityId: string | null,
 ): Promise<HousekeeperDashboardBrief> {
   const supabase = createClient();
 
-  const todayStart = new Date().toISOString().split("T")[0] + "T00:00:00";
   const weekStart = new Date(Date.now() - 7 * 86400000).toISOString();
 
   // Housekeeping tasks from transport_requests (repurposed for housekeeping)
@@ -41,7 +43,7 @@ export async function fetchHousekeepingBrief(
     roomsQuery = roomsQuery.eq("facility_id", facilityId);
   }
   const roomsRes = await roomsQuery;
-  const roomsCount = (roomsRes as any).data?.length ?? 0;
+  const roomsCount = ((roomsRes.data ?? []) as RoomRow[]).length;
 
   // Time records for hours this week
   let hoursQuery = supabase
@@ -54,7 +56,7 @@ export async function fetchHousekeepingBrief(
   }
   const hoursRes = await hoursQuery;
   let totalMinutes = 0;
-  for (const rec of (hoursRes as any).data ?? []) {
+  for (const rec of (hoursRes.data ?? []) as TimeRecordRow[]) {
     if (rec.clock_in && rec.clock_out) {
       totalMinutes += (new Date(rec.clock_out).getTime() - new Date(rec.clock_in).getTime()) / 60000;
     }

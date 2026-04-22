@@ -28,6 +28,10 @@ export type ReminderCounts = {
   total: number;
 };
 
+type ReminderTypeRow = {
+  reminder_type: ComplianceReminder["reminder_type"];
+};
+
 /**
  * Get pending reminders for a facility.
  */
@@ -36,8 +40,8 @@ export async function getPendingReminders(
 ): Promise<ComplianceReminder[]> {
   const supabase = createClient();
 
-  const { data, error } = await (supabase as any)
-    .from("compliance_reminders")
+  const { data, error } = await supabase
+    .from("compliance_reminders" as never)
     .select("*")
     .eq("facility_id", facilityId)
     .eq("status", "pending")
@@ -59,8 +63,8 @@ export async function getReminderCounts(
 ): Promise<ReminderCounts> {
   const supabase = createClient();
 
-  const { data, error } = await (supabase as any)
-    .from("compliance_reminders")
+  const { data, error } = await supabase
+    .from("compliance_reminders" as never)
     .select("reminder_type")
     .eq("facility_id", facilityId)
     .eq("status", "pending")
@@ -79,7 +83,7 @@ export async function getReminderCounts(
     total: 0,
   };
 
-  for (const reminder of data ?? []) {
+  for (const reminder of (data ?? []) as ReminderTypeRow[]) {
     const type = reminder.reminder_type as keyof ReminderCounts;
     counts[type] = (counts[type] || 0) + 1;
     counts.total++;
@@ -131,8 +135,8 @@ export async function generateWeeklyDigest(
       .is("deleted_at", null)
       .in("status", ["draft", "submitted"])
       .lt("submission_due_date", new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()),
-    (supabase as any)
-      .from("assessments")
+    supabase
+      .from("assessments" as never)
       .select("id")
       .eq("facility_id", facilityId)
       .is("deleted_at", null)
@@ -163,8 +167,8 @@ export async function generateWeeklyDigest(
 
   if (totalIssues === 0) {
     // No issues - create a positive weekly summary
-    const { data: result } = await (supabase as any)
-      .from("compliance_reminders")
+    const { data: result } = await supabase
+      .from("compliance_reminders" as never)
       .insert({
         facility_id: facilityId,
         organization_id: organizationId,
@@ -177,7 +181,7 @@ export async function generateWeeklyDigest(
         context: { issues_count: 0 },
         status: "pending",
         created_by: createdById,
-      })
+      } as never)
       .select()
       .single();
 
@@ -195,8 +199,8 @@ export async function generateWeeklyDigest(
     .filter(Boolean)
     .join(", ");
 
-  const { data: result } = await (supabase as any)
-    .from("compliance_reminders")
+  const { data: result } = await supabase
+    .from("compliance_reminders" as never)
     .insert({
       facility_id: facilityId,
       organization_id: organizationId,
@@ -216,7 +220,7 @@ export async function generateWeeklyDigest(
       },
       status: "pending",
       created_by: createdById,
-    })
+    } as never)
     .select()
     .single();
 
@@ -237,8 +241,8 @@ export async function createOverdueReminder(
 ): Promise<ComplianceReminder | null> {
   const supabase = createClient();
 
-  const { data, error } = await (supabase as any)
-    .from("compliance_reminders")
+  const { data, error } = await supabase
+    .from("compliance_reminders" as never)
     .insert({
       facility_id: facilityId,
       organization_id: organizationId,
@@ -250,7 +254,7 @@ export async function createOverdueReminder(
       frequency: "once",
       context: context || null,
       status: "pending",
-    })
+    } as never)
     .select()
     .single();
 
@@ -268,13 +272,12 @@ export async function createOverdueReminder(
 export async function checkAndCreateOverdueReminders(
   facilityId: string,
   organizationId: string,
-  createdById: string,
 ): Promise<void> {
   const supabase = createClient();
 
   // Check if POC due reminders already exist
-  const { count: existingPocReminders } = await (supabase as any)
-    .from("compliance_reminders")
+  const { count: existingPocReminders } = await supabase
+    .from("compliance_reminders" as never)
     .select("*", { count: "exact", head: true })
     .eq("facility_id", facilityId)
     .eq("reminder_type", "poc_due")
@@ -305,8 +308,8 @@ export async function checkAndCreateOverdueReminders(
   }
 
   // Check for overdue assessments
-  const { count: existingAssessmentReminders } = await (supabase as any)
-    .from("compliance_reminders")
+  const { count: existingAssessmentReminders } = await supabase
+    .from("compliance_reminders" as never)
     .select("*", { count: "exact", head: true })
     .eq("facility_id", facilityId)
     .eq("reminder_type", "assessment_overdue")
@@ -314,8 +317,8 @@ export async function checkAndCreateOverdueReminders(
     .is("deleted_at", null);
 
   if (existingAssessmentReminders === 0) {
-    const { data: assessments } = await (supabase as any)
-      .from("assessments")
+    const { data: assessments } = await supabase
+      .from("assessments" as never)
       .select("id")
       .eq("facility_id", facilityId)
       .is("deleted_at", null)
@@ -335,8 +338,8 @@ export async function checkAndCreateOverdueReminders(
   }
 
   // Check for overdue care plan reviews
-  const { count: existingCarePlanReminders } = await (supabase as any)
-    .from("compliance_reminders")
+  const { count: existingCarePlanReminders } = await supabase
+    .from("compliance_reminders" as never)
     .select("*", { count: "exact", head: true })
     .eq("facility_id", facilityId)
     .eq("reminder_type", "care_plan_review_due")
@@ -365,8 +368,8 @@ export async function checkAndCreateOverdueReminders(
   }
 
   // Check for overdue policy acknowledgments
-  const { count: existingPolicyReminders } = await (supabase as any)
-    .from("compliance_reminders")
+  const { count: existingPolicyReminders } = await supabase
+    .from("compliance_reminders" as never)
     .select("*", { count: "exact", head: true })
     .eq("facility_id", facilityId)
     .eq("reminder_type", "policy_acknowledgment_overdue")
@@ -430,13 +433,13 @@ export async function dismissReminder(
 ): Promise<boolean> {
   const supabase = createClient();
 
-  const { error } = await (supabase as any)
-    .from("compliance_reminders")
+  const { error } = await supabase
+    .from("compliance_reminders" as never)
     .update({
       status: "dismissed",
       dismissed_by: userId,
       dismissed_at: new Date().toISOString(),
-    })
+    } as never)
     .eq("id", reminderId)
     .eq("status", "pending");
 
@@ -456,12 +459,12 @@ export async function markReminderSent(
 ): Promise<boolean> {
   const supabase = createClient();
 
-  const { error } = await (supabase as any)
-    .from("compliance_reminders")
+  const { error } = await supabase
+    .from("compliance_reminders" as never)
     .update({
       status: "sent",
       last_sent_at: new Date().toISOString(),
-    })
+    } as never)
     .eq("id", reminderId)
     .eq("status", "pending");
 

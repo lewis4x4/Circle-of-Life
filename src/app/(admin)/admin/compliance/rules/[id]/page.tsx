@@ -6,7 +6,7 @@ import { ArrowLeft, CheckCircle, XCircle, AlertTriangle, RefreshCw } from "lucid
 
 import { createClient } from "@/lib/supabase/client";
 import { useParams } from "next/navigation";
-import { type ComplianceRule, getScanHistory } from "@/lib/compliance-scan";
+import { type ComplianceRule } from "@/lib/compliance-scan";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,8 +40,8 @@ export default function ComplianceRuleDetailPage() {
 
     try {
       // Fetch rule
-      const { data: ruleData, error: ruleError } = await (supabase as any)
-        .from("compliance_rules")
+      const { data: ruleData, error: ruleError } = await supabase
+        .from("compliance_rules" as never)
         .select("*")
         .eq("id", ruleId)
         .maybeSingle();
@@ -53,8 +53,8 @@ export default function ComplianceRuleDetailPage() {
       setRule(ruleData);
 
       // Fetch recent scan results for this rule
-      const { data: scansData } = await (supabase as any)
-        .from("compliance_scans")
+      const { data: scansData } = await supabase
+        .from("compliance_scans" as never)
         .select("id")
         .order("scanned_at", { ascending: false })
         .limit(5);
@@ -68,8 +68,8 @@ export default function ComplianceRuleDetailPage() {
       // Get results for each scan
       const scanIds = scansData.map((s: { id: string }) => s.id);
 
-      const { data: resultsData, error: resultsError } = await (supabase as any)
-        .from("compliance_scan_results")
+      const { data: resultsData, error: resultsError } = await supabase
+        .from("compliance_scan_results" as never)
         .select("*")
         .eq("rule_id", ruleId)
         .in("scan_id", scanIds)

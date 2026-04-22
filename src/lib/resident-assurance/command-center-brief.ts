@@ -112,7 +112,7 @@ export async function fetchResidentAssuranceCommandBrief(
 ): Promise<ResidentAssuranceCommandBrief> {
   const supabase = createClient();
 
-  const scoped = (query: any) =>
+  const scoped = <T extends { eq(column: string, value: string): T }>(query: T): T =>
     isValidFacilityIdForQuery(facilityId) ? query.eq("facility_id", facilityId) : query;
 
   const [
@@ -157,7 +157,7 @@ export async function fetchResidentAssuranceCommandBrief(
         .is("deleted_at", null)
         .order("computed_at", { ascending: false })
         .limit(200),
-    ) as Promise<{ data: RiskScoreRow[] | null; error: { message: string } | null }>,
+    ) as unknown as Promise<{ data: RiskScoreRow[] | null; error: { message: string } | null }>,
   ]);
 
   const firstError = [

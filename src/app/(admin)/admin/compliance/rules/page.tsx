@@ -35,7 +35,6 @@ export default function ComplianceRulesPage() {
   const [rules, setRules] = useState<RuleSummary[]>([]);
   const [score, setScore] = useState<{ percentage: number; passed: number; total: number } | null>(null);
   const [scanDate, setScanDate] = useState<string | null>(null);
-  const [scanRunning, setScanRunning] = useState(false);
 
   const facilityReady = !!(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
 
@@ -51,8 +50,8 @@ export default function ComplianceRulesPage() {
     setLoading(true);
     try {
       // Fetch rules
-      const { data: rulesData, error: rulesError } = await (supabase as any)
-        .from("compliance_rules")
+      const { data: rulesData, error: rulesError } = await supabase
+        .from("compliance_rules" as never)
         .select("id, tag_number, tag_title, severity, enabled")
         .or(`facility_id.eq.${selectedFacilityId},facility_id.is.null`)
         .eq("enabled", true)
@@ -103,32 +102,6 @@ export default function ComplianceRulesPage() {
     void loadRules();
   }, [loadRules]);
 
-  const runScan = useCallback(async () => {
-    if (!facilityReady || scanRunning) return;
-
-    setScanRunning(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const result = await getComplianceScore(selectedFacilityId!);
-      if (result) {
-        await (supabase as any).from("compliance_scans").insert({
-          facility_id: selectedFacilityId!,
-          organization_id: (await supabase.from("facilities").select("organization_id").eq("id", selectedFacilityId).maybeSingle())?.data?.organization_id || "",
-          scanned_by: user.id,
-          total_rules_checked: result.total,
-          rules_passed: result.passed,
-          rules_failed: result.total - result.passed,
-        });
-      }
-
-      await loadRules();
-    } finally {
-      setScanRunning(false);
-    }
-  }, [facilityReady, selectedFacilityId, supabase, scanRunning, loadRules]);
-
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case "immediate_jeopardy":
@@ -174,9 +147,9 @@ export default function ComplianceRulesPage() {
         </div>
         <div className="flex gap-3">
           <Link href="/admin/compliance/scan">
-            <Button disabled={scanRunning}>
+            <Button>
               <Play className="mr-2 h-4 w-4" />
-              {scanRunning ? "Running…" : "Run Scan"}
+              Run Scan
             </Button>
           </Link>
           <Link href="/admin/compliance/rules/new">

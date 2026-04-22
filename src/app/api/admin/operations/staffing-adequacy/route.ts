@@ -52,7 +52,7 @@ export async function GET(request: Request) {
     : getCurrentOperationShift(now, timezone);
 
   const { data: residentData } = await actor.admin
-    .from("residents" as any)
+    .from("residents" as never)
     .select("acuity_level")
     .is("deleted_at", null)
     .in("status", ["active", "hospital_hold", "loa"])
@@ -69,7 +69,7 @@ export async function GET(request: Request) {
   }, 0);
 
   const { data: staffData } = await actor.admin
-    .from("staff" as any)
+    .from("staff" as never)
     .select("id, staff_role")
     .is("deleted_at", null)
     .eq("employment_status", "active")
@@ -85,7 +85,7 @@ export async function GET(request: Request) {
   }
 
   const { data: ratioRuleData } = await actor.admin
-    .from("facility_ratio_rules" as any)
+    .from("facility_ratio_rules" as never)
     .select("required_ratio")
     .eq("facility_id", targetFacilityId)
     .eq("organization_id", actor.organizationId)
@@ -98,7 +98,7 @@ export async function GET(request: Request) {
   const isCompliant = actualRatio >= requiredRatio;
 
   const { data: taskData } = await actor.admin
-    .from("operation_task_instances" as any)
+    .from("operation_task_instances" as never)
     .select("status, priority, estimated_minutes")
     .is("deleted_at", null)
     .eq("organization_id", actor.organizationId)

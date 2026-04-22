@@ -57,7 +57,7 @@ export async function GET(request: Request) {
   }
 
   let query = actor.admin
-    .from("operation_task_instances" as any)
+    .from("operation_task_instances" as never)
     .select(`
       id,
       organization_id,

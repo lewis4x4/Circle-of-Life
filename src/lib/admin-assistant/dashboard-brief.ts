@@ -20,12 +20,21 @@ export type AdminAssistantDashboardBrief = {
   }>;
 };
 
+type CountResponse = { count: number | null };
+type ScopedQuery<T> = { eq(column: string, value: string): T };
+type RecentMessageRow = {
+  id: string;
+  sender_name: string | null;
+  subject: string | null;
+  created_at: string;
+};
+
 export async function fetchAdminAssistantDashboardBrief(
   facilityId: string | null,
 ): Promise<AdminAssistantDashboardBrief> {
   const supabase = createClient();
 
-  const f = (q: any) =>
+  const f = <T extends ScopedQuery<T>>(q: T): T =>
     isValidFacilityIdForQuery(facilityId) ? q.eq("facility_id", facilityId) : q;
 
   const todayStart = new Date().toISOString().split("T")[0] + "T00:00:00";
@@ -56,18 +65,18 @@ export async function fetchAdminAssistantDashboardBrief(
       .limit(5),
   ]);
 
-  const recentMessages = (recentMsgRes as any).data?.map((m: any) => ({
-    id: m.id,
-    from: m.sender_name ?? "Family member",
-    preview: m.subject ?? "No subject",
-    createdAt: m.created_at,
-  })) ?? [];
+  const recentMessages = ((recentMsgRes.data ?? []) as RecentMessageRow[]).map((message) => ({
+    id: message.id,
+    from: message.sender_name ?? "Family member",
+    preview: message.subject ?? "No subject",
+    createdAt: message.created_at,
+  }));
 
   return {
-    censusCount: (censusRes as any).count ?? 0,
-    pendingDocs: (docsRes as any).count ?? 0,
-    unreadMessages: (messagesRes as any).count ?? 0,
-    transportationToday: (transportRes as any).count ?? 0,
+    censusCount: (censusRes as CountResponse).count ?? 0,
+    pendingDocs: (docsRes as CountResponse).count ?? 0,
+    unreadMessages: (messagesRes as CountResponse).count ?? 0,
+    transportationToday: (transportRes as CountResponse).count ?? 0,
     recentMessages,
   };
 }
