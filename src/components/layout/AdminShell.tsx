@@ -66,6 +66,7 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { FACILITY_LIST_TTL_MS, useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
 import { createClient } from "@/lib/supabase/client";
+import { syncSelectedFacilityCookie } from "@/lib/facilities/selected-facility-cookie";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -161,6 +162,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     void refreshFacilities();
   }, [refreshFacilities]);
+
+  useEffect(() => {
+    syncSelectedFacilityCookie(selectedFacilityId);
+  }, [selectedFacilityId]);
+
+  const handleFacilityScopeChange = useCallback((facilityId: string | null) => {
+    setSelectedFacility(facilityId);
+    syncSelectedFacilityCookie(facilityId);
+    router.refresh();
+  }, [router, setSelectedFacility]);
 
   const facilityTriggerLabel = facilitiesLoading
     ? "Loading facilities…"
@@ -427,7 +438,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[260px] rounded-[1.2rem] p-2 dark:bg-zinc-950/95 dark:backdrop-blur-xl dark:border-white/10">
               <DropdownMenuItem
-                onClick={() => setSelectedFacility(null)}
+                onClick={() => handleFacilityScopeChange(null)}
                 className="flex cursor-pointer items-center justify-between font-medium rounded-lg p-3 dark:focus:bg-white/5"
               >
                 <div className="flex items-center gap-2">
@@ -449,7 +460,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               {availableFacilities.map((facility) => (
                 <DropdownMenuItem 
                   key={facility.id}
-                  onClick={() => setSelectedFacility(facility.id)}
+                  onClick={() => handleFacilityScopeChange(facility.id)}
                   className="flex justify-between items-center cursor-pointer rounded-lg p-3 dark:focus:bg-white/5"
                 >
                   <span className="truncate pr-2">{facility.name}</span>

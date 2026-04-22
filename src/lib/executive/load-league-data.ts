@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database, Json } from "@/types/database";
-import { fetchExecutiveKpiSnapshot, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
+import { loadExecutiveKpiBulk } from "@/lib/executive/load-executive-kpi-bulk";
 import {
   computeEntityInsuranceReadiness,
   computeLeagueRows,
@@ -132,18 +132,7 @@ export async function loadExecutiveLeagueData(
     entityName: entities.get(facility.entity_id) ?? facility.entity_id,
   }));
 
-  const kpiSettled = await Promise.allSettled(
-    leagueFacilities.map(async (facility) => ({
-      facilityId: facility.facilityId,
-      kpi: await fetchExecutiveKpiSnapshot(supabase, organizationId, facility.facilityId),
-    })),
-  );
-  const kpiMap = new Map<string, ExecKpiPayload>();
-  for (const result of kpiSettled) {
-    if (result.status === "fulfilled") {
-      kpiMap.set(result.value.facilityId, result.value.kpi);
-    }
-  }
+  const { facilityKpis: kpiMap } = await loadExecutiveKpiBulk(supabase, organizationId);
 
   const riskMap = new Map<string, RiskSnapshotMini>();
   for (const row of ((riskRes.data ?? []) as unknown as RiskSnapshotRow[])) {
