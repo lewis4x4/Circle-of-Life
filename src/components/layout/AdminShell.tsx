@@ -59,6 +59,7 @@ import {
   BookOpen,
   BrainCircuit,
   MessageSquare,
+  Radar,
   type LucideIcon,
 } from "lucide-react";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -211,6 +212,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       group: "Quality & Risk",
       icon: ShieldCheck,
       items: [
+        { key: "risk", href: "/admin/risk", label: "Risk command", enabled: true, icon: Radar },
         { key: "incidents-new", href: "/admin/incidents/new", label: "Report Incident", enabled: true, icon: ShieldAlert },
         { key: "incidents", href: "/admin/incidents", label: "Incident queue", enabled: true, icon: ShieldAlert },
         { key: "infection", href: "/admin/infection-control", label: "Infection Control", enabled: true, icon: Biohazard },

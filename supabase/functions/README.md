@@ -11,6 +11,7 @@
 | `generate-emar-schedule` | no | `POST` — creates future **`emar_records`** for scheduled meds. Auth: **`x-cron-secret`** = `GENERATE_EMAR_SCHEDULE_SECRET`. |
 | `emar-missed-dose-check` | no | `POST` — opens **`exec_alerts`** for overdue scheduled eMAR rows. Auth: **`x-cron-secret`** = `EMAR_MISSED_DOSE_SECRET`. |
 | `exec-alert-evaluator` | no | `POST { "organization_id" }` — inserts **`exec_alerts`** from live KPI thresholds. Auth: **`x-cron-secret`** = `EXEC_ALERT_EVALUATOR_SECRET`. |
+| `risk-nightly-scorer` | no | `POST { "organization_id"?, "facility_id"?, "dry_run"?, "notify"? }` — writes **`risk_score_snapshots`**, opens/resolves risk **`exec_alerts`**, and sends owner SMS for material high/critical overnight risk. Auth: **`x-cron-secret`** = `RISK_NIGHTLY_SCORER_SECRET`. Reuses Twilio secrets from OCE escalation when SMS is enabled. |
 | `process-referral-hl7-inbound` | no | `POST { "organization_id"?, "limit"? }` — minimal **MSH** parse for **`referral_hl7_inbound`** rows in **`pending`** → **`processed`** / **`failed`**; sets **`message_control_id`**, **`trigger_event`**, **`parse_error`**. Does **not** create **`referral_leads`**. Auth: **`x-cron-secret`** = `PROCESS_REFERRAL_HL7_INBOUND_SECRET`. |
 | `oce-task-scheduler` | no | `POST { "date_from"?, "date_to"?, "dry_run"?, "facility_id"?, "category"? }` — generates due **`operation_task_instances`** from active **`operation_task_templates`** across day/week/month/quarter/year cadences. Auth: **`x-cron-secret`** = `OCE_TASK_SCHEDULER_SECRET`. |
 | `ingest` | yes | `POST` multipart (`file`, …) or JSON `{ "document_id" }` re-index or `{ "document_id", "action": "regenerate_markdown" }` (re-download from storage, re-convert). Pipeline: extract → **Markdown IR** (`markdown_text`) → chunk → embed. Roles: **owner**, **org_admin**, **facility_admin**. Secrets: **`OPENAI_API_KEY`**, **`ANTHROPIC_API_KEY`** (Markdown conversion + summary + scanned PDF vision). |
@@ -77,6 +78,7 @@ Do **not** send `facility_id` and `organization_id` together.
 - `GENERATE_EMAR_SCHEDULE_SECRET` — required for `generate-emar-schedule`.
 - `EMAR_MISSED_DOSE_SECRET` — required for `emar-missed-dose-check`.
 - `EXEC_ALERT_EVALUATOR_SECRET` — required for `exec-alert-evaluator`.
+- `RISK_NIGHTLY_SCORER_SECRET` — required for `risk-nightly-scorer`.
 - `PROCESS_REFERRAL_HL7_INBOUND_SECRET` — required for `process-referral-hl7-inbound`.
 - `OCE_TASK_SCHEDULER_SECRET` — required for `oce-task-scheduler`.
 - `FACILITY_EXPIRATION_SCANNER_SECRET` — required for `facility-expiration-scanner` (header `x-cron-secret`).
@@ -150,6 +152,7 @@ supabase functions deploy ar-aging-check --project-ref manfqmasfqppukpobpld
 supabase functions deploy generate-emar-schedule --project-ref manfqmasfqppukpobpld
 supabase functions deploy emar-missed-dose-check --project-ref manfqmasfqppukpobpld
 supabase functions deploy exec-alert-evaluator --project-ref manfqmasfqppukpobpld
+supabase functions deploy risk-nightly-scorer --project-ref manfqmasfqppukpobpld --no-verify-jwt
 supabase functions deploy oce-task-scheduler --project-ref manfqmasfqppukpobpld --no-verify-jwt
 supabase functions deploy ingest --project-ref manfqmasfqppukpobpld
 supabase functions deploy knowledge-agent --project-ref manfqmasfqppukpobpld
