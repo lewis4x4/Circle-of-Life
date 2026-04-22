@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { OperationsViewNav } from "@/components/operations/OperationsViewNav";
+import { topMissPredictions } from "@/lib/operations/miss-prediction";
 
 type TaskRow = {
   id: string;
@@ -77,6 +78,8 @@ export default function OperationsPagerPage() {
     });
     return ranked.slice(0, 3);
   }, [tasks]);
+
+  const missPredictions = useMemo(() => topMissPredictions(tasks, adequacy, 3), [adequacy, tasks]);
 
   async function completeTask(taskId: string) {
     await fetch(`/api/admin/operations/tasks/${taskId}/complete`, {
@@ -149,6 +152,30 @@ export default function OperationsPagerPage() {
             <CardTitle className="text-base">Staffing guidance</CardTitle>
             <CardDescription>{adequacy.recommended_action}</CardDescription>
           </CardHeader>
+        </Card>
+      )}
+
+      {missPredictions.length > 0 && (
+        <Card className="border-indigo-200 bg-indigo-50/70">
+          <CardHeader>
+            <CardTitle className="text-base">Predicted next miss</CardTitle>
+            <CardDescription>
+              Heuristic miss-risk ranking from current urgency, license exposure, and shift adequacy.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {missPredictions.map((prediction) => (
+              <div key={prediction.taskId} className="rounded-lg border border-indigo-100 bg-white/70 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-medium">{prediction.templateName}</p>
+                  <Badge variant="outline">{prediction.predictedBand}</Badge>
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {prediction.predictedRisk}/100 · {prediction.rationale}
+                </p>
+              </div>
+            ))}
+          </CardContent>
         </Card>
       )}
 

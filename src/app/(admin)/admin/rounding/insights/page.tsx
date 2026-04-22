@@ -7,7 +7,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Brain, AlertTriangle, TrendingUp, TrendingDown, Eye, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Brain, AlertTriangle, TrendingUp, TrendingDown, Eye, CheckCircle, XCircle, Loader2, Sparkles, Mic } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
@@ -51,6 +51,8 @@ export default function InsightsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "new" | "acknowledged">("all");
+  const [running, setRunning] = useState(false);
+  const [runMessage, setRunMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -79,6 +81,29 @@ export default function InsightsPage() {
   }, [supabase, filter]);
 
   useEffect(() => { void load(); }, [load]);
+
+  async function runAnalysis() {
+    setRunning(true);
+    setRunMessage(null);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/rounding/insights/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ maxResidents: 25 }),
+      });
+      const json = (await res.json()) as { error?: string; residentsAnalyzed?: number; insightsGenerated?: number; alertsCreated?: number };
+      if (!res.ok) throw new Error(json.error ?? "Could not run analysis");
+      setRunMessage(
+        `Analyzed ${json.residentsAnalyzed ?? 0} residents · ${json.insightsGenerated ?? 0} insight(s) generated · ${json.alertsCreated ?? 0} alert(s) created.`,
+      );
+      await load();
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : "Failed to run resident assurance AI.");
+    } finally {
+      setRunning(false);
+    }
+  }
 
   const updateStatus = async (id: string, status: string) => {
     const { error: uErr } = await supabase
@@ -110,6 +135,40 @@ export default function InsightsPage() {
             <p className="text-sm text-slate-400">Claude-powered clinical pattern detection and early warnings</p>
           </div>
         </header>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4">
+            <p className="text-[10px] uppercase font-mono tracking-widest text-violet-300">Insight backlog</p>
+            <p className="mt-2 text-3xl font-semibold text-white">{rows.length}</p>
+            <p className="mt-1 text-xs text-slate-400">Current resident safety insights in scope</p>
+          </div>
+          <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4">
+            <p className="text-[10px] uppercase font-mono tracking-widest text-amber-300">New patterns</p>
+            <p className="mt-2 text-3xl font-semibold text-white">{rows.filter((row) => row.status === "new").length}</p>
+            <p className="mt-1 text-xs text-slate-400">Unacknowledged findings from the latest runs</p>
+          </div>
+          <div className="rounded-2xl border border-sky-500/20 bg-sky-500/5 p-4">
+            <p className="text-[10px] uppercase font-mono tracking-widest text-sky-300">Voice & AI lane</p>
+            <p className="mt-2 flex items-center gap-2 text-sm text-white">
+              <Mic className="h-4 w-4 text-sky-300" />
+              Voice check-off now feeds this safety model.
+            </p>
+            <p className="mt-1 text-xs text-slate-400">Run a manual analysis after a shift surge or incident cluster.</p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => void runAnalysis()}
+            disabled={running}
+            className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-violet-200 transition hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            {running ? "Running analysis" : "Run analysis"}
+          </button>
+          {runMessage ? <p className="text-sm text-emerald-300">{runMessage}</p> : null}
+        </div>
 
         {/* Filters */}
         <div className="flex gap-2">

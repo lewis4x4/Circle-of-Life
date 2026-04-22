@@ -53,15 +53,19 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "PHI processing not authorized for this organization" }, 403, origin);
   }
 
-  // Load active residents
+  // Load active residents and facility entity mapping
   const cap = Math.min(Math.max(Number(body.max_residents) || MAX_CAP, 1), MAX_CAP);
-  let q = admin.from("residents").select("id, facility_id, entity_id").eq("organization_id", orgId).is("deleted_at", null).eq("status", "active").limit(cap);
+  let q = admin.from("residents").select("id, facility_id").eq("organization_id", orgId).is("deleted_at", null).eq("status", "active").limit(cap);
   if (facilityId) q = q.eq("facility_id", facilityId);
-  const { data: residents } = await q;
+  const [{ data: residents }, { data: facilities }] = await Promise.all([
+    q,
+    admin.from("facilities").select("id, entity_id").eq("organization_id", orgId).is("deleted_at", null),
+  ]);
   if (!residents?.length) {
     t.log({ event: "no_residents", outcome: "success", organization_id: orgId });
     return jsonResponse({ ok: true, residents_analyzed: 0, insights_generated: 0, alerts_created: 0 });
   }
+  const entityByFacility = new Map((facilities ?? []).map((facility) => [facility.id, facility.entity_id]));
 
   const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
   let insightsGenerated = 0, alertsCreated = 0;
@@ -70,11 +74,26 @@ Deno.serve(async (req) => {
     // Gather 7-day clinical data in parallel
     const [obsRes, incRes, emarRes, scoreRes, assessRes] = await Promise.all([
       admin.from("resident_observation_logs").select("quick_status, exception_present").eq("resident_id", r.id).gte("observed_at", since).is("deleted_at", null),
-      admin.from("incidents").select("incident_type, severity").eq("resident_id", r.id).gte("created_at", since).is("deleted_at", null),
-      admin.from("emar_records").select("status, is_prn, effectiveness_rating").eq("resident_id", r.id).gte("scheduled_time", since).is("deleted_at", null),
+      admin.from("incidents").select("category, severity").eq("resident_id", r.id).gte("created_at", since).is("deleted_at", null),
+      admin.from("emar_records").select("status, is_prn, prn_effectiveness_result").eq("resident_id", r.id).gte("scheduled_time", since).is("deleted_at", null),
       admin.from("resident_safety_scores").select("score, risk_tier, score_delta").eq("resident_id", r.id).is("deleted_at", null).order("computed_at", { ascending: false }).limit(1).maybeSingle(),
       admin.from("assessments").select("assessment_type, total_score").eq("resident_id", r.id).gte("created_at", since).is("deleted_at", null),
     ]);
+
+    if (obsRes.error || incRes.error || emarRes.error || scoreRes.error || assessRes.error) {
+      t.log({
+        event: "resident_data_load_failed",
+        outcome: "error",
+        resident_id: r.id,
+        error_message:
+          obsRes.error?.message ??
+          incRes.error?.message ??
+          emarRes.error?.message ??
+          scoreRes.error?.message ??
+          assessRes.error?.message,
+      });
+      continue;
+    }
 
     const obs = obsRes.data ?? [], incidents = incRes.data ?? [], emars = emarRes.data ?? [];
     const ss = scoreRes.data, assessments = assessRes.data ?? [];
@@ -86,14 +105,14 @@ Deno.serve(async (req) => {
 
     // Aggregate incidents
     const incByType: Record<string, number> = {};
-    for (const i of incidents) incByType[i.incident_type] = (incByType[i.incident_type] || 0) + 1;
+    for (const i of incidents) incByType[i.category] = (incByType[i.category] || 0) + 1;
 
     // Aggregate eMAR
     const given = emars.filter((e) => e.status === "given").length;
     const refused = emars.filter((e) => e.status === "refused").length;
     const missed = emars.filter((e) => e.status === "missed").length;
     const prn = emars.filter((e) => e.is_prn);
-    const prnEff = prn.filter((e) => e.effectiveness_rating === "effective").length;
+    const prnEff = prn.filter((e) => e.prn_effectiveness_result === "effective").length;
     const adherePct = emars.length ? Math.round((given / emars.length) * 100) : 100;
     const prnRate = prn.length ? Math.round((prnEff / prn.length) * 100) : 0;
 
@@ -152,7 +171,7 @@ Respond with JSON only:
       const iType = VALID_TYPES.includes(p.type) ? p.type : "pattern_detected";
 
       const { error: insErr } = await admin.from("resident_safety_insights").insert({
-        organization_id: orgId, entity_id: r.entity_id, facility_id: r.facility_id,
+        organization_id: orgId, entity_id: entityByFacility.get(r.facility_id) ?? null, facility_id: r.facility_id,
         resident_id: r.id, insight_type: iType, severity: sev,
         title: (p.title ?? "").slice(0, 200), body: (p.body ?? "").slice(0, 2000),
         clinical_domains: Array.isArray(p.clinical_domains) ? p.clinical_domains : [],
@@ -162,11 +181,11 @@ Respond with JSON only:
 
       if (sev === "high" || sev === "critical") {
         const { error: aErr } = await admin.from("exec_alerts").insert({
-          organization_id: orgId, facility_id: r.facility_id, source_module: "resident_assurance",
-          severity: sev, title: `[AI] ${(p.title ?? "").slice(0, 180)}`, body: p.body?.slice(0, 2000),
+          organization_id: orgId, facility_id: r.facility_id, entity_id: entityByFacility.get(r.facility_id) ?? null, source_module: "system",
+          severity: sev === "critical" ? "critical" : "warning", title: `[AI] ${(p.title ?? "").slice(0, 180)}`, body: p.body?.slice(0, 2000),
           category: "clinical", why_it_matters: "AI-detected clinical pattern requiring attention",
-          source_metric_code: "resident_assurance.ai_insight",
           current_value_json: { resident_id: r.id, insight_type: iType },
+          deep_link_path: "/admin/rounding/insights",
         });
         if (!aErr) alertsCreated++;
       }
