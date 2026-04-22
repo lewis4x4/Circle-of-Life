@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ClipboardCheck, FileText, Loader2, ShieldCheck, HeartPulse } from "lucide-react";
+import { ClipboardCheck, FileText, Loader2, ShieldCheck } from "lucide-react";
 
 import {
   fetchFamilyCarePlanOverview,

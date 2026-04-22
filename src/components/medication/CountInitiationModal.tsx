@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Shield, ChevronDown, Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Shield, ChevronDown, Loader2, AlertTriangle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

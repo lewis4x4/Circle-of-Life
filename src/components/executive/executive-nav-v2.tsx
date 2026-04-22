@@ -72,8 +72,6 @@ const pillMenuTabs = [
   "Haven Insight",
 ] as const;
 
-type PillMenuTab = (typeof pillMenuTabs)[number];
-
 // ── COMPONENTS ──
 
 export interface ExecutiveNavV2Props {

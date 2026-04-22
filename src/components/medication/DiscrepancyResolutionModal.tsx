@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { CheckCircle2, AlertTriangle, Loader2, FileText } from "lucide-react";
+import { AlertTriangle, Loader2, FileText } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -93,7 +93,7 @@ export function DiscrepancyResolutionModal({
             <p className="text-xs font-bold uppercase tracking-widest text-rose-200/50">
               Affected Medications
             </p>
-            {discrepancies.map((d, idx) => (
+            {discrepancies.map((d) => (
               <div
                 key={d.id}
                 className="flex items-center justify-between py-2 border-b border-rose-900/20 last:border-0 last:pb-0"

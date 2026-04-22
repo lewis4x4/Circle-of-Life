@@ -438,6 +438,7 @@ export function generateDynamicSuggestions(
   kpis?: ExecKpiPayload | null,
   _role?: string,
 ): string[] {
+  void _role;
   const base = [...moduleContext.suggestedQuestions];
 
   if (kpis) {

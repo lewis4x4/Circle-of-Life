@@ -12,7 +12,7 @@ import React from "react";
 import Link from "next/link";
 import { TrendingUp, TrendingDown, Minus, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { type MoonshotColor, getMoonshotColor, getMoonshotDimColor, createGlowShadow, createTextGlow } from "@/lib/moonshot-theme";
+import { type MoonshotColor, getMoonshotColor, getMoonshotDimColor, createGlowShadow } from "@/lib/moonshot-theme";
 import { MonoLabel, MetricValue } from "@/components/ui/moonshot/typography";
 import { Sparkline } from "@/components/ui/moonshot/sparkline";
 
@@ -66,7 +66,6 @@ export function MetricCardMoonshot({
   const colorHex = getMoonshotColor(color);
   const dimColorHex = getMoonshotDimColor(color);
   const glowShadow = createGlowShadow(color);
-  const textGlow = createTextGlow(color);
 
   const isInteractive = !disabled && (onClick || href);
 

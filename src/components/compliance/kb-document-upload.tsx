@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle, Check, Loader2, Upload, X } from "lucide-react";
 import { authorizedEdgeFetch } from "@/lib/supabase/edge-auth";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";

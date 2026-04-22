@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
 import { ArrowRight, ChevronDown, ChevronRight, Plus, Minus, AlertCircle } from "lucide-react";
 
 import {
@@ -19,7 +18,6 @@ import { cn } from "@/lib/utils";
 
 type QueryError = { message: string };
 type QueryResult<T> = { data: T | null; error: QueryError | null };
-type QueryListResult<T> = { data: T[] | null; error: QueryError | null };
 
 type CarePlanRow = {
   id: string;

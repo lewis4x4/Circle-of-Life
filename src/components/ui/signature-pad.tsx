@@ -22,7 +22,7 @@ interface SignaturePadProps {
 }
 
 export function useSignaturePad() {
-  const [isDrawing, setIsDrawing] = useState(false);
+  const isDrawing = false;
   const [hasSignature, setHasSignature] = useState(false);
   const [signatureData, setSignatureData] = useState<string | null>(null);
 

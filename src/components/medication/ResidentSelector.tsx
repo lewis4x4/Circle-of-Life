@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronDown, Loader2, User } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";

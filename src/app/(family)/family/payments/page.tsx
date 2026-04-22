@@ -11,7 +11,6 @@ import { FamilySectionIntro } from "@/components/family/FamilySectionIntro";
 
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export default function FamilyPaymentsPage() {

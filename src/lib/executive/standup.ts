@@ -1,6 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { buildStandupPacketDocument } from "@/lib/executive/standup-packet";
 import type { Database } from "@/types/database";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
@@ -876,21 +875,6 @@ function formatCurrencyFromCents(value: number | null): string {
     currency: "USD",
     maximumFractionDigits: 0,
   }).format(value / 100);
-}
-
-function formatMetricDisplay(metric: StandupMetricRow | undefined): string {
-  if (!metric) return "—";
-  if (metric.valueText?.trim()) return metric.valueText.trim();
-  if (metric.valueNumeric == null) return "—";
-  if (metric.valueType === "currency") return formatCurrencyFromCents(metric.valueNumeric);
-  if (metric.valueType === "hours") return `${metric.valueNumeric.toFixed(2)} hrs`;
-  if (metric.valueType === "percent") return `${metric.valueNumeric.toFixed(1)}%`;
-  return `${metric.valueNumeric}`;
-}
-
-function formatDateTimeDisplay(value: string | null): string {
-  if (!value) return "—";
-  return new Date(value).toLocaleString();
 }
 
 function deltaLine(label: string, current: number | null, previous: number | null, formatter?: (value: number | null) => string): string | null {
@@ -1938,4 +1922,3 @@ export function buildStandupNarrative(
 }
 
 export { buildStandupBoardPrintHtml } from "@/lib/executive/standup-pdf";
-

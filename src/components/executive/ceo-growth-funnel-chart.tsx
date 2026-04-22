@@ -86,7 +86,6 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
 export function CeoGrowthFunnelChart({
   data,
   stageColors,
-  showConversionRates = true,
   className,
 }: CeoGrowthFunnelChartProps) {
   // Combine preset colors with custom colors

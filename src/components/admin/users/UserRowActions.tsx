@@ -4,7 +4,7 @@
 
 "use client";
 
-import { ROLE_LABELS, canManageUser } from "@/lib/rbac";
+import { canManageUser } from "@/lib/rbac";
 import { useAuth } from "@/hooks/useAuth";
 
 interface UserRowActionsProps {

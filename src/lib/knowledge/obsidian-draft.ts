@@ -69,14 +69,6 @@ function candidateVaultPaths(): string[] {
   ]);
 }
 
-function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/-{2,}/g, "-");
-}
-
 function sanitizeTitle(value: string): string {
   return value.replace(/[/:]/g, " ").replace(/\s+/g, " ").trim();
 }
@@ -358,7 +350,9 @@ export async function createObsidianDraftFromDocument(document: ObsidianDraftDoc
   };
 }
 
-export default {
+const obsidianDraft = {
   ensureActiveObsidianVault,
   createObsidianDraftFromDocument,
 };
+
+export default obsidianDraft;

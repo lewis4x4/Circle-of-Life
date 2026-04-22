@@ -7,11 +7,6 @@
 import { useState } from "react";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 
-interface Facility {
-  id: string;
-  name: string;
-}
-
 interface FacilityAccessManagerProps {
   /** Currently selected facility IDs */
   selected: string[];

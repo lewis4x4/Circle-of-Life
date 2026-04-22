@@ -257,13 +257,13 @@ export async function getRecurringTags(
 
   // Filter to only tags that appear more than once (recurring)
   const recurring = Array.from(tagCounts.entries())
-    .filter(([_, data]) => data.count > 1)
+    .filter(([, data]) => data.count > 1)
     .map(([tag_number, data]) => ({ tag_number, ...data }));
 
   // Get full recurrence data for each recurring tag
   const results: DeficiencyRecurrence[] = [];
 
-  for (const { tag_number, tag_title } of recurring) {
+  for (const { tag_number } of recurring) {
     const recurrence = await getTagRecurrence(facilityId, tag_number);
     if (recurrence) {
       results.push(recurrence);
