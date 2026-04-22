@@ -144,6 +144,9 @@ export default function AdminFinanceHubPage() {
                 <Link className="text-indigo-600 dark:text-indigo-400 font-mono uppercase tracking-widest hover:text-indigo-500 transition-colors" href="/admin/finance/period-close">
                   Period close
                 </Link>
+                <Link className="text-indigo-600 dark:text-indigo-400 font-mono uppercase tracking-widest hover:text-indigo-500 transition-colors" href="/admin/finance/forecast">
+                  Forecast
+                </Link>
                 <Link className="text-indigo-600 dark:text-indigo-400 font-mono uppercase tracking-widest hover:text-indigo-500 transition-colors" href="/admin/finance/budget">
                   Budget vs actual
                 </Link>

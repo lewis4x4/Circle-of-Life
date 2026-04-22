@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/admin/finance", label: "Overview" },
+  { href: "/admin/finance/forecast", label: "Forecast" },
   { href: "/admin/finance/close", label: "Close" },
   { href: "/admin/finance/trust", label: "Trust" },
   { href: "/admin/finance/chart-of-accounts", label: "Chart of accounts" },
