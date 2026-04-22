@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   ChevronDown,
   Loader2,
@@ -14,7 +13,6 @@ import {
 
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { ResidentSelector } from "@/components/medication/ResidentSelector";
@@ -45,13 +43,11 @@ function formatDueDate(date: Date): string {
 }
 
 export default function NewVerbalOrderPage() {
-  const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
 
   // Form state
   const [residentId, setResidentId] = useState("");
-  const [residentName, setResidentName] = useState("");
   const [orderType, setOrderType] = useState<OrderType>("new_medication");
   const [orderText, setOrderText] = useState("");
   const [indication, setIndication] = useState("");
@@ -166,7 +162,6 @@ export default function NewVerbalOrderPage() {
     setSuccess(false);
     setSubmittedOrder(null);
     setResidentId("");
-    setResidentName("");
     setOrderType("new_medication");
     setOrderText("");
     setIndication("");
@@ -297,9 +292,8 @@ export default function NewVerbalOrderPage() {
             </label>
             <ResidentSelector
               value={residentId}
-              onChange={(id, name) => {
+              onChange={(id) => {
                 setResidentId(id);
-                if (name) setResidentName(name);
               }}
               placeholder="Select a resident"
             />

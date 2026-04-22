@@ -2,12 +2,11 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CalendarClock, ClipboardList, FileSignature, ShieldAlert } from "lucide-react";
+import { ClipboardList, FileSignature, ShieldAlert } from "lucide-react";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
   fetchCarePlanReviewsDue,
-  formatCarePlanReviewDate,
   type CarePlanReviewDueRow,
 } from "@/lib/care-plans/reviews-due";
 import { buttonVariants } from "@/components/ui/button";

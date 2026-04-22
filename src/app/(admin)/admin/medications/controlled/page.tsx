@@ -10,7 +10,6 @@ import {
   Download,
   AlertTriangle,
   CheckCircle2,
-  Loader2,
 } from "lucide-react";
 
 import { AdminTableLoadingState } from "@/components/common/admin-list-patterns";

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
   Plus,
@@ -8,11 +7,8 @@ import {
   AlertTriangle,
   Flame,
   Zap,
-  ArrowRight,
   Calendar,
-  Users,
   FileText,
-  History,
 } from "lucide-react";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -24,7 +20,6 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogTrigger,
@@ -163,18 +158,6 @@ export default function EmergencyPreparednessPage() {
   useEffect(() => {
     void loadItems();
   }, [loadItems]);
-
-  const openCompletionDialog = (itemId: string) => {
-    const item = items.find((i) => i.id === itemId);
-    if (item) {
-      setCompletionDialog({
-        open: true,
-        itemId,
-        participants: "",
-        notes: item.last_notes || "",
-      });
-    }
-  };
 
   const submitCompletion = async () => {
     if (!completionDialog.itemId || !facilityReady) return;

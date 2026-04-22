@@ -20,8 +20,6 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
-  LineChart,
-  Line,
 } from "recharts";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -41,8 +39,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
-import { MotionList, MotionItem } from "@/components/ui/motion-list";
-
 const CHART_COLORS = {
   indigo: "#6366f1",
   rose: "#f43f5e",
@@ -167,9 +163,6 @@ export default function DeficienciesAnalysisPage() {
     count: point.count,
     tag: point.tag_number,
   }));
-
-  // Get unique months for x-axis
-  const uniqueMonths = Array.from(new Set(trendData.map((d) => d.month))).sort();
 
   // Prepare bar chart data
   const barChartData = tagCounts.slice(0, 10).map((item) => ({

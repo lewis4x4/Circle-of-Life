@@ -32,17 +32,12 @@ export default function AdminMedicationErrorsPage() {
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
   const [reviewFilter, setReviewFilter] = useState<ReviewFilter>("all");
-  const [totals, setTotals] = useState<{ n: number; bySeverity: Record<string, number> }>({
-    n: 0,
-    bySeverity: {},
-  });
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     if (!isValidFacilityIdForQuery(selectedFacilityId)) {
       setRows([]);
-      setTotals({ n: 0, bySeverity: {} });
       setLoading(false);
       setError("Select a facility.");
       return;
@@ -63,7 +58,6 @@ export default function AdminMedicationErrorsPage() {
       for (const r of list) {
         bySeverity[r.severity] = (bySeverity[r.severity] ?? 0) + 1;
       }
-      setTotals({ n: list.length, bySeverity });
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Load failed");
       setRows([]);
