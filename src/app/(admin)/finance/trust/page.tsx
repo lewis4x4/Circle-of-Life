@@ -1,161 +1,51 @@
-"use client";
-
-import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Landmark, Scale, Wallet } from "lucide-react";
 
 import { FinanceHubNav } from "../finance-hub-nav";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { billingCurrency } from "@/app/(admin)/billing/billing-invoice-ledger";
-import { useFacilityStore } from "@/hooks/useFacilityStore";
-import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getServerSelectedFacilityId } from "@/lib/facilities/selected-facility-cookie.server";
+import { loadFinanceRoleContextServer } from "@/lib/finance/load-finance-context.server";
+import { loadFinanceTrustData, type ResidentTrustRow } from "@/lib/finance/load-trust-data";
+import { createClient } from "@/lib/supabase/server";
 
-type TrustEntry = {
-  id: string;
-  resident_id: string;
-  facility_id: string;
-  entry_date: string;
-  entry_type: string;
-  amount_cents: number;
-  balance_after_cents: number;
-  notes: string | null;
-};
+export default async function FinanceTrustPage() {
+  const roleContext = await loadFinanceRoleContextServer();
+  const selectedFacilityId = await getServerSelectedFacilityId();
 
-type ResidentMini = {
-  id: string;
-  first_name: string | null;
-  last_name: string | null;
-  facility_id: string;
-};
+  if (!roleContext.ok) {
+    return (
+      <div className="space-y-6">
+        <FinanceHubNav />
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="py-4 text-sm text-red-700">{roleContext.error}</CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-type InvoiceMini = {
-  resident_id: string;
-  balance_due: number;
-  status: string;
-  facility_id: string;
-};
+  const supabase = await createClient();
+  let rows: ResidentTrustRow[] = [];
+  let error: string | null = null;
 
-type ResidentTrustRow = {
-  residentId: string;
-  residentName: string;
-  currentBalanceCents: number;
-  openInvoiceCents: number;
-  deltaCents: number;
-  facilityId: string;
-  lastEntryDate: string | null;
-  entriesCount: number;
-};
+  try {
+    rows = await loadFinanceTrustData(
+      supabase,
+      roleContext.ctx.organizationId,
+      selectedFacilityId,
+    );
+  } catch (caughtError) {
+    error =
+      caughtError instanceof Error
+        ? caughtError.message
+        : "Failed to load trust reconciliation.";
+  }
 
-export default function FinanceTrustPage() {
-  const supabase = createClient();
-  const { selectedFacilityId } = useFacilityStore();
-  const [rows, setRows] = useState<ResidentTrustRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) throw new Error(ctx.error);
-
-      let trustQuery = supabase
-        .from("trust_account_entries")
-        .select("id, resident_id, facility_id, entry_date, entry_type, amount_cents, balance_after_cents, notes")
-        .eq("organization_id", ctx.ctx.organizationId)
-        .is("deleted_at", null)
-        .order("entry_date", { ascending: false })
-        .limit(1000);
-
-      let residentQuery = supabase
-        .from("residents")
-        .select("id, first_name, last_name, facility_id")
-        .eq("organization_id", ctx.ctx.organizationId)
-        .is("deleted_at", null);
-
-      let invoiceQuery = supabase
-        .from("invoices" as never)
-        .select("resident_id, balance_due, status, facility_id")
-        .eq("organization_id", ctx.ctx.organizationId)
-        .is("deleted_at", null)
-        .in("status", ["sent", "partial", "overdue"]);
-
-      if (isValidFacilityIdForQuery(selectedFacilityId)) {
-        trustQuery = trustQuery.eq("facility_id", selectedFacilityId);
-        residentQuery = residentQuery.eq("facility_id", selectedFacilityId);
-        invoiceQuery = invoiceQuery.eq("facility_id", selectedFacilityId);
-      }
-
-      const [trustRes, residentRes, invoiceRes] = await Promise.all([trustQuery, residentQuery, invoiceQuery]);
-      if (trustRes.error) throw trustRes.error;
-      if (residentRes.error) throw residentRes.error;
-      if (invoiceRes.error) throw invoiceRes.error;
-
-      const trustEntries = (trustRes.data ?? []) as TrustEntry[];
-      const residents = (residentRes.data ?? []) as ResidentMini[];
-      const invoices = (invoiceRes.data ?? []) as unknown as InvoiceMini[];
-
-      const residentMap = new Map(residents.map((resident) => [
-        resident.id,
-        `${resident.first_name ?? ""} ${resident.last_name ?? ""}`.trim() || resident.id,
-      ]));
-
-      const latestBalance = new Map<string, { balance: number; facilityId: string; lastEntryDate: string | null; entriesCount: number }>();
-      for (const entry of trustEntries) {
-        const existing = latestBalance.get(entry.resident_id);
-        if (!existing) {
-          latestBalance.set(entry.resident_id, {
-            balance: entry.balance_after_cents,
-            facilityId: entry.facility_id,
-            lastEntryDate: entry.entry_date,
-            entriesCount: 1,
-          });
-        } else {
-          existing.entriesCount += 1;
-        }
-      }
-
-      const invoiceTotals = new Map<string, number>();
-      for (const invoice of invoices) {
-        invoiceTotals.set(invoice.resident_id, (invoiceTotals.get(invoice.resident_id) ?? 0) + Math.max(0, invoice.balance_due ?? 0));
-      }
-
-      const trustRows = Array.from(latestBalance.entries()).map(([residentId, snapshot]) => {
-        const openInvoiceCents = invoiceTotals.get(residentId) ?? 0;
-        return {
-          residentId,
-          residentName: residentMap.get(residentId) ?? residentId,
-          currentBalanceCents: snapshot.balance,
-          openInvoiceCents,
-          deltaCents: snapshot.balance - openInvoiceCents,
-          facilityId: snapshot.facilityId,
-          lastEntryDate: snapshot.lastEntryDate,
-          entriesCount: snapshot.entriesCount,
-        };
-      }).sort((left, right) => left.deltaCents - right.deltaCents);
-
-      setRows(trustRows);
-    } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : "Failed to load trust reconciliation.");
-      setRows([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedFacilityId, supabase]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  const summary = useMemo(() => {
-    const totalTrust = rows.reduce((sum, row) => sum + row.currentBalanceCents, 0);
-    const totalOpenInvoices = rows.reduce((sum, row) => sum + row.openInvoiceCents, 0);
-    const deficits = rows.filter((row) => row.deltaCents < 0).length;
-    return { totalTrust, totalOpenInvoices, deficits };
-  }, [rows]);
+  const summary = {
+    totalTrust: rows.reduce((sum, row) => sum + row.currentBalanceCents, 0),
+    totalOpenInvoices: rows.reduce((sum, row) => sum + row.openInvoiceCents, 0),
+    deficits: rows.filter((row) => row.deltaCents < 0).length,
+  };
 
   return (
     <div className="space-y-6">
@@ -168,11 +58,11 @@ export default function FinanceTrustPage() {
         </p>
       </div>
 
-      {error && (
+      {error ? (
         <Card className="border-red-200 bg-red-50">
           <CardContent className="py-4 text-sm text-red-700">{error}</CardContent>
         </Card>
-      )}
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-3">
         <TrustMetricCard
@@ -196,9 +86,7 @@ export default function FinanceTrustPage() {
       <Card>
         <CardHeader>
           <CardTitle>Resident trust positions</CardTitle>
-          <CardDescription>
-            {loading ? "Loading trust positions..." : `${rows.length} resident trust account(s) in scope`}
-          </CardDescription>
+          <CardDescription>{rows.length} resident trust account(s) in scope</CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <table className="w-full text-left text-sm">
@@ -226,23 +114,29 @@ export default function FinanceTrustPage() {
                   <td className="py-3 pr-4">{row.lastEntryDate ?? "—"}</td>
                   <td className="py-3">
                     <div className="flex gap-2">
-                      <Link href={`/admin/residents/${row.residentId}/billing`} className="text-primary underline-offset-4 hover:underline">
+                      <Link
+                        href={`/admin/residents/${row.residentId}/billing`}
+                        className="text-primary underline-offset-4 hover:underline"
+                      >
                         Billing
                       </Link>
-                      <Link href="/admin/finance/period-close" className="text-primary underline-offset-4 hover:underline">
+                      <Link
+                        href="/admin/finance/period-close"
+                        className="text-primary underline-offset-4 hover:underline"
+                      >
                         Close
                       </Link>
                     </div>
                   </td>
                 </tr>
               ))}
-              {!loading && rows.length === 0 && (
+              {rows.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-muted-foreground">
                     No trust-account entries in the current scope.
                   </td>
                 </tr>
-              )}
+              ) : null}
             </tbody>
           </table>
         </CardContent>
