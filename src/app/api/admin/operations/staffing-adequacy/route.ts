@@ -16,6 +16,8 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const requestedFacilityId = searchParams.get("facility_id");
+  const requestedDate = searchParams.get("date");
+  const requestedShift = searchParams.get("shift");
   const accessibleFacilityIds = await listActorAccessibleFacilityIds(actor);
   const targetFacilityId = requestedFacilityId ?? accessibleFacilityIds[0] ?? null;
 
@@ -44,7 +46,10 @@ export async function GET(request: Request) {
   const timezone = facility.timezone || "America/New_York";
   const now = new Date();
   const localParts = getFacilityLocalDateTimeParts(now, timezone);
-  const currentShift = getCurrentOperationShift(now, timezone);
+  const snapshotDate = requestedDate || localParts.date;
+  const currentShift = requestedShift === "day" || requestedShift === "evening" || requestedShift === "night"
+    ? requestedShift
+    : getCurrentOperationShift(now, timezone);
 
   const { data: residentData } = await actor.admin
     .from("residents" as any)
@@ -98,7 +103,7 @@ export async function GET(request: Request) {
     .is("deleted_at", null)
     .eq("organization_id", actor.organizationId)
     .eq("facility_id", targetFacilityId)
-    .eq("assigned_shift_date", localParts.date)
+    .eq("assigned_shift_date", snapshotDate)
     .eq("assigned_shift", currentShift)
     .in("status", ["pending", "in_progress"]);
 
@@ -166,6 +171,7 @@ export async function GET(request: Request) {
     float_pool_required: cannotCoverCount > 0 || !isCompliant,
     recommended_action: recommendedAction,
     current_shift: currentShift,
+    snapshot_date: snapshotDate,
     facility_name: facility.name,
     facility_timezone: timezone,
   });

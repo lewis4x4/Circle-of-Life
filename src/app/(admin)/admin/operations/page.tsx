@@ -42,6 +42,7 @@ type AdequacySnapshot = {
   scheduled_staff_count: number;
   is_compliant: boolean;
   cannot_cover_count: number;
+  current_shift: "day" | "evening" | "night";
 };
 
 type StatsBar = {
@@ -101,6 +102,7 @@ export default function OperationsTodayPage() {
   const [stats, setStats] = useState<StatsBar | null>(null);
   const [selectedShift, setSelectedShift] = useState<"day" | "evening" | "night" | "all">("all");
   const [selectedStatus, setSelectedStatus] = useState<TaskStatus | "all">("all");
+  const [autoShiftApplied, setAutoShiftApplied] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -156,13 +158,17 @@ export default function OperationsTodayPage() {
 
       const data = await response.json();
       setAdequacy(data);
+      if (!autoShiftApplied && data.current_shift && selectedShift === "all") {
+        setSelectedShift(data.current_shift);
+        setAutoShiftApplied(true);
+      }
       if (stats) {
         setStats({ ...stats, adequacy_score: data.adequacy_score });
       }
     } catch {
       // Non-critical, continue without adequacy data
     }
-  }, [selectedFacilityId, authLoading, stats]);
+  }, [selectedFacilityId, authLoading, stats, autoShiftApplied, selectedShift]);
 
   useEffect(() => {
     void loadData();
@@ -330,7 +336,7 @@ export default function OperationsTodayPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Operations</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Today {shiftLabels.day.split("·")[0].trim()}
+            Today {shiftLabels[(adequacy?.current_shift ?? "day")].split("·")[0].trim()}
           </p>
         </div>
 
