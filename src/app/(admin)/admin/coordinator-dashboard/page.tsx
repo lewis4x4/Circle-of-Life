@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchCoordinatorDashboardBrief, type CoordinatorDashboardBrief } from "@/lib/coordinator/dashboard-brief";
-import { ClipboardList, FileCheck, MessageSquare, UserPlus, Activity, CalendarClock, AlertCircle, Zap } from "lucide-react";
+import { ClipboardList, FileCheck, MessageSquare, UserPlus, Activity, CalendarClock, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function CoordinatorDashboardPage() {

@@ -5,7 +5,7 @@ import { Building2, Loader2, RefreshCw, Search, Sparkles } from "lucide-react";
 import { useFacilities } from "@/hooks/useFacilities";
 import { FacilityCard } from "@/components/admin/facilities/FacilityCard";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 

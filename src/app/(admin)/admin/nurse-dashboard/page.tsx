@@ -5,8 +5,7 @@ import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchNurseMedicationBrief, type NurseMedicationBrief } from "@/lib/nurse/medication-brief";
-import { createClient } from "@/lib/supabase/client";
-import { Pill, ShieldCheck, AlertTriangle, Activity, Clock, FileWarning, Zap } from "lucide-react";
+import { Pill, ShieldCheck, AlertTriangle, Activity, FileWarning, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function NurseDashboardPage() {

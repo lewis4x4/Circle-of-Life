@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminAssistantDashboardBrief, type AdminAssistantDashboardBrief } from "@/lib/admin-assistant/dashboard-brief";
-import { Users, FileText, MessageSquare, Truck, Clock, Zap } from "lucide-react";
+import { Users, FileText, MessageSquare, Truck, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function AssistantDashboardPage() {
