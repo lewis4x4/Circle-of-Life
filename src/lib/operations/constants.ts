@@ -51,12 +51,36 @@ export const OPERATIONS_MUTATION_ADMIN_ROLES = [
 
 export const OPERATIONS_VIEW_ROLE_SET = new Set<AppRole>(OPERATIONS_VIEW_ROLES);
 export const OPERATIONS_MUTATION_ADMIN_ROLE_SET = new Set<AppRole>(OPERATIONS_MUTATION_ADMIN_ROLES);
+export const OPERATIONS_TEMPLATE_AUTHOR_ROLES = ["owner", "org_admin"] as const satisfies readonly AppRole[];
+export const OPERATIONS_TEMPLATE_AUTHOR_ROLE_SET = new Set<AppRole>(OPERATIONS_TEMPLATE_AUTHOR_ROLES);
 
 export const ORG_WIDE_OPERATION_ROLES = new Set<AppRole>(["owner", "org_admin"]);
 
 export function isOperationsViewRole(role: string | null | undefined): role is AppRole {
   return Boolean(role) && OPERATIONS_VIEW_ROLE_SET.has(role as AppRole);
 }
+
+export function canAuthorOperationsTemplates(role: string | null | undefined): role is AppRole {
+  return Boolean(role) && OPERATIONS_TEMPLATE_AUTHOR_ROLE_SET.has(role as AppRole);
+}
+
+export const OCE_CADENCE_TYPES = [
+  "daily",
+  "weekly",
+  "monthly",
+  "quarterly",
+  "yearly",
+  "on_demand",
+  "event_driven",
+] as const;
+
+export const OCE_PRIORITY_LEVELS = ["critical", "high", "normal", "low"] as const;
+
+export const OCE_SHIFT_SCOPES = ["all", "day", "evening", "night"] as const;
+
+export type OceCadenceType = (typeof OCE_CADENCE_TYPES)[number];
+export type OcePriorityLevel = (typeof OCE_PRIORITY_LEVELS)[number];
+export type OceShiftScope = (typeof OCE_SHIFT_SCOPES)[number];
 
 export const OCE_TEMPLATE_ASSIGNEE_ROLES = [
   "coo",

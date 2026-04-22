@@ -3,9 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { canAuthorOperationsTemplates } from "@/lib/operations/constants";
 import { cn } from "@/lib/utils";
 
-const LINKS = [
+type OperationsNavLink = {
+  href: string;
+  label: string;
+  authorOnly?: boolean;
+};
+
+const LINKS: readonly OperationsNavLink[] = [
   { href: "/admin/operations", label: "Today" },
   { href: "/admin/operations/week", label: "Week" },
   { href: "/admin/operations/month", label: "Month" },
@@ -15,16 +23,18 @@ const LINKS = [
   { href: "/admin/operations/pager", label: "Pager" },
   { href: "/admin/operations/assets", label: "Assets" },
   { href: "/admin/operations/vendors", label: "Vendors" },
+  { href: "/admin/operations/templates", label: "Templates", authorOnly: true },
   { href: "/admin/operations/overdue", label: "Overdue" },
   { href: "/admin/operations/missed", label: "Missed" },
-] as const;
+];
 
 export function OperationsViewNav() {
   const pathname = usePathname();
+  const { appRole } = useHavenAuth();
 
   return (
     <div className="flex flex-wrap gap-2">
-      {LINKS.map((link) => {
+      {LINKS.filter((link) => !link.authorOnly || canAuthorOperationsTemplates(appRole)).map((link) => {
         const active = pathname === link.href;
         return (
           <Link
