@@ -141,7 +141,7 @@ export default function AdminRoundingLivePage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedFacilityId, supabase]);
+  }, [demo, selectedFacilityId, supabase]);
 
   useEffect(() => {
     void load();

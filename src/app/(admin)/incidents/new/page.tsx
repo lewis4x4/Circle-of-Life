@@ -2,7 +2,6 @@
 
 import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertTriangle, CheckCircle2, ChevronDown, Loader2 } from "lucide-react";
@@ -68,7 +67,6 @@ const defaultFormValues = (): CaregiverIncidentFormData => ({
 });
 
 function AdminIncidentFormInner() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const queryResidentId = searchParams.get("resident") ?? searchParams.get("residentId") ?? "";
   const { selectedFacilityId } = useFacilityStore();

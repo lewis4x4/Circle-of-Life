@@ -165,8 +165,6 @@ export default function AdminDashboardPage() {
   const topStripActionable = staffingGaps + medExceptions + complianceAlerts;
   const incidentLifecycleBacklog =
     workflows.incidentOpenObligations + workflows.incidentRootCausePending + workflows.incidentCarePlanPending;
-  const incidentFollowupBacklog =
-    workflows.incidentEscalatedFollowups + workflows.incidentOverdueFollowups + workflows.incidentUnassignedFollowups;
   const incidentPrimaryHref =
     incidentLifecycleBacklog > 0
       ? "/admin/incidents/obligations"

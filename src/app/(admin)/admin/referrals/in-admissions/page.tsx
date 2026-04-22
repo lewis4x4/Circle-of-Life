@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle2, DoorOpen, Home, Loader2, UserPlus } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, DoorOpen, Home, UserPlus } from "lucide-react";
 
 import {
   AdminEmptyState,

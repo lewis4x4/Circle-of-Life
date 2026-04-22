@@ -92,7 +92,7 @@ export default function AdminRoundingPlansPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedFacilityId, supabase, fallbackPlans]);
+  }, [demo, selectedFacilityId, supabase, fallbackPlans]);
 
   useEffect(() => {
     void load();

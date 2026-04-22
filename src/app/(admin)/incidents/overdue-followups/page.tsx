@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, ArrowLeft, CheckCircle2, Loader2, UserPlus } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, UserPlus } from "lucide-react";
 
 import {
   AdminEmptyState,
@@ -397,7 +397,7 @@ export default function AdminIncidentOverdueFollowupsPage() {
     } finally {
       setActionLoading(null);
     }
-  }, [load, supabase, user, visibleRows]);
+  }, [load, rows, supabase, user]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">

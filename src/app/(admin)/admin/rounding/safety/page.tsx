@@ -12,7 +12,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
-import { SafetyScoreBadge, scoreTier } from "@/components/rounding/SafetyScoreBadge";
+import { SafetyScoreBadge } from "@/components/rounding/SafetyScoreBadge";
 import { cn } from "@/lib/utils";
 
 interface ScoreRow {
