@@ -110,8 +110,6 @@ type SupabaseBedRow = {
   current_resident_id: string | null;
 };
 
-type SupabaseRoomRow = { id: string; room_number: string; unit_id: string | null };
-
 type SupabaseFacilityRow = {
   id: string;
   name: string;
@@ -742,10 +740,59 @@ export async function fetchAdminDashboardSnapshot(
   const watchlistResidents = acuityWatchlistResult.data ?? [];
   const incidentRows = incidentsFeedResult.data ?? [];
 
-  const [censusPreview, acuityWatchlist, activity] = await Promise.all([
+  const pendingDoctrineDocs = doctrinePendingResult.data ?? [];
+  const doctrineDocIds = pendingDoctrineDocs.map((doc) => doc.id);
+
+  const admissionQueueRowsAll = admissionsQueueRes.data ?? [];
+  const moveInResidentIdsAll = admissionQueueRowsAll
+    .filter((row) => row.status === "move_in")
+    .map((row) => row.resident_id);
+
+  type DoctrineAuditRow = { document_id: string; event_type: string; created_at: string };
+  type MoveInReadinessResult = { data: Array<{ resident_id: string }> | null; error: QueryError | null };
+
+  const doctrineDraftCreatedPromise: Promise<QueryResult<DoctrineAuditRow[]>> =
+    doctrineDocIds.length > 0
+      ? ((supabase
+          .from("document_audit_events" as never)
+          .select("document_id, event_type, created_at")
+          .in("document_id", doctrineDocIds)
+          .in("event_type", ["obsidian_draft_created", "review_completed"])) as unknown as Promise<
+          QueryResult<DoctrineAuditRow[]>
+        >)
+      : Promise.resolve({ data: [], error: null } as QueryResult<DoctrineAuditRow[]>);
+
+  const makeMoveInReadinessPromise = (table: string): Promise<MoveInReadinessResult> =>
+    moveInResidentIdsAll.length > 0
+      ? ((supabase
+          .from(table as never)
+          .select("resident_id")
+          .in("resident_id", moveInResidentIdsAll)
+          .is("deleted_at", null)) as unknown as Promise<MoveInReadinessResult>)
+      : Promise.resolve({ data: [], error: null } as MoveInReadinessResult);
+
+  // Fuse what used to be three serial phases — the census/watchlist/activity
+  // maps, the doctrine draft lookup, and the move-in readiness batch — into a
+  // single parallel phase. Every item here only depends on Phase 1's results,
+  // not on each other, so there is no reason to await them in sequence.
+  const [
+    censusPreview,
+    acuityWatchlist,
+    activity,
+    doctrineDraftCreatedRes,
+    carePlansRes,
+    medsRes,
+    payersRes,
+    consentsRes,
+  ] = await Promise.all([
     mapResidentsToCensusRows(supabase, previewResidents),
     mapResidentsToCensusRows(supabase, watchlistResidents),
     mapIncidentsToActivity(supabase, incidentRows),
+    doctrineDraftCreatedPromise,
+    makeMoveInReadinessPromise("care_plans"),
+    makeMoveInReadinessPromise("resident_medications"),
+    makeMoveInReadinessPromise("resident_payers"),
+    makeMoveInReadinessPromise("family_consent_records"),
   ]);
 
   const residentCount = residentsCountRes.count ?? 0;
@@ -758,18 +805,6 @@ export async function fetchAdminDashboardSnapshot(
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const pendingDoctrineDocs = doctrinePendingResult.data ?? [];
-  const doctrineDocIds = pendingDoctrineDocs.map((doc) => doc.id);
-  const doctrineDraftCreatedRes =
-    doctrineDocIds.length > 0
-      ? ((await supabase
-          .from("document_audit_events" as never)
-          .select("document_id, event_type, created_at")
-          .in("document_id", doctrineDocIds)
-          .in("event_type", ["obsidian_draft_created", "review_completed"])) as unknown as QueryResult<
-          Array<{ document_id: string; event_type: string; created_at: string }>
-        >)
-      : ({ data: [], error: null } as QueryResult<Array<{ document_id: string; event_type: string; created_at: string }>>);
   if (doctrineDraftCreatedRes.error) {
     throw doctrineDraftCreatedRes.error;
   }
@@ -818,7 +853,7 @@ export async function fetchAdminDashboardSnapshot(
     return Boolean(row.resolved_at) && !row.care_plan_updated && (row.severity === "level_3" || row.severity === "level_4");
   }).length;
 
-  const admissionQueueRows = admissionsQueueRes.data ?? [];
+  const admissionQueueRows = admissionQueueRowsAll;
   const admissionsBlocked = admissionQueueRows.filter((row) => {
     return !row.financial_clearance_at || !row.physician_orders_received_at || !row.bed_id || !row.target_move_in_date;
   }).length;
@@ -827,29 +862,16 @@ export async function fetchAdminDashboardSnapshot(
   }).length;
   const referralsInAdmissions = admissionQueueRows.filter((row) => Boolean(row.referral_lead_id)).length;
 
-  const moveInResidentIds = admissionQueueRows
-    .filter((row) => row.status === "move_in")
-    .map((row) => row.resident_id);
-  let admissionsOnboardingPending = 0;
-  let carePlanIds = new Set<string>();
-  let medIds = new Set<string>();
-  let payerIds = new Set<string>();
-  let consentIds = new Set<string>();
-  if (moveInResidentIds.length > 0) {
-    const [carePlansRes, medsRes, payersRes, consentsRes] = await Promise.all([
-      supabase.from("care_plans" as never).select("resident_id").in("resident_id", moveInResidentIds).is("deleted_at", null),
-      supabase.from("resident_medications" as never).select("resident_id").in("resident_id", moveInResidentIds).is("deleted_at", null),
-      supabase.from("resident_payers" as never).select("resident_id").in("resident_id", moveInResidentIds).is("deleted_at", null),
-      supabase.from("family_consent_records" as never).select("resident_id").in("resident_id", moveInResidentIds).is("deleted_at", null),
-    ]);
-    carePlanIds = new Set(((carePlansRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
-    medIds = new Set(((medsRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
-    payerIds = new Set(((payersRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
-    consentIds = new Set(((consentsRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
-    admissionsOnboardingPending = moveInResidentIds.filter((residentId) => {
-      return !(carePlanIds.has(residentId) && medIds.has(residentId) && payerIds.has(residentId) && consentIds.has(residentId));
-    }).length;
-  }
+  // Move-in readiness Sets now derive from the Phase-2 batch that ran in
+  // parallel with the census/watchlist/activity maps — no extra round-trip.
+  const moveInResidentIds = moveInResidentIdsAll;
+  const carePlanIds = new Set(((carePlansRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
+  const medIds = new Set(((medsRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
+  const payerIds = new Set(((payersRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
+  const consentIds = new Set(((consentsRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
+  const admissionsOnboardingPending = moveInResidentIds.filter((residentId) => {
+    return !(carePlanIds.has(residentId) && medIds.has(residentId) && payerIds.has(residentId) && consentIds.has(residentId));
+  }).length;
 
   let referralsBlockedHandoffs = 0;
   let referralsReadyHandoffs = 0;
@@ -985,34 +1007,23 @@ async function mapResidentsToCensusRows(
   }
 
   const residentIds = residents.map((r) => r.id);
+
+  // Single nested-select replaces the old beds → rooms two-step chain.
+  // PostgREST walks beds.room_id → rooms in the same request. RLS still
+  // applies to both joined tables.
+  type BedJoinRow = SupabaseBedRow & { rooms: { id: string; room_number: string | null; unit_id: string | null } | null };
   const bedsResult = (await supabase
     .from("beds" as never)
-    .select("id, room_id, bed_label, current_resident_id")
-    .in("current_resident_id", residentIds)) as unknown as QueryResult<SupabaseBedRow>;
+    .select("id, room_id, bed_label, current_resident_id, rooms ( id, room_number, unit_id )")
+    .in("current_resident_id", residentIds)) as unknown as QueryResult<BedJoinRow>;
   if (bedsResult.error) {
     throw bedsResult.error;
   }
-  const beds: SupabaseBedRow[] = Array.isArray(bedsResult.data) ? bedsResult.data : [];
-
-  const roomIds = Array.from(
-    new Set(
-      beds.map((b) => b.room_id).filter((id): id is string => typeof id === "string" && id.length > 0),
-    ),
-  );
-  const roomsResult = roomIds.length
-    ? ((await supabase.from("rooms" as never).select("id, room_number, unit_id").in("id", roomIds)) as unknown as QueryResult<
-        SupabaseRoomRow[]
-      >)
-    : ({ data: [], error: null } as QueryResult<SupabaseRoomRow[]>);
-  if (roomsResult.error) {
-    throw roomsResult.error;
-  }
-  const rooms = roomsResult.data ?? [];
+  const beds: BedJoinRow[] = Array.isArray(bedsResult.data) ? bedsResult.data : [];
 
   const bedByResident = new Map(
     beds.filter((b) => b.current_resident_id).map((b) => [b.current_resident_id as string, b] as const),
   );
-  const roomById = new Map(rooms.map((r) => [r.id, r] as const));
 
   return residents.map((resident) => {
     const firstName = resident.first_name ?? "";
@@ -1020,7 +1031,7 @@ async function mapResidentsToCensusRows(
     const fullName = `${firstName} ${lastName}`.trim() || "Unknown resident";
     const initials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase() || "NA";
     const bed = bedByResident.get(resident.id);
-    const room = bed?.room_id ? roomById.get(bed.room_id) : null;
+    const room = bed?.rooms ?? null;
     const roomLabel = room?.room_number
       ? `${room.room_number}${bed?.bed_label ? `-${bed.bed_label}` : ""}`
       : "Unassigned";
