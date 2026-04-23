@@ -34,8 +34,13 @@ export async function updateSession(request: NextRequest): Promise<SessionUpdate
 
   let user: User | null = null;
   try {
-    const { data } = await supabase.auth.getUser();
-    user = data.user ?? null;
+    // getSession() reads local cookies (no network) and refreshes only when the
+    // access token is actually expired. getUser() hits the Supabase Auth API on
+    // every request and was adding 300-1500ms of round-trip to every nav. The
+    // proxy only uses this user object for routing/redirect decisions; all data
+    // access is re-verified by RLS using the JWT attached to each query.
+    const { data } = await supabase.auth.getSession();
+    user = data.session?.user ?? null;
   } catch (e: unknown) {
     /* auth check failed — treat as unauthenticated */
     void e;
