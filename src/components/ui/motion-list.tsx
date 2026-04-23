@@ -1,32 +1,12 @@
-"use client";
-
-import { motion, AnimatePresence } from "framer-motion";
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-const listVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.08,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, scale: 0.95, y: 20 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    transition: {
-      type: "spring" as const,
-      stiffness: 400,
-      damping: 30,
-    },
-  },
-};
+// Pure-CSS drop-in for the framer-motion wrapper this file used to export.
+// The animation uses tw-animate-css utilities (already in the project); items
+// fade + rise on mount. Dropping framer-motion here removes ~100KB of JS
+// from every admin page bundle that imports MotionList / MotionItem. No
+// staggered delay — visual difference is marginal, and the cost/benefit
+// doesn't justify carrying framer-motion for a stagger effect.
 
 export function MotionList({
   children,
@@ -35,18 +15,7 @@ export function MotionList({
   children: ReactNode;
   className?: string;
 }) {
-  return (
-    <motion.div
-      variants={listVariants}
-      initial="hidden"
-      animate="visible"
-      className={cn(className)}
-    >
-      <AnimatePresence mode="popLayout">
-        {children}
-      </AnimatePresence>
-    </motion.div>
-  );
+  return <div className={cn(className)}>{children}</div>;
 }
 
 export function MotionItem({
@@ -57,15 +26,13 @@ export function MotionItem({
   className?: string;
 }) {
   return (
-    <motion.div 
-      variants={itemVariants} 
-      initial="hidden"
-      animate="visible"
-      exit="hidden"
-      layout="position"
-      className={cn(className)}
+    <div
+      className={cn(
+        "animate-in fade-in-0 slide-in-from-bottom-2 duration-500 ease-out fill-mode-both",
+        className,
+      )}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }

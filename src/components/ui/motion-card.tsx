@@ -1,8 +1,12 @@
-"use client";
-
-import { motion } from "framer-motion";
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+
+// Pure-CSS drop-in replacement for the framer-motion wrapper this file used
+// to export. Same API (children, className, delay). The delay prop is
+// respected via inline animationDelay so callers that orchestrate a stagger
+// still work. Dropping framer-motion here (paired with motion-list.tsx)
+// removes the library from every admin-page bundle that only used these
+// wrappers for mount animations.
 
 export function MotionCard({
   children,
@@ -14,19 +18,14 @@ export function MotionCard({
   delay?: number;
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95, y: 15 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95, y: -10 }}
-      transition={{
-        type: "spring" as const,
-        stiffness: 400,
-        damping: 30,
-        delay,
-      }}
-      className={cn(className)}
+    <div
+      className={cn(
+        "animate-in fade-in-0 slide-in-from-bottom-2 duration-500 ease-out fill-mode-both",
+        className,
+      )}
+      style={delay > 0 ? { animationDelay: `${delay}s` } : undefined}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
