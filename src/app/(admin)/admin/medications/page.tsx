@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { ClipboardList, Pill, ShieldAlert, Stethoscope } from "lucide-react";
 
