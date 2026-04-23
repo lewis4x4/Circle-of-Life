@@ -1,5 +1,3 @@
-"use client";
-
 import { BillingHubNav } from "./billing-hub-nav";
 import { BillingInvoiceLedger } from "./billing-invoice-ledger";
 
