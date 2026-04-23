@@ -40,7 +40,12 @@ export function useHavenInsight(): HavenInsightState {
 
 export function HavenInsightProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { kpis } = useExecRoleKpis();
+  // `hasOpened` flips true the first time the panel is opened and stays true
+  // for the life of the provider. Gating useExecRoleKpis on it keeps 4 admin
+  // Supabase queries + a realtime subscription from firing on every admin page
+  // load for a panel most users never open.
+  const [hasOpened, setHasOpened] = useState(false);
+  const { kpis } = useExecRoleKpis(undefined, hasOpened);
 
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<HavenInsightMessage[]>([]);
@@ -53,9 +58,17 @@ export function HavenInsightProvider({ children }: { children: React.ReactNode }
     [currentModule, kpis],
   );
 
-  const open = useCallback(() => setIsOpen(true), []);
+  const open = useCallback(() => {
+    setHasOpened(true);
+    setIsOpen(true);
+  }, []);
   const close = useCallback(() => setIsOpen(false), []);
-  const toggle = useCallback(() => setIsOpen(p => !p), []);
+  const toggle = useCallback(() => {
+    setIsOpen((prev) => {
+      if (!prev) setHasOpened(true);
+      return !prev;
+    });
+  }, []);
   const clearChat = useCallback(() => { setMessages([]); setError(null); }, []);
 
   const sendQuestion = useCallback(async (text: string) => {

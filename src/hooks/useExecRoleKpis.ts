@@ -52,13 +52,21 @@ const DEMO_ALERTS: ExecutiveAlertRow[] = [];
  * Auto-resolves organizationId from the user's profile, then fetches
  * executive KPIs, alerts, and facility list. Falls back to demo data
  * when NEXT_PUBLIC_DEMO_MODE=true and queries fail or return empty.
+ *
+ * Pass `enabled=false` to defer all network work (queries + realtime
+ * subscription) until the caller actually needs the data. Used by
+ * HavenInsightProvider so the exec-KPI fetch does not fire on every
+ * admin page load for a panel that may never be opened.
  */
-export function useExecRoleKpis(facilityId?: string | null): ExecRoleKpiData {
+export function useExecRoleKpis(
+  facilityId?: string | null,
+  enabled: boolean = true,
+): ExecRoleKpiData {
   const [kpis, setKpis] = useState<ExecKpiPayload | null>(null);
   const [alerts, setAlerts] = useState<ExecutiveAlertRow[]>([]);
   const [facilities, setFacilities] = useState<ExecRoleKpiData["facilities"]>([]);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState<string | null>(null);
   const [isDemo, setIsDemo] = useState(false);
   const realtimeChannelKey = `exec-kpi-realtime-${useId().replace(/:/g, "")}`;
@@ -128,12 +136,13 @@ export function useExecRoleKpis(facilityId?: string | null): ExecRoleKpiData {
   }, [facilityId]);
 
   useEffect(() => {
+    if (!enabled) return;
     void load();
-  }, [load]);
+  }, [enabled, load]);
 
   // ── Realtime: auto-refetch when new snapshots or alerts arrive ──
   useEffect(() => {
-    if (!organizationId || isDemo) {
+    if (!enabled || !organizationId || isDemo) {
       return;
     }
 
@@ -154,7 +163,7 @@ export function useExecRoleKpis(facilityId?: string | null): ExecRoleKpiData {
     return () => {
       channel.unsubscribe();
     };
-  }, [isDemo, load, organizationId, realtimeChannelKey]);
+  }, [enabled, isDemo, load, organizationId, realtimeChannelKey]);
 
   return { kpis, alerts, facilities, loading, error, isDemo, refetch: load };
 }
