@@ -72,15 +72,9 @@ export async function fetchStaffFromSupabase(
   const staffIds = staffList.map((s) => s.id);
   const today = new Date().toISOString().slice(0, 10);
 
-  const certsResult = (await supabase
-    .from("staff_certifications" as never)
-    .select("staff_id, status, expiration_date, deleted_at")
-    .in("staff_id", staffIds)
-    .is("deleted_at", null)) as unknown as QueryResult<SupabaseCertRow>;
-  if (certsResult.error) {
-    throw certsResult.error;
-  }
-
+  // The cert and shift queries both depend only on the staff id list — run
+  // them in parallel instead of chaining two serial round-trips. Saves ~1 RTT
+  // on every load.
   let shiftsQuery = supabase
     .from("shift_assignments" as never)
     .select("staff_id, shift_date, shift_type")
@@ -94,7 +88,18 @@ export async function fetchStaffFromSupabase(
     shiftsQuery = shiftsQuery.eq("facility_id", selectedFacilityId);
   }
 
-  const shiftsResult = (await shiftsQuery) as unknown as QueryResult<SupabaseShiftRow>;
+  const [certsResult, shiftsResult] = (await Promise.all([
+    supabase
+      .from("staff_certifications" as never)
+      .select("staff_id, status, expiration_date, deleted_at")
+      .in("staff_id", staffIds)
+      .is("deleted_at", null),
+    shiftsQuery,
+  ])) as unknown as [QueryResult<SupabaseCertRow>, QueryResult<SupabaseShiftRow>];
+
+  if (certsResult.error) {
+    throw certsResult.error;
+  }
   if (shiftsResult.error) {
     throw shiftsResult.error;
   }

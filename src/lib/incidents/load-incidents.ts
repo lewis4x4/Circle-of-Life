@@ -100,24 +100,30 @@ export async function fetchIncidentsFromSupabase(
   const residentIds = Array.from(new Set(incidents.map((row) => row.resident_id).filter(Boolean))) as string[];
   const reporterIds = Array.from(new Set(incidents.map((row) => row.reported_by)));
 
-  const residentsResult = residentIds.length
-    ? await supabase.from("residents" as never).select("id, first_name, last_name").in("id", residentIds)
-    : { data: [] };
-
-  const profilesResult = reporterIds.length
-    ? await supabase.from("user_profiles" as never).select("id, full_name").in("id", reporterIds)
-    : { data: [] };
-
-  const followupsResult = incidentIds.length
-    ? await supabase
-        .from("incident_followups" as never)
-        .select("incident_id, due_at, assigned_to, completed_at")
-        .in("incident_id", incidentIds)
-        .is("completed_at", null)
-    : { data: [] };
-  const rcaResult = incidentIds.length
-    ? await supabase.from("incident_rca" as never).select("incident_id, investigation_status").in("incident_id", incidentIds)
-    : { data: [] };
+  // None of these four secondary fetches depend on each other — run them in
+  // parallel instead of chaining four serial round-trips after the primary
+  // incidents query. Saves ~3 RTTs on every load.
+  const [residentsResult, profilesResult, followupsResult, rcaResult] = await Promise.all([
+    residentIds.length
+      ? supabase.from("residents" as never).select("id, first_name, last_name").in("id", residentIds)
+      : Promise.resolve({ data: [] }),
+    reporterIds.length
+      ? supabase.from("user_profiles" as never).select("id, full_name").in("id", reporterIds)
+      : Promise.resolve({ data: [] }),
+    incidentIds.length
+      ? supabase
+          .from("incident_followups" as never)
+          .select("incident_id, due_at, assigned_to, completed_at")
+          .in("incident_id", incidentIds)
+          .is("completed_at", null)
+      : Promise.resolve({ data: [] }),
+    incidentIds.length
+      ? supabase
+          .from("incident_rca" as never)
+          .select("incident_id, investigation_status")
+          .in("incident_id", incidentIds)
+      : Promise.resolve({ data: [] }),
+  ]);
 
   const residentById = new Map(
     ((residentsResult.data ?? []) as SupabaseResidentMini[]).map((r) => [r.id, r] as const)
