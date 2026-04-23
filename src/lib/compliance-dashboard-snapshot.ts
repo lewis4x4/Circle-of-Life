@@ -1,5 +1,8 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import type { Database } from "@/types/database";
 
 export type ComplianceDashboardSnapshot = {
   overdueAssessments: number;
@@ -54,8 +57,8 @@ export function countOverdueAssessments(
 
 export async function fetchComplianceDashboardSnapshot(
   selectedFacilityId: string | null,
+  supabase: SupabaseClient<Database> = createClient(),
 ): Promise<ComplianceDashboardSnapshot> {
-  const supabase = createClient();
   const facilityFilter = isValidFacilityIdForQuery(selectedFacilityId);
 
   const today = todayISODate();
