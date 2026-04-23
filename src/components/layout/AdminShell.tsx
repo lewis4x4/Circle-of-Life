@@ -558,9 +558,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
       {/* Main Content Area */}
       <main className="flex-1 overflow-auto relative">
-        <div className="fixed top-[-20%] right-[-10%] h-[1000px] w-[1000px] rounded-full blur-[180px] bg-indigo-500/10 dark:bg-indigo-600-[0.03] pointer-events-none z-0 mix-blend-screen" />
-        <div className="fixed bottom-[-10%] left-[-10%] h-[800px] w-[800px] rounded-full blur-[150px] bg-emerald-500/10 dark:bg-emerald-900/[0.04] pointer-events-none z-0 mix-blend-screen" />
-        
         <div className="relative z-10 w-full h-full p-6 lg:p-10 max-w-[1600px] mx-auto">
           {children}
         </div>
