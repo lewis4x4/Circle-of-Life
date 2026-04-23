@@ -21,7 +21,26 @@ export type ResidentRow = {
   updatedAt: string;
 };
 
-type SupabaseResidentRow = {
+type SupabaseUnitJoin = {
+  id: string;
+  name: string | null;
+};
+
+type SupabaseRoomJoin = {
+  id: string;
+  room_number: string | null;
+  unit_id: string | null;
+  units: SupabaseUnitJoin | null;
+};
+
+type SupabaseBedJoin = {
+  id: string;
+  bed_label: string | null;
+  room_id: string | null;
+  rooms: SupabaseRoomJoin | null;
+};
+
+type SupabaseResidentJoined = {
   id: string;
   first_name: string | null;
   last_name: string | null;
@@ -30,24 +49,7 @@ type SupabaseResidentRow = {
   acuity_level: string | null;
   updated_at: string | null;
   deleted_at: string | null;
-};
-
-type SupabaseBedRow = {
-  id: string;
-  room_id: string | null;
-  bed_label: string | null;
-  current_resident_id: string | null;
-};
-
-type SupabaseRoomRow = {
-  id: string;
-  room_number: string | null;
-  unit_id: string | null;
-};
-
-type SupabaseUnitRow = {
-  id: string;
-  name: string | null;
+  beds: SupabaseBedJoin[] | null;
 };
 
 type QueryError = { message: string };
@@ -57,9 +59,20 @@ export async function fetchResidentsFromSupabase(
   selectedFacilityId: string | null,
   supabase: SupabaseClient<Database> = createClient(),
 ): Promise<ResidentRow[]> {
+  // Single nested-select replaces the old residents → beds → rooms → units
+  // four-step chain. PostgREST walks the FK graph
+  // (beds.current_resident_id → residents, beds.room_id → rooms,
+  // rooms.unit_id → units) in a single round-trip. RLS still applies to
+  // every joined table.
   let residentsQuery = supabase
     .from("residents" as never)
-    .select("id, first_name, last_name, facility_id, status, acuity_level, updated_at, deleted_at")
+    .select(
+      `id, first_name, last_name, facility_id, status, acuity_level, updated_at, deleted_at,
+       beds!fk_beds_resident (
+         id, bed_label, room_id,
+         rooms ( id, room_number, unit_id, units ( id, name ) )
+       )`,
+    )
     .is("deleted_at", null)
     .in("status", ["active", "hospital_hold", "loa"])
     .limit(300);
@@ -68,7 +81,7 @@ export async function fetchResidentsFromSupabase(
     residentsQuery = residentsQuery.eq("facility_id", selectedFacilityId);
   }
 
-  const residentsResult = (await residentsQuery) as unknown as QueryResult<SupabaseResidentRow>;
+  const residentsResult = (await residentsQuery) as unknown as QueryResult<SupabaseResidentJoined>;
   const residents = residentsResult.data ?? [];
   const residentsError = residentsResult.error;
   if (residentsError) {
@@ -79,72 +92,17 @@ export async function fetchResidentsFromSupabase(
     return [];
   }
 
-  const residentIds = residents.map((resident) => resident.id);
-  const bedsResult = (await supabase
-    .from("beds" as never)
-    .select("id, room_id, bed_label, current_resident_id")
-    .in("current_resident_id", residentIds)) as unknown as QueryResult<SupabaseBedRow>;
-  const beds = bedsResult.data ?? [];
-  const bedsError = bedsResult.error;
-  if (bedsError) {
-    throw bedsError;
-  }
-
-  const roomIds = Array.from(
-    new Set(
-      beds
-        .map((bed) => bed.room_id)
-        .filter((roomId): roomId is string => Boolean(roomId)),
-    ),
-  );
-  const roomsResult = roomIds.length
-    ? ((await supabase
-        .from("rooms" as never)
-        .select("id, room_number, unit_id")
-        .in("id", roomIds)) as unknown as QueryResult<SupabaseRoomRow>)
-    : ({ data: [], error: null } as QueryResult<SupabaseRoomRow>);
-  const rooms = roomsResult.data ?? [];
-  const roomsError = roomsResult.error;
-  if (roomsError) {
-    throw roomsError;
-  }
-
-  const unitIds = Array.from(
-    new Set(
-      rooms
-        .map((room) => room.unit_id)
-        .filter((unitId): unitId is string => Boolean(unitId)),
-    ),
-  );
-  const unitsResult = unitIds.length
-    ? ((await supabase
-        .from("units" as never)
-        .select("id, name")
-        .in("id", unitIds)) as unknown as QueryResult<SupabaseUnitRow>)
-    : ({ data: [], error: null } as QueryResult<SupabaseUnitRow>);
-  const units = unitsResult.data ?? [];
-  const unitsError = unitsResult.error;
-  if (unitsError) {
-    throw unitsError;
-  }
-
-  const bedByResident = new Map(
-    beds
-      .filter((bed): bed is SupabaseBedRow & { current_resident_id: string } => Boolean(bed.current_resident_id))
-      .map((bed) => [bed.current_resident_id, bed] as const),
-  );
-  const roomById = new Map(rooms.map((room) => [room.id, room] as const));
-  const unitById = new Map(units.map((unit) => [unit.id, unit] as const));
-
   return residents.map((resident) => {
     const firstName = resident.first_name ?? "";
     const lastName = resident.last_name ?? "";
     const fullName = `${firstName} ${lastName}`.trim() || "Unknown Resident";
     const initials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase() || "NA";
 
-    const bed = bedByResident.get(resident.id);
-    const room = bed?.room_id ? roomById.get(bed.room_id) : null;
-    const unit = room?.unit_id ? unitById.get(room.unit_id) : null;
+    // A resident is assigned to at most one bed; the nested array will
+    // normally hold one row. If a stale row is returned we take the first.
+    const bed = resident.beds?.[0] ?? null;
+    const room = bed?.rooms ?? null;
+    const unit = room?.units ?? null;
 
     const acuity = mapAcuity(resident.acuity_level);
     const status = mapResidencyStatus(resident.status);
