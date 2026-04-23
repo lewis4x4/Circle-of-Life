@@ -109,8 +109,8 @@ function computeHeatScore(parts: {
 
 export async function fetchResidentAssuranceCommandBrief(
   facilityId: string | null,
+  supabase: SupabaseClient<Database> = createClient(),
 ): Promise<ResidentAssuranceCommandBrief> {
-  const supabase = createClient();
 
   const scoped = <T extends { eq(column: string, value: string): T }>(query: T): T =>
     isValidFacilityIdForQuery(facilityId) ? query.eq("facility_id", facilityId) : query;

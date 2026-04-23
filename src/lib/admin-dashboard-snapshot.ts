@@ -1,7 +1,10 @@
-import { createClient } from "@/lib/supabase/client";
-import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligations";
 import { fetchResidentAssuranceCommandBrief } from "@/lib/resident-assurance/command-center-brief";
+import { createClient } from "@/lib/supabase/client";
+import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import type { Database } from "@/types/database";
 
 type QueryError = { message: string };
 type QueryResult<T> = { data: T | null; error: QueryError | null };
@@ -455,9 +458,9 @@ function buildWorkflowInbox(input: {
 
 export async function fetchAdminDashboardSnapshot(
   selectedFacilityId: string | null,
+  supabase: SupabaseClient<Database> = createClient(),
 ): Promise<AdminDashboardSnapshot> {
-  const supabase = createClient();
-  const residentAssuranceBriefPromise = fetchResidentAssuranceCommandBrief(selectedFacilityId);
+  const residentAssuranceBriefPromise = fetchResidentAssuranceCommandBrief(selectedFacilityId, supabase);
 
   let facilitiesQuery = supabase
     .from("facilities" as never)
