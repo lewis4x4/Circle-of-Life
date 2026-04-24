@@ -69,14 +69,15 @@ For each primitive: component + render test + preview file + Playwright a11y spe
 **File pattern per primitive:**
 - `<Name>.tsx` — the component
 - `<Name>.test.tsx` — Vitest + Testing Library render test (assert regions render; assert keyboard + prop contract)
-- `<Name>.preview.tsx` — small server component rendering each state as a section, mounted at `/admin/v2/__dev__/<name>` via the dev route below (documentation, not CI)
+- `<Name>.preview.tsx` — small server component rendering each state as a section, mounted at `/admin/v2/design-preview/<name>` via the dev route below (documentation, not CI)
 - `<Name>.a11y.spec.ts` — Playwright test loading the dev route, scrolling through states, running `@axe-core/playwright` — zero violations
 - `index.ts` — barrel export
 
 **Dev preview route (one time, S3):**
-- `src/app/(admin)/v2/__dev__/page.tsx` — lists every primitive
-- `src/app/(admin)/v2/__dev__/[component]/page.tsx` — server component that `import`s `<component>.preview.tsx` and renders it
+- `src/app/(admin)/admin/v2/design-preview/page.tsx` — lists every primitive
+- `src/app/(admin)/admin/v2/design-preview/[component]/page.tsx` — server component that imports the preview from `src/design-system/dev-previews.ts` registry
 - Route is gated by `NEXT_PUBLIC_UI_V2=true` AND `NODE_ENV !== "production"`. Never served to end users.
+- NOTE: original S3 plan used `__dev__` for the folder name, but Next.js treats any `_`-prefixed folder as private (opts out of routing) — `design-preview/` is the first non-private alternative that matches the intent. The `(admin)/admin/` prefix mirrors actual filesystem layout (route group `(admin)` wraps with layout; `/admin` segment is physical in the URL).
 
 ### P01 — `<PageShell>`
 
@@ -113,7 +114,7 @@ For each primitive: component + render test + preview file + Playwright a11y spe
 
 1. Every primitive reads colors/spacing via Tailwind semantic classes from `tokens.ts` (S1). Zero raw hex/px. Lint enforced.
 2. Each component is keyboard-operable end-to-end. Focus ring visible. Tab order matches visual order.
-3. Each `.a11y.spec.ts` runs `@axe-core/playwright` against the `/admin/v2/__dev__/<name>` preview route with the dev server up. Zero violations.
+3. Each `.a11y.spec.ts` runs `@axe-core/playwright` against the `/admin/v2/design-preview/<name>` preview route with the dev server up. Zero violations.
 4. No primitive imports another slice's primitives. S3 stands alone.
 5. Components are server/client-safe where possible. `<ScopeSelector>` and `<FilterBar>` are client components (URL writes, interactions). `<PageShell>`, `<TopBar>`, `<AuditFooter>` should be server components by default, escalate to client only if needed.
 

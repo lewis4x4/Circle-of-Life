@@ -6,7 +6,8 @@
   - Gate: `test-results/agent-gates/2026-04-24T15-36-50-301Z-UI-V2-S1.json`
 - [x] S2 — Migrations + RLS
   - Gate: `test-results/agent-gates/2026-04-24T18-12-12-685Z-UI-V2-S2.json`
-- [ ] S3 — Primitives A (shell + chrome)
+- [x] S3 — Primitives A (shell + chrome)
+  - Gate: `test-results/agent-gates/2026-04-24T18-41-48-075Z-UI-V2-S3.json`
 - [ ] S4 — Primitives B (KPI)
 - [ ] S5 — Primitives C (alerts + AI)
 - [ ] S6 — DataTable
