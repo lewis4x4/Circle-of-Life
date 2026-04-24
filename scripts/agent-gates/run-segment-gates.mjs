@@ -591,6 +591,48 @@ async function main() {
     });
   }
 
+  // --- UI-V2 segment-specific gates ---
+  // Guard: only run for segments in the UI-V2 family.
+  // See docs/specs/UI-V2-DESIGN-SYSTEM.md §10.0 (Evidence sources).
+  if (/^UI-V2\b/i.test(args.segment)) {
+    await executeCommandCheck(checks, advisoryCheckIds, {
+      id: "smoke.sentry",
+      command: "npm run smoke:sentry",
+      invoke: () => npmRun("smoke:sentry", root, { label: "smoke.sentry" }),
+      mapResult: (result) => {
+        const combinedOutput = `${result.stdout}\n${result.stderr}`;
+        const skipped = /^\[sentry-smoke\] SKIP:/m.test(combinedOutput);
+        return {
+          required: !skipped,
+          status: skipped ? "skipped" : result.code === 0 ? "passed" : "failed",
+          duration_ms: result.duration_ms,
+          stdout: result.stdout,
+          stderr: result.stderr,
+        };
+      },
+    });
+
+    await executeCommandCheck(checks, advisoryCheckIds, {
+      id: "evidence.ui-v2-issues",
+      command: "node scripts/agent-gates/ui-v2-issue-acceptance.mjs",
+      invoke: () =>
+        nodeRun("scripts/agent-gates/ui-v2-issue-acceptance.mjs", {
+          label: "evidence.ui-v2-issues",
+        }),
+      mapResult: (result) => {
+        const combinedOutput = `${result.stdout}\n${result.stderr}`;
+        const skipped = /^\[ui-v2-issues\] SKIP:/m.test(combinedOutput);
+        return {
+          required: !skipped,
+          status: skipped ? "skipped" : result.code === 0 ? "passed" : "failed",
+          duration_ms: result.duration_ms,
+          stdout: result.stdout,
+          stderr: result.stderr,
+        };
+      },
+    });
+  }
+
   report.checks = checks;
 
   for (const c of checks) {

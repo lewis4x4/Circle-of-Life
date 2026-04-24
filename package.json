@@ -9,6 +9,8 @@
     "start": "next start",
     "lint": "eslint src --max-warnings 0",
     "audit:ci": "npm audit --audit-level=high",
+    "smoke:sentry": "node scripts/agent-gates/sentry-smoke.mjs",
+    "smoke:ui-v2-issues": "node scripts/agent-gates/ui-v2-issue-acceptance.mjs",
     "check:admin-shell": "node scripts/check-admin-shell-routes.mjs",
     "check:memory-care": "node scripts/check-memory-care.mjs",
     "check:env-example": "node scripts/check-env-example.mjs",
