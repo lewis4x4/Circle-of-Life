@@ -11,6 +11,7 @@
     "audit:ci": "npm audit --audit-level=high",
     "smoke:sentry": "node scripts/agent-gates/sentry-smoke.mjs",
     "smoke:ui-v2-issues": "node scripts/agent-gates/ui-v2-issue-acceptance.mjs",
+    "test:ui-v2": "vitest run src/design-system/tokens.test.ts src/lib/flags.test.ts src/lib/scope.test.ts",
     "check:admin-shell": "node scripts/check-admin-shell-routes.mjs",
     "check:memory-care": "node scripts/check-memory-care.mjs",
     "check:env-example": "node scripts/check-env-example.mjs",
@@ -80,7 +81,8 @@
     "eslint-config-next": "16.2.3",
     "tailwindcss": "^4",
     "tsx": "^4.19.3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.5"
   },
   "overrides": {
     "hono": "^4.12.14"

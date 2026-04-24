@@ -2,7 +2,8 @@
 
 - [x] S0 — Scaffolding commit + gate infra
   - Gate: `test-results/agent-gates/2026-04-24T14-50-28-718Z-UI-V2-S0.json`
-- [ ] S1 — Tokens + Tailwind + flags + scope + lint
+- [x] S1 — Tokens + Tailwind + flags + scope + lint
+  - Gate: `test-results/agent-gates/2026-04-24T15-36-50-301Z-UI-V2-S1.json`
 - [ ] S2 — Migrations + RLS
 - [ ] S3 — Primitives A (shell + chrome)
 - [ ] S4 — Primitives B (KPI)
