@@ -11,6 +11,8 @@ Four primitives handle exception triage and AI surface. `<PriorityAlertStack>` A
 
 ## Files to deliver
 
+Same 4-file pattern as S3 (component + `.test.tsx` + `.preview.tsx` + `.a11y.spec.ts`). **No Storybook** — test stack established in S3. Register new primitives in the `/admin/v2/__dev__/` dev preview route.
+
 ### P07 — `<Panel>`
 
 - `src/design-system/components/Panel/...`

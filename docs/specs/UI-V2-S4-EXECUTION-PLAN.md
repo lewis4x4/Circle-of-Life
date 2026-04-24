@@ -11,7 +11,7 @@ Five KPI-related primitives render per spec. `require-kpi-info` lint rule from S
 
 ## Files to deliver
 
-Same 4-file pattern per primitive (component + story + test + a11y):
+Same 4-file pattern per primitive as S3 (component + `.test.tsx` + `.preview.tsx` + `.a11y.spec.ts`). **No Storybook** — test stack established in S3 using Vitest + Testing Library + Playwright + @axe-core/playwright. See `UI-V2-S3-EXECUTION-PLAN.md` "Pre-flight" for stack details. Register new primitives in the `/admin/v2/__dev__/` dev preview route.
 
 ### P05 — `<KPITile>`
 

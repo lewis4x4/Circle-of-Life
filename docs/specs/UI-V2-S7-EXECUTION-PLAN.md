@@ -23,14 +23,11 @@ Eight page templates exist as composable React components. Every future page (S8
 - `src/design-system/templates/T8InboxThreaded.tsx`
 - `src/design-system/templates/index.ts` — barrel export + `TemplateKey = "T1"|...|"T8"` type
 
-### Template stories
+### Template previews + tests (use S3 test stack — no Storybook)
 
-One story per template in `src/design-system/templates/<Template>.stories.tsx`. Use DataTable fixtures from S6 + alert fixtures from S5.
-
-### Template tests
-
+- `src/design-system/templates/<Template>.preview.tsx` — one preview file per template, registered in `/admin/v2/__dev__/`. Uses DataTable fixtures from S6 + alert fixtures from S5.
 - `src/design-system/templates/*.test.tsx` — minimum: renders without error for a stub page, all regions present.
-- `src/design-system/templates/*.a11y.spec.ts` — axe-core zero violations per template.
+- `src/design-system/templates/*.a11y.spec.ts` — axe-core zero violations per template, run against `/admin/v2/__dev__/<template>`.
 
 ### W0 closeout
 

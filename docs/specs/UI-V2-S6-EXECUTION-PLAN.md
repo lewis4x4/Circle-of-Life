@@ -11,10 +11,10 @@ The workhorse primitive. DataTable with sticky header, row status icons, thresho
 
 ## Files to deliver
 
-### Primitive
+### Primitive (use S3 test stack — no Storybook)
 
 - `src/design-system/components/DataTable/DataTable.tsx`
-- `src/design-system/components/DataTable/DataTable.stories.tsx` — states: `loading`, `empty`, `fiveRowsAllOk`, `mixedSeverity`, `filtered`, `columnsCustomized`, `largeDataset` (1000+ rows, virtualized)
+- `src/design-system/components/DataTable/DataTable.preview.tsx` — states: `loading`, `empty`, `fiveRowsAllOk`, `mixedSeverity`, `filtered`, `columnsCustomized`, `largeDataset` (1000+ rows, virtualized). Registered in `/admin/v2/__dev__/`.
 - `src/design-system/components/DataTable/DataTable.test.tsx`
 - `src/design-system/components/DataTable/DataTable.a11y.spec.ts`
 - `src/design-system/components/DataTable/columns.ts` — type + helpers
