@@ -1,10 +1,14 @@
 import type { ComponentType } from "react";
 
+import { ActionQueuePreview } from "./components/ActionQueue/ActionQueue.preview";
 import { AuditFooterPreview } from "./components/AuditFooter/AuditFooter.preview";
+import { CopilotButtonPreview } from "./components/CopilotButton/CopilotButton.preview";
 import { FilterBarPreview } from "./components/FilterBar/FilterBar.preview";
 import { HealthDotPreview } from "./components/HealthDot/HealthDot.preview";
 import { KPITilePreview } from "./components/KPITile/KPITile.preview";
 import { PageShellPreview } from "./components/PageShell/PageShell.preview";
+import { PanelPreview } from "./components/Panel/Panel.preview";
+import { PriorityAlertStackPreview } from "./components/PriorityAlertStack/PriorityAlertStack.preview";
 import { ScopeSelectorPreview } from "./components/ScopeSelector/ScopeSelector.preview";
 import { SeverityChipPreview } from "./components/SeverityChip/SeverityChip.preview";
 import { SparklinePreview } from "./components/Sparkline/Sparkline.preview";
@@ -81,6 +85,34 @@ export const UI_V2_PREVIEW_REGISTRY: Record<string, DevPreviewEntry> = {
     description:
       "Thin Recharts area chart used inside KPITile; semantic tone mapping.",
     Preview: SparklinePreview,
+  },
+  "panel": {
+    code: "P07",
+    name: "Panel",
+    description:
+      "Mid-section card with title + info + action CTA; wraps Haven V2Card with loading/error states.",
+    Preview: PanelPreview,
+  },
+  "priority-alert-stack": {
+    code: "P08",
+    name: "PriorityAlertStack",
+    description:
+      "Right-rail alert queue with ACK/Details; optimistic UI posts to /api/v2/alerts/[id]/ack with rollback.",
+    Preview: PriorityAlertStackPreview,
+  },
+  "action-queue": {
+    code: "P09",
+    name: "ActionQueue",
+    description:
+      "Counted action list: icon + label + sublabel + count badge (danger when >0) + chevron.",
+    Preview: ActionQueuePreview,
+  },
+  "copilot-button": {
+    code: "P14",
+    name: "CopilotButton",
+    description:
+      "AI entry point; opens CopilotDrawer. Uncited suggestions are filtered (cite-backed contract).",
+    Preview: CopilotButtonPreview,
   },
   "audit-footer": {
     code: "P13",
