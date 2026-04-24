@@ -2,9 +2,14 @@ import type { ComponentType } from "react";
 
 import { AuditFooterPreview } from "./components/AuditFooter/AuditFooter.preview";
 import { FilterBarPreview } from "./components/FilterBar/FilterBar.preview";
+import { HealthDotPreview } from "./components/HealthDot/HealthDot.preview";
+import { KPITilePreview } from "./components/KPITile/KPITile.preview";
 import { PageShellPreview } from "./components/PageShell/PageShell.preview";
 import { ScopeSelectorPreview } from "./components/ScopeSelector/ScopeSelector.preview";
+import { SeverityChipPreview } from "./components/SeverityChip/SeverityChip.preview";
+import { SparklinePreview } from "./components/Sparkline/Sparkline.preview";
 import { TopBarPreview } from "./components/TopBar/TopBar.preview";
+import { TrendDeltaPreview } from "./components/TrendDelta/TrendDelta.preview";
 
 export type DevPreviewEntry = {
   code: string;
@@ -41,6 +46,41 @@ export const UI_V2_PREVIEW_REGISTRY: Record<string, DevPreviewEntry> = {
     description:
       "Date range, facilities, regions, statuses. Reset + Save View (stubbed until S6).",
     Preview: FilterBarPreview,
+  },
+  "kpi-tile": {
+    code: "P05",
+    name: "KPITile",
+    description:
+      "Metric card: label, value, unit, tone, trend delta, sparkline, info tooltip, breach message.",
+    Preview: KPITilePreview,
+  },
+  "trend-delta": {
+    code: "P06",
+    name: "TrendDelta",
+    description:
+      "Directional arrow + value + unit + period; tone resolves against goodDirection.",
+    Preview: TrendDeltaPreview,
+  },
+  "severity-chip": {
+    code: "P11",
+    name: "SeverityChip",
+    description:
+      "Low/Medium/High chip with optional trend (from X N ago).",
+    Preview: SeverityChipPreview,
+  },
+  "health-dot": {
+    code: "P12",
+    name: "HealthDot",
+    description:
+      "Colored dot + proportional bar + numeric score; bands ≥80 success / ≥65 warning / <65 danger.",
+    Preview: HealthDotPreview,
+  },
+  "sparkline": {
+    code: "P05i",
+    name: "Sparkline",
+    description:
+      "Thin Recharts area chart used inside KPITile; semantic tone mapping.",
+    Preview: SparklinePreview,
   },
   "audit-footer": {
     code: "P13",

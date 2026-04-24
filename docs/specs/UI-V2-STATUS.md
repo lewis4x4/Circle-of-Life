@@ -8,7 +8,8 @@
   - Gate: `test-results/agent-gates/2026-04-24T18-12-12-685Z-UI-V2-S2.json`
 - [x] S3 — Primitives A (shell + chrome)
   - Gate: `test-results/agent-gates/2026-04-24T18-41-48-075Z-UI-V2-S3.json`
-- [ ] S4 — Primitives B (KPI)
+- [x] S4 — Primitives B (KPI)
+  - Gate: `test-results/agent-gates/2026-04-24T18-56-02-787Z-UI-V2-S4.json`
 - [ ] S5 — Primitives C (alerts + AI)
 - [ ] S6 — DataTable
 - [ ] S7 — Templates T1–T8 + W0 closeout
