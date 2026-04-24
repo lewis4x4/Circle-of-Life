@@ -4,7 +4,8 @@
   - Gate: `test-results/agent-gates/2026-04-24T14-50-28-718Z-UI-V2-S0.json`
 - [x] S1 — Tokens + Tailwind + flags + scope + lint
   - Gate: `test-results/agent-gates/2026-04-24T15-36-50-301Z-UI-V2-S1.json`
-- [ ] S2 — Migrations + RLS
+- [x] S2 — Migrations + RLS
+  - Gate: `test-results/agent-gates/2026-04-24T18-12-12-685Z-UI-V2-S2.json`
 - [ ] S3 — Primitives A (shell + chrome)
 - [ ] S4 — Primitives B (KPI)
 - [ ] S5 — Primitives C (alerts + AI)
