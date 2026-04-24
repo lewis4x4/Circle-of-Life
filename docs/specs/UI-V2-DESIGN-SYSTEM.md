@@ -344,109 +344,153 @@ Total: 64 routes, 8 templates, 14 primitives.
 
 ## 7. Data Model
 
-V2 introduces two new tables. Both are admin-scoped; caregivers do not read or write.
+V2 introduces three new tables. All are admin-scoped; caregivers do not read or write.
+
+**RLS pattern:** Haven uses helper functions from `supabase/migrations/004_haven_rls_helpers.sql`, not a `user_facility_access` table. Canonical usage: `supabase/migrations/205_risk_score_snapshots.sql` lines 50–74.
+
+Helpers:
+- `haven.organization_id()` — current user's org_id
+- `haven.accessible_facility_ids()` — set of facility_ids the user can access
+- `haven.app_role()` — current user's `app_role` enum value
+- `public.haven_capture_audit_log()` — audit trigger function
+
+Tables under facility RLS carry **both** `organization_id` AND `facility_id` (non-negotiable denormalization rule #7). Soft-delete via `deleted_at timestamptz` (rule #3). Audit trigger on every new clinical/financial/config table (rule #2) — except audit tables themselves (self-audit recursion).
 
 ### 7.1 `user_dashboard_preferences`
 
+User-scoped (no facility scope). Uses `auth.uid()` directly.
+
 ```sql
-create table public.user_dashboard_preferences (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  dashboard_id text not null,                         -- '/admin', '/admin/executive', etc.
-  column_order text[] not null default '{}',
-  column_visibility jsonb not null default '{}'::jsonb,
-  saved_views jsonb not null default '[]'::jsonb,     -- [{id, name, filters, createdAt}]
-  updated_at timestamptz not null default now(),
-  unique (user_id, dashboard_id)
+CREATE TABLE IF NOT EXISTS user_dashboard_preferences (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  dashboard_id text NOT NULL,                         -- '/admin', '/admin/executive', etc.
+  column_order text[] NOT NULL DEFAULT '{}',
+  column_visibility jsonb NOT NULL DEFAULT '{}'::jsonb,
+  saved_views jsonb NOT NULL DEFAULT '[]'::jsonb,     -- [{id, name, filters, createdAt}]
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  deleted_at timestamptz,
+  UNIQUE (user_id, dashboard_id)
 );
 
-alter table public.user_dashboard_preferences enable row level security;
+ALTER TABLE user_dashboard_preferences ENABLE ROW LEVEL SECURITY;
 
-create policy "users manage own preferences"
-  on public.user_dashboard_preferences
-  for all
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+CREATE POLICY user_dashboard_preferences_select ON user_dashboard_preferences
+  FOR SELECT USING (auth.uid() = user_id AND deleted_at IS NULL);
 
-create index udp_user_dashboard_idx
-  on public.user_dashboard_preferences (user_id, dashboard_id);
+CREATE POLICY user_dashboard_preferences_insert ON user_dashboard_preferences
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY user_dashboard_preferences_update ON user_dashboard_preferences
+  FOR UPDATE USING (auth.uid() = user_id AND deleted_at IS NULL);
+
+CREATE POLICY user_dashboard_preferences_delete ON user_dashboard_preferences
+  FOR DELETE USING (auth.uid() = user_id);
+
+CREATE INDEX user_dashboard_preferences_user_dashboard_idx
+  ON user_dashboard_preferences (user_id, dashboard_id);
+
+CREATE TRIGGER user_dashboard_preferences_audit_trigger
+  AFTER INSERT OR UPDATE OR DELETE ON user_dashboard_preferences
+  FOR EACH ROW EXECUTE FUNCTION haven_capture_audit_log();
 ```
 
 ### 7.2 `facility_metric_targets`
 
+Facility-scoped, org-scoped. Writes gated to `owner` / `org_admin`.
+
 ```sql
-create table public.facility_metric_targets (
-  id uuid primary key default gen_random_uuid(),
-  facility_id uuid not null references public.facilities(id) on delete cascade,
-  metric_key text not null,                             -- 'occupancy_pct', 'labor_cost_pct', 'incidents_per_1k', 'survey_readiness_pct', 'open_incidents', 'staffing_severity'
-  target_value numeric not null,
-  direction text not null check (direction in ('up','down')),  -- 'up' = higher is better
-  warning_band_pct numeric not null default 10,
-  updated_at timestamptz not null default now(),
-  updated_by uuid not null references auth.users(id),
-  unique (facility_id, metric_key)
+CREATE TABLE IF NOT EXISTS facility_metric_targets (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id uuid NOT NULL REFERENCES organizations(id),
+  facility_id uuid NOT NULL REFERENCES facilities(id) ON DELETE CASCADE,
+  metric_key text NOT NULL,                             -- 'occupancy_pct', 'labor_cost_pct', 'incidents_per_1k', 'survey_readiness_pct', 'open_incidents', 'staffing_severity'
+  target_value numeric NOT NULL,
+  direction text NOT NULL CHECK (direction IN ('up','down')),   -- 'up' = higher is better
+  warning_band_pct numeric NOT NULL DEFAULT 10,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  updated_by uuid REFERENCES auth.users(id),
+  deleted_at timestamptz,
+  UNIQUE (facility_id, metric_key)
 );
 
-alter table public.facility_metric_targets enable row level security;
+ALTER TABLE facility_metric_targets ENABLE ROW LEVEL SECURITY;
 
-create policy "read by facility membership"
-  on public.facility_metric_targets for select
-  using (
-    exists (
-      select 1 from public.user_facility_access uf
-      where uf.user_id = auth.uid() and uf.facility_id = facility_metric_targets.facility_id
-    )
+CREATE POLICY facility_metric_targets_select ON facility_metric_targets
+  FOR SELECT USING (
+    organization_id = haven.organization_id()
+    AND deleted_at IS NULL
+    AND facility_id IN (SELECT haven.accessible_facility_ids())
   );
 
-create policy "write by org_admin or owner"
-  on public.facility_metric_targets for all
-  using (public.has_role(auth.uid(), 'owner') or public.has_role(auth.uid(), 'org_admin'))
-  with check (public.has_role(auth.uid(), 'owner') or public.has_role(auth.uid(), 'org_admin'));
+CREATE POLICY facility_metric_targets_insert ON facility_metric_targets
+  FOR INSERT WITH CHECK (
+    organization_id = haven.organization_id()
+    AND facility_id IN (SELECT haven.accessible_facility_ids())
+    AND haven.app_role() IN ('owner', 'org_admin')
+  );
 
-create index fmt_facility_metric_idx
-  on public.facility_metric_targets (facility_id, metric_key);
+CREATE POLICY facility_metric_targets_update ON facility_metric_targets
+  FOR UPDATE USING (
+    organization_id = haven.organization_id()
+    AND deleted_at IS NULL
+    AND facility_id IN (SELECT haven.accessible_facility_ids())
+    AND haven.app_role() IN ('owner', 'org_admin')
+  );
+
+CREATE INDEX facility_metric_targets_facility_metric_idx
+  ON facility_metric_targets (facility_id, metric_key);
+
+CREATE TRIGGER facility_metric_targets_audit_trigger
+  AFTER INSERT OR UPDATE OR DELETE ON facility_metric_targets
+  FOR EACH ROW EXECUTE FUNCTION haven_capture_audit_log();
 ```
 
-### 7.3 `alert_audit_log` (extends existing audit infrastructure if present)
+### 7.3 `alert_audit_log`
+
+Append-only. Facility-scoped reads; insert gated by membership + `actor_id = auth.uid()`. No UPDATE or DELETE policies (rule #2). No self-audit trigger (recursion).
 
 ```sql
-create table if not exists public.alert_audit_log (
-  id uuid primary key default gen_random_uuid(),
-  alert_id uuid not null,
-  action text not null check (action in ('ack','detail_open','escalate','dismiss','assign')),
-  actor_id uuid not null references auth.users(id),
-  actor_role text not null,
-  facility_id uuid not null references public.facilities(id),
+CREATE TABLE IF NOT EXISTS alert_audit_log (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id uuid NOT NULL REFERENCES organizations(id),
+  facility_id uuid NOT NULL REFERENCES facilities(id),
+  alert_id uuid NOT NULL,
+  action text NOT NULL CHECK (action IN ('ack','detail_open','escalate','dismiss','assign')),
+  actor_id uuid NOT NULL REFERENCES auth.users(id),
+  actor_role app_role NOT NULL,
   note text,
-  created_at timestamptz not null default now()
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
-alter table public.alert_audit_log enable row level security;
+ALTER TABLE alert_audit_log ENABLE ROW LEVEL SECURITY;
 
-create policy "read by facility membership"
-  on public.alert_audit_log for select
-  using (
-    exists (
-      select 1 from public.user_facility_access uf
-      where uf.user_id = auth.uid() and uf.facility_id = alert_audit_log.facility_id
-    )
+CREATE POLICY alert_audit_log_select ON alert_audit_log
+  FOR SELECT USING (
+    organization_id = haven.organization_id()
+    AND facility_id IN (SELECT haven.accessible_facility_ids())
   );
 
-create policy "insert by authenticated with membership"
-  on public.alert_audit_log for insert
-  with check (
-    auth.uid() = actor_id
-    and exists (
-      select 1 from public.user_facility_access uf
-      where uf.user_id = auth.uid() and uf.facility_id = alert_audit_log.facility_id
-    )
+CREATE POLICY alert_audit_log_insert ON alert_audit_log
+  FOR INSERT WITH CHECK (
+    organization_id = haven.organization_id()
+    AND facility_id IN (SELECT haven.accessible_facility_ids())
+    AND actor_id = auth.uid()
   );
 
-create index aal_facility_idx on public.alert_audit_log (facility_id, created_at desc);
-create index aal_actor_idx    on public.alert_audit_log (actor_id, created_at desc);
+CREATE INDEX alert_audit_log_facility_created_idx
+  ON alert_audit_log (facility_id, created_at DESC);
+
+CREATE INDEX alert_audit_log_actor_created_idx
+  ON alert_audit_log (actor_id, created_at DESC);
+
+CREATE INDEX alert_audit_log_alert_idx
+  ON alert_audit_log (alert_id, created_at DESC);
 ```
 
-**Security review:** §7 tables follow the existing `user_facility_access` + `has_role()` pattern from `PHASE1-RLS-VALIDATION-RECORD.md`. No new auth primitives introduced.
+**Security review:** §7 tables follow Haven's canonical RLS pattern from `004_haven_rls_helpers.sql` + `205_risk_score_snapshots.sql` (lines 50–74). No new auth primitives introduced. Audit trigger applied to `user_dashboard_preferences` + `facility_metric_targets`; omitted from `alert_audit_log` to avoid self-audit recursion.
 
 ### 7.4 Server API
 
