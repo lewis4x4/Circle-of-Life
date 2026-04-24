@@ -46,3 +46,5 @@ Active waivers are not free-floating backlog. They must map to the **Completion 
 ## Rejected / must-fix before closure
 
 *(None — blockers for full Phase 1 product acceptance are tracked in [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) and [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md), not in this waiver table.)*
+
+| 2026-04-24 | UI-V2-S1..S7 | smoke.sentry SKIPPED (no valid token, deferred) | Fix before S8 — first slice that serves runtime pages |
