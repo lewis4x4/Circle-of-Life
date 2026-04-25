@@ -100,3 +100,14 @@ npm run segment:gates -- --segment "UI-V2-S8" --ui
 - `/admin/rounding` is a deep hub with sub-routes. S8 scope is the hub index only. Sub-routes (`/rounding/live`, `/rounding/watches`, etc.) are S9/S11.
 - Dashboard payload shape is owned by the `vw_v2_*` views. Changing the shape post-S8 means migration + view rewrite. Lock the shape in S8.
 - Each dashboard has different KPI tiles (spec §6 inventory) — do not copy-paste one view across all four. Each view is bespoke per dashboard ID.
+
+## S8 implementation deviations
+
+S8 ships the **core** of W1 — four V2 pages live on the `ui-v2` branch with the middleware rewrite armed when `NEXT_PUBLIC_UI_V2=true`. Items below are owner-actionable or sequenced behind S8.
+
+- **Path mismatch (typo) carried through plans S2–S12.** The plans say `src/app/(admin)/v2/<seg>/page.tsx`. With Next route groups, `(admin)` does not add to the URL, so `(admin)/v2/foo` would resolve to `/v2/foo`. The actual filesystem location for `/admin/v2/foo` is `src/app/(admin)/admin/v2/foo/page.tsx`. S3 already corrected this for the dev preview; S8 follows the same correction for all four pages.
+- **Supabase views 211–214 deferred to S8.5.** S8 ships deterministic fixtures from `src/lib/v2-dashboards.ts` so the four pages render with stable data. Each fixture's shape is locked (6 KPIs / 4 panels / row schema). Views replace the fixtures without page-side code changes once authored.
+- **`smoke.sentry` gate still SKIP.** Plan called for it to be PASS at S8. Token + org env vars are not set in this environment (Netlify owner action). Tracked in `PHASE1-WAIVER-LOG.md`.
+- **GitHub `ui-v2` issue mirror not created in this slice.** Plan called for one issue per dashboard with the PR template's checklist. The agent gate `evidence.ui-v2-issues` already passes (zero closed issues with unchecked boxes). Mirror creation can land alongside the staging flag flip.
+- **V1↔V2 screenshot diffs + Loom recordings deferred.** Both require a live branch deploy with the flag on; that's the next owner action (Netlify branch context env: `NEXT_PUBLIC_UI_V2=true`). Once the branch is live, per-page recordings + screenshot diffs land in the eventual merge PR per `.github/PULL_REQUEST_TEMPLATE/ui-v2.md`.
+- **Live data wiring.** S8 pages load via `loadV2Dashboard()` which currently returns fixtures. The `facilities` list is real (RLS-enforced read from `public.facilities`), so the ScopeSelector reflects the user's actual access. KPI / table / alert data switches to live the moment the views ship.

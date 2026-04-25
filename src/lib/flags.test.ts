@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { normalizeAdminRoute, resolveUiV2AdminRewritePath, uiV2 } from "./flags";
+import {
+  UI_V2_IMPLEMENTED_ROUTES,
+  normalizeAdminRoute,
+  resolveUiV2AdminRewritePath,
+  uiV2,
+} from "./flags";
 
 describe("UI-V2 flags", () => {
   it("defaults off unless NEXT_PUBLIC_UI_V2 is true", () => {
@@ -38,6 +43,39 @@ describe("UI-V2 flags", () => {
         enabled: false,
         implementedRoutes,
       }),
+    ).toBeNull();
+  });
+
+  it("S8 W1 routes are registered as implemented", () => {
+    // Adding a route here without shipping the page is a 404 trap; this test
+    // tracks the four W1 P0 dashboards landed in S8.
+    expect(UI_V2_IMPLEMENTED_ROUTES.has("/")).toBe(true);
+    expect(UI_V2_IMPLEMENTED_ROUTES.has("/executive")).toBe(true);
+    expect(UI_V2_IMPLEMENTED_ROUTES.has("/quality")).toBe(true);
+    expect(UI_V2_IMPLEMENTED_ROUTES.has("/rounding")).toBe(true);
+  });
+
+  it("rewrites every S8 W1 route via the live registry", () => {
+    expect(
+      resolveUiV2AdminRewritePath("/admin", { enabled: true }),
+    ).toBe("/admin/v2");
+    expect(
+      resolveUiV2AdminRewritePath("/admin/executive", { enabled: true }),
+    ).toBe("/admin/v2/executive");
+    expect(
+      resolveUiV2AdminRewritePath("/admin/quality", { enabled: true }),
+    ).toBe("/admin/v2/quality");
+    expect(
+      resolveUiV2AdminRewritePath("/admin/rounding", { enabled: true }),
+    ).toBe("/admin/v2/rounding");
+  });
+
+  it("non-W1 admin routes still fall through (V1) even with the flag on", () => {
+    expect(
+      resolveUiV2AdminRewritePath("/admin/residents", { enabled: true }),
+    ).toBeNull();
+    expect(
+      resolveUiV2AdminRewritePath("/admin/billing", { enabled: true }),
     ).toBeNull();
   });
 });

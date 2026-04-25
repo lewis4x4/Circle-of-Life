@@ -1,7 +1,22 @@
 export const UI_V2_ADMIN_ROUTE_PREFIX = "/admin";
 export const UI_V2_INTERNAL_ROUTE_PREFIX = "/admin/v2";
 
-export const UI_V2_IMPLEMENTED_ROUTES = new Set<string>();
+/**
+ * Routes that have a V2 implementation under `src/app/(admin)/admin/v2/<seg>/`.
+ * Middleware (`src/proxy.ts`) consults this set after the flag check; only
+ * routes listed here are rewritten to their `/admin/v2/...` counterpart when
+ * `NEXT_PUBLIC_UI_V2=true`. Adding a route here without shipping the page file
+ * causes a 404 on the rewrite path.
+ *
+ * Each entry uses the post-`/admin` segment ("/" for `/admin`).
+ */
+export const UI_V2_IMPLEMENTED_ROUTES = new Set<string>([
+  // S8 (W1 P0 dashboards)
+  "/", // /admin
+  "/executive", // /admin/executive
+  "/quality", // /admin/quality
+  "/rounding", // /admin/rounding
+]);
 
 export function uiV2(env: Record<string, string | undefined> = process.env): boolean {
   return env.NEXT_PUBLIC_UI_V2 === "true";

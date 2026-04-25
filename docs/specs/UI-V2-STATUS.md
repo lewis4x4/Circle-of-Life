@@ -17,7 +17,10 @@
 - [x] S7 — Templates T1–T8 + W0 closeout
   - Gate: `test-results/agent-gates/2026-04-25T01-19-40-480Z-UI-V2-S7.json`
   - W0 closure gate: `test-results/agent-gates/2026-04-25T01-21-36-840Z-UI-V2-W0.json`
-- [ ] S8 — W1 P0 dashboards
+- [x] S8 — W1 P0 dashboards (core)
+  - Gate: `test-results/agent-gates/2026-04-25T02-00-02-522Z-UI-V2-S8.json`
+  - Migrations 207–210 deployed to `manfqmasfqppukpobpld` (see PHASE1-OPS-VERIFICATION-RUNBOOK.md §2)
+  - Deferred follow-ups (tracked separately): Supabase views 211–214, Sentry smoke envs (Netlify), Loom recordings, GitHub `ui-v2` issue mirror, V1↔V2 screenshot diffs
 - [ ] S9 — W2 P0 list+detail
 - [ ] S10 — W3+W4 analytics + forms
 - [ ] S11 — W5 settings + lists
