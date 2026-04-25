@@ -178,4 +178,38 @@ describe("UI-V2 flags", () => {
       "/admin/v2/admissions/new",
     );
   });
+
+  it("S11 W5 settings routes are registered as exact matches", () => {
+    expect(UI_V2_IMPLEMENTED_ROUTES.has("/settings/thresholds")).toBe(true);
+    expect(UI_V2_IMPLEMENTED_ROUTES.has("/settings/audit-log")).toBe(true);
+    expect(UI_V2_IMPLEMENTED_ROUTES.has("/settings/users")).toBe(true);
+    expect(UI_V2_IMPLEMENTED_ROUTES.has("/settings/notifications")).toBe(true);
+  });
+
+  it("rewrites every S11 settings route", () => {
+    expect(
+      resolveUiV2AdminRewritePath("/admin/settings/thresholds", { enabled: true }),
+    ).toBe("/admin/v2/settings/thresholds");
+    expect(
+      resolveUiV2AdminRewritePath("/admin/settings/audit-log", { enabled: true }),
+    ).toBe("/admin/v2/settings/audit-log");
+    expect(
+      resolveUiV2AdminRewritePath("/admin/settings/users", { enabled: true }),
+    ).toBe("/admin/v2/settings/users");
+    expect(
+      resolveUiV2AdminRewritePath("/admin/settings/notifications", { enabled: true }),
+    ).toBe("/admin/v2/settings/notifications");
+  });
+
+  it("does NOT rewrite settings paths the V2 build hasn't shipped", () => {
+    // /admin/settings (root) and any setting that isn't in the registry should
+    // continue to fall through to the V1 page so we don't strand visitors on
+    // empty V2 placeholders.
+    expect(
+      resolveUiV2AdminRewritePath("/admin/settings", { enabled: true }),
+    ).toBeNull();
+    expect(
+      resolveUiV2AdminRewritePath("/admin/settings/integrations", { enabled: true }),
+    ).toBeNull();
+  });
 });

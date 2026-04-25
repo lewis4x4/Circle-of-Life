@@ -35,5 +35,12 @@
   - 7 T4 analytics pages live: executive/standup, executive/facility/[id], executive/reports, executive/benchmarks, finance, finance/ledger, finance/trial-balance
   - 3 T5 forms live: residents/new, admissions/new, incidents/new (RHF + Zod; submit posts to `/api/v2/forms/[id]` deferred envelope)
   - Deferred to S10a/S10.5: per-page time-series + breakdown views, shared export Edge Function (XLSX/PDF), live form persistence (today posts to deferred-envelope endpoint), Care Plan rich-text form
-- [ ] S11 — W5 settings + lists
+- [x] S11 — W5 settings (priority shipped); 10 long-tail lists deferred to S11.5
+  - Gate: `test-results/agent-gates/2026-04-25T03-49-08-554Z-UI-V2-S11.json`
+  - Settings shell at `/admin/v2/settings/{thresholds,users,notifications,audit-log}`
+  - **Thresholds editor full CRUD** — PUT `/api/v2/thresholds/[facilityId]` with owner/org_admin role gate; per-metric rows save individually; the edited targets feed back into DataTable callout coloring across W1 dashboards + W2 lists
+  - Audit log viewer reads `alert_audit_log` (deployed S2)
+  - Users settings reads `public.user_profiles` (read-only roster)
+  - Notifications stub points at V1 until V2 surface lands
+  - Deferred to S11.5: 10 long-tail lists (assessments overdue, rounding live/watches/escalations/plans/integrity, documents, tasks, insurance/claims, staff)
 - [ ] S12 — W6 cleanup + flag removal + merge

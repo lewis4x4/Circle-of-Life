@@ -23,6 +23,11 @@ export const UI_V2_IMPLEMENTED_ROUTES = new Set<string>([
   "/finance", // /admin/finance hub
   "/finance/ledger", // /admin/finance/ledger (labor analytics proxy)
   "/finance/trial-balance", // /admin/finance/trial-balance (revenue proxy)
+  // S11 (W5 settings)
+  "/settings/thresholds", // /admin/settings/thresholds — facility metric thresholds CRUD
+  "/settings/audit-log", // /admin/settings/audit-log — global audit log viewer
+  "/settings/users", // /admin/settings/users — read-only roster
+  "/settings/notifications", // /admin/settings/notifications — V2 stub
 ]);
 
 /**

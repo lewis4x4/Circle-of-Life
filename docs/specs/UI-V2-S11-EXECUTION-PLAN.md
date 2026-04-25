@@ -108,3 +108,14 @@ npm run segment:gates -- --segment "UI-V2-S11" --ui
 - Rounding sub-routes in V1 are deep. Some may already be T4 (analytics) not T2 (list). Verify per route before assigning template. `/admin/rounding/reports` is clearly T4; included here for completeness but may move to S10 if missed there.
 - Documents and Tasks hubs: check if these exist as routes in V1 (`rg "tasks" src/app/\(admin\)/ | grep page.tsx`). If V1 has no Tasks page, create one at V2 only. Document the new page in `FRONTEND-CONTRACT.md §2`.
 - Thresholds import/export CSV must validate input strictly (reject unknown metric_keys). Don't create ghost thresholds.
+
+## S11 implementation deviations
+
+S11 is a 7 eng-day plan with 14 pages. The "single most impactful control" per the spec is the thresholds editor. Tonight's commit ships that fully working plus the settings shell; the 10 long-tail lists become S11.5.
+
+- **Thresholds editor shipped end-to-end.** Edit a target, save, reload any W1/W2 page, and the DataTable callout color updates. PUT `/api/v2/thresholds/[facilityId]` is owner/org_admin-gated and upserts on `(facility_id, metric_key)`. Each row saves individually (no bulk apply yet — bulk + CSV import/export are S11.5).
+- **Audit log viewer** reads `alert_audit_log` directly (not a view) since the only consumer is this page and the table is small. Pagination is "100 most recent" for now.
+- **Users settings is read-only.** The V1 surface at `/admin/settings/users` remains the canonical write path (invite / role change / deactivate). V2 write surface is sequenced behind S11.5.
+- **Notifications page is a stub** pointing at V1.
+- **10 long-tail lists deferred to S11.5.** Each needs its own Supabase view and its own table-column mapping. They're additive — the prefix-match middleware is already in place and will pick them up the moment their `page.tsx` files land.
+- **Playwright `thresholds-drive-callout` spec deferred** (no `@playwright/test` runner). The full chain is verified via Vitest (PUT validation + role gate) and the existing DataTable threshold tests; S12's pre-merge UAT walks the visible chain end-to-end.
