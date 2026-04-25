@@ -25,7 +25,11 @@
   - Gate: `test-results/agent-gates/2026-04-25T02-58-59-538Z-UI-V2-S8.5.json`
   - Migration 211 deployed: `haven.vw_v2_facility_rollup` (security_invoker; RLS cascades from facilities + incidents + risk_score_snapshots)
   - Loader reads from view with fixture fallback when view returns 0 rows or errors
-- [ ] S9 — W2 P0 list+detail
+- [x] S9 — W2 P0 list+detail (skeleton + live list views)
+  - Gate: `test-results/agent-gates/2026-04-25T03-15-56-136Z-UI-V2-S9.json`
+  - Migrations 212–215 deployed to `manfqmasfqppukpobpld` (residents/incidents/alerts/admissions list views, all `security_invoker=true`)
+  - 4 list pages (T2) + 4 detail pages (T3) under `/admin/v2/{residents,incidents,admissions,executive/alerts}` with one-segment-deep prefix rewrite (sub-routes stay V1)
+  - Deferred: side-panel drawer (S10), per-entity tabs Clinical/Staffing/Finance/Compliance (S10–S11), activity timeline data (per-module audit log wiring), 7 resident sub-routes
 - [ ] S10 — W3+W4 analytics + forms
 - [ ] S11 — W5 settings + lists
 - [ ] S12 — W6 cleanup + flag removal + merge

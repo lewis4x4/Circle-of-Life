@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  UI_V2_IMPLEMENTED_PREFIXES,
   UI_V2_IMPLEMENTED_ROUTES,
   normalizeAdminRoute,
   resolveUiV2AdminRewritePath,
@@ -70,12 +71,62 @@ describe("UI-V2 flags", () => {
     ).toBe("/admin/v2/rounding");
   });
 
-  it("non-W1 admin routes still fall through (V1) even with the flag on", () => {
-    expect(
-      resolveUiV2AdminRewritePath("/admin/residents", { enabled: true }),
-    ).toBeNull();
+  it("non-W1/W2 admin routes still fall through (V1) even with the flag on", () => {
     expect(
       resolveUiV2AdminRewritePath("/admin/billing", { enabled: true }),
+    ).toBeNull();
+    expect(
+      resolveUiV2AdminRewritePath("/admin/care-plans/reviews-due", { enabled: true }),
+    ).toBeNull();
+  });
+
+  it("S9 W2 prefixes are registered for the four list+detail pairs", () => {
+    expect(UI_V2_IMPLEMENTED_PREFIXES.has("/residents")).toBe(true);
+    expect(UI_V2_IMPLEMENTED_PREFIXES.has("/incidents")).toBe(true);
+    expect(UI_V2_IMPLEMENTED_PREFIXES.has("/admissions")).toBe(true);
+    expect(UI_V2_IMPLEMENTED_PREFIXES.has("/executive/alerts")).toBe(true);
+  });
+
+  it("rewrites the W2 list root and any subtree path under each prefix", () => {
+    // List roots
+    expect(
+      resolveUiV2AdminRewritePath("/admin/residents", { enabled: true }),
+    ).toBe("/admin/v2/residents");
+    expect(
+      resolveUiV2AdminRewritePath("/admin/incidents", { enabled: true }),
+    ).toBe("/admin/v2/incidents");
+    expect(
+      resolveUiV2AdminRewritePath("/admin/admissions", { enabled: true }),
+    ).toBe("/admin/v2/admissions");
+    expect(
+      resolveUiV2AdminRewritePath("/admin/executive/alerts", { enabled: true }),
+    ).toBe("/admin/v2/executive/alerts");
+
+    // Detail subtree
+    expect(
+      resolveUiV2AdminRewritePath("/admin/residents/abc-123", { enabled: true }),
+    ).toBe("/admin/v2/residents/abc-123");
+    expect(
+      resolveUiV2AdminRewritePath("/admin/incidents/inc-1", { enabled: true }),
+    ).toBe("/admin/v2/incidents/inc-1");
+    expect(
+      resolveUiV2AdminRewritePath("/admin/executive/alerts/al-99", { enabled: true }),
+    ).toBe("/admin/v2/executive/alerts/al-99");
+  });
+
+  it("does NOT rewrite resident sub-routes that S9 left on V1", () => {
+    // /admin/residents/[id] is rewritten (one segment deep). Deeper paths like
+    // /admin/residents/[id]/care-plan fall through to V1 because S9 only
+    // shipped detail roots; sub-routes get explicit V2 in S10/S11.
+    expect(
+      resolveUiV2AdminRewritePath("/admin/residents/abc-123/care-plan", {
+        enabled: true,
+      }),
+    ).toBeNull();
+    expect(
+      resolveUiV2AdminRewritePath("/admin/residents/abc-123/medications", {
+        enabled: true,
+      }),
     ).toBeNull();
   });
 });

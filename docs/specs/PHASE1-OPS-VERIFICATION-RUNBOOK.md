@@ -115,6 +115,20 @@ Record:
 | Security model | View defined `WITH (security_invoker = true)` so RLS cascades from underlying tables — view does not re-filter |
 | Outstanding | Source aggregates for `occupancy_pct` (facilities table column unpopulated) + `survey_readiness_pct` (Module 24 owns `summary_json` shape) + `labor_cost_pct` (payroll/finance module). UI renders NULL as "—". |
 
+### UI-V2 S9 list views deploy — 2026-04-25
+
+| Field | Value |
+|---|---|
+| Project ref | `manfqmasfqppukpobpld` |
+| Branch | `ui-v2` |
+| Migrations applied | `212_v2_residents_list_view`, `213_v2_incidents_list_view`, `214_v2_alerts_list_view`, `215_v2_admissions_list_view` |
+| Pre-state remote | `001`–`211` aligned |
+| Post-state remote | `001`–`215` aligned with local |
+| Apply method | `supabase db push --linked --include-all --yes` |
+| Verification | `vw_v2_residents_list`=32 rows, `vw_v2_incidents_list`=12, `vw_v2_alerts_list`=20, `vw_v2_admissions_list`=1. All four views joined with `public.facilities` for `facility_name`. |
+| Security model | All four views `WITH (security_invoker = true)`; RLS cascades from underlying tables (residents/incidents/exec_alerts/admission_cases + facilities). Views grant SELECT to `authenticated`, `service_role`. |
+| Outstanding | Per-entity activity timeline + module-specific tab data (Clinical/Staffing/Finance/Compliance) tracked as S10/S11 work. |
+
 ---
 
 ## 3. Edge Function deploy and list verification

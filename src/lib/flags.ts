@@ -18,6 +18,20 @@ export const UI_V2_IMPLEMENTED_ROUTES = new Set<string>([
   "/rounding", // /admin/rounding
 ]);
 
+/**
+ * List+detail pair prefixes. The middleware rewrites `<prefix>` AND
+ * `<prefix>/<one-segment>` only — never deeper paths. This protects V1 routes
+ * like `/admin/residents/[id]/care-plan` from being rewritten before their V2
+ * implementations land in S10/S11.
+ */
+export const UI_V2_IMPLEMENTED_PREFIXES = new Set<string>([
+  // S9 (W2 P0 list+detail pairs)
+  "/residents", // list + /residents/[id]
+  "/incidents", // list + /incidents/[id]
+  "/admissions", // list + /admissions/[id]
+  "/executive/alerts", // list + /executive/alerts/[id]
+]);
+
 export function uiV2(env: Record<string, string | undefined> = process.env): boolean {
   return env.NEXT_PUBLIC_UI_V2 === "true";
 }
@@ -31,11 +45,21 @@ export function normalizeAdminRoute(pathname: string): string | null {
   return pathname.slice(UI_V2_ADMIN_ROUTE_PREFIX.length) || "/";
 }
 
+function isExactMatchOrOneDeep(adminRoute: string, prefix: string): boolean {
+  if (adminRoute === prefix) return true;
+  if (!adminRoute.startsWith(`${prefix}/`)) return false;
+  // Allow exactly one segment beyond the prefix (the dynamic [id] segment)
+  // — anything deeper means a sub-route the V2 build doesn't yet handle.
+  const remainder = adminRoute.slice(prefix.length + 1);
+  return remainder.length > 0 && !remainder.includes("/");
+}
+
 export function resolveUiV2AdminRewritePath(
   pathname: string,
   options: {
     enabled?: boolean;
     implementedRoutes?: ReadonlySet<string>;
+    implementedPrefixes?: ReadonlySet<string>;
   } = {},
 ): string | null {
   const enabled = options.enabled ?? uiV2();
@@ -45,7 +69,16 @@ export function resolveUiV2AdminRewritePath(
   if (!adminRoute) return null;
 
   const implementedRoutes = options.implementedRoutes ?? UI_V2_IMPLEMENTED_ROUTES;
-  if (!implementedRoutes.has(adminRoute)) return null;
+  const implementedPrefixes = options.implementedPrefixes ?? UI_V2_IMPLEMENTED_PREFIXES;
+
+  const exactMatch = implementedRoutes.has(adminRoute);
+  const prefixMatch =
+    !exactMatch &&
+    Array.from(implementedPrefixes).some((prefix) =>
+      isExactMatchOrOneDeep(adminRoute, prefix),
+    );
+
+  if (!exactMatch && !prefixMatch) return null;
 
   if (adminRoute === "/") return UI_V2_INTERNAL_ROUTE_PREFIX;
   return `${UI_V2_INTERNAL_ROUTE_PREFIX}${adminRoute}`;

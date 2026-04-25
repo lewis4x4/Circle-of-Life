@@ -94,3 +94,14 @@ Sentry token must still be valid from S8.
 - `/admin/executive/alerts/[id]` may not exist as a V1 route. Create the V2 route fresh; optionally add a V1 redirect if marketing/support already links to something.
 - Resident detail is the heaviest migration — residents have 7 existing sub-routes (`/residents/[id]/assessments`, `/care-plan`, `/medications`, `/vitals`, etc.). S9 scope is the detail root only; sub-routes stay on V1 until S10/S11.
 - Side-panel drawer state (which row is open) should persist via URL hash, not Zustand, so deep-linking to a row+panel state works.
+
+## S9 implementation deviations
+
+- **Plan numbering 215–218 → renumbered 212–215.** S8.5 used migration 211 for the combined facility rollup (one view backing all four W1 dashboards) instead of four per-dashboard views. Continuing the sequence: residents=212, incidents=213, alerts=214, admissions=215.
+- **Middleware prefix match limited to one segment deep.** `UI_V2_IMPLEMENTED_PREFIXES` plus `isExactMatchOrOneDeep` rewrites `/admin/<seg>` and `/admin/<seg>/<id>` only. Deeper paths (e.g., `/admin/residents/[id]/care-plan`) fall through to V1 untouched, so the 7 resident sub-routes the spec calls out stay V1 until S10/S11 land them explicitly.
+- **Detail tabs minimized to Overview + Activity.** The full `Clinical / Staffing / Finance / Compliance` tab set requires module-specific aggregates (Module 06 eMAR, Module 11 staffing, Module 16/17 finance, Module 08 compliance). Each is a slice of its own. S9 stub renders Overview + Activity with explicit "lights up in S10/S11" copy.
+- **Activity timeline stubbed to "No activity recorded".** Per spec gotcha — module audit log backfill is tracked alongside the per-module detail surfaces.
+- **Side-panel drawer deferred.** Spec calls for a Sheet-based inline detail bound to row select. T2 today routes row clicks to the dedicated detail URL (more honest with the current data shape, fewer moving parts). Sheet wiring lands when residents detail goes deeper in S10/S11.
+- **Playwright spec deferred.** Repo doesn't have `@playwright/test` installed (raw `playwright` package only). Per the existing slice pattern, the `.a11y.spec.ts` files exist as documentation; gate runs `a11y-axe-routes.mjs` against the build.
+- **Loom + screenshot diffs deferred.** Owner action — needs branch deploy with flag on.
+- **GitHub `ui-v2` issue mirror deferred.** Optional ceremonial step; agent gate `evidence.ui-v2-issues` already passes.
