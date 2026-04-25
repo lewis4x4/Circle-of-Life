@@ -1,10 +1,11 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { adminShellAccessRedirect, isAdminShellPath, mergeSetCookieHeaders } from "@/lib/auth/admin-shell";
 import { caregiverShellAccessRedirect, isCaregiverShellPath } from "@/lib/auth/caregiver-shell";
 import { dietaryShellAccessRedirect, isDietaryShellPath } from "@/lib/auth/dietary-shell";
 import { familyShellAccessRedirect, isFamilyShellPath } from "@/lib/auth/family-shell";
 import { isMedTechShellPath, medTechShellAccessRedirect } from "@/lib/auth/med-tech-shell";
 import { isOnboardingShellPath, onboardingShellAccessRedirect } from "@/lib/auth/onboarding-shell";
+import { resolveUiV2AdminRewritePath } from "@/lib/flags";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function proxy(request: NextRequest) {
@@ -16,6 +17,14 @@ export async function proxy(request: NextRequest) {
     if (redirect) {
       mergeSetCookieHeaders(response, redirect);
       return redirect;
+    }
+    const rewritePath = resolveUiV2AdminRewritePath(pathname);
+    if (rewritePath) {
+      const rewriteUrl = request.nextUrl.clone();
+      rewriteUrl.pathname = rewritePath;
+      const rewrite = NextResponse.rewrite(rewriteUrl);
+      mergeSetCookieHeaders(response, rewrite);
+      return rewrite;
     }
     return response;
   }

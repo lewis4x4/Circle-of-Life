@@ -9,6 +9,11 @@
     "start": "next start",
     "lint": "eslint src --max-warnings 0",
     "audit:ci": "npm audit --audit-level=high",
+    "smoke:sentry": "node scripts/agent-gates/sentry-smoke.mjs",
+    "smoke:ui-v2-issues": "node scripts/agent-gates/ui-v2-issue-acceptance.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui-v2": "vitest run src/design-system src/lib",
     "check:admin-shell": "node scripts/check-admin-shell-routes.mjs",
     "check:memory-care": "node scripts/check-memory-care.mjs",
     "check:env-example": "node scripts/check-env-example.mjs",
@@ -49,6 +54,8 @@
     "@sentry/nextjs": "^10.47.0",
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.0",
+    "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-virtual": "^3.13.24",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -71,14 +78,20 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.11.1",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
+    "happy-dom": "^20.9.0",
     "tailwindcss": "^4",
     "tsx": "^4.19.3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.5"
   },
   "overrides": {
     "hono": "^4.12.14"

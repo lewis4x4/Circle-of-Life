@@ -1,0 +1,41 @@
+[
+  {
+    "id": "sugg-1",
+    "title": "Review fall-prevention protocol for Oakridge memory care",
+    "body": "2 falls in Hallway A in the last 72h. Consider reviewing grab-bar placement and overnight rounding cadence with the DON.",
+    "recordId": "oakridge-memory-care-hallway-a",
+    "recordType": "facility_unit",
+    "facilityId": "oakridge",
+    "generatedAt": "2026-04-24T15:58:00-04:00",
+    "modelVersion": "haven-copilot-2026-04-15",
+    "citations": [
+      {
+        "source": "incident_reports",
+        "id": "inc-0411-a1",
+        "excerpt": "Resident fall near Hallway A. No injury reported."
+      },
+      {
+        "source": "incident_reports",
+        "id": "inc-0413-b2",
+        "excerpt": "Resident fall in Hallway A bathroom. Hip bruising."
+      }
+    ]
+  },
+  {
+    "id": "sugg-2",
+    "title": "Escalate missed-dose streak on Homewood Resident A",
+    "body": "3 missed doses in the last 24h. Confirm nurse on duty acknowledges and opens a care-plan review.",
+    "recordId": "homewood-res-a",
+    "recordType": "resident",
+    "facilityId": "homewood",
+    "generatedAt": "2026-04-24T15:59:00-04:00",
+    "modelVersion": "haven-copilot-2026-04-15",
+    "citations": [
+      {
+        "source": "emar_events",
+        "id": "emar-0423-17",
+        "excerpt": "Scheduled 08:00 metformin — marked missed."
+      }
+    ]
+  }
+]

@@ -1,0 +1,50 @@
+# UI-V2 Status
+
+- [x] S0 — Scaffolding commit + gate infra
+  - Gate: `test-results/agent-gates/2026-04-24T14-50-28-718Z-UI-V2-S0.json`
+- [x] S1 — Tokens + Tailwind + flags + scope + lint
+  - Gate: `test-results/agent-gates/2026-04-24T15-36-50-301Z-UI-V2-S1.json`
+- [x] S2 — Migrations + RLS
+  - Gate: `test-results/agent-gates/2026-04-24T18-12-12-685Z-UI-V2-S2.json`
+- [x] S3 — Primitives A (shell + chrome)
+  - Gate: `test-results/agent-gates/2026-04-24T18-41-48-075Z-UI-V2-S3.json`
+- [x] S4 — Primitives B (KPI)
+  - Gate: `test-results/agent-gates/2026-04-24T18-56-02-787Z-UI-V2-S4.json`
+- [x] S5 — Primitives C (alerts + AI)
+  - Gate: `test-results/agent-gates/2026-04-24T19-10-59-934Z-UI-V2-S5.json`
+- [x] S6 — DataTable
+  - Gate: `test-results/agent-gates/2026-04-25T00-58-23-893Z-UI-V2-S6.json`
+- [x] S7 — Templates T1–T8 + W0 closeout
+  - Gate: `test-results/agent-gates/2026-04-25T01-19-40-480Z-UI-V2-S7.json`
+  - W0 closure gate: `test-results/agent-gates/2026-04-25T01-21-36-840Z-UI-V2-W0.json`
+- [x] S8 — W1 P0 dashboards (core)
+  - Gate: `test-results/agent-gates/2026-04-25T02-00-02-522Z-UI-V2-S8.json`
+  - Migrations 207–210 deployed to `manfqmasfqppukpobpld` (see PHASE1-OPS-VERIFICATION-RUNBOOK.md §2)
+  - Deferred follow-ups (tracked separately): Sentry smoke envs (Netlify), Loom recordings, GitHub `ui-v2` issue mirror, V1↔V2 screenshot diffs
+- [x] S8.5 — Live data wiring (W1 table rollup)
+  - Gate: `test-results/agent-gates/2026-04-25T02-58-59-538Z-UI-V2-S8.5.json`
+  - Migration 211 deployed: `haven.vw_v2_facility_rollup` (security_invoker; RLS cascades from facilities + incidents + risk_score_snapshots)
+  - Loader reads from view with fixture fallback when view returns 0 rows or errors
+- [x] S9 — W2 P0 list+detail (skeleton + live list views)
+  - Gate: `test-results/agent-gates/2026-04-25T03-15-56-136Z-UI-V2-S9.json`
+  - Migrations 212–215 deployed to `manfqmasfqppukpobpld` (residents/incidents/alerts/admissions list views, all `security_invoker=true`)
+  - 4 list pages (T2) + 4 detail pages (T3) under `/admin/v2/{residents,incidents,admissions,executive/alerts}` with one-segment-deep prefix rewrite (sub-routes stay V1)
+  - Deferred: side-panel drawer (S10), per-entity tabs Clinical/Staffing/Finance/Compliance (S10–S11), activity timeline data (per-module audit log wiring), 7 resident sub-routes
+- [x] S10 — W3+W4 analytics + forms (skeleton; live wiring in S10a/S10.5)
+  - Gate: `test-results/agent-gates/2026-04-25T03-32-05-360Z-UI-V2-S10.json`
+  - 7 T4 analytics pages live: executive/standup, executive/facility/[id], executive/reports, executive/benchmarks, finance, finance/ledger, finance/trial-balance
+  - 3 T5 forms live: residents/new, admissions/new, incidents/new (RHF + Zod; submit posts to `/api/v2/forms/[id]` deferred envelope)
+  - Deferred to S10a/S10.5: per-page time-series + breakdown views, shared export Edge Function (XLSX/PDF), live form persistence (today posts to deferred-envelope endpoint), Care Plan rich-text form
+- [x] S11 — W5 settings (priority shipped); 10 long-tail lists deferred to S11.5
+  - Gate: `test-results/agent-gates/2026-04-25T03-49-08-554Z-UI-V2-S11.json`
+  - Settings shell at `/admin/v2/settings/{thresholds,users,notifications,audit-log}`
+  - **Thresholds editor full CRUD** — PUT `/api/v2/thresholds/[facilityId]` with owner/org_admin role gate; per-metric rows save individually; the edited targets feed back into DataTable callout coloring across W1 dashboards + W2 lists
+  - Audit log viewer reads `alert_audit_log` (deployed S2)
+  - Users settings reads `public.user_profiles` (read-only roster)
+  - Notifications stub points at V1 until V2 surface lands
+  - Deferred to S11.5: 10 long-tail lists (assessments overdue, rounding live/watches/escalations/plans/integrity, documents, tasks, insurance/claims, staff)
+- [x] S12 — Closure record + merge (safe variant)
+  - Gate: `test-results/agent-gates/2026-04-25T03-54-27-071Z-UI-V2-S12.json`
+  - Closure record: `docs/specs/UI-V2-CLOSURE-RECORD.md`
+  - Variant: keep flag in code + V1 alongside V2 + merge via standard merge commit. Flag stays `false` in production until owner staging UAT clears.
+  - Deferred to post-merge follow-up: P2 routes (10), V1 deletion, flag removal, Lighthouse + bundle gates, Loom recordings — all owner-blocked or higher-risk than the merge itself.

@@ -85,6 +85,50 @@ Record:
 
 `demo:ops-status` captures the current alignment snapshot in JSON.
 
+### UI-V2 W0 deploy — 2026-04-25
+
+| Field | Value |
+|---|---|
+| Project ref | `manfqmasfqppukpobpld` |
+| CLI version | `supabase` v2.84.2 |
+| Branch | `ui-v2` (head `99ff273`) |
+| Migrations applied | `207_user_dashboard_preferences`, `208_facility_metric_targets`, `209_alert_audit_log`, `210_rollback_ui_v2` |
+| Pre-state remote | `001`–`206` aligned |
+| Post-state remote | `001`–`210` aligned with local |
+| Apply method | `supabase db push --linked --include-all --yes` |
+| Anomalies | NOTICE on 208: trigger `tr_facility_metric_targets_set_updated_at` did not exist (DROP IF EXISTS no-op) — expected on first apply |
+| Verification | RLS enabled on all 3 tables; policy counts: `user_dashboard_preferences`=4 (CRUD), `facility_metric_targets`=3 (no DELETE — soft-delete via `deleted_at`), `alert_audit_log`=2 (immutable — INSERT+SELECT only). Zero rows post-apply. |
+| Advisor | MCP `get_advisors` blocked (integration scoped to a different account); manual SQL advisor-equivalent: every new table has `relrowsecurity=true` AND `policy_count > 0` |
+| Outstanding | A5 (Pro/BAA/PITR) not yet confirmed by owner — these tables hold no PHI, but any PHI-bearing migration in later modules will require A5 sign-off before push. |
+
+### UI-V2 S8.5 view deploy — 2026-04-25
+
+| Field | Value |
+|---|---|
+| Project ref | `manfqmasfqppukpobpld` |
+| Branch | `ui-v2` |
+| Migrations applied | `211_v2_facility_rollup_view` |
+| Pre-state remote | `001`–`210` aligned |
+| Post-state remote | `001`–`211` aligned with local |
+| Apply method | `supabase db push --linked --include-all --yes` |
+| Verification | `SELECT * FROM haven.vw_v2_facility_rollup` returns 6 rows; `open_incidents_count` populated from `public.incidents` (Oakridge=7, others=0); `risk_score` populated for 5 of 6 facilities from `public.risk_score_snapshots`; `occupancy_pct` / `survey_readiness_pct` NULL where source aggregates not yet wired (occupancy column unpopulated; summary_json missing the field) |
+| Security model | View defined `WITH (security_invoker = true)` so RLS cascades from underlying tables — view does not re-filter |
+| Outstanding | Source aggregates for `occupancy_pct` (facilities table column unpopulated) + `survey_readiness_pct` (Module 24 owns `summary_json` shape) + `labor_cost_pct` (payroll/finance module). UI renders NULL as "—". |
+
+### UI-V2 S9 list views deploy — 2026-04-25
+
+| Field | Value |
+|---|---|
+| Project ref | `manfqmasfqppukpobpld` |
+| Branch | `ui-v2` |
+| Migrations applied | `212_v2_residents_list_view`, `213_v2_incidents_list_view`, `214_v2_alerts_list_view`, `215_v2_admissions_list_view` |
+| Pre-state remote | `001`–`211` aligned |
+| Post-state remote | `001`–`215` aligned with local |
+| Apply method | `supabase db push --linked --include-all --yes` |
+| Verification | `vw_v2_residents_list`=32 rows, `vw_v2_incidents_list`=12, `vw_v2_alerts_list`=20, `vw_v2_admissions_list`=1. All four views joined with `public.facilities` for `facility_name`. |
+| Security model | All four views `WITH (security_invoker = true)`; RLS cascades from underlying tables (residents/incidents/exec_alerts/admission_cases + facilities). Views grant SELECT to `authenticated`, `service_role`. |
+| Outstanding | Per-entity activity timeline + module-specific tab data (Clinical/Staffing/Finance/Compliance) tracked as S10/S11 work. |
+
 ---
 
 ## 3. Edge Function deploy and list verification

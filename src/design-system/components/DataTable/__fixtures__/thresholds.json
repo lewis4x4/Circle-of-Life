@@ -1,0 +1,6 @@
+{
+  "occupancy_pct": { "target": 90, "direction": "up", "warningBandPct": 10 },
+  "labor_cost_pct": { "target": 35, "direction": "down", "warningBandPct": 10 },
+  "open_incidents": { "target": 0, "direction": "down", "warningBandPct": 200 },
+  "survey_readiness_pct": { "target": 85, "direction": "up", "warningBandPct": 10 }
+}

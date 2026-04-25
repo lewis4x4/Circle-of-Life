@@ -1,0 +1,150 @@
+{
+  "segment": "UI-V2-S8.5",
+  "timestamp": "2026-04-25T02:58:59.538Z",
+  "verdict": "PASS",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "command": "node scripts/check-env-example.mjs",
+      "status": "passed",
+      "duration_ms": 66,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "status": "passed",
+      "duration_ms": 316,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "command": "npm run audit:ci",
+      "status": "passed",
+      "duration_ms": 3132,
+      "stdout": "# npm audit report\n\npostcss  <8.5.10\nSeverity: moderate\nPostCSS has XSS via Unescaped </style> in its CSS Stringify Output - https://github.com/advisories/GHSA-qx2v-qp2m-jg93\nfix available via `npm audit fix --force`\nWill install next@9.3.3, which is a breaking change\nnode_modules/next/node_modules/postcss\n  next  >=9.3.4-canary.0\n  Depends on vulnerable versions of postcss\n  node_modules/next\n    @sentry/nextjs  >=6.3.6\n    Depends on vulnerable versions of next\n    node_modules/@sentry/nextjs\n\nuuid  <14.0.0\nSeverity: moderate\nuuid: Missing buffer bounds check in v3/v5/v6 when buf is provided - https://github.com/advisories/GHSA-w5hq-g745-h8pq\nfix available via `npm audit fix`\nnode_modules/uuid\n  @sentry/webpack-plugin  2.0.0-alpha.1 - 5.1.1\n  Depends on vulnerable versions of uuid\n  node_modules/@sentry/webpack-plugin\n\n5 moderate severity vulnerabilities\n\nTo address issues that do not require attention, run:\n  npm audit fix\n\nTo address all issues (including breaking changes), run:\n  npm audit fix --force\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": false,
+      "command": "npm run secrets:gitleaks",
+      "status": "skipped",
+      "duration_ms": 5285,
+      "stdout": "[gitleaks] SKIP: install gitleaks or start Docker to enable secret scanning\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "command": "npm run lint",
+      "status": "passed",
+      "duration_ms": 24725,
+      "stdout": "",
+      "stderr": "[BABEL] Note: The code generator has deoptimised the styling of /Users/brianlewis/Circle of Life/Circle-of-Life/src/types/database.ts as it exceeds the max of 500KB.\n"
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "command": "npm run migrations:check",
+      "status": "passed",
+      "duration_ms": 284,
+      "stdout": "[migrations:check] PASS: 211 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..211\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": false,
+      "command": "npm run migrations:verify:pg",
+      "status": "passed",
+      "duration_ms": 247,
+      "stdout": "[migrations:verify:pg] SKIP: SKIP_PG_VERIFY=1\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "command": "npm run build",
+      "status": "passed",
+      "duration_ms": 81117,
+      "stdout": "[migrations:check] PASS: 211 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..211\n[check:admin-shell] PASS: all 21 top-level (admin) route prefix(es) are gated\n[check-memory-care] PASS\n▲ Next.js 16.2.3 (Turbopack)\n- Environments: .env.local\n- Experiments (use with caution):\n  · clientTraceMetadata\n  · optimizePackageImports\n\n  Creating an optimized production build ...\n✓ Compiled successfully in 41s\n  Running next.config.js provided runAfterProductionCompile ...\n✓ Completed runAfterProductionCompile in 350ms\n  Running TypeScript ...\n  Finished TypeScript in 29.0s ...\n  Collecting page data using 15 workers ...\n  Generating static pages using 15 workers (0/358) ...\n  Generating static pages using 15 workers (89/358) \r\n  Generating static pages using 15 workers (178/358) \r\n  Generating static pages using 15 workers (268/358) \r\n✓ Generating static pages using 15 workers (358/358) in 2.4s\n  Finalizing page optimization ...\n\nRoute (app)\n┌ ○ /\n├ ○ /_not-found\n├ ƒ /admin\n├ ○ /admin/admissions\n├ ƒ /admin/admissions/[id]\n├ ○ /admin/admissions/blocked\n├ ○ /admin/admissions/move-in-ready\n├ ○ /admin/admissions/new\n├ ○ /admin/admissions/onboarding\n├ ○ /admin/assessments/overdue\n├ ○ /admin/assistant-dashboard\n├ ○ /admin/billing\n├ ○ /admin/billing/ar-aging\n├ ○ /admin/billing/collections\n├ ○ /admin/billing/collections/new\n├ ○ /admin/billing/invoices\n├ ƒ /admin/billing/invoices/[id]\n├ ○ /admin/billing/invoices/generate\n├ ○ /admin/billing/org-ar-aging\n├ ○ /admin/billing/payments/new\n├ ○ /admin/billing/rates\n├ ○ /admin/billing/rates/new\n├ ○ /admin/billing/revenue\n├ ○ /admin/care-plans/reviews-due\n├ ○ /admin/certifications\n├ ○ /admin/certifications/new\n├ ƒ /admin/compliance\n├ ○ /admin/compliance/audit-export\n├ ƒ /admin/compliance/deficiencies/[id]\n├ ○ /admin/compliance/deficiencies/analysis\n├ ○ /admin/compliance/deficiencies/new\n├ ○ /admin/compliance/emergency-preparedness\n├ ○ /admin/compliance/policies\n├ ƒ /admin/compliance/policies/[id]/edit\n├ ○ /admin/compliance/policies/new\n├ ○ /admin/compliance/rules\n├ ƒ /admin/compliance/rules/[id]\n├ ○ /admin/compliance/rules/new\n├ ○ /admin/compliance/scan\n├ ○ /admin/coordinator-dashboard\n├ ○ /admin/dietary\n├ ○ /admin/dietary-dashboard\n├ ○ /admin/dietary/clinical-review\n├ ○ /admin/dietary/new\n├ ○ /admin/discharge\n├ ƒ /admin/discharge/[id]\n├ ○ /admin/discharge/new\n├ ƒ /admin/executive\n├ ○ /admin/executive/alerts\n├ ƒ /admin/executive/benchmarks\n├ ƒ /admin/executive/ceo\n├ ○ /admin/executive/cfo\n├ ○ /admin/executive/coo\n├ ○ /admin/executive/entity\n├ ƒ /admin/executive/entity/[id]\n├ ƒ /admin/executive/facility/[id]\n├ ƒ /admin/executive/league\n├ ○ /admin/executive/nlq\n├ ○ /admin/executive/reports\n├ ○ /admin/executive/scenarios\n├ ○ /admin/executive/settings\n├ ○ /admin/executive/standup\n├ ƒ /admin/executive/standup/[week]\n├ ƒ /admin/executive/standup/[week]/board\n├ ○ /admin/executive/standup/compare\n├ ○ /admin/executive/standup/history\n├ ○ /admin/facilities\n├ ƒ /admin/facilities/[facilityId]\n├ ○ /admin/family-messages\n├ ○ /admin/family-portal\n├ ○ /admin/feedback\n├ ƒ /admin/finance\n├ ○ /admin/finance/budget\n├ ○ /admin/finance/chart-of-accounts\n├ ○ /admin/finance/gl-settings\n├ ○ /admin/finance/journal-entries\n├ ƒ /admin/finance/journal-entries/[id]\n├ ○ /admin/finance/journal-entries/new\n├ ○ /admin/finance/ledger\n├ ƒ /admin/finance/period-close\n├ ƒ /admin/finance/posting-rules\n├ ƒ /admin/finance/trial-balance\n├ ƒ /admin/incidents\n├ ƒ /admin/incidents/[id]\n├ ƒ /admin/incidents/[id]/rca\n├ ○ /admin/incidents/followups\n├ ○ /admin/incidents/new\n├ ○ /admin/incidents/obligations\n├ ○ /admin/incidents/overdue-followups\n├ ○ /admin/incidents/trends\n├ ○ /admin/infection-control\n├ ƒ /admin/infection-control/[id]\n├ ○ /admin/infection-control/new\n├ ƒ /admin/infection-control/outbreaks/[id]\n├ ○ /admin/infection-control/staff-illness\n├ ○ /admin/insurance\n├ ○ /admin/insurance/claims\n├ ƒ /admin/insurance/claims/[id]\n├ ○ /admin/insurance/coi\n├ ○ /admin/insurance/loss-runs\n├ ○ /admin/insurance/policies\n├ ƒ /admin/insurance/policies/[id]\n├ ○ /admin/insurance/policies/new\n├ ○ /admin/insurance/renewal-packages\n├ ƒ /admin/insurance/renewal-packages/[id]\n├ ○ /admin/insurance/renewals\n├ ○ /admin/insurance/workers-comp\n├ ○ /admin/knowledge\n├ ○ /admin/knowledge/admin\n├ ƒ /admin/knowledge/admin/review/[id]\n├ ○ /admin/medications\n├ ○ /admin/medications/controlled\n├ ○ /admin/medications/errors\n├ ○ /admin/medications/errors/new\n├ ○ /admin/medications/verbal-orders\n├ ○ /admin/medications/verbal-orders/new\n├ ○ /admin/nurse-dashboard\n├ ○ /admin/operations\n├ ○ /admin/operations/assets\n├ ○ /admin/operations/calendar\n├ ○ /admin/operations/missed\n├ ○ /admin/operations/month\n├ ○ /admin/operations/overdue\n├ ○ /admin/operations/pager\n├ ○ /admin/operations/quarter\n├ ○ /admin/operations/templates\n├ ○ /admin/operations/vendors\n├ ○ /admin/operations/week\n├ ○ /admin/operations/year\n├ ○ /admin/payroll\n├ ƒ /admin/payroll/[id]\n├ ○ /admin/payroll/new\n├ ○ /admin/quality\n├ ○ /admin/quality/measures/new\n├ ○ /admin/referrals\n├ ƒ /admin/referrals/[id]\n├ ○ /admin/referrals/hl7-inbound\n├ ○ /admin/referrals/hl7-inbound/new\n├ ○ /admin/referrals/in-admissions\n├ ○ /admin/referrals/new\n├ ○ /admin/referrals/sources\n├ ○ /admin/reports\n├ ○ /admin/reports/admin\n├ ○ /admin/reports/benchmarks\n├ ○ /admin/reports/history\n├ ○ /admin/reports/nlq\n├ ○ /admin/reports/packs\n├ ƒ /admin/reports/run/[sourceType]/[id]\n├ ○ /admin/reports/saved\n├ ○ /admin/reports/scheduled\n├ ○ /admin/reports/templates\n├ ƒ /admin/reports/templates/[slug]\n├ ○ /admin/reputation\n├ ○ /admin/reputation/accounts/new\n├ ○ /admin/reputation/integrations\n├ ○ /admin/reputation/replies/new\n├ ƒ /admin/residents\n├ ƒ /admin/residents/[id]\n├ ƒ /admin/residents/[id]/assessments\n├ ƒ /admin/residents/[id]/assessments/new\n├ ƒ /admin/residents/[id]/billing\n├ ƒ /admin/residents/[id]/care-plan\n├ ƒ /admin/residents/[id]/medications\n├ ƒ /admin/residents/[id]/vitals\n├ ƒ /admin/residents/[id]/vitals/thresholds\n├ ○ /admin/residents/new\n├ ƒ /admin/risk\n├ ƒ /admin/risk/survey-bundle\n├ ○ /admin/rounding\n├ ○ /admin/rounding/escalations\n├ ○ /admin/rounding/insights\n├ ○ /admin/rounding/integrity\n├ ○ /admin/rounding/live\n├ ○ /admin/rounding/plans\n├ ƒ /admin/rounding/plans/[id]\n├ ○ /admin/rounding/plans/new\n├ ○ /admin/rounding/reports\n├ ○ /admin/rounding/safety\n├ ○ /admin/rounding/watches\n├ ƒ /admin/schedules\n├ ƒ /admin/schedules/[id]\n├ ○ /admin/schedules/new\n├ ○ /admin/search\n├ ○ /admin/settings/notifications\n├ ○ /admin/settings/search-tools\n├ ○ /admin/settings/users\n├ ○ /admin/shift-swaps\n├ ƒ /admin/staff\n├ ƒ /admin/staff/[id]\n├ ○ /admin/staff/new\n├ ƒ /admin/staffing\n├ ○ /admin/staffing/new\n├ ○ /admin/time-records\n├ ○ /admin/time-records/new\n├ ○ /admin/training\n├ ○ /admin/training/completions/new\n├ ○ /admin/training/new\n├ ○ /admin/transportation\n├ ○ /admin/transportation/calendar\n├ ○ /admin/transportation/drivers/new\n├ ○ /admin/transportation/inspections/new\n├ ○ /admin/transportation/mileage-approvals\n├ ○ /admin/transportation/settings\n├ ○ /admin/transportation/vehicles/new\n├ ƒ /admin/v2\n├ ƒ /admin/v2/design-preview\n├ ƒ /admin/v2/design-preview/[component]\n├ ƒ /admin/v2/executive\n├ ƒ /admin/v2/quality\n├ ƒ /admin/v2/rounding\n├ ○ /admin/vendors\n├ ƒ /admin/vendors/[id]\n├ ○ /admin/vendors/contracts\n├ ƒ /admin/vendors/contracts/[id]\n├ ○ /admin/vendors/directory\n├ ○ /admin/vendors/invoices\n├ ƒ /admin/vendors/invoices/[id]\n├ ○ /admin/vendors/payments\n├ ○ /admin/vendors/purchase-orders\n├ ƒ /admin/vendors/purchase-orders/[id]\n├ ○ /admin/vendors/purchase-orders/new\n├ ○ /admin/vendors/spend\n├ ƒ /api/admin/facilities\n├ ƒ /api/admin/facilities/[facilityId]\n├ ƒ /api/admin/facilities/[facilityId]/audit-log\n├ ƒ /api/admin/facilities/[facilityId]/building-profile\n├ ƒ /api/admin/facilities/[facilityId]/communication-settings\n├ ƒ /api/admin/facilities/[facilityId]/documents\n├ ƒ /api/admin/facilities/[facilityId]/emergency-contacts\n├ ƒ /api/admin/facilities/[facilityId]/rates\n├ ƒ /api/admin/facilities/[facilityId]/rates/[rateId]\n├ ƒ /api/admin/facilities/[facilityId]/surveys\n├ ƒ /api/admin/facilities/[facilityId]/thresholds\n├ ƒ /api/admin/facilities/[facilityId]/timeline\n├ ƒ /api/admin/facilities/[facilityId]/vendors\n├ ƒ /api/admin/operations/assets\n├ ƒ /api/admin/operations/maintenance-templates\n├ ƒ /api/admin/operations/staffing-adequacy\n├ ƒ /api/admin/operations/tasks\n├ ƒ /api/admin/operations/tasks/[id]/complete\n├ ƒ /api/admin/operations/tasks/[id]/defer\n├ ƒ /api/admin/operations/tasks/[id]/escalate\n├ ƒ /api/admin/operations/tasks/[id]/reinstate\n├ ƒ /api/admin/operations/tasks/[id]/start\n├ ƒ /api/admin/operations/tasks/bulk-complete\n├ ƒ /api/admin/operations/templates\n├ ƒ /api/admin/operations/templates/[id]\n├ ƒ /api/admin/operations/vendors\n├ ƒ /api/admin/operations/vendors/[id]\n├ ƒ /api/admin/rounding/insights/run\n├ ƒ /api/admin/users\n├ ƒ /api/admin/users/[id]\n├ ƒ /api/admin/users/[id]/audit\n├ ƒ /api/admin/users/[id]/facility-access\n├ ƒ /api/admin/users/[id]/reactivate\n├ ƒ /api/admin/workflows/admission-cases\n├ ƒ /api/admin/workflows/admission-cases/[id]\n├ ƒ /api/admin/workflows/admission-cases/[id]/form-1823\n├ ƒ /api/admin/workflows/collection-activities\n├ ƒ /api/care-plans/[id]/approve\n├ ƒ /api/controlled-substance/verify-co-sign\n├ ƒ /api/cron/reputation/google-reviews\n├ ƒ /api/executive/league/pdf\n├ ƒ /api/executive/standup/[week]/pdf\n├ ƒ /api/incidents/followup-assignees\n├ ƒ /api/infection-control/evaluate-outbreak\n├ ƒ /api/infection-control/evaluate-vitals\n├ ƒ /api/insurance/renewal-narrative\n├ ƒ /api/knowledge/document-audit\n├ ƒ /api/knowledge/obsidian-draft\n├ ƒ /api/med-tech/incidents\n├ ƒ /api/pilot-feedback\n├ ƒ /api/reputation/integrations/google\n├ ƒ /api/reputation/integrations/status\n├ ƒ /api/reputation/oauth/google\n├ ƒ /api/reputation/oauth/google/callback\n├ ƒ /api/reputation/replies/[id]/post-google\n├ ƒ /api/reputation/replies/[id]/post-yelp\n├ ƒ /api/reputation/sync/google\n├ ƒ /api/reputation/sync/yelp\n├ ƒ /api/risk/survey-bundle/[facilityId]/pdf\n├ ƒ /api/rounding/escalations/[id]\n├ ƒ /api/rounding/generate-tasks\n├ ƒ /api/rounding/integrity-flags/[id]\n├ ƒ /api/rounding/integrity-flags/history\n├ ƒ /api/rounding/plans\n├ ƒ /api/rounding/reports/completion\n├ ƒ /api/rounding/tasks\n├ ƒ /api/rounding/tasks/[id]/complete\n├ ƒ /api/rounding/tasks/[id]/excuse\n├ ƒ /api/rounding/tasks/[id]/reassign\n├ ƒ /api/rounding/watch-instances/[id]\n├ ƒ /api/v2/alerts/[id]/ack\n├ ƒ /api/v2/dashboards/[id]\n├ ƒ /api/v2/exports\n├ ƒ /api/v2/preferences\n├ ƒ /api/v2/thresholds/[facilityId]\n├ ○ /assessments/overdue\n├ ○ /billing\n├ ○ /billing/ar-aging\n├ ○ /billing/collections\n├ ○ /billing/collections/new\n├ ○ /billing/invoices\n├ ƒ /billing/invoices/[id]\n├ ○ /billing/invoices/generate\n├ ○ /billing/org-ar-aging\n├ ○ /billing/payments/new\n├ ○ /billing/rates\n├ ○ /billing/rates/new\n├ ○ /billing/revenue\n├ ○ /caregiver\n├ ○ /caregiver/clock\n├ ○ /caregiver/controlled-count\n├ ○ /caregiver/followups\n├ ○ /caregiver/handoff\n├ ○ /caregiver/housekeeper\n├ ○ /caregiver/incident-draft\n├ ○ /caregiver/me\n├ ○ /caregiver/meds\n├ ○ /caregiver/policies\n├ ƒ /caregiver/policies/[id]\n├ ○ /caregiver/prn-followup\n├ ƒ /caregiver/resident/[id]\n├ ƒ /caregiver/resident/[id]/adl\n├ ƒ /caregiver/resident/[id]/behavior\n├ ƒ /caregiver/resident/[id]/condition-change\n├ ƒ /caregiver/resident/[id]/log\n├ ○ /caregiver/rounds\n├ ƒ /caregiver/rounds/[residentId]\n├ ○ /caregiver/schedules\n├ ○ /caregiver/tasks\n├ ○ /certifications\n├ ○ /certifications/new\n├ ○ /clock\n├ ○ /dietary\n├ ƒ /executive\n├ ○ /executive/alerts\n├ ƒ /executive/benchmarks\n├ ƒ /executive/ceo\n├ ○ /executive/cfo\n├ ○ /executive/coo\n├ ƒ /executive/facility/[id]\n├ ƒ /executive/league\n├ ○ /executive/nlq\n├ ○ /executive/reports\n├ ○ /executive/scenarios\n├ ○ /executive/settings\n├ ○ /executive/standup\n├ ƒ /executive/standup/[week]\n├ ƒ /executive/standup/[week]/board\n├ ○ /executive/standup/compare\n├ ○ /executive/standup/history\n├ ○ /family\n├ ○ /family/billing\n├ ○ /family/calendar\n├ ○ /family/care-plan\n├ ○ /family/invoices\n├ ○ /family/messages\n├ ○ /family/payments\n├ ƒ /finance\n├ ○ /finance/budget\n├ ○ /finance/chart-of-accounts\n├ ƒ /finance/close\n├ ƒ /finance/forecast\n├ ○ /finance/gl-settings\n├ ○ /finance/journal-entries\n├ ƒ /finance/journal-entries/[id]\n├ ○ /finance/journal-entries/new\n├ ○ /finance/ledger\n├ ƒ /finance/period-close\n├ ƒ /finance/posting-rules\n├ ƒ /finance/trial-balance\n├ ƒ /finance/trust\n├ ○ /followups\n├ ○ /handoff\n├ ○ /icon.svg\n├ ○ /incident-draft\n├ ƒ /incidents\n├ ƒ /incidents/[id]\n├ ƒ /incidents/[id]/rca\n├ ○ /incidents/followups\n├ ○ /incidents/new\n├ ○ /incidents/obligations\n├ ○ /incidents/overdue-followups\n├ ○ /incidents/trends\n├ ○ /insurance\n├ ○ /insurance/claims\n├ ƒ /insurance/claims/[id]\n├ ○ /insurance/coi\n├ ○ /insurance/loss-runs\n├ ○ /insurance/policies\n├ ƒ /insurance/policies/[id]\n├ ○ /insurance/policies/new\n├ ○ /insurance/renewal-packages\n├ ƒ /insurance/renewal-packages/[id]\n├ ○ /insurance/renewals\n├ ○ /insurance/workers-comp\n├ ○ /login\n├ ○ /manifest.webmanifest\n├ ○ /me\n├ ○ /med-tech\n├ ○ /med-tech/controlled-count\n├ ○ /meds\n├ ○ /onboarding\n├ ○ /onboarding/departments\n├ ○ /onboarding/questions\n├ ○ /payroll\n├ ƒ /payroll/[id]\n├ ○ /payroll/new\n├ ○ /prn-followup\n├ ○ /reports\n├ ○ /reports/admin\n├ ○ /reports/benchmarks\n├ ○ /reports/history\n├ ○ /reports/nlq\n├ ○ /reports/packs\n├ ƒ /reports/run/[sourceType]/[id]\n├ ○ /reports/saved\n├ ○ /reports/scheduled\n├ ○ /reports/templates\n├ ƒ /reports/templates/[slug]\n├ ○ /reputation\n├ ○ /reputation/accounts/new\n├ ○ /reputation/integrations\n├ ○ /reputation/replies/new\n├ ƒ /resident/[id]\n├ ƒ /resident/[id]/adl\n├ ƒ /resident/[id]/behavior\n├ ƒ /resident/[id]/condition-change\n├ ƒ /resident/[id]/log\n├ ƒ /residents\n├ ƒ /residents/[id]\n├ ƒ /residents/[id]/assessments\n├ ƒ /residents/[id]/assessments/new\n├ ƒ /residents/[id]/billing\n├ ƒ /residents/[id]/care-plan\n├ ƒ /residents/[id]/medications\n├ ○ /residents/new\n├ ƒ /risk\n├ ƒ /risk/survey-bundle\n├ ○ /robots.txt\n├ ƒ /schedules\n├ ƒ /schedules/[id]\n├ ○ /schedules/new\n├ ○ /search\n├ ƒ /staff\n├ ƒ /staff/[id]\n├ ○ /staff/new\n├ ƒ /staffing\n├ ○ /staffing/new\n├ ○ /tasks\n├ ○ /time-records\n├ ○ /time-records/new\n├ ○ /training\n├ ○ /training/completions/new\n├ ○ /training/inservice/new\n├ ○ /training/new\n├ ○ /transportation\n├ ○ /transportation/calendar\n├ ○ /transportation/drivers/new\n├ ○ /transportation/inspections/new\n├ ○ /transportation/mileage-approvals\n├ ƒ /transportation/requests/[id]\n├ ○ /transportation/requests/new\n├ ○ /transportation/settings\n├ ○ /transportation/vehicles/new\n├ ○ /vendors\n├ ƒ /vendors/[id]\n├ ○ /vendors/contracts\n├ ƒ /vendors/contracts/[id]\n├ ○ /vendors/directory\n├ ○ /vendors/invoices\n├ ƒ /vendors/invoices/[id]\n├ ○ /vendors/payments\n├ ○ /vendors/purchase-orders\n├ ƒ /vendors/purchase-orders/[id]\n├ ○ /vendors/purchase-orders/new\n└ ○ /vendors/spend\n\n\nƒ Proxy (Middleware)\n\n○  (Static)   prerendered as static content\nƒ  (Dynamic)  server-rendered on demand\n\n",
+      "stderr": "(node:40325) Warning: `--localstorage-file` was provided without a valid path\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:40321) Warning: `--localstorage-file` was provided without a valid path\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:40316) Warning: `--localstorage-file` was provided without a valid path\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:40320) Warning: `--localstorage-file` was provided without a valid path\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:40323) Warning: `--localstorage-file` was provided without a valid path\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:40327) Warning: `--localstorage-file` was provided without a valid path\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:40326) Warning: `--localstorage-file` was provided without a valid path\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:40319) Warning: `--localstorage-file` was provided without a valid path\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:40318) Warning: `--localstorage-file` was provided without a valid path\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:40322) Warning: `--localstorage-file` was provided without a valid path\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:40317) Warning: `--localstorage-file` was provided without a valid path\n(Use `node --trace-warnings ...` to show where the warning was created)\nThe width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.\nThe width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.\nThe width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.\nThe width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.\n(node:40324) Warning: `--localstorage-file` was provided without a valid path\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": true,
+      "command": "npm run stress:test",
+      "status": "passed",
+      "duration_ms": 488,
+      "stdout": "PASS\tstress: suite loaded\nPASS\tstress: Number.parseInt rejects garbage\nPASS\tstress: parallel microtasks both ran\nADVISORY\tstress: add ALF/home-care workflow simulations when resident and census models exist\n",
+      "stderr": ""
+    },
+    {
+      "id": "cdo.design-review",
+      "required": true,
+      "command": "npm run design:review",
+      "status": "passed",
+      "duration_ms": 5927,
+      "stdout": "[design:review] PASS: 4 screenshot(s) -> /Users/brianlewis/Circle of Life/Circle-of-Life/test-results/design-review/report.json\n",
+      "stderr": "",
+      "artifacts": [
+        "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/design-review/report.json"
+      ]
+    },
+    {
+      "id": "cdo.a11y-axe",
+      "required": true,
+      "command": "npm run a11y:routes",
+      "status": "passed",
+      "duration_ms": 1900,
+      "stdout": "[a11y:routes] PASS (1 route(s))\n",
+      "stderr": ""
+    },
+    {
+      "id": "smoke.sentry",
+      "required": false,
+      "command": "npm run smoke:sentry",
+      "status": "skipped",
+      "duration_ms": 274,
+      "stdout": "[sentry-smoke] SKIP: missing SENTRY_ORG / SENTRY_PROJECT / SENTRY_AUTH_TOKEN\n",
+      "stderr": ""
+    },
+    {
+      "id": "evidence.ui-v2-issues",
+      "required": true,
+      "command": "node scripts/agent-gates/ui-v2-issue-acceptance.mjs",
+      "status": "passed",
+      "duration_ms": 941,
+      "stdout": "[ui-v2-issues] PASS: 0 UI-V2 issue(s) scanned; 0 closed issues with unchecked boxes\n",
+      "stderr": ""
+    }
+  ],
+  "summary": {
+    "passed": 12,
+    "failed": 0,
+    "skipped": 3,
+    "blocking_failures": []
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/agent-gates/2026-04-25T02-58-59-538Z-UI-V2-S8.5.json"
+  ]
+}
