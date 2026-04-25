@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -22,6 +23,7 @@ export function NewAdmissionForm({
   facilities: FacilityOption[];
   residents: ResidentOption[];
 }) {
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -52,12 +54,16 @@ export function NewAdmissionForm({
         headers: { "content-type": "application/json" },
         body: JSON.stringify(values),
       });
-      if (!response.ok) throw new Error(`Submit failed (${response.status})`);
-      const json = (await response.json()) as { deferred?: boolean; message?: string };
-      setBanner({
-        tone: json.deferred ? "info" : "success",
-        message: json.message ?? "Submitted.",
-      });
+      const json = (await response.json().catch(() => ({}))) as {
+        ok?: boolean;
+        redirectTo?: string;
+        error?: string;
+      };
+      if (!response.ok || !json.ok) {
+        throw new Error(json.error ?? `Submit failed (${response.status})`);
+      }
+      setBanner({ tone: "success", message: "Admission case saved. Redirecting…" });
+      if (json.redirectTo) router.push(json.redirectTo);
     } catch (err) {
       setBanner({
         tone: "danger",

@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -15,6 +16,7 @@ import { V2FormShell } from "./V2FormShell";
 export type FacilityOption = { id: string; label: string };
 
 export function NewResidentForm({ facilities }: { facilities: FacilityOption[] }) {
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -47,13 +49,22 @@ export function NewResidentForm({ facilities }: { facilities: FacilityOption[] }
         headers: { "content-type": "application/json" },
         body: JSON.stringify(values),
       });
-      if (!response.ok) throw new Error(`Submit failed (${response.status})`);
-      const json = (await response.json()) as { deferred?: boolean; message?: string };
+      const json = (await response.json().catch(() => ({}))) as {
+        ok?: boolean;
+        redirectTo?: string;
+        error?: string;
+        detail?: string;
+      };
+      if (!response.ok || !json.ok) {
+        throw new Error(json.error ?? `Submit failed (${response.status})`);
+      }
       setBanner({
-        tone: json.deferred ? "info" : "success",
-        message:
-          json.message ?? "Submitted. Detail page will redirect once V1 wire-up lands.",
+        tone: "success",
+        message: "Resident saved. Redirecting…",
       });
+      if (json.redirectTo) {
+        router.push(json.redirectTo);
+      }
     } catch (err) {
       setBanner({
         tone: "danger",

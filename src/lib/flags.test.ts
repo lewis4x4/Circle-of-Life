@@ -8,10 +8,13 @@ import {
 } from "./flags";
 
 describe("UI-V2 flags", () => {
-  it("defaults off unless NEXT_PUBLIC_UI_V2 is true", () => {
-    expect(uiV2({})).toBe(false);
-    expect(uiV2({ NEXT_PUBLIC_UI_V2: "false" })).toBe(false);
+  it("defaults ON; only `NEXT_PUBLIC_UI_V2=false` flips to V1 (kill-switch)", () => {
+    // After S12 production cutover, V2 is the canonical shell. The flag is
+    // retained as a kill-switch only — the only env value that reverts to V1.
+    expect(uiV2({})).toBe(true);
     expect(uiV2({ NEXT_PUBLIC_UI_V2: "true" })).toBe(true);
+    expect(uiV2({ NEXT_PUBLIC_UI_V2: "anything-else" })).toBe(true);
+    expect(uiV2({ NEXT_PUBLIC_UI_V2: "false" })).toBe(false);
   });
 
   it("normalizes public admin paths to internal route keys", () => {

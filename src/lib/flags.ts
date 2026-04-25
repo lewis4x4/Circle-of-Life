@@ -46,8 +46,15 @@ export const UI_V2_IMPLEMENTED_PREFIXES = new Set<string>([
   "/executive/facility", // /executive/facility/[id]
 ]);
 
+/**
+ * UI-V2 is the canonical admin shell. The flag is retained as an explicit
+ * KILL-SWITCH only: setting `NEXT_PUBLIC_UI_V2=false` reverts to V1 (V1 page
+ * files still exist on disk; middleware stops rewriting). Any other value —
+ * including absent — keeps V2 on. Defaults to TRUE so production renders V2
+ * without requiring an env-var flip.
+ */
 export function uiV2(env: Record<string, string | undefined> = process.env): boolean {
-  return env.NEXT_PUBLIC_UI_V2 === "true";
+  return env.NEXT_PUBLIC_UI_V2 !== "false";
 }
 
 export function normalizeAdminRoute(pathname: string): string | null {
