@@ -12,7 +12,8 @@
   - Gate: `test-results/agent-gates/2026-04-24T18-56-02-787Z-UI-V2-S4.json`
 - [x] S5 — Primitives C (alerts + AI)
   - Gate: `test-results/agent-gates/2026-04-24T19-10-59-934Z-UI-V2-S5.json`
-- [ ] S6 — DataTable
+- [x] S6 — DataTable
+  - Gate: `test-results/agent-gates/2026-04-25T00-58-23-893Z-UI-V2-S6.json`
 - [ ] S7 — Templates T1–T8 + W0 closeout
 - [ ] S8 — W1 P0 dashboards
 - [ ] S9 — W2 P0 list+detail

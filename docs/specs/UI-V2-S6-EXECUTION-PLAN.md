@@ -77,3 +77,11 @@ SKIP_PG_VERIFY=1 npm run segment:gates -- --segment "UI-V2-S6" --ui
 - SheetJS CE is MIT; do not import SheetJS Pro (paid).
 - TanStack Table v8 is the only supported version; v7 API differs significantly.
 - Preferences debounce must persist on blur/unmount too, otherwise quick nav-away loses the last edit.
+
+## S6 implementation deviations
+
+- **Column reorder via up/down buttons, not drag-and-drop.** `@dnd-kit/core` is not added in this slice; Customize dialog moves columns with arrow buttons. Persistence + visibility behavior matches the spec; only the gesture differs. Track DnD upgrade as a follow-up.
+- **XLSX / PDF export return 501.** `/api/v2/exports` ships full CSV; XLSX (SheetJS) and PDF (`@sparticuz/chromium`) return 501 with a body pointing back to CSV. Acceptance gate "Export CSV for 50 rows" is met by the implemented path. Track XLSX/PDF as a follow-up so the bundle-size budget can be evaluated separately from S6.
+- **No TanStack Query install.** `useDashboardPreferences` uses a self-contained debounced fetcher (500ms; flushes on unmount). Equivalent to the contract in §7.4 without bringing in a new caching layer; can be migrated to TanStack Query when it lands repo-wide.
+- **`alert_audit_log` / `user_dashboard_preferences` / `facility_metric_targets` typed via narrow casts.** Generated `Database` types in `src/types/database.ts` predate migrations 207–209 and aren't regenerated in this slice. Route handlers use `as never`/`as unknown as` casts at the table boundary, with strict response shapes inside. Type regen is tracked separately.
+- **`react-hooks/incompatible-library`** raised by ESLint on `useReactTable` (TanStack Table returns non-memoizable functions under the React 19 compiler). Suppressed at the call site with an explanatory comment.

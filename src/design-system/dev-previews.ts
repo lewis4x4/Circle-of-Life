@@ -3,6 +3,7 @@ import type { ComponentType } from "react";
 import { ActionQueuePreview } from "./components/ActionQueue/ActionQueue.preview";
 import { AuditFooterPreview } from "./components/AuditFooter/AuditFooter.preview";
 import { CopilotButtonPreview } from "./components/CopilotButton/CopilotButton.preview";
+import { DataTablePreview } from "./components/DataTable/DataTable.preview";
 import { FilterBarPreview } from "./components/FilterBar/FilterBar.preview";
 import { HealthDotPreview } from "./components/HealthDot/HealthDot.preview";
 import { KPITilePreview } from "./components/KPITile/KPITile.preview";
@@ -113,6 +114,13 @@ export const UI_V2_PREVIEW_REGISTRY: Record<string, DevPreviewEntry> = {
     description:
       "AI entry point; opens CopilotDrawer. Uncited suggestions are filtered (cite-backed contract).",
     Preview: CopilotButtonPreview,
+  },
+  "data-table": {
+    code: "P10",
+    name: "DataTable",
+    description:
+      "Dense table: row status, threshold-colored numerics, virtualized large datasets, Customize + Export, per-user column persistence.",
+    Preview: DataTablePreview,
   },
   "audit-footer": {
     code: "P13",

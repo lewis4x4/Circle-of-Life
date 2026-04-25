@@ -1,0 +1,7 @@
+[
+  { "id": "oakridge", "name": "Oakridge ALF", "occupancyPct": 92, "laborCostPct": 32, "openIncidents": 1, "surveyReadinessPct": 88 },
+  { "id": "homewood", "name": "Homewood Lodge", "occupancyPct": 70, "laborCostPct": 41, "openIncidents": 4, "surveyReadinessPct": 62 },
+  { "id": "plantation", "name": "Plantation", "occupancyPct": 99, "laborCostPct": 28, "openIncidents": 0, "surveyReadinessPct": 95 },
+  { "id": "rising-oaks", "name": "Rising Oaks", "occupancyPct": 86, "laborCostPct": 36, "openIncidents": 2, "surveyReadinessPct": 80 },
+  { "id": "grande-cypress", "name": "Grande Cypress", "occupancyPct": 64, "laborCostPct": 47, "openIncidents": 6, "surveyReadinessPct": 51 }
+]
