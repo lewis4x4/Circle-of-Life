@@ -85,6 +85,22 @@ Record:
 
 `demo:ops-status` captures the current alignment snapshot in JSON.
 
+### UI-V2 W0 deploy — 2026-04-25
+
+| Field | Value |
+|---|---|
+| Project ref | `manfqmasfqppukpobpld` |
+| CLI version | `supabase` v2.84.2 |
+| Branch | `ui-v2` (head `99ff273`) |
+| Migrations applied | `207_user_dashboard_preferences`, `208_facility_metric_targets`, `209_alert_audit_log`, `210_rollback_ui_v2` |
+| Pre-state remote | `001`–`206` aligned |
+| Post-state remote | `001`–`210` aligned with local |
+| Apply method | `supabase db push --linked --include-all --yes` |
+| Anomalies | NOTICE on 208: trigger `tr_facility_metric_targets_set_updated_at` did not exist (DROP IF EXISTS no-op) — expected on first apply |
+| Verification | RLS enabled on all 3 tables; policy counts: `user_dashboard_preferences`=4 (CRUD), `facility_metric_targets`=3 (no DELETE — soft-delete via `deleted_at`), `alert_audit_log`=2 (immutable — INSERT+SELECT only). Zero rows post-apply. |
+| Advisor | MCP `get_advisors` blocked (integration scoped to a different account); manual SQL advisor-equivalent: every new table has `relrowsecurity=true` AND `policy_count > 0` |
+| Outstanding | A5 (Pro/BAA/PITR) not yet confirmed by owner — these tables hold no PHI, but any PHI-bearing migration in later modules will require A5 sign-off before push. |
+
 ---
 
 ## 3. Edge Function deploy and list verification
