@@ -129,4 +129,53 @@ describe("UI-V2 flags", () => {
       }),
     ).toBeNull();
   });
+
+  it("S10 W3 analytics + W4 finance routes are registered", () => {
+    expect(UI_V2_IMPLEMENTED_ROUTES.has("/executive/standup")).toBe(true);
+    expect(UI_V2_IMPLEMENTED_ROUTES.has("/executive/reports")).toBe(true);
+    expect(UI_V2_IMPLEMENTED_ROUTES.has("/executive/benchmarks")).toBe(true);
+    expect(UI_V2_IMPLEMENTED_ROUTES.has("/finance")).toBe(true);
+    expect(UI_V2_IMPLEMENTED_ROUTES.has("/finance/ledger")).toBe(true);
+    expect(UI_V2_IMPLEMENTED_ROUTES.has("/finance/trial-balance")).toBe(true);
+    expect(UI_V2_IMPLEMENTED_PREFIXES.has("/executive/facility")).toBe(true);
+  });
+
+  it("rewrites every S10 W3 analytics + W4 finance route", () => {
+    expect(resolveUiV2AdminRewritePath("/admin/executive/standup", { enabled: true })).toBe(
+      "/admin/v2/executive/standup",
+    );
+    expect(resolveUiV2AdminRewritePath("/admin/executive/reports", { enabled: true })).toBe(
+      "/admin/v2/executive/reports",
+    );
+    expect(
+      resolveUiV2AdminRewritePath("/admin/executive/benchmarks", { enabled: true }),
+    ).toBe("/admin/v2/executive/benchmarks");
+    expect(
+      resolveUiV2AdminRewritePath("/admin/executive/facility/abc-123", { enabled: true }),
+    ).toBe("/admin/v2/executive/facility/abc-123");
+    expect(resolveUiV2AdminRewritePath("/admin/finance", { enabled: true })).toBe(
+      "/admin/v2/finance",
+    );
+    expect(resolveUiV2AdminRewritePath("/admin/finance/ledger", { enabled: true })).toBe(
+      "/admin/v2/finance/ledger",
+    );
+    expect(
+      resolveUiV2AdminRewritePath("/admin/finance/trial-balance", { enabled: true }),
+    ).toBe("/admin/v2/finance/trial-balance");
+  });
+
+  it("S10 form routes are covered by S9 list prefixes (one-deep rewrite)", () => {
+    // /admin/residents/new gets rewritten via the /residents prefix because
+    // it's one segment deep — the V2 page at residents/new/page.tsx wins over
+    // [id]/page.tsx via Next routing precedence (static beats dynamic).
+    expect(resolveUiV2AdminRewritePath("/admin/residents/new", { enabled: true })).toBe(
+      "/admin/v2/residents/new",
+    );
+    expect(resolveUiV2AdminRewritePath("/admin/incidents/new", { enabled: true })).toBe(
+      "/admin/v2/incidents/new",
+    );
+    expect(resolveUiV2AdminRewritePath("/admin/admissions/new", { enabled: true })).toBe(
+      "/admin/v2/admissions/new",
+    );
+  });
 });

@@ -108,3 +108,15 @@ npm run segment:gates -- --segment "UI-V2-S10" --ui
 - The Care Plan form is genuinely complex (rich text, section templates, approval workflow). Consider breaking it into its own sub-slice if it doesn't fit — document as `UI-V2-S10a` closeout record.
 - Finance routes in V1 are called `/admin/finance/ledger`, `/trial-balance`, `/period-close` — not labor / revenue. The "labor analytics" and "revenue" dashboards from the spec page inventory are logical dashboards composed over those tables, not existing routes. Create new V2 routes under `/admin/v2/finance/labor` + `/admin/v2/finance/revenue` and leave V1 ledger/trial-balance alone.
 - Export PDF for a 100-row table is fine at synchronous. For 10k rows, stream page-by-page or chunk via multipart response. Test at realistic sizes.
+
+## S10 implementation deviations
+
+S10 is a 6 eng-day plan. Tonight's commit ships a coherent **skeleton** for the 11 pages and the form-submission contract; the live aggregate views, the shared export Edge Function, and the Care Plan rich-text form are all sequenced as named follow-ups so each can land with proper review.
+
+- **7 T4 analytics pages share a single fixture-backed skeleton client.** `W3AnalyticsClient` reads from `haven.vw_v2_facility_rollup` (already deployed in S8.5) for the breakdown table and computes a 4-tile KPI strip from those rows. Charts render placeholder slots — `S10.5` adds per-page time-series views (`vw_v2_<seg>_*`) + Recharts wiring. Skeletons are live so visual fidelity, scope, and table customize/export work today.
+- **Care Plan form deferred to S10a.** Rich text + section templates + approval workflow is its own slice per the spec's own gotcha. S10 ships the three simpler forms (resident, admission, incident); Care Plan stays on V1 until S10a.
+- **Form submit endpoint is intentionally deferred.** `POST /api/v2/forms/[id]` validates the form id and the caller's auth, then returns a `202 deferred` envelope without writing. The V1 forms at `/admin/<seg>/new` remain the canonical write path. S10a will wire each V2 form to the existing V1 create endpoint (or a new `/api/v2/<seg>` endpoint where the V1 contract is too coupled to V1 UI assumptions).
+- **Shared export Edge Function deferred to S10.5.** `supabase/functions/v2-export/index.ts` calls for SheetJS + jsPDF + autotable bundled into Deno — meaningful infrastructure work. Today the analytics skeleton's `Export` toolbar copy points users at the DataTable's CSV export (already shipped in S6) and notes XLSX/PDF land with the Edge Function in S10.5.
+- **Per-page Supabase views (7) deferred to S10.5.** Authoring 7 new aggregate views needs locked KPI semantics + product input on which charts each page surfaces. Skeletons today let UAT validate layout + nav before view authoring locks downstream consumers.
+- **Playwright spec deferred** (no `@playwright/test` runner in repo, same as prior slices).
+- **Loom + screenshot diffs + GitHub `ui-v2` issue mirror deferred** — owner actions tied to the staging branch deploy.

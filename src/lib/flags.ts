@@ -16,6 +16,13 @@ export const UI_V2_IMPLEMENTED_ROUTES = new Set<string>([
   "/executive", // /admin/executive
   "/quality", // /admin/quality
   "/rounding", // /admin/rounding
+  // S10 (W3 analytics + W4 finance)
+  "/executive/standup", // /admin/executive/standup
+  "/executive/reports", // /admin/executive/reports
+  "/executive/benchmarks", // /admin/executive/benchmarks
+  "/finance", // /admin/finance hub
+  "/finance/ledger", // /admin/finance/ledger (labor analytics proxy)
+  "/finance/trial-balance", // /admin/finance/trial-balance (revenue proxy)
 ]);
 
 /**
@@ -26,10 +33,12 @@ export const UI_V2_IMPLEMENTED_ROUTES = new Set<string>([
  */
 export const UI_V2_IMPLEMENTED_PREFIXES = new Set<string>([
   // S9 (W2 P0 list+detail pairs)
-  "/residents", // list + /residents/[id]
-  "/incidents", // list + /incidents/[id]
-  "/admissions", // list + /admissions/[id]
+  "/residents", // list + /residents/[id] + /residents/new
+  "/incidents", // list + /incidents/[id] + /incidents/new
+  "/admissions", // list + /admissions/[id] + /admissions/new
   "/executive/alerts", // list + /executive/alerts/[id]
+  // S10 — facility deep-dive analytic
+  "/executive/facility", // /executive/facility/[id]
 ]);
 
 export function uiV2(env: Record<string, string | undefined> = process.env): boolean {

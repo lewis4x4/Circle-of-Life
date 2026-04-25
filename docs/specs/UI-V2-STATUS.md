@@ -30,6 +30,10 @@
   - Migrations 212–215 deployed to `manfqmasfqppukpobpld` (residents/incidents/alerts/admissions list views, all `security_invoker=true`)
   - 4 list pages (T2) + 4 detail pages (T3) under `/admin/v2/{residents,incidents,admissions,executive/alerts}` with one-segment-deep prefix rewrite (sub-routes stay V1)
   - Deferred: side-panel drawer (S10), per-entity tabs Clinical/Staffing/Finance/Compliance (S10–S11), activity timeline data (per-module audit log wiring), 7 resident sub-routes
-- [ ] S10 — W3+W4 analytics + forms
+- [x] S10 — W3+W4 analytics + forms (skeleton; live wiring in S10a/S10.5)
+  - Gate: `test-results/agent-gates/2026-04-25T03-32-05-360Z-UI-V2-S10.json`
+  - 7 T4 analytics pages live: executive/standup, executive/facility/[id], executive/reports, executive/benchmarks, finance, finance/ledger, finance/trial-balance
+  - 3 T5 forms live: residents/new, admissions/new, incidents/new (RHF + Zod; submit posts to `/api/v2/forms/[id]` deferred envelope)
+  - Deferred to S10a/S10.5: per-page time-series + breakdown views, shared export Edge Function (XLSX/PDF), live form persistence (today posts to deferred-envelope endpoint), Care Plan rich-text form
 - [ ] S11 — W5 settings + lists
 - [ ] S12 — W6 cleanup + flag removal + merge
