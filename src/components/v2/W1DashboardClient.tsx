@@ -17,12 +17,19 @@ const DASHBOARD_BASE_PATH: Record<V2DashboardId, string> = {
   "rounding-operations": "/admin/rounding",
 };
 
+function fmtPct(value: number | null): string {
+  if (value == null || !Number.isFinite(value)) return "—";
+  // Show 1 decimal when fractional, integer otherwise.
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
 const COLUMNS: DataTableColumn<V2DashboardTableRow>[] = [
   { id: "name", header: "Facility", accessor: (r) => r.name, align: "left", sticky: true },
   {
     id: "occupancyPct",
     header: "Occupancy %",
     accessor: (r) => r.occupancyPct,
+    render: (r) => fmtPct(r.occupancyPct),
     align: "right",
     numeric: true,
     metricKey: "occupancy_pct",
@@ -31,6 +38,7 @@ const COLUMNS: DataTableColumn<V2DashboardTableRow>[] = [
     id: "laborCostPct",
     header: "Labor cost %",
     accessor: (r) => r.laborCostPct,
+    render: (r) => fmtPct(r.laborCostPct),
     align: "right",
     numeric: true,
     metricKey: "labor_cost_pct",
@@ -47,6 +55,7 @@ const COLUMNS: DataTableColumn<V2DashboardTableRow>[] = [
     id: "surveyReadinessPct",
     header: "Survey readiness %",
     accessor: (r) => r.surveyReadinessPct,
+    render: (r) => fmtPct(r.surveyReadinessPct),
     align: "right",
     numeric: true,
     metricKey: "survey_readiness_pct",

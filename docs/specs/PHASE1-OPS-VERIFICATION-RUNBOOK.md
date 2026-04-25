@@ -101,6 +101,20 @@ Record:
 | Advisor | MCP `get_advisors` blocked (integration scoped to a different account); manual SQL advisor-equivalent: every new table has `relrowsecurity=true` AND `policy_count > 0` |
 | Outstanding | A5 (Pro/BAA/PITR) not yet confirmed by owner — these tables hold no PHI, but any PHI-bearing migration in later modules will require A5 sign-off before push. |
 
+### UI-V2 S8.5 view deploy — 2026-04-25
+
+| Field | Value |
+|---|---|
+| Project ref | `manfqmasfqppukpobpld` |
+| Branch | `ui-v2` |
+| Migrations applied | `211_v2_facility_rollup_view` |
+| Pre-state remote | `001`–`210` aligned |
+| Post-state remote | `001`–`211` aligned with local |
+| Apply method | `supabase db push --linked --include-all --yes` |
+| Verification | `SELECT * FROM haven.vw_v2_facility_rollup` returns 6 rows; `open_incidents_count` populated from `public.incidents` (Oakridge=7, others=0); `risk_score` populated for 5 of 6 facilities from `public.risk_score_snapshots`; `occupancy_pct` / `survey_readiness_pct` NULL where source aggregates not yet wired (occupancy column unpopulated; summary_json missing the field) |
+| Security model | View defined `WITH (security_invoker = true)` so RLS cascades from underlying tables — view does not re-filter |
+| Outstanding | Source aggregates for `occupancy_pct` (facilities table column unpopulated) + `survey_readiness_pct` (Module 24 owns `summary_json` shape) + `labor_cost_pct` (payroll/finance module). UI renders NULL as "—". |
+
 ---
 
 ## 3. Edge Function deploy and list verification

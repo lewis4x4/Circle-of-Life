@@ -20,7 +20,11 @@
 - [x] S8 — W1 P0 dashboards (core)
   - Gate: `test-results/agent-gates/2026-04-25T02-00-02-522Z-UI-V2-S8.json`
   - Migrations 207–210 deployed to `manfqmasfqppukpobpld` (see PHASE1-OPS-VERIFICATION-RUNBOOK.md §2)
-  - Deferred follow-ups (tracked separately): Supabase views 211–214, Sentry smoke envs (Netlify), Loom recordings, GitHub `ui-v2` issue mirror, V1↔V2 screenshot diffs
+  - Deferred follow-ups (tracked separately): Sentry smoke envs (Netlify), Loom recordings, GitHub `ui-v2` issue mirror, V1↔V2 screenshot diffs
+- [x] S8.5 — Live data wiring (W1 table rollup)
+  - Gate: `test-results/agent-gates/2026-04-25T02-58-59-538Z-UI-V2-S8.5.json`
+  - Migration 211 deployed: `haven.vw_v2_facility_rollup` (security_invoker; RLS cascades from facilities + incidents + risk_score_snapshots)
+  - Loader reads from view with fixture fallback when view returns 0 rows or errors
 - [ ] S9 — W2 P0 list+detail
 - [ ] S10 — W3+W4 analytics + forms
 - [ ] S11 — W5 settings + lists

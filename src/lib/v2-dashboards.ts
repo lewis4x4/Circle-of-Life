@@ -25,14 +25,21 @@ export const V2_DASHBOARD_IDS: readonly V2DashboardId[] = [
   "rounding-operations",
 ] as const;
 
-/** Row shape that all four W1 dashboard tables share — facility-level rollup. */
+/** Row shape that all four W1 dashboard tables share — facility-level rollup.
+ *
+ * Numeric metrics are nullable: the live view (`haven.vw_v2_facility_rollup`)
+ * returns NULL where source aggregates aren't populated yet (e.g.,
+ * `occupancy_pct`, `labor_cost_pct`, `survey_readiness_pct` while their owning
+ * modules are still in flight). UI renders NULL as "—" so consumers see honest
+ * gaps instead of fake numbers.
+ */
 export type V2DashboardTableRow = {
   id: string;
   name: string;
-  occupancyPct: number;
-  laborCostPct: number;
+  occupancyPct: number | null;
+  laborCostPct: number | null;
   openIncidents: number;
-  surveyReadinessPct: number;
+  surveyReadinessPct: number | null;
 };
 
 export type V2DashboardPayload = {
