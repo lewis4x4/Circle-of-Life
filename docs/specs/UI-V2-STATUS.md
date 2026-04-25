@@ -43,4 +43,8 @@
   - Users settings reads `public.user_profiles` (read-only roster)
   - Notifications stub points at V1 until V2 surface lands
   - Deferred to S11.5: 10 long-tail lists (assessments overdue, rounding live/watches/escalations/plans/integrity, documents, tasks, insurance/claims, staff)
-- [ ] S12 — W6 cleanup + flag removal + merge
+- [x] S12 — Closure record + merge (safe variant)
+  - Gate: `test-results/agent-gates/2026-04-25T03-54-27-071Z-UI-V2-S12.json`
+  - Closure record: `docs/specs/UI-V2-CLOSURE-RECORD.md`
+  - Variant: keep flag in code + V1 alongside V2 + merge via standard merge commit. Flag stays `false` in production until owner staging UAT clears.
+  - Deferred to post-merge follow-up: P2 routes (10), V1 deletion, flag removal, Lighthouse + bundle gates, Loom recordings — all owner-blocked or higher-risk than the merge itself.
