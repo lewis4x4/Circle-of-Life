@@ -15,6 +15,14 @@ import { SeverityChipPreview } from "./components/SeverityChip/SeverityChip.prev
 import { SparklinePreview } from "./components/Sparkline/Sparkline.preview";
 import { TopBarPreview } from "./components/TopBar/TopBar.preview";
 import { TrendDeltaPreview } from "./components/TrendDelta/TrendDelta.preview";
+import { T1DashboardPreview } from "./templates/T1Dashboard.preview";
+import { T2ListPreview } from "./templates/T2List.preview";
+import { T3EntityDetailPreview } from "./templates/T3EntityDetail.preview";
+import { T4AnalyticsPreview } from "./templates/T4Analytics.preview";
+import { T5FormPreview } from "./templates/T5Form.preview";
+import { T6SettingsPreview } from "./templates/T6Settings.preview";
+import { T7DocumentViewerPreview } from "./templates/T7DocumentViewer.preview";
+import { T8InboxThreadedPreview } from "./templates/T8InboxThreaded.preview";
 
 export type DevPreviewEntry = {
   code: string;
@@ -128,6 +136,55 @@ export const UI_V2_PREVIEW_REGISTRY: Record<string, DevPreviewEntry> = {
     description:
       "Audit Trail link + Live indicator + Updated N ago + facility timezone label.",
     Preview: AuditFooterPreview,
+  },
+  "t1-dashboard": {
+    code: "T1",
+    name: "T1Dashboard",
+    description:
+      "Dashboard template: scope + filters + 6 KPI tiles + 2×2 panel grid + DataTable + right-rail (alerts + actions).",
+    Preview: T1DashboardPreview,
+  },
+  "t2-list": {
+    code: "T2",
+    name: "T2List",
+    description: "List/Queue template: filter bar + DataTable + optional side-panel detail.",
+    Preview: T2ListPreview,
+  },
+  "t3-entity-detail": {
+    code: "T3",
+    name: "T3EntityDetail",
+    description: "Entity Detail template: identifier header + tabs + right-rail timeline.",
+    Preview: T3EntityDetailPreview,
+  },
+  "t4-analytics": {
+    code: "T4",
+    name: "T4Analytics",
+    description: "Analytics template: KPI strip + 1–2 charts + breakdown DataTable + export toolbar.",
+    Preview: T4AnalyticsPreview,
+  },
+  "t5-form": {
+    code: "T5",
+    name: "T5Form",
+    description: "Form/Wizard template: step indicator + form body + sticky save bar + right-rail audit log.",
+    Preview: T5FormPreview,
+  },
+  "t6-settings": {
+    code: "T6",
+    name: "T6Settings",
+    description: "Settings template: left sub-nav + stacked sections + save-state indicator.",
+    Preview: T6SettingsPreview,
+  },
+  "t7-document-viewer": {
+    code: "T7",
+    name: "T7DocumentViewer",
+    description: "Document viewer: annotation toolbar + document pane + metadata + activity rail.",
+    Preview: T7DocumentViewerPreview,
+  },
+  "t8-inbox": {
+    code: "T8",
+    name: "T8InboxThreaded",
+    description: "Inbox/Threaded: queue list + thread detail + context rail.",
+    Preview: T8InboxThreadedPreview,
   },
 };
 

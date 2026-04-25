@@ -14,7 +14,9 @@
   - Gate: `test-results/agent-gates/2026-04-24T19-10-59-934Z-UI-V2-S5.json`
 - [x] S6 — DataTable
   - Gate: `test-results/agent-gates/2026-04-25T00-58-23-893Z-UI-V2-S6.json`
-- [ ] S7 — Templates T1–T8 + W0 closeout
+- [x] S7 — Templates T1–T8 + W0 closeout
+  - Gate: `test-results/agent-gates/2026-04-25T01-19-40-480Z-UI-V2-S7.json`
+  - W0 closure gate: `test-results/agent-gates/2026-04-25T01-21-36-840Z-UI-V2-W0.json`
 - [ ] S8 — W1 P0 dashboards
 - [ ] S9 — W2 P0 list+detail
 - [ ] S10 — W3+W4 analytics + forms

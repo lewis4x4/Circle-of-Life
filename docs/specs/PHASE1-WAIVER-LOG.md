@@ -21,6 +21,7 @@
 | ID | Gap | Owner | Reason | Expiry | Remediation issue | Approved date |
 |----|-----|-------|--------|--------|-------------------|---------------|
 | W-ADMIN-01 | Some admin pages list-heavy without create wizards | Brian Lewis | Milestone = run daily ops on seeded data; wizards added incrementally | 2026-10-01 | Completion remediation queue — Workflow Hardening / Phase 6 Completion Pass in `docs/specs/README.md`; **partial:** `/admin/residents/new`, `/admin/staff/new`, `/admin/schedules/new`, `/admin/certifications/new`, `/admin/staffing/new` (migration `072`), `/admin/time-records/new` (migration `073`), `/admin/billing/rates/new` (`rate_schedules` insert via existing RLS); other modules remain | 2026-04-06 |
+| W-COPILOT-SOURCE-01 | Copilot suggestion backend + `citations[]` origin unspecified (UI-V2 spec §16 Q5) | Brian Lewis | UI-V2 ships `<CopilotButton>` / `<CopilotDrawer>` with strict cite-backed contract; uncited suggestions are filtered at render. Fixture data in `src/design-system/components/CopilotButton/__fixtures__/suggestions.json` substitutes for the live backend during S5–S12 preview work. | 2026-09-30 | Required before Copilot promotes from the dev preview surface to a live admin page; tracked in UI-V2 backlog and `docs/specs/UI-V2-W0-APPROVAL.md` §2. | 2026-04-25 |
 
 **Note:** Replace remediation **TBD** with real issue URLs when filed.
 
