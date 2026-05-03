@@ -1,0 +1,169 @@
+{
+  "generated_at": "2026-05-03T11:44:01.241Z",
+  "remaining_non_empty": [
+    {
+      "table": "assessment_templates",
+      "count": 4
+    },
+    {
+      "table": "audit_log",
+      "count": 8868
+    },
+    {
+      "table": "benchmark_cohorts",
+      "count": 1
+    },
+    {
+      "table": "census_daily_log",
+      "count": 5
+    },
+    {
+      "table": "chunks",
+      "count": 375
+    },
+    {
+      "table": "compliance_rules",
+      "count": 15
+    },
+    {
+      "table": "document_aliases",
+      "count": 103
+    },
+    {
+      "table": "document_audit_events",
+      "count": 6
+    },
+    {
+      "table": "document_planning_hints",
+      "count": 12
+    },
+    {
+      "table": "document_relationships",
+      "count": 2
+    },
+    {
+      "table": "documents",
+      "count": 23
+    },
+    {
+      "table": "emergency_checklist_items",
+      "count": 15
+    },
+    {
+      "table": "entities",
+      "count": 6
+    },
+    {
+      "table": "exec_alert_rules",
+      "count": 10
+    },
+    {
+      "table": "exec_metric_definitions",
+      "count": 8
+    },
+    {
+      "table": "exec_standup_metric_definitions",
+      "count": 20
+    },
+    {
+      "table": "facilities",
+      "count": 6
+    },
+    {
+      "table": "facility_building_profiles",
+      "count": 5
+    },
+    {
+      "table": "facility_communication_settings",
+      "count": 5
+    },
+    {
+      "table": "facility_emergency_contacts",
+      "count": 123
+    },
+    {
+      "table": "facility_operational_thresholds",
+      "count": 55
+    },
+    {
+      "table": "family_portal_resident_rights_entries",
+      "count": 12
+    },
+    {
+      "table": "fl_statute_module_links",
+      "count": 1
+    },
+    {
+      "table": "fl_statutes",
+      "count": 2
+    },
+    {
+      "table": "flow_workflow_definitions",
+      "count": 3
+    },
+    {
+      "table": "gl_accounts",
+      "count": 2
+    },
+    {
+      "table": "incident_root_cause_taxonomy",
+      "count": 5
+    },
+    {
+      "table": "knowledge_contradictions",
+      "count": 4
+    },
+    {
+      "table": "memory_compiler_runs",
+      "count": 3
+    },
+    {
+      "table": "onboarding_questions",
+      "count": 94
+    },
+    {
+      "table": "operation_task_templates",
+      "count": 23
+    },
+    {
+      "table": "organizations",
+      "count": 2
+    },
+    {
+      "table": "quality_measures",
+      "count": 1
+    },
+    {
+      "table": "report_nlq_mappings",
+      "count": 2
+    },
+    {
+      "table": "report_template_versions",
+      "count": 11
+    },
+    {
+      "table": "report_templates",
+      "count": 11
+    },
+    {
+      "table": "role_permissions",
+      "count": 13
+    },
+    {
+      "table": "search_tool_policies",
+      "count": 80
+    },
+    {
+      "table": "training_programs",
+      "count": 10
+    },
+    {
+      "table": "user_facility_access",
+      "count": 51
+    },
+    {
+      "table": "user_profiles",
+      "count": 22
+    }
+  ]
+}

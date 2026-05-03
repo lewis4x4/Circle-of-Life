@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import process from "node:process";
+
 import {
   assertNoError,
   createAdminSupabaseClient,
@@ -799,7 +801,28 @@ async function seedInsurance(supabase) {
 }
 
 
+function requireExplicitDemoSeedApproval() {
+  if (process.env.HAVEN_ALLOW_DEMO_SEED !== "1") {
+    throw new Error(
+      "Refusing to seed demo data without HAVEN_ALLOW_DEMO_SEED=1. Real Homewood data entry is underway.",
+    );
+  }
+
+  const targetUrl =
+    process.env.SUPABASE_URL ??
+    process.env.NEXT_PUBLIC_SUPABASE_URL ??
+    process.env.VITE_SUPABASE_URL ??
+    "";
+  const isHostedSupabase = /\.supabase\.co\/?$/.test(targetUrl.replace(/^https?:\/\//, ""));
+  if (isHostedSupabase && process.env.HAVEN_ALLOW_REMOTE_DEMO_SEED !== "1") {
+    throw new Error(
+      "Refusing to seed demo data on hosted Supabase without HAVEN_ALLOW_REMOTE_DEMO_SEED=1.",
+    );
+  }
+}
+
 async function main() {
+  requireExplicitDemoSeedApproval();
   const supabase = createAdminSupabaseClient();
   const actorUserId = optionalEnv("DEMO_ACTOR_USER_ID");
   const familyUserId = optionalEnv("DEMO_FAMILY_USER_ID");

@@ -1,0 +1,846 @@
+{
+  "generatedAt": "2026-05-03T15:02:10.168Z",
+  "missionAlignment": "pass",
+  "organizationId": "00000000-0000-0000-0000-000000000001",
+  "homewoodFacilityId": "00000000-0000-0000-0002-000000000003",
+  "supabaseUrlHost": "manfqmasfqppukpobpld.supabase.co",
+  "summary": {
+    "status": "ready",
+    "totalChecks": 83,
+    "failedChecks": 0,
+    "zeroRowTablesChecked": 80
+  },
+  "checks": [
+    {
+      "name": "active COL facility shells",
+      "status": "pass",
+      "count": 5
+    },
+    {
+      "name": "Homewood Lodge active shell",
+      "status": "pass",
+      "facilityId": "00000000-0000-0000-0002-000000000003"
+    },
+    {
+      "name": "Homewood user access preserved",
+      "status": "pass",
+      "count": 8
+    },
+    {
+      "name": "units empty for Homewood",
+      "status": "pass",
+      "table": "units",
+      "count": 0
+    },
+    {
+      "name": "rooms empty for Homewood",
+      "status": "pass",
+      "table": "rooms",
+      "count": 0
+    },
+    {
+      "name": "beds empty for Homewood",
+      "status": "pass",
+      "table": "beds",
+      "count": 0
+    },
+    {
+      "name": "census_daily_log empty for Homewood",
+      "status": "pass",
+      "table": "census_daily_log",
+      "count": 0
+    },
+    {
+      "name": "admission_cases empty for Homewood",
+      "status": "pass",
+      "table": "admission_cases",
+      "count": 0
+    },
+    {
+      "name": "advance_directive_documents empty for Homewood",
+      "status": "pass",
+      "table": "advance_directive_documents",
+      "count": 0
+    },
+    {
+      "name": "assessments empty for Homewood",
+      "status": "pass",
+      "table": "assessments",
+      "count": 0
+    },
+    {
+      "name": "care_plans empty for Homewood",
+      "status": "pass",
+      "table": "care_plans",
+      "count": 0
+    },
+    {
+      "name": "care_plan_items empty for Homewood",
+      "status": "pass",
+      "table": "care_plan_items",
+      "count": 0
+    },
+    {
+      "name": "care_plan_tasks empty for Homewood",
+      "status": "pass",
+      "table": "care_plan_tasks",
+      "count": 0
+    },
+    {
+      "name": "care_plan_change_tasks empty for Homewood",
+      "status": "pass",
+      "table": "care_plan_change_tasks",
+      "count": 0
+    },
+    {
+      "name": "care_plan_review_alerts empty for Homewood",
+      "status": "pass",
+      "table": "care_plan_review_alerts",
+      "count": 0
+    },
+    {
+      "name": "daily_logs empty for Homewood",
+      "status": "pass",
+      "table": "daily_logs",
+      "count": 0
+    },
+    {
+      "name": "adl_logs empty for Homewood",
+      "status": "pass",
+      "table": "adl_logs",
+      "count": 0
+    },
+    {
+      "name": "behavioral_logs empty for Homewood",
+      "status": "pass",
+      "table": "behavioral_logs",
+      "count": 0
+    },
+    {
+      "name": "condition_changes empty for Homewood",
+      "status": "pass",
+      "table": "condition_changes",
+      "count": 0
+    },
+    {
+      "name": "discharge_med_reconciliation empty for Homewood",
+      "status": "pass",
+      "table": "discharge_med_reconciliation",
+      "count": 0
+    },
+    {
+      "name": "family_care_conference_sessions empty for Homewood",
+      "status": "pass",
+      "table": "family_care_conference_sessions",
+      "count": 0
+    },
+    {
+      "name": "family_consent_records empty for Homewood",
+      "status": "pass",
+      "table": "family_consent_records",
+      "count": 0
+    },
+    {
+      "name": "family_message_triage_items empty for Homewood",
+      "status": "pass",
+      "table": "family_message_triage_items",
+      "count": 0
+    },
+    {
+      "name": "family_portal_messages empty for Homewood",
+      "status": "pass",
+      "table": "family_portal_messages",
+      "count": 0
+    },
+    {
+      "name": "family_resident_links direct Homewood count skipped",
+      "status": "skip",
+      "table": "family_resident_links",
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "name": "resident_contacts empty for Homewood",
+      "status": "pass",
+      "table": "resident_contacts",
+      "count": 0
+    },
+    {
+      "name": "resident_documents empty for Homewood",
+      "status": "pass",
+      "table": "resident_documents",
+      "count": 0
+    },
+    {
+      "name": "resident_photos empty for Homewood",
+      "status": "pass",
+      "table": "resident_photos",
+      "count": 0
+    },
+    {
+      "name": "resident_observation_tasks empty for Homewood",
+      "status": "pass",
+      "table": "resident_observation_tasks",
+      "count": 0
+    },
+    {
+      "name": "residents empty for Homewood",
+      "status": "pass",
+      "table": "residents",
+      "count": 0
+    },
+    {
+      "name": "controlled_substance_count_variance_events empty for Homewood",
+      "status": "pass",
+      "table": "controlled_substance_count_variance_events",
+      "count": 0
+    },
+    {
+      "name": "controlled_substance_counts empty for Homewood",
+      "status": "pass",
+      "table": "controlled_substance_counts",
+      "count": 0
+    },
+    {
+      "name": "emar_administration_witnesses empty for Homewood",
+      "status": "pass",
+      "table": "emar_administration_witnesses",
+      "count": 0
+    },
+    {
+      "name": "emar_records empty for Homewood",
+      "status": "pass",
+      "table": "emar_records",
+      "count": 0
+    },
+    {
+      "name": "incident_followups empty for Homewood",
+      "status": "pass",
+      "table": "incident_followups",
+      "count": 0
+    },
+    {
+      "name": "incident_photos empty for Homewood",
+      "status": "pass",
+      "table": "incident_photos",
+      "count": 0
+    },
+    {
+      "name": "incident_rca empty for Homewood",
+      "status": "pass",
+      "table": "incident_rca",
+      "count": 0
+    },
+    {
+      "name": "incident_root_causes direct Homewood count skipped",
+      "status": "skip",
+      "table": "incident_root_causes",
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "name": "incidents empty for Homewood",
+      "status": "pass",
+      "table": "incidents",
+      "count": 0
+    },
+    {
+      "name": "infection_outbreaks empty for Homewood",
+      "status": "pass",
+      "table": "infection_outbreaks",
+      "count": 0
+    },
+    {
+      "name": "infection_surveillance empty for Homewood",
+      "status": "pass",
+      "table": "infection_surveillance",
+      "count": 0
+    },
+    {
+      "name": "infection_threshold_profiles empty for Homewood",
+      "status": "pass",
+      "table": "infection_threshold_profiles",
+      "count": 0
+    },
+    {
+      "name": "compliance_survey_visit_notes empty for Homewood",
+      "status": "pass",
+      "table": "compliance_survey_visit_notes",
+      "count": 0
+    },
+    {
+      "name": "compliance_survey_visits empty for Homewood",
+      "status": "pass",
+      "table": "compliance_survey_visits",
+      "count": 0
+    },
+    {
+      "name": "competency_demonstrations empty for Homewood",
+      "status": "pass",
+      "table": "competency_demonstrations",
+      "count": 0
+    },
+    {
+      "name": "diet_orders empty for Homewood",
+      "status": "pass",
+      "table": "diet_orders",
+      "count": 0
+    },
+    {
+      "name": "driver_credentials empty for Homewood",
+      "status": "pass",
+      "table": "driver_credentials",
+      "count": 0
+    },
+    {
+      "name": "fleet_vehicles empty for Homewood",
+      "status": "pass",
+      "table": "fleet_vehicles",
+      "count": 0
+    },
+    {
+      "name": "inservice_log_sessions empty for Homewood",
+      "status": "pass",
+      "table": "inservice_log_sessions",
+      "count": 0
+    },
+    {
+      "name": "mileage_logs empty for Homewood",
+      "status": "pass",
+      "table": "mileage_logs",
+      "count": 0
+    },
+    {
+      "name": "payroll_export_batches empty for Homewood",
+      "status": "pass",
+      "table": "payroll_export_batches",
+      "count": 0
+    },
+    {
+      "name": "payroll_export_lines direct Homewood count skipped",
+      "status": "skip",
+      "table": "payroll_export_lines",
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "name": "schedules empty for Homewood",
+      "status": "pass",
+      "table": "schedules",
+      "count": 0
+    },
+    {
+      "name": "shift_assignments empty for Homewood",
+      "status": "pass",
+      "table": "shift_assignments",
+      "count": 0
+    },
+    {
+      "name": "shift_handoffs empty for Homewood",
+      "status": "pass",
+      "table": "shift_handoffs",
+      "count": 0
+    },
+    {
+      "name": "shift_swap_requests empty for Homewood",
+      "status": "pass",
+      "table": "shift_swap_requests",
+      "count": 0
+    },
+    {
+      "name": "staff empty for Homewood",
+      "status": "pass",
+      "table": "staff",
+      "count": 0
+    },
+    {
+      "name": "staff_certifications empty for Homewood",
+      "status": "pass",
+      "table": "staff_certifications",
+      "count": 0
+    },
+    {
+      "name": "staff_training_completions empty for Homewood",
+      "status": "pass",
+      "table": "staff_training_completions",
+      "count": 0
+    },
+    {
+      "name": "staffing_ratio_snapshots empty for Homewood",
+      "status": "pass",
+      "table": "staffing_ratio_snapshots",
+      "count": 0
+    },
+    {
+      "name": "time_records empty for Homewood",
+      "status": "pass",
+      "table": "time_records",
+      "count": 0
+    },
+    {
+      "name": "resident_transport_requests empty for Homewood",
+      "status": "pass",
+      "table": "resident_transport_requests",
+      "count": 0
+    },
+    {
+      "name": "certificates_of_insurance direct Homewood count skipped",
+      "status": "skip",
+      "table": "certificates_of_insurance",
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "name": "claim_activities direct Homewood count skipped",
+      "status": "skip",
+      "table": "claim_activities",
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "name": "collection_activities empty for Homewood",
+      "status": "pass",
+      "table": "collection_activities",
+      "count": 0
+    },
+    {
+      "name": "contract_alerts direct Homewood count skipped",
+      "status": "skip",
+      "table": "contract_alerts",
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "name": "contracts direct Homewood count skipped",
+      "status": "skip",
+      "table": "contracts",
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "name": "gl_budget_lines direct Homewood count skipped",
+      "status": "skip",
+      "table": "gl_budget_lines",
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "name": "gl_period_closes direct Homewood count skipped",
+      "status": "skip",
+      "table": "gl_period_closes",
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "name": "incident_sequences direct Homewood count skipped",
+      "status": "skip",
+      "table": "incident_sequences",
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "name": "insurance_policies direct Homewood count skipped",
+      "status": "skip",
+      "table": "insurance_policies",
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "name": "invoice_line_items direct Homewood count skipped",
+      "status": "skip",
+      "table": "invoice_line_items",
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "name": "invoice_sequences direct Homewood count skipped",
+      "status": "skip",
+      "table": "invoice_sequences",
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "name": "invoices empty for Homewood",
+      "status": "pass",
+      "table": "invoices",
+      "count": 0
+    },
+    {
+      "name": "payments empty for Homewood",
+      "status": "pass",
+      "table": "payments",
+      "count": 0
+    },
+    {
+      "name": "rate_schedules empty for Homewood",
+      "status": "pass",
+      "table": "rate_schedules",
+      "count": 0
+    },
+    {
+      "name": "referral_hl7_inbound empty for Homewood",
+      "status": "pass",
+      "table": "referral_hl7_inbound",
+      "count": 0
+    },
+    {
+      "name": "referral_leads empty for Homewood",
+      "status": "pass",
+      "table": "referral_leads",
+      "count": 0
+    },
+    {
+      "name": "referral_sources empty for Homewood",
+      "status": "pass",
+      "table": "referral_sources",
+      "count": 0
+    },
+    {
+      "name": "reputation_accounts empty for Homewood",
+      "status": "pass",
+      "table": "reputation_accounts",
+      "count": 0
+    },
+    {
+      "name": "reputation_replies empty for Homewood",
+      "status": "pass",
+      "table": "reputation_replies",
+      "count": 0
+    },
+    {
+      "name": "resident_payers empty for Homewood",
+      "status": "pass",
+      "table": "resident_payers",
+      "count": 0
+    },
+    {
+      "name": "vendors direct Homewood count skipped",
+      "status": "skip",
+      "table": "vendors",
+      "reason": "not directly facility-scoped"
+    }
+  ],
+  "tableCounts": [
+    {
+      "table": "units",
+      "count": 0
+    },
+    {
+      "table": "rooms",
+      "count": 0
+    },
+    {
+      "table": "beds",
+      "count": 0
+    },
+    {
+      "table": "census_daily_log",
+      "count": 0
+    },
+    {
+      "table": "admission_cases",
+      "count": 0
+    },
+    {
+      "table": "advance_directive_documents",
+      "count": 0
+    },
+    {
+      "table": "assessments",
+      "count": 0
+    },
+    {
+      "table": "care_plans",
+      "count": 0
+    },
+    {
+      "table": "care_plan_items",
+      "count": 0
+    },
+    {
+      "table": "care_plan_tasks",
+      "count": 0
+    },
+    {
+      "table": "care_plan_change_tasks",
+      "count": 0
+    },
+    {
+      "table": "care_plan_review_alerts",
+      "count": 0
+    },
+    {
+      "table": "daily_logs",
+      "count": 0
+    },
+    {
+      "table": "adl_logs",
+      "count": 0
+    },
+    {
+      "table": "behavioral_logs",
+      "count": 0
+    },
+    {
+      "table": "condition_changes",
+      "count": 0
+    },
+    {
+      "table": "discharge_med_reconciliation",
+      "count": 0
+    },
+    {
+      "table": "family_care_conference_sessions",
+      "count": 0
+    },
+    {
+      "table": "family_consent_records",
+      "count": 0
+    },
+    {
+      "table": "family_message_triage_items",
+      "count": 0
+    },
+    {
+      "table": "family_portal_messages",
+      "count": 0
+    },
+    {
+      "table": "family_resident_links",
+      "skipped": true,
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "table": "resident_contacts",
+      "count": 0
+    },
+    {
+      "table": "resident_documents",
+      "count": 0
+    },
+    {
+      "table": "resident_photos",
+      "count": 0
+    },
+    {
+      "table": "resident_observation_tasks",
+      "count": 0
+    },
+    {
+      "table": "residents",
+      "count": 0
+    },
+    {
+      "table": "controlled_substance_count_variance_events",
+      "count": 0
+    },
+    {
+      "table": "controlled_substance_counts",
+      "count": 0
+    },
+    {
+      "table": "emar_administration_witnesses",
+      "count": 0
+    },
+    {
+      "table": "emar_records",
+      "count": 0
+    },
+    {
+      "table": "incident_followups",
+      "count": 0
+    },
+    {
+      "table": "incident_photos",
+      "count": 0
+    },
+    {
+      "table": "incident_rca",
+      "count": 0
+    },
+    {
+      "table": "incident_root_causes",
+      "skipped": true,
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "table": "incidents",
+      "count": 0
+    },
+    {
+      "table": "infection_outbreaks",
+      "count": 0
+    },
+    {
+      "table": "infection_surveillance",
+      "count": 0
+    },
+    {
+      "table": "infection_threshold_profiles",
+      "count": 0
+    },
+    {
+      "table": "compliance_survey_visit_notes",
+      "count": 0
+    },
+    {
+      "table": "compliance_survey_visits",
+      "count": 0
+    },
+    {
+      "table": "competency_demonstrations",
+      "count": 0
+    },
+    {
+      "table": "diet_orders",
+      "count": 0
+    },
+    {
+      "table": "driver_credentials",
+      "count": 0
+    },
+    {
+      "table": "fleet_vehicles",
+      "count": 0
+    },
+    {
+      "table": "inservice_log_sessions",
+      "count": 0
+    },
+    {
+      "table": "mileage_logs",
+      "count": 0
+    },
+    {
+      "table": "payroll_export_batches",
+      "count": 0
+    },
+    {
+      "table": "payroll_export_lines",
+      "skipped": true,
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "table": "schedules",
+      "count": 0
+    },
+    {
+      "table": "shift_assignments",
+      "count": 0
+    },
+    {
+      "table": "shift_handoffs",
+      "count": 0
+    },
+    {
+      "table": "shift_swap_requests",
+      "count": 0
+    },
+    {
+      "table": "staff",
+      "count": 0
+    },
+    {
+      "table": "staff_certifications",
+      "count": 0
+    },
+    {
+      "table": "staff_training_completions",
+      "count": 0
+    },
+    {
+      "table": "staffing_ratio_snapshots",
+      "count": 0
+    },
+    {
+      "table": "time_records",
+      "count": 0
+    },
+    {
+      "table": "resident_transport_requests",
+      "count": 0
+    },
+    {
+      "table": "certificates_of_insurance",
+      "skipped": true,
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "table": "claim_activities",
+      "skipped": true,
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "table": "collection_activities",
+      "count": 0
+    },
+    {
+      "table": "contract_alerts",
+      "skipped": true,
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "table": "contracts",
+      "skipped": true,
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "table": "gl_budget_lines",
+      "skipped": true,
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "table": "gl_period_closes",
+      "skipped": true,
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "table": "incident_sequences",
+      "skipped": true,
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "table": "insurance_policies",
+      "skipped": true,
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "table": "invoice_line_items",
+      "skipped": true,
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "table": "invoice_sequences",
+      "skipped": true,
+      "reason": "not directly facility-scoped"
+    },
+    {
+      "table": "invoices",
+      "count": 0
+    },
+    {
+      "table": "payments",
+      "count": 0
+    },
+    {
+      "table": "rate_schedules",
+      "count": 0
+    },
+    {
+      "table": "referral_hl7_inbound",
+      "count": 0
+    },
+    {
+      "table": "referral_leads",
+      "count": 0
+    },
+    {
+      "table": "referral_sources",
+      "count": 0
+    },
+    {
+      "table": "reputation_accounts",
+      "count": 0
+    },
+    {
+      "table": "reputation_replies",
+      "count": 0
+    },
+    {
+      "table": "resident_payers",
+      "count": 0
+    },
+    {
+      "table": "vendors",
+      "skipped": true,
+      "reason": "not directly facility-scoped"
+    }
+  ]
+}

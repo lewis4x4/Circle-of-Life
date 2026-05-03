@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-import { assertNoError, createAdminSupabaseClient, DEMO_IDS } from "./_config.mjs";
+import process from "node:process";
+
+import { assertNoError, createAdminSupabaseClient, DEMO, DEMO_IDS } from "./_config.mjs";
 
 async function deleteByOrg(supabase, table) {
   await assertNoError(
@@ -8,11 +10,58 @@ async function deleteByOrg(supabase, table) {
   );
 }
 
+async function requireExplicitDemoResetApproval(supabase) {
+  if (process.env.HAVEN_ALLOW_DEMO_RESET !== "1") {
+    throw new Error(
+      "Refusing to reset demo data without HAVEN_ALLOW_DEMO_RESET=1. This script is destructive.",
+    );
+  }
+
+  const targetUrl =
+    process.env.SUPABASE_URL ??
+    process.env.NEXT_PUBLIC_SUPABASE_URL ??
+    process.env.VITE_SUPABASE_URL ??
+    "";
+  const isHostedSupabase = /\.supabase\.co\/?$/.test(targetUrl.replace(/^https?:\/\//, ""));
+  if (isHostedSupabase && process.env.HAVEN_ALLOW_REMOTE_DEMO_RESET !== "1") {
+    throw new Error(
+      "Refusing to reset demo data on hosted Supabase without HAVEN_ALLOW_REMOTE_DEMO_RESET=1.",
+    );
+  }
+
+  const { data: org, error: orgError } = await supabase
+    .from("organizations")
+    .select("id, name, deleted_at")
+    .eq("id", DEMO_IDS.orgId)
+    .maybeSingle();
+  if (orgError) throw new Error(`demo org verification failed: ${orgError.message}`);
+  if (!org || org.name !== DEMO.orgName) {
+    throw new Error("Refusing reset: deterministic demo organization was not found.");
+  }
+
+  const { data: facility, error: facilityError } = await supabase
+    .from("facilities")
+    .select("id, name, organization_id, deleted_at")
+    .eq("id", DEMO_IDS.facilityId)
+    .maybeSingle();
+  if (facilityError) {
+    throw new Error(`demo facility verification failed: ${facilityError.message}`);
+  }
+  if (
+    !facility ||
+    facility.name !== DEMO.facilityName ||
+    facility.organization_id !== DEMO_IDS.orgId
+  ) {
+    throw new Error("Refusing reset: deterministic demo facility was not found.");
+  }
+}
+
 async function main() {
   const supabase = createAdminSupabaseClient();
+  await requireExplicitDemoResetApproval(supabase);
   const facilityId = DEMO_IDS.facilityId;
 
-  console.log("[demo:reset] deleting demo workspace data...");
+  console.log("[demo:reset] deleting deterministic demo workspace data...");
 
   // Break resident <-> bed cyclic reference first.
   await assertNoError(

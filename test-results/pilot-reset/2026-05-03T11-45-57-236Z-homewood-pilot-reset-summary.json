@@ -1,0 +1,62 @@
+{
+  "generated_at": "2026-05-03T11:45:57.234Z",
+  "target": "manfqmasfqppukpobpld",
+  "purpose": "Homewood pilot reset: operational/demo data cleared while preserving real COL facility shells and platform config.",
+  "counts": {
+    "residents": 0,
+    "staff": 0,
+    "census_daily_log": 0,
+    "invoices": 0,
+    "invoice_line_items": 0,
+    "payments": 0,
+    "resident_medications": 0,
+    "emar_records": 0,
+    "care_plans": 0,
+    "incidents": 0,
+    "time_records": 0,
+    "payroll_export_batches": 0,
+    "payroll_export_lines": 0,
+    "beds": 0,
+    "rooms": 0,
+    "units": 0,
+    "operation_task_instances": 0,
+    "resident_safety_scores": 0,
+    "med_passes": 0,
+    "med_tech_shifts": 0,
+    "report_runs": 0,
+    "exec_metric_snapshots": 0,
+    "search_documents": 0
+  },
+  "activeFacilities": [
+    {
+      "id": "00000000-0000-0000-0002-000000000005",
+      "name": "Grande Cypress ALF",
+      "deleted_at": null
+    },
+    {
+      "id": "00000000-0000-0000-0002-000000000003",
+      "name": "Homewood Lodge ALF",
+      "deleted_at": null
+    },
+    {
+      "id": "00000000-0000-0000-0002-000000000001",
+      "name": "Oakridge ALF",
+      "deleted_at": null
+    },
+    {
+      "id": "00000000-0000-0000-0002-000000000004",
+      "name": "Plantation ALF",
+      "deleted_at": null
+    },
+    {
+      "id": "00000000-0000-0000-0002-000000000002",
+      "name": "Rising Oaks ALF",
+      "deleted_at": null
+    }
+  ],
+  "homewood": {
+    "id": "00000000-0000-0000-0002-000000000003",
+    "name": "Homewood Lodge ALF",
+    "deleted_at": null
+  }
+}

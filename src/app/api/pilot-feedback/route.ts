@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
 
 type FeedbackBody = {
   id?: string;
@@ -18,6 +19,15 @@ type FeedbackBody = {
 const REVIEWER_ROLES = new Set(["owner", "org_admin", "facility_admin", "manager"]);
 const CATEGORIES = new Set(["bug", "confusion", "request", "friction", "praise"]);
 const SEVERITIES = new Set(["low", "medium", "high", "critical"]);
+const MAX_SHELL_KIND_LENGTH = 80;
+const MAX_ROUTE_LENGTH = 240;
+const MAX_TITLE_LENGTH = 180;
+const MAX_DETAIL_LENGTH = 4_000;
+const ORG_WIDE_ROLES = new Set(["owner", "org_admin"]);
+
+function trimToMax(value: string, max: number): string {
+  return value.length > max ? value.slice(0, max) : value;
+}
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
@@ -59,12 +69,14 @@ export async function POST(request: Request) {
   const actor = await requireActor();
   if ("error" in actor) return actor.error;
 
+  const { admin, user, profile } = actor;
+
   const category = body.category?.trim() ?? "";
   const severity = body.severity?.trim() ?? "medium";
   const title = body.title?.trim() ?? "";
   const detail = body.detail?.trim() ?? "";
   const route = body.route?.trim() ?? "/";
-  const shellKind = body.shellKind?.trim() ?? "unknown";
+  const shellKind = trimToMax(body.shellKind?.trim() || "unknown", MAX_SHELL_KIND_LENGTH);
   const facilityId = body.facilityId?.trim() || null;
 
   if (!CATEGORIES.has(category)) {
@@ -77,7 +89,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Title and detail are required" }, { status: 400 });
   }
 
-  const { admin, user, profile } = actor;
+  if (facilityId) {
+    const canAccessFacility = await serviceRoleUserHasFacilityAccess(admin, {
+      userId: user.id,
+      facilityId,
+      organizationId: String(profile.organization_id),
+      appRole: String(profile.app_role),
+    });
+    if (!canAccessFacility) {
+      return NextResponse.json({ error: "Facility not found" }, { status: 404 });
+    }
+  }
+
   const insertPayload = {
     organization_id: profile.organization_id,
     facility_id: facilityId,
@@ -85,11 +108,11 @@ export async function POST(request: Request) {
     user_email: user.email ?? profile.email ?? null,
     app_role: profile.app_role,
     shell_kind: shellKind,
-    route,
+    route: trimToMax(route, MAX_ROUTE_LENGTH),
     category,
     severity,
-    title,
-    detail,
+    title: trimToMax(title, MAX_TITLE_LENGTH),
+    detail: trimToMax(detail, MAX_DETAIL_LENGTH),
     status: "new",
     metadata: {
       full_name: profile.full_name ?? null,
@@ -131,7 +154,20 @@ export async function GET(request: Request) {
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  if (facilityId) query = query.eq("facility_id", facilityId);
+  if (facilityId) {
+    const canAccessFacility = ORG_WIDE_ROLES.has(String(profile.app_role))
+      ? true
+      : await serviceRoleUserHasFacilityAccess(admin, {
+          userId: actor.user.id,
+          facilityId,
+          organizationId,
+          appRole: String(profile.app_role),
+        });
+    if (!canAccessFacility) {
+      return NextResponse.json({ error: "Facility not found" }, { status: 404 });
+    }
+    query = query.eq("facility_id", facilityId);
+  }
   if (status) query = query.eq("status", status);
 
   const { data, error } = await query;

@@ -1,0 +1,43 @@
+{
+  "generated_at": "2026-05-03T11:41:21.672Z",
+  "host": "manfqmasfqppukpobpld.supabase.co",
+  "deleted_non_audit_demo_rows": 89,
+  "remaining_real_facilities": [
+    {
+      "id": "00000000-0000-0000-0002-000000000005",
+      "name": "Grande Cypress ALF",
+      "organization_id": "00000000-0000-0000-0000-000000000001",
+      "deleted_at": null
+    },
+    {
+      "id": "00000000-0000-0000-0002-000000000003",
+      "name": "Homewood Lodge ALF",
+      "organization_id": "00000000-0000-0000-0000-000000000001",
+      "deleted_at": null
+    },
+    {
+      "id": "00000000-0000-0000-0002-000000000001",
+      "name": "Oakridge ALF",
+      "organization_id": "00000000-0000-0000-0000-000000000001",
+      "deleted_at": null
+    },
+    {
+      "id": "00000000-0000-0000-0002-000000000004",
+      "name": "Plantation ALF",
+      "organization_id": "00000000-0000-0000-0000-000000000001",
+      "deleted_at": null
+    },
+    {
+      "id": "00000000-0000-0000-0002-000000000002",
+      "name": "Rising Oaks ALF",
+      "organization_id": "00000000-0000-0000-0000-000000000001",
+      "deleted_at": null
+    }
+  ],
+  "demo_facility": {
+    "id": "11111111-1111-1111-1111-111111111113",
+    "name": "Oakridge Demo ALF",
+    "organization_id": "11111111-1111-1111-1111-111111111111",
+    "deleted_at": "2026-05-03T11:41:21.672+00:00"
+  }
+}

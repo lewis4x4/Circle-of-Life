@@ -37,9 +37,10 @@
     "obsidian:validate": "node scripts/obsidian/validate-vault.mjs",
     "obsidian:compile": "node scripts/obsidian/compile-vault.mjs",
     "obsidian:publish": "node scripts/obsidian/publish-vault.mjs",
-    "demo:seed": "node scripts/demo/seed-demo-data.mjs",
-    "demo:reset": "node scripts/demo/reset-demo-data.mjs",
-    "demo:reseed": "npm run demo:reset && npm run demo:seed"
+    "pilot:homewood:check": "node scripts/pilot/homewood-readiness-check.mjs",
+    "demo:seed:danger": "node scripts/demo/seed-demo-data.mjs",
+    "demo:reset:danger": "node scripts/demo/reset-demo-data.mjs",
+    "demo:reseed:danger": "npm run demo:reset:danger && npm run demo:seed:danger"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",
