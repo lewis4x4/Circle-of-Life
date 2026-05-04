@@ -10,7 +10,7 @@
 import React, { useState } from "react";
 import { Zap, Database } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { DEMO_MODE_STORAGE_KEY } from "@/lib/demo-mode";
+import { DEMO_MODE_STORAGE_KEY, isDemoMode } from "@/lib/demo-mode";
 
 // ── TYPES ──
 
@@ -27,12 +27,7 @@ export interface DemoToggleProps {
 
 /** Read demo mode from localStorage (safe for SSR) */
 function readDemoMode(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return localStorage.getItem(DEMO_MODE_STORAGE_KEY) === "true";
-  } catch {
-    return false;
-  }
+  return isDemoMode();
 }
 
 // ── MAIN COMPONENT ──
