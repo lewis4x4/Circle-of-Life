@@ -30,10 +30,12 @@ import { evaluateGate0, evaluateGate2 } from "./gates.js";
 import { buildReadinessMarkdown, buildStateJsonExport, buildLaunchNarrative } from "./export.js";
 import { onboardingIntakeCatalog } from "./intakeCatalog.js";
 import { inferDocumentIntelligence } from "./documentIntelligence.js";
+import { loadPipelineConfig, savePipelineConfig, pipelineConfigured, uploadDocumentToSupabasePipeline } from "./supabasePipeline.js";
 
 let state = loadState();
 let activeTab = "overview";
 let lastDocumentSaveSummary = "";
+let pipelineMessage = "";
 
 const tabsEl = document.getElementById("tabs");
 const summaryEl = document.getElementById("summary");
@@ -440,6 +442,35 @@ function renderDetectionCard(intelligence, options = {}) {
   `;
 }
 
+function renderSupabasePipelinePanel() {
+  const config = loadPipelineConfig();
+  const configured = pipelineConfigured(config);
+  return `
+    <div class="supabase-pipeline-panel ${configured ? "connected" : ""}">
+      <div class="row-between gap">
+        <div>
+          <p class="eyebrow">Production OCR/AI pipeline</p>
+          <h3>${configured ? "Supabase connected" : "Connect Supabase to make upload → OCR/AI → approval live"}</h3>
+          <p class="small-muted">Uses Supabase Storage + existing ingest OCR/Markdown conversion, then the Facility Launch parser creates reviewable facts with source excerpts. Approved facts write to module values with provenance.</p>
+        </div>
+        <span class="confidence-pill ${configured ? "confidence-high" : "confidence-medium"}">${configured ? "ready" : "needs session"}</span>
+      </div>
+      <div class="grid2 compact-config">
+        <input data-pipeline-config="supabaseUrl" placeholder="Supabase URL" value="${esc(config.supabaseUrl || "")}" />
+        <input data-pipeline-config="anonKey" placeholder="Supabase anon key" value="${esc(config.anonKey || "")}" />
+        <input data-pipeline-config="accessToken" placeholder="Current user JWT / access token" value="${esc(config.accessToken || "")}" />
+        <input data-pipeline-config="organizationId" placeholder="Organization UUID" value="${esc(config.organizationId || "")}" />
+        <input data-pipeline-config="facilityId" placeholder="Facility UUID (optional but recommended)" value="${esc(config.facilityId || "")}" />
+        <button type="button" data-save-pipeline-config>Save Supabase connection</button>
+      </div>
+      <div class="approval-flow">
+        <span>1 Storage upload</span><span>2 OCR/Markdown</span><span>3 AI fact extraction</span><span>4 Human approve/reject</span><span>5 Provenance write to modules</span>
+      </div>
+      ${pipelineMessage ? `<div class="save-callout">${esc(pipelineMessage)}</div>` : ""}
+    </div>
+  `;
+}
+
 function renderDocumentsLaunchNeeds(docs, groups) {
   const stale = docs.filter((doc) => doc.currencyStatus === "stale");
   const pendingApproval = docs.filter((doc) => doc.custodianApprovalStatus !== "approved");
@@ -500,6 +531,7 @@ function renderDocs() {
     <h2>Document Intake + Source-of-Truth Resolver</h2>
     <p class="lead">Drop a document here first. The launch center classifies what it appears to be, pre-fills the launch metadata, routes it to the affected modules, flags stale/duplicate evidence, and immediately updates readiness after save. Current demo automation is filename/metadata based; production extraction should add Supabase Storage + OCR/AI parsing + human approval before facts write into modules.</p>
     ${lastDocumentSaveSummary ? `<div class="save-callout">${esc(lastDocumentSaveSummary)}</div>` : ""}
+    ${renderSupabasePipelinePanel()}
     ${renderDocumentsLaunchNeeds(docs, groups)}
     ${unresolvedGroups.length ? `<div class="source-resolver-banner"><strong>Source-of-truth needed:</strong> ${unresolvedGroups.map((group) => esc(group.name)).join(", ")}. Select the canonical document below before Gate 2.</div>` : ""}
     <form id="document-form" class="grid2 intake-card doc-upload-card">
@@ -525,6 +557,7 @@ function renderDocs() {
       <input type="hidden" name="mappedModuleCodes" />
       <div id="doc-intelligence-preview" class="doc-intelligence-preview">${renderDetectionCard(null)}</div>
       <button type="submit">Confirm and save classified document</button>
+      <button type="button" class="secondary-button" data-supabase-ocr-upload>Upload to Supabase OCR/AI pipeline</button>
     </form>
     <div class="table-wrap"><table><thead><tr><th>Document</th><th>Artifact</th><th>Facility/Entity</th><th>Term</th><th>Effective</th><th>Expiration</th><th>Version</th><th>Currency</th><th>Approval</th><th>Confidence/Notes</th><th>Route/Exception</th><th>Actions</th></tr></thead><tbody>
       ${docs.map((d) => `<tr>
@@ -658,7 +691,7 @@ function render() {
   renderDecisionLog();
 }
 
-document.body.addEventListener("click", (e) => {
+document.body.addEventListener("click", async (e) => {
   const tab = e.target.closest("[data-tab]");
   if (tab) {
     activeTab = tab.dataset.tab;
@@ -677,6 +710,33 @@ document.body.addEventListener("click", (e) => {
   if (deleteDoc) {
     state = deleteDocument(state, deleteDoc.dataset.docDelete);
     lastDocumentSaveSummary = "Document row deleted. Readiness and source-of-truth groups were recalculated.";
+    render();
+    return;
+  }
+
+  const savePipeline = e.target.closest("[data-save-pipeline-config]");
+  if (savePipeline) {
+    const config = Object.fromEntries(Array.from(document.querySelectorAll("[data-pipeline-config]")).map((input) => [input.dataset.pipelineConfig, input.value]));
+    savePipelineConfig(config);
+    pipelineMessage = "Supabase OCR/AI pipeline connection saved in this browser.";
+    render();
+    return;
+  }
+
+  const supabaseUpload = e.target.closest("[data-supabase-ocr-upload]");
+  if (supabaseUpload) {
+    const form = supabaseUpload.closest("form");
+    const file = form?.querySelector("#doc-file-input")?.files?.[0];
+    const title = form?.querySelector("[name='title']")?.value || file?.name || "Uploaded document";
+    supabaseUpload.disabled = true;
+    pipelineMessage = "Uploading to Supabase Storage, converting document text, and running parser job...";
+    renderSummary();
+    try {
+      const result = await uploadDocumentToSupabasePipeline(file, { title });
+      pipelineMessage = `Supabase OCR/AI complete. Document ${result.ingest.document_id} parsed with ${result.parsed.fact_count || 0} fact(s) waiting for human approval/provenance apply.`;
+    } catch (error) {
+      pipelineMessage = error instanceof Error ? error.message : "Supabase OCR/AI pipeline failed.";
+    }
     render();
     return;
   }

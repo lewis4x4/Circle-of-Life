@@ -185,7 +185,7 @@ state = stateApi.addDocument(state, { fileName: "HOMEWOOD GL CERT 2026.pdf" });
 const autoDoc = state.documents.find((doc) => doc.originalFilename === "HOMEWOOD GL CERT 2026.pdf");
 check("g1) document upload can auto-fill classification metadata", autoDoc?.artifactType === "gl_cert" && autoDoc?.mappedModuleCodes?.includes("M17") && autoDoc?.confidence === "high", autoDoc?.automationSummary || "");
 const appSource = readFileSync(new URL("../src/app.js", import.meta.url), "utf8");
-check("g2) document intake UI exposes upload detection, confirmation, rescore, and delete controls", appSource.includes("doc-drop-zone") && appSource.includes("Detected facts") && appSource.includes("Readiness recalculated") && appSource.includes("data-doc-delete"));
+check("g2) document intake UI exposes upload detection, confirmation, rescore, and delete controls", appSource.includes("doc-drop-zone") && appSource.includes("Detected facts") && appSource.includes("Readiness recalculated") && appSource.includes("data-doc-delete") && appSource.includes("data-supabase-ocr-upload") && appSource.includes("Production OCR/AI pipeline"));
 const deleteDocState = stateApi.deleteDocument(state, autoDoc.id);
 check("g3) document intake rows can be deleted and document groups recalculate", !deleteDocState.documents.some((doc) => doc.id === autoDoc.id) && !deleteDocState.documentGroups.some((group) => (group.documentIds || []).includes(autoDoc.id)));
 

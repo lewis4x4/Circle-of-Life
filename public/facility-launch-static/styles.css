@@ -115,3 +115,11 @@ dd { margin: 0; font-weight: 800; }
 .source-resolver-banner { border-color: #fed7aa; background: #fff7ed; color: #9a3412; }
 .doc-needs-panel ul { margin: .4rem 0 0; }
 .route-chip-row b { display: inline-block; background: #dbeafe; color: #1d4ed8; border-radius: 999px; padding: .12rem .4rem; font-size: .72rem; margin-right: .2rem; }
+
+.supabase-pipeline-panel { border: 1px solid #c7d2fe; background: #f8faff; border-radius: 16px; padding: 1rem; margin: 1rem 0; }
+.supabase-pipeline-panel.connected { border-color: #86efac; background: #f0fdf4; }
+.compact-config { margin-top: .75rem; }
+.compact-config input { min-width: 220px; }
+.approval-flow { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .75rem; }
+.approval-flow span { border: 1px solid #dbe4ff; background: #fff; border-radius: 999px; padding: .28rem .6rem; font-weight: 800; color: #26345f; }
+.secondary-button { background: #172554; }
