@@ -1,6 +1,6 @@
 import { onboardingIntakeCatalog, createEmptyIntakeData, fullIntakeModuleCodes } from "./intakeCatalog.js";
 
-export const STORAGE_KEY = "facilityLaunchCenter.homewood.v3";
+export const STORAGE_KEY = "facilityLaunchCenter.homewood.v4";
 
 const nowIso = new Date().toISOString();
 
