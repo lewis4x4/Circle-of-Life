@@ -206,6 +206,51 @@ export function addModuleRecord(state, moduleCode, collectionKey, payload) {
   });
 }
 
+export function updateModuleRecord(state, moduleCode, collectionKey, recordId, patch) {
+  const code = String(moduleCode || "").trim();
+  const key = String(collectionKey || "").trim();
+  const id = String(recordId || "").trim();
+  if (!code || !key || !id || typeof patch !== "object" || patch === null) return state;
+
+  const next = clone(state);
+  const rows = next.mvpData?.[code]?.[key];
+  if (!Array.isArray(rows)) return state;
+  const row = rows.find((candidate) => String(candidate.id || "") === id);
+  if (!row) return state;
+
+  Object.assign(row, Object.fromEntries(
+    Object.entries(patch).map(([field, value]) => [field, String(value ?? "").trim()])
+  ));
+
+  return appendDecisionLog(next, {
+    actionType: "module_intake_record_updated",
+    summary: `Updated ${code} ${key} intake record`,
+    relatedType: "module",
+    relatedId: code
+  });
+}
+
+export function deleteModuleRecord(state, moduleCode, collectionKey, recordId) {
+  const code = String(moduleCode || "").trim();
+  const key = String(collectionKey || "").trim();
+  const id = String(recordId || "").trim();
+  if (!code || !key || !id) return state;
+
+  const next = clone(state);
+  const rows = next.mvpData?.[code]?.[key];
+  if (!Array.isArray(rows)) return state;
+  const before = rows.length;
+  next.mvpData[code][key] = rows.filter((candidate) => String(candidate.id || "") !== id);
+  if (next.mvpData[code][key].length === before) return state;
+
+  return appendDecisionLog(next, {
+    actionType: "module_intake_record_deleted",
+    summary: `Deleted ${code} ${key} intake record`,
+    relatedType: "module",
+    relatedId: code
+  });
+}
+
 export function addDocument(state, payload) {
   const title = String(payload.title || payload.fileName || payload.originalFilename || "").trim();
   if (!title) return state;

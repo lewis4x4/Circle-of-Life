@@ -9,6 +9,8 @@ import {
   addM3Room,
   addM4Employee,
   addModuleRecord,
+  updateModuleRecord,
+  deleteModuleRecord,
   addDocument,
   updateDocument,
   selectSourceOfTruthDocument,
@@ -259,12 +261,23 @@ function renderRecordForm(code, collection) {
   </form>`;
 }
 
+function renderEditableRecordCells(code, collectionKey, row, fields) {
+  return fields.map((fieldDef) => `<td><input
+    data-record-field="${esc(fieldDef.key)}"
+    data-record-module="${esc(code)}"
+    data-record-collection="${esc(collectionKey)}"
+    data-record-id="${esc(row.id || "")}"
+    type="${esc(fieldDef.type || "text")}"
+    value="${esc(row[fieldDef.key] || "")}"
+  /></td>`).join("");
+}
+
 function renderRecordTable(code, collection, rows) {
   const fields = collection.fields || [];
   const body = rows.length
-    ? rows.map((row) => `<tr>${fields.map((fieldDef) => `<td>${esc(row[fieldDef.key] || "")}</td>`).join("")}</tr>`).join("")
-    : `<tr><td colspan="${Math.max(fields.length, 1)}">No ${esc(collection.label.toLowerCase())} entered yet. This module cannot come alive until this data is captured.</td></tr>`;
-  return `<div class="table-wrap compact-table"><table><thead><tr>${fields.map((fieldDef) => `<th>${esc(fieldDef.label)}</th>`).join("")}</tr></thead><tbody>${body}</tbody></table></div>`;
+    ? rows.map((row) => `<tr>${renderEditableRecordCells(code, collection.key, row, fields)}<td><button type="button" class="danger-button" data-record-delete data-record-module="${esc(code)}" data-record-collection="${esc(collection.key)}" data-record-id="${esc(row.id || "")}">Delete</button></td></tr>`).join("")
+    : `<tr><td colspan="${Math.max(fields.length + 1, 1)}">No ${esc(collection.label.toLowerCase())} entered yet. This module cannot come alive until this data is captured.</td></tr>`;
+  return `<div class="table-wrap compact-table"><table><thead><tr>${fields.map((fieldDef) => `<th>${esc(fieldDef.label)}</th>`).join("")}<th>Actions</th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
 function renderIntakeCoverageSummary() {
@@ -332,12 +345,12 @@ function renderModules() {
     <details open><summary>M3 — Rooms / Beds / Units</summary>
       <div class="grid2">${input({ label: "Beds total", type: "number", "data-mvp": "M3", "data-field": "bedsTotal", value: m3.bedsTotal })}${input({ label: "Units total", type: "number", "data-mvp": "M3", "data-field": "unitsTotal", value: m3.unitsTotal })}</div>
       <form id="m3-room-form" class="inline-form wrap"><input name="roomNumber" placeholder="Room #" required /><input name="floor" placeholder="Floor" /><input name="wing" placeholder="Wing" /><input name="unitType" placeholder="Unit type" /><input name="bedCount" type="number" placeholder="Beds" /><input name="careDesignation" placeholder="Care designation" /><select name="status"><option>active</option><option>offline</option><option>reserved</option></select><button type="submit">Add room</button></form>
-      <div class="table-wrap"><table><thead><tr><th>Room</th><th>Floor</th><th>Wing</th><th>Type</th><th>Beds</th><th>Care</th><th>Status</th></tr></thead><tbody>${(m3.rooms || []).map((r) => `<tr><td>${esc(r.roomNumber || r.name)}</td><td>${esc(r.floor)}</td><td>${esc(r.wing)}</td><td>${esc(r.unitType)}</td><td>${esc(r.bedCount)}</td><td>${esc(r.careDesignation)}</td><td>${esc(r.status)}</td></tr>`).join("") || "<tr><td colspan='7'>No rooms yet — add one representative room/unit to prove the capture model.</td></tr>"}</tbody></table></div>
+      <div class="table-wrap"><table><thead><tr><th>Room</th><th>Floor</th><th>Wing</th><th>Type</th><th>Beds</th><th>Care</th><th>Status</th><th>Actions</th></tr></thead><tbody>${(m3.rooms || []).map((r) => `<tr>${renderEditableRecordCells("M3", "rooms", r, [{ key: "roomNumber", label: "Room" }, { key: "floor", label: "Floor" }, { key: "wing", label: "Wing" }, { key: "unitType", label: "Type" }, { key: "bedCount", label: "Beds", type: "number" }, { key: "careDesignation", label: "Care" }, { key: "status", label: "Status" }])}<td><button type="button" class="danger-button" data-record-delete data-record-module="M3" data-record-collection="rooms" data-record-id="${esc(r.id || "")}">Delete</button></td></tr>`).join("") || "<tr><td colspan='8'>No rooms yet — add one representative room/unit to prove the capture model.</td></tr>"}</tbody></table></div>
     </details>
     <details open><summary>M4 — Employees / Users / Roles</summary>
       ${textarea({ label: "Role coverage notes", "data-mvp": "M4", "data-field": "roleCoverageNotes", value: m4.roleCoverageNotes, hint: "Explain launch coverage for ED/DON/Maintenance/Business Office/app roles." })}
       <form id="m4-employee-form" class="inline-form wrap"><input name="fullLegalName" placeholder="Full legal name" required /><input name="preferredName" placeholder="Preferred" /><input name="emailOrMobile" placeholder="Email/mobile" /><input name="hireDate" type="date" /><select name="employmentStatus"><option>active</option><option>inactive</option><option>terminated</option></select><input name="jobTitle" placeholder="Job title" /><input name="appRole" placeholder="App role" required /><input name="primaryFacility" placeholder="Primary facility" value="Homewood Lodge ALF" /><input name="shiftDepartment" placeholder="Shift/department" /><input name="supervisor" placeholder="Supervisor" /><input name="credentialSummary" placeholder="Credential summary" /><select name="loginStatus"><option>pending</option><option>active</option><option>disabled</option></select><button type="submit">Add employee</button></form>
-      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Contact</th><th>Status</th><th>Job/App Role</th><th>Shift</th><th>Supervisor</th><th>Credential</th><th>Login</th></tr></thead><tbody>${(m4.employees || []).map((e) => `<tr><td>${esc(e.fullLegalName || e.name)}<br><small>${esc(e.preferredName)}</small></td><td>${esc(e.emailOrMobile)}</td><td>${esc(e.employmentStatus)}</td><td>${esc(e.jobTitle)} / ${esc(e.appRole || e.role)}</td><td>${esc(e.shiftDepartment)}</td><td>${esc(e.supervisor)}</td><td>${esc(e.credentialSummary)}</td><td>${esc(e.loginStatus)}</td></tr>`).join("") || "<tr><td colspan='8'>No employees yet — add a representative launch user to show role/credential/login readiness.</td></tr>"}</tbody></table></div>
+      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Preferred</th><th>Contact</th><th>Status</th><th>Job Title</th><th>App Role</th><th>Shift</th><th>Supervisor</th><th>Credential</th><th>Login</th><th>Actions</th></tr></thead><tbody>${(m4.employees || []).map((e) => `<tr>${renderEditableRecordCells("M4", "employees", e, [{ key: "fullLegalName", label: "Name" }, { key: "preferredName", label: "Preferred" }, { key: "emailOrMobile", label: "Contact" }, { key: "employmentStatus", label: "Status" }, { key: "jobTitle", label: "Job Title" }, { key: "appRole", label: "App Role" }, { key: "shiftDepartment", label: "Shift" }, { key: "supervisor", label: "Supervisor" }, { key: "credentialSummary", label: "Credential" }, { key: "loginStatus", label: "Login" }])}<td><button type="button" class="danger-button" data-record-delete data-record-module="M4" data-record-collection="employees" data-record-id="${esc(e.id || "")}">Delete</button></td></tr>`).join("") || "<tr><td colspan='11'>No employees yet — add a representative launch user to show role/credential/login readiness.</td></tr>"}</tbody></table></div>
     </details>
     <details open><summary>M17 — Documents / Insurance / Compliance</summary>
       ${textarea({ label: "Review notes", "data-mvp": "M17", "data-field": "reviewNotes", value: m17.reviewNotes })}
@@ -507,6 +520,13 @@ document.body.addEventListener("click", (e) => {
     return;
   }
 
+  const deleteRecord = e.target.closest("[data-record-delete]");
+  if (deleteRecord) {
+    state = deleteModuleRecord(state, deleteRecord.dataset.recordModule, deleteRecord.dataset.recordCollection, deleteRecord.dataset.recordId);
+    render();
+    return;
+  }
+
   const approve = e.target.closest("[data-ex-approve]");
   if (approve) {
     const id = approve.dataset.exApprove;
@@ -612,6 +632,13 @@ document.body.addEventListener("change", (e) => {
   if (mvp) {
     const value = mvp.type === "checkbox" ? mvp.checked : mvp.value;
     state = updateMvpDataField(state, mvp.dataset.mvp, mvp.dataset.field, value);
+    renderSummary();
+    return;
+  }
+
+  const recordField = e.target.closest("[data-record-field]");
+  if (recordField) {
+    state = updateModuleRecord(state, recordField.dataset.recordModule, recordField.dataset.recordCollection, recordField.dataset.recordId, { [recordField.dataset.recordField]: recordField.value });
     renderSummary();
     return;
   }

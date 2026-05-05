@@ -224,6 +224,12 @@ const m2Score = scoring.scoreModule(state.modules.find((module) => module.module
 check("j) M2 captures deeper facility profile and operating-address confirmation", m2Score.completenessPct === 100 && state.mvpData.M2.operatingAddressConfirmed === true, `M2 completeness=${m2Score.completenessPct}%`);
 
 state = fillM3(state);
+let m3RoomId = state.mvpData.M3.rooms[0].id;
+state = stateApi.updateModuleRecord(state, "M3", "rooms", m3RoomId, { wing: "West" });
+check("k1) M3 room records can be edited inline", state.mvpData.M3.rooms[0].wing === "West");
+state = stateApi.deleteModuleRecord(state, "M3", "rooms", m3RoomId);
+check("k2) M3 room records can be deleted", state.mvpData.M3.rooms.length === 0);
+state = fillM3(state);
 const m3Score = scoring.scoreModule(state.modules.find((module) => module.moduleCode === "M3"), state);
 check(
   "k) M3 room/unit entries include floor/wing/type/beds/care/status",
@@ -244,6 +250,12 @@ check(
 );
 
 state = fillOperationalIntakeModules(state);
+const residentRecordId = state.mvpData.M5.residents[0].id;
+state = stateApi.updateModuleRecord(state, "M5", "residents", residentRecordId, { preferredName: "Evie" });
+check("m1) generic intake records can be edited", state.mvpData.M5.residents[0].preferredName === "Evie");
+state = stateApi.deleteModuleRecord(state, "M5", "residents", residentRecordId);
+check("m2) generic intake records can be deleted", state.mvpData.M5.residents.length === 0);
+state = stateApi.addModuleRecord(state, "M5", "residents", onboardingIntakeCatalog.M5.collections[0].sampleRecord);
 for (const moduleCode of Object.keys(onboardingIntakeCatalog)) {
   const moduleScore = scoring.scoreModule(state.modules.find((module) => module.moduleCode === moduleCode), state);
   check(

@@ -86,3 +86,6 @@ dd { margin: 0; font-weight: 800; }
 .module-record-form input { min-width: 185px; }
 .compact-table table { min-width: 1180px; font-size: .82rem; }
 .compact-table th, .compact-table td { padding: .45rem; }
+
+.danger-button { background: #dc2626; }
+.compact-table input { min-width: 150px; padding: .38rem; }
