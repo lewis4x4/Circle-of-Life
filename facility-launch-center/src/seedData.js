@@ -23,7 +23,7 @@ export const moduleCatalog = [
   { moduleNumber: 16, moduleCode: "M16", moduleName: "Incidents / Risk / Claims Awareness", isMvpDetailed: true },
   { moduleNumber: 17, moduleCode: "M17", moduleName: "Documents / Insurance / Compliance", isMvpDetailed: true },
   { moduleNumber: 18, moduleCode: "M18", moduleName: "Vendors / Contacts / Emergency", isMvpDetailed: true },
-  { moduleNumber: 19, moduleCode: "M19", moduleName: "Reports / Dashboards / KPIs", isMvpDetailed: true }
+  { moduleNumber: 19, moduleCode: "M19", moduleName: "Launch Scoreboard / Operating Reports", isMvpDetailed: true }
 ];
 
 const recommendedModuleOwners = {
@@ -45,7 +45,7 @@ const recommendedModuleOwners = {
   M16: ["ED / DON / CFO", "Risk / Incidents", "Incident policy and loss-run awareness"],
   M17: ["Document Custodian", "Compliance Documents", "Insurance/compliance document binder"],
   M18: ["Maintenance / Business Office", "Vendors / Emergency", "Vendor binder and emergency contact list"],
-  M19: ["COO", "Executive Reporting", "Launch dashboard/KPI definitions"]
+  M19: ["COO", "Executive Reporting", "Launch scoreboard worksheet"]
 };
 
 const seededModules = moduleCatalog.map((m) => {

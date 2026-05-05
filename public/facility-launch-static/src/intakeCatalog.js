@@ -260,26 +260,54 @@ export const onboardingIntakeCatalog = {
     }]
   },
   M19: {
-    priority: "Executive operating visibility",
-    purpose: "Define the dashboards, KPIs, owners, cadence, and launch success metrics executives need to run the facility after go-live.",
+    priority: "Executive go-live visibility",
+    purpose: "Lock the short list of numbers leadership will check every day for the first 30 days, who owns each number, where it comes from, and what we do when it slips. This is the launch scoreboard — not a BI spec. If a number isn't on this list, no one will look at it during go-live.",
     fields: [
-      { key: "executiveDashboardAudience", label: "Dashboard audience", sampleValue: "CEO, CFO, COO, ED, DON" },
-      { key: "reportCadence", label: "Report cadence", sampleValue: "Daily launch huddle; weekly executive rollup" },
-      { key: "kpiOwner", label: "KPI owner", sampleValue: "COO" }
+      { key: "executiveDashboardAudience", label: "Who reviews these numbers", sampleValue: "CEO, CFO, COO, ED, DON" },
+      { key: "reportCadence", label: "How often we review them", sampleValue: "Daily 9am huddle for first 30 days; weekly executive rollup after that" },
+      { key: "kpiOwner", label: "Scoreboard owner", sampleValue: "COO — assembles the daily scoreboard and chases gaps" }
     ],
-    checklist: ["Census", "Occupancy", "Revenue/rates", "Incidents", "Staffing", "Rounds completion", "Med/diet exceptions", "Admissions pipeline", "Open work orders", "Launch success criteria"],
+    checklist: [
+      "At least one resident-safety number (e.g., rounds completion, incidents)",
+      "At least one census/occupancy number",
+      "At least one revenue or billing-health number",
+      "At least one staffing-coverage number",
+      "At least one admissions/move-in pipeline number",
+      "Each number has a single named owner (not a department)",
+      "Each number has a documented source (system, log, or person)",
+      "Each number has both a day-1-to-30 floor and a steady-state target",
+      "Each number has a written action for when it slips",
+      "Daily review cadence and reviewer roster confirmed for the first 30 days"
+    ],
     collections: [{
       key: "kpiDefinitions",
-      label: "Dashboard/KPI definitions",
-      addLabel: "Add KPI definition",
-      requiredFields: ["kpiName", "businessQuestion", "dataSource", "owner", "refreshCadence", "target", "launchThreshold", "audience", "actionIfOffTrack"],
-      sampleRecord: { kpiName: "Rounds completion", businessQuestion: "Are required resident checks completed on time?", dataSource: "App rounds logs", owner: "DON", refreshCadence: "Daily", target: "98% complete", launchThreshold: "95% for first 14 days", audience: "COO, ED, DON", actionIfOffTrack: "Huddle review and assignment correction" },
+      label: "Numbers we'll watch at go-live",
+      addLabel: "Add a number to watch",
+      requiredFields: ["kpiName", "businessQuestion", "dataSource", "owner", "refreshCadence", "target", "launchThreshold", "actionIfOffTrack"],
+      sampleRecord: {
+        kpiName: "Rounds completion %",
+        businessQuestion: "Are required resident checks happening on time? Missed rounds = safety + survey risk.",
+        dataSource: "App rounds log, exported each morning by night-shift lead",
+        owner: "DON — Maria Hayes",
+        refreshCadence: "Refreshed every morning by 8am",
+        target: "≥ 98% rounds completed on time",
+        launchThreshold: "≥ 95% for the first 14 days, then re-baseline",
+        audience: "COO, ED, DON on the daily huddle",
+        actionIfOffTrack: "DON pulls the assignment sheet at huddle, reassigns, documents reason in app"
+      },
       fields: [
-        { key: "kpiName", label: "KPI" }, { key: "businessQuestion", label: "Business question" }, { key: "dataSource", label: "Data source" }, { key: "owner", label: "Owner" }, { key: "refreshCadence", label: "Refresh cadence" }, { key: "target", label: "Target" }, { key: "launchThreshold", label: "Launch threshold" }, { key: "audience", label: "Audience" }, { key: "actionIfOffTrack", label: "Action if off-track" }
+        { key: "kpiName", label: "Number we're watching" },
+        { key: "businessQuestion", label: "Why we watch it" },
+        { key: "dataSource", label: "Where the number comes from" },
+        { key: "owner", label: "Person on the hook" },
+        { key: "refreshCadence", label: "How often it's updated" },
+        { key: "target", label: "Steady-state target (after day 30)" },
+        { key: "launchThreshold", label: "Day-1-to-30 floor (alert if below)" },
+        { key: "audience", label: "Who sees this number" },
+        { key: "actionIfOffTrack", label: "What we do if it slips" }
       ]
     }]
-  }
-};
+  }};
 
 export const fullIntakeModuleCodes = Object.keys(onboardingIntakeCatalog);
 

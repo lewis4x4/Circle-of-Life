@@ -123,3 +123,6 @@ dd { margin: 0; font-weight: 800; }
 .approval-flow { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .75rem; }
 .approval-flow span { border: 1px solid #dbe4ff; background: #fff; border-radius: 999px; padding: .28rem .6rem; font-weight: 800; color: #26345f; }
 .secondary-button { background: #172554; }
+
+.pipeline-config-details { margin-top: .75rem; }
+.pipeline-config-details summary { cursor: pointer; font-weight: 900; color: #1d4ed8; }

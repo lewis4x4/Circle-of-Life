@@ -320,7 +320,7 @@ function renderRecordTable(code, collection, rows) {
   const fields = collection.fields || [];
   const body = rows.length
     ? rows.map((row) => `<tr>${renderEditableRecordCells(code, collection.key, row, fields)}<td><button type="button" class="danger-button" data-record-delete data-record-module="${esc(code)}" data-record-collection="${esc(collection.key)}" data-record-id="${esc(row.id || "")}">Delete</button></td></tr>`).join("")
-    : `<tr><td colspan="${Math.max(fields.length + 1, 1)}">No ${esc(collection.label.toLowerCase())} entered yet. This module cannot come alive until this data is captured.</td></tr>`;
+    : `<tr><td colspan="${Math.max(fields.length + 1, 1)}">${code === "M19" ? "No launch scoreboard numbers yet. The COO cannot run the daily go-live huddle until the critical numbers, owners, sources, and red-condition actions are entered here." : `No ${esc(collection.label.toLowerCase())} entered yet. This module cannot come alive until this data is captured.`}</td></tr>`;
   return `<div class="table-wrap compact-table"><table><thead><tr>${fields.map((fieldDef) => `<th>${esc(fieldDef.label)}</th>`).join("")}<th>Actions</th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
@@ -449,23 +449,26 @@ function renderSupabasePipelinePanel() {
     <div class="supabase-pipeline-panel ${configured ? "connected" : ""}">
       <div class="row-between gap">
         <div>
-          <p class="eyebrow">Production OCR/AI pipeline</p>
-          <h3>${configured ? "Supabase connected" : "Connect Supabase to make upload → OCR/AI → approval live"}</h3>
-          <p class="small-muted">Uses Supabase Storage + existing ingest OCR/Markdown conversion, then the Facility Launch parser creates reviewable facts with source excerpts. Approved facts write to module values with provenance.</p>
+          <p class="eyebrow">Storage mode</p>
+          <h3>${configured ? "Supabase OCR/AI connected" : "Local draft workbook — not auto-writing module answers to Supabase yet"}</h3>
+          <p class="small-muted"><strong>Plain English:</strong> the answers typed in this Facility Launch page are saved in this browser so the onboarding team can finish the roundtable, export the JSON/markdown, and hand it back for import. The production Supabase parser is built and deployed, but this standalone page needs an authenticated Haven/Supabase session before it can upload documents or write approved facts into Supabase.</p>
         </div>
-        <span class="confidence-pill ${configured ? "confidence-high" : "confidence-medium"}">${configured ? "ready" : "needs session"}</span>
-      </div>
-      <div class="grid2 compact-config">
-        <input data-pipeline-config="supabaseUrl" placeholder="Supabase URL" value="${esc(config.supabaseUrl || "")}" />
-        <input data-pipeline-config="anonKey" placeholder="Supabase anon key" value="${esc(config.anonKey || "")}" />
-        <input data-pipeline-config="accessToken" placeholder="Current user JWT / access token" value="${esc(config.accessToken || "")}" />
-        <input data-pipeline-config="organizationId" placeholder="Organization UUID" value="${esc(config.organizationId || "")}" />
-        <input data-pipeline-config="facilityId" placeholder="Facility UUID (optional but recommended)" value="${esc(config.facilityId || "")}" />
-        <button type="button" data-save-pipeline-config>Save Supabase connection</button>
+        <span class="confidence-pill ${configured ? "confidence-high" : "confidence-medium"}">${configured ? "connected" : "local draft"}</span>
       </div>
       <div class="approval-flow">
-        <span>1 Storage upload</span><span>2 OCR/Markdown</span><span>3 AI fact extraction</span><span>4 Human approve/reject</span><span>5 Provenance write to modules</span>
+        <span>Current form entries: browser local draft</span><span>Export creates JSON/markdown handoff</span><span>Connected mode: Storage → OCR/AI → human approval → provenance write</span>
       </div>
+      <details class="pipeline-config-details">
+        <summary>Connect Supabase OCR/AI pipeline when logged into Haven</summary>
+        <div class="grid2 compact-config">
+          <input data-pipeline-config="supabaseUrl" placeholder="Supabase URL" value="${esc(config.supabaseUrl || "")}" />
+          <input data-pipeline-config="anonKey" placeholder="Supabase anon key" value="${esc(config.anonKey || "")}" />
+          <input data-pipeline-config="accessToken" placeholder="Current user JWT / access token" value="${esc(config.accessToken || "")}" />
+          <input data-pipeline-config="organizationId" placeholder="Organization UUID" value="${esc(config.organizationId || "")}" />
+          <input data-pipeline-config="facilityId" placeholder="Facility UUID (optional but recommended)" value="${esc(config.facilityId || "")}" />
+          <button type="button" data-save-pipeline-config>Save Supabase connection</button>
+        </div>
+      </details>
       ${pipelineMessage ? `<div class="save-callout">${esc(pipelineMessage)}</div>` : ""}
     </div>
   `;
