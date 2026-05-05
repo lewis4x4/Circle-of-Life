@@ -32,10 +32,10 @@ export const onboardingIntakeCatalog = {
       key: "rateRecords",
       label: "Resident rate records",
       addLabel: "Add rate record",
-      requiredFields: ["residentName", "payerType", "billingContact", "baseMonthlyRate", "careLevelCharge", "otherCharges", "effectiveDate", "depositBalance", "concessions", "collectionStatus"],
+      requiredFields: ["residentId", "payerType", "billingContact", "baseMonthlyRate", "careLevelCharge", "otherCharges", "effectiveDate", "depositBalance", "concessions", "collectionStatus"],
       sampleRecord: { residentName: "Evelyn Carter", payerType: "private_pay", billingContact: "Mark Carter / mark@example.com", baseMonthlyRate: "4200", careLevelCharge: "650", otherCharges: "Medication management 250", effectiveDate: "2026-05-01", depositBalance: "0", concessions: "None", collectionStatus: "current" },
       fields: [
-        { key: "residentName", label: "Resident" }, { key: "payerType", label: "Payer type" }, { key: "billingContact", label: "Billing contact" }, { key: "baseMonthlyRate", label: "Base monthly rate", type: "number" }, { key: "careLevelCharge", label: "Care charge", type: "number" }, { key: "otherCharges", label: "Other charges" }, { key: "effectiveDate", label: "Effective date", type: "date" }, { key: "depositBalance", label: "Deposit/balance" }, { key: "concessions", label: "Concessions" }, { key: "collectionStatus", label: "Collection status" }
+        { key: "residentId", label: "Resident", relation: "resident" }, { key: "payerType", label: "Payer type" }, { key: "billingContact", label: "Billing contact" }, { key: "baseMonthlyRate", label: "Base monthly rate", type: "number" }, { key: "careLevelCharge", label: "Care charge", type: "number" }, { key: "otherCharges", label: "Other charges" }, { key: "effectiveDate", label: "Effective date", type: "date" }, { key: "depositBalance", label: "Deposit/balance" }, { key: "concessions", label: "Concessions" }, { key: "collectionStatus", label: "Collection status" }
       ]
     }]
   },
@@ -52,10 +52,10 @@ export const onboardingIntakeCatalog = {
       key: "carePlans",
       label: "Care/service plans",
       addLabel: "Add care plan",
-      requiredFields: ["residentName", "careLevel", "adlNeeds", "mobility", "cognitiveStatus", "fallRisk", "servicePlanSummary", "assessmentDate", "nextReviewDate", "escalationRules"],
+      requiredFields: ["residentId", "careLevel", "adlNeeds", "mobility", "cognitiveStatus", "fallRisk", "servicePlanSummary", "assessmentDate", "nextReviewDate", "escalationRules"],
       sampleRecord: { residentName: "Evelyn Carter", careLevel: "Level 2", adlNeeds: "Bathing assistance; medication reminders", mobility: "Walker with standby assist", cognitiveStatus: "Mild memory support", fallRisk: "High", servicePlanSummary: "AM/PM ADL prompts; nightly safety check", assessmentDate: "2026-04-20", nextReviewDate: "2026-07-20", escalationRules: "Notify DON after any fall or missed med pass" },
       fields: [
-        { key: "residentName", label: "Resident" }, { key: "careLevel", label: "Care level" }, { key: "adlNeeds", label: "ADL needs" }, { key: "mobility", label: "Mobility" }, { key: "cognitiveStatus", label: "Cognitive status" }, { key: "fallRisk", label: "Fall risk" }, { key: "servicePlanSummary", label: "Service plan summary" }, { key: "assessmentDate", label: "Assessment date", type: "date" }, { key: "nextReviewDate", label: "Next review", type: "date" }, { key: "escalationRules", label: "Escalation rules" }
+        { key: "residentId", label: "Resident", relation: "resident" }, { key: "careLevel", label: "Care level" }, { key: "adlNeeds", label: "ADL needs" }, { key: "mobility", label: "Mobility" }, { key: "cognitiveStatus", label: "Cognitive status" }, { key: "fallRisk", label: "Fall risk" }, { key: "servicePlanSummary", label: "Service plan summary" }, { key: "assessmentDate", label: "Assessment date", type: "date" }, { key: "nextReviewDate", label: "Next review", type: "date" }, { key: "escalationRules", label: "Escalation rules" }
       ]
     }]
   },
@@ -112,10 +112,10 @@ export const onboardingIntakeCatalog = {
       key: "medicationProfiles",
       label: "Medication process profiles",
       addLabel: "Add medication profile",
-      requiredFields: ["residentName", "pharmacy", "marStatus", "medPassTimes", "prnProcess", "controlledSubstanceProcess", "allergies", "exceptionEscalation"],
+      requiredFields: ["residentId", "pharmacy", "marStatus", "medPassTimes", "prnProcess", "controlledSubstanceProcess", "allergies", "exceptionEscalation"],
       sampleRecord: { residentName: "Evelyn Carter", pharmacy: "Homewood Pharmacy", marStatus: "Paper MAR active", medPassTimes: "08:00, 14:00, 20:00", prnProcess: "Document reason/result and notify nurse/DON per policy", controlledSubstanceProcess: "Double-count at shift change", allergies: "Penicillin", exceptionEscalation: "Missed med escalates to DON immediately" },
       fields: [
-        { key: "residentName", label: "Resident" }, { key: "pharmacy", label: "Pharmacy" }, { key: "marStatus", label: "MAR status" }, { key: "medPassTimes", label: "Med-pass times" }, { key: "prnProcess", label: "PRN process" }, { key: "controlledSubstanceProcess", label: "Controlled substance process" }, { key: "allergies", label: "Allergies" }, { key: "exceptionEscalation", label: "Exception escalation" }
+        { key: "residentId", label: "Resident", relation: "resident" }, { key: "pharmacy", label: "Pharmacy" }, { key: "marStatus", label: "MAR status" }, { key: "medPassTimes", label: "Med-pass times" }, { key: "prnProcess", label: "PRN process" }, { key: "controlledSubstanceProcess", label: "Controlled substance process" }, { key: "allergies", label: "Allergies" }, { key: "exceptionEscalation", label: "Exception escalation" }
       ]
     }]
   },
@@ -132,10 +132,10 @@ export const onboardingIntakeCatalog = {
       key: "dietaryProfiles",
       label: "Resident dietary profiles",
       addLabel: "Add dietary profile",
-      requiredFields: ["residentName", "dietOrder", "allergies", "texture", "likesDislikes", "assistanceNeeded", "snackHydrationPlan", "missedMealEscalation"],
+      requiredFields: ["residentId", "dietOrder", "allergies", "texture", "likesDislikes", "assistanceNeeded", "snackHydrationPlan", "missedMealEscalation"],
       sampleRecord: { residentName: "Evelyn Carter", dietOrder: "Regular low sodium", allergies: "Shellfish", texture: "Regular texture", likesDislikes: "Likes oatmeal; dislikes fish", assistanceNeeded: "Cueing and tray setup", snackHydrationPlan: "PM snack and hydration rounds", missedMealEscalation: "Notify caregiver lead if meal refused" },
       fields: [
-        { key: "residentName", label: "Resident" }, { key: "dietOrder", label: "Diet order" }, { key: "allergies", label: "Allergies" }, { key: "texture", label: "Texture" }, { key: "likesDislikes", label: "Likes/dislikes" }, { key: "assistanceNeeded", label: "Assistance needed" }, { key: "snackHydrationPlan", label: "Snack/hydration plan" }, { key: "missedMealEscalation", label: "Missed meal escalation" }
+        { key: "residentId", label: "Resident", relation: "resident" }, { key: "dietOrder", label: "Diet order" }, { key: "allergies", label: "Allergies" }, { key: "texture", label: "Texture" }, { key: "likesDislikes", label: "Likes/dislikes" }, { key: "assistanceNeeded", label: "Assistance needed" }, { key: "snackHydrationPlan", label: "Snack/hydration plan" }, { key: "missedMealEscalation", label: "Missed meal escalation" }
       ]
     }]
   },
@@ -212,10 +212,10 @@ export const onboardingIntakeCatalog = {
       key: "familyContacts",
       label: "Family/responsible-party contacts",
       addLabel: "Add family contact",
-      requiredFields: ["residentName", "contactName", "relationship", "phone", "email", "authority", "communicationPreference", "portalInviteStatus", "billingAccess", "privacyConsent"],
+      requiredFields: ["residentId", "contactName", "relationship", "phone", "email", "authority", "communicationPreference", "portalInviteStatus", "billingAccess", "privacyConsent"],
       sampleRecord: { residentName: "Evelyn Carter", contactName: "Mark Carter", relationship: "Son / responsible party", phone: "205-555-2100", email: "mark@example.com", authority: "Financial POA on file", communicationPreference: "Text urgent, email routine", portalInviteStatus: "Invite pending", billingAccess: "Yes", privacyConsent: "HIPAA release on file" },
       fields: [
-        { key: "residentName", label: "Resident" }, { key: "contactName", label: "Contact" }, { key: "relationship", label: "Relationship" }, { key: "phone", label: "Phone" }, { key: "email", label: "Email" }, { key: "authority", label: "Authority" }, { key: "communicationPreference", label: "Communication preference" }, { key: "portalInviteStatus", label: "Portal invite status" }, { key: "billingAccess", label: "Billing access" }, { key: "privacyConsent", label: "Privacy consent" }
+        { key: "residentId", label: "Resident", relation: "resident" }, { key: "contactName", label: "Contact" }, { key: "relationship", label: "Relationship" }, { key: "phone", label: "Phone" }, { key: "email", label: "Email" }, { key: "authority", label: "Authority" }, { key: "communicationPreference", label: "Communication preference" }, { key: "portalInviteStatus", label: "Portal invite status" }, { key: "billingAccess", label: "Billing access" }, { key: "privacyConsent", label: "Privacy consent" }
       ]
     }]
   },

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 const storage = new Map();
 globalThis.localStorage = {
@@ -20,6 +21,7 @@ const stateApi = await import("../src/state.js");
 const scoring = await import("../src/scoring.js");
 const gates = await import("../src/gates.js");
 const exportsApi = await import("../src/export.js");
+const documentIntelligence = await import("../src/documentIntelligence.js");
 const { onboardingIntakeCatalog } = await import("../src/intakeCatalog.js");
 
 function check(label, condition, detail = "") {
@@ -125,7 +127,11 @@ function fillOperationalIntakeModules(state) {
       next = stateApi.updateMvpDataField(next, moduleCode, field.key, field.sampleValue || `${field.label} captured`);
     }
     for (const collection of spec.collections || []) {
-      next = stateApi.addModuleRecord(next, moduleCode, collection.key, collection.sampleRecord);
+      const sampleRecord = { ...collection.sampleRecord };
+      if ((collection.fields || []).some((field) => field.relation === "resident")) {
+        sampleRecord.residentId = next.mvpData?.M5?.residents?.[0]?.id || sampleRecord.residentId;
+      }
+      next = stateApi.addModuleRecord(next, moduleCode, collection.key, sampleRecord);
     }
     next = stateApi.updateOwnerWorksheetRow(next, moduleCode, {
       status: "ready_for_review",
@@ -172,6 +178,16 @@ check(
   "f) source-of-truth conflicts can be resolved",
   scoring.getUnresolvedDuplicateGroups(state).length === 0 && scoring.getInvalidSourceOfTruthGroups(state).length === 0
 );
+
+const inferredGl = documentIntelligence.inferDocumentIntelligence("HOMEWOOD GL CERT 2.pdf");
+check("g0) document intelligence classifies GL certificates from filename", inferredGl.artifactType === "gl_cert" && inferredGl.mappedModuleCodes.includes("M17") && inferredGl.documentGroupId.includes("gl_cert"));
+state = stateApi.addDocument(state, { fileName: "HOMEWOOD GL CERT 2026.pdf" });
+const autoDoc = state.documents.find((doc) => doc.originalFilename === "HOMEWOOD GL CERT 2026.pdf");
+check("g1) document upload can auto-fill classification metadata", autoDoc?.artifactType === "gl_cert" && autoDoc?.mappedModuleCodes?.includes("M17") && autoDoc?.confidence === "high", autoDoc?.automationSummary || "");
+const appSource = readFileSync(new URL("../src/app.js", import.meta.url), "utf8");
+check("g2) document intake UI exposes upload detection, confirmation, rescore, and delete controls", appSource.includes("doc-drop-zone") && appSource.includes("Detected facts") && appSource.includes("Readiness recalculated") && appSource.includes("data-doc-delete"));
+const deleteDocState = stateApi.deleteDocument(state, autoDoc.id);
+check("g3) document intake rows can be deleted and document groups recalculate", !deleteDocState.documents.some((doc) => doc.id === autoDoc.id) && !deleteDocState.documentGroups.some((group) => (group.documentIds || []).includes(autoDoc.id)));
 
 state = stateApi.addDocument(state, {
   title: "HOMEWOOD 2026 LICENSE.pdf",
@@ -249,13 +265,23 @@ check(
   `M4 completeness=${m4Score.completenessPct}%`
 );
 
+
+for (const moduleCode of ["M6", "M7", "M10", "M11", "M15"]) {
+  const firstCollection = onboardingIntakeCatalog[moduleCode].collections[0];
+  check(`${moduleCode}) resident-dependent module uses linked resident selection`, firstCollection.requiredFields.includes("residentId") && firstCollection.fields.some((field) => field.key === "residentId" && field.relation === "resident"));
+}
+
 state = fillOperationalIntakeModules(state);
-const residentRecordId = state.mvpData.M5.residents[0].id;
-state = stateApi.updateModuleRecord(state, "M5", "residents", residentRecordId, { preferredName: "Evie" });
-check("m1) generic intake records can be edited", state.mvpData.M5.residents[0].preferredName === "Evie");
-state = stateApi.deleteModuleRecord(state, "M5", "residents", residentRecordId);
-check("m2) generic intake records can be deleted", state.mvpData.M5.residents.length === 0);
-state = stateApi.addModuleRecord(state, "M5", "residents", onboardingIntakeCatalog.M5.collections[0].sampleRecord);
+const brokenLinkState = structuredClone(state);
+brokenLinkState.mvpData.M6.rateRecords[0].residentId = "missing-resident-id";
+const brokenM6Score = scoring.scoreModule(brokenLinkState.modules.find((module) => module.moduleCode === "M6"), brokenLinkState);
+check("m0) invalid resident links do not count as complete", brokenM6Score.completenessPct < 100, `M6 broken-link completeness=${brokenM6Score.completenessPct}%`);
+const vendorRecordId = state.mvpData.M18.vendorContacts[0].id;
+state = stateApi.updateModuleRecord(state, "M18", "vendorContacts", vendorRecordId, { category: "Life safety updated" });
+check("m1) generic intake records can be edited", state.mvpData.M18.vendorContacts[0].category === "Life safety updated");
+state = stateApi.deleteModuleRecord(state, "M18", "vendorContacts", vendorRecordId);
+check("m2) generic intake records can be deleted", state.mvpData.M18.vendorContacts.length === 0);
+state = stateApi.addModuleRecord(state, "M18", "vendorContacts", onboardingIntakeCatalog.M18.collections[0].sampleRecord);
 for (const moduleCode of Object.keys(onboardingIntakeCatalog)) {
   const moduleScore = scoring.scoreModule(state.modules.find((module) => module.moduleCode === moduleCode), state);
   check(

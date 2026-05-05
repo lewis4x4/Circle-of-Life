@@ -12,6 +12,7 @@ import {
   updateModuleRecord,
   deleteModuleRecord,
   addDocument,
+  deleteDocument,
   updateDocument,
   selectSourceOfTruthDocument,
   routeStaleDocument,
@@ -28,9 +29,11 @@ import { scoreFacility } from "./scoring.js";
 import { evaluateGate0, evaluateGate2 } from "./gates.js";
 import { buildReadinessMarkdown, buildStateJsonExport, buildLaunchNarrative } from "./export.js";
 import { onboardingIntakeCatalog } from "./intakeCatalog.js";
+import { inferDocumentIntelligence } from "./documentIntelligence.js";
 
 let state = loadState();
 let activeTab = "overview";
+let lastDocumentSaveSummary = "";
 
 const tabsEl = document.getElementById("tabs");
 const summaryEl = document.getElementById("summary");
@@ -251,25 +254,64 @@ function renderScalarIntakeFields(code, spec, data) {
 }
 
 function renderIntakeChecklist(spec) {
-  return `<ul class="checklist-grid">${(spec.checklist || []).map((item) => `<li>${esc(item)}</li>`).join("")}</ul>`;
+  return `<div class="checklist-block"><p class="checklist-label">Required capture checklist</p><ul class="checklist-grid">${(spec.checklist || []).map((item) => `<li><span aria-hidden="true">✓</span>${esc(item)}</li>`).join("")}</ul></div>`;
+}
+
+function getResidentOptions() {
+  return (state.mvpData?.M5?.residents || []).map((resident) => ({
+    value: resident.id,
+    label: `${resident.fullLegalName || resident.preferredName || resident.id}${resident.roomBed ? ` — ${resident.roomBed}` : ""}`,
+    name: resident.fullLegalName || resident.preferredName || resident.id
+  })).filter((optionItem) => optionItem.value);
+}
+
+function relationOptions(fieldDef) {
+  if (fieldDef.relation === "resident") return getResidentOptions();
+  return [];
+}
+
+function renderCollectionFieldControl(fieldDef, attrs = {}, value = "") {
+  const normalizedAttrs = Object.fromEntries(Object.entries(attrs).filter(([, attrValue]) => attrValue !== "" && attrValue !== false && attrValue !== null && attrValue !== undefined));
+  const attr = Object.entries(normalizedAttrs).map(([k, v]) => `${k}="${esc(v)}"`).join(" ");
+  if (fieldDef.relation) {
+    const options = relationOptions(fieldDef);
+    const disabled = options.length ? "" : "disabled";
+    return `<select ${attr} ${disabled} data-relation="${esc(fieldDef.relation)}">
+      <option value="">${options.length ? `Select ${fieldDef.label}` : `Add ${fieldDef.label.toLowerCase()} records first`}</option>
+      ${options.map((optionItem) => `<option value="${esc(optionItem.value)}" ${optionItem.value === value ? "selected" : ""}>${esc(optionItem.label)}</option>`).join("")}
+    </select>`;
+  }
+  return `<input ${attr} type="${esc(fieldDef.type || "text")}" value="${esc(value)}" />`;
+}
+
+function enrichLinkedPayload(payload) {
+  const next = { ...payload };
+  if (next.residentId) {
+    const resident = (state.mvpData?.M5?.residents || []).find((candidate) => candidate.id === next.residentId);
+    if (resident) next.residentName = resident.fullLegalName || resident.preferredName || resident.id;
+  }
+  return next;
 }
 
 function renderRecordForm(code, collection) {
+  const relationBlocked = (collection.fields || []).some((fieldDef) => fieldDef.relation === "resident") && !getResidentOptions().length;
   return `<form class="inline-form wrap module-record-form" data-module-record-form data-module-code="${esc(code)}" data-collection-key="${esc(collection.key)}">
-    ${(collection.fields || []).map((fieldDef) => `<input name="${esc(fieldDef.key)}" type="${esc(fieldDef.type || "text")}" placeholder="${esc(fieldDef.label)}" ${collection.requiredFields?.includes(fieldDef.key) ? "required" : ""} />`).join("")}
-    <button type="submit">${esc(collection.addLabel || `Add ${collection.label}`)}</button>
+    ${(collection.fields || []).map((fieldDef) => renderCollectionFieldControl(fieldDef, {
+      name: fieldDef.key,
+      placeholder: fieldDef.label,
+      required: collection.requiredFields?.includes(fieldDef.key) ? "required" : ""
+    })).join("")}
+    <button type="submit" ${relationBlocked ? "disabled" : ""}>${relationBlocked ? "Add resident in M5 first" : esc(collection.addLabel || `Add ${collection.label}`)}</button>
   </form>`;
 }
 
 function renderEditableRecordCells(code, collectionKey, row, fields) {
-  return fields.map((fieldDef) => `<td><input
-    data-record-field="${esc(fieldDef.key)}"
-    data-record-module="${esc(code)}"
-    data-record-collection="${esc(collectionKey)}"
-    data-record-id="${esc(row.id || "")}"
-    type="${esc(fieldDef.type || "text")}"
-    value="${esc(row[fieldDef.key] || "")}"
-  /></td>`).join("");
+  return fields.map((fieldDef) => `<td>${renderCollectionFieldControl(fieldDef, {
+    "data-record-field": fieldDef.key,
+    "data-record-module": code,
+    "data-record-collection": collectionKey,
+    "data-record-id": row.id || ""
+  }, row[fieldDef.key] || "")}</td>`).join("");
 }
 
 function renderRecordTable(code, collection, rows) {
@@ -299,7 +341,9 @@ function renderOperationalIntakeModules() {
       ${renderScalarIntakeFields(code, spec, data)}
       ${(spec.collections || []).map((collection) => {
         const rows = Array.isArray(data[collection.key]) ? data[collection.key] : [];
-        return `<section class="collection-block"><div class="row-between"><h4>${esc(collection.label)}</h4><span class="badge badge-info">${rows.length} record(s)</span></div>${renderRecordForm(code, collection)}${renderRecordTable(code, collection, rows)}</section>`;
+        const needsResident = (collection.fields || []).some((fieldDef) => fieldDef.relation === "resident");
+        const residentDependency = needsResident && !getResidentOptions().length ? `<p class="dependency-note">This section links to M5 Residents. Add the resident in M5 first, then select them here. No duplicate typing.</p>` : "";
+        return `<section class="collection-block"><div class="row-between"><h4>${esc(collection.label)}</h4><span class="badge badge-info">${rows.length} record(s)</span></div>${residentDependency}${renderRecordForm(code, collection)}${renderRecordTable(code, collection, rows)}</section>`;
       }).join("")}
     </details>`;
   }).join("");
@@ -360,30 +404,131 @@ function renderModules() {
   `;
 }
 
+function formatArtifactLabel(value = "") {
+  return String(value || "other").replaceAll("_", " ").replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function renderDetectionCard(intelligence, options = {}) {
+  if (!intelligence) {
+    return `
+      <div class="doc-detected-card empty">
+        <strong>Drop or choose a document.</strong>
+        <p>The launch center will classify it, pre-fill the metadata, route it to the right module(s), and show what still needs human confirmation.</p>
+      </div>
+    `;
+  }
+  const confidence = intelligence.confidence || "low";
+  const routes = intelligence.mappedModuleCodes || [];
+  return `
+    <div class="doc-detected-card">
+      <div class="row-between gap">
+        <div>
+          <p class="eyebrow">Detected facts ${options.saved ? "saved" : "ready for review"}</p>
+          <h3>${esc(formatArtifactLabel(intelligence.artifactType))} · ${esc(intelligence.entityAssociation)}</h3>
+        </div>
+        <span class="confidence-pill confidence-${esc(confidence)}">${esc(confidence)} confidence</span>
+      </div>
+      <div class="detected-grid">
+        <span><strong>Term</strong>${esc(intelligence.term || "Needs confirmation")}</span>
+        <span><strong>Currency</strong>${esc(intelligence.currencyStatus || "unknown")}</span>
+        <span><strong>Source group</strong>${esc(intelligence.groupName || intelligence.documentGroupId || "New group")}</span>
+        <span><strong>Routes</strong>${routes.map((code) => `<b>${esc(code)}</b>`).join(" ") || "M17"}</span>
+      </div>
+      <p class="small-muted"><strong>Why suggested:</strong> ${esc(intelligence.notes || "Matched filename and document metadata heuristics.")}</p>
+      <p class="small-muted"><strong>Human checkpoint:</strong> review the highlighted auto-filled fields, then save. In production this same panel becomes the OCR/AI extraction review queue before facts are pushed into modules.</p>
+    </div>
+  `;
+}
+
+function renderDocumentsLaunchNeeds(docs, groups) {
+  const stale = docs.filter((doc) => doc.currencyStatus === "stale");
+  const pendingApproval = docs.filter((doc) => doc.custodianApprovalStatus !== "approved");
+  const unresolvedGroups = groups.filter((group) => (group.documentIds || []).length > 1 && !group.sourceOfTruthDocumentId);
+  const missing = [];
+  if (!docs.length) missing.push("Upload core evidence: license, GL certificate, property policy, bond, loss runs, floor plan, emergency/vendor documents.");
+  if (stale.length) missing.push(`${stale.length} stale document(s) need a refreshed file, route owner, or exception.`);
+  if (pendingApproval.length) missing.push(`${pendingApproval.length} document(s) still need custodian approval.`);
+  if (unresolvedGroups.length) missing.push(`${unresolvedGroups.length} duplicate/variant group(s) need source-of-truth selection.`);
+  if (!docs.some((doc) => (doc.mappedModuleCodes || []).includes("M16"))) missing.push("Claims/risk evidence has not been routed to M16 yet.");
+  if (!docs.some((doc) => (doc.mappedModuleCodes || []).includes("M18"))) missing.push("Vendor/emergency evidence has not been routed to M18 yet.");
+  return `
+    <div class="doc-needs-panel">
+      <h3>What document intake still needs</h3>
+      <ul>${(missing.length ? missing : ["Document intake has source-of-truth, currency, routing, and approval coverage for demo launch."]).map((item) => `<li>${esc(item)}</li>`).join("")}</ul>
+    </div>
+  `;
+}
+
+function markAutoFilledFields(form) {
+  form?.querySelectorAll("[data-auto-field]").forEach((control) => {
+    control.classList.toggle("auto-filled", Boolean(control.value));
+  });
+}
+
+function applyDocumentIntelligenceToForm(form, fileName) {
+  if (!form || !fileName) return;
+  const intelligence = inferDocumentIntelligence(fileName);
+  for (const [name, value] of Object.entries({
+    title: intelligence.title,
+    artifactType: intelligence.artifactType,
+    entityAssociation: intelligence.entityAssociation,
+    term: intelligence.term,
+    effectiveDate: intelligence.effectiveDate,
+    expirationDate: intelligence.expirationDate,
+    currencyStatus: intelligence.currencyStatus,
+    version: intelligence.version,
+    custodianApprovalStatus: intelligence.custodianApprovalStatus,
+    confidence: intelligence.confidence,
+    notes: intelligence.notes,
+    documentGroupId: intelligence.documentGroupId,
+    groupName: intelligence.groupName,
+    mappedModuleCodes: intelligence.mappedModuleCodes.join(",")
+  })) {
+    const control = form.querySelector(`[name='${name}']`);
+    if (control) control.value = value || "";
+  }
+  markAutoFilledFields(form);
+  const preview = document.getElementById("doc-intelligence-preview");
+  if (preview) preview.innerHTML = renderDetectionCard(intelligence);
+}
+
 function renderDocs() {
   const groups = state.documentGroups || [];
   const docs = state.documents || [];
+  const unresolvedGroups = groups.filter((g) => (g.documentIds || []).length > 1 && !g.sourceOfTruthDocumentId);
   return `
     <h2>Document Intake + Source-of-Truth Resolver</h2>
-    <p class="lead">File intake captures filename and metadata. No parser is required for launch control: the onboarder or custodian marks artifact type, term, currency, approval, and source-of-truth.</p>
-    <form id="document-form" class="grid2 intake-card">
-      <input id="doc-file-input" type="file" name="file" />
-      <input name="title" placeholder="Document title (auto-filled from file name)" required />
-      <select name="artifactType">${ARTIFACT_TYPES.map((v) => option(v, "gl_cert")).join("")}</select>
-      <input name="entityAssociation" placeholder="Facility/entity association" value="Homewood Lodge ALF" />
-      <input name="term" placeholder="Term/year" />
-      <input name="effectiveDate" type="date" />
-      <input name="expirationDate" type="date" />
-      <select name="currencyStatus">${CURRENCY_STATUSES.map((v) => option(v, "unknown")).join("")}</select>
-      <input name="version" placeholder="Version" value="v1" />
-      <select name="custodianApprovalStatus">${APPROVAL_STATUSES.map((v) => option(v, "pending")).join("")}</select>
-      <select name="confidence">${CONFIDENCE_LEVELS.map((v) => option(v, "manual")).join("")}</select>
-      <input name="notes" placeholder="Confidence notes" />
-      <button type="submit">Add intake row</button>
+    <p class="lead">Drop a document here first. The launch center classifies what it appears to be, pre-fills the launch metadata, routes it to the affected modules, flags stale/duplicate evidence, and immediately updates readiness after save. Current demo automation is filename/metadata based; production extraction should add Supabase Storage + OCR/AI parsing + human approval before facts write into modules.</p>
+    ${lastDocumentSaveSummary ? `<div class="save-callout">${esc(lastDocumentSaveSummary)}</div>` : ""}
+    ${renderDocumentsLaunchNeeds(docs, groups)}
+    ${unresolvedGroups.length ? `<div class="source-resolver-banner"><strong>Source-of-truth needed:</strong> ${unresolvedGroups.map((group) => esc(group.name)).join(", ")}. Select the canonical document below before Gate 2.</div>` : ""}
+    <form id="document-form" class="grid2 intake-card doc-upload-card">
+      <label class="doc-drop-zone" for="doc-file-input">
+        <input id="doc-file-input" type="file" name="file" />
+        <span class="drop-icon">📄</span>
+        <strong>Drop a PDF or choose file</strong>
+        <small>Auto-detects type, entity, dates, duplicate group, and module route.</small>
+      </label>
+      <input name="title" placeholder="Document title (auto-filled from file name)" required data-auto-field />
+      <select name="artifactType" data-auto-field>${ARTIFACT_TYPES.map((v) => option(v, "gl_cert")).join("")}</select>
+      <input name="entityAssociation" placeholder="Facility/entity association" value="Homewood Lodge ALF" data-auto-field />
+      <input name="term" placeholder="Term/year" data-auto-field />
+      <input name="effectiveDate" type="date" data-auto-field />
+      <input name="expirationDate" type="date" data-auto-field />
+      <select name="currencyStatus" data-auto-field>${CURRENCY_STATUSES.map((v) => option(v, "unknown")).join("")}</select>
+      <input name="version" placeholder="Version" value="v1" data-auto-field />
+      <select name="custodianApprovalStatus" data-auto-field>${APPROVAL_STATUSES.map((v) => option(v, "pending")).join("")}</select>
+      <select name="confidence" data-auto-field>${CONFIDENCE_LEVELS.map((v) => option(v, "manual")).join("")}</select>
+      <input name="notes" placeholder="Confidence notes" data-auto-field />
+      <input type="hidden" name="documentGroupId" />
+      <input type="hidden" name="groupName" />
+      <input type="hidden" name="mappedModuleCodes" />
+      <div id="doc-intelligence-preview" class="doc-intelligence-preview">${renderDetectionCard(null)}</div>
+      <button type="submit">Confirm and save classified document</button>
     </form>
-    <div class="table-wrap"><table><thead><tr><th>Document</th><th>Artifact</th><th>Facility/Entity</th><th>Term</th><th>Effective</th><th>Expiration</th><th>Version</th><th>Currency</th><th>Approval</th><th>Confidence/Notes</th><th>Route/Exception</th></tr></thead><tbody>
+    <div class="table-wrap"><table><thead><tr><th>Document</th><th>Artifact</th><th>Facility/Entity</th><th>Term</th><th>Effective</th><th>Expiration</th><th>Version</th><th>Currency</th><th>Approval</th><th>Confidence/Notes</th><th>Route/Exception</th><th>Actions</th></tr></thead><tbody>
       ${docs.map((d) => `<tr>
-        <td><strong>${esc(d.title)}</strong><br><small>${d.isSourceOfTruth ? "Source of truth" : "variant/intake"}</small></td>
+        <td><strong>${esc(d.title)}</strong><br><small>${d.isSourceOfTruth ? "Source of truth" : "variant/intake"}</small>${d.mappedModuleCodes?.length ? `<br><span class="route-chip-row">${d.mappedModuleCodes.map((code) => `<b>${esc(code)}</b>`).join(" ")}</span>` : ""}${d.automationSummary ? `<br><small>${esc(d.automationSummary)}</small>` : ""}</td>
         <td><select data-doc-field="artifactType" data-doc-id="${d.id}">${ARTIFACT_TYPES.map((v) => option(v, d.artifactType)).join("")}</select></td>
         <td><input data-doc-field="entityAssociation" data-doc-id="${d.id}" value="${esc(d.entityAssociation || d.facilityName || "")}" /></td>
         <td><input data-doc-field="term" data-doc-id="${d.id}" value="${esc(d.term || "")}" /></td>
@@ -394,7 +539,8 @@ function renderDocs() {
         <td><select data-doc-field="custodianApprovalStatus" data-doc-id="${d.id}">${APPROVAL_STATUSES.map((v) => option(v, d.custodianApprovalStatus)).join("")}</select></td>
         <td><select data-doc-field="confidence" data-doc-id="${d.id}">${CONFIDENCE_LEVELS.map((v) => option(v, d.confidence)).join("")}</select><input data-doc-field="notes" data-doc-id="${d.id}" value="${esc(d.notes || "")}" /></td>
         <td>${d.currencyStatus === "stale" ? `<input data-route-doc="${d.id}" placeholder="Route owner" value="${esc(d.routedOwnerName || "")}" /><button data-doc-exception="${d.id}">Request Exception</button>` : "No stale action"}</td>
-      </tr>`).join("")}
+        <td><button type="button" class="danger-button" data-doc-delete="${esc(d.id)}">Delete</button></td>
+      </tr>`).join("") || "<tr><td colspan='12'>No documents entered yet — upload a license, insurance certificate, policy, bond, loss run, floor plan, or emergency/vendor document to start source-of-truth resolution.</td></tr>"}
     </tbody></table></div>
     <h3>Duplicate / Variant Groups</h3>
     <div class="cards">${groups.filter((g) => (g.documentIds || []).length > 1).map((g) => `<div class="card"><h4>${esc(g.name)}</h4><p>${g.sourceOfTruthDocumentId ? "Resolved" : "Unresolved"}</p><select data-sot-group="${g.id}"><option value="">Select source of truth</option>${g.documentIds.map((id) => {
@@ -527,6 +673,14 @@ document.body.addEventListener("click", (e) => {
     return;
   }
 
+  const deleteDoc = e.target.closest("[data-doc-delete]");
+  if (deleteDoc) {
+    state = deleteDocument(state, deleteDoc.dataset.docDelete);
+    lastDocumentSaveSummary = "Document row deleted. Readiness and source-of-truth groups were recalculated.";
+    render();
+    return;
+  }
+
   const approve = e.target.closest("[data-ex-approve]");
   if (approve) {
     const id = approve.dataset.exApprove;
@@ -638,7 +792,7 @@ document.body.addEventListener("change", (e) => {
 
   const recordField = e.target.closest("[data-record-field]");
   if (recordField) {
-    state = updateModuleRecord(state, recordField.dataset.recordModule, recordField.dataset.recordCollection, recordField.dataset.recordId, { [recordField.dataset.recordField]: recordField.value });
+    state = updateModuleRecord(state, recordField.dataset.recordModule, recordField.dataset.recordCollection, recordField.dataset.recordId, enrichLinkedPayload({ [recordField.dataset.recordField]: recordField.value }));
     renderSummary();
     return;
   }
@@ -672,16 +826,40 @@ document.body.addEventListener("change", (e) => {
   }
 
   if (e.target.id === "doc-file-input") {
-    const title = e.target.form?.querySelector("input[name='title']");
-    if (title && e.target.files?.[0]?.name && !title.value) title.value = e.target.files[0].name;
+    const fileName = e.target.files?.[0]?.name || "";
+    applyDocumentIntelligenceToForm(e.target.form, fileName);
   }
+});
+
+document.body.addEventListener("dragover", (e) => {
+  const zone = e.target.closest(".doc-drop-zone");
+  if (!zone) return;
+  e.preventDefault();
+  zone.classList.add("dragging");
+});
+
+document.body.addEventListener("dragleave", (e) => {
+  const zone = e.target.closest(".doc-drop-zone");
+  if (!zone) return;
+  zone.classList.remove("dragging");
+});
+
+document.body.addEventListener("drop", (e) => {
+  const zone = e.target.closest(".doc-drop-zone");
+  if (!zone) return;
+  e.preventDefault();
+  zone.classList.remove("dragging");
+  const input = zone.querySelector("input[type='file']");
+  if (!input || !e.dataTransfer?.files?.length) return;
+  input.files = e.dataTransfer.files;
+  applyDocumentIntelligenceToForm(input.form, input.files[0]?.name || "");
 });
 
 document.body.addEventListener("submit", (e) => {
   if (e.target.matches("[data-module-record-form]")) {
     e.preventDefault();
     const fd = new FormData(e.target);
-    state = addModuleRecord(state, e.target.dataset.moduleCode, e.target.dataset.collectionKey, Object.fromEntries(fd.entries()));
+    state = addModuleRecord(state, e.target.dataset.moduleCode, e.target.dataset.collectionKey, enrichLinkedPayload(Object.fromEntries(fd.entries())));
     e.target.reset();
     render();
     return;
@@ -711,9 +889,13 @@ document.body.addEventListener("submit", (e) => {
 
   if (e.target.id === "document-form") {
     e.preventDefault();
+    const beforeScore = scoreFacility(state).facilityReadinessScore;
     const fd = new FormData(e.target);
     const file = fd.get("file");
-    state = addDocument(state, { ...Object.fromEntries(fd.entries()), fileName: file?.name || "" });
+    const title = String(fd.get("title") || file?.name || "document");
+    state = addDocument(state, { ...Object.fromEntries(fd.entries()), mappedModuleCodes: String(fd.get("mappedModuleCodes") || "").split(",").filter(Boolean), fileName: file?.name || "" });
+    const afterScore = scoreFacility(state).facilityReadinessScore;
+    lastDocumentSaveSummary = `Saved ${title}. Readiness recalculated from ${beforeScore} to ${afterScore}. Routed modules: ${String(fd.get("mappedModuleCodes") || "M17") || "M17"}.`;
     e.target.reset();
     render();
     return;

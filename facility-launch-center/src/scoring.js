@@ -101,17 +101,29 @@ function completeDocumentMetadata(doc) {
   ].every(Boolean);
 }
 
-function requiredRecordComplete(record, requiredFields = []) {
-  return requiredFields.every((field) => present(record?.[field]));
+function relationTargetExists(state, fieldDef, value) {
+  if (!present(value)) return false;
+  if (fieldDef?.relation === "resident") {
+    return safeArray(state?.mvpData?.M5?.residents).some((resident) => resident.id === value);
+  }
+  return present(value);
 }
 
-function getCatalogCompleteness(data, spec) {
+function requiredRecordComplete(record, requiredFields = [], fieldDefs = [], state = null) {
+  return requiredFields.every((field) => {
+    const fieldDef = fieldDefs.find((candidate) => candidate.key === field);
+    if (fieldDef?.relation) return relationTargetExists(state, fieldDef, record?.[field]);
+    return present(record?.[field]);
+  });
+}
+
+function getCatalogCompleteness(data, spec, state) {
   const checks = [];
   for (const field of spec.fields || []) checks.push(present(data?.[field.key]));
   for (const collection of spec.collections || []) {
     const rows = safeArray(data?.[collection.key]);
     checks.push(rows.length > 0);
-    checks.push(rows.some((row) => requiredRecordComplete(row, collection.requiredFields || [])));
+    checks.push(rows.some((row) => requiredRecordComplete(row, collection.requiredFields || [], collection.fields || [], state)));
   }
   return pct(checks);
 }
@@ -230,7 +242,7 @@ function getMvpCompleteness(state, moduleCode) {
   }
 
   const intakeSpec = onboardingIntakeCatalog[moduleCode];
-  if (intakeSpec) return getCatalogCompleteness(data, intakeSpec);
+  if (intakeSpec) return getCatalogCompleteness(data, intakeSpec, state);
 
   return 0;
 }

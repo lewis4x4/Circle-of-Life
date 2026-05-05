@@ -75,8 +75,11 @@ dd { margin: 0; font-weight: 800; }
 .intake-card { background: #f8faff; border: 1px dashed #9db2ff; border-radius: 14px; padding: .8rem; margin-bottom: .8rem; }
 #export-markdown, #export-json { width: 100%; min-height: 260px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 @media (max-width: 900px) { .grid2, .command-grid, .command-hero { grid-template-columns: 1fr; } .span2 { grid-column: span 1; } .inline-form { flex-direction: column; align-items: stretch; } .complexity-list div { grid-template-columns: 1fr; } }
-.checklist-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .45rem; padding: 0; margin: .75rem 0; list-style: none; }
-.checklist-grid li { border: 1px solid #dbe4ff; background: #f8faff; border-radius: 999px; padding: .42rem .65rem; font-weight: 750; color: #26345f; }
+.checklist-block { margin: .75rem 0; }
+.checklist-label { margin: 0 0 .4rem; color: var(--muted); font-size: .78rem; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
+.checklist-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .45rem; padding: 0; margin: 0; list-style: none; }
+.checklist-grid li { display: flex; gap: .4rem; align-items: center; border: 1px solid #dbe4ff; background: #f8faff; border-radius: 12px; padding: .42rem .65rem; font-weight: 750; color: #26345f; cursor: default; }
+.checklist-grid li span { color: #2563eb; font-weight: 900; }
 .intake-scorecards { margin: .8rem 0 1rem; }
 .ready-soft { background: #f0fdf4; border-color: #bbf7d0; }
 .intake-module { border-left: 6px solid #2a4bff; }
@@ -89,3 +92,26 @@ dd { margin: 0; font-weight: 800; }
 
 .danger-button { background: #dc2626; }
 .compact-table input { min-width: 150px; padding: .38rem; }
+
+.dependency-note { margin: .5rem 0; border: 1px solid #bfdbfe; background: #eff6ff; color: #1d4ed8; border-radius: 10px; padding: .55rem .7rem; font-weight: 800; }
+.doc-upload-card { align-items: stretch; }
+.doc-drop-zone { grid-row: span 3; min-height: 180px; border: 2px dashed #91a7ff; background: linear-gradient(135deg, #f8faff, #eef4ff); border-radius: 18px; padding: 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: .35rem; cursor: pointer; color: #1a2a58; }
+.doc-drop-zone.dragging { border-color: #2a4bff; background: #eaf0ff; box-shadow: inset 0 0 0 2px #2a4bff; }
+.doc-drop-zone input { max-width: 260px; }
+.drop-icon { font-size: 2rem; }
+.doc-intelligence-preview { grid-column: 1 / -1; border: 1px solid #bfdbfe; background: #eff6ff; color: #1d4ed8; border-radius: 12px; padding: .7rem .85rem; font-weight: 800; line-height: 1.35; }
+.doc-detected-card { color: #172554; background: #fff; border: 1px solid #c7d2fe; border-radius: 14px; padding: .9rem; font-weight: 650; }
+.doc-detected-card.empty { background: transparent; border-style: dashed; }
+.doc-detected-card h3 { margin: .1rem 0 .4rem; }
+.detected-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: .5rem; margin: .55rem 0; }
+.detected-grid span { display: block; background: #f8faff; border: 1px solid #dbe4ff; border-radius: 10px; padding: .55rem; }
+.detected-grid strong { display: block; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: #64748b; margin-bottom: .2rem; }
+.confidence-pill { border-radius: 999px; padding: .25rem .6rem; font-size: .78rem; text-transform: uppercase; font-weight: 900; }
+.confidence-high { background: #dcfce7; color: #166534; }
+.confidence-medium, .confidence-manual { background: #fef3c7; color: #92400e; }
+.confidence-low { background: #fee2e2; color: #991b1b; }
+.auto-filled { border-color: #60a5fa; background: #eff6ff; }
+.save-callout, .source-resolver-banner, .doc-needs-panel { border: 1px solid #bfdbfe; background: #eff6ff; color: #172554; border-radius: 14px; padding: .85rem 1rem; margin: .8rem 0; }
+.source-resolver-banner { border-color: #fed7aa; background: #fff7ed; color: #9a3412; }
+.doc-needs-panel ul { margin: .4rem 0 0; }
+.route-chip-row b { display: inline-block; background: #dbeafe; color: #1d4ed8; border-radius: 999px; padding: .12rem .4rem; font-size: .72rem; margin-right: .2rem; }

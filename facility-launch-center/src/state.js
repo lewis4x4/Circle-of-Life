@@ -1,4 +1,5 @@
 import { seedState, STORAGE_KEY } from "./seedData.js";
+import { inferDocumentIntelligence } from "./documentIntelligence.js";
 
 let memoryFallback = null;
 
@@ -254,29 +255,32 @@ export function deleteModuleRecord(state, moduleCode, collectionKey, recordId) {
 export function addDocument(state, payload) {
   const title = String(payload.title || payload.fileName || payload.originalFilename || "").trim();
   if (!title) return state;
+  const intelligence = inferDocumentIntelligence(payload.fileName || payload.originalFilename || title, payload);
   const next = clone(state);
   next.documents = next.documents || [];
   next.documentGroups = next.documentGroups || [];
   const id = payload.id || `doc-${Date.now()}-${next.documents.length}`;
-  const groupId = payload.documentGroupId || `grp-${id}`;
+  const groupId = intelligence.documentGroupId || payload.documentGroupId || `grp-${id}`;
   const doc = {
     id,
-    title,
+    title: intelligence.title || title,
     originalFilename: payload.originalFilename || payload.fileName || title,
-    artifactType: payload.artifactType || "other",
+    artifactType: intelligence.artifactType || "other",
     documentGroupId: groupId,
     isSourceOfTruth: Boolean(payload.isSourceOfTruth),
-    currencyStatus: payload.currencyStatus || "unknown",
+    currencyStatus: intelligence.currencyStatus || "unknown",
     facilityId: payload.facilityId || "fac-homewood",
-    facilityName: payload.facilityName || "Homewood Lodge ALF",
-    entityAssociation: payload.entityAssociation || "",
-    effectiveDate: payload.effectiveDate || "",
-    expirationDate: payload.expirationDate || "",
-    term: payload.term || "",
-    version: payload.version || "v1",
-    custodianApprovalStatus: payload.custodianApprovalStatus || "pending",
-    confidence: payload.confidence || "manual",
-    notes: payload.notes || "",
+    facilityName: intelligence.facilityName || "Homewood Lodge ALF",
+    entityAssociation: intelligence.entityAssociation || "",
+    effectiveDate: intelligence.effectiveDate || "",
+    expirationDate: intelligence.expirationDate || "",
+    term: intelligence.term || "",
+    version: intelligence.version || "v1",
+    custodianApprovalStatus: intelligence.custodianApprovalStatus || "pending",
+    confidence: intelligence.confidence || "manual",
+    notes: intelligence.notes || "",
+    mappedModuleCodes: intelligence.mappedModuleCodes || ["M17"],
+    automationSummary: intelligence.automationSummary || "",
     uploadedAt: new Date().toISOString()
   };
   next.documents.unshift(doc);
@@ -285,7 +289,7 @@ export function addDocument(state, payload) {
   if (!group) {
     group = {
       id: groupId,
-      name: payload.groupName || `${title} group`,
+      name: intelligence.groupName || payload.groupName || `${title} group`,
       artifactType: doc.artifactType,
       documentIds: [],
       sourceOfTruthDocumentId: null
@@ -313,6 +317,31 @@ export function updateDocument(state, documentId, patch) {
     summary: `Updated document metadata for ${doc.title}`,
     relatedType: "document",
     relatedId: documentId
+  });
+}
+
+export function deleteDocument(state, documentId) {
+  const id = String(documentId || "").trim();
+  if (!id) return state;
+  const next = clone(state);
+  const before = (next.documents || []).length;
+  const doc = (next.documents || []).find((candidate) => candidate.id === id);
+  next.documents = (next.documents || []).filter((candidate) => candidate.id !== id);
+  if (next.documents.length === before) return state;
+  next.documentGroups = (next.documentGroups || []).map((group) => {
+    const documentIds = (group.documentIds || []).filter((candidateId) => candidateId !== id);
+    return {
+      ...group,
+      documentIds,
+      sourceOfTruthDocumentId: group.sourceOfTruthDocumentId === id ? null : group.sourceOfTruthDocumentId
+    };
+  }).filter((group) => (group.documentIds || []).length > 0);
+
+  return appendDecisionLog(next, {
+    actionType: "document_intake_deleted",
+    summary: `Deleted document intake row ${doc?.title || id}`,
+    relatedType: "document",
+    relatedId: id
   });
 }
 

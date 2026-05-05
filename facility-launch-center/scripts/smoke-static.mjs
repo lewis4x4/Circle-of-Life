@@ -62,7 +62,7 @@ try {
     if (!appJs.includes(expected)) throw new Error(`app.js missing import ${expected}`);
   }
 
-  const moduleFiles = ['state.js', 'scoring.js', 'gates.js', 'export.js', 'seedData.js'];
+  const moduleFiles = ['state.js', 'scoring.js', 'gates.js', 'export.js', 'seedData.js', 'documentIntelligence.js'];
   for (const file of moduleFiles) {
     const response = await fetch(`${base}/src/${file}`);
     if (!response.ok) throw new Error(`src/${file} returned ${response.status}`);
