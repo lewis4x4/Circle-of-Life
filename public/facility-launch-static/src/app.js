@@ -243,16 +243,70 @@ function renderReadiness() {
   `;
 }
 
+function fieldHelp(fieldDef) {
+  return fieldDef.help || fieldDef.hint || (fieldDef.sampleValue ? `Example: ${fieldDef.sampleValue}` : "");
+}
+
+function fieldPlaceholder(fieldDef) {
+  return fieldDef.placeholder || fieldDef.sampleValue || fieldDef.label || "";
+}
+
+function normalizeOption(optionItem) {
+  if (typeof optionItem === "object" && optionItem !== null) {
+    return { value: String(optionItem.value ?? optionItem.label ?? ""), label: String(optionItem.label ?? optionItem.value ?? "") };
+  }
+  return { value: String(optionItem ?? ""), label: String(optionItem ?? "") };
+}
+
+function renderOptions(options = [], selected = "") {
+  const normalizedOptions = options.map(normalizeOption);
+  const hasSelected = !selected || normalizedOptions.some((optionItem) => optionItem.value === selected);
+  const selectedOption = hasSelected ? "" : `<option value="${esc(selected)}" selected>${esc(selected)} (existing)</option>`;
+  return `${selectedOption}${normalizedOptions.map((optionItem) => `<option value="${esc(optionItem.value)}" ${optionItem.value === selected ? "selected" : ""}>${esc(optionItem.label)}</option>`).join("")}`;
+}
+
+function renderIntakeFieldControl(fieldDef, attrs = {}, value = "") {
+  const normalizedAttrs = Object.fromEntries(Object.entries(attrs).filter(([, attrValue]) => attrValue !== "" && attrValue !== false && attrValue !== null && attrValue !== undefined));
+  const attr = Object.entries(normalizedAttrs).map(([k, v]) => `${k}="${esc(v)}"`).join(" ");
+  const type = fieldDef.control || fieldDef.type || "text";
+  if (fieldDef.relation) {
+    const options = relationOptions(fieldDef);
+    const disabled = options.length ? "" : "disabled";
+    return `<select ${attr} ${disabled} data-relation="${esc(fieldDef.relation)}">
+      <option value="">${options.length ? `Select ${fieldDef.label}` : `Add ${fieldDef.label.toLowerCase()} records first`}</option>
+      ${options.map((optionItem) => `<option value="${esc(optionItem.value)}" ${optionItem.value === value ? "selected" : ""}>${esc(optionItem.label)}</option>`).join("")}
+    </select>`;
+  }
+  if (type === "select" || fieldDef.options?.length) {
+    return `<select ${attr}>
+      <option value="">${esc(fieldDef.selectPrompt || `Choose ${fieldDef.label}`)}</option>
+      ${renderOptions(fieldDef.options || [], value)}
+    </select>`;
+  }
+  if (type === "yesNo") {
+    return `<select ${attr}>
+      <option value="">Choose yes/no</option>
+      ${renderOptions(fieldDef.options || ["Yes", "No", "Unknown / not decided", "Not applicable"], value)}
+    </select>`;
+  }
+  if (type === "textarea") return `<textarea ${attr}>${esc(value)}</textarea>`;
+  return `<input ${attr} type="${esc(type)}" value="${esc(value)}" />`;
+}
+
+function renderCatalogField(fieldDef, attrs = {}, value = "") {
+  const control = renderIntakeFieldControl(fieldDef, {
+    placeholder: fieldPlaceholder(fieldDef),
+    ...attrs
+  }, value);
+  return field(fieldDef.label, control, fieldHelp(fieldDef));
+}
+
 function renderScalarIntakeFields(code, spec, data) {
   if (!spec.fields?.length) return "";
-  return `<div class="grid2">${spec.fields.map((f) => input({
-    label: f.label,
-    type: f.type || "text",
+  return `<div class="grid2">${spec.fields.map((f) => renderCatalogField(f, {
     "data-mvp": code,
-    "data-field": f.key,
-    value: data?.[f.key] || "",
-    hint: f.hint || ""
-  })).join("")}</div>`;
+    "data-field": f.key
+  }, data?.[f.key] || "")).join("")}</div>`;
 }
 
 function renderIntakeChecklist(spec) {
@@ -272,18 +326,10 @@ function relationOptions(fieldDef) {
   return [];
 }
 
-function renderCollectionFieldControl(fieldDef, attrs = {}, value = "") {
-  const normalizedAttrs = Object.fromEntries(Object.entries(attrs).filter(([, attrValue]) => attrValue !== "" && attrValue !== false && attrValue !== null && attrValue !== undefined));
-  const attr = Object.entries(normalizedAttrs).map(([k, v]) => `${k}="${esc(v)}"`).join(" ");
-  if (fieldDef.relation) {
-    const options = relationOptions(fieldDef);
-    const disabled = options.length ? "" : "disabled";
-    return `<select ${attr} ${disabled} data-relation="${esc(fieldDef.relation)}">
-      <option value="">${options.length ? `Select ${fieldDef.label}` : `Add ${fieldDef.label.toLowerCase()} records first`}</option>
-      ${options.map((optionItem) => `<option value="${esc(optionItem.value)}" ${optionItem.value === value ? "selected" : ""}>${esc(optionItem.label)}</option>`).join("")}
-    </select>`;
-  }
-  return `<input ${attr} type="${esc(fieldDef.type || "text")}" value="${esc(value)}" />`;
+function renderCollectionFieldControl(fieldDef, attrs = {}, value = "", options = {}) {
+  const control = renderIntakeFieldControl(fieldDef, attrs, value);
+  if (options.withLabel) return field(fieldDef.label, control, fieldHelp(fieldDef));
+  return control;
 }
 
 function enrichLinkedPayload(payload) {
@@ -295,14 +341,26 @@ function enrichLinkedPayload(payload) {
   return next;
 }
 
+function enrichCollectionField(fieldDef, collection) {
+  const sampleValue = collection.sampleRecord?.[fieldDef.key];
+  return {
+    ...fieldDef,
+    placeholder: fieldDef.placeholder || sampleValue || fieldDef.label,
+    sampleValue: fieldDef.sampleValue || sampleValue || ""
+  };
+}
+
 function renderRecordForm(code, collection) {
   const relationBlocked = (collection.fields || []).some((fieldDef) => fieldDef.relation === "resident") && !getResidentOptions().length;
   return `<form class="inline-form wrap module-record-form" data-module-record-form data-module-code="${esc(code)}" data-collection-key="${esc(collection.key)}">
-    ${(collection.fields || []).map((fieldDef) => renderCollectionFieldControl(fieldDef, {
-      name: fieldDef.key,
-      placeholder: fieldDef.label,
-      required: collection.requiredFields?.includes(fieldDef.key) ? "required" : ""
-    })).join("")}
+    ${(collection.fields || []).map((fieldDef) => {
+      const enrichedFieldDef = enrichCollectionField(fieldDef, collection);
+      return renderCollectionFieldControl(enrichedFieldDef, {
+        name: enrichedFieldDef.key,
+        placeholder: fieldPlaceholder(enrichedFieldDef),
+        required: collection.requiredFields?.includes(enrichedFieldDef.key) ? "required" : ""
+      }, "", { withLabel: true });
+    }).join("")}
     <button type="submit" ${relationBlocked ? "disabled" : ""}>${relationBlocked ? "Add resident in M5 first" : esc(collection.addLabel || `Add ${collection.label}`)}</button>
   </form>`;
 }
@@ -320,8 +378,8 @@ function renderRecordTable(code, collection, rows) {
   const fields = collection.fields || [];
   const body = rows.length
     ? rows.map((row) => `<tr>${renderEditableRecordCells(code, collection.key, row, fields)}<td><button type="button" class="danger-button" data-record-delete data-record-module="${esc(code)}" data-record-collection="${esc(collection.key)}" data-record-id="${esc(row.id || "")}">Delete</button></td></tr>`).join("")
-    : `<tr><td colspan="${Math.max(fields.length + 1, 1)}">${code === "M19" ? "No launch scoreboard numbers yet. The COO cannot run the daily go-live huddle until the critical numbers, owners, sources, and red-condition actions are entered here." : `No ${esc(collection.label.toLowerCase())} entered yet. This module cannot come alive until this data is captured.`}</td></tr>`;
-  return `<div class="table-wrap compact-table"><table><thead><tr>${fields.map((fieldDef) => `<th>${esc(fieldDef.label)}</th>`).join("")}<th>Actions</th></tr></thead><tbody>${body}</tbody></table></div>`;
+    : `<tr><td colspan="${Math.max(fields.length + 1, 1)}">${collection.emptyState || (code === "M19" ? "No launch scoreboard numbers yet. The COO cannot run the daily go-live huddle until the critical numbers, owners, sources, and red-condition actions are entered here." : `No ${esc(collection.label.toLowerCase())} entered yet. This module cannot come alive until this data is captured.`)}</td></tr>`;
+  return `<div class="table-wrap compact-table"><table><thead><tr>${fields.map((fieldDef) => `<th>${esc(fieldDef.columnLabel || fieldDef.label)}</th>`).join("")}<th>Actions</th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
 function renderIntakeCoverageSummary() {
@@ -339,6 +397,7 @@ function renderOperationalIntakeModules() {
       <div class="module-intro">
         <p><strong>${esc(spec.priority)}</strong> — ${esc(spec.purpose)}</p>
         ${renderIntakeChecklist(spec)}
+        ${spec.guidanceCards?.length ? `<div class="guidance-cards">${spec.guidanceCards.map((card) => `<div class="guidance-card"><strong>${esc(card.title)}</strong><p>${esc(card.body)}</p></div>`).join("")}</div>` : ""}
       </div>
       ${renderScalarIntakeFields(code, spec, data)}
       ${(spec.collections || []).map((collection) => {

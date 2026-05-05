@@ -85,6 +85,14 @@ dd { margin: 0; font-weight: 800; }
 .intake-module { border-left: 6px solid #2a4bff; }
 .summary-pill { margin-left: .45rem; display: inline-block; font-size: .72rem; border-radius: 999px; padding: .18rem .5rem; background: #dbeafe; color: #1d4ed8; vertical-align: middle; }
 .module-intro { background: #fbfcff; border: 1px solid #edf1f8; border-radius: 12px; padding: .75rem; margin: .75rem 0; }
+
+.guidance-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .65rem; margin-top: .75rem; }
+.guidance-card { border: 1px solid #dbe4ff; border-radius: 12px; background: #fff; padding: .75rem; }
+.guidance-card strong { display: block; color: #1c2b55; margin-bottom: .25rem; }
+.guidance-card p { margin: 0; color: var(--muted); line-height: 1.35; }
+.module-record-form .field { min-width: 220px; flex: 1 1 220px; }
+.module-record-form .field textarea { min-height: 78px; }
+.compact-table textarea { min-width: 220px; min-height: 52px; padding: .38rem; }
 .collection-block { margin-top: 1rem; padding-top: .75rem; border-top: 1px solid #e8edf8; }
 .module-record-form input { min-width: 185px; }
 .compact-table table { min-width: 1180px; font-size: .82rem; }

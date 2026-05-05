@@ -220,22 +220,181 @@ export const onboardingIntakeCatalog = {
     }]
   },
   M16: {
-    priority: "Risk and compliance operating model",
-    purpose: "Capture incidents, reportability, claims/legal routing, investigation ownership, and trend visibility before launch.",
-    fields: [
-      { key: "incidentPolicySource", label: "Incident policy/source", sampleValue: "Incident binder and state reporting policy" },
-      { key: "claimsRoutingOwner", label: "Claims/legal routing owner", sampleValue: "CFO / Legal" },
-      { key: "stateReportingRule", label: "State reporting rule", sampleValue: "Reportable incidents escalated to ED/DON immediately for state threshold decision" }
+    priority: "What happens when something goes wrong",
+    purpose: "Define the incident types staff must report, how serious each event is, who gets notified, when state/claims/legal review is required, who investigates, and how follow-up is closed before launch.",
+    guidanceCards: [
+      {
+        title: "How to complete this module",
+        body: "Use one row per incident type. Pick the closest option first, then add short operating instructions: who, when, and what happens next."
+      },
+      {
+        title: "What good looks like",
+        body: "A brand-new caregiver can tell what to do in the first 15 minutes, who to notify, whether ED/DON/CFO/legal must review, and when the incident is considered closed."
+      },
+      {
+        title: "Common miss",
+        body: "Do not enter only yes/no or vague words like 'notify family' or 'review'. Write the timing and accountable role."
+      }
     ],
-    checklist: ["Incident categories", "Severity levels", "State reporting threshold", "Family notification", "Claims/legal routing", "Investigation workflow", "Trend dashboard"],
+    fields: [
+      {
+        key: "incidentPolicySource",
+        label: "Where does our written incident policy live today?",
+        placeholder: "Example: Operations binder, incident policy tab + state reporting policy",
+        help: "We need a source we can cite if surveyors, families, insurers, or attorneys ask how incidents are handled.",
+        sampleValue: "Incident binder and state reporting policy"
+      },
+      {
+        key: "claimsRoutingOwner",
+        label: "Who decides whether to call insurance, broker, or attorney?",
+        placeholder: "Example: ED triages first; CFO owns claim notice; outside counsel for litigation risk",
+        help: "Enter one accountable person or role, not a department.",
+        sampleValue: "CFO / Legal"
+      },
+      {
+        key: "stateReportingRule",
+        label: "What is our standing rule for notifying the state?",
+        type: "textarea",
+        placeholder: "Example: DON + ED review every major/critical incident within 2 hours; default-yes for abuse, elopement, death, EMS/hospitalization.",
+        help: "This is the plain-English policy. Each incident row below captures the case-by-case workflow.",
+        sampleValue: "Reportable incidents escalated to ED/DON immediately for state threshold decision"
+      }
+    ],
+    checklist: [
+      "Incident types staff must report",
+      "What makes an event minor, major, or critical",
+      "What staff do in the first 15 minutes",
+      "When family/responsible party must be notified",
+      "When ED/DON review state reporting",
+      "When CFO/broker/legal must be notified",
+      "Who investigates and closes follow-up"
+    ],
     collections: [{
       key: "incidentWorkflows",
-      label: "Incident/risk workflows",
-      addLabel: "Add incident workflow",
+      label: "Incident response rules by event type",
+      addLabel: "Add incident response rule",
+      emptyState: "No incident response rules yet. Staff will not know what to do after falls, elopements, medication errors, allegations, injuries, or claims until these rules are entered.",
       requiredFields: ["incidentType", "severityRule", "immediateActions", "familyNotificationRule", "stateReportingThreshold", "claimsRouting", "investigationOwner", "followUpCadence"],
-      sampleRecord: { incidentType: "Fall with injury", severityRule: "Major/reportability review", immediateActions: "Assess resident, call EMS if needed, notify DON/ED", familyNotificationRule: "Notify responsible party same day", stateReportingThreshold: "ED/DON determine state report requirement", claimsRouting: "CFO/legal if injury or hospital transfer", investigationOwner: "DON", followUpCadence: "24h, 72h, care-plan review" },
+      sampleRecord: {
+        incidentType: "Fall with injury",
+        severityRule: "Major — injury, ER visit, or family-level concern",
+        immediateActions: "Assess resident, vitals, first aid, call EMS if indicated, notify charge nurse and DON, secure scene, start incident note.",
+        familyNotificationRule: "Same shift — within 2 hours",
+        stateReportingThreshold: "Maybe — ED/DON decide within 24 hours",
+        claimsRouting: "CFO if hospital transfer or possible liability",
+        investigationOwner: "DON",
+        followUpCadence: "24h + 72h + care-plan review"
+      },
       fields: [
-        { key: "incidentType", label: "Incident type" }, { key: "severityRule", label: "Severity rule" }, { key: "immediateActions", label: "Immediate actions" }, { key: "familyNotificationRule", label: "Family notification" }, { key: "stateReportingThreshold", label: "State reporting threshold" }, { key: "claimsRouting", label: "Claims/legal routing" }, { key: "investigationOwner", label: "Investigation owner" }, { key: "followUpCadence", label: "Follow-up cadence" }
+        {
+          key: "incidentType",
+          label: "What kind of incident is this?",
+          columnLabel: "Incident",
+          type: "select",
+          options: [
+            "Fall — no injury",
+            "Fall with injury",
+            "Elopement / missing resident",
+            "Medication error",
+            "Abuse / neglect / exploitation allegation",
+            "Resident-to-resident altercation",
+            "Skin tear / wound / pressure injury",
+            "Choking / aspiration",
+            "Behavioral event",
+            "Hospital transfer / emergency transport",
+            "Property loss or damage",
+            "Other — explain in actions"
+          ],
+          help: "Pick the closest event type. The app uses this to branch the workflow."
+        },
+        {
+          key: "severityRule",
+          label: "How serious is this event at worst?",
+          columnLabel: "Severity",
+          type: "select",
+          options: [
+            "Minor — no injury, routine follow-up",
+            "Major — injury, ER visit, hospital transfer, or family-level concern",
+            "Critical — abuse allegation, elopement, death, life-safety risk, or immediate state/legal concern"
+          ],
+          help: "If unsure between major and critical, choose critical and escalate."
+        },
+        {
+          key: "immediateActions",
+          label: "What must staff do in the first 15 minutes?",
+          columnLabel: "First 15 min",
+          type: "textarea",
+          placeholder: "Example: Assess resident, take vitals, call EMS if indicated, notify charge nurse/DON, secure scene, start incident note.",
+          help: "Write the play-by-play a new caregiver should follow before the issue gets handed off."
+        },
+        {
+          key: "familyNotificationRule",
+          label: "When do we notify family or responsible party?",
+          columnLabel: "Family timing",
+          type: "select",
+          options: [
+            "Immediately — within 1 hour",
+            "Same shift — within 2 hours",
+            "Same day — before end of day",
+            "Within 24 hours",
+            "Only if condition changes",
+            "Per care plan / responsible-party preference",
+            "Not applicable"
+          ],
+          help: "Family means the responsible party/contact captured in M15, not whoever happens to call first."
+        },
+        {
+          key: "stateReportingThreshold",
+          label: "Does ED/DON need to review state reporting?",
+          columnLabel: "State review",
+          type: "select",
+          options: [
+            "Yes — always for this category",
+            "Maybe — ED/DON decide within 24 hours",
+            "Only if injury, EMS, hospital transfer, allegation, elopement, or death",
+            "No — not reportable under normal circumstances"
+          ],
+          help: "If the answer depends on facts, choose Maybe so it becomes an ED/DON review item."
+        },
+        {
+          key: "claimsRouting",
+          label: "When do we loop in CFO, insurance broker, or legal?",
+          columnLabel: "Claims/legal",
+          type: "select",
+          options: [
+            "CFO if hospital transfer or possible liability",
+            "Insurance broker for any potential claim",
+            "Outside counsel for allegations, litigation threat, or serious injury",
+            "ED/DON review first, then decide",
+            "No routine claims/legal routing",
+            "Case-by-case — explain in actions"
+          ],
+          help: "This is not software routing; it is who gets contacted when the event could become a claim or legal issue."
+        },
+        {
+          key: "investigationOwner",
+          label: "Who investigates and closes the loop?",
+          columnLabel: "Investigation owner",
+          type: "select",
+          options: ["DON", "Executive Director", "Risk / Compliance lead", "Regional Clinical", "DON + ED jointly", "Outside investigator", "Other — name role in actions"],
+          help: "Pick one accountable owner. Do not enter 'team'."
+        },
+        {
+          key: "followUpCadence",
+          label: "When do we check back until this is closed?",
+          columnLabel: "Follow-up",
+          type: "select",
+          options: [
+            "End of shift only",
+            "24 hours",
+            "24h + 72h",
+            "24h + 72h + care-plan review",
+            "Daily until resolved",
+            "Weekly trend review",
+            "Event-specific — explain in actions"
+          ],
+          help: "This becomes the follow-up task rhythm after the initial incident note."
+        }
       ]
     }]
   },
