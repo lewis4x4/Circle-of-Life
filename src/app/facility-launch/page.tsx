@@ -1,0 +1,36 @@
+import type { Metadata } from 'next';
+
+export const dynamic = 'force-static';
+
+export const metadata: Metadata = {
+  title: 'Facility Launch Center | Circle of Life',
+  description: 'Facility DNA command center for Homewood launch readiness.',
+  robots: { index: false, follow: false, nocache: true },
+};
+
+export default function FacilityLaunchPage() {
+  return (
+    <>
+      <link rel="stylesheet" href="/facility-launch-static/styles.css" />
+      <header className="app-header">
+        <h1>Facility Launch Center</h1>
+        <p className="subhead">Facility DNA command center for Homewood launch readiness</p>
+      </header>
+
+      <main className="container">
+        <nav id="tabs" className="tabs" />
+        <section id="summary" className="panel" />
+        <section id="view" className="panel" />
+        <section className="panel">
+          <div className="row-between">
+            <h3>Decision Log (latest)</h3>
+            <button id="reset-demo" type="button">Reset Demo</button>
+          </div>
+          <ul id="decision-log" />
+        </section>
+      </main>
+
+      <script type="module" src="/facility-launch-static/src/app.js" />
+    </>
+  );
+}
