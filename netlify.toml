@@ -1,4 +1,3 @@
 [build]
-  base = "facility-launch-center"
-  command = "npm run verify && rm -rf dist && mkdir -p dist && cp index.html styles.css robots.txt _redirects dist/ && cp -R src dist/src"
-  publish = "dist"
+  command = "npm run build"
+  publish = ".next"
