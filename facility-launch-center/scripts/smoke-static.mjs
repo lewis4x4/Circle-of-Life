@@ -48,7 +48,7 @@ try {
   const index = await fetch(`${base}/index.html`);
   if (!index.ok) throw new Error(`index.html returned ${index.status}`);
   const html = await index.text();
-  for (const expected of ['./styles.css', './src/app.js', 'noindex']) {
+  for (const expected of ['/styles.css', '/src/app.js', 'noindex']) {
     if (!html.includes(expected)) throw new Error(`index.html missing ${expected}`);
   }
 
@@ -62,7 +62,7 @@ try {
     if (!appJs.includes(expected)) throw new Error(`app.js missing import ${expected}`);
   }
 
-  const moduleFiles = ['state.js', 'scoring.js', 'gates.js', 'export.js', 'seedData.js', 'documentIntelligence.js'];
+  const moduleFiles = ['state.js', 'scoring.js', 'gates.js', 'export.js', 'seedData.js', 'documentIntelligence.js', 'supabasePipeline.js', 'intakeCatalog.js'];
   for (const file of moduleFiles) {
     const response = await fetch(`${base}/src/${file}`);
     if (!response.ok) throw new Error(`src/${file} returned ${response.status}`);

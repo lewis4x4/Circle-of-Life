@@ -53,12 +53,12 @@ const CONFIDENCE_LEVELS = ["low", "medium", "high", "manual"];
 const tabs = [
   ["overview", "Facility Command Center"],
   ["program", "Program Charter"],
-  ["worksheet", "Accountability Matrix"],
+  ["worksheet", "Module Owners & Due Dates"],
   ["readiness", "Readiness Map"],
-  ["modules", "Complete Intake / Facility DNA"],
+  ["modules", "Onboarding Intake"],
   ["docs", "Document Intake"],
   ["exceptions", "Exceptions"],
-  ["contradictions", "Contradictions"],
+  ["contradictions", "Policy vs Reality Checks"],
   ["gates", "Gate Checks"],
   ["export", "Export"]
 ];
@@ -310,7 +310,7 @@ function renderScalarIntakeFields(code, spec, data) {
 }
 
 function renderIntakeChecklist(spec) {
-  return `<div class="checklist-block"><p class="checklist-label">Required capture checklist</p><ul class="checklist-grid">${(spec.checklist || []).map((item) => `<li><span aria-hidden="true">✓</span>${esc(item)}</li>`).join("")}</ul></div>`;
+  return `<div class="checklist-block"><p class="checklist-label">Topics this module must cover — enter details in the fields and table below</p><ul class="checklist-grid">${(spec.checklist || []).map((item) => `<li><span aria-hidden="true">✓</span>${esc(item)}</li>`).join("")}</ul></div>`;
 }
 
 function getResidentOptions() {
@@ -378,7 +378,7 @@ function renderRecordTable(code, collection, rows) {
   const fields = collection.fields || [];
   const body = rows.length
     ? rows.map((row) => `<tr>${renderEditableRecordCells(code, collection.key, row, fields)}<td><button type="button" class="danger-button" data-record-delete data-record-module="${esc(code)}" data-record-collection="${esc(collection.key)}" data-record-id="${esc(row.id || "")}">Delete</button></td></tr>`).join("")
-    : `<tr><td colspan="${Math.max(fields.length + 1, 1)}">${collection.emptyState || (code === "M19" ? "No launch scoreboard numbers yet. The COO cannot run the daily go-live huddle until the critical numbers, owners, sources, and red-condition actions are entered here." : `No ${esc(collection.label.toLowerCase())} entered yet. This module cannot come alive until this data is captured.`)}</td></tr>`;
+    : `<tr><td colspan="${Math.max(fields.length + 1, 1)}">${collection.emptyState ? esc(collection.emptyState) : (code === "M19" ? "No launch scoreboard numbers yet. The COO cannot run the daily go-live huddle until the critical numbers, owners, sources, and red-condition actions are entered here." : `No ${esc(collection.label.toLowerCase())} added yet. Add the first record below to start building this module.`)}</td></tr>`;
   return `<div class="table-wrap compact-table"><table><thead><tr>${fields.map((fieldDef) => `<th>${esc(fieldDef.columnLabel || fieldDef.label)}</th>`).join("")}<th>Actions</th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
@@ -403,7 +403,7 @@ function renderOperationalIntakeModules() {
       ${(spec.collections || []).map((collection) => {
         const rows = Array.isArray(data[collection.key]) ? data[collection.key] : [];
         const needsResident = (collection.fields || []).some((fieldDef) => fieldDef.relation === "resident");
-        const residentDependency = needsResident && !getResidentOptions().length ? `<p class="dependency-note">This section links to M5 Residents. Add the resident in M5 first, then select them here. No duplicate typing.</p>` : "";
+        const residentDependency = needsResident && !getResidentOptions().length ? `<p class="dependency-note">Add the resident in M5 Residents first. Once added, you can select them here by name.</p>` : "";
         return `<section class="collection-block"><div class="row-between"><h4>${esc(collection.label)}</h4><span class="badge badge-info">${rows.length} record(s)</span></div>${residentDependency}${renderRecordForm(code, collection)}${renderRecordTable(code, collection, rows)}</section>`;
       }).join("")}
     </details>`;
@@ -518,11 +518,12 @@ function renderSupabasePipelinePanel() {
         <span>Current form entries: browser local draft</span><span>Export creates JSON/markdown handoff</span><span>Connected mode: Storage → OCR/AI → human approval → provenance write</span>
       </div>
       <details class="pipeline-config-details">
-        <summary>Connect Supabase OCR/AI pipeline when logged into Haven</summary>
+        <summary>Advanced: connect Supabase OCR/AI pipeline when logged into Haven</summary>
+        <p class="small-muted"><strong>Do not enter real tokens during a screen-shared meeting.</strong> These fields are masked and are only for authenticated Haven testing.</p>
         <div class="grid2 compact-config">
           <input data-pipeline-config="supabaseUrl" placeholder="Supabase URL" value="${esc(config.supabaseUrl || "")}" />
-          <input data-pipeline-config="anonKey" placeholder="Supabase anon key" value="${esc(config.anonKey || "")}" />
-          <input data-pipeline-config="accessToken" placeholder="Current user JWT / access token" value="${esc(config.accessToken || "")}" />
+          <input data-pipeline-config="anonKey" type="password" autocomplete="off" placeholder="Supabase anon key" value="${esc(config.anonKey || "")}" />
+          <input data-pipeline-config="accessToken" type="password" autocomplete="off" placeholder="Current user JWT / access token" value="${esc(config.accessToken || "")}" />
           <input data-pipeline-config="organizationId" placeholder="Organization UUID" value="${esc(config.organizationId || "")}" />
           <input data-pipeline-config="facilityId" placeholder="Facility UUID (optional but recommended)" value="${esc(config.facilityId || "")}" />
           <button type="button" data-save-pipeline-config>Save Supabase connection</button>
@@ -651,11 +652,11 @@ function renderExceptions() {
     <h2>Exceptions</h2>
     <p class="lead">Exceptions are explicit launch waivers with approver name, role, and decision history captured for the onboarding record.</p>
     <form id="exception-form" class="grid2">
-      <input name="scopeType" placeholder="scopeType (document/module/rule)" required />
-      <input name="scopeId" placeholder="scopeId" required />
-      <input name="ownerName" placeholder="ownerName" required />
-      <input name="description" placeholder="description" required />
-      <select name="severity"><option>major</option><option>minor</option><option>blocking</option></select>
+      <label class="field"><span>What are we creating an exception for?</span><select name="scopeType" required><option value="document">A specific document</option><option value="module">An onboarding module</option><option value="rule">A rule or policy</option></select><small>Choose the type first. Use the exact module code (M16) or document title/id in the next field.</small></label>
+      <label class="field"><span>Which document, module, or rule?</span><input name="scopeId" placeholder="Example: M16 or HOMEWOOD GL CERT.pdf" required /><small>For a module, enter M1–M19. For a document, enter the document title shown in Document Intake.</small></label>
+      <label class="field"><span>Who owns clearing this exception?</span><input name="ownerName" placeholder="Example: CFO, ED, DON, Document Custodian" required /></label>
+      <label class="field"><span>Why is this exception acceptable for launch?</span><input name="description" placeholder="Example: Current COI requested from broker; CFO approves temporary launch exception." required /></label>
+      <label class="field"><span>How serious is it?</span><select name="severity"><option value="major">Major — leadership approval needed</option><option value="minor">Minor — track and close</option><option value="blocking">Blocking — cannot launch until resolved or approved</option></select></label>
       <button type="submit">Add Exception</button>
     </form>
     <div class="table-wrap"><table><thead><tr><th>ID</th><th>Scope</th><th>Description</th><th>Status</th><th>Owner</th><th>Approval</th><th>Actions</th></tr></thead><tbody>${rows}</tbody></table></div>
@@ -675,8 +676,8 @@ function renderContradictions() {
     <td>${c.status === "open" ? `<button data-ctr-save-owner="${c.id}">Save Owner</button> <button data-ctr-resolve="${c.id}">Resolve</button>` : ""}</td>
   </tr>`).join("");
   return `
-    <h2>Contradictions</h2>
-    <p class="lead">Homewood rounds show the trust contract: policy text, operational reality, and app settings must be reconciled before launch.</p>
+    <h2>Policy vs Reality Checks</h2>
+    <p class="lead">Use this when policy, real-world practice, and app settings do not match. Each item needs an owner and a resolution before launch trust is complete.</p>
     <form id="contradiction-form" class="grid2">
       <select name="type"><option>policy_reality_app</option><option>document_document</option><option>other</option></select>
       <select name="severity"><option>major</option><option>minor</option><option>blocking</option></select>
@@ -724,7 +725,7 @@ function renderExport() {
     <button id="generate-export">Generate Readiness Export</button>
     <h3>Markdown Readiness Summary</h3>
     <textarea id="export-markdown" rows="16" placeholder="Generate export..."></textarea>
-    <h3>JSON State Export</h3>
+    <h3>Technical Data Export (JSON)</h3>
     <textarea id="export-json" rows="16" placeholder="Generate export..."></textarea>
   `;
 }
@@ -742,8 +743,31 @@ function renderView() {
   if (activeTab === "export") viewEl.innerHTML = renderExport();
 }
 
+function decisionActionLabel(actionType = "") {
+  const labels = {
+    program_charter_updated: "Program Charter updated",
+    owner_assignment_updated: "Module owner updated",
+    module_intake_record_added: "Onboarding record added",
+    module_intake_record_updated: "Onboarding record updated",
+    module_intake_record_deleted: "Onboarding record deleted",
+    mvp_data_updated: "Onboarding field updated",
+    document_added: "Document added",
+    document_updated: "Document updated",
+    document_deleted: "Document deleted",
+    exception_requested: "Exception requested",
+    exception_approved: "Exception approved",
+    exception_closed: "Exception closed",
+    contradiction_added: "Policy/reality check added",
+    contradiction_updated: "Policy/reality check updated",
+    contradiction_resolved: "Policy/reality check resolved",
+    gate_signed: "Gate signed",
+    export_generated: "Readiness export generated"
+  };
+  return labels[actionType] || String(actionType || "Activity").replaceAll("_", " ");
+}
+
 function renderDecisionLog() {
-  decisionLogEl.innerHTML = (state.decisionLog || []).slice(0, 20).map((d) => `<li><strong>${esc(d.actionType)}</strong> — ${esc(d.summary)}</li>`).join("");
+  decisionLogEl.innerHTML = (state.decisionLog || []).slice(0, 20).map((d) => `<li><strong>${esc(decisionActionLabel(d.actionType))}</strong> — ${esc(d.summary)}</li>`).join("");
 }
 
 function render() {
@@ -763,6 +787,7 @@ document.body.addEventListener("click", async (e) => {
 
   const deleteRecord = e.target.closest("[data-record-delete]");
   if (deleteRecord) {
+    if (!window.confirm("Delete this record? This cannot be undone.")) return;
     state = deleteModuleRecord(state, deleteRecord.dataset.recordModule, deleteRecord.dataset.recordCollection, deleteRecord.dataset.recordId);
     render();
     return;
@@ -770,6 +795,7 @@ document.body.addEventListener("click", async (e) => {
 
   const deleteDoc = e.target.closest("[data-doc-delete]");
   if (deleteDoc) {
+    if (!window.confirm("Delete this document row? This cannot be undone.")) return;
     state = deleteDocument(state, deleteDoc.dataset.docDelete);
     lastDocumentSaveSummary = "Document row deleted. Readiness and source-of-truth groups were recalculated.";
     render();
@@ -882,6 +908,11 @@ document.body.addEventListener("click", async (e) => {
   }
 });
 
+function refreshAfterDataChange() {
+  renderSummary();
+  if (["modules", "readiness", "gates", "export"].includes(activeTab)) renderView();
+}
+
 document.body.addEventListener("change", (e) => {
   const program = e.target.closest("[data-program]");
   if (program) {
@@ -908,21 +939,21 @@ document.body.addEventListener("change", (e) => {
   if (mvp) {
     const value = mvp.type === "checkbox" ? mvp.checked : mvp.value;
     state = updateMvpDataField(state, mvp.dataset.mvp, mvp.dataset.field, value);
-    renderSummary();
+    refreshAfterDataChange();
     return;
   }
 
   const recordField = e.target.closest("[data-record-field]");
   if (recordField) {
     state = updateModuleRecord(state, recordField.dataset.recordModule, recordField.dataset.recordCollection, recordField.dataset.recordId, enrichLinkedPayload({ [recordField.dataset.recordField]: recordField.value }));
-    renderSummary();
+    refreshAfterDataChange();
     return;
   }
 
   const docField = e.target.closest("[data-doc-field]");
   if (docField) {
     state = updateDocument(state, docField.dataset.docId, { [docField.dataset.docField]: docField.value });
-    renderSummary();
+    refreshAfterDataChange();
     return;
   }
 
@@ -943,7 +974,7 @@ document.body.addEventListener("change", (e) => {
   const route = e.target.closest("[data-route-doc]");
   if (route) {
     state = routeStaleDocument(state, route.dataset.routeDoc, route.value);
-    renderSummary();
+    refreshAfterDataChange();
     return;
   }
 

@@ -264,11 +264,11 @@ export const onboardingIntakeCatalog = {
   },
   M16: {
     priority: "What happens when something goes wrong",
-    purpose: "Define the incident types staff must report, how serious each event is, who gets notified, when state/claims/legal review is required, who investigates, and how follow-up is closed before launch.",
+    purpose: "Configure how the facility will respond to future incidents in the app. This is not a log of past incidents; it defines the response templates staff will follow after go-live.",
     guidanceCards: [
       {
         title: "How to complete this module",
-        body: "Use one row per incident type. Pick the closest option first, then add short operating instructions: who, when, and what happens next."
+        body: "Use one row per incident type. These are future response templates, not past incident records. Pick the closest option first, then add who, when, and what happens next."
       },
       {
         title: "What good looks like",
@@ -314,7 +314,7 @@ export const onboardingIntakeCatalog = {
     ],
     collections: [{
       key: "incidentWorkflows",
-      label: "Incident response rules by event type",
+      label: "Incident response workflow templates",
       addLabel: "Add incident response rule",
       emptyState: "No incident response rules yet. Staff will not know what to do after falls, elopements, medication errors, allegations, injuries, or claims until these rules are entered.",
       requiredFields: ["incidentType", "severityRule", "immediateActions", "familyNotificationRule", "stateReportingThreshold", "claimsRouting", "investigationOwner", "followUpCadence"],
@@ -499,7 +499,7 @@ export const onboardingIntakeCatalog = {
         { key: "afterHoursPhone", label: "24/7 or after-hours phone", columnLabel: "After-hours", help: "This is the number staff need when the office is closed." },
         { key: "accountNumber", label: "Account or customer number", columnLabel: "Account #" },
         { key: "contractStatus", label: "Contract status", columnLabel: "Contract", type: "select", options: ["Active", "Auto-renew", "Expiring within 90 days", "Expired", "Month-to-month", "No contract on file", "Unknown"] },
-        { key: "insuranceRequired", label: "Certificate of insurance status", columnLabel: "COI", type: "select", options: ["Required and current", "Required but expired", "Required but missing", "Not required", "Pending request", "Unknown"] },
+        { key: "insuranceRequired", label: "Vendor COI status — do they owe us a certificate of insurance?", columnLabel: "Vendor COI", type: "select", options: ["Required and current", "Required but expired", "Required but missing", "Not required", "Pending request", "Unknown"] },
         { key: "escalationOwner", label: "Who escalates if vendor does not respond?", columnLabel: "Escalation owner" }
       ]
     }]
@@ -510,7 +510,7 @@ export const onboardingIntakeCatalog = {
     guidanceCards: [
       {
         title: "Plain-English translation",
-        body: "This module asks: what numbers will the CEO/CFO/COO/ED/DON watch every morning after go-live, and who fixes it when a number turns red?"
+        body: "This module asks: what numbers will the CEO/CFO/COO/ED/DON watch every morning after go-live, and who fixes it when a number turns red? It records targets and owners; automated live alerts are configured in the production system after launch."
       },
       {
         title: "What good looks like",
@@ -561,8 +561,8 @@ export const onboardingIntakeCatalog = {
         { key: "dataSource", label: "Where does the number come from?", columnLabel: "Source" },
         { key: "owner", label: "Who is on the hook for this number?", columnLabel: "Owner" },
         { key: "refreshCadence", label: "How often is it updated?", columnLabel: "Cadence", type: "select", options: ["Live", "Hourly", "Daily by 8am", "Daily by end of day", "Weekly Monday 9am", "Monthly", "Manual during launch huddle"] },
-        { key: "target", label: "What is the steady-state target after day 30?", columnLabel: "Target" },
-        { key: "launchThreshold", label: "What is the launch floor before we call it red?", columnLabel: "Launch floor" },
+        { key: "target", label: "What is the steady-state target after day 30?", columnLabel: "Target", help: "The normal operating goal after launch stabilizes." },
+        { key: "launchThreshold", label: "What is the launch floor before we call it red?", columnLabel: "Launch floor", help: "The temporary acceptable bar during the first 14–30 days." },
         { key: "audience", label: "Who sees this number?", columnLabel: "Audience" },
         { key: "actionIfOffTrack", label: "What do we do if it slips?", columnLabel: "Action if red", type: "textarea", help: "Use a verb and an owner, not vague words like review or investigate." }
       ]
