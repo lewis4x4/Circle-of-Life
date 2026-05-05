@@ -26,17 +26,42 @@ export const moduleCatalog = [
   { moduleNumber: 19, moduleCode: "M19", moduleName: "Reports / Dashboards / KPIs", isMvpDetailed: true }
 ];
 
-const seededModules = moduleCatalog.map((m) => ({
-  ...m,
-  scopeStatus: "in",
-  ownerName: "Roundtable Owner",
-  ownerTitle: "Department Lead",
-  source: "Onboarding Roundtable Intake",
-  dueDate: "2026-05-15",
-  openQuestions: "",
-  status: "assigned",
-  nextAction: "Complete required data capture and validate source of truth"
-}));
+const recommendedModuleOwners = {
+  M1: ["CEO / CFO", "Executive / Finance", "Corporate legal/entity records"],
+  M2: ["Executive Director", "Facility Leader", "License file and facility profile"],
+  M3: ["Maintenance Director", "Physical Plant", "Room list / floor plan"],
+  M4: ["Executive Director", "HR / Operations", "Employee roster and access list"],
+  M5: ["Business Office Manager", "Resident Census", "Current census and face sheets"],
+  M6: ["CFO / Business Office", "Billing / Finance", "Resident ledger and rate sheets"],
+  M7: ["DON / Resident Care Director", "Clinical Operations", "Assessments and service plans"],
+  M8: ["DON / Shift Leads", "Care Execution", "Rounds policy and staff interview"],
+  M9: ["Executive Director", "Staffing", "Schedule and assignment sheet"],
+  M10: ["DON", "Medication Process", "MAR/eMAR and pharmacy records"],
+  M11: ["Dining Manager", "Dining / Dietary", "Dietary binder and meal schedule"],
+  M12: ["Life Enrichment Director", "Activities", "Activity calendar and preferences"],
+  M13: ["Maintenance Director", "Maintenance", "Asset list and work-order log"],
+  M14: ["Sales / Admissions Director", "Admissions", "Inquiry pipeline and move-in checklist"],
+  M15: ["Business Office Manager", "Family Portal", "Responsible-party contacts and consents"],
+  M16: ["ED / DON / CFO", "Risk / Incidents", "Incident policy and loss-run awareness"],
+  M17: ["Document Custodian", "Compliance Documents", "Insurance/compliance document binder"],
+  M18: ["Maintenance / Business Office", "Vendors / Emergency", "Vendor binder and emergency contact list"],
+  M19: ["COO", "Executive Reporting", "Launch dashboard/KPI definitions"]
+};
+
+const seededModules = moduleCatalog.map((m) => {
+  const [ownerName, ownerTitle, source] = recommendedModuleOwners[m.moduleCode] || ["Assign owner", "", ""];
+  return {
+    ...m,
+    scopeStatus: "in",
+    ownerName,
+    ownerTitle,
+    source,
+    dueDate: "2026-05-15",
+    openQuestions: "",
+    status: "assigned",
+    nextAction: "Enter and validate this module in Complete Intake / Facility DNA"
+  };
+});
 
 const emptyOperationalIntakeData = Object.fromEntries(
   fullIntakeModuleCodes.map((code) => [code, createEmptyIntakeData(onboardingIntakeCatalog[code])])

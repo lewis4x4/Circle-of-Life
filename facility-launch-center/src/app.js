@@ -46,7 +46,7 @@ const CONFIDENCE_LEVELS = ["low", "medium", "high", "manual"];
 const tabs = [
   ["overview", "Facility Command Center"],
   ["program", "Program Charter"],
-  ["worksheet", "Owner Worksheet"],
+  ["worksheet", "Accountability Matrix"],
   ["readiness", "Readiness Map"],
   ["modules", "Complete Intake / Facility DNA"],
   ["docs", "Document Intake"],
@@ -209,7 +209,7 @@ function renderWorksheet() {
       <td><textarea data-ws="openQuestions" data-code="${m.moduleCode}" placeholder="Open questions">${esc(m.openQuestions)}</textarea></td>
     </tr>
   `).join("");
-  return `<h2>Owner Worksheet (19 modules)</h2><p class="lead">One accountable human per module. Missing owner/source/due remains a Gate 2 blocker unless an exception is approved.</p><div class="table-wrap"><table><thead><tr><th>Module</th><th>Owner</th><th>Title</th><th>Source</th><th>Due</th><th>Scope</th><th>Status</th><th>Next Action</th><th>Open Questions</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  return `<h2>Launch Accountability Matrix (19 modules)</h2><p class="lead"><strong>This is not the resident/rate intake screen.</strong> This table assigns the accountable human, source of truth, due date, and next action for each onboarding module. Actual resident, rate, rounds, care, staffing, vendor, and KPI data is entered in <strong>Complete Intake / Facility DNA</strong>.</p><div class="table-wrap"><table><thead><tr><th>Module</th><th>Data Owner</th><th>Owner Title</th><th>Source of Truth</th><th>Due</th><th>Scope</th><th>Status</th><th>Next Action</th><th>Open Questions</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function renderReadiness() {
