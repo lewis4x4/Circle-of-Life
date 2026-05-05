@@ -373,7 +373,7 @@ check(
     && markdown.includes("Complete Onboarding Intake Coverage")
     && markdown.includes("Resident roster")
     && markdown.includes("Rounds/check schedules")
-    && markdown.includes("Numbers we'll watch at go-live")
+    && markdown.includes("Numbers leadership will watch at go-live")
     && markdown.includes("Recent Decision Log Excerpts")
     && parsed.readiness.gate2.pass === true
     && parsed.completeOnboardingIntake.some((module) => module.code === "M5" && module.collections[0].recordCount === 1)

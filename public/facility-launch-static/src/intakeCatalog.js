@@ -200,22 +200,65 @@ export const onboardingIntakeCatalog = {
     }]
   },
   M15: {
-    priority: "Family/responsible-party access",
-    purpose: "Capture family contacts, legal authority, portal invitations, communication preferences, billing access, and privacy/consent boundaries.",
-    fields: [
-      { key: "familyPortalScope", label: "Family portal scope", sampleValue: "Responsible-party updates, statements, activity visibility, care communications" },
-      { key: "communicationPolicy", label: "Communication policy", sampleValue: "Primary responsible party receives billing and care escalations" },
-      { key: "portalOwner", label: "Portal rollout owner", sampleValue: "Business Office Manager" }
+    priority: "Family access and communication rules",
+    purpose: "Capture exactly who can receive updates for each resident, what legal authority they have, what they can see in the family portal, whether billing access is allowed, and whether privacy consent is on file.",
+    guidanceCards: [
+      {
+        title: "How to complete this module",
+        body: "Start with the resident from M5, then add each responsible party, POA, emergency contact, or family contact as a separate row. Do not type a resident name manually."
+      },
+      {
+        title: "What good looks like",
+        body: "For every resident, staff know who to call, what that person is allowed to know, whether they can see billing, and whether the portal invite is active."
+      },
+      {
+        title: "Common miss",
+        body: "Do not give billing or health information access just because someone is family. The row must show authority and privacy consent."
+      }
     ],
-    checklist: ["Responsible party", "Emergency contacts", "POA/authority", "Communication preference", "Portal invite status", "Billing access", "HIPAA/privacy consent"],
+    fields: [
+      {
+        key: "familyPortalScope",
+        label: "What can family members see in the portal?",
+        placeholder: "Example: Statements, activity calendar, wellness updates, messages; no clinical notes unless approved",
+        help: "This is the facility-wide default. Each contact row can still be more restrictive.",
+        sampleValue: "Responsible-party updates, statements, activity visibility, care communications"
+      },
+      {
+        key: "communicationPolicy",
+        label: "What is our rule for who gets called for what?",
+        type: "textarea",
+        placeholder: "Example: Primary responsible party gets billing and care escalations. Secondary contact gets care escalations only if primary cannot be reached.",
+        help: "This is the standing communication policy, not a one-off note.",
+        sampleValue: "Primary responsible party receives billing and care escalations"
+      },
+      {
+        key: "portalOwner",
+        label: "Who owns portal rollout and invite cleanup?",
+        placeholder: "Example: Business Office Manager",
+        help: "One person must chase missing emails, failed invites, consent gaps, and billing-access questions.",
+        sampleValue: "Business Office Manager"
+      }
+    ],
+    checklist: ["Resident selected from M5", "Responsible party identified", "Emergency contact identified", "Legal authority recorded", "Communication preference recorded", "Portal invite status known", "Billing access decision made", "Privacy/HIPAA consent status known"],
     collections: [{
       key: "familyContacts",
-      label: "Family/responsible-party contacts",
-      addLabel: "Add family contact",
+      label: "Resident family and responsible-party access rules",
+      addLabel: "Add family/responsible-party contact",
+      emptyState: "No family or responsible-party contacts yet. Staff will not know who can receive updates, who has legal authority, who can access billing, or who should be invited to the portal until these rows are entered.",
       requiredFields: ["residentId", "contactName", "relationship", "phone", "email", "authority", "communicationPreference", "portalInviteStatus", "billingAccess", "privacyConsent"],
       sampleRecord: { residentName: "Evelyn Carter", contactName: "Mark Carter", relationship: "Son / responsible party", phone: "205-555-2100", email: "mark@example.com", authority: "Financial POA on file", communicationPreference: "Text urgent, email routine", portalInviteStatus: "Invite pending", billingAccess: "Yes", privacyConsent: "HIPAA release on file" },
       fields: [
-        { key: "residentId", label: "Resident", relation: "resident" }, { key: "contactName", label: "Contact" }, { key: "relationship", label: "Relationship" }, { key: "phone", label: "Phone" }, { key: "email", label: "Email" }, { key: "authority", label: "Authority" }, { key: "communicationPreference", label: "Communication preference" }, { key: "portalInviteStatus", label: "Portal invite status" }, { key: "billingAccess", label: "Billing access" }, { key: "privacyConsent", label: "Privacy consent" }
+        { key: "residentId", label: "Which resident is this contact connected to?", columnLabel: "Resident", relation: "resident", help: "This pulls from M5 so the contact maps to the correct resident record." },
+        { key: "contactName", label: "Contact full name", columnLabel: "Contact" },
+        { key: "relationship", label: "Relationship to resident", columnLabel: "Relationship", type: "select", options: ["Responsible party", "Son", "Daughter", "Spouse", "Sibling", "Friend", "Guardian", "Financial POA", "Healthcare POA", "Other"] },
+        { key: "phone", label: "Best phone number", columnLabel: "Phone" },
+        { key: "email", label: "Email for portal invite", columnLabel: "Email" },
+        { key: "authority", label: "What legal authority does this person have?", columnLabel: "Authority", type: "select", options: ["Financial POA on file", "Healthcare POA on file", "Guardian / conservator", "Responsible party agreement", "Emergency contact only", "No formal authority", "Pending document", "Other — explain"] },
+        { key: "communicationPreference", label: "How should we contact them?", columnLabel: "Contact preference", type: "select", options: ["Call for urgent issues", "Text urgent / email routine", "Email routine only", "Portal message only", "Call first, then text", "Do not contact except emergency"] },
+        { key: "portalInviteStatus", label: "Portal invite status", columnLabel: "Portal", type: "select", options: ["Not invited", "Invite pending", "Invite sent", "Active", "Declined", "Locked / disabled"] },
+        { key: "billingAccess", label: "Can this person see billing?", columnLabel: "Billing", type: "yesNo", help: "Turn this off unless they have financial authority or the resident authorized it." },
+        { key: "privacyConsent", label: "Privacy/HIPAA consent status", columnLabel: "Privacy", type: "select", options: ["HIPAA release on file", "Limited release on file", "Consent pending", "No consent", "Not applicable"] }
       ]
     }]
   },
@@ -399,32 +442,89 @@ export const onboardingIntakeCatalog = {
     }]
   },
   M18: {
-    priority: "External dependency map",
-    purpose: "Capture vendors, emergency contacts, utilities, service agreements, after-hours routing, and operational dependencies.",
+    priority: "Who we call when the building needs outside help",
+    purpose: "Capture the outside companies, emergency services, utilities, account numbers, after-hours phone numbers, contract status, insurance requirements, and escalation owners needed to keep the facility running.",
+    guidanceCards: [
+      {
+        title: "Those checklist pills are not buttons",
+        body: "They are the categories that must be covered: vendors, utilities, emergency services, contracts, insurance, and account numbers. The table below is where the actual contacts go."
+      },
+      {
+        title: "The 2 a.m. test",
+        body: "If a pipe bursts, fire panel alarms, phone system fails, or HVAC dies at 2 a.m., this module should tell staff exactly who to call and who escalates."
+      },
+      {
+        title: "Common miss",
+        body: "Office phone numbers are not enough. Capture the after-hours dispatch number, account number, contract status, COI status, and internal owner."
+      }
+    ],
     fields: [
-      { key: "vendorSource", label: "Vendor/contact source", sampleValue: "Vendor binder and emergency contact sheet" },
-      { key: "afterHoursVendorRule", label: "After-hours vendor rule", sampleValue: "ED approves emergency calls; maintenance calls life-safety vendors directly" },
-      { key: "vendorOwner", label: "Vendor directory owner", sampleValue: "Maintenance Director / Business Office" }
+      {
+        key: "vendorSource",
+        label: "Where is the vendor list today?",
+        type: "select",
+        options: ["Binder", "Spreadsheet", "Accounting/vendor system", "Sticky notes / not centralized", "Mixed", "Unknown"],
+        help: "Be honest. This tells us how hard the migration will be.",
+        sampleValue: "Vendor binder and emergency contact sheet"
+      },
+      {
+        key: "afterHoursVendorRule",
+        label: "Who is allowed to call vendors after hours?",
+        type: "textarea",
+        placeholder: "Example: Maintenance on-call calls life-safety vendors directly. ED approval required for non-emergency vendor spend over $500.",
+        help: "This prevents staff from guessing during emergencies.",
+        sampleValue: "ED approves emergency calls; maintenance calls life-safety vendors directly"
+      },
+      {
+        key: "vendorOwner",
+        label: "Who owns vendor directory accuracy?",
+        placeholder: "Example: Maintenance Director, with Business Office backup",
+        help: "One owner must update phone numbers, contracts, account numbers, COIs, and renewals.",
+        sampleValue: "Maintenance Director / Business Office"
+      }
     ],
     checklist: ["Vendor directory", "Utilities", "Emergency services", "After-hours process", "Contracts/renewals", "Insurance requirements", "Account numbers"],
     collections: [{
       key: "vendorContacts",
-      label: "Vendor and emergency contacts",
-      addLabel: "Add vendor/contact",
+      label: "Vendor, utility, and emergency contacts",
+      addLabel: "Add vendor / utility / emergency contact",
+      emptyState: "No vendor or emergency contacts yet. Staff will not know who to call for fire/life-safety, HVAC, plumbing, utilities, pharmacy, legal, insurance, or after-hours failures until these rows are entered.",
       requiredFields: ["organization", "category", "primaryContact", "phone", "afterHoursPhone", "accountNumber", "contractStatus", "insuranceRequired", "escalationOwner"],
       sampleRecord: { organization: "SafeFire Systems", category: "Fire/life safety", primaryContact: "Dispatch", phone: "205-555-3000", afterHoursPhone: "205-555-3999", accountNumber: "HF-7781", contractStatus: "Active annual service", insuranceRequired: "COI required annually", escalationOwner: "Maintenance Director" },
       fields: [
-        { key: "organization", label: "Organization" }, { key: "category", label: "Category" }, { key: "primaryContact", label: "Primary contact" }, { key: "phone", label: "Phone" }, { key: "afterHoursPhone", label: "After-hours phone" }, { key: "accountNumber", label: "Account #" }, { key: "contractStatus", label: "Contract status" }, { key: "insuranceRequired", label: "Insurance required" }, { key: "escalationOwner", label: "Escalation owner" }
+        { key: "organization", label: "Company / agency name", columnLabel: "Organization" },
+        { key: "category", label: "What kind of outside help is this?", columnLabel: "Category", type: "select", options: ["Fire / life safety", "HVAC", "Plumbing", "Electrical", "Pest control", "Landscaping", "Pharmacy", "Medical waste", "Lab / imaging", "Food / supply", "IT / phones", "Generator / fuel", "Insurance broker", "Outside counsel", "Utility", "Emergency services", "Other"] },
+        { key: "primaryContact", label: "Primary contact or dispatch name", columnLabel: "Primary contact" },
+        { key: "phone", label: "Normal business-hours phone", columnLabel: "Phone" },
+        { key: "afterHoursPhone", label: "24/7 or after-hours phone", columnLabel: "After-hours", help: "This is the number staff need when the office is closed." },
+        { key: "accountNumber", label: "Account or customer number", columnLabel: "Account #" },
+        { key: "contractStatus", label: "Contract status", columnLabel: "Contract", type: "select", options: ["Active", "Auto-renew", "Expiring within 90 days", "Expired", "Month-to-month", "No contract on file", "Unknown"] },
+        { key: "insuranceRequired", label: "Certificate of insurance status", columnLabel: "COI", type: "select", options: ["Required and current", "Required but expired", "Required but missing", "Not required", "Pending request", "Unknown"] },
+        { key: "escalationOwner", label: "Who escalates if vendor does not respond?", columnLabel: "Escalation owner" }
       ]
     }]
   },
   M19: {
     priority: "Executive go-live visibility",
     purpose: "Lock the short list of numbers leadership will check every day for the first 30 days, who owns each number, where it comes from, and what we do when it slips. This is the launch scoreboard — not a BI spec. If a number isn't on this list, no one will look at it during go-live.",
+    guidanceCards: [
+      {
+        title: "Plain-English translation",
+        body: "This module asks: what numbers will the CEO/CFO/COO/ED/DON watch every morning after go-live, and who fixes it when a number turns red?"
+      },
+      {
+        title: "What good looks like",
+        body: "Each row has a number, why it matters, where it comes from, a named owner, a daily/weekly cadence, a target, and the action if it slips."
+      },
+      {
+        title: "Common miss",
+        body: "Do not enter broad topics like 'staffing' or 'revenue'. Enter a measurable number like 'open shifts today' or 'private-pay AR over 30 days'."
+      }
+    ],
     fields: [
-      { key: "executiveDashboardAudience", label: "Who reviews these numbers", sampleValue: "CEO, CFO, COO, ED, DON" },
-      { key: "reportCadence", label: "How often we review them", sampleValue: "Daily 9am huddle for first 30 days; weekly executive rollup after that" },
-      { key: "kpiOwner", label: "Scoreboard owner", sampleValue: "COO — assembles the daily scoreboard and chases gaps" }
+      { key: "executiveDashboardAudience", label: "Who reviews these numbers?", placeholder: "Example: CEO, CFO, COO, ED, DON", help: "List the people or roles in the daily launch huddle.", sampleValue: "CEO, CFO, COO, ED, DON" },
+      { key: "reportCadence", label: "How often will leadership review them?", type: "select", options: ["Daily 9am huddle for first 30 days", "Daily by 8am email", "Weekly executive rollup", "Monthly operating review", "Custom — explain in KPI rows"], help: "Daily is the normal launch cadence for the first 30 days.", sampleValue: "Daily 9am huddle for first 30 days; weekly executive rollup after that" },
+      { key: "kpiOwner", label: "Who owns assembling the scoreboard?", placeholder: "Example: COO — assembles the daily scoreboard and chases gaps", help: "One owner compiles the numbers and follows up when data is missing.", sampleValue: "COO — assembles the daily scoreboard and chases gaps" }
     ],
     checklist: [
       "At least one resident-safety number (e.g., rounds completion, incidents)",
@@ -440,8 +540,9 @@ export const onboardingIntakeCatalog = {
     ],
     collections: [{
       key: "kpiDefinitions",
-      label: "Numbers we'll watch at go-live",
-      addLabel: "Add a number to watch",
+      label: "Numbers leadership will watch at go-live",
+      addLabel: "Add scoreboard number",
+      emptyState: "No scoreboard numbers yet. Leadership cannot run a useful go-live huddle until safety, census, revenue, staffing, admissions, and operating-risk numbers have owners, sources, targets, and actions.",
       requiredFields: ["kpiName", "businessQuestion", "dataSource", "owner", "refreshCadence", "target", "launchThreshold", "actionIfOffTrack"],
       sampleRecord: {
         kpiName: "Rounds completion %",
@@ -455,15 +556,15 @@ export const onboardingIntakeCatalog = {
         actionIfOffTrack: "DON pulls the assignment sheet at huddle, reassigns, documents reason in app"
       },
       fields: [
-        { key: "kpiName", label: "Number we're watching" },
-        { key: "businessQuestion", label: "Why we watch it" },
-        { key: "dataSource", label: "Where the number comes from" },
-        { key: "owner", label: "Person on the hook" },
-        { key: "refreshCadence", label: "How often it's updated" },
-        { key: "target", label: "Steady-state target (after day 30)" },
-        { key: "launchThreshold", label: "Day-1-to-30 floor (alert if below)" },
-        { key: "audience", label: "Who sees this number" },
-        { key: "actionIfOffTrack", label: "What we do if it slips" }
+        { key: "kpiName", label: "What number are we watching?", columnLabel: "Number" },
+        { key: "businessQuestion", label: "Why does this number matter?", columnLabel: "Why it matters", type: "textarea" },
+        { key: "dataSource", label: "Where does the number come from?", columnLabel: "Source" },
+        { key: "owner", label: "Who is on the hook for this number?", columnLabel: "Owner" },
+        { key: "refreshCadence", label: "How often is it updated?", columnLabel: "Cadence", type: "select", options: ["Live", "Hourly", "Daily by 8am", "Daily by end of day", "Weekly Monday 9am", "Monthly", "Manual during launch huddle"] },
+        { key: "target", label: "What is the steady-state target after day 30?", columnLabel: "Target" },
+        { key: "launchThreshold", label: "What is the launch floor before we call it red?", columnLabel: "Launch floor" },
+        { key: "audience", label: "Who sees this number?", columnLabel: "Audience" },
+        { key: "actionIfOffTrack", label: "What do we do if it slips?", columnLabel: "Action if red", type: "textarea", help: "Use a verb and an owner, not vague words like review or investigate." }
       ]
     }]
   }};
