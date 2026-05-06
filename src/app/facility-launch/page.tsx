@@ -1,6 +1,5 @@
-/* eslint-disable @next/next/no-css-tags */
+/* eslint-disable @next/next/no-css-tags, @next/next/no-sync-scripts */
 import type { Metadata } from 'next';
-import Script from 'next/script';
 
 export const dynamic = 'force-static';
 
@@ -13,7 +12,7 @@ export const metadata: Metadata = {
 export default function FacilityLaunchPage() {
   return (
     <>
-      <link rel="stylesheet" href="/facility-launch-static/styles.css" />
+      <link rel="stylesheet" href="/facility-launch-static/styles.css?v=20260506-col-responses" />
       <header className="app-header">
         <h1>Facility Launch Center</h1>
         <p className="subhead">Facility DNA command center for Homewood launch readiness</p>
@@ -32,7 +31,7 @@ export default function FacilityLaunchPage() {
         </section>
       </main>
 
-      <Script type="module" src="/facility-launch-static/src/app.js" strategy="afterInteractive" />
+      <script type="module" src="/facility-launch-static/src/app.js?v=20260506-col-responses" />
     </>
   );
 }
