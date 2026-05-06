@@ -33,11 +33,50 @@ function withSaved(state) {
   return state;
 }
 
+function isBlankForSeedMerge(value) {
+  return value === undefined || value === null || value === "" || (Array.isArray(value) && value.length === 0);
+}
+
+function seededRecordKey(record) {
+  if (!record || typeof record !== "object") return "";
+  return record.id || record.roomNumber || record.roundName || record.kpiName || record.organization || record.fullLegalName || record.contactName || "";
+}
+
+function mergeMissingSeedValues(current, seed) {
+  if (isBlankForSeedMerge(current)) return clone(seed);
+  if (Array.isArray(current) && Array.isArray(seed)) {
+    const next = clone(current);
+    const existingKeys = new Set(next.map(seededRecordKey).filter(Boolean));
+    for (const seedRecord of seed) {
+      const key = seededRecordKey(seedRecord);
+      if (key && !existingKeys.has(key)) {
+        next.push(clone(seedRecord));
+        existingKeys.add(key);
+      }
+    }
+    return next;
+  }
+  if (
+    current && seed
+    && typeof current === "object"
+    && typeof seed === "object"
+    && !Array.isArray(current)
+    && !Array.isArray(seed)
+  ) {
+    const next = clone(current);
+    for (const [key, seedValue] of Object.entries(seed)) {
+      next[key] = mergeMissingSeedValues(next[key], seedValue);
+    }
+    return next;
+  }
+  return current;
+}
+
 export function loadState() {
   const raw = readStorage();
   if (!raw) return resetState();
   try {
-    return JSON.parse(raw);
+    return withSaved(mergeMissingSeedValues(JSON.parse(raw), seedState));
   } catch (error) {
     console.warn("Facility Launch Center storage parse failed; resetting demo state.", error);
     return resetState();

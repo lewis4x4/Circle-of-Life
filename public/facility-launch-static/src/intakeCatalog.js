@@ -21,21 +21,45 @@ export const onboardingIntakeCatalog = {
   },
   M6: {
     priority: "Core financial data",
-    purpose: "Capture what each resident is charged, who pays, when billing starts, and what exceptions affect revenue accuracy.",
-    fields: [
-      { key: "billingSystemSource", label: "Billing source of truth", sampleValue: "QuickBooks/customer ledger" },
-      { key: "billingCycle", label: "Billing cycle", sampleValue: "Monthly in advance on the 1st" },
-      { key: "rateApprovalOwner", label: "Rate approval owner", sampleValue: "CFO" }
+    purpose: "Capture the real contracted rate for each resident. COL does not use generic tiers: each resident can have a negotiated private amount, an optional Medicaid provider amount, and a posted-rate cap.",
+    guidanceCards: [
+      {
+        title: "No tier model",
+        body: "Do not enter Level 1 / Level 2 rate tiers unless a specific resident contract uses that language. COL confirmed rates are negotiated resident-by-resident."
+      },
+      {
+        title: "Medicaid rule",
+        body: "For Medicaid residents, capture the resident contracted private amount plus the Medicaid provider amount. The total cannot exceed the posted room rate for that room type."
+      }
     ],
-    checklist: ["Resident-level rate schedule", "Payer and billing contact", "Effective dates", "Care-level and add-on charges", "Deposits/concessions/balances", "Collections/escalation rules"],
+    fields: [
+      { key: "billingSystemSource", label: "Billing source of truth", sampleValue: "QuickBooks/customer ledger + resident contract" },
+      { key: "billingCycle", label: "Billing cycle / billing rule", sampleValue: "Monthly; individually negotiated under posted ceilings" },
+      { key: "rateApprovalOwner", label: "Rate approval owner", sampleValue: "CFO / Business Office" },
+      { key: "postedPrivateRoomRate", label: "Posted private room rate", type: "number", sampleValue: "5550" },
+      { key: "postedCompanionRoomRate", label: "Posted companion room rate", type: "number", sampleValue: "4000" },
+      { key: "medicaidProviderRule", label: "Medicaid provider rule", type: "textarea", sampleValue: "Provider amount cascades by facility/provider and combines with resident contracted private amount, capped at posted rate." }
+    ],
+    checklist: ["Posted private and companion rates", "Resident contracted private amount", "Medicaid provider, if applicable", "Provider amount by facility", "Posted-rate cap check", "Billing contact and payer", "Effective dates", "Deposits/concessions/balances", "Collections/escalation rules"],
     collections: [{
       key: "rateRecords",
       label: "Resident rate records",
-      addLabel: "Add rate record",
-      requiredFields: ["residentId", "payerType", "billingContact", "baseMonthlyRate", "careLevelCharge", "otherCharges", "effectiveDate", "depositBalance", "concessions", "collectionStatus"],
-      sampleRecord: { residentName: "Evelyn Carter", payerType: "private_pay", billingContact: "Mark Carter / mark@example.com", baseMonthlyRate: "4200", careLevelCharge: "650", otherCharges: "Medication management 250", effectiveDate: "2026-05-01", depositBalance: "0", concessions: "None", collectionStatus: "current" },
+      addLabel: "Add resident rate",
+      requiredFields: ["residentId", "roomType", "payerType", "billingContact", "contractedPrivateAmount", "medicaidProvider", "medicaidProviderAmount", "postedRateCap", "effectiveDate", "depositBalance", "concessions", "collectionStatus"],
+      sampleRecord: { residentName: "Evelyn Carter", roomType: "Companion", payerType: "Medicaid + private responsibility", billingContact: "Mark Carter / mark@example.com", contractedPrivateAmount: "1500", medicaidProvider: "Sunshine LTC", medicaidProviderAmount: "2500", postedRateCap: "4000", effectiveDate: "2026-05-01", depositBalance: "0", concessions: "None", collectionStatus: "current" },
       fields: [
-        { key: "residentId", label: "Resident", relation: "resident" }, { key: "payerType", label: "Payer type" }, { key: "billingContact", label: "Billing contact" }, { key: "baseMonthlyRate", label: "Base monthly rate", type: "number" }, { key: "careLevelCharge", label: "Care charge", type: "number" }, { key: "otherCharges", label: "Other charges" }, { key: "effectiveDate", label: "Effective date", type: "date" }, { key: "depositBalance", label: "Deposit/balance" }, { key: "concessions", label: "Concessions" }, { key: "collectionStatus", label: "Collection status" }
+        { key: "residentId", label: "Resident", relation: "resident" },
+        { key: "roomType", label: "Room type", type: "select", options: ["Private", "Companion"] },
+        { key: "payerType", label: "Payer type", type: "select", options: ["Private pay", "Medicaid + private responsibility", "Medicaid only", "VA / Aid & Attendance", "LTC insurance", "Other"] },
+        { key: "billingContact", label: "Billing contact" },
+        { key: "contractedPrivateAmount", label: "Contracted private amount", type: "number" },
+        { key: "medicaidProvider", label: "Medicaid provider", type: "select", options: ["None", "United", "Humana", "Sunshine LTC", "Sunshine MMA", "Other"] },
+        { key: "medicaidProviderAmount", label: "Provider amount", type: "number" },
+        { key: "postedRateCap", label: "Posted rate cap", type: "number" },
+        { key: "effectiveDate", label: "Effective date", type: "date" },
+        { key: "depositBalance", label: "Deposit/balance" },
+        { key: "concessions", label: "Concessions" },
+        { key: "collectionStatus", label: "Collection status" }
       ]
     }]
   },

@@ -1,0 +1,66 @@
+ On the Launch Center I built this morning, we agreed it's just a discovery scaffolding tool to populate the data layer, not a permanent screen. All the M1 through M7 entries we walked through pertain only to Homewood for this first pass.  On rooms and beds, we captured Homewood live: 20 rooms, 36 beds, single floor, no wings. Rooms 1 through 4 are private singles, rooms 5 through 20 are companion doubles. Care designation across the whole facility is standard facility.  On rates, the current rate plan model is wrong and I'm rebuilding it. COL doesn't use tiers. Each resident gets a contracted private amount plus a Medicaid provider amount, capped at the posted room rate when Medicaid is involved. I'll add a Medicaid providers table keyed per facility so United, Humana, Sunshine LTC, and Sunshine MMA each have their own contract rate that cascades to every resident tied to that provider.
+	•	Standard Rates – Private Room $5550.00 and Companion Room $4000.00 – as discussed our rate are negotiated –
+On resident status, we're going from active/discharged to a four-state model: active, bed hold hospital, bed hold vacation, discharged. That feeds the monthly census and admit/discharge log inspectors ask for. 
+	•	Yes, this is the four states to be able to track billable days 
+On Quickmar, we're keeping it as the live MAR through Phase 1. You or your assistant will export the daily report into a Drive folder, the system parses it automatically, and the resident profile shows meds and notes as of the last sync. Phase 2 we cut over to Haven's native med module.
+	•	We will provide training to staff on the daily export that is required – As discussed, we want the administrator, assistant, Michelle and Jessica to get alerts if the export is not competed in the time frame required.
+
+On activities, I'm scrapping the Donny/Dieter dietary module entirely and replacing it with an Activities module: catalog, schedule, attendance, and provider tracking. It'll generate the monthly calendar you currently build by hand.
+	•	Include resident attendance and indicate who conducted the activity (e.g., facility staff, Home Health, Hospice, or others). 
+	•	After the activity is completed, facility staff should record the start time and initial to confirm it was carried out. 
+	•	The administrator, assistant, Michelle, and Jessica should receive alerts if the two required daily activities are not completed.
+
+On rounds, Haven owns the rounding workflow and we're disabling that side of Quickmar. Cadence is configurable per shift per facility, with two-hour overrides for fall risk or incontinence. Tablet-based UI with dropdown Location and Activity values, optional speech-to-text for notes. I need the dropdown lists from you to finish the build.
+	•	Location where the resident was observed (e.g., common area, dining room, resident room, front porch, back porch). 
+	•	Activity observed (e.g., participating in a facility activity, socializing with others, watching TV, resting in bed, sleeping, or engaging in an individual activity such as reading or puzzles). 
+	•	OOF (Out of Facility): indicates the resident is away for reasons such as a personal errand, medical appointment, time with family or friends, hospitalization, or day treatment. 
+
+On the Family Portal, we scoped it to one-way only. Families see activity attendance, billing, and admin notes. They can't reply. Only administrators and assistants can post notes. 
+	•	This section allows only the Administrator and Assistant (not line staff) to enter a note that will be sent to the family, such as: “I called earlier—please return my call when you can.” This provides documentation that the family was notified of an issue or concern, while not allowing them to reply.
+On maintenance, two surfaces: reactive work order tickets and proactive scheduled inspections (fire ext, hoods, sprinklers, generator, occupational license, etc.) with auto-vendor email reminders. 
+On fire drills, we'll migrate your existing tracker into Haven and trigger reminders based on the last completed drill date.
+	•	We want to track and follow up on required annual items, including inspections, menus, permits, as well as six fire drills and two elopement drills per year. 
+	•	On the maintenance side, we will coordinate with Terell to determine which tasks—such as AC filter changes—should be included. 
+On dietary, I'm stripping it to per-meal logging only with ate/refused/out_of_facility status, plus a facility-level snack timestamp. Allergies stay on the face sheet.
+	•	Meal logs include breakfast, lunch and dinner with the above options
+	•	Snacks should be a facility reminder and should include who passed the snack and the time. We can even add what the snack was, but this could get complicated so we will hold off on this for now.  
+
+On contracts, we're moving to Docusign with the signed PDF stored on the resident record. I confirmed Florida Statute 668 covers electronic signatures generally. I need you to verify with Donna that the arbitration clause survives electronic execution.
+	•	I have emailed Donna and will let you know her response
+
+On the Medicaid pending pipeline, I'm building a Kanban board to replace your Drive sheet. Approved triggers full onboarding with no re-entry. Discharge auto-populates the DCAF form and notifies marketing of the open bed.  On integrations, ADP scoping starts now. 
+	•	The employee module should begin with the application and continue through the completion of all required items within 30 days of the hire date. 
+	•	It should include the application, background check, references, and date of hire. 
+	•	Before working on the floor, employees must complete pre-service orientation, including Resident Rights, Infection Control and Universal Precautions
+	•	Within 30 days of hire, communicable disease, TB, CPR & First Aid and all required in-services  
+	•	There should be a section for employees to confirm that all in-services and training have been completed. 
+	•	Medication technicians should verify that they have received training, understand the regulations for medication assistance, and feel adequately prepared to assist with medications.
+	•	Alerts to administrator, assistant, Michelle and Jessica for any employees that are non-compliant 
+QuickBooks is still pending Milton's call on Path A versus Path B, but cloud migration is required either way. 
+	•	It would be most effective to integrate QuickBooks into Haven, allowing invoices, payments, and statements to flow seamlessly while automatically generating an aging report for accurate tracking of outstanding and collected funds.
+
+ I need the name of your encrypted email provider.
+	•	Jessica will get this to you
+On cameras, live view in the resident profile is Phase 2. The immediate item is the Rising Oaks office buildout. I'm coming over to look before the sheet rock goes up so we can run wiring for four corner exterior cameras, a video doorbell, and front-door access control with auto-lock-behind-entry.
+	•	The Central Office currently under development will operate separately from the facilities. If we move forward with a security system, having access within Haven could be advantageous, though a separate app would also work. This can be finalized once we decide if and which security system best meets our needs. 
+	•	Future plans may include integrating all facility camera systems into Haven for centralized access. 
+On permissions, every employee gets a role preset (Resident Aide, Administrator, Assistant Administrator, Corporate, Maintenance, Owner) with per-user overrides on top.
+	•	Facility staff may include the Administrator, Assistant, Cook, Medication Technician, Resident Aide, and Housekeeping Aide. While we typically operate as universal workers, there may be cases where an employee is hired for a specific role only—for example, a cook who does not administer medications.
+
+What I need from you and William:  First, dump every Homewood document you have into the Drive folder I'll send: face sheets, admit/discharge log, census records, AR sheet, dietary logs, fire drill log, Medicaid pending tracker, contract scans. Any format works. Don't merge anything, don't reformat anything, just upload.  Second, the rounds vocabulary lists: Location values, Activity values, and per-shift cadence per facility (Homewood day vs night, etc.).
+	•	Oakridge, Rising Oaks, and Grande Cypress:  Rounds for 12 hours shifts – Day Shift - 6 am, 10 am, 2 pm and 5:30pm.  Night Shift: 6 pm 10pm and 5:30 am.  During the night most residents do not want to be awakened by someone coming into their room.   I know these times may seem unusual, but they are scheduled around meals, activities, and daily routines. For example, the 5:30 pm check serves as a final observation to ensure the resident has been seen before staff leave at 6:00 p.m.  We can also have a grace period of 30 minutes since all residents can’t be checked at the same time.  The resident list for each staff member will be divided the same as the med cart.  So, of the two medication techs on duty, they will each do half of the building.  If we have a third staff member on duty, they can also be divided into 3. 
+	•	Homewood:  Rounds for 12-hour shifts – Day shift will be 6 am, 10 am, 2 pm and 5:30pm.  Night shift will be every two hours.  We may need to adjust this as we proceed.  
+	•	Plantation – Jessica will get you this information.  
+	•	One consideration is that during medication pass—occurring several times a day—staff typically already document notes. Because of this, it may not be necessary to require four separate notes in Haven each shift. If we export documentation once daily, we could utilize those existing notes. My goal is to avoid making documentation burdensome for staff, as they already have many other resident responsibilities. We can continue to adjust this process as we go and determine what works best in practice.
+	•	 Location where the resident was observed (e.g., common area, dining room, resident room, front porch, back porch). 
+	•	Activity observed (e.g., participating in a facility activity, socializing with others, watching TV, resting in bed, sleeping or engaging in an individual activity such as reading or puzzles). 
+	•	OOF (Out of Facility): indicates the resident is away for reasons such as a personal errand, medical appointment, time with family or friends, hospitalization, or day treatment. 
+Third, an Excel mapping for each facility to which forms it requires (1823, service plan, community support plan).
+	•	All five facilities will require an 1823
+	•	Plantation will also require service and community support plans
+
+Fourth, the name of your encrypted email provider.
+	•	Jessica will get this to you 
+Fifth, Donna's confirmation on the Docusign arbitration question.
+	•	I emailed Donna this morning and will let you know her thought  
+ 

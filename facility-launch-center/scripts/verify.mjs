@@ -241,17 +241,19 @@ check("j) M2 captures deeper facility profile and operating-address confirmation
 
 state = fillM3(state);
 let m3RoomId = state.mvpData.M3.rooms[0].id;
+const m3InitialCount = state.mvpData.M3.rooms.length;
 state = stateApi.updateModuleRecord(state, "M3", "rooms", m3RoomId, { wing: "West" });
 check("k1) M3 room records can be edited inline", state.mvpData.M3.rooms[0].wing === "West");
 state = stateApi.deleteModuleRecord(state, "M3", "rooms", m3RoomId);
-check("k2) M3 room records can be deleted", state.mvpData.M3.rooms.length === 0);
+check("k2) M3 room records can be deleted", state.mvpData.M3.rooms.length === m3InitialCount - 1);
 state = fillM3(state);
 const m3Score = scoring.scoreModule(state.modules.find((module) => module.moduleCode === "M3"), state);
+const addedRoom = state.mvpData.M3.rooms.find((room) => room.roomNumber === "101");
 check(
   "k) M3 room/unit entries include floor/wing/type/beds/care/status",
   m3Score.completenessPct === 100
-    && state.mvpData.M3.rooms[0].roomNumber === "101"
-    && state.mvpData.M3.rooms[0].careDesignation === "Assisted Living",
+    && addedRoom?.roomNumber === "101"
+    && addedRoom?.careDesignation === "Assisted Living",
   `M3 completeness=${m3Score.completenessPct}%`
 );
 

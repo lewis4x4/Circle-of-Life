@@ -4,6 +4,23 @@ export const STORAGE_KEY = "facilityLaunchCenter.homewood.v4";
 
 const nowIso = new Date().toISOString();
 
+
+const homewoodRooms = Array.from({ length: 20 }, (_, index) => {
+  const roomNumber = String(index + 1);
+  const isPrivate = index < 4;
+  return {
+    id: `room-homewood-${roomNumber}`,
+    roomNumber,
+    floor: "1",
+    wing: "None — single floor",
+    unitType: isPrivate ? "Private single" : "Companion double",
+    bedCount: isPrivate ? 1 : 2,
+    careDesignation: "Standard facility",
+    status: "active",
+    name: roomNumber
+  };
+});
+
 export const moduleCatalog = [
   { moduleNumber: 1, moduleCode: "M1", moduleName: "Company / Portfolio", isMvpDetailed: true },
   { moduleNumber: 2, moduleCode: "M2", moduleName: "Facility Profile", isMvpDetailed: true },
@@ -59,7 +76,7 @@ const seededModules = moduleCatalog.map((m) => {
     dueDate: "2026-05-15",
     openQuestions: "",
     status: "assigned",
-    nextAction: "Enter and validate this module in Complete Intake / Facility DNA"
+    nextAction: "Enter and validate this module in Onboarding Intake"
   };
 });
 
@@ -116,19 +133,19 @@ export const seedState = {
     },
     M2: {
       legalName: "",
-      dba: "",
+      dba: "Homewood Lodge ALF",
       facilityType: "Assisted Living Facility",
       licenseNumber: "",
-      licenseState: "",
-      licenseAgency: "",
+      licenseState: "Florida",
+      licenseAgency: "AHCA",
       licenseExpiration: "",
       physicalAddress: "",
       facilityAddress: "",
       mailingAddress: "",
       mainPhone: "",
       afterHoursPhone: "",
-      capacity: "",
-      floorsWings: "",
+      capacity: "36",
+      floorsWings: "Single floor; no wings",
       executiveDirector: "",
       don: "",
       maintenanceDirector: "",
@@ -137,17 +154,109 @@ export const seedState = {
       operatingAddressConfirmed: false
     },
     M3: {
-      rooms: [],
-      bedsTotal: null,
-      unitsTotal: null
+      rooms: homewoodRooms,
+      bedsTotal: 36,
+      unitsTotal: 20
     },
     M4: {
       employees: [],
-      roleCoverageNotes: ""
+      roleCoverageNotes: "COL roles confirmed: Administrator, Assistant, Cook, Medication Technician, Resident Aide, Housekeeping Aide. Universal-worker model is normal, but role-restricted hires must be supported. Employee lifecycle must capture application, background check, references, hire date, pre-service orientation before floor work, 30-day items, in-service confirmation, med-tech attestation, and non-compliance alerts to Administrator, Assistant, Michelle, and Jessica."
     },
     ...emptyOperationalIntakeData,
+    M5: {
+      ...emptyOperationalIntakeData.M5,
+      censusDate: "2026-05-06",
+      residentSource: "Pending Homewood document dump: face sheets, admit/discharge log, census records, AR sheet, Medicaid pending tracker, contract scans.",
+      residentValidationOwner: "Business Office Manager / Jessica + William document dump"
+    },
+    M6: {
+      ...emptyOperationalIntakeData.M6,
+      billingSystemSource: "QuickBooks/customer ledger + resident contracts; QuickBooks Online API integration preferred pending Milton sign-off.",
+      billingCycle: "Monthly; actual resident rates are individually negotiated under posted ceilings.",
+      rateApprovalOwner: "CFO / Business Office",
+      medicaidProviderRule: "Add Medicaid providers per facility. For Medicaid residents, combine contracted private amount plus Medicaid provider amount, capped at the posted room rate.",
+      postedPrivateRoomRate: "5550",
+      postedCompanionRoomRate: "4000"
+    },
+    M8: {
+      ...emptyOperationalIntakeData.M8,
+      roundingPolicySource: "COL response 2026-05-06: Haven owns rounds; Quickmar rounds disabled. Use med-cart resident split for staff assignments.",
+      roundingDecisionOwner: "COO / DON",
+      roundingExceptionProcess: "30-minute grace period. Enhanced checks can override standard cadence. Avoid duplicate narrative notes if Quickmar med-pass export already covers notes.",
+      roundSchedules: [
+        {
+          id: "m8-homewood-day",
+          roundName: "Homewood day-shift observation rounds",
+          residentGroup: "All Homewood residents, divided by med-cart/staff assignment",
+          shift: "Day Shift 6a-6p",
+          cadence: "6:00a, 10:00a, 2:00p, 5:30p",
+          startTime: "06:00",
+          endTime: "18:00",
+          taskList: "Fast location + activity dropdown capture; optional note/speech-to-text only when needed.",
+          documentationRequired: "Location and activity required; narrative note optional to avoid duplicate Quickmar documentation.",
+          missedRoundEscalation: "Grace period 30 minutes; escalate overdue rounds to shift lead/DON.",
+          ownerRole: "Shift lead / Medication Technician"
+        },
+        {
+          id: "m8-homewood-night",
+          roundName: "Homewood night-shift safety rounds",
+          residentGroup: "All Homewood residents, divided by med-cart/staff assignment",
+          shift: "Night Shift 6p-6a",
+          cadence: "Every 2 hours",
+          startTime: "18:00",
+          endTime: "06:00",
+          taskList: "Minimal-disruption safety/location/activity check; do not wake residents unnecessarily.",
+          documentationRequired: "Location and activity required; narrative note optional when condition or exception warrants.",
+          missedRoundEscalation: "Grace period 30 minutes; escalate overdue rounds to shift lead/DON.",
+          ownerRole: "Night shift lead"
+        }
+      ]
+    },
+    M10: {
+      ...emptyOperationalIntakeData.M10,
+      medicationScope: "Phase 1: Quickmar remains live MAR. Haven parses daily Quickmar export and displays meds/notes as of last sync. Phase 2: Haven native med module.",
+      marSource: "Quickmar daily export to Drive folder",
+      medicationOwner: "Administrator / Assistant; alerts to Administrator, Assistant, Michelle, Jessica if export missed."
+    },
+    M11: {
+      ...emptyOperationalIntakeData.M11,
+      mealSchedule: "Breakfast, lunch, dinner with ate/refused/out_of_facility status.",
+      dietarySource: "Dietary logs + resident face sheet allergies. Snack contents deferred Phase 1.",
+      diningOwner: "Facility staff / dietary owner; snack log must capture who passed snack and time."
+    },
+    M12: {
+      ...emptyOperationalIntakeData.M12,
+      activityCalendarSource: "Monthly activity calendar currently built by hand.",
+      attendanceTrackingRule: "Track resident attendance, who conducted activity (facility staff, Home Health, Hospice, other), actual start time, and confirming initials.",
+      activitiesOwner: "Activities owner / facility staff; alert Administrator, Assistant, Michelle, Jessica if two required daily activities are not completed."
+    },
+    M13: {
+      ...emptyOperationalIntakeData.M13,
+      workOrderSource: "Reactive work orders plus scheduled inspections/drills.",
+      preventiveMaintenanceCadence: "Annual inspections, menus, permits, 6 fire drills/year, 2 elopement drills/year. Maintenance task catalog pending Terell intake.",
+      maintenanceOwner: "Terell for maintenance task catalog; facility administrator for annual compliance follow-up."
+    },
+    M15: {
+      ...emptyOperationalIntakeData.M15,
+      familyPortalScope: "One-way Haven-to-family portal: activity attendance, billing, and admin/assistant notes. Families cannot reply.",
+      communicationPolicy: "Only Administrator and Assistant can post family notes, e.g. called earlier / please return call. Use portal notes as documentation that family was notified.",
+      portalOwner: "Administrator / Assistant / Business Office"
+    },
     M17: {
-      reviewNotes: "Seeded docs require source-of-truth selection and currency routing."
+      ...emptyOperationalIntakeData.M17,
+      reviewNotes: "Seeded docs require source-of-truth selection and currency routing. Confirmed forms map: all five facilities require 1823; Plantation also requires service plan and community support plan. Homewood document dump still pending: face sheets, admit/discharge log, census, AR sheet, dietary logs, fire drill log, Medicaid pending tracker, contract scans."
+    },
+    M18: {
+      ...emptyOperationalIntakeData.M18,
+      vendorSource: "Pending vendor/emergency contact document dump and Terell maintenance intake.",
+      afterHoursVendorRule: "Capture after-hours dispatch numbers, account numbers, contract status, vendor COI status, and escalation owner for each critical vendor.",
+      vendorOwner: "Maintenance Director / Business Office"
+    },
+    M19: {
+      ...emptyOperationalIntakeData.M19,
+      executiveDashboardAudience: "CEO, CFO, COO, ED, DON / launch leadership",
+      reportCadence: "Daily 9am huddle for first 30 days",
+      kpiOwner: "COO — assembles daily launch scoreboard and chases missing data"
     }
   },
   documents: [
@@ -306,7 +415,7 @@ export const seedState = {
       timestamp: nowIso,
       actor: "system",
       actionType: "data_reset",
-      summary: "Seeded Homewood pilot fixture initialized.",
+      summary: "Seeded Homewood pilot fixture initialized; COL 2026-05-06 responses ingested into Homewood launch intake defaults.",
       relatedType: "facility",
       relatedId: "fac-homewood"
     }
