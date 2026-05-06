@@ -70,3 +70,6 @@ supabase/functions/deno.lock
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Netlify local build/deploy cache
+.netlify/
