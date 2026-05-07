@@ -11,7 +11,7 @@ import { MetricCardMoonshot } from "@/components/executive/metric-card-moonshot"
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { Subtitle, SysLabel, TitleH1 } from "@/components/ui/moonshot/typography";
-import { isDemoMode } from "@/lib/demo-mode";
+import { useClientDemoMode } from "@/hooks/useClientDemoMode";
 import type { CeoAlertDisplay } from "@/lib/executive/load-ceo-dashboard-data";
 import type { ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
 import { CEO_PALETTE } from "@/lib/moonshot-theme";
@@ -99,7 +99,7 @@ export default function CeoDashboardPageClient({
   initialError,
 }: CeoDashboardPageClientProps) {
   const [tab, setTab] = useState("CEO View");
-  const demo = isDemoMode();
+  const demo = useClientDemoMode();
 
   const kpis = initialKpis;
   const displayAlerts = initialAlerts.length > 0 ? initialAlerts : DEMO_ALERTS;

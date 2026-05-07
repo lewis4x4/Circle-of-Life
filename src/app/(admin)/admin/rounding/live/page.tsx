@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import { isDemoMode } from "@/lib/demo-mode";
+import { useClientDemoMode } from "@/hooks/useClientDemoMode";
 import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 
 type LiveTaskRow = {
@@ -99,10 +99,10 @@ function toDrawerTask(task: LiveTaskRow): QuickCheckTask {
 export default function AdminRoundingLivePage() {
   const { selectedFacilityId } = useFacilityStore();
   const supabase = useMemo(() => createClient(), []);
-  const demo = isDemoMode();
+  const demo = useClientDemoMode();
   const [, setLoading] = useState(true);
-  const [tasks, setTasks] = useState<LiveTaskRow[]>(DEMO_TASKS);
-  const [demoFallbackActive, setDemoFallbackActive] = useState(demo);
+  const [tasks, setTasks] = useState<LiveTaskRow[]>([]);
+  const [demoFallbackActive, setDemoFallbackActive] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   // Drawer state
@@ -116,7 +116,7 @@ export default function AdminRoundingLivePage() {
 
     if (!selectedFacilityId || !isBrowserSupabaseConfigured()) {
       setDemoFallbackActive(demo);
-      setTasks(DEMO_TASKS);
+      setTasks(demo ? DEMO_TASKS : []);
       setLoading(false);
       return;
     }

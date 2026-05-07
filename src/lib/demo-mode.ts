@@ -13,13 +13,17 @@ export function isDemoModeEnabledByEnv(): boolean {
 export function isDemoMode(): boolean {
   if (!isDemoModeEnabledByEnv()) return false;
 
-  if (typeof window !== "undefined") {
-    try {
-      const stored = window.localStorage.getItem(DEMO_MODE_STORAGE_KEY);
-      if (stored === "false") return false;
-    } catch {
-      // fall back to env
-    }
+  // SSR / non-DOM: never imply demo on — client components should use
+  // `useClientDemoMode` for UI that depends on localStorage.
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    const stored = window.localStorage.getItem(DEMO_MODE_STORAGE_KEY);
+    if (stored === "false") return false;
+  } catch {
+    // fall through to env-default
   }
   return true;
 }

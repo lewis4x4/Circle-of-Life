@@ -7,7 +7,7 @@ import { FinanceHubNav } from "@/app/(admin)/finance/finance-hub-nav";
 import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { isDemoMode } from "@/lib/demo-mode";
+import { useClientDemoMode } from "@/hooks/useClientDemoMode";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
@@ -29,7 +29,7 @@ export default function AdminFinanceHubPageClient({
   unpostedInvoices,
   initialError,
 }: FinanceOverviewPageClientProps) {
-  const demo = isDemoMode();
+  const demo = useClientDemoMode();
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">

@@ -7,10 +7,11 @@
  * Shows watermark or badge when in demo mode.
  */
 
-import React, { useState } from "react";
+import React from "react";
 import { Zap, Database } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { DEMO_MODE_STORAGE_KEY, isDemoMode } from "@/lib/demo-mode";
+import { DEMO_MODE_STORAGE_KEY } from "@/lib/demo-mode";
+import { useClientDemoMode } from "@/hooks/useClientDemoMode";
 
 // ── TYPES ──
 
@@ -23,13 +24,6 @@ export interface DemoToggleProps {
   position?: "top-right" | "bottom-left" | "top-left" | "bottom-right";
 }
 
-// ── STORAGE KEY ──
-
-/** Read demo mode from localStorage (safe for SSR) */
-function readDemoMode(): boolean {
-  return isDemoMode();
-}
-
 // ── MAIN COMPONENT ──
 
 export function DemoToggle({
@@ -37,11 +31,10 @@ export function DemoToggle({
   compact = false,
   position = "top-right",
 }: DemoToggleProps) {
-  const [isEnabled, setIsEnabled] = useState(readDemoMode);
+  const isEnabled = useClientDemoMode();
 
   const handleToggle = () => {
     const newValue = !isEnabled;
-    setIsEnabled(newValue);
 
     try {
       localStorage.setItem(DEMO_MODE_STORAGE_KEY, String(newValue));
@@ -147,9 +140,9 @@ export interface DemoWatermarkProps {
  * Full-screen watermark for demo mode
  */
 export function DemoWatermark({ className }: DemoWatermarkProps) {
-  const [isDemoMode] = useState(readDemoMode);
+  const demo = useClientDemoMode();
 
-  if (!isDemoMode) return null;
+  if (!demo) return null;
 
   return (
     <div
@@ -176,11 +169,10 @@ export function DemoWatermark({ className }: DemoWatermarkProps) {
  * Hook to access and manage demo mode state
  */
 export function useDemoMode() {
-  const [isEnabled, setIsEnabled] = useState(readDemoMode);
+  const isEnabled = useClientDemoMode();
 
   const toggle = () => {
     const newValue = !isEnabled;
-    setIsEnabled(newValue);
 
     try {
       localStorage.setItem(DEMO_MODE_STORAGE_KEY, String(newValue));
@@ -191,8 +183,6 @@ export function useDemoMode() {
   };
 
   const set = (value: boolean) => {
-    setIsEnabled(value);
-
     try {
       localStorage.setItem(DEMO_MODE_STORAGE_KEY, String(value));
       window.location.reload();

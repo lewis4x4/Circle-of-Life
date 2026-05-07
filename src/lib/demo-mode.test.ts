@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DEMO_MODE_STORAGE_KEY, isDemoMode } from "./demo-mode";
 
@@ -49,5 +49,23 @@ describe("isDemoMode", () => {
     process.env.NEXT_PUBLIC_DEMO_MODE = "true";
 
     expect(isDemoMode()).toBe(true);
+  });
+
+  it("returns false when window is unavailable (SSR) even if env is true", async () => {
+    const prevWindow = globalThis.window;
+    const prevEnv = process.env.NEXT_PUBLIC_DEMO_MODE;
+
+    process.env.NEXT_PUBLIC_DEMO_MODE = "true";
+    // @ts-expect-error — simulate SSR
+    delete globalThis.window;
+
+    vi.resetModules();
+    const { isDemoMode: isDemoModeFresh } = await import("./demo-mode");
+    expect(isDemoModeFresh()).toBe(false);
+
+    globalThis.window = prevWindow;
+    process.env.NEXT_PUBLIC_DEMO_MODE = prevEnv;
+    vi.resetModules();
+    await import("./demo-mode");
   });
 });

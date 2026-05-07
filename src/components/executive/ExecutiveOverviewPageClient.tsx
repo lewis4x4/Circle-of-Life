@@ -14,7 +14,7 @@ import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 
 import { ExecutiveHubNav } from "@/app/(admin)/executive/executive-hub-nav";
 
-import { isDemoMode } from "@/lib/demo-mode";
+import { useClientDemoMode } from "@/hooks/useClientDemoMode";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import type { AlertWithFacility } from "@/lib/executive/load-executive-overview";
@@ -44,7 +44,7 @@ export function ExecutiveOverviewPageClient({
   initialAssuranceTrends,
   initialHasServerData,
 }: ExecutiveOverviewPageClientProps) {
-  const demo = isDemoMode();
+  const demo = useClientDemoMode();
   const supabase = createClient();
   const { user } = useAuth();
   const roleConfig = getRoleDashboardConfig(getAppRoleFromClaims(user));

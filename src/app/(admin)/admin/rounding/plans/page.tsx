@@ -23,7 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
-import { isDemoMode } from "@/lib/demo-mode";
+import { useClientDemoMode } from "@/hooks/useClientDemoMode";
 import { cn } from "@/lib/utils";
 import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 
@@ -55,14 +55,14 @@ const DEMO_PLANS: PlanRow[] = [
 export default function AdminRoundingPlansPage() {
   const { selectedFacilityId } = useFacilityStore();
   const supabase = useMemo(() => createClient(), []);
-  const demo = isDemoMode();
+  const demo = useClientDemoMode();
   const emptyPlansFallback = useMemo<PlanRow[]>(() => [], []);
   const fallbackPlans = demo ? DEMO_PLANS : emptyPlansFallback;
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [plans, setPlans] = useState<PlanRow[]>(() => (isDemoMode() ? DEMO_PLANS : []));
+  const [plans, setPlans] = useState<PlanRow[]>([]);
   const [filter, setFilter] = useState<FilterType>("all");
-  const [demoFallbackActive, setDemoFallbackActive] = useState<boolean>(() => isDemoMode());
+  const [demoFallbackActive, setDemoFallbackActive] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);

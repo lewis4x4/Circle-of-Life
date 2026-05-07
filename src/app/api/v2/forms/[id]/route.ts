@@ -103,6 +103,39 @@ async function loadFacilityOrg(
   return { orgId: result.data.organization_id };
 }
 
+async function assertResidentBelongsToAdmissionContext(
+  supabase: ServerSupabase,
+  residentId: string,
+  facilityId: string,
+  organizationId: string,
+): Promise<NextResponse | null> {
+  const result = (await supabase
+    .from("residents" as never)
+    .select("id")
+    .eq("id" as never, residentId as never)
+    .eq("facility_id" as never, facilityId as never)
+    .eq("organization_id" as never, organizationId as never)
+    .is("deleted_at" as never, null as never)
+    .maybeSingle()) as unknown as SimpleResult<{ id: string }>;
+
+  if (result.error) {
+    return NextResponse.json(
+      { error: result.error.message },
+      { status: 500 },
+    );
+  }
+  if (!result.data) {
+    return NextResponse.json(
+      {
+        error:
+          "Resident is not in the selected facility or you do not have access.",
+      },
+      { status: 400 },
+    );
+  }
+  return null;
+}
+
 function rlsDenied(error: { message: string; code?: string } | null): boolean {
   if (!error) return false;
   return (
@@ -182,6 +215,14 @@ async function handleNewAdmission(
     return NextResponse.json({ error: orgLookup.error }, { status: orgLookup.status });
   }
 
+  const residentCheck = await assertResidentBelongsToAdmissionContext(
+    supabase,
+    data.residentId,
+    data.facilityId,
+    orgLookup.orgId,
+  );
+  if (residentCheck) return residentCheck;
+
   const insertResult = (await supabase
     .from("admission_cases" as never)
     .insert({
@@ -235,6 +276,16 @@ async function handleNewIncident(
   const orgLookup = await loadFacilityOrg(supabase, data.facilityId);
   if ("error" in orgLookup) {
     return NextResponse.json({ error: orgLookup.error }, { status: orgLookup.status });
+  }
+
+  if (data.residentId) {
+    const residentCheck = await assertResidentBelongsToAdmissionContext(
+      supabase,
+      data.residentId,
+      data.facilityId,
+      orgLookup.orgId,
+    );
+    if (residentCheck) return residentCheck;
   }
 
   const insertResult = (await supabase
