@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import {
+  datetimeLocalToUtcIso,
   newIncidentFormSchema,
   type NewIncidentFormValues,
 } from "@/lib/v2-forms";
@@ -56,7 +57,10 @@ export function NewIncidentForm({
       const response = await fetch("/api/v2/forms/new-incident", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          ...values,
+          occurredAt: datetimeLocalToUtcIso(values.occurredAt),
+        }),
       });
       const json = (await response.json().catch(() => ({}))) as {
         ok?: boolean;

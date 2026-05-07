@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   isV2FormId,
   newAdmissionFormSchema,
+  newIncidentApiSchema,
   newIncidentFormSchema,
   newResidentFormSchema,
   type V2FormId,
@@ -18,8 +19,8 @@ import {
  * enforces who can write what. The handler:
  *
  * 1. Validates auth.
- * 2. Re-validates the body against the same Zod schema the form uses
- *    client-side (defense in depth).
+ * 2. Re-validates the body with the same Zod shapes as the forms (incidents
+ *    use `occurredAt` as UTC ISO from the client; defense in depth).
  * 3. Looks up `organization_id` via the chosen facility (residents,
  *    incidents) or directly from the body in S10a follow-up if needed.
  * 4. Inserts and returns `{ id, listId }` so the client can redirect into
@@ -223,7 +224,7 @@ async function handleNewIncident(
   userId: string,
   payload: unknown,
 ): Promise<NextResponse> {
-  const parsed = newIncidentFormSchema.safeParse(payload);
+  const parsed = newIncidentApiSchema.safeParse(payload);
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Invalid request body", detail: parsed.error.flatten() },

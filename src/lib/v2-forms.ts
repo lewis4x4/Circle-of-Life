@@ -52,6 +52,29 @@ export const newIncidentFormSchema = z.object({
 });
 export type NewIncidentFormValues = z.infer<typeof newIncidentFormSchema>;
 
+/** Same shape as {@link newIncidentFormSchema} but `occurredAt` is UTC ISO (Z) for API ingestion. */
+export const newIncidentApiSchema = newIncidentFormSchema.omit({ occurredAt: true }).extend({
+  occurredAt: z.iso.datetime(),
+});
+export type NewIncidentApiValues = z.infer<typeof newIncidentApiSchema>;
+
+/**
+ * `<input type="datetime-local">` values are wall-clock in the browser's local TZ with no offset.
+ * Parsing that string on the server uses the host TZ (UTC on Netlify), which skews `occurred_at`.
+ */
+export function datetimeLocalToUtcIso(datetimeLocal: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(datetimeLocal);
+  if (!m) {
+    throw new Error("datetimeLocal must match YYYY-MM-DDTHH:mm");
+  }
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  const h = Number(m[4]);
+  const min = Number(m[5]);
+  return new Date(y, mo - 1, d, h, min).toISOString();
+}
+
 export type V2FormId = "new-resident" | "new-admission" | "new-incident";
 export const V2_FORM_IDS: readonly V2FormId[] = [
   "new-resident",

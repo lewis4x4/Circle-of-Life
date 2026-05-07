@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   V2_FORM_IDS,
+  datetimeLocalToUtcIso,
   isV2FormId,
   newAdmissionFormSchema,
+  newIncidentApiSchema,
   newIncidentFormSchema,
   newResidentFormSchema,
 } from "./v2-forms";
@@ -115,5 +117,60 @@ describe("newIncidentFormSchema", () => {
     expect(
       newIncidentFormSchema.safeParse({ ...minimal, residentId: "" }).success,
     ).toBe(true);
+  });
+});
+
+describe("datetimeLocalToUtcIso", () => {
+  const prevTz = process.env.TZ;
+
+  beforeEach(() => {
+    process.env.TZ = "America/New_York";
+  });
+
+  afterEach(() => {
+    if (prevTz === undefined) {
+      delete process.env.TZ;
+    } else {
+      process.env.TZ = prevTz;
+    }
+  });
+
+  it("interprets datetime-local as the runner local TZ (Eastern), not UTC", () => {
+    expect(datetimeLocalToUtcIso("2026-05-07T14:30")).toBe("2026-05-07T18:30:00.000Z");
+  });
+});
+
+describe("newIncidentApiSchema", () => {
+  const FAC = "550e8400-e29b-41d4-a716-446655440000";
+  const RES = "6ba7b810-9dad-41d1-80b4-00c04fd430c8";
+
+  it("accepts occurredAt as UTC ISO with Z suffix", () => {
+    const result = newIncidentApiSchema.safeParse({
+      facilityId: FAC,
+      residentId: RES,
+      category: "fall",
+      severity: "medium",
+      occurredAt: "2026-04-24T19:42:00.000Z",
+      locationDescription: "Hallway A",
+      description: "Resident fell while walking to the dining area.",
+      injuryOccurred: true,
+      ahcaReportable: false,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects naive datetime-local (client must normalize first)", () => {
+    const result = newIncidentApiSchema.safeParse({
+      facilityId: FAC,
+      residentId: RES,
+      category: "fall",
+      severity: "medium",
+      occurredAt: "2026-04-24T15:42",
+      locationDescription: "",
+      description: "Resident fell while walking to the dining area.",
+      injuryOccurred: true,
+      ahcaReportable: false,
+    });
+    expect(result.success).toBe(false);
   });
 });
