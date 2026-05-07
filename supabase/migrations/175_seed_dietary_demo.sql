@@ -9,7 +9,7 @@
 --   - 2 fortification recommendations (weight-loss trigger)
 --   - 1 meal refusal (pattern refusal)
 --
--- Password for dietary@circleoflifealf.com: Sp33dy22
+-- Password for marcus.bell@circleoflifealf.com (Lead Cook): Sp33dy22
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
@@ -20,7 +20,7 @@ DECLARE
   inst          uuid := '00000000-0000-0000-0000-000000000000';
   org           uuid := '00000000-0000-0000-0000-000000000001';
   fac           uuid := '00000000-0000-0000-0002-000000000001';
-  cook_id       uuid := 'a0000000-0000-0000-0000-000000000013'; -- Marcus Bell
+  cook_id       uuid := 'a0000000-0000-0000-0000-000000000016'; -- Marcus Bell
   nurse_id      uuid := 'a0000000-0000-0000-0000-000000000003'; -- Sarah Williams
   ts            timestamptz := now();
   today         date := CURRENT_DATE;
@@ -69,7 +69,7 @@ BEGIN
     reauthentication_token
   ) VALUES (
     cook_id, inst,
-    'dietary@circleoflifealf.com', pw, ts,
+    'marcus.bell@circleoflifealf.com', pw, ts,
     '{"provider":"email","providers":["email"],"app_role":"dietary"}',
     '{"full_name":"Marcus Bell","email_verified":true}',
     'authenticated', 'authenticated',
@@ -94,9 +94,9 @@ BEGIN
 
   INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
   VALUES (
-    'b0000000-0000-0000-0000-000000000013',
+    'b0000000-0000-0000-0000-000000000016',
     cook_id,
-    '{"sub":"a0000000-0000-0000-0000-000000000013","email":"dietary@circleoflifealf.com","email_verified":true,"phone_verified":false}',
+    '{"sub":"a0000000-0000-0000-0000-000000000016","email":"marcus.bell@circleoflifealf.com","email_verified":true,"phone_verified":false}',
     'email', cook_id, ts, ts, ts
   );
 
@@ -104,14 +104,14 @@ BEGIN
   -- 3. USER PROFILE + FACILITY ACCESS
   -- ============================================================
   INSERT INTO user_profiles (id, organization_id, email, full_name, phone, app_role) VALUES
-    (cook_id, org, 'dietary@circleoflifealf.com', 'Marcus Bell', '386-339-1660', 'dietary')
+    (cook_id, org, 'marcus.bell@circleoflifealf.com', 'Marcus Bell', '386-339-1660', 'dietary')
   ON CONFLICT (id) DO UPDATE SET
     app_role   = EXCLUDED.app_role,
     email      = EXCLUDED.email,
     full_name  = EXCLUDED.full_name;
 
   INSERT INTO user_facility_access (id, user_id, facility_id, organization_id, is_primary) VALUES
-    ('f0000000-fa00-0000-0000-000000000013', cook_id, fac, org, true)
+    ('f0000000-fa00-0000-0000-000000000016', cook_id, fac, org, true)
   ON CONFLICT DO NOTHING;
 
   -- ============================================================
@@ -168,43 +168,43 @@ BEGIN
   INSERT INTO tray_tickets (id, organization_id, facility_id, meal_service_id, resident_id, diet_order_snapshot, menu_items, status, iddsi_confirmed_food, allergen_check_passed, carb_count_g, sodium_mg, calorie_count)
   VALUES
     -- Margaret Sullivan (Renal) → main dining → queued
-    ('t0000000-0000-0000-0000-000000000001', org, fac, ms_main, r1,
+    ('f2000000-0000-0000-0000-000000000001', org, fac, ms_main, r1,
      '{"diet_type":"renal","iddsi_food_level":7,"allergies":["shellfish"]}',
      '["Roasted chicken","Mashed potato (no salt)","Green beans"]',
      'queued', false, false, 45, 480, 520),
 
     -- Harold Chen (NCS) → main dining → prepping
-    ('t0000000-0000-0000-0000-000000000002', org, fac, ms_main, r2,
+    ('f2000000-0000-0000-0000-000000000002', org, fac, ms_main, r2,
      '{"diet_type":"ncs","iddsi_food_level":7,"allergies":[]}',
      '["Roasted chicken","Brown rice","Side salad"]',
      'prepping', false, true, 52, 620, 580),
 
     -- Dorothy Williams (Regular + fortify) → main dining → prepping
-    ('t0000000-0000-0000-0000-000000000003', org, fac, ms_main, r3,
+    ('f2000000-0000-0000-0000-000000000003', org, fac, ms_main, r3,
      '{"diet_type":"regular","iddsi_food_level":7,"allergies":[]}',
      '["Roasted chicken","Mashed potato","Green beans"]',
      'prepping', false, true, 68, 720, 640),
 
     -- Arthur Pennington (Mech Soft L5) → memory care → plating
-    ('t0000000-0000-0000-0000-000000000004', org, fac, ms_mc, r4,
+    ('f2000000-0000-0000-0000-000000000004', org, fac, ms_mc, r4,
      '{"diet_type":"mechanical_soft","iddsi_food_level":5,"allergies":["nuts"]}',
      '["Pulled chicken","Mashed potato","Soft carrots"]',
      'plating', false, true, 50, 510, 530),
 
     -- Ruth Anderson (Puree L4 + fortify) → memory care → plating
-    ('t0000000-0000-0000-0000-000000000005', org, fac, ms_mc, r5,
+    ('f2000000-0000-0000-0000-000000000005', org, fac, ms_mc, r5,
      '{"diet_type":"puree","iddsi_food_level":4,"allergies":[]}',
      '["Pureed chicken","Pureed potato","Pureed carrots"]',
      'plating', false, true, 38, 420, 480),
 
     -- Frank Martinez (Vegetarian) → room trays → passed
-    ('t0000000-0000-0000-0000-000000000006', org, fac, ms_tray, r6,
+    ('f2000000-0000-0000-0000-000000000006', org, fac, ms_tray, r6,
      '{"diet_type":"vegetarian","iddsi_food_level":7,"allergies":[]}',
      '["Lentil curry","Jasmine rice","Naan"]',
      'passed', true, true, 72, 580, 620),
 
     -- Virginia Taylor (Mech Soft + dairy allergy) → main dining → plated
-    ('t0000000-0000-0000-0000-000000000007', org, fac, ms_main, r7,
+    ('f2000000-0000-0000-0000-000000000007', org, fac, ms_main, r7,
      '{"diet_type":"mechanical_soft","iddsi_food_level":5,"allergies":["dairy"]}',
      '["Pulled chicken","Sweet potato","Soft greens"]',
      'plated', true, true, 48, 530, 510)
@@ -217,11 +217,11 @@ BEGIN
   -- ============================================================
   INSERT INTO haccp_logs (id, organization_id, facility_id, log_type, item, temperature_f, in_safe_range, threshold_min_f, threshold_max_f, logged_by, meal_service_id, logged_at)
   VALUES
-    ('h0000000-0000-0000-0000-000000000001', org, fac, 'hot_hold',     'Beef stew',         158.0, true,  140.0, null, cook_id, ms_main, (today + '10:42'::time) AT TIME ZONE 'America/New_York'),
-    ('h0000000-0000-0000-0000-000000000002', org, fac, 'cold_hold',    'Salad bar',          39.0, true,  null,  41.0, cook_id, ms_main, (today + '10:35'::time) AT TIME ZONE 'America/New_York'),
-    ('h0000000-0000-0000-0000-000000000003', org, fac, 'fridge_temp',  'Walk-in fridge',     38.0, true,  null,  41.0, cook_id, null,    (today + '10:28'::time) AT TIME ZONE 'America/New_York'),
-    ('h0000000-0000-0000-0000-000000000004', org, fac, 'dishmachine',  'Dish sanitizer ppm', 200.0, true, 150.0, null, cook_id, null,    (today + '10:15'::time) AT TIME ZONE 'America/New_York'),
-    ('h0000000-0000-0000-0000-000000000005', org, fac, 'reheating',    'Reheated soup',      168.0, true,  165.0, null, cook_id, ms_main, (today + '09:58'::time) AT TIME ZONE 'America/New_York')
+    ('f3000000-0000-0000-0000-000000000001', org, fac, 'hot_hold',     'Beef stew',         158.0, true,  140.0, null, cook_id, ms_main, (today + '10:42'::time) AT TIME ZONE 'America/New_York'),
+    ('f3000000-0000-0000-0000-000000000002', org, fac, 'cold_hold',    'Salad bar',          39.0, true,  null,  41.0, cook_id, ms_main, (today + '10:35'::time) AT TIME ZONE 'America/New_York'),
+    ('f3000000-0000-0000-0000-000000000003', org, fac, 'fridge_temp',  'Walk-in fridge',     38.0, true,  null,  41.0, cook_id, null,    (today + '10:28'::time) AT TIME ZONE 'America/New_York'),
+    ('f3000000-0000-0000-0000-000000000004', org, fac, 'dishmachine',  'Dish sanitizer ppm', 200.0, true, 150.0, null, cook_id, null,    (today + '10:15'::time) AT TIME ZONE 'America/New_York'),
+    ('f3000000-0000-0000-0000-000000000005', org, fac, 'reheating',    'Reheated soup',      168.0, true,  165.0, null, cook_id, ms_main, (today + '09:58'::time) AT TIME ZONE 'America/New_York')
   ON CONFLICT (id) DO NOTHING;
 
   -- ============================================================
@@ -229,11 +229,11 @@ BEGIN
   -- ============================================================
   INSERT INTO fortification_recommendations (id, organization_id, facility_id, resident_id, triggered_by, trigger_evidence, recommended_items, estimated_added_calories, status)
   VALUES
-    ('fr000000-0000-0000-0000-000000000001', org, fac, r3, 'weight_loss',
+    ('f4000000-0000-0000-0000-000000000001', org, fac, r3, 'weight_loss',
      '{"weight_loss_pct_30d":6.2,"current_weight_lbs":108.4}',
      '[{"item":"Boost Plus","calories":360},{"item":"butter pat","calories":35}]',
      340, 'pending'),
-    ('fr000000-0000-0000-0000-000000000002', org, fac, r5, 'low_intake',
+    ('f4000000-0000-0000-0000-000000000002', org, fac, r5, 'low_intake',
      '{"avg_intake_pct_7d":32}',
      '[{"item":"MCT oil 1 tbsp","calories":115},{"item":"protein powder scoop","calories":120}]',
      280, 'pending')
@@ -244,7 +244,7 @@ BEGIN
   -- ============================================================
   INSERT INTO meal_refusals (id, organization_id, facility_id, resident_id, refused_items, reason, reported_by, intake_estimate_pct, substitution_offered, refused_at)
   VALUES
-    ('rf000000-0000-0000-0000-000000000001', org, fac, r6,
+    ('f5000000-0000-0000-0000-000000000001', org, fac, r6,
      '{"Eggs"}', 'Dislikes eggs — consistent 7-day pattern',
      cook_id, 0, true,
      (today - 1 + '08:14'::time) AT TIME ZONE 'America/New_York')

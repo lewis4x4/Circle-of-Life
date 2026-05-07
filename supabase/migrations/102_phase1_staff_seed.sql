@@ -4,7 +4,8 @@
 -- This migration:
 -- - Extends staff_role enum with COL-specific roles
 -- - Seeds 20 staff records (10 corporate leadership + 10 facility administrators)
--- - Corporate staff have facility_id = NULL
+-- - Corporate staff use the Oakridge (pilot) facility_id so rows satisfy
+--   staff.facility_id NOT NULL (Module 11 schema); they remain org-level by organization_id.
 --
 -- Existing RLS policies and audit triggers remain unchanged
 
@@ -35,21 +36,20 @@ ALTER TYPE staff_role ADD VALUE IF NOT EXISTS 'resident_services_coordinator';
 -- ============================================================
 
 -- Source: Section 3 "Corporate leadership"
--- facility_id is NULL for CORPORATE level staff
--- organization_id references '00000000-0000-0000-0000-000000000001' (Circle of Life)
--- created_by uses system UUID for initial seed
+-- Anchor to Oakridge ALF (pilot) for facility_id NOT NULL; organization_id remains COL org.
+-- created_by uses org-placeholder auth id; Docker pg-verify seeds matching row in scripts/pg-verify-stub.sql
 
 INSERT INTO staff (facility_id, organization_id, first_name, last_name, phone, staff_role, employment_status, hire_date, created_by) VALUES
-(NULL, '00000000-0000-0000-0000-000000000001', 'Milton', 'Smith', '386-984-0798', 'owner', 'active', '2014-01-01', '00000000-0000-0000-0000-000000000001'),
-(NULL, '00000000-0000-0000-0000-000000000001', 'Darren', 'Webb', '850-443-2367', 'ceo', 'active', '2014-01-01', '00000000-0000-0000-0000-000000000001'),
-(NULL, '00000000-0000-0000-0000-000000000001', 'Michelle', 'Norris', '386-209-1440', 'coo', 'active', '2014-01-01', '00000000-0000-0000-0000-000000000001'),
-(NULL, '00000000-0000-0000-0000-000000000001', 'Jessica', 'Murphy', '386-688-9318', 'cfo', 'active', '2014-01-01', '00000000-0000-0000-0000-000000000001'),
-(NULL, '00000000-0000-0000-0000-000000000001', 'Jessica', 'Lawson', '386-688-3589', 'admin_support_coordinator', 'active', '2014-01-01', '00000000-0000-0000-0000-000000000001'),
-(NULL, '00000000-0000-0000-0000-000000000001', 'Todd', 'Denmark', '386-288-1372', 'marketing_consultant', 'active', '2014-01-01', '00000000-0000-0000-0000-000000000001'),
-(NULL, '00000000-0000-0000-0000-000000000001', 'April', 'Powell', '386-867-5909', 'marketing_consultant', 'active', '2014-01-01', '00000000-0000-0000-0000-000000000001'),
-(NULL, '00000000-0000-0000-0000-000000000001', 'Terrill', 'Murphy', '386-688-9318', 'maintenance_director', 'active', '2014-01-01', '00000000-0000-0000-0000-000000000001'),
-(NULL, '00000000-0000-0000-0000-000000000001', 'Scott', 'Reeves', '386-288-6593', 'maintenance', 'active', '2014-01-01', '00000000-0000-0000-0000-000000000001'),
-(NULL, '00000000-0000-0000-0000-000000000001', 'Richard', 'Rehberg', '386-292-0806', 'maintenance_standby', 'active', '2014-01-01', '00000000-0000-0000-0000-000000000001');
+('00000000-0000-0000-0002-000000000001', '00000000-0000-0000-0000-000000000001', 'Milton', 'Smith', '386-984-0798', 'owner', 'active', '2014-01-01', '00000000-0000-0000-0000-000000000001'),
+('00000000-0000-0000-0002-000000000001', '00000000-0000-0000-0000-000000000001', 'Darren', 'Webb', '850-443-2367', 'ceo', 'active', '2014-01-01', '00000000-0000-0000-0000-000000000001'),
+('00000000-0000-0000-0002-000000000001', '00000000-0000-0000-0000-000000000001', 'Michelle', 'Norris', '386-209-1440', 'coo', 'active', '2014-01-01', '00000000-0000-0000-0000-000000000001'),
+('00000000-0000-0000-0002-000000000001', '00000000-0000-0000-0000-000000000001', 'Jessica', 'Murphy', '386-688-9318', 'cfo', 'active', '2014-01-01', '00000000-0000-0000-0000-000000000001'),
+('00000000-0000-0000-0002-000000000001', '00000000-0000-0000-0000-000000000001', 'Jessica', 'Lawson', '386-688-3589', 'admin_support_coordinator', 'active', '2014-01-01', '00000000-0000-0000-0000-000000000001'),
+('00000000-0000-0000-0002-000000000001', '00000000-0000-0000-0000-000000000001', 'Todd', 'Denmark', '386-288-1372', 'marketing_consultant', 'active', '2014-01-01', '00000000-0000-0000-0000-000000000001'),
+('00000000-0000-0000-0002-000000000001', '00000000-0000-0000-0000-000000000001', 'April', 'Powell', '386-867-5909', 'marketing_consultant', 'active', '2014-01-01', '00000000-0000-0000-0000-000000000001'),
+('00000000-0000-0000-0002-000000000001', '00000000-0000-0000-0000-000000000001', 'Terrill', 'Murphy', '386-688-9318', 'maintenance_director', 'active', '2014-01-01', '00000000-0000-0000-0000-000000000001'),
+('00000000-0000-0000-0002-000000000001', '00000000-0000-0000-0000-000000000001', 'Scott', 'Reeves', '386-288-6593', 'maintenance', 'active', '2014-01-01', '00000000-0000-0000-0000-000000000001'),
+('00000000-0000-0000-0002-000000000001', '00000000-0000-0000-0000-000000000001', 'Richard', 'Rehberg', '386-292-0806', 'maintenance_standby', 'active', '2014-01-01', '00000000-0000-0000-0000-000000000001');
 
 -- ============================================================
 -- FACILITY ADMINISTRATORS

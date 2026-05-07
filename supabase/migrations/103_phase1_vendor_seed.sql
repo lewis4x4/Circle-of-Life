@@ -23,45 +23,45 @@ BEGIN
   RETURNING id INTO v_vendor_id;
 
   -- Assign to ALL facilities
-  INSERT INTO vendor_facilities (organization_id, vendor_id, facility_id, created_by)
-  SELECT v_org_id, v_vendor_id, id, '00000000-0000-0000-0000-000000000001'
+  INSERT INTO vendor_facilities (organization_id, vendor_id, facility_id)
+  SELECT v_org_id, v_vendor_id, id
   FROM facilities WHERE deleted_at IS NULL;
 
   -- Jackson Transport
-  INSERT INTO vendors (organization_id, name, category, status, primary_contact_name, created_by)
+  INSERT INTO vendors (organization_id, name, category, status, primary_contact_name, primary_contact_phone, created_by)
   VALUES (v_org_id, 'Jackson Transport', 'other', 'active', 'John', NULL, '00000000-0000-0000-0000-000000000001')
   RETURNING id INTO v_vendor_id;
 
-  INSERT INTO vendor_facilities (organization_id, vendor_id, facility_id, created_by)
-  SELECT v_org_id, v_vendor_id, id, '00000000-0000-0000-0000-000000000001'
+  INSERT INTO vendor_facilities (organization_id, vendor_id, facility_id)
+  SELECT v_org_id, v_vendor_id, id
   FROM facilities WHERE deleted_at IS NULL;
 
   -- Parrish Medivan
-  INSERT INTO vendors (organization_id, name, category, status, primary_contact_name, created_by)
+  INSERT INTO vendors (organization_id, name, category, status, primary_contact_name, primary_contact_phone, created_by)
   VALUES (v_org_id, 'Parrish Medivan', 'other', 'active', 'Hanah', NULL, '00000000-0000-0000-0000-000000000001')
   RETURNING id INTO v_vendor_id;
 
-  INSERT INTO vendor_facilities (organization_id, vendor_id, facility_id, created_by)
-  SELECT v_org_id, v_vendor_id, id, '00000000-0000-0000-0000-000000000001'
+  INSERT INTO vendor_facilities (organization_id, vendor_id, facility_id)
+  SELECT v_org_id, v_vendor_id, id
   FROM facilities WHERE deleted_at IS NULL;
 
   -- Peeler Transport
-  INSERT INTO vendors (organization_id, name, category, status, primary_contact_name, created_by)
+  INSERT INTO vendors (organization_id, name, category, status, primary_contact_name, primary_contact_phone, created_by)
   VALUES (v_org_id, 'Peeler Transport', 'other', 'active', 'Carlene', NULL, '00000000-0000-0000-0000-000000000001')
   RETURNING id INTO v_vendor_id;
 
-  INSERT INTO vendor_facilities (organization_id, vendor_id, facility_id, created_by)
-  SELECT v_org_id, v_vendor_id, id, '00000000-0000-0000-0000-000000000001'
+  INSERT INTO vendor_facilities (organization_id, vendor_id, facility_id)
+  SELECT v_org_id, v_vendor_id, id
   FROM facilities WHERE deleted_at IS NULL;
 
   -- D's Transport
   -- Note: The name uses a single quote for "D's" which must be escaped
-  INSERT INTO vendors (organization_id, name, category, status, primary_contact_name, created_by)
+  INSERT INTO vendors (organization_id, name, category, status, primary_contact_name, primary_contact_phone, created_by)
   VALUES (v_org_id, 'D''s Transport', 'other', 'active', 'Lavern', NULL, '00000000-0000-0000-0000-000000000001')
   RETURNING id INTO v_vendor_id;
 
-  INSERT INTO vendor_facilities (organization_id, vendor_id, facility_id, created_by)
-  SELECT v_org_id, v_vendor_id, id, '00000000-0000-0000-0000-000000000001'
+  INSERT INTO vendor_facilities (organization_id, vendor_id, facility_id)
+  SELECT v_org_id, v_vendor_id, id
   FROM facilities WHERE deleted_at IS NULL;
 
   -- Lafayette County
@@ -70,8 +70,8 @@ BEGIN
   VALUES (v_org_id, 'Lafayette County', 'other', 'active', 'Robbie Edwards', NULL, '00000000-0000-0000-0000-000000000001')
   RETURNING id INTO v_vendor_id;
 
-  INSERT INTO vendor_facilities (organization_id, vendor_id, facility_id, created_by)
-  SELECT v_org_id, v_vendor_id, id, '00000000-0000-0000-0000-000000000001'
+  INSERT INTO vendor_facilities (organization_id, vendor_id, facility_id)
+  SELECT v_org_id, v_vendor_id, id
   FROM facilities WHERE name IN ('Oakridge ALF', 'Homewood Lodge ALF');
 
   -- Suwannee River Economic Council
@@ -80,8 +80,8 @@ BEGIN
   VALUES (v_org_id, 'Suwannee River Economic Council', 'other', 'active', '00000000-0000-0000-0000-000000000001')
   RETURNING id INTO v_vendor_id;
 
-  INSERT INTO vendor_facilities (organization_id, vendor_id, facility_id, created_by)
-  SELECT v_org_id, v_vendor_id, id, '00000000-0000-0000-0000-000000000001'
+  INSERT INTO vendor_facilities (organization_id, vendor_id, facility_id)
+  SELECT v_org_id, v_vendor_id, id
   FROM facilities WHERE name IN ('Oakridge ALF', 'Homewood Lodge ALF', 'Rising Oaks ALF');
 
   -- Verify insertion

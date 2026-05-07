@@ -24,7 +24,11 @@ ALTER TYPE app_role ADD VALUE IF NOT EXISTS 'dietary_aide';
 -- ============================================================
 -- 1. DIET ORDERS
 -- One active row per resident (enforced by partial unique index).
+-- Supersedes the enum-based `diet_orders` from 089_dietary_nutrition.sql
+-- (command deck + seed 175 expect this schema).
 -- ============================================================
+DROP TABLE IF EXISTS public.diet_orders CASCADE;
+
 CREATE TABLE diet_orders (
   id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id  uuid NOT NULL REFERENCES organizations(id),
@@ -63,7 +67,7 @@ ALTER TABLE diet_orders ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Diet orders visible to dietary and clinical staff"
   ON diet_orders FOR SELECT
   USING (
-    facility_id = ANY(haven.accessible_facility_ids())
+    facility_id IN (SELECT haven.accessible_facility_ids())
     AND haven.app_role() IN (
       'dietary','dietary_aide','nurse','manager','owner',
       'org_admin','facility_admin','coordinator'
@@ -73,15 +77,21 @@ CREATE POLICY "Diet orders visible to dietary and clinical staff"
 CREATE POLICY "Clinical staff manage diet orders"
   ON diet_orders FOR ALL
   USING (
-    facility_id = ANY(haven.accessible_facility_ids())
+    facility_id IN (SELECT haven.accessible_facility_ids())
     AND haven.app_role() IN ('nurse','manager','owner','org_admin','facility_admin')
   )
   WITH CHECK (
-    facility_id = ANY(haven.accessible_facility_ids())
+    facility_id IN (SELECT haven.accessible_facility_ids())
     AND haven.app_role() IN ('nurse','manager','owner','org_admin','facility_admin')
   );
 
-SELECT haven_capture_audit_log('diet_orders');
+CREATE TRIGGER tr_diet_orders_set_updated_at
+  BEFORE UPDATE ON diet_orders
+  FOR EACH ROW EXECUTE FUNCTION public.haven_set_updated_at();
+
+CREATE TRIGGER tr_diet_orders_audit
+  AFTER INSERT OR UPDATE OR DELETE ON diet_orders
+  FOR EACH ROW EXECUTE FUNCTION public.haven_capture_audit_log();
 
 
 -- ============================================================
@@ -119,7 +129,7 @@ ALTER TABLE meal_services ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Meal services visible to dietary and clinical staff"
   ON meal_services FOR SELECT
   USING (
-    facility_id = ANY(haven.accessible_facility_ids())
+    facility_id IN (SELECT haven.accessible_facility_ids())
     AND haven.app_role() IN (
       'dietary','dietary_aide','nurse','manager','owner',
       'org_admin','facility_admin','coordinator'
@@ -129,11 +139,11 @@ CREATE POLICY "Meal services visible to dietary and clinical staff"
 CREATE POLICY "Dietary staff manage meal services"
   ON meal_services FOR ALL
   USING (
-    facility_id = ANY(haven.accessible_facility_ids())
+    facility_id IN (SELECT haven.accessible_facility_ids())
     AND haven.app_role() IN ('dietary','dietary_aide','manager','owner','org_admin','facility_admin')
   )
   WITH CHECK (
-    facility_id = ANY(haven.accessible_facility_ids())
+    facility_id IN (SELECT haven.accessible_facility_ids())
     AND haven.app_role() IN ('dietary','dietary_aide','manager','owner','org_admin','facility_admin')
   );
 
@@ -185,7 +195,7 @@ ALTER TABLE tray_tickets ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Tray tickets visible to dietary and clinical staff"
   ON tray_tickets FOR SELECT
   USING (
-    facility_id = ANY(haven.accessible_facility_ids())
+    facility_id IN (SELECT haven.accessible_facility_ids())
     AND haven.app_role() IN (
       'dietary','dietary_aide','nurse','manager','owner',
       'org_admin','facility_admin','coordinator'
@@ -195,15 +205,21 @@ CREATE POLICY "Tray tickets visible to dietary and clinical staff"
 CREATE POLICY "Dietary staff manage tray tickets"
   ON tray_tickets FOR ALL
   USING (
-    facility_id = ANY(haven.accessible_facility_ids())
+    facility_id IN (SELECT haven.accessible_facility_ids())
     AND haven.app_role() IN ('dietary','dietary_aide','nurse','manager','owner','org_admin','facility_admin')
   )
   WITH CHECK (
-    facility_id = ANY(haven.accessible_facility_ids())
+    facility_id IN (SELECT haven.accessible_facility_ids())
     AND haven.app_role() IN ('dietary','dietary_aide','nurse','manager','owner','org_admin','facility_admin')
   );
 
-SELECT haven_capture_audit_log('tray_tickets');
+CREATE TRIGGER tr_tray_tickets_set_updated_at
+  BEFORE UPDATE ON tray_tickets
+  FOR EACH ROW EXECUTE FUNCTION public.haven_set_updated_at();
+
+CREATE TRIGGER tr_tray_tickets_audit
+  AFTER INSERT OR UPDATE OR DELETE ON tray_tickets
+  FOR EACH ROW EXECUTE FUNCTION public.haven_capture_audit_log();
 
 
 -- ============================================================
@@ -240,7 +256,7 @@ ALTER TABLE haccp_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "HACCP logs readable by dietary and clinical staff"
   ON haccp_logs FOR SELECT
   USING (
-    facility_id = ANY(haven.accessible_facility_ids())
+    facility_id IN (SELECT haven.accessible_facility_ids())
     AND haven.app_role() IN (
       'dietary','dietary_aide','nurse','manager','owner',
       'org_admin','facility_admin','coordinator'
@@ -251,7 +267,7 @@ CREATE POLICY "HACCP logs readable by dietary and clinical staff"
 CREATE POLICY "Dietary staff insert HACCP logs"
   ON haccp_logs FOR INSERT
   WITH CHECK (
-    facility_id = ANY(haven.accessible_facility_ids())
+    facility_id IN (SELECT haven.accessible_facility_ids())
     AND haven.app_role() IN ('dietary','dietary_aide','manager','owner','org_admin','facility_admin')
   );
 
@@ -286,7 +302,7 @@ ALTER TABLE meal_refusals ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Meal refusals visible to dietary and clinical staff"
   ON meal_refusals FOR SELECT
   USING (
-    facility_id = ANY(haven.accessible_facility_ids())
+    facility_id IN (SELECT haven.accessible_facility_ids())
     AND haven.app_role() IN (
       'dietary','dietary_aide','caregiver','nurse','manager','owner',
       'org_admin','facility_admin','coordinator'
@@ -296,14 +312,16 @@ CREATE POLICY "Meal refusals visible to dietary and clinical staff"
 CREATE POLICY "Dietary and caregivers insert refusals"
   ON meal_refusals FOR INSERT
   WITH CHECK (
-    facility_id = ANY(haven.accessible_facility_ids())
+    facility_id IN (SELECT haven.accessible_facility_ids())
     AND haven.app_role() IN (
       'dietary','dietary_aide','caregiver','nurse','manager','owner',
       'org_admin','facility_admin'
     )
   );
 
-SELECT haven_capture_audit_log('meal_refusals');
+CREATE TRIGGER tr_meal_refusals_audit
+  AFTER INSERT OR UPDATE OR DELETE ON meal_refusals
+  FOR EACH ROW EXECUTE FUNCTION public.haven_capture_audit_log();
 
 
 -- ============================================================
@@ -342,7 +360,7 @@ ALTER TABLE fortification_recommendations ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Fortification recs visible to dietary and clinical staff"
   ON fortification_recommendations FOR SELECT
   USING (
-    facility_id = ANY(haven.accessible_facility_ids())
+    facility_id IN (SELECT haven.accessible_facility_ids())
     AND haven.app_role() IN (
       'dietary','dietary_aide','nurse','manager','owner',
       'org_admin','facility_admin','coordinator'
@@ -352,19 +370,25 @@ CREATE POLICY "Fortification recs visible to dietary and clinical staff"
 CREATE POLICY "Dietary and clinical staff manage fortification recs"
   ON fortification_recommendations FOR ALL
   USING (
-    facility_id = ANY(haven.accessible_facility_ids())
+    facility_id IN (SELECT haven.accessible_facility_ids())
     AND haven.app_role() IN (
       'dietary','nurse','manager','owner','org_admin','facility_admin'
     )
   )
   WITH CHECK (
-    facility_id = ANY(haven.accessible_facility_ids())
+    facility_id IN (SELECT haven.accessible_facility_ids())
     AND haven.app_role() IN (
       'dietary','nurse','manager','owner','org_admin','facility_admin'
     )
   );
 
-SELECT haven_capture_audit_log('fortification_recommendations');
+CREATE TRIGGER tr_fortification_recommendations_set_updated_at
+  BEFORE UPDATE ON fortification_recommendations
+  FOR EACH ROW EXECUTE FUNCTION public.haven_set_updated_at();
+
+CREATE TRIGGER tr_fortification_recommendations_audit
+  AFTER INSERT OR UPDATE OR DELETE ON fortification_recommendations
+  FOR EACH ROW EXECUTE FUNCTION public.haven_capture_audit_log();
 
 
 -- ============================================================
