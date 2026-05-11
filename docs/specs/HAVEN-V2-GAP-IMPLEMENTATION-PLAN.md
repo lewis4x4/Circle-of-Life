@@ -70,7 +70,7 @@ Explicit correction:
 
 ### Slice 4 — Operational logs
 
-Status: **complete locally** — migration `220` added and gate artifact generated at `test-results/agent-gates/2026-05-11T18-06-18-445Z-COL-V2-S4.json`. Remote deploy/commit occurs with the Slice 4 commit.
+Status: **complete** — committed/pushed as `c16c8d8`, deployed to Supabase remote as migration `220`, and Netlify production deployed the commit. Gate artifact: `test-results/agent-gates/2026-05-11T18-06-18-445Z-COL-V2-S4.json`.
 
 Goal: add the missing daily execution logs that are not covered by existing modules.
 
@@ -81,6 +81,8 @@ Includes:
 - RLS, indexes, audit triggers.
 
 ### Slice 5 — Staff compliance and notification routing
+
+Status: **complete locally** — migration `221` added and gate artifact generated at `test-results/agent-gates/2026-05-11T18-29-12-843Z-COL-V2-S5.json`. Remote deploy/commit occurs with the Slice 5 commit.
 
 Goal: close COL-specific staff compliance and alert-routing gaps using existing staff and notification systems.
 
