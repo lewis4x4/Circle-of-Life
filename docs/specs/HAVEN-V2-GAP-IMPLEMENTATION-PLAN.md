@@ -123,7 +123,7 @@ Blocked until:
 
 ### Slice 8 — Admissions Medicaid Kanban
 
-Status: **complete locally** — migration `224`, admissions UI/API/type updates added, and required checks passed (`npm run migrations:check`, `npm run lint`, `npm run build`, `npm run segment:gates -- --segment COL-V2-S8`). Gate artifact: `test-results/agent-gates/2026-05-11T19-26-38-086Z-COL-V2-S8.json`.
+Status: **complete** — committed/pushed as `960dc78`, deployed to Supabase remote as migration `224`, and production web routes respond (`/` HTTP 200; `/admin/admissions` and `/admin/admissions/onboarding` auth-redirect as expected). Gate artifact: `test-results/agent-gates/2026-05-11T19-26-38-086Z-COL-V2-S8.json`.
 
 Goal: add COL-specific Medicaid substage tracking while preserving the current `admission_case_status` enum.
 
