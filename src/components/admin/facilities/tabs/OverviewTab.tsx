@@ -6,9 +6,24 @@ import { useFacility } from "@/hooks/useFacility";
 import { useFacilityBedAvailability } from "@/hooks/useFacilityBedAvailability";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { OccupancyGauge } from "../shared/OccupancyGauge";
+import { formatColLabel } from "@/lib/col-labels";
 
 interface OverviewTabProps {
   facilityId: string;
+}
+
+const STANDUP_CLASS_LABELS: Record<"private" | "sp_female" | "sp_male" | "sp_flexible", string> = {
+  private: formatColLabel("private"),
+  sp_female: "Companion (Women)",
+  sp_male: "Companion (Men)",
+  sp_flexible: "Companion (Any)",
+};
+
+function getBedStatusLabel(bed: { current_resident_id: string | null; is_temporarily_blocked: boolean; status: string }) {
+  if (bed.current_resident_id) return "Occupied";
+  if (bed.is_temporarily_blocked) return "Blocked";
+  if (bed.status === "available") return "Open";
+  return formatColLabel(bed.status, { fallback: "sentence" });
 }
 
 export function OverviewTab({ facilityId }: OverviewTabProps) {
@@ -26,7 +41,7 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
       spMale: openBeds.filter((bed) => bed.standup_availability_class === "sp_male").length,
       spFlexible: openBeds.filter((bed) => bed.standup_availability_class === "sp_flexible").length,
       blocked: beds.filter((bed) => bed.is_temporarily_blocked).length,
-      unclassified: beds.filter((bed) => !bed.current_resident_id && !bed.standup_availability_class).length,
+      unclassified: openBeds.filter((bed) => !bed.standup_availability_class).length,
     };
   }, [beds]);
 
@@ -34,7 +49,7 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
     return beds.filter((bed) => {
       if (bedFilter === "open") return !bed.current_resident_id && !bed.is_temporarily_blocked && bed.status === "available";
       if (bedFilter === "blocked") return bed.is_temporarily_blocked;
-      if (bedFilter === "unclassified") return !bed.current_resident_id && !bed.standup_availability_class;
+      if (bedFilter === "unclassified") return !bed.current_resident_id && !bed.is_temporarily_blocked && bed.status === "available" && !bed.standup_availability_class;
       return true;
     });
   }, [bedFilter, beds]);
@@ -207,12 +222,12 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
           <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-6">
               {[
-                ["Private open", bedSummary.private],
-                ["SP female", bedSummary.spFemale],
-                ["SP male", bedSummary.spMale],
-                ["SP flexible", bedSummary.spFlexible],
+                [`${STANDUP_CLASS_LABELS.private} Open`, bedSummary.private],
+                [`${STANDUP_CLASS_LABELS.sp_female} Open`, bedSummary.spFemale],
+                [`${STANDUP_CLASS_LABELS.sp_male} Open`, bedSummary.spMale],
+                [`${STANDUP_CLASS_LABELS.sp_flexible} Open`, bedSummary.spFlexible],
                 ["Blocked", bedSummary.blocked],
-                ["Needs class", bedSummary.unclassified],
+                ["Needs Assignment", bedSummary.unclassified],
               ].map(([label, value]) => (
                 <div key={label} className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
                   <div className="text-[10px] uppercase tracking-widest text-slate-500">{label}</div>
@@ -226,7 +241,7 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
                 ["all", "All beds"],
                 ["open", "Open only"],
                 ["blocked", "Blocked"],
-                ["unclassified", "Needs class"],
+                ["unclassified", "Needs assignment"],
               ].map(([value, label]) => (
                 <button
                   key={value}
@@ -250,7 +265,7 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
                   <th className="px-3 py-2">Room</th>
                   <th className="px-3 py-2">Bed</th>
                   <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2">Standup class</th>
+                  <th className="px-3 py-2">Availability type</th>
                   <th className="px-3 py-2">Blocked</th>
                   <th className="px-3 py-2">Reason</th>
                   <th className="px-3 py-2"></th>
@@ -261,7 +276,7 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
                   <tr key={bed.id} className="border-b border-white/5 align-top">
                     <td className="px-3 py-3 text-slate-200">{bed.room_number}</td>
                     <td className="px-3 py-3 text-slate-200">{bed.bed_label}</td>
-                    <td className="px-3 py-3 text-slate-400">{bed.current_resident_id ? "Occupied" : bed.status}</td>
+                    <td className="px-3 py-3 text-slate-400">{getBedStatusLabel(bed)}</td>
                     <td className="px-3 py-3">
                       <select
                         className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100"
@@ -278,11 +293,11 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
                           })
                         }
                       >
-                        <option value="">Unset</option>
-                        <option value="private">Private</option>
-                        <option value="sp_female">SP Female</option>
-                        <option value="sp_male">SP Male</option>
-                        <option value="sp_flexible">SP Flexible</option>
+                        <option value="">Needs assignment</option>
+                        <option value="private">{STANDUP_CLASS_LABELS.private}</option>
+                        <option value="sp_female">{STANDUP_CLASS_LABELS.sp_female}</option>
+                        <option value="sp_male">{STANDUP_CLASS_LABELS.sp_male}</option>
+                        <option value="sp_flexible">{STANDUP_CLASS_LABELS.sp_flexible}</option>
                       </select>
                     </td>
                     <td className="px-3 py-3">

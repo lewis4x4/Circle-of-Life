@@ -137,6 +137,8 @@ Status (Slice 9A): **complete locally** — shared COL label helper + first admi
 
 Status (Slice 9B): **complete locally** — resident billing payer UI now exposes Medicaid provider/MCO selection and Medicaid rate-unit display/edit (using existing `facility_medicaid_providers` + `resident_payers` columns), with lint/build/segment gates passing. Gate artifact: `test-results/agent-gates/2026-05-11T20-05-45-006Z-COL-V2-S9B.json`.
 
+Status (Slice 9C): **complete locally** — `/admin/facilities/[facilityId]` bed availability board now uses operator-friendly availability language (Open/Occupied/Blocked + Companion/Private labels and “Needs assignment” state), backed by existing `beds` + standup availability fields only. Gate artifact: `test-results/agent-gates/2026-05-11T20-18-08-370Z-COL-V2-S9C.json`.
+
 Goal: make the new data understandable and usable.
 
 Includes:
