@@ -20,6 +20,8 @@ Decision: treat the original greenfield handoff as obsolete. Haven already has a
 
 ### Slice 1 — Foundation status + Medicaid provider support
 
+Status: **complete** — committed/pushed as `dcdeb8d`, deployed to Supabase remote as migration `217`, and Netlify production deployed the commit.
+
 Goal: add inspector-grade resident status history and a facility-level Medicaid provider/rate catalog without disturbing existing billing tables.
 
 Includes:
@@ -36,6 +38,10 @@ Done when:
 
 ### Slice 2 — Physical plant + posted-rate seeds
 
+Status: **complete locally** — migration `218` added and gate artifact generated. Remote deploy/commit occurs with the Slice 2 commit.
+
+Live facility verification: remote public data dump on 2026-05-11 showed five active COL facilities under organization `00000000-0000-0000-0000-000000000001`: Oakridge ALF, Rising Oaks ALF, Homewood Lodge ALF, Plantation ALF, Grande Cypress ALF. The 6th facility is `Oakridge Demo ALF` under demo organization `11111111-1111-1111-1111-111111111111` and is soft-deleted, so no facility deletion was performed.
+
 Goal: seed COL rooms/beds/units/rate schedules using existing `units -> rooms -> beds` and `rate_schedules`.
 
 Includes:
@@ -44,8 +50,8 @@ Includes:
 - Idempotent seed for Plantation wings/rooms/beds after facility IDs are confirmed.
 - Idempotent posted-rate schedules with all required non-null care surcharge columns.
 
-Blocked until:
-- Facility names/IDs verified from live database.
+Resolved blocker:
+- Facility names/IDs verified from live database; seed is constrained to the verified COL organization/facility names and does not touch demo rows.
 
 ### Slice 3 — Rounds vocabulary + per-resident observation templates
 
