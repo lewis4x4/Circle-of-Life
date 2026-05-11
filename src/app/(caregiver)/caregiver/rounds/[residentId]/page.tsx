@@ -184,6 +184,7 @@ export default function CaregiverResidentRoundPage() {
         <QuickObservationForm
           residentName={residentName}
           dueLabel={`Due at ${new Date(task.due_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}${facilityId ? ` · Facility ${facilityId.slice(-4)}` : ""}`}
+          facilityId={facilityId}
           submitting={submitting}
           onSubmit={submitRound}
         />

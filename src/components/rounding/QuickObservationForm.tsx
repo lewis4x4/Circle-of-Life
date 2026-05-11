@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Loader2, Mic, MicOff, Volume2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -31,8 +31,33 @@ const EXCEPTION_OPTIONS: { value: ObservationExceptionType; label: string }[] = 
   { value: "other", label: "Other" },
 ];
 
+const FALLBACK_LOCATION_OPTIONS = ["Resident Room", "Common Area", "Dining Room", "Outside/Courtyard", "OOF — Medical Appointment"];
+const FALLBACK_POSITION_OPTIONS = ["Lying Down", "Sitting", "Standing", "Walking", "In Wheelchair"];
+const FALLBACK_STATE_OPTIONS = [
+  "Resting in Bed",
+  "Participating in Facility Activity",
+  "Socializing with Others",
+  "Sleeping",
+  "Needs Assistance",
+  "Distressed",
+  "Not Found / Escalate",
+];
+const DEFAULT_LOCATION = FALLBACK_LOCATION_OPTIONS[0]!;
+const DEFAULT_POSITION = FALLBACK_POSITION_OPTIONS[0]!;
+const DEFAULT_STATE = FALLBACK_STATE_OPTIONS[0]!;
+
+type VocabResponse = {
+  location: string[];
+  position: string[];
+  state: string[];
+};
+
 function hasAbnormalStatus(status: ObservationQuickStatus) {
   return status === "agitated" || status === "confused" || status === "distressed" || status === "not_found" || status === "refused";
+}
+
+function mergePreferredOptions(preferred: string, sourceOptions: string[] | undefined, fallbackOptions: string[]) {
+  return [...new Set([preferred, ...(sourceOptions?.length ? sourceOptions : fallbackOptions), ...fallbackOptions].filter(Boolean))];
 }
 
 function parseVoiceCheckoff(transcript: string) {
@@ -74,18 +99,20 @@ function parseVoiceCheckoff(transcript: string) {
 export function QuickObservationForm({
   residentName,
   dueLabel,
+  facilityId,
   submitting,
   onSubmit,
 }: {
   residentName: string;
   dueLabel: string;
+  facilityId?: string | null;
   submitting?: boolean;
   onSubmit: (payload: CompletionPayload) => Promise<void> | void;
 }) {
   const [quickStatus, setQuickStatus] = useState<ObservationQuickStatus>("awake");
-  const [residentLocation, setResidentLocation] = useState("in room");
-  const [residentPosition, setResidentPosition] = useState("in bed");
-  const [residentState, setResidentState] = useState("resting comfortably");
+  const [residentLocation, setResidentLocation] = useState(DEFAULT_LOCATION);
+  const [residentPosition, setResidentPosition] = useState(DEFAULT_POSITION);
+  const [residentState, setResidentState] = useState(DEFAULT_STATE);
   const [lateReason, setLateReason] = useState("");
   const [note, setNote] = useState("");
   const [exceptionType, setExceptionType] = useState<ObservationExceptionType | "">("");
@@ -94,9 +121,51 @@ export function QuickObservationForm({
   const [repositioned, setRepositioned] = useState(false);
   const [fallHazardObserved, setFallHazardObserved] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState("");
+  const [locationOptions, setLocationOptions] = useState<string[]>(FALLBACK_LOCATION_OPTIONS);
+  const [positionOptions, setPositionOptions] = useState<string[]>(FALLBACK_POSITION_OPTIONS);
+  const [stateOptions, setStateOptions] = useState<string[]>(FALLBACK_STATE_OPTIONS);
   const [voiceBusy, setVoiceBusy] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const voiceRecorder = useGraceVoiceRecorder();
+
+  useEffect(() => {
+    const facilityIdParam = facilityId ?? "";
+    if (!facilityIdParam) return;
+
+    let cancelled = false;
+
+    async function loadVocab() {
+      try {
+        const response = await fetch(`/api/rounding/vocabulary?facilityId=${encodeURIComponent(facilityIdParam)}`, { cache: "no-store" });
+        const json = (await response.json()) as Partial<VocabResponse> & { error?: string };
+        if (!response.ok) {
+          throw new Error(json.error ?? "Could not load rounds vocabulary");
+        }
+        if (cancelled) return;
+
+        setLocationOptions(mergePreferredOptions(DEFAULT_LOCATION, json.location, FALLBACK_LOCATION_OPTIONS));
+        setPositionOptions(mergePreferredOptions(DEFAULT_POSITION, json.position, FALLBACK_POSITION_OPTIONS));
+        setStateOptions(mergePreferredOptions(DEFAULT_STATE, json.state, FALLBACK_STATE_OPTIONS));
+      } catch {
+        if (cancelled) return;
+        setLocationOptions(FALLBACK_LOCATION_OPTIONS);
+        setPositionOptions(FALLBACK_POSITION_OPTIONS);
+        setStateOptions(FALLBACK_STATE_OPTIONS);
+      }
+    }
+
+    void loadVocab();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [facilityId]);
+
+  useEffect(() => {
+    if (!locationOptions.includes(residentLocation)) setResidentLocation(locationOptions[0] ?? "");
+    if (!positionOptions.includes(residentPosition)) setResidentPosition(positionOptions[0] ?? "");
+    if (!stateOptions.includes(residentState)) setResidentState(stateOptions[0] ?? "");
+  }, [locationOptions, positionOptions, residentLocation, residentPosition, residentState, stateOptions]);
 
   const needsDetails = useMemo(
     () => hasAbnormalStatus(quickStatus) || !!exceptionType || fallHazardObserved || note.length > 0,
@@ -237,28 +306,13 @@ export function QuickObservationForm({
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Field
-            label="Location"
-            value={residentLocation}
-            onChange={setResidentLocation}
-            options={["in room", "common area", "out of room", "off unit", "appointment"]}
-          />
-          <Field
-            label="Position"
-            value={residentPosition}
-            onChange={setResidentPosition}
-            options={["in bed", "in chair", "ambulating", "with staff"]}
-          />
+          <Field label="Location" value={residentLocation} onChange={setResidentLocation} options={locationOptions} />
+          <Field label="Position" value={residentPosition} onChange={setResidentPosition} options={positionOptions} />
         </div>
 
         {needsDetails ? (
           <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-900/70 p-3">
-            <Field
-              label="Resident presentation"
-              value={residentState}
-              onChange={setResidentState}
-              options={["resting comfortably", "calm", "agitated", "confused", "distressed", "needs follow-up"]}
-            />
+            <Field label="Resident presentation" value={residentState} onChange={setResidentState} options={stateOptions} />
 
             <Field
               label="Exception"

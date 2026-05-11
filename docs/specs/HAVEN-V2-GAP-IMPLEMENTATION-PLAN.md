@@ -139,6 +139,8 @@ Status (Slice 9B): **complete locally** — resident billing payer UI now expose
 
 Status (Slice 9C): **complete locally** — `/admin/facilities/[facilityId]` bed availability board now uses operator-friendly availability language (Open/Occupied/Blocked + Companion/Private labels and “Needs assignment” state), backed by existing `beds` + standup availability fields only. Gate artifact: `test-results/agent-gates/2026-05-11T20-18-08-370Z-COL-V2-S9C.json`.
 
+Status (Slice 9D): **complete locally** — caregiver quick-round form now loads and uses facility/org `observation_vocab` labels for Location, Position, and Resident presentation (fallbacks preserved), replacing hardcoded wording with operator-facing vocabulary on the active `/caregiver/rounds/[residentId]` surface. Gate artifact: `test-results/agent-gates/2026-05-11T20-45-29-556Z-COL-V2-S9D.json`.
+
 Goal: make the new data understandable and usable.
 
 Includes:
