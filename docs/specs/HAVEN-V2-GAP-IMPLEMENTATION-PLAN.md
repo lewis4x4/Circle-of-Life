@@ -147,6 +147,8 @@ Status (Slice 9F): **complete locally** — `/admin/compliance/emergency-prepare
 
 Status (Slice 9G): **complete locally** — `/admin/training` now includes a staff compliance attestation create + review panel backed by existing migration `221` table `staff_attestations` (active-staff picker, required attestation fields, date validation, and recent signed entry visibility for med-tech compliance review), with no schema/auth/edge changes. Gate artifact: `test-results/agent-gates/2026-05-11T21-52-41-411Z-COL-V2-S9G.json`.
 
+Status (Slice 9H): **complete locally** — `/admin/settings/notifications` now includes operator/admin notification-route management backed by existing `notification_routes` (create + edit-minimal + active-route visibility by facility/channels/severity/target roles/status), with severity labels mapped to non-technical wording and no schema/auth/edge changes. Gate artifact: `test-results/agent-gates/2026-05-11T22-33-36-415Z-COL-V2-S9H.json`.
+
 Goal: make the new data understandable and usable.
 
 Includes:
