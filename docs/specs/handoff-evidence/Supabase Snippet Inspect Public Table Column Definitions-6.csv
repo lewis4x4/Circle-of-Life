@@ -1,0 +1,340 @@
+table_name,column_name,data_type,is_nullable
+documents,id,uuid,NO
+documents,workspace_id,text,NO
+documents,title,text,NO
+documents,source,text,NO
+documents,source_id,text,YES
+documents,source_url,text,YES
+documents,mime_type,text,YES
+documents,raw_text,text,YES
+documents,word_count,integer,YES
+documents,summary,text,YES
+documents,audience,text,NO
+documents,status,text,NO
+documents,uploaded_by,uuid,YES
+documents,approved_by,uuid,YES
+documents,approved_at,timestamp with time zone,YES
+documents,classification_updated_by,uuid,YES
+documents,classification_updated_at,timestamp with time zone,YES
+documents,review_owner,uuid,YES
+documents,review_due_at,timestamp with time zone,YES
+documents,metadata,jsonb,YES
+documents,created_at,timestamp with time zone,NO
+documents,updated_at,timestamp with time zone,NO
+documents,deleted_at,timestamp with time zone,YES
+documents,markdown_text,text,YES
+documents,conversion_method,text,YES
+documents,compliance_category,text,YES
+documents,regulation_version,text,YES
+documents,regulation_citation,text,YES
+documents,regulation_effective_date,date,YES
+documents,compliance_deficiency_id,uuid,YES
+documents,kb_document_id,uuid,YES
+documents,compliance_relevance_score,double precision,YES
+documents,approved_by_admin,uuid,YES
+documents,sop_id,uuid,YES
+documents,sop_type,text,YES
+documents,doc_type,text,YES
+documents,source_system,text,NO
+documents,source_path,text,YES
+documents,canonical_slug,text,YES
+documents,lifecycle_status,text,YES
+documents,facility_scope,text,YES
+documents,facility_tags,ARRAY,NO
+documents,entity_tags,ARRAY,NO
+documents,role_tags,ARRAY,NO
+documents,topic_tags,ARRAY,NO
+documents,alias_terms,ARRAY,NO
+documents,grace_priority,text,YES
+documents,grace_answerable,boolean,NO
+documents,trust_rank,integer,YES
+documents,effective_date,date,YES
+documents,review_date,date,YES
+documents,owner_name,text,YES
+documents,compiled_at,timestamp with time zone,YES
+documents,compiler_version,text,YES
+inservice_log_attendees,id,uuid,NO
+inservice_log_attendees,session_id,uuid,NO
+inservice_log_attendees,staff_id,uuid,NO
+inservice_log_attendees,signed_in,boolean,NO
+inservice_log_attendees,notes,text,YES
+inservice_log_sessions,id,uuid,NO
+inservice_log_sessions,organization_id,uuid,NO
+inservice_log_sessions,facility_id,uuid,NO
+inservice_log_sessions,training_program_id,uuid,YES
+inservice_log_sessions,session_date,date,NO
+inservice_log_sessions,topic,text,NO
+inservice_log_sessions,trainer_name,text,NO
+inservice_log_sessions,trainer_user_id,uuid,YES
+inservice_log_sessions,hours,numeric,NO
+inservice_log_sessions,location,text,YES
+inservice_log_sessions,notes,text,YES
+inservice_log_sessions,created_by,uuid,NO
+inservice_log_sessions,created_at,timestamp with time zone,NO
+inservice_log_sessions,updated_at,timestamp with time zone,NO
+inservice_log_sessions,deleted_at,timestamp with time zone,YES
+notification_routes,id,uuid,NO
+notification_routes,organization_id,uuid,NO
+notification_routes,facility_id,uuid,YES
+notification_routes,name,text,NO
+notification_routes,severity_min,USER-DEFINED,NO
+notification_routes,channels,ARRAY,NO
+notification_routes,staff_role_targets,ARRAY,YES
+notification_routes,is_active,boolean,NO
+notification_routes,created_at,timestamp with time zone,NO
+notification_routes,updated_at,timestamp with time zone,NO
+notification_routes,deleted_at,timestamp with time zone,YES
+notification_subscriptions,id,uuid,NO
+notification_subscriptions,organization_id,uuid,NO
+notification_subscriptions,user_id,uuid,NO
+notification_subscriptions,endpoint,text,NO
+notification_subscriptions,keys_json,jsonb,NO
+notification_subscriptions,user_agent,text,YES
+notification_subscriptions,created_at,timestamp with time zone,NO
+notification_subscriptions,last_used_at,timestamp with time zone,YES
+notification_subscriptions,deleted_at,timestamp with time zone,YES
+resident_observation_assignments,id,uuid,NO
+resident_observation_assignments,organization_id,uuid,NO
+resident_observation_assignments,entity_id,uuid,YES
+resident_observation_assignments,facility_id,uuid,NO
+resident_observation_assignments,resident_id,uuid,NO
+resident_observation_assignments,task_id,uuid,NO
+resident_observation_assignments,shift_assignment_id,uuid,YES
+resident_observation_assignments,staff_id,uuid,NO
+resident_observation_assignments,assignment_type,USER-DEFINED,NO
+resident_observation_assignments,assigned_at,timestamp with time zone,NO
+resident_observation_assignments,released_at,timestamp with time zone,YES
+resident_observation_assignments,reason,text,YES
+resident_observation_assignments,created_by,uuid,YES
+resident_observation_assignments,created_at,timestamp with time zone,NO
+resident_observation_logs,id,uuid,NO
+resident_observation_logs,organization_id,uuid,NO
+resident_observation_logs,entity_id,uuid,YES
+resident_observation_logs,facility_id,uuid,NO
+resident_observation_logs,resident_id,uuid,NO
+resident_observation_logs,task_id,uuid,NO
+resident_observation_logs,assigned_staff_id,uuid,YES
+resident_observation_logs,staff_id,uuid,NO
+resident_observation_logs,observed_at,timestamp with time zone,NO
+resident_observation_logs,entered_at,timestamp with time zone,NO
+resident_observation_logs,entry_mode,USER-DEFINED,NO
+resident_observation_logs,quick_status,USER-DEFINED,NO
+resident_observation_logs,resident_location,text,YES
+resident_observation_logs,resident_position,text,YES
+resident_observation_logs,resident_state,text,YES
+resident_observation_logs,distress_present,boolean,NO
+resident_observation_logs,breathing_concern,boolean,NO
+resident_observation_logs,pain_concern,boolean,NO
+resident_observation_logs,toileting_assisted,boolean,NO
+resident_observation_logs,hydration_offered,boolean,NO
+resident_observation_logs,repositioned,boolean,NO
+resident_observation_logs,skin_concern_observed,boolean,NO
+resident_observation_logs,fall_hazard_observed,boolean,NO
+resident_observation_logs,refused_assistance,boolean,NO
+resident_observation_logs,intervention_codes,ARRAY,NO
+resident_observation_logs,exception_present,boolean,NO
+resident_observation_logs,note,text,YES
+resident_observation_logs,late_reason,text,YES
+resident_observation_logs,created_by,uuid,YES
+resident_observation_logs,created_at,timestamp with time zone,NO
+resident_observation_logs,updated_at,timestamp with time zone,NO
+resident_observation_logs,updated_by,uuid,YES
+resident_observation_logs,deleted_at,timestamp with time zone,YES
+resident_observation_plan_rules,id,uuid,NO
+resident_observation_plan_rules,plan_id,uuid,NO
+resident_observation_plan_rules,organization_id,uuid,NO
+resident_observation_plan_rules,entity_id,uuid,YES
+resident_observation_plan_rules,facility_id,uuid,NO
+resident_observation_plan_rules,resident_id,uuid,NO
+resident_observation_plan_rules,interval_type,USER-DEFINED,NO
+resident_observation_plan_rules,interval_minutes,integer,YES
+resident_observation_plan_rules,shift,USER-DEFINED,YES
+resident_observation_plan_rules,daypart_start,time without time zone,YES
+resident_observation_plan_rules,daypart_end,time without time zone,YES
+resident_observation_plan_rules,days_of_week,ARRAY,NO
+resident_observation_plan_rules,grace_minutes,integer,NO
+resident_observation_plan_rules,required_fields_schema,jsonb,NO
+resident_observation_plan_rules,escalation_policy_key,text,YES
+resident_observation_plan_rules,sort_order,integer,NO
+resident_observation_plan_rules,active,boolean,NO
+resident_observation_plan_rules,created_at,timestamp with time zone,NO
+resident_observation_plan_rules,updated_at,timestamp with time zone,NO
+resident_observation_plan_rules,updated_by,uuid,YES
+resident_observation_plan_rules,deleted_at,timestamp with time zone,YES
+resident_observation_plans,id,uuid,NO
+resident_observation_plans,organization_id,uuid,NO
+resident_observation_plans,entity_id,uuid,YES
+resident_observation_plans,facility_id,uuid,NO
+resident_observation_plans,resident_id,uuid,NO
+resident_observation_plans,status,USER-DEFINED,NO
+resident_observation_plans,source_type,USER-DEFINED,NO
+resident_observation_plans,effective_from,timestamp with time zone,NO
+resident_observation_plans,effective_to,timestamp with time zone,YES
+resident_observation_plans,rationale,text,YES
+resident_observation_plans,created_by,uuid,YES
+resident_observation_plans,approved_by,uuid,YES
+resident_observation_plans,created_at,timestamp with time zone,NO
+resident_observation_plans,updated_at,timestamp with time zone,NO
+resident_observation_plans,updated_by,uuid,YES
+resident_observation_plans,deleted_at,timestamp with time zone,YES
+resident_observation_tasks,id,uuid,NO
+resident_observation_tasks,organization_id,uuid,NO
+resident_observation_tasks,entity_id,uuid,YES
+resident_observation_tasks,facility_id,uuid,NO
+resident_observation_tasks,resident_id,uuid,NO
+resident_observation_tasks,plan_id,uuid,NO
+resident_observation_tasks,plan_rule_id,uuid,YES
+resident_observation_tasks,watch_instance_id,uuid,YES
+resident_observation_tasks,shift_assignment_id,uuid,YES
+resident_observation_tasks,assigned_staff_id,uuid,YES
+resident_observation_tasks,scheduled_for,timestamp with time zone,NO
+resident_observation_tasks,due_at,timestamp with time zone,NO
+resident_observation_tasks,grace_ends_at,timestamp with time zone,NO
+resident_observation_tasks,status,USER-DEFINED,NO
+resident_observation_tasks,completed_log_id,uuid,YES
+resident_observation_tasks,reassigned_from_staff_id,uuid,YES
+resident_observation_tasks,reassignment_reason,text,YES
+resident_observation_tasks,excused_reason,text,YES
+resident_observation_tasks,excused_by,uuid,YES
+resident_observation_tasks,escalated_at,timestamp with time zone,YES
+resident_observation_tasks,notes,text,YES
+resident_observation_tasks,created_at,timestamp with time zone,NO
+resident_observation_tasks,updated_at,timestamp with time zone,NO
+resident_observation_tasks,updated_by,uuid,YES
+resident_observation_tasks,deleted_at,timestamp with time zone,YES
+resident_observation_templates,id,uuid,NO
+resident_observation_templates,organization_id,uuid,NO
+resident_observation_templates,entity_id,uuid,YES
+resident_observation_templates,facility_id,uuid,YES
+resident_observation_templates,name,text,NO
+resident_observation_templates,description,text,YES
+resident_observation_templates,category,text,NO
+resident_observation_templates,preset_definition,jsonb,NO
+resident_observation_templates,active,boolean,NO
+resident_observation_templates,created_by,uuid,YES
+resident_observation_templates,created_at,timestamp with time zone,NO
+resident_observation_templates,updated_at,timestamp with time zone,NO
+resident_observation_templates,updated_by,uuid,YES
+resident_observation_templates,deleted_at,timestamp with time zone,YES
+role_permissions,id,uuid,NO
+role_permissions,app_role,text,NO
+role_permissions,feature,text,NO
+role_permissions,permission_level,text,NO
+role_permissions,description,text,YES
+role_permissions,created_at,timestamp with time zone,NO
+role_permissions,updated_at,timestamp with time zone,NO
+staff,id,uuid,NO
+staff,user_id,uuid,YES
+staff,facility_id,uuid,NO
+staff,organization_id,uuid,NO
+staff,first_name,text,NO
+staff,last_name,text,NO
+staff,preferred_name,text,YES
+staff,date_of_birth,date,YES
+staff,ssn_last_four,text,YES
+staff,phone,text,YES
+staff,phone_alt,text,YES
+staff,email,text,YES
+staff,address_line_1,text,YES
+staff,address_line_2,text,YES
+staff,city,text,YES
+staff,state,text,YES
+staff,zip,text,YES
+staff,emergency_contact_name,text,YES
+staff,emergency_contact_phone,text,YES
+staff,emergency_contact_relationship,text,YES
+staff,staff_role,USER-DEFINED,NO
+staff,employment_status,USER-DEFINED,NO
+staff,hire_date,date,NO
+staff,termination_date,date,YES
+staff,termination_reason,text,YES
+staff,hourly_rate,integer,YES
+staff,overtime_rate,integer,YES
+staff,is_full_time,boolean,NO
+staff,is_float_pool,boolean,NO
+staff,max_hours_per_week,integer,YES
+staff,photo_url,text,YES
+staff,notes,text,YES
+staff,created_at,timestamp with time zone,NO
+staff,updated_at,timestamp with time zone,NO
+staff,created_by,uuid,YES
+staff,updated_by,uuid,YES
+staff,deleted_at,timestamp with time zone,YES
+staff,excluded_from_care,boolean,NO
+staff_background_checks,id,uuid,NO
+staff_background_checks,staff_id,uuid,NO
+staff_background_checks,facility_id,uuid,NO
+staff_background_checks,organization_id,uuid,NO
+staff_background_checks,clearinghouse_id,text,YES
+staff_background_checks,result,USER-DEFINED,NO
+staff_background_checks,checked_at,timestamp with time zone,YES
+staff_background_checks,expires_at,date,YES
+staff_background_checks,document_storage_path,text,YES
+staff_background_checks,notes,text,YES
+staff_background_checks,created_at,timestamp with time zone,NO
+staff_background_checks,updated_at,timestamp with time zone,NO
+staff_background_checks,deleted_at,timestamp with time zone,YES
+staff_certifications,id,uuid,NO
+staff_certifications,staff_id,uuid,NO
+staff_certifications,facility_id,uuid,NO
+staff_certifications,organization_id,uuid,NO
+staff_certifications,certification_type,text,NO
+staff_certifications,certification_name,text,NO
+staff_certifications,issuing_authority,text,YES
+staff_certifications,certificate_number,text,YES
+staff_certifications,issue_date,date,NO
+staff_certifications,expiration_date,date,YES
+staff_certifications,status,USER-DEFINED,NO
+staff_certifications,document_id,uuid,YES
+staff_certifications,storage_path,text,YES
+staff_certifications,notes,text,YES
+staff_certifications,created_at,timestamp with time zone,NO
+staff_certifications,updated_at,timestamp with time zone,NO
+staff_certifications,created_by,uuid,YES
+staff_certifications,updated_by,uuid,YES
+staff_certifications,deleted_at,timestamp with time zone,YES
+staff_training_completions,id,uuid,NO
+staff_training_completions,organization_id,uuid,NO
+staff_training_completions,facility_id,uuid,NO
+staff_training_completions,staff_id,uuid,NO
+staff_training_completions,training_program_id,uuid,NO
+staff_training_completions,completed_at,date,NO
+staff_training_completions,expires_at,date,YES
+staff_training_completions,hours_completed,numeric,YES
+staff_training_completions,delivery_method,USER-DEFINED,NO
+staff_training_completions,external_provider,text,YES
+staff_training_completions,certificate_number,text,YES
+staff_training_completions,evaluator_user_id,uuid,YES
+staff_training_completions,notes,text,YES
+staff_training_completions,attachment_path,text,YES
+staff_training_completions,created_by,uuid,NO
+staff_training_completions,created_at,timestamp with time zone,NO
+staff_training_completions,updated_at,timestamp with time zone,NO
+staff_training_completions,deleted_at,timestamp with time zone,YES
+user_facility_access,id,uuid,NO
+user_facility_access,user_id,uuid,NO
+user_facility_access,facility_id,uuid,NO
+user_facility_access,organization_id,uuid,NO
+user_facility_access,is_primary,boolean,NO
+user_facility_access,granted_at,timestamp with time zone,NO
+user_facility_access,granted_by,uuid,YES
+user_facility_access,revoked_at,timestamp with time zone,YES
+user_facility_access,revoked_by,uuid,YES
+user_profiles,id,uuid,NO
+user_profiles,organization_id,uuid,YES
+user_profiles,email,text,NO
+user_profiles,full_name,text,NO
+user_profiles,phone,text,YES
+user_profiles,app_role,USER-DEFINED,NO
+user_profiles,avatar_url,text,YES
+user_profiles,is_active,boolean,NO
+user_profiles,last_login_at,timestamp with time zone,YES
+user_profiles,settings,jsonb,NO
+user_profiles,created_at,timestamp with time zone,NO
+user_profiles,updated_at,timestamp with time zone,NO
+user_profiles,deleted_at,timestamp with time zone,YES
+user_profiles,auth_claim_version,integer,NO
+user_profiles,mfa_enforced_at,timestamp with time zone,YES
+user_profiles,updated_by,uuid,YES
+user_profiles,job_title,text,YES
+user_profiles,manager_user_id,uuid,YES

@@ -1,0 +1,276 @@
+table_name,column_name,data_type,is_nullable,column_default
+admission_case_rate_terms,id,uuid,NO,gen_random_uuid()
+admission_case_rate_terms,admission_case_id,uuid,NO,null
+admission_case_rate_terms,rate_schedule_id,uuid,YES,null
+admission_case_rate_terms,accommodation_type,USER-DEFINED,NO,null
+admission_case_rate_terms,quoted_base_rate_cents,integer,NO,null
+admission_case_rate_terms,quoted_care_surcharge_cents,integer,NO,0
+admission_case_rate_terms,effective_date,date,YES,null
+admission_case_rate_terms,notes,text,YES,null
+admission_case_rate_terms,created_at,timestamp with time zone,NO,now()
+admission_case_rate_terms,created_by,uuid,YES,null
+admission_cases,id,uuid,NO,gen_random_uuid()
+admission_cases,organization_id,uuid,NO,null
+admission_cases,facility_id,uuid,NO,null
+admission_cases,resident_id,uuid,NO,null
+admission_cases,referral_lead_id,uuid,YES,null
+admission_cases,bed_id,uuid,YES,null
+admission_cases,status,USER-DEFINED,NO,'pending_clearance'::admission_case_status
+admission_cases,target_move_in_date,date,YES,null
+admission_cases,financial_clearance_at,timestamp with time zone,YES,null
+admission_cases,financial_clearance_by,uuid,YES,null
+admission_cases,physician_orders_received_at,timestamp with time zone,YES,null
+admission_cases,physician_orders_summary,text,YES,null
+admission_cases,notes,text,YES,null
+admission_cases,created_at,timestamp with time zone,NO,now()
+admission_cases,updated_at,timestamp with time zone,NO,now()
+admission_cases,created_by,uuid,YES,null
+admission_cases,updated_by,uuid,YES,null
+admission_cases,deleted_at,timestamp with time zone,YES,null
+beds,id,uuid,NO,gen_random_uuid()
+beds,room_id,uuid,NO,null
+beds,facility_id,uuid,NO,null
+beds,organization_id,uuid,NO,null
+beds,bed_label,text,NO,null
+beds,bed_type,USER-DEFINED,NO,'alf_intermediate'::bed_type
+beds,status,USER-DEFINED,NO,'available'::bed_status
+beds,current_resident_id,uuid,YES,null
+beds,created_at,timestamp with time zone,NO,now()
+beds,updated_at,timestamp with time zone,NO,now()
+beds,created_by,uuid,YES,null
+beds,updated_by,uuid,YES,null
+beds,deleted_at,timestamp with time zone,YES,null
+beds,standup_availability_class,USER-DEFINED,YES,null
+beds,is_temporarily_blocked,boolean,NO,false
+beds,blocked_reason,text,YES,null
+facilities,id,uuid,NO,gen_random_uuid()
+facilities,entity_id,uuid,NO,null
+facilities,organization_id,uuid,NO,null
+facilities,name,text,NO,null
+facilities,license_number,text,YES,null
+facilities,license_type,USER-DEFINED,NO,'alf_intermediate'::bed_type
+facilities,status,USER-DEFINED,NO,'active'::facility_status
+facilities,address_line_1,text,NO,null
+facilities,address_line_2,text,YES,null
+facilities,city,text,NO,null
+facilities,state,text,NO,'FL'::text
+facilities,zip,text,NO,null
+facilities,county,text,YES,null
+facilities,phone,text,YES,null
+facilities,fax,text,YES,null
+facilities,email,text,YES,null
+facilities,administrator_name,text,YES,null
+facilities,total_licensed_beds,integer,NO,null
+facilities,timezone,text,NO,'America/New_York'::text
+facilities,settings,jsonb,NO,'{}'::jsonb
+facilities,created_at,timestamp with time zone,NO,now()
+facilities,updated_at,timestamp with time zone,NO,now()
+facilities,created_by,uuid,YES,null
+facilities,updated_by,uuid,YES,null
+facilities,deleted_at,timestamp with time zone,YES,null
+facilities,license_authority,text,YES,null
+facilities,alf_license_type,text,YES,null
+facilities,cms_certification_number,text,YES,null
+facilities,medicaid_provider_id,text,YES,null
+facilities,facility_ratio_rule_set_id,uuid,YES,null
+facilities,facility_overrides,jsonb,YES,null
+facilities,pharmacy_vendor,text,YES,null
+facilities,occupancy_pct,numeric,YES,NULL::numeric
+facilities,ahca_license_number,text,YES,null
+facilities,ahca_license_expiration,date,YES,null
+facilities,care_services_offered,ARRAY,YES,ARRAY['standard_alf'::text]
+facilities,opening_date,date,YES,null
+facilities,current_administrator_id,uuid,YES,null
+facilities,waitlist_count,integer,NO,0
+facilities,target_occupancy_pct,numeric,YES,0.95
+facilities,last_survey_date,date,YES,null
+facilities,last_survey_result,text,YES,null
+organizations,id,uuid,NO,gen_random_uuid()
+organizations,name,text,NO,null
+organizations,dba_name,text,YES,null
+organizations,status,USER-DEFINED,NO,'active'::org_status
+organizations,primary_contact_name,text,YES,null
+organizations,primary_contact_email,text,YES,null
+organizations,primary_contact_phone,text,YES,null
+organizations,address_line_1,text,YES,null
+organizations,address_line_2,text,YES,null
+organizations,city,text,YES,null
+organizations,state,text,YES,null
+organizations,zip,text,YES,null
+organizations,timezone,text,NO,'America/New_York'::text
+organizations,settings,jsonb,NO,'{}'::jsonb
+organizations,created_at,timestamp with time zone,NO,now()
+organizations,updated_at,timestamp with time zone,NO,now()
+organizations,created_by,uuid,YES,null
+organizations,updated_by,uuid,YES,null
+organizations,deleted_at,timestamp with time zone,YES,null
+rate_schedule_versions,id,uuid,NO,gen_random_uuid()
+rate_schedule_versions,facility_id,uuid,NO,null
+rate_schedule_versions,organization_id,uuid,NO,null
+rate_schedule_versions,rate_type,text,NO,null
+rate_schedule_versions,amount_cents,integer,NO,null
+rate_schedule_versions,effective_from,date,NO,null
+rate_schedule_versions,effective_to,date,YES,null
+rate_schedule_versions,approved_by,uuid,YES,null
+rate_schedule_versions,approved_at,timestamp with time zone,YES,null
+rate_schedule_versions,notes,text,YES,null
+rate_schedule_versions,created_at,timestamp with time zone,NO,now()
+rate_schedule_versions,created_by,uuid,NO,null
+rate_schedule_versions,updated_at,timestamp with time zone,NO,now()
+rate_schedule_versions,deleted_at,timestamp with time zone,YES,null
+rate_schedule_versions,rate_confirmed,boolean,NO,false
+rate_schedules,id,uuid,NO,gen_random_uuid()
+rate_schedules,facility_id,uuid,NO,null
+rate_schedules,organization_id,uuid,NO,null
+rate_schedules,name,text,NO,null
+rate_schedules,effective_date,date,NO,null
+rate_schedules,end_date,date,YES,null
+rate_schedules,base_rate_private,integer,NO,null
+rate_schedules,base_rate_semi_private,integer,YES,null
+rate_schedules,care_surcharge_level_1,integer,NO,0
+rate_schedules,care_surcharge_level_2,integer,NO,null
+rate_schedules,care_surcharge_level_3,integer,NO,null
+rate_schedules,community_fee,integer,YES,0
+rate_schedules,pet_fee,integer,YES,0
+rate_schedules,second_occupant_fee,integer,YES,0
+rate_schedules,respite_daily_rate,integer,YES,null
+rate_schedules,bed_hold_daily_rate,integer,YES,null
+rate_schedules,notes,text,YES,null
+rate_schedules,created_at,timestamp with time zone,NO,now()
+rate_schedules,updated_at,timestamp with time zone,NO,now()
+rate_schedules,created_by,uuid,YES,null
+rate_schedules,updated_by,uuid,YES,null
+rate_schedules,deleted_at,timestamp with time zone,YES,null
+resident_payers,id,uuid,NO,gen_random_uuid()
+resident_payers,resident_id,uuid,NO,null
+resident_payers,facility_id,uuid,NO,null
+resident_payers,organization_id,uuid,NO,null
+resident_payers,payer_type,USER-DEFINED,NO,null
+resident_payers,is_primary,boolean,NO,true
+resident_payers,payer_name,text,YES,null
+resident_payers,policy_number,text,YES,null
+resident_payers,group_number,text,YES,null
+resident_payers,payer_phone,text,YES,null
+resident_payers,payer_contact_name,text,YES,null
+resident_payers,monthly_benefit_amount,integer,YES,null
+resident_payers,daily_benefit_amount,integer,YES,null
+resident_payers,elimination_period_days,integer,YES,null
+resident_payers,elimination_period_start_date,date,YES,null
+resident_payers,benefit_period_months,integer,YES,null
+resident_payers,benefits_used_months,integer,YES,0
+resident_payers,remaining_benefits_months,integer,YES,null
+resident_payers,medicaid_recipient_id,text,YES,null
+resident_payers,medicaid_authorization_start,date,YES,null
+resident_payers,medicaid_authorization_end,date,YES,null
+resident_payers,medicaid_rate,integer,YES,null
+resident_payers,medicaid_patient_responsibility,integer,YES,null
+resident_payers,payer_share_type,text,NO,'full'::text
+resident_payers,payer_fixed_amount,integer,YES,null
+resident_payers,payer_percentage,numeric,YES,null
+resident_payers,effective_date,date,NO,null
+resident_payers,end_date,date,YES,null
+resident_payers,notes,text,YES,null
+resident_payers,created_at,timestamp with time zone,NO,now()
+resident_payers,updated_at,timestamp with time zone,NO,now()
+resident_payers,created_by,uuid,YES,null
+resident_payers,updated_by,uuid,YES,null
+resident_payers,deleted_at,timestamp with time zone,YES,null
+residents,id,uuid,NO,gen_random_uuid()
+residents,facility_id,uuid,NO,null
+residents,organization_id,uuid,NO,null
+residents,bed_id,uuid,YES,null
+residents,first_name,text,NO,null
+residents,middle_name,text,YES,null
+residents,last_name,text,NO,null
+residents,preferred_name,text,YES,null
+residents,date_of_birth,date,NO,null
+residents,gender,USER-DEFINED,NO,null
+residents,ssn_last_four,text,YES,null
+residents,photo_url,text,YES,null
+residents,status,USER-DEFINED,NO,'inquiry'::resident_status
+residents,acuity_level,USER-DEFINED,YES,null
+residents,acuity_score,numeric,YES,null
+residents,admission_date,date,YES,null
+residents,admission_source,text,YES,null
+residents,referral_source_id,uuid,YES,null
+residents,discharge_date,date,YES,null
+residents,discharge_reason,USER-DEFINED,YES,null
+residents,discharge_destination,text,YES,null
+residents,discharge_notes,text,YES,null
+residents,primary_physician_name,text,YES,null
+residents,primary_physician_phone,text,YES,null
+residents,primary_physician_fax,text,YES,null
+residents,primary_diagnosis,text,YES,null
+residents,diagnosis_list,ARRAY,YES,null
+residents,allergy_list,ARRAY,YES,null
+residents,diet_order,text,YES,null
+residents,diet_restrictions,ARRAY,YES,null
+residents,code_status,text,NO,'full_code'::text
+residents,advance_directive_on_file,boolean,NO,false
+residents,advance_directive_type,text,YES,null
+residents,ambulatory,boolean,NO,true
+residents,assistive_device,text,YES,null
+residents,fall_risk_level,text,YES,'standard'::text
+residents,elopement_risk,boolean,NO,false
+residents,wandering_risk,boolean,NO,false
+residents,smoking_status,text,YES,'non_smoker'::text
+residents,primary_payer,USER-DEFINED,NO,'private_pay'::payer_type
+residents,secondary_payer,USER-DEFINED,YES,null
+residents,monthly_base_rate,integer,YES,null
+residents,monthly_care_surcharge,integer,YES,0
+residents,monthly_total_rate,integer,YES,null
+residents,rate_effective_date,date,YES,null
+residents,responsible_party_name,text,YES,null
+residents,responsible_party_relationship,text,YES,null
+residents,responsible_party_phone,text,YES,null
+residents,responsible_party_email,text,YES,null
+residents,responsible_party_address,text,YES,null
+residents,emergency_contact_1_name,text,YES,null
+residents,emergency_contact_1_relationship,text,YES,null
+residents,emergency_contact_1_phone,text,YES,null
+residents,emergency_contact_2_name,text,YES,null
+residents,emergency_contact_2_relationship,text,YES,null
+residents,emergency_contact_2_phone,text,YES,null
+residents,preferred_wake_time,time without time zone,YES,null
+residents,preferred_bed_time,time without time zone,YES,null
+residents,preferred_shower_days,ARRAY,YES,null
+residents,food_preferences,text,YES,null
+residents,activity_preferences,text,YES,null
+residents,religious_preference,text,YES,null
+residents,special_instructions,text,YES,null
+residents,created_at,timestamp with time zone,NO,now()
+residents,updated_at,timestamp with time zone,NO,now()
+residents,created_by,uuid,YES,null
+residents,updated_by,uuid,YES,null
+residents,deleted_at,timestamp with time zone,YES,null
+residents,discharge_target_date,date,YES,null
+residents,hospice_status,USER-DEFINED,NO,'none'::hospice_status
+rooms,id,uuid,NO,gen_random_uuid()
+rooms,facility_id,uuid,NO,null
+rooms,organization_id,uuid,NO,null
+rooms,unit_id,uuid,YES,null
+rooms,room_number,text,NO,null
+rooms,room_type,USER-DEFINED,NO,'private'::room_type
+rooms,max_occupancy,integer,NO,1
+rooms,floor_number,integer,YES,1
+rooms,is_ada_accessible,boolean,NO,false
+rooms,near_nursing_station,boolean,NO,false
+rooms,has_bathroom,boolean,NO,true
+rooms,notes,text,YES,null
+rooms,sort_order,integer,NO,0
+rooms,created_at,timestamp with time zone,NO,now()
+rooms,updated_at,timestamp with time zone,NO,now()
+rooms,created_by,uuid,YES,null
+rooms,updated_by,uuid,YES,null
+rooms,deleted_at,timestamp with time zone,YES,null
+units,id,uuid,NO,gen_random_uuid()
+units,facility_id,uuid,NO,null
+units,organization_id,uuid,NO,null
+units,name,text,NO,null
+units,floor_number,integer,YES,1
+units,sort_order,integer,NO,0
+units,created_at,timestamp with time zone,NO,now()
+units,updated_at,timestamp with time zone,NO,now()
+units,created_by,uuid,YES,null
+units,updated_by,uuid,YES,null
+units,deleted_at,timestamp with time zone,YES,null

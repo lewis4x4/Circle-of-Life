@@ -1,0 +1,101 @@
+table_name,column_name,data_type,is_nullable
+activities,id,uuid,NO
+activities,facility_id,uuid,NO
+activities,organization_id,uuid,NO
+activities,name,text,NO
+activities,description,text,YES
+activities,default_day_of_week,ARRAY,YES
+activities,default_start_time,time without time zone,YES
+activities,default_duration_minutes,integer,YES
+activities,facilitator,text,YES
+activities,is_recurring,boolean,NO
+activities,created_at,timestamp with time zone,NO
+activities,updated_at,timestamp with time zone,NO
+activities,deleted_at,timestamp with time zone,YES
+activity_attendance,id,uuid,NO
+activity_attendance,activity_session_id,uuid,NO
+activity_attendance,resident_id,uuid,NO
+activity_attendance,facility_id,uuid,NO
+activity_attendance,organization_id,uuid,NO
+activity_attendance,attended,boolean,NO
+activity_attendance,engagement_level,text,YES
+activity_attendance,duration_minutes,integer,YES
+activity_attendance,notes,text,YES
+activity_attendance,logged_by,uuid,NO
+activity_attendance,created_at,timestamp with time zone,NO
+activity_attendance,deleted_at,timestamp with time zone,YES
+activity_sessions,id,uuid,NO
+activity_sessions,activity_id,uuid,NO
+activity_sessions,facility_id,uuid,NO
+activity_sessions,organization_id,uuid,NO
+activity_sessions,session_date,date,NO
+activity_sessions,start_time,timestamp with time zone,YES
+activity_sessions,end_time,timestamp with time zone,YES
+activity_sessions,facilitator_name,text,YES
+activity_sessions,notes,text,YES
+activity_sessions,cancelled,boolean,NO
+activity_sessions,cancel_reason,text,YES
+activity_sessions,created_at,timestamp with time zone,NO
+activity_sessions,deleted_at,timestamp with time zone,YES
+family_consent_records,id,uuid,NO
+family_consent_records,organization_id,uuid,NO
+family_consent_records,facility_id,uuid,NO
+family_consent_records,resident_id,uuid,NO
+family_consent_records,family_user_id,uuid,NO
+family_consent_records,consent_type,text,NO
+family_consent_records,document_version,text,NO
+family_consent_records,signed_at,timestamp with time zone,NO
+family_consent_records,ip_address,inet,YES
+family_consent_records,metadata,jsonb,YES
+family_consent_records,created_at,timestamp with time zone,NO
+family_consent_records,updated_at,timestamp with time zone,NO
+family_consent_records,created_by,uuid,YES
+family_consent_records,updated_by,uuid,YES
+family_consent_records,deleted_at,timestamp with time zone,YES
+family_portal_messages,id,uuid,NO
+family_portal_messages,organization_id,uuid,NO
+family_portal_messages,facility_id,uuid,NO
+family_portal_messages,resident_id,uuid,NO
+family_portal_messages,author_user_id,uuid,NO
+family_portal_messages,author_kind,USER-DEFINED,NO
+family_portal_messages,body,text,NO
+family_portal_messages,created_at,timestamp with time zone,NO
+family_portal_messages,updated_at,timestamp with time zone,NO
+family_portal_messages,updated_by,uuid,YES
+family_portal_messages,deleted_at,timestamp with time zone,YES
+family_resident_links,id,uuid,NO
+family_resident_links,user_id,uuid,NO
+family_resident_links,resident_id,uuid,NO
+family_resident_links,organization_id,uuid,NO
+family_resident_links,relationship,text,NO
+family_resident_links,is_responsible_party,boolean,NO
+family_resident_links,is_emergency_contact,boolean,NO
+family_resident_links,can_view_clinical,boolean,NO
+family_resident_links,can_view_financial,boolean,NO
+family_resident_links,can_make_decisions,boolean,NO
+family_resident_links,granted_at,timestamp with time zone,NO
+family_resident_links,granted_by,uuid,YES
+family_resident_links,revoked_at,timestamp with time zone,YES
+family_resident_links,revoked_by,uuid,YES
+med_tech_shift_residents,id,uuid,NO
+med_tech_shift_residents,shift_id,uuid,NO
+med_tech_shift_residents,resident_id,uuid,NO
+med_tech_shift_residents,organization_id,uuid,NO
+med_tech_shift_residents,facility_id,uuid,NO
+med_tech_shift_residents,priority,integer,NO
+med_tech_shift_residents,created_at,timestamp with time zone,NO
+med_tech_shifts,id,uuid,NO
+med_tech_shifts,organization_id,uuid,NO
+med_tech_shifts,facility_id,uuid,NO
+med_tech_shifts,user_id,uuid,NO
+med_tech_shifts,shift_start,timestamp with time zone,NO
+med_tech_shifts,shift_end,timestamp with time zone,NO
+med_tech_shifts,clocked_in_at,timestamp with time zone,YES
+med_tech_shifts,clocked_out_at,timestamp with time zone,YES
+med_tech_shifts,handoff_document_id,uuid,YES
+med_tech_shifts,device_id,text,YES
+med_tech_shifts,status,text,NO
+med_tech_shifts,created_at,timestamp with time zone,NO
+med_tech_shifts,updated_at,timestamp with time zone,NO
+med_tech_shifts,created_by,uuid,YES
+med_tech_shifts,updated_by,uuid,YES

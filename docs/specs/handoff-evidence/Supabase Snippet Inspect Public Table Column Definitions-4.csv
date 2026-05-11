@@ -1,0 +1,101 @@
+table_name,column_name,data_type,is_nullable
+compliance_reminders,id,uuid,NO
+compliance_reminders,facility_id,uuid,NO
+compliance_reminders,organization_id,uuid,NO
+compliance_reminders,reminder_type,text,NO
+compliance_reminders,title,text,NO
+compliance_reminders,description,text,YES
+compliance_reminders,action_url,text,YES
+compliance_reminders,next_send_at,timestamp with time zone,NO
+compliance_reminders,last_sent_at,timestamp with time zone,YES
+compliance_reminders,frequency,text,YES
+compliance_reminders,context,jsonb,YES
+compliance_reminders,status,text,NO
+compliance_reminders,dismissed_by,uuid,YES
+compliance_reminders,dismissed_at,timestamp with time zone,YES
+compliance_reminders,created_at,timestamp with time zone,NO
+compliance_reminders,updated_at,timestamp with time zone,NO
+compliance_reminders,created_by,uuid,YES
+compliance_reminders,deleted_at,timestamp with time zone,YES
+compliance_rules,id,uuid,NO
+compliance_rules,facility_id,uuid,YES
+compliance_rules,organization_id,uuid,NO
+compliance_rules,tag_number,text,NO
+compliance_rules,tag_title,text,NO
+compliance_rules,rule_description,text,NO
+compliance_rules,check_query,text,NO
+compliance_rules,severity,text,NO
+compliance_rules,enabled,boolean,NO
+compliance_rules,created_by,uuid,YES
+compliance_rules,created_at,timestamp with time zone,NO
+compliance_rules,updated_at,timestamp with time zone,NO
+compliance_rules,deleted_at,timestamp with time zone,YES
+compliance_scan_results,id,uuid,NO
+compliance_scan_results,scan_id,uuid,NO
+compliance_scan_results,facility_id,uuid,NO
+compliance_scan_results,organization_id,uuid,NO
+compliance_scan_results,rule_id,uuid,NO
+compliance_scan_results,tag_number,text,NO
+compliance_scan_results,passed,boolean,NO
+compliance_scan_results,non_compliant_count,integer,NO
+compliance_scan_results,context,jsonb,YES
+compliance_scan_results,created_at,timestamp with time zone,NO
+compliance_scans,id,uuid,NO
+compliance_scans,facility_id,uuid,NO
+compliance_scans,organization_id,uuid,NO
+compliance_scans,scanned_at,timestamp with time zone,NO
+compliance_scans,scanned_by,uuid,YES
+compliance_scans,total_rules_checked,integer,NO
+compliance_scans,rules_passed,integer,NO
+compliance_scans,rules_failed,integer,NO
+compliance_scans,notes,text,YES
+compliance_scans,created_at,timestamp with time zone,NO
+compliance_scans,updated_at,timestamp with time zone,NO
+contract_alerts,id,uuid,NO
+contract_alerts,organization_id,uuid,NO
+contract_alerts,contract_id,uuid,NO
+contract_alerts,alert_type,USER-DEFINED,NO
+contract_alerts,alert_date,date,NO
+contract_alerts,status,USER-DEFINED,NO
+contract_alerts,title,text,NO
+contract_alerts,description,text,YES
+contract_alerts,acknowledged_at,timestamp with time zone,YES
+contract_alerts,acknowledged_by,uuid,YES
+contract_alerts,resolved_at,timestamp with time zone,YES
+contract_alerts,created_at,timestamp with time zone,NO
+contract_alerts,updated_at,timestamp with time zone,NO
+contract_alerts,deleted_at,timestamp with time zone,YES
+contract_terms,id,uuid,NO
+contract_terms,contract_id,uuid,NO
+contract_terms,organization_id,uuid,NO
+contract_terms,price_escalation_percent,numeric,YES
+contract_terms,sla_response_hours,integer,YES
+contract_terms,insurance_requirements,text,YES
+contract_terms,notes,text,YES
+contract_terms,created_at,timestamp with time zone,NO
+contract_terms,updated_at,timestamp with time zone,NO
+contract_terms,deleted_at,timestamp with time zone,YES
+contracts,id,uuid,NO
+contracts,organization_id,uuid,NO
+contracts,vendor_id,uuid,NO
+contracts,contract_type,USER-DEFINED,NO
+contracts,title,text,NO
+contracts,effective_date,date,NO
+contracts,expiration_date,date,YES
+contracts,auto_renew,boolean,NO
+contracts,termination_notice_days,integer,YES
+contracts,total_value_cents,bigint,YES
+contracts,payment_terms,text,YES
+contracts,document_storage_path,text,YES
+contracts,created_at,timestamp with time zone,NO
+contracts,updated_at,timestamp with time zone,NO
+contracts,created_by,uuid,YES
+contracts,updated_by,uuid,YES
+contracts,deleted_at,timestamp with time zone,YES
+document_audit_events,id,uuid,NO
+document_audit_events,actor_user_id,uuid,YES
+document_audit_events,document_id,uuid,YES
+document_audit_events,document_title_snapshot,text,YES
+document_audit_events,event_type,text,NO
+document_audit_events,metadata,jsonb,YES
+document_audit_events,created_at,timestamp with time zone,NO
