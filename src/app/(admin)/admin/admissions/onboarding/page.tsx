@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatColLabel } from "@/lib/col-labels";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
@@ -47,8 +48,7 @@ function onboardingChecklist(counts: { carePlans: number; medications: number; p
 
 function formatMedicaidStage(stage: string | null) {
   if (!stage) return "Not set";
-  if (stage === "app_requested") return "Application requested";
-  return stage.replace(/_/g, " ");
+  return formatColLabel(stage);
 }
 
 function formatRelative(date: string | null): string {

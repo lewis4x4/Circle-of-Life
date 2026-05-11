@@ -9,6 +9,7 @@ import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
+import { formatColLabel } from "@/lib/col-labels";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
@@ -72,12 +73,11 @@ type ConferenceRow = Pick<
 };
 
 function formatStatus(s: string) {
-  return s.replace(/_/g, " ");
+  return formatColLabel(s);
 }
 
 function formatMedicaidStage(stage: string | null) {
   if (!stage) return "Not set";
-  if (stage === "app_requested") return "Application requested";
   return formatStatus(stage);
 }
 

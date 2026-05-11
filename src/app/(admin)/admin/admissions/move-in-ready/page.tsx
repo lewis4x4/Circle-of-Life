@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatColLabel } from "@/lib/col-labels";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
@@ -204,7 +205,7 @@ export default function AdminMoveInReadyPage() {
                   </div>
                   <div>
                     <div className="text-xs uppercase tracking-wide text-slate-400">Current status</div>
-                    <div className="mt-1 capitalize text-slate-900 dark:text-slate-100">{row.status.replace(/_/g, " ")}</div>
+                    <div className="mt-1 text-slate-900 dark:text-slate-100">{formatColLabel(row.status)}</div>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">

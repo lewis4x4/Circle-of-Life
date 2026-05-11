@@ -7,6 +7,7 @@ import { ArrowLeft, CalendarDays, FileText, Loader2, UserPlus } from "lucide-rea
 
 import { AdmissionsHubNav } from "../admissions-hub-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { formatColLabel } from "@/lib/col-labels";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
@@ -74,7 +75,7 @@ const MEDICAID_PIPELINE_STAGE_OPTIONS: Array<{ value: MedicaidPipelineStage; lab
 ];
 
 function formatStatus(s: string) {
-  return s.replace(/_/g, " ");
+  return formatColLabel(s);
 }
 
 function formatTs(iso: string | null) {
@@ -982,8 +983,8 @@ export default function AdminAdmissionCaseDetailPage() {
                         onChange={(event) => setRateAccommodationDraft(event.target.value as Database["public"]["Enums"]["admission_accommodation_quote"])}
                         className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       >
-                        <option value="private">Private</option>
-                        <option value="semi_private">Semi-private</option>
+                        <option value="private">{formatColLabel("private")}</option>
+                        <option value="semi_private">{formatColLabel("semi_private")}</option>
                       </select>
                     </div>
                     <div className="space-y-2">
@@ -1041,8 +1042,8 @@ export default function AdminAdmissionCaseDetailPage() {
                   {selectedRateSchedule ? (
                     <div className="rounded-xl border border-indigo-200/70 dark:border-indigo-900/40 bg-indigo-50/60 dark:bg-indigo-950/20 px-4 py-3 text-xs text-indigo-900 dark:text-indigo-100">
                       Schedule helper:
-                      <span className="ml-2 font-medium">Private {formatCents(selectedRateSchedule.base_rate_private)}</span>
-                      <span className="ml-2 font-medium">Semi-private {formatCents(selectedRateSchedule.base_rate_semi_private)}</span>
+                      <span className="ml-2 font-medium">{formatColLabel("private")} {formatCents(selectedRateSchedule.base_rate_private)}</span>
+                      <span className="ml-2 font-medium">{formatColLabel("semi_private")} {formatCents(selectedRateSchedule.base_rate_semi_private)}</span>
                       <span className="ml-2 font-medium">L1 {formatCents(selectedRateSchedule.care_surcharge_level_1)}</span>
                       <span className="ml-2 font-medium">L2 {formatCents(selectedRateSchedule.care_surcharge_level_2)}</span>
                       <span className="ml-2 font-medium">L3 {formatCents(selectedRateSchedule.care_surcharge_level_3)}</span>
@@ -1091,7 +1092,7 @@ export default function AdminAdmissionCaseDetailPage() {
                                     <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_1.5fr] gap-4 sm:items-center p-5 rounded-2xl bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg transition-all duration-300 w-full outline-none">
                                       <div className="flex flex-col">
                                          <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Accommodation</span>
-                                         <span className="font-semibold text-base text-slate-900 dark:text-slate-100 tracking-tight leading-tight capitalize">{t.accommodation_type.replace("_", " ")}</span>
+                                         <span className="font-semibold text-base text-slate-900 dark:text-slate-100 tracking-tight leading-tight">{formatColLabel(t.accommodation_type)}</span>
                                       </div>
                                       <div className="flex flex-col sm:items-end">
                                          <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Base (¢)</span>

@@ -133,6 +133,8 @@ Includes:
 
 ### Slice 9 — UI enablement pass
 
+Status (Slice 9A): **complete locally** — shared COL label helper + first admissions/rates surface application implemented; lint, build, and segment gates passed. Gate artifact: `test-results/agent-gates/2026-05-11T19-40-57-924Z-COL-V2-S9A.json`.
+
 Goal: make the new data understandable and usable.
 
 Includes:
