@@ -26,6 +26,47 @@ type DietRow = Database["public"]["Tables"]["diet_orders"]["Row"] & {
 
 type DietOrderStatus = Database["public"]["Enums"]["diet_order_status"];
 
+type ResidentOption = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+};
+
+type MealLogStatus = "ate" | "partial" | "refused" | "out_of_facility" | "not_observed";
+type MealLogType = "breakfast" | "lunch" | "dinner";
+
+type MealLogRow = {
+  id: string;
+  resident_id: string;
+  meal_date: string;
+  meal_type: MealLogType;
+  status: MealLogStatus;
+  intake_percent: number | null;
+  notes: string | null;
+  created_at: string;
+  residents: { first_name: string | null; last_name: string | null } | null;
+};
+
+type SnackLogRow = {
+  id: string;
+  snack_at: string;
+  snack_description: string | null;
+  residents_offered_count: number | null;
+  residents_accepted_count: number | null;
+  notes: string | null;
+  created_at: string;
+};
+
+const MEAL_TYPES: MealLogType[] = ["breakfast", "lunch", "dinner"];
+const MEAL_STATUSES: MealLogStatus[] = ["ate", "partial", "refused", "out_of_facility", "not_observed"];
+const MEAL_STATUS_LABELS: Record<MealLogStatus, string> = {
+  ate: "Ate most/all",
+  partial: "Ate some",
+  refused: "Refused",
+  out_of_facility: "Out of facility",
+  not_observed: "Not observed",
+};
+
 const DIET_ORDER_STATUS_FILTERS: { value: "all" | DietOrderStatus; label: string }[] = [
   { value: "all", label: "All statuses" },
   { value: "draft", label: "Draft" },
@@ -144,35 +185,104 @@ function buildDietOrdersCsv(rows: DietRow[]): string {
 }
 
 export default function AdminDietaryHubPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<DietRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
   const [dietOrderStatusFilter, setDietOrderStatusFilter] = useState<"all" | DietOrderStatus>("all");
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [residents, setResidents] = useState<ResidentOption[]>([]);
+  const [mealLogs, setMealLogs] = useState<MealLogRow[]>([]);
+  const [snackLogs, setSnackLogs] = useState<SnackLogRow[]>([]);
+  const [savingMeal, setSavingMeal] = useState(false);
+  const [savingSnack, setSavingSnack] = useState(false);
+  const [mealForm, setMealForm] = useState({
+    resident_id: "",
+    meal_date: new Date().toISOString().slice(0, 10),
+    meal_type: "lunch" as MealLogType,
+    status: "ate" as MealLogStatus,
+    intake_percent: "100",
+    notes: "",
+  });
+  const [snackForm, setSnackForm] = useState({
+    snack_at: new Date().toISOString().slice(0, 16),
+    snack_description: "PM snack pass",
+    residents_offered_count: "",
+    residents_accepted_count: "",
+    notes: "",
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
       setRows([]);
+      setResidents([]);
+      setMealLogs([]);
+      setSnackLogs([]);
+      setOrganizationId(null);
       setLoading(false);
       return;
     }
     try {
-      const { data, error: qErr } = await supabase
-        .from("diet_orders")
-        .select("*, residents(first_name, last_name)")
-        .eq("facility_id", selectedFacilityId)
-        .is("deleted_at", null)
-        .order("updated_at", { ascending: false })
-        .limit(50);
-      if (qErr) throw qErr;
-      setRows((data ?? []) as DietRow[]);
+      const [dietOrdersRes, facilityRes, residentsRes, mealLogsRes, snackLogsRes] = await Promise.all([
+        supabase
+          .from("diet_orders")
+          .select("*, residents(first_name, last_name)")
+          .eq("facility_id", selectedFacilityId)
+          .is("deleted_at", null)
+          .order("updated_at", { ascending: false })
+          .limit(50),
+        supabase.from("facilities").select("organization_id").eq("id", selectedFacilityId).single(),
+        supabase
+          .from("residents" as never)
+          .select("id, first_name, last_name")
+          .eq("facility_id", selectedFacilityId)
+          .eq("status", "active")
+          .is("deleted_at", null)
+          .order("first_name", { ascending: true })
+          .limit(200),
+        supabase
+          .from("meal_logs" as never)
+          .select("id, resident_id, meal_date, meal_type, status, intake_percent, notes, created_at, residents(first_name, last_name)")
+          .eq("facility_id", selectedFacilityId)
+          .is("deleted_at", null)
+          .order("meal_date", { ascending: false })
+          .order("created_at", { ascending: false })
+          .limit(12),
+        supabase
+          .from("snack_logs" as never)
+          .select("id, snack_at, snack_description, residents_offered_count, residents_accepted_count, notes, created_at")
+          .eq("facility_id", selectedFacilityId)
+          .is("deleted_at", null)
+          .order("snack_at", { ascending: false })
+          .limit(12),
+      ]);
+
+      if (dietOrdersRes.error) throw dietOrdersRes.error;
+      if (facilityRes.error) throw facilityRes.error;
+      if (residentsRes.error) throw residentsRes.error;
+      if (mealLogsRes.error) throw mealLogsRes.error;
+      if (snackLogsRes.error) throw snackLogsRes.error;
+
+      setRows((dietOrdersRes.data ?? []) as DietRow[]);
+      setOrganizationId(facilityRes.data.organization_id);
+      const residentData = (residentsRes.data ?? []) as ResidentOption[];
+      setResidents(residentData);
+      setMealLogs((mealLogsRes.data ?? []) as MealLogRow[]);
+      setSnackLogs((snackLogsRes.data ?? []) as SnackLogRow[]);
+      if (residentData.length > 0) {
+        setMealForm((prev) => (prev.resident_id ? prev : { ...prev, resident_id: residentData[0].id }));
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load diet orders.");
+      setError(e instanceof Error ? e.message : "Failed to load dietary data.");
       setRows([]);
+      setResidents([]);
+      setMealLogs([]);
+      setSnackLogs([]);
+      setOrganizationId(null);
     } finally {
       setLoading(false);
     }
@@ -246,6 +356,78 @@ export default function AdminDietaryHubPage() {
   }, [displayRows]);
 
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
+
+  const saveMealLog = useCallback(async () => {
+    if (!facilityReady || !selectedFacilityId || !organizationId || !mealForm.resident_id) return;
+    setSavingMeal(true);
+    setError(null);
+    try {
+      const intakeValue = mealForm.intake_percent.trim();
+      const intakePercent = intakeValue === "" ? null : Number(intakeValue);
+      if (intakePercent !== null && (!Number.isFinite(intakePercent) || intakePercent < 0 || intakePercent > 100)) {
+        throw new Error("Intake percent must be between 0 and 100.");
+      }
+      const { error: insertErr } = await supabase.from("meal_logs" as never).upsert(({
+        organization_id: organizationId,
+        facility_id: selectedFacilityId,
+        resident_id: mealForm.resident_id,
+        meal_date: mealForm.meal_date,
+        meal_type: mealForm.meal_type,
+        status: mealForm.status,
+        intake_percent: intakePercent,
+        notes: mealForm.notes.trim() || null,
+        deleted_at: null,
+      }) as never, { onConflict: "resident_id,meal_date,meal_type" });
+      if (insertErr) throw insertErr;
+      setMealForm((prev) => ({ ...prev, notes: "" }));
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save meal log.");
+    } finally {
+      setSavingMeal(false);
+    }
+  }, [facilityReady, mealForm, organizationId, selectedFacilityId, supabase, load]);
+
+  const saveSnackLog = useCallback(async () => {
+    if (!facilityReady || !selectedFacilityId || !organizationId) return;
+    setSavingSnack(true);
+    setError(null);
+    try {
+      const offered = snackForm.residents_offered_count.trim();
+      const accepted = snackForm.residents_accepted_count.trim();
+      const offeredCount = offered === "" ? null : Number(offered);
+      const acceptedCount = accepted === "" ? null : Number(accepted);
+      const snackAt = new Date(snackForm.snack_at);
+      if (Number.isNaN(snackAt.getTime())) {
+        throw new Error("Snack time is required.");
+      }
+      if (offeredCount !== null && (!Number.isFinite(offeredCount) || offeredCount < 0)) {
+        throw new Error("Offered count must be zero or greater.");
+      }
+      if (acceptedCount !== null && (!Number.isFinite(acceptedCount) || acceptedCount < 0)) {
+        throw new Error("Accepted count must be zero or greater.");
+      }
+      if (offeredCount !== null && acceptedCount !== null && acceptedCount > offeredCount) {
+        throw new Error("Accepted count cannot be greater than offered count.");
+      }
+      const { error: insertErr } = await supabase.from("snack_logs" as never).insert(({
+        organization_id: organizationId,
+        facility_id: selectedFacilityId,
+        snack_at: snackAt.toISOString(),
+        snack_description: snackForm.snack_description.trim() || null,
+        residents_offered_count: offeredCount,
+        residents_accepted_count: acceptedCount,
+        notes: snackForm.notes.trim() || null,
+      }) as never);
+      if (insertErr) throw insertErr;
+      setSnackForm((prev) => ({ ...prev, notes: "" }));
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save snack log.");
+    } finally {
+      setSavingSnack(false);
+    }
+  }, [facilityReady, organizationId, selectedFacilityId, snackForm, supabase, load]);
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -515,6 +697,129 @@ export default function AdminDietaryHubPage() {
                     />
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div className="glass-panel mt-6 p-6 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] space-y-5">
+              <h3 className="text-[12px] font-bold uppercase tracking-widest text-slate-800 dark:text-slate-200">Meal / snack log</h3>
+              <div className="space-y-3 text-xs">
+                <select
+                  value={mealForm.resident_id}
+                  onChange={(e) => setMealForm((prev) => ({ ...prev, resident_id: e.target.value }))}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-black/20"
+                >
+                  {residents.map((resident) => (
+                    <option key={resident.id} value={resident.id}>
+                      {`${resident.first_name ?? ""} ${resident.last_name ?? ""}`.trim() || "Resident"}
+                    </option>
+                  ))}
+                </select>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="date"
+                    value={mealForm.meal_date}
+                    onChange={(e) => setMealForm((prev) => ({ ...prev, meal_date: e.target.value }))}
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-black/20"
+                  />
+                  <select
+                    value={mealForm.meal_type}
+                    onChange={(e) => setMealForm((prev) => ({ ...prev, meal_type: e.target.value as MealLogType }))}
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 capitalize dark:border-white/10 dark:bg-black/20"
+                  >
+                    {MEAL_TYPES.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    value={mealForm.status}
+                    onChange={(e) => setMealForm((prev) => ({ ...prev, status: e.target.value as MealLogStatus }))}
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 capitalize dark:border-white/10 dark:bg-black/20"
+                  >
+                    {MEAL_STATUSES.map((option) => (
+                      <option key={option} value={option}>{MEAL_STATUS_LABELS[option]}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={mealForm.intake_percent}
+                    onChange={(e) => setMealForm((prev) => ({ ...prev, intake_percent: e.target.value }))}
+                    placeholder="Intake %"
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-black/20"
+                  />
+                </div>
+                <textarea
+                  value={mealForm.notes}
+                  onChange={(e) => setMealForm((prev) => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Meal notes"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-black/20"
+                  rows={2}
+                />
+                <Button type="button" size="sm" disabled={!mealForm.resident_id || savingMeal} onClick={() => void saveMealLog()}>
+                  {savingMeal ? "Saving meal…" : "Log meal"}
+                </Button>
+              </div>
+
+              <div className="space-y-3 text-xs border-t border-slate-200/70 dark:border-white/10 pt-4">
+                <input
+                  type="datetime-local"
+                  value={snackForm.snack_at}
+                  onChange={(e) => setSnackForm((prev) => ({ ...prev, snack_at: e.target.value }))}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-black/20"
+                />
+                <input
+                  type="text"
+                  value={snackForm.snack_description}
+                  onChange={(e) => setSnackForm((prev) => ({ ...prev, snack_description: e.target.value }))}
+                  placeholder="Snack description"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-black/20"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    value={snackForm.residents_offered_count}
+                    onChange={(e) => setSnackForm((prev) => ({ ...prev, residents_offered_count: e.target.value }))}
+                    placeholder="Offered"
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-black/20"
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    value={snackForm.residents_accepted_count}
+                    onChange={(e) => setSnackForm((prev) => ({ ...prev, residents_accepted_count: e.target.value }))}
+                    placeholder="Accepted"
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-black/20"
+                  />
+                </div>
+                <textarea
+                  value={snackForm.notes}
+                  onChange={(e) => setSnackForm((prev) => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Snack notes"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-black/20"
+                  rows={2}
+                />
+                <Button type="button" size="sm" disabled={savingSnack} onClick={() => void saveSnackLog()}>
+                  {savingSnack ? "Saving snack…" : "Log snack pass"}
+                </Button>
+              </div>
+
+              <div className="space-y-2 border-t border-slate-200/70 dark:border-white/10 pt-4">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400">Recent meal entries</p>
+                {mealLogs.slice(0, 3).map((log) => (
+                  <p key={log.id} className="text-xs text-slate-600 dark:text-slate-300">
+                    {log.meal_date} {log.meal_type}: {`${log.residents?.first_name ?? ""} ${log.residents?.last_name ?? ""}`.trim() || "Resident"} — {MEAL_STATUS_LABELS[log.status]}
+                  </p>
+                ))}
+                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 pt-2">Recent snack passes</p>
+                {snackLogs.slice(0, 3).map((log) => (
+                  <p key={log.id} className="text-xs text-slate-600 dark:text-slate-300">
+                    {format(new Date(log.snack_at), "MMM d, h:mm a")} — {log.snack_description || "Snack pass"}
+                  </p>
+                ))}
               </div>
             </div>
           </div>

@@ -141,6 +141,8 @@ Status (Slice 9C): **complete locally** — `/admin/facilities/[facilityId]` bed
 
 Status (Slice 9D): **complete locally** — caregiver quick-round form now loads and uses facility/org `observation_vocab` labels for Location, Position, and Resident presentation (fallbacks preserved), replacing hardcoded wording with operator-facing vocabulary on the active `/caregiver/rounds/[residentId]` surface. Gate artifact: `test-results/agent-gates/2026-05-11T20-45-29-556Z-COL-V2-S9D.json`.
 
+Status (Slice 9E): **complete locally** — `/admin/dietary` now includes an operator-facing meal/snack logging panel backed by existing `meal_logs` and `snack_logs` (plus recent-entry review), without schema changes. Gate artifact: `test-results/agent-gates/2026-05-11T21-09-47-200Z-COL-V2-S9E.json`.
+
 Goal: make the new data understandable and usable.
 
 Includes:
