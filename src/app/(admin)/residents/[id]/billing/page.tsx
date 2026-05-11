@@ -8,6 +8,7 @@ import { ArrowLeft, CreditCard } from "lucide-react";
 import { AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { formatColLabel } from "@/lib/col-labels";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -18,6 +19,7 @@ import { BillingInvoiceLedger, PayerTypeBadge, mapDbPayerTypeToUi } from "../../
 
 type SupabaseResident = {
   id: string;
+  organization_id: string;
   facility_id: string;
   first_name: string | null;
   last_name: string | null;
@@ -31,7 +33,15 @@ type SupabasePayer = {
   payer_name: string | null;
   effective_date: string;
   end_date: string | null;
+  medicaid_rate_unit: string | null;
+  facility_medicaid_provider_id: string | null;
   deleted_at: string | null;
+};
+
+type MedicaidProvider = {
+  id: string;
+  provider_name: string;
+  rate_unit: string;
 };
 
 type QueryResult<T> = { data: T | null; error: { message: string } | null };
@@ -43,6 +53,15 @@ function formatDate(isoDate: string): string {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
 }
 
+function formatRateUnitLabel(value: string | null | undefined): string {
+  if (!value) return "—";
+  if (value === "monthly") return "Monthly";
+  if (value === "daily") return "Daily";
+  if (value === "weekly") return "Weekly";
+  if (value === "per_billable_day") return "Per Billable Day";
+  return formatColLabel(value);
+}
+
 export default function ResidentBillingPage() {
   const params = useParams();
   const rawId = typeof params?.id === "string" ? params.id : "";
@@ -50,9 +69,15 @@ export default function ResidentBillingPage() {
   const { selectedFacilityId } = useFacilityStore();
 
   const [residentName, setResidentName] = useState("");
+  const [residentOrganizationId, setResidentOrganizationId] = useState("");
+  const [residentFacilityId, setResidentFacilityId] = useState("");
   const [payers, setPayers] = useState<SupabasePayer[]>([]);
+  const [providers, setProviders] = useState<MedicaidProvider[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [savingPayerId, setSavingPayerId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!residentId) {
@@ -66,7 +91,7 @@ export default function ResidentBillingPage() {
       const supabase = createClient();
       const res = (await supabase
         .from("residents" as never)
-        .select("id, facility_id, first_name, last_name, deleted_at")
+        .select("id, organization_id, facility_id, first_name, last_name, deleted_at")
         .eq("id", residentId)
         .is("deleted_at", null)
         .maybeSingle()) as unknown as QueryResult<SupabaseResident>;
@@ -85,18 +110,34 @@ export default function ResidentBillingPage() {
       const fn = r.first_name?.trim() ?? "";
       const ln = r.last_name?.trim() ?? "";
       setResidentName(`${fn} ${ln}`.trim() || "Resident");
+      setResidentOrganizationId(r.organization_id);
+      setResidentFacilityId(r.facility_id);
 
-      const payRes = (await supabase
-        .from("resident_payers" as never)
-        .select("id, payer_type, is_primary, payer_name, effective_date, end_date, deleted_at")
-        .eq("resident_id", residentId)
-        .is("deleted_at", null)
-        .order("effective_date", { ascending: false })) as unknown as QueryListResult<SupabasePayer>;
-      if (payRes.error) throw payRes.error;
-      setPayers(payRes.data ?? []);
+      const [payRes, providerRes] = await Promise.all([
+        supabase
+          .from("resident_payers" as never)
+          .select("id, payer_type, is_primary, payer_name, effective_date, end_date, medicaid_rate_unit, facility_medicaid_provider_id, deleted_at")
+          .eq("resident_id", residentId)
+          .is("deleted_at", null)
+          .order("effective_date", { ascending: false }),
+        supabase
+          .from("facility_medicaid_providers" as never)
+          .select("id, provider_name, rate_unit")
+          .eq("facility_id", r.facility_id)
+          .is("deleted_at", null)
+          .eq("active", true)
+          .order("provider_name", { ascending: true }),
+      ]);
+      const payList = payRes as unknown as QueryListResult<SupabasePayer>;
+      if (payList.error) throw payList.error;
+      const providerList = providerRes as unknown as QueryListResult<MedicaidProvider>;
+      if (providerList.error) throw providerList.error;
+      setPayers(payList.data ?? []);
+      setProviders(providerList.data ?? []);
     } catch {
       setNotFound(true);
       setPayers([]);
+      setProviders([]);
     } finally {
       setIsLoading(false);
     }
@@ -105,6 +146,54 @@ export default function ResidentBillingPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function saveMedicaidFields(payerId: string, rateUnit: string, providerId: string | null) {
+    setSavingPayerId(payerId);
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("resident_payers" as never)
+        .update({ medicaid_rate_unit: rateUnit, facility_medicaid_provider_id: providerId || null } as never)
+        .eq("id", payerId)
+        .eq("resident_id", residentId);
+      if (error) throw error;
+      setActionMessage("Medicaid payer details saved.");
+      await load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Could not save Medicaid payer details.");
+    } finally {
+      setSavingPayerId(null);
+    }
+  }
+
+  async function addMedicaidPayer() {
+    setSavingPayerId("new");
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const supabase = createClient();
+      const provider = providers[0] ?? null;
+      const { error } = await supabase.from("resident_payers" as never).insert({
+        resident_id: residentId,
+        organization_id: residentOrganizationId,
+        facility_id: residentFacilityId,
+        payer_type: "medicaid_oss",
+        payer_name: provider?.provider_name ?? "Medicaid",
+        effective_date: new Date().toISOString().slice(0, 10),
+        medicaid_rate_unit: provider?.rate_unit ?? "monthly",
+        facility_medicaid_provider_id: provider?.id ?? null,
+      } as never);
+      if (error) throw error;
+      setActionMessage("Medicaid payer row added.");
+      await load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Could not add Medicaid payer row.");
+    } finally {
+      setSavingPayerId(null);
+    }
+  }
 
   if (!residentId || notFound) {
     return (
@@ -160,34 +249,47 @@ export default function ResidentBillingPage() {
       </header>
 
         <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all">
-          <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
+          <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between gap-3">
             <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1 flex items-center gap-3">
               <CreditCard className="h-5 w-5 text-brand-500" />
               Payers on File
             </h3>
-            <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-1 uppercase">
-              Primary and secondary coverage
-            </p>
+            <div className="flex items-center gap-3">
+              <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-1 uppercase">
+                Primary and secondary coverage
+              </p>
+              <button
+                type="button"
+                onClick={() => void addMedicaidPayer()}
+                disabled={savingPayerId === "new" || !residentOrganizationId || !residentFacilityId}
+                className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {savingPayerId === "new" ? "Adding…" : "+ Medicaid payer"}
+              </button>
+            </div>
           </div>
+          {actionError ? <p className="mb-4 text-sm text-rose-600 dark:text-rose-400">{actionError}</p> : null}
+          {actionMessage ? <p className="mb-4 text-sm text-emerald-700 dark:text-emerald-300">{actionMessage}</p> : null}
           
           <div className="relative z-10 w-full overflow-hidden">
             {payers.length === 0 ? (
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 py-4">No payer records returned.</p>
             ) : (
               <>
-                 <div className="hidden lg:grid grid-cols-[1fr_2fr_1fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10 text-left">
+                 <div className="hidden lg:grid grid-cols-[1fr_2fr_1fr_1fr_1fr_2fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10 text-left">
                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Type</div>
                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Name</div>
                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Effective</div>
                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">End</div>
                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 mt-0.5">Role</div>
+                   <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Medicaid details</div>
                  </div>
                  
                  <div className="space-y-4 mt-6 relative z-10">
                    <MotionList className="space-y-4">
                      {payers.map((p) => (
                        <MotionItem key={p.id}>
-                         <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr_1fr_1fr_1fr] gap-4 lg:items-center p-6 rounded-[1.8rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg dark:hover:bg-white/[0.05] transition-all duration-300 w-full outline-none">
+                         <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr_1fr_1fr_1fr_2fr] gap-4 lg:items-center p-6 rounded-[1.8rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg dark:hover:bg-white/[0.05] transition-all duration-300 w-full outline-none">
                            
                            <div className="flex flex-col">
                              <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold mb-1">Type</span>
@@ -214,6 +316,49 @@ export default function ResidentBillingPage() {
                              {p.is_primary ? (
                                <div className="inline-flex px-3 py-1 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 text-indigo-700 dark:text-indigo-300 rounded-[1rem] font-bold text-[10px] uppercase tracking-widest">
                                  Primary
+                               </div>
+                             ) : (
+                               <span className="text-slate-400">—</span>
+                             )}
+                           </div>
+
+                           <div className="flex flex-col gap-2">
+                             <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold mb-1">Medicaid details</span>
+                             {mapDbPayerTypeToUi(p.payer_type) === "medicaid" ? (
+                               <div className="space-y-2">
+                                 <div className="grid gap-2 sm:grid-cols-2">
+                                   <select
+                                     value={p.facility_medicaid_provider_id ?? ""}
+                                     onChange={(event) => {
+                                       const providerId = event.target.value || null;
+                                       const provider = providers.find((item) => item.id === providerId);
+                                       const rateUnit = provider?.rate_unit ?? p.medicaid_rate_unit ?? "monthly";
+                                       void saveMedicaidFields(p.id, rateUnit, providerId);
+                                     }}
+                                     className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900"
+                                   >
+                                     <option value="">Select provider/MCO</option>
+                                     {providers.map((provider) => (
+                                       <option key={provider.id} value={provider.id}>
+                                         {provider.provider_name}
+                                       </option>
+                                     ))}
+                                   </select>
+                                   <select
+                                     value={p.medicaid_rate_unit ?? "monthly"}
+                                     onChange={(event) => void saveMedicaidFields(p.id, event.target.value, p.facility_medicaid_provider_id)}
+                                     className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900"
+                                   >
+                                     <option value="monthly">Monthly</option>
+                                     <option value="daily">Daily</option>
+                                     <option value="weekly">Weekly</option>
+                                     <option value="per_billable_day">Per Billable Day</option>
+                                   </select>
+                                 </div>
+                                 <p className="text-xs text-slate-500">
+                                   Current: {providers.find((item) => item.id === p.facility_medicaid_provider_id)?.provider_name ?? "—"} · {formatRateUnitLabel(p.medicaid_rate_unit)}
+                                 </p>
+                                 {savingPayerId === p.id ? <p className="text-xs text-slate-400">Saving…</p> : null}
                                </div>
                              ) : (
                                <span className="text-slate-400">—</span>

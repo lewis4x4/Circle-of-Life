@@ -135,6 +135,8 @@ Includes:
 
 Status (Slice 9A): **complete locally** — shared COL label helper + first admissions/rates surface application implemented; lint, build, and segment gates passed. Gate artifact: `test-results/agent-gates/2026-05-11T19-40-57-924Z-COL-V2-S9A.json`.
 
+Status (Slice 9B): **complete locally** — resident billing payer UI now exposes Medicaid provider/MCO selection and Medicaid rate-unit display/edit (using existing `facility_medicaid_providers` + `resident_payers` columns), with lint/build/segment gates passing. Gate artifact: `test-results/agent-gates/2026-05-11T20-05-45-006Z-COL-V2-S9B.json`.
+
 Goal: make the new data understandable and usable.
 
 Includes:
