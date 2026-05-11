@@ -96,7 +96,7 @@ Includes:
 
 ### Slice 6 — Resident contracts + BoldSign schema
 
-Status: **complete locally** — migration `222` added and gate artifact generated at `test-results/agent-gates/2026-05-11T18-39-02-561Z-COL-V2-S6.json`. Remote deploy/commit occurs with the Slice 6 commit.
+Status: **complete** — committed/pushed as `1673e7b`, deployed to Supabase remote as migration `222`, and Netlify production deployed the commit. Gate artifact: `test-results/agent-gates/2026-05-11T18-39-02-561Z-COL-V2-S6.json`.
 
 Goal: establish the legal/e-signature contract record separate from vendor contracts.
 
@@ -106,6 +106,8 @@ Includes:
 - Provider default `boldsign`; legacy `docusign` only retained for manual/historical compatibility if needed.
 
 ### Slice 7 — BoldSign Edge Functions
+
+Status: **complete locally** — migration `223` and Edge Functions added; `deno check`, migration checks, lint, build, and segment gates passed. Gate artifact: `test-results/agent-gates/2026-05-11T18-54-39-122Z-COL-V2-S7.json`.
 
 Goal: implement send + webhook functions after schema is live.
 
