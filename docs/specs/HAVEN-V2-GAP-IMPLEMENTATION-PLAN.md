@@ -82,7 +82,7 @@ Includes:
 
 ### Slice 5 — Staff compliance and notification routing
 
-Status: **complete locally** — migration `221` added and gate artifact generated at `test-results/agent-gates/2026-05-11T18-29-12-843Z-COL-V2-S5.json`. Remote deploy/commit occurs with the Slice 5 commit.
+Status: **complete** — committed/pushed as `3e7bb36`, deployed to Supabase remote as migration `221`, and Netlify production deployed the commit. Gate artifact: `test-results/agent-gates/2026-05-11T18-29-12-843Z-COL-V2-S5.json`.
 
 Goal: close COL-specific staff compliance and alert-routing gaps using existing staff and notification systems.
 
@@ -95,6 +95,8 @@ Includes:
 - Role-permission seed using only active permission levels.
 
 ### Slice 6 — Resident contracts + BoldSign schema
+
+Status: **complete locally** — migration `222` added and gate artifact generated at `test-results/agent-gates/2026-05-11T18-39-02-561Z-COL-V2-S6.json`. Remote deploy/commit occurs with the Slice 6 commit.
 
 Goal: establish the legal/e-signature contract record separate from vendor contracts.
 
