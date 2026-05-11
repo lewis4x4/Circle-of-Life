@@ -20,7 +20,7 @@ import type { Database } from "@/types/database";
 
 type CaseRow = Pick<
   Database["public"]["Tables"]["admission_cases"]["Row"],
-  "id" | "status" | "updated_at" | "resident_id" | "target_move_in_date"
+  "id" | "status" | "updated_at" | "resident_id" | "target_move_in_date" | "medicaid_pipeline_stage"
 > & {
   residents: { first_name: string; last_name: string } | null;
 };
@@ -43,6 +43,12 @@ function onboardingChecklist(counts: { carePlans: number; medications: number; p
     { key: "billing", label: "Resident payer", passed: counts.payers > 0 },
     { key: "family", label: "Family consent", passed: counts.familyConsents > 0 },
   ];
+}
+
+function formatMedicaidStage(stage: string | null) {
+  if (!stage) return "Not set";
+  if (stage === "app_requested") return "Application requested";
+  return stage.replace(/_/g, " ");
 }
 
 function formatRelative(date: string | null): string {
@@ -82,7 +88,7 @@ export default function AdminAdmissionsOnboardingPage() {
     try {
       const { data, error: queryError } = await supabase
         .from("admission_cases")
-        .select("id, status, updated_at, resident_id, target_move_in_date, residents(first_name, last_name)")
+        .select("id, status, updated_at, resident_id, target_move_in_date, medicaid_pipeline_stage, residents(first_name, last_name)")
         .eq("facility_id", selectedFacilityId)
         .eq("status", "move_in")
         .is("deleted_at", null)
@@ -282,6 +288,9 @@ export default function AdminAdmissionsOnboardingPage() {
                         {row.target_move_in_date}
                       </Badge>
                     ) : null}
+                    <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
+                      Medicaid: {formatMedicaidStage(row.medicaid_pipeline_stage)}
+                    </Badge>
                   </div>
                 </div>
               </CardHeader>

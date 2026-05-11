@@ -380,6 +380,7 @@ export type Database = {
           financial_clearance_at: string | null
           financial_clearance_by: string | null
           id: string
+          medicaid_pipeline_stage: string
           notes: string | null
           organization_id: string
           physician_orders_received_at: string | null
@@ -400,6 +401,7 @@ export type Database = {
           financial_clearance_at?: string | null
           financial_clearance_by?: string | null
           id?: string
+          medicaid_pipeline_stage?: string
           notes?: string | null
           organization_id: string
           physician_orders_received_at?: string | null
@@ -420,6 +422,7 @@ export type Database = {
           financial_clearance_at?: string | null
           financial_clearance_by?: string | null
           id?: string
+          medicaid_pipeline_stage?: string
           notes?: string | null
           organization_id?: string
           physician_orders_received_at?: string | null

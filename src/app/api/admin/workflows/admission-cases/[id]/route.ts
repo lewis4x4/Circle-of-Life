@@ -20,6 +20,17 @@ const ALLOWED_ROLES = [
   "nurse",
 ] as const;
 
+type MedicaidPipelineStage = "prospect" | "app_requested" | "pending" | "approved" | "denied" | "waitlist";
+
+const MEDICAID_PIPELINE_STAGES: MedicaidPipelineStage[] = [
+  "prospect",
+  "app_requested",
+  "pending",
+  "approved",
+  "denied",
+  "waitlist",
+];
+
 type AdmissionPatch = Partial<Database["public"]["Tables"]["admission_cases"]["Update"]>;
 
 export async function PATCH(
@@ -36,6 +47,13 @@ export async function PATCH(
     patch = (await request.json()) as AdmissionPatch;
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  if (
+    patch.medicaid_pipeline_stage !== undefined
+    && !MEDICAID_PIPELINE_STAGES.includes(patch.medicaid_pipeline_stage as MedicaidPipelineStage)
+  ) {
+    return NextResponse.json({ error: "Invalid Medicaid pipeline stage" }, { status: 400 });
   }
 
   const current = await loadAdmissionCaseWorkflowContext(actor.admin, id);

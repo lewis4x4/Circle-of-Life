@@ -62,6 +62,17 @@ type AdmissionChecklistItem = {
   waived_reason: string | null;
 };
 
+type MedicaidPipelineStage = "prospect" | "app_requested" | "pending" | "approved" | "denied" | "waitlist";
+
+const MEDICAID_PIPELINE_STAGE_OPTIONS: Array<{ value: MedicaidPipelineStage; label: string }> = [
+  { value: "prospect", label: "Prospect" },
+  { value: "app_requested", label: "Application requested" },
+  { value: "pending", label: "Pending review" },
+  { value: "approved", label: "Approved" },
+  { value: "denied", label: "Denied" },
+  { value: "waitlist", label: "Waitlist" },
+];
+
 function formatStatus(s: string) {
   return s.replace(/_/g, " ");
 }
@@ -186,6 +197,7 @@ export default function AdminAdmissionCaseDetailPage() {
   const [bedDraft, setBedDraft] = useState("");
   const [physicianOrdersSummaryDraft, setPhysicianOrdersSummaryDraft] = useState("");
   const [caseNotesDraft, setCaseNotesDraft] = useState("");
+  const [medicaidPipelineStageDraft, setMedicaidPipelineStageDraft] = useState<MedicaidPipelineStage>("prospect");
   const [rateScheduleDraft, setRateScheduleDraft] = useState("");
   const [rateAccommodationDraft, setRateAccommodationDraft] =
     useState<Database["public"]["Enums"]["admission_accommodation_quote"]>("private");
@@ -233,6 +245,7 @@ export default function AdminAdmissionCaseDetailPage() {
       setBedDraft(caseRow?.bed_id ?? "");
       setPhysicianOrdersSummaryDraft(caseRow?.physician_orders_summary ?? "");
       setCaseNotesDraft(caseRow?.notes ?? "");
+      setMedicaidPipelineStageDraft((caseRow?.medicaid_pipeline_stage as MedicaidPipelineStage | null) ?? "prospect");
       setEffectiveDateDraft(caseRow?.target_move_in_date ?? "");
       if (caseRow?.facility_id) {
         const [{ data: schedules, error: schedulesError }, { data: bedRows, error: bedsError }] = await Promise.all([
@@ -569,6 +582,10 @@ export default function AdminAdmissionCaseDetailPage() {
                     <dd className="text-base font-semibold text-slate-900 dark:text-slate-100 capitalize">{formatStatus(row.status)}</dd>
                   </div>
                   <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
+                    <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Medicaid Stage</dt>
+                    <dd className="text-base font-semibold text-slate-900 dark:text-slate-100 capitalize">{formatStatus(row.medicaid_pipeline_stage ?? "prospect")}</dd>
+                  </div>
+                  <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
                     <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Target Move-In</dt>
                     <dd className="text-base font-semibold text-slate-900 dark:text-slate-100">{row.target_move_in_date ?? "—"}</dd>
                   </div>
@@ -589,6 +606,35 @@ export default function AdminAdmissionCaseDetailPage() {
                   <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
                     <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Physician Orders</dt>
                     <dd className="text-sm font-mono text-slate-900 dark:text-slate-300">{formatTs(row.physician_orders_received_at)}</dd>
+                  </div>
+                  <div className="sm:col-span-2 bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
+                    <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Medicaid Pipeline Tracking</dt>
+                    <dd className="space-y-3">
+                      <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                        <select
+                          value={medicaidPipelineStageDraft}
+                          onChange={(event) => setMedicaidPipelineStageDraft(event.target.value as MedicaidPipelineStage)}
+                          className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                          {MEDICAID_PIPELINE_STAGE_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={actionLoading === "Medicaid stage saved." || medicaidPipelineStageDraft === (row.medicaid_pipeline_stage ?? "prospect")}
+                          onClick={() => void updateCase({ medicaid_pipeline_stage: medicaidPipelineStageDraft }, "Medicaid stage saved.")}
+                        >
+                          {actionLoading === "Medicaid stage saved." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save stage"}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-zinc-400">
+                        Keep this in sync with the COL Medicaid workflow while the main admission status stays unchanged.
+                      </p>
+                    </dd>
                   </div>
                   <div className="sm:col-span-2 bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
                     <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Physician Orders Summary</dt>

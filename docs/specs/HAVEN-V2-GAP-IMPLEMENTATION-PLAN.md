@@ -107,7 +107,7 @@ Includes:
 
 ### Slice 7 — BoldSign Edge Functions
 
-Status: **complete locally** — migration `223` and Edge Functions added; `deno check`, migration checks, lint, build, and segment gates passed. Gate artifact: `test-results/agent-gates/2026-05-11T18-54-39-122Z-COL-V2-S7.json`.
+Status: **complete** — committed/pushed as `4df68fc`, deployed to Supabase remote as migration `223`, and Edge Functions `boldsign-send-contract` + `boldsign-webhook` are active in project `manfqmasfqppukpobpld`. Gate artifact: `test-results/agent-gates/2026-05-11T18-54-39-122Z-COL-V2-S7.json`.
 
 Goal: implement send + webhook functions after schema is live.
 
@@ -122,6 +122,8 @@ Blocked until:
 - Webhook signature documentation is verified against BoldSign docs.
 
 ### Slice 8 — Admissions Medicaid Kanban
+
+Status: **complete locally** — migration `224`, admissions UI/API/type updates added, and required checks passed (`npm run migrations:check`, `npm run lint`, `npm run build`, `npm run segment:gates -- --segment COL-V2-S8`). Gate artifact: `test-results/agent-gates/2026-05-11T19-26-38-086Z-COL-V2-S8.json`.
 
 Goal: add COL-specific Medicaid substage tracking while preserving the current `admission_case_status` enum.
 

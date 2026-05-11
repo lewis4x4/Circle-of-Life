@@ -36,6 +36,7 @@ type CaseRow = Pick<
   | "bed_id"
   | "resident_id"
   | "referral_lead_id"
+  | "medicaid_pipeline_stage"
 > & {
   residents: { first_name: string; last_name: string } | null;
 };
@@ -72,6 +73,12 @@ type ConferenceRow = Pick<
 
 function formatStatus(s: string) {
   return s.replace(/_/g, " ");
+}
+
+function formatMedicaidStage(stage: string | null) {
+  if (!stage) return "Not set";
+  if (stage === "app_requested") return "Application requested";
+  return formatStatus(stage);
 }
 
 function formatRelative(date: string | null): string {
@@ -355,7 +362,7 @@ export default function AdminAdmissionsHubPage() {
           .order("updated_at", { ascending: false }),
         supabase
           .from("admission_cases")
-          .select("id, referral_lead_id, status, updated_at, target_move_in_date, financial_clearance_at, physician_orders_received_at, bed_id, resident_id, residents(first_name, last_name)")
+          .select("id, referral_lead_id, status, medicaid_pipeline_stage, updated_at, target_move_in_date, financial_clearance_at, physician_orders_received_at, bed_id, resident_id, residents(first_name, last_name)")
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
           .not("status", "eq", "cancelled")
@@ -908,6 +915,9 @@ export default function AdminAdmissionsHubPage() {
                       </div>
                       <p className="text-xs text-slate-500 dark:text-zinc-500 mt-0.5">
                         {r.target_move_in_date ? `Target: ${r.target_move_in_date}` : "No date set"} · {formatRelative(r.updated_at)}
+                      </p>
+                      <p className="mt-1 text-[11px] text-slate-600 dark:text-zinc-400">
+                        Medicaid stage: {formatMedicaidStage(r.medicaid_pipeline_stage)}
                       </p>
                       <p className={cn(
                         "mt-1 text-[11px]",
