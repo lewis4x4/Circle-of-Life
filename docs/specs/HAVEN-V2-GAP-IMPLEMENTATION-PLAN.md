@@ -55,7 +55,7 @@ Resolved blocker:
 
 ### Slice 3 — Rounds vocabulary + per-resident observation templates
 
-Status: **complete locally** — migration `219` added and gate artifact generated. Remote deploy/commit occurs with the Slice 3 commit.
+Status: **complete** — committed/pushed as `448cd4d`, deployed to Supabase remote as migration `219`, and Netlify production deployed the commit.
 
 Goal: make rounds/observations operational without creating parallel round tables.
 
@@ -69,6 +69,8 @@ Explicit correction:
 - Do not insert `resident_id = NULL` into observation plans/rules.
 
 ### Slice 4 — Operational logs
+
+Status: **complete locally** — migration `220` added and gate artifact generated at `test-results/agent-gates/2026-05-11T18-06-18-445Z-COL-V2-S4.json`. Remote deploy/commit occurs with the Slice 4 commit.
 
 Goal: add the missing daily execution logs that are not covered by existing modules.
 
