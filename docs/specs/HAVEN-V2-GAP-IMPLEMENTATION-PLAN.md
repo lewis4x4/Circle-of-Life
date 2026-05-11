@@ -145,6 +145,8 @@ Status (Slice 9E): **complete locally** — `/admin/dietary` now includes an ope
 
 Status (Slice 9F): **complete locally** — `/admin/compliance/emergency-preparedness` now exposes maintenance/drill workflows for migration `220` by adding direct create/recent-log UI for `drill_log`, `maintenance_tickets`, and `maintenance_task_completions`, with no schema/auth/edge changes. Gate artifact: `test-results/agent-gates/2026-05-11T21-30-33-144Z-COL-V2-S9F.json`.
 
+Status (Slice 9G): **complete locally** — `/admin/training` now includes a staff compliance attestation create + review panel backed by existing migration `221` table `staff_attestations` (active-staff picker, required attestation fields, date validation, and recent signed entry visibility for med-tech compliance review), with no schema/auth/edge changes. Gate artifact: `test-results/agent-gates/2026-05-11T21-52-41-411Z-COL-V2-S9G.json`.
+
 Goal: make the new data understandable and usable.
 
 Includes:

@@ -135,6 +135,29 @@ type InserviceRow = Database["public"]["Tables"]["inservice_log_sessions"]["Row"
   inservice_log_attendees: { id: string }[] | null;
 };
 
+type StaffAttestationRow = {
+  id: string;
+  organization_id: string;
+  facility_id: string;
+  staff_id: string;
+  attestation_type: string;
+  attestation_text: string;
+  effective_date: string;
+  expires_at: string | null;
+  signed_at: string;
+  signer_name: string | null;
+  staff: { first_name: string; last_name: string } | null;
+  facilities: { name: string } | null;
+};
+
+type ActiveStaffOption = {
+  id: string;
+  facility_id: string;
+  organization_id: string;
+  facility_name: string;
+  name: string;
+};
+
 function buildInserviceSessionsCsv(rows: InserviceRow[]): string {
   const header = [
     "id",
@@ -173,17 +196,33 @@ function buildInserviceSessionsCsv(rows: InserviceRow[]): string {
 }
 
 export default function AdminTrainingHubPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<DemoRow[]>([]);
   const [completionRows, setCompletionRows] = useState<CompletionRow[]>([]);
   const [inserviceRows, setInserviceRows] = useState<InserviceRow[]>([]);
+  const [attestationRows, setAttestationRows] = useState<StaffAttestationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingCompletions, setLoadingCompletions] = useState(true);
   const [loadingInservice, setLoadingInservice] = useState(true);
+  const [loadingAttestations, setLoadingAttestations] = useState(true);
+  const [loadingAttestationStaff, setLoadingAttestationStaff] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [completionError, setCompletionError] = useState<string | null>(null);
   const [inserviceError, setInserviceError] = useState<string | null>(null);
+  const [attestationError, setAttestationError] = useState<string | null>(null);
+  const [attestationFormError, setAttestationFormError] = useState<string | null>(null);
+  const [attestationFormSuccess, setAttestationFormSuccess] = useState<string | null>(null);
+  const [attestationSubmitting, setAttestationSubmitting] = useState(false);
+  const [attestationStaffOptions, setAttestationStaffOptions] = useState<ActiveStaffOption[]>([]);
+  const [attestationStaffId, setAttestationStaffId] = useState("");
+  const [attestationType, setAttestationType] = useState("med_tech_self");
+  const [attestationText, setAttestationText] = useState("");
+  const [attestationEffectiveDate, setAttestationEffectiveDate] = useState(
+    format(new Date(), "yyyy-MM-dd"),
+  );
+  const [attestationExpiresAt, setAttestationExpiresAt] = useState("");
+  const [attestationSignerName, setAttestationSignerName] = useState("");
   const [exportingCsv, setExportingCsv] = useState(false);
   const [exportingCompletionsCsv, setExportingCompletionsCsv] = useState(false);
   const [exportingInserviceCsv, setExportingInserviceCsv] = useState(false);
@@ -198,9 +237,13 @@ export default function AdminTrainingHubPage() {
     setLoading(true);
     setLoadingCompletions(true);
     setLoadingInservice(true);
+    setLoadingAttestations(true);
+    setLoadingAttestationStaff(true);
     setError(null);
     setCompletionError(null);
     setInserviceError(null);
+    setAttestationError(null);
+    setAttestationFormError(null);
     if (!facilityReady) {
       setRows([]);
       setCompletionRows([]);
@@ -208,6 +251,9 @@ export default function AdminTrainingHubPage() {
       setLoading(false);
       setLoadingCompletions(false);
       setLoadingInservice(false);
+      setLoadingAttestations(false);
+      setLoadingAttestationStaff(false);
+      setAttestationStaffOptions([]);
       return;
     }
 
@@ -245,7 +291,30 @@ export default function AdminTrainingHubPage() {
       iq = iq.eq("facility_id", selectedFacilityId);
     }
 
-    const [demoRes, compRes, insRes] = await Promise.all([q, cq, iq]);
+    let aq = supabase
+      .from("staff_attestations" as never)
+      .select(
+        "id, organization_id, facility_id, staff_id, attestation_type, attestation_text, effective_date, expires_at, signed_at, signer_name, staff(first_name, last_name), facilities(name)",
+      )
+      .is("deleted_at", null)
+      .order("signed_at", { ascending: false })
+      .limit(50);
+    if (singleFacilityMode && selectedFacilityId) {
+      aq = aq.eq("facility_id", selectedFacilityId);
+    }
+
+    let sq = supabase
+      .from("staff")
+      .select("id, facility_id, organization_id, first_name, last_name, facilities(name)")
+      .eq("employment_status", "active")
+      .is("deleted_at", null)
+      .order("last_name", { ascending: true })
+      .limit(400);
+    if (singleFacilityMode && selectedFacilityId) {
+      sq = sq.eq("facility_id", selectedFacilityId);
+    }
+
+    const [demoRes, compRes, insRes, attRes, staffRes] = await Promise.all([q, cq, iq, aq, sq]);
 
     if (demoRes.error) {
       setError(demoRes.error.message || "Failed to load competency demonstrations.");
@@ -272,11 +341,116 @@ export default function AdminTrainingHubPage() {
       setInserviceRows((insRes.data ?? []) as InserviceRow[]);
     }
     setLoadingInservice(false);
+
+    if (attRes.error) {
+      setAttestationError(attRes.error.message || "Failed to load staff attestations.");
+      setAttestationRows([]);
+    } else {
+      setAttestationRows((attRes.data ?? []) as StaffAttestationRow[]);
+    }
+    setLoadingAttestations(false);
+
+    if (staffRes.error) {
+      setAttestationFormError(staffRes.error.message || "Failed to load active staff.");
+      setAttestationStaffOptions([]);
+    } else {
+      setAttestationStaffOptions(
+        ((staffRes.data ?? []) as {
+          id: string;
+          facility_id: string;
+          organization_id: string;
+          first_name: string;
+          last_name: string;
+          facilities: { name: string } | null;
+        }[]).map((s) => ({
+          id: s.id,
+          facility_id: s.facility_id,
+          organization_id: s.organization_id,
+          facility_name: s.facilities?.name ?? "Facility",
+          name: `${s.first_name} ${s.last_name}`.trim(),
+        })),
+      );
+    }
+    setLoadingAttestationStaff(false);
   }, [supabase, selectedFacilityId, facilityReady, singleFacilityMode]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  const selectedAttestationStaff = useMemo(
+    () => attestationStaffOptions.find((s) => s.id === attestationStaffId) ?? null,
+    [attestationStaffId, attestationStaffOptions],
+  );
+
+  const handleAttestationSave = useCallback(async () => {
+    setAttestationFormError(null);
+    setAttestationFormSuccess(null);
+    if (!facilityReady) {
+      setAttestationFormError("Select a valid facility scope first.");
+      return;
+    }
+    if (!attestationStaffId) {
+      setAttestationFormError("Choose a staff member.");
+      return;
+    }
+    if (!selectedAttestationStaff) {
+      setAttestationFormError("Selected staff member is not available.");
+      return;
+    }
+    if (!attestationType || !/^[a-z0-9_]+$/.test(attestationType)) {
+      setAttestationFormError("Attestation type must use lowercase letters, numbers, and underscores.");
+      return;
+    }
+    if (!attestationText.trim()) {
+      setAttestationFormError("Attestation statement is required.");
+      return;
+    }
+    if (!attestationEffectiveDate) {
+      setAttestationFormError("Effective date is required.");
+      return;
+    }
+    if (attestationExpiresAt && attestationExpiresAt < attestationEffectiveDate) {
+      setAttestationFormError("Expiration date must be on or after the effective date.");
+      return;
+    }
+
+    setAttestationSubmitting(true);
+    try {
+      const { error: insertError } = await supabase.from("staff_attestations" as never).insert({
+        organization_id: selectedAttestationStaff.organization_id,
+        facility_id: selectedAttestationStaff.facility_id,
+        staff_id: attestationStaffId,
+        attestation_type: attestationType,
+        attestation_text: attestationText.trim(),
+        effective_date: attestationEffectiveDate,
+        expires_at: attestationExpiresAt || null,
+        signer_name: attestationSignerName.trim() || null,
+      } as never);
+      if (insertError) throw insertError;
+
+      setAttestationText("");
+      setAttestationExpiresAt("");
+      setAttestationSignerName("");
+      setAttestationFormSuccess("Attestation recorded.");
+      await load();
+    } catch (e) {
+      setAttestationFormError(e instanceof Error ? e.message : "Failed to save attestation.");
+    } finally {
+      setAttestationSubmitting(false);
+    }
+  }, [
+    attestationEffectiveDate,
+    attestationExpiresAt,
+    attestationSignerName,
+    attestationStaffId,
+    attestationText,
+    attestationType,
+    facilityReady,
+    load,
+    selectedAttestationStaff,
+    supabase,
+  ]);
 
   const attentionRows = useMemo(
     () =>
@@ -623,6 +797,187 @@ export default function AdminTrainingHubPage() {
                             <span className="text-slate-400">—</span>
                           )}
                         </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4 border-t border-white/10 pt-8 dark:border-white/5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                  Staff attestations (compliance)
+                </h3>
+                <p className="mt-1 text-[10px] text-slate-500">
+                  Last 50 attestation records from <span className="font-mono">staff_attestations</span>.
+                  Includes annual med-tech attestation visibility for COL-HR-008 review.
+                </p>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/20 bg-white/35 p-4 dark:border-white/5 dark:bg-slate-900/30">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                Record attestation
+              </h4>
+              <p className="mt-1 text-[10px] text-slate-500">
+                Add a signed attestation for active staff. In All facilities mode, choose staff from any
+                accessible facility.
+              </p>
+              <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+                <label className="space-y-1 text-xs text-slate-700 dark:text-slate-200">
+                  <span className="font-medium">Staff member *</span>
+                  <select
+                    value={attestationStaffId}
+                    onChange={(e) => setAttestationStaffId(e.target.value)}
+                    disabled={!facilityReady || loadingAttestationStaff || attestationSubmitting}
+                    className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  >
+                    <option value="">Select staff…</option>
+                    {attestationStaffOptions.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                        {orgWideMode ? ` (${s.facility_name})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="space-y-1 text-xs text-slate-700 dark:text-slate-200">
+                  <span className="font-medium">Attestation type *</span>
+                  <select
+                    value={attestationType}
+                    onChange={(e) => setAttestationType(e.target.value)}
+                    disabled={attestationSubmitting}
+                    className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  >
+                    <option value="med_tech_self">Medication Tech self-attestation</option>
+                    <option value="general_staff">General staff attestation</option>
+                  </select>
+                </label>
+                <label className="space-y-1 text-xs text-slate-700 dark:text-slate-200">
+                  <span className="font-medium">Effective date *</span>
+                  <input
+                    type="date"
+                    value={attestationEffectiveDate}
+                    onChange={(e) => setAttestationEffectiveDate(e.target.value)}
+                    disabled={attestationSubmitting}
+                    className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  />
+                </label>
+                <label className="space-y-1 text-xs text-slate-700 dark:text-slate-200">
+                  <span className="font-medium">Expires date</span>
+                  <input
+                    type="date"
+                    value={attestationExpiresAt}
+                    onChange={(e) => setAttestationExpiresAt(e.target.value)}
+                    disabled={attestationSubmitting}
+                    className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  />
+                </label>
+              </div>
+              <div className="mt-3 grid grid-cols-1 gap-3">
+                <label className="space-y-1 text-xs text-slate-700 dark:text-slate-200">
+                  <span className="font-medium">Attestation statement *</span>
+                  <textarea
+                    value={attestationText}
+                    onChange={(e) => setAttestationText(e.target.value)}
+                    rows={3}
+                    disabled={attestationSubmitting}
+                    className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    placeholder="Staff confirms scope, training, and escalation expectations are understood."
+                  />
+                </label>
+                <label className="space-y-1 text-xs text-slate-700 dark:text-slate-200">
+                  <span className="font-medium">Signer name</span>
+                  <input
+                    type="text"
+                    value={attestationSignerName}
+                    onChange={(e) => setAttestationSignerName(e.target.value)}
+                    disabled={attestationSubmitting}
+                    className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    placeholder="Jane Supervisor"
+                  />
+                </label>
+              </div>
+              {attestationFormError ? (
+                <p className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
+                  {attestationFormError}
+                </p>
+              ) : null}
+              {attestationFormSuccess ? (
+                <p className="mt-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
+                  {attestationFormSuccess}
+                </p>
+              ) : null}
+              <div className="mt-3 flex justify-end">
+                <Button
+                  type="button"
+                  onClick={() => void handleAttestationSave()}
+                  disabled={!facilityReady || loadingAttestationStaff || attestationSubmitting}
+                  className="font-mono uppercase tracking-widest text-[10px]"
+                >
+                  {attestationSubmitting ? "Saving…" : "Save attestation"}
+                </Button>
+              </div>
+            </div>
+            {attestationError && (
+              <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
+                {attestationError}
+              </p>
+            )}
+            {loadingAttestations ? (
+              <p className="text-sm font-mono text-slate-500">Loading attestations…</p>
+            ) : attestationRows.length === 0 ? (
+              <div className="rounded-2xl border border-white/20 bg-white/30 p-8 text-center text-slate-500 dark:border-white/5 dark:bg-slate-900/30">
+                <p className="font-medium text-slate-700 dark:text-slate-300">No attestations yet</p>
+                <p className="mt-1 text-sm opacity-80">
+                  Staff attestation records will appear here once signed.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-white/20 bg-white/40 dark:border-white/5 dark:bg-slate-900/40">
+                <table className="w-full min-w-[900px] text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-white/20 font-mono uppercase tracking-wider text-slate-500 dark:border-white/10">
+                      <th className="px-3 py-2">Facility</th>
+                      <th className="px-3 py-2">Staff</th>
+                      <th className="px-3 py-2">Type</th>
+                      <th className="px-3 py-2">Signed</th>
+                      <th className="px-3 py-2">Effective</th>
+                      <th className="px-3 py-2">Expires</th>
+                      <th className="px-3 py-2">Signer</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attestationRows.map((row) => (
+                      <tr
+                        key={row.id}
+                        className="border-b border-white/10 text-slate-800 last:border-0 dark:border-white/5 dark:text-slate-200"
+                      >
+                        <td className="px-3 py-2 font-mono text-[10px] text-indigo-600 dark:text-indigo-400">
+                          {row.facilities?.name ?? "—"}
+                        </td>
+                        <td className="px-3 py-2">
+                          {row.staff ? `${row.staff.first_name} ${row.staff.last_name}` : "—"}
+                        </td>
+                        <td className="px-3 py-2 font-mono text-[10px] uppercase tracking-wider">
+                          {row.attestation_type.replace(/_/g, " ")}
+                        </td>
+                        <td className="px-3 py-2 font-mono text-[10px]">
+                          {row.signed_at ? format(new Date(row.signed_at), "MMM d, yyyy") : "—"}
+                        </td>
+                        <td className="px-3 py-2 font-mono text-[10px]">
+                          {row.effective_date
+                            ? format(new Date(`${row.effective_date}T12:00:00`), "MMM d, yyyy")
+                            : "—"}
+                        </td>
+                        <td className="px-3 py-2 font-mono text-[10px]">
+                          {row.expires_at
+                            ? format(new Date(`${row.expires_at}T12:00:00`), "MMM d, yyyy")
+                            : "—"}
+                        </td>
+                        <td className="px-3 py-2">{row.signer_name ?? "—"}</td>
                       </tr>
                     ))}
                   </tbody>
