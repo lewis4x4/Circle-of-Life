@@ -38,7 +38,7 @@ Done when:
 
 ### Slice 2 — Physical plant + posted-rate seeds
 
-Status: **complete locally** — migration `218` added and gate artifact generated. Remote deploy/commit occurs with the Slice 2 commit.
+Status: **complete** — committed/pushed as `af881b9`, deployed to Supabase remote as migration `218`, and Netlify production deployed the commit.
 
 Live facility verification: remote public data dump on 2026-05-11 showed five active COL facilities under organization `00000000-0000-0000-0000-000000000001`: Oakridge ALF, Rising Oaks ALF, Homewood Lodge ALF, Plantation ALF, Grande Cypress ALF. The 6th facility is `Oakridge Demo ALF` under demo organization `11111111-1111-1111-1111-111111111111` and is soft-deleted, so no facility deletion was performed.
 
@@ -54,6 +54,8 @@ Resolved blocker:
 - Facility names/IDs verified from live database; seed is constrained to the verified COL organization/facility names and does not touch demo rows.
 
 ### Slice 3 — Rounds vocabulary + per-resident observation templates
+
+Status: **complete locally** — migration `219` added and gate artifact generated. Remote deploy/commit occurs with the Slice 3 commit.
 
 Goal: make rounds/observations operational without creating parallel round tables.
 
