@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Plus,
   CheckCircle,
@@ -9,6 +9,7 @@ import {
   Zap,
   Calendar,
   FileText,
+  Wrench,
 } from "lucide-react";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -100,6 +101,67 @@ type EmergencyChecklistItemInsert = {
   next_due_date: string;
 };
 
+type DrillType = "fire" | "elopement" | "tornado";
+
+type DrillLogRow = {
+  id: string;
+  drill_type: DrillType;
+  drill_date: string;
+  drill_time: string;
+  pull_station_activated: boolean;
+  staff_present_count: number | null;
+  residents_present_count: number | null;
+  notes: string | null;
+};
+
+type DrillLogInsert = {
+  facility_id: string;
+  organization_id: string;
+  drill_type: DrillType;
+  drill_date: string;
+  drill_time: string;
+  pull_station_activated: boolean;
+  staff_present_count: number | null;
+  residents_present_count: number | null;
+  notes: string | null;
+};
+
+type MaintenanceTicketRow = {
+  id: string;
+  asset_description: string;
+  issue_description: string;
+  priority: "urgent" | "high" | "normal" | "low";
+  status: "open" | "assigned" | "in_progress" | "completed" | "cancelled";
+  opened_at: string;
+};
+
+type MaintenanceTicketInsert = {
+  facility_id: string;
+  organization_id: string;
+  asset_description: string;
+  issue_description: string;
+  priority: "urgent" | "high" | "normal" | "low";
+};
+
+type MaintenanceCompletionRow = {
+  id: string;
+  task_type: string;
+  completed_at: string;
+  completed_by_vendor: string | null;
+  notes: string | null;
+  related_ticket_id: string | null;
+};
+
+type MaintenanceCompletionInsert = {
+  facility_id: string;
+  organization_id: string;
+  task_type: string;
+  completed_by_user_id: string | null;
+  completed_by_vendor: string | null;
+  notes: string | null;
+  related_ticket_id: string | null;
+};
+
 const CHECKLIST_TYPES = [
   { value: "generator_test", label: "Generator Test", icon: Zap },
   { value: "fire_drill", label: "Fire Drill", icon: Flame },
@@ -109,9 +171,12 @@ const CHECKLIST_TYPES = [
 
 export default function EmergencyPreparednessPage() {
   const { selectedFacilityId } = useFacilityStore();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ChecklistItem[]>([]);
+  const [drillLog, setDrillLog] = useState<DrillLogRow[]>([]);
+  const [maintenanceTickets, setMaintenanceTickets] = useState<MaintenanceTicketRow[]>([]);
+  const [maintenanceCompletions, setMaintenanceCompletions] = useState<MaintenanceCompletionRow[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   // Completion dialog state
@@ -132,12 +197,38 @@ export default function EmergencyPreparednessPage() {
     frequency: 30,
   });
   const [savingNewItem, setSavingNewItem] = useState(false);
+  const [newDrill, setNewDrill] = useState({
+    drill_type: "fire" as DrillType,
+    drill_date: new Date().toISOString().slice(0, 10),
+    drill_time: "10:00",
+    pull_station_activated: false,
+    staff_present_count: "",
+    residents_present_count: "",
+    notes: "",
+  });
+  const [savingDrill, setSavingDrill] = useState(false);
+  const [newTicket, setNewTicket] = useState({
+    asset_description: "",
+    issue_description: "",
+    priority: "normal" as MaintenanceTicketInsert["priority"],
+  });
+  const [savingTicket, setSavingTicket] = useState(false);
+  const [newCompletion, setNewCompletion] = useState({
+    task_type: "monthly_leak_check",
+    completed_by_vendor: "",
+    notes: "",
+    related_ticket_id: "",
+  });
+  const [savingCompletionLog, setSavingCompletionLog] = useState(false);
 
   const facilityReady = !!(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
 
   const loadItems = useCallback(async () => {
     if (!facilityReady) {
       setItems([]);
+      setDrillLog([]);
+      setMaintenanceTickets([]);
+      setMaintenanceCompletions([]);
       setLoading(false);
       return;
     }
@@ -146,8 +237,16 @@ export default function EmergencyPreparednessPage() {
     setError(null);
 
     try {
-      const data = await fetchEmergencyChecklistItems(supabase, selectedFacilityId!);
-      setItems(data);
+      const [checklistData, drillData, ticketData, completionData] = await Promise.all([
+        fetchEmergencyChecklistItems(supabase, selectedFacilityId!),
+        fetchDrillLog(supabase, selectedFacilityId!),
+        fetchMaintenanceTickets(supabase, selectedFacilityId!),
+        fetchMaintenanceCompletions(supabase, selectedFacilityId!),
+      ]);
+      setItems(checklistData);
+      setDrillLog(drillData);
+      setMaintenanceTickets(ticketData);
+      setMaintenanceCompletions(completionData);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load checklist items");
     } finally {
@@ -257,6 +356,94 @@ export default function EmergencyPreparednessPage() {
       setError(e instanceof Error ? e.message : "Failed to create checklist item");
     } finally {
       setSavingNewItem(false);
+    }
+  };
+
+  const submitDrillLog = async () => {
+    if (!facilityReady) return;
+    setSavingDrill(true);
+    setError(null);
+    try {
+      const organizationId = await loadOrganizationIdForFacility(supabase, selectedFacilityId!);
+      if (!organizationId) throw new Error("Could not determine organization ID");
+      const staffCount = newDrill.staff_present_count ? Number(newDrill.staff_present_count) : null;
+      const residentCount = newDrill.residents_present_count ? Number(newDrill.residents_present_count) : null;
+      if (!newDrill.drill_date || !newDrill.drill_time) {
+        throw new Error("Drill date and time are required.");
+      }
+      if (staffCount !== null && (!Number.isFinite(staffCount) || staffCount < 0)) {
+        throw new Error("Staff present count must be zero or greater.");
+      }
+      if (residentCount !== null && (!Number.isFinite(residentCount) || residentCount < 0)) {
+        throw new Error("Residents present count must be zero or greater.");
+      }
+      await insertDrillLog(supabase, {
+        facility_id: selectedFacilityId!,
+        organization_id: organizationId,
+        drill_type: newDrill.drill_type,
+        drill_date: newDrill.drill_date,
+        drill_time: newDrill.drill_time,
+        pull_station_activated: newDrill.pull_station_activated,
+        staff_present_count: staffCount,
+        residents_present_count: residentCount,
+        notes: newDrill.notes.trim() || null,
+      });
+      setNewDrill({ ...newDrill, notes: "", staff_present_count: "", residents_present_count: "" });
+      await loadItems();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save drill log");
+    } finally {
+      setSavingDrill(false);
+    }
+  };
+
+  const submitMaintenanceTicket = async () => {
+    if (!facilityReady || !newTicket.asset_description.trim() || !newTicket.issue_description.trim()) return;
+    setSavingTicket(true);
+    setError(null);
+    try {
+      const organizationId = await loadOrganizationIdForFacility(supabase, selectedFacilityId!);
+      if (!organizationId) throw new Error("Could not determine organization ID");
+      await insertMaintenanceTicket(supabase, {
+        facility_id: selectedFacilityId!,
+        organization_id: organizationId,
+        asset_description: newTicket.asset_description.trim(),
+        issue_description: newTicket.issue_description.trim(),
+        priority: newTicket.priority,
+      });
+      setNewTicket({ asset_description: "", issue_description: "", priority: "normal" });
+      await loadItems();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to create maintenance ticket");
+    } finally {
+      setSavingTicket(false);
+    }
+  };
+
+  const submitMaintenanceCompletion = async () => {
+    if (!facilityReady || !newCompletion.task_type.trim()) return;
+    setSavingCompletionLog(true);
+    setError(null);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+      const organizationId = await loadOrganizationIdForFacility(supabase, selectedFacilityId!);
+      if (!organizationId) throw new Error("Could not determine organization ID");
+      await insertMaintenanceCompletion(supabase, {
+        facility_id: selectedFacilityId!,
+        organization_id: organizationId,
+        task_type: newCompletion.task_type.trim().toLowerCase().replace(/[^a-z0-9_]/g, "_"),
+        completed_by_user_id: newCompletion.completed_by_vendor.trim() ? null : user.id,
+        completed_by_vendor: newCompletion.completed_by_vendor.trim() || null,
+        notes: newCompletion.notes.trim() || null,
+        related_ticket_id: newCompletion.related_ticket_id || null,
+      });
+      setNewCompletion({ ...newCompletion, notes: "", related_ticket_id: "", completed_by_vendor: "" });
+      await loadItems();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to log maintenance completion");
+    } finally {
+      setSavingCompletionLog(false);
     }
   };
 
@@ -513,7 +700,14 @@ export default function EmergencyPreparednessPage() {
                       </div>
                       <Dialog
                         open={completionDialog.open && completionDialog.itemId === item.id}
-                        onOpenChange={(open) => !open && setCompletionDialog({ ...completionDialog, open })}
+                        onOpenChange={(open) =>
+                          setCompletionDialog({
+                            open,
+                            itemId: open ? item.id : null,
+                            participants: "",
+                            notes: "",
+                          })
+                        }
                       >
                         <DialogTrigger asChild>
                           <Button variant="outline" size="sm">
@@ -580,9 +774,90 @@ export default function EmergencyPreparednessPage() {
           })}
         </ul>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Flame className="h-4 w-4" /> Drill Log (Slice 9F)</CardTitle>
+          <CardDescription>Record fire/elopement/tornado drills in the new `drill_log` table.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-3">
+            <Field label="Type">
+              <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={newDrill.drill_type} onChange={(e) => setNewDrill((current) => ({ ...current, drill_type: e.target.value as DrillType }))}>
+                <option value="fire">Fire</option>
+                <option value="elopement">Elopement</option>
+                <option value="tornado">Tornado</option>
+              </select>
+            </Field>
+            <Field label="Date"><Input type="date" value={newDrill.drill_date} onChange={(e) => setNewDrill((current) => ({ ...current, drill_date: e.target.value }))} /></Field>
+            <Field label="Time"><Input type="time" value={newDrill.drill_time} onChange={(e) => setNewDrill((current) => ({ ...current, drill_time: e.target.value }))} /></Field>
+            <Field label="Staff present"><Input inputMode="numeric" value={newDrill.staff_present_count} onChange={(e) => setNewDrill((current) => ({ ...current, staff_present_count: e.target.value }))} /></Field>
+            <Field label="Residents present"><Input inputMode="numeric" value={newDrill.residents_present_count} onChange={(e) => setNewDrill((current) => ({ ...current, residents_present_count: e.target.value }))} /></Field>
+            <Field label="Pull station"><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={newDrill.pull_station_activated ? "yes" : "no"} onChange={(e) => setNewDrill((current) => ({ ...current, pull_station_activated: e.target.value === "yes" }))}><option value="no">No</option><option value="yes">Yes</option></select></Field>
+          </div>
+          <Field label="Notes"><Textarea rows={2} value={newDrill.notes} onChange={(e) => setNewDrill((current) => ({ ...current, notes: e.target.value }))} /></Field>
+          <Button onClick={() => void submitDrillLog()} disabled={savingDrill}>{savingDrill ? "Saving…" : "Log drill"}</Button>
+          <ul className="space-y-2 text-sm">
+            {drillLog.slice(0, 5).map((entry) => (
+              <li key={entry.id} className="rounded border p-2">{entry.drill_date} {entry.drill_time.slice(0,5)} · {entry.drill_type} · staff {entry.staff_present_count ?? "—"} / residents {entry.residents_present_count ?? "—"}</li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Wrench className="h-4 w-4" /> Maintenance Tickets</CardTitle>
+          <CardDescription>Create and view work orders from `maintenance_tickets`.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-3">
+            <Field label="Asset/area"><Input value={newTicket.asset_description} onChange={(e) => setNewTicket((current) => ({ ...current, asset_description: e.target.value }))} placeholder="Kitchen hood" /></Field>
+            <Field label="Priority"><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={newTicket.priority} onChange={(e) => setNewTicket((current) => ({ ...current, priority: e.target.value as MaintenanceTicketInsert["priority"] }))}><option value="urgent">Urgent</option><option value="high">High</option><option value="normal">Normal</option><option value="low">Low</option></select></Field>
+            <div className="flex items-end"><Button onClick={() => void submitMaintenanceTicket()} disabled={savingTicket || !newTicket.asset_description.trim() || !newTicket.issue_description.trim()}>{savingTicket ? "Saving…" : "Create ticket"}</Button></div>
+          </div>
+          <Field label="Issue"><Textarea rows={2} value={newTicket.issue_description} onChange={(e) => setNewTicket((current) => ({ ...current, issue_description: e.target.value }))} /></Field>
+          <ul className="space-y-2 text-sm">
+            {maintenanceTickets.slice(0, 6).map((ticket) => (
+              <li key={ticket.id} className="rounded border p-2">{ticket.status} · {ticket.priority} · {ticket.asset_description} — {ticket.issue_description}</li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Maintenance Completion Log</CardTitle>
+          <CardDescription>Log evidence entries in `maintenance_task_completions`.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            <Field label="Task type"><Input value={newCompletion.task_type} onChange={(e) => setNewCompletion((current) => ({ ...current, task_type: e.target.value }))} placeholder="quarterly_grease_trap_cleaning" /></Field>
+            <Field label="Completed by vendor (optional)"><Input value={newCompletion.completed_by_vendor} onChange={(e) => setNewCompletion((current) => ({ ...current, completed_by_vendor: e.target.value }))} placeholder="Vendor name" /></Field>
+            <Field label="Related ticket (optional)"><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={newCompletion.related_ticket_id} onChange={(e) => setNewCompletion((current) => ({ ...current, related_ticket_id: e.target.value }))}><option value="">None</option>{maintenanceTickets.map((ticket) => (<option key={ticket.id} value={ticket.id}>{ticket.asset_description} ({ticket.status})</option>))}</select></Field>
+            <div className="flex items-end"><Button onClick={() => void submitMaintenanceCompletion()} disabled={savingCompletionLog || !newCompletion.task_type.trim()}>{savingCompletionLog ? "Saving…" : "Log completion"}</Button></div>
+          </div>
+          <Field label="Notes"><Textarea rows={2} value={newCompletion.notes} onChange={(e) => setNewCompletion((current) => ({ ...current, notes: e.target.value }))} /></Field>
+          <ul className="space-y-2 text-sm">
+            {maintenanceCompletions.slice(0, 6).map((completion) => (
+              <li key={completion.id} className="rounded border p-2">{new Date(completion.completed_at).toLocaleDateString()} · {completion.task_type} · {completion.completed_by_vendor || "staff"}</li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="space-y-1.5">
+      <span className="text-sm font-medium">{label}</span>
+      {children}
+    </label>
+  );
+}
+
 
 async function fetchEmergencyChecklistItems(
   supabase: ReturnType<typeof createClient>,
@@ -683,6 +958,65 @@ async function insertEmergencyChecklistItem(
   if (error) {
     throw new Error(error.message);
   }
+}
+
+async function fetchDrillLog(supabase: ReturnType<typeof createClient>, facilityId: string): Promise<DrillLogRow[]> {
+  const result = await supabase
+    .from("drill_log" as never)
+    .select("id, drill_type, drill_date, drill_time, pull_station_activated, staff_present_count, residents_present_count, notes")
+    .eq("facility_id", facilityId)
+    .is("deleted_at", null)
+    .order("drill_date", { ascending: false })
+    .limit(20);
+  const { data, error } = result as unknown as { data: DrillLogRow[] | null; error: { message: string } | null };
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+async function insertDrillLog(supabase: ReturnType<typeof createClient>, payload: DrillLogInsert) {
+  const result = await supabase.from("drill_log" as never).upsert(payload as never, {
+    onConflict: "facility_id,drill_type,drill_date,drill_time",
+  });
+  const { error } = result as unknown as { error: { message: string } | null };
+  if (error) throw new Error(error.message);
+}
+
+async function fetchMaintenanceTickets(supabase: ReturnType<typeof createClient>, facilityId: string): Promise<MaintenanceTicketRow[]> {
+  const result = await supabase
+    .from("maintenance_tickets" as never)
+    .select("id, asset_description, issue_description, priority, status, opened_at")
+    .eq("facility_id", facilityId)
+    .is("deleted_at", null)
+    .order("opened_at", { ascending: false })
+    .limit(20);
+  const { data, error } = result as unknown as { data: MaintenanceTicketRow[] | null; error: { message: string } | null };
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+async function insertMaintenanceTicket(supabase: ReturnType<typeof createClient>, payload: MaintenanceTicketInsert) {
+  const result = await supabase.from("maintenance_tickets" as never).insert(payload as never);
+  const { error } = result as unknown as { error: { message: string } | null };
+  if (error) throw new Error(error.message);
+}
+
+async function fetchMaintenanceCompletions(supabase: ReturnType<typeof createClient>, facilityId: string): Promise<MaintenanceCompletionRow[]> {
+  const result = await supabase
+    .from("maintenance_task_completions" as never)
+    .select("id, task_type, completed_at, completed_by_vendor, notes, related_ticket_id")
+    .eq("facility_id", facilityId)
+    .is("deleted_at", null)
+    .order("completed_at", { ascending: false })
+    .limit(20);
+  const { data, error } = result as unknown as { data: MaintenanceCompletionRow[] | null; error: { message: string } | null };
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+async function insertMaintenanceCompletion(supabase: ReturnType<typeof createClient>, payload: MaintenanceCompletionInsert) {
+  const result = await supabase.from("maintenance_task_completions" as never).insert(payload as never);
+  const { error } = result as unknown as { error: { message: string } | null };
+  if (error) throw new Error(error.message);
 }
 
 function getOverdueStatus(nextDueDate: string) {

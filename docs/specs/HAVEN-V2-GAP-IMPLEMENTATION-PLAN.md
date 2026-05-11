@@ -143,6 +143,8 @@ Status (Slice 9D): **complete locally** — caregiver quick-round form now loads
 
 Status (Slice 9E): **complete locally** — `/admin/dietary` now includes an operator-facing meal/snack logging panel backed by existing `meal_logs` and `snack_logs` (plus recent-entry review), without schema changes. Gate artifact: `test-results/agent-gates/2026-05-11T21-09-47-200Z-COL-V2-S9E.json`.
 
+Status (Slice 9F): **complete locally** — `/admin/compliance/emergency-preparedness` now exposes maintenance/drill workflows for migration `220` by adding direct create/recent-log UI for `drill_log`, `maintenance_tickets`, and `maintenance_task_completions`, with no schema/auth/edge changes. Gate artifact: `test-results/agent-gates/2026-05-11T21-30-33-144Z-COL-V2-S9F.json`.
+
 Goal: make the new data understandable and usable.
 
 Includes:
