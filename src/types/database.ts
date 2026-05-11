@@ -156,6 +156,9 @@ export type Database = {
           activity_id: string
           cancel_reason: string | null
           cancelled: boolean
+          confirmed_at: string | null
+          confirmed_by_initials: string | null
+          confirmed_by_user_id: string | null
           created_at: string
           deleted_at: string | null
           end_time: string | null
@@ -164,6 +167,8 @@ export type Database = {
           id: string
           notes: string | null
           organization_id: string
+          provider_name: string | null
+          provider_type: string | null
           session_date: string
           start_time: string | null
         }
@@ -171,6 +176,9 @@ export type Database = {
           activity_id: string
           cancel_reason?: string | null
           cancelled?: boolean
+          confirmed_at?: string | null
+          confirmed_by_initials?: string | null
+          confirmed_by_user_id?: string | null
           created_at?: string
           deleted_at?: string | null
           end_time?: string | null
@@ -179,6 +187,8 @@ export type Database = {
           id?: string
           notes?: string | null
           organization_id: string
+          provider_name?: string | null
+          provider_type?: string | null
           session_date: string
           start_time?: string | null
         }
@@ -186,6 +196,9 @@ export type Database = {
           activity_id?: string
           cancel_reason?: string | null
           cancelled?: boolean
+          confirmed_at?: string | null
+          confirmed_by_initials?: string | null
+          confirmed_by_user_id?: string | null
           created_at?: string
           deleted_at?: string | null
           end_time?: string | null
@@ -194,6 +207,8 @@ export type Database = {
           id?: string
           notes?: string | null
           organization_id?: string
+          provider_name?: string | null
+          provider_type?: string | null
           session_date?: string
           start_time?: string | null
         }
@@ -4578,7 +4593,9 @@ export type Database = {
           body: string
           created_at: string
           deleted_at: string | null
+          delivery_method: string
           facility_id: string
+          family_acknowledged_at: string | null
           id: string
           organization_id: string
           resident_id: string
@@ -4591,7 +4608,9 @@ export type Database = {
           body: string
           created_at?: string
           deleted_at?: string | null
+          delivery_method?: string
           facility_id: string
+          family_acknowledged_at?: string | null
           id?: string
           organization_id: string
           resident_id: string
@@ -4604,7 +4623,9 @@ export type Database = {
           body?: string
           created_at?: string
           deleted_at?: string | null
+          delivery_method?: string
           facility_id?: string
+          family_acknowledged_at?: string | null
           id?: string
           organization_id?: string
           resident_id?: string

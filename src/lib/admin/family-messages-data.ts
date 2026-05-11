@@ -12,6 +12,8 @@ export type StaffMessageThread = {
   lastAuthorKind: "family" | "staff";
   unreadHint: boolean;
   messageCount: number;
+  latestDeliveryMethod: FamilyDeliveryMethod;
+  latestFamilyAcknowledgedAt: string | null;
   triageItemId: string | null;
   triageStatus: Database["public"]["Enums"]["family_message_triage_status"] | null;
   triageKeywords: string[];
@@ -23,7 +25,18 @@ export type StaffMessageRow = {
   authorKind: "family" | "staff";
   body: string;
   createdAt: string;
+  deliveryMethod: FamilyDeliveryMethod;
+  familyAcknowledgedAt: string | null;
 };
+
+export const familyDeliveryMethodOptions = [
+  { value: "portal_only", label: "Portal only" },
+  { value: "portal_and_email", label: "Portal + email" },
+  { value: "portal_and_sms", label: "Portal + SMS" },
+  { value: "portal_and_call", label: "Portal + call" },
+] as const;
+
+export type FamilyDeliveryMethod = (typeof familyDeliveryMethodOptions)[number]["value"];
 
 type MsgRow = {
   id: string;
@@ -32,6 +45,8 @@ type MsgRow = {
   author_kind: "family" | "staff";
   body: string;
   created_at: string;
+  delivery_method: FamilyDeliveryMethod;
+  family_acknowledged_at: string | null;
 };
 
 type ResRow = {
@@ -74,7 +89,7 @@ export async function fetchStaffMessageThreads(
 ): Promise<{ ok: true; threads: StaffMessageThread[] } | { ok: false; error: string }> {
   const { data: msgs, error: msgErr } = await supabase
     .from("family_portal_messages")
-    .select("id, resident_id, author_user_id, author_kind, body, created_at")
+    .select("id, resident_id, author_user_id, author_kind, body, created_at, delivery_method, family_acknowledged_at")
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .limit(500);
@@ -169,6 +184,8 @@ export async function fetchStaffMessageThreads(
       lastAuthorKind: latest.author_kind,
       unreadHint: latest.author_kind === "family",
       messageCount: msgs.length,
+      latestDeliveryMethod: latest.delivery_method,
+      latestFamilyAcknowledgedAt: latest.family_acknowledged_at,
       triageItemId: triage?.id ?? null,
       triageStatus: triage?.triage_status ?? null,
       triageKeywords: triage?.matched_keywords ?? [],
@@ -205,7 +222,7 @@ export async function fetchStaffMessagesForResident(
       .maybeSingle(),
     supabase
       .from("family_portal_messages")
-      .select("id, author_user_id, author_kind, body, created_at")
+      .select("id, author_user_id, author_kind, body, created_at, delivery_method, family_acknowledged_at")
       .eq("resident_id", residentId)
       .is("deleted_at", null)
       .order("created_at", { ascending: true })
@@ -242,6 +259,8 @@ export async function fetchStaffMessagesForResident(
       hour: "numeric",
       minute: "2-digit",
     }).format(new Date(m.created_at)),
+    deliveryMethod: m.delivery_method,
+    familyAcknowledgedAt: m.family_acknowledged_at,
   }));
 
   return { ok: true, messages, residentName: rn };
@@ -251,6 +270,7 @@ export async function postStaffMessage(
   supabase: SupabaseClient<Database>,
   residentId: string,
   body: string,
+  deliveryMethod: FamilyDeliveryMethod,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const trimmed = body.trim();
   if (!trimmed) return { ok: false, error: "Message cannot be empty." };
@@ -277,6 +297,7 @@ export async function postStaffMessage(
     author_user_id: user.id,
     author_kind: "staff" as const,
     body: trimmed,
+    delivery_method: deliveryMethod,
   });
 
   if (insErr) return { ok: false, error: insErr.message };

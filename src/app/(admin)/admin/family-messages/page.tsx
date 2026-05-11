@@ -5,13 +5,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, Loader2, MessageCircle, Send, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import type { StaffMessageRow, StaffMessageThread } from "@/lib/admin/family-messages-data";
+import type {
+  FamilyDeliveryMethod,
+  StaffMessageRow,
+  StaffMessageThread,
+} from "@/lib/admin/family-messages-data";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import {
   fetchStaffMessageThreads,
   fetchStaffMessagesForResident,
   postStaffMessage,
+  familyDeliveryMethodOptions,
 } from "@/lib/admin/family-messages-data";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
@@ -28,6 +33,7 @@ export default function StaffFamilyMessagesPage() {
   const [msgError, setMsgError] = useState<string | null>(null);
 
   const [draft, setDraft] = useState("");
+  const [deliveryMethod, setDeliveryMethod] = useState<FamilyDeliveryMethod>("portal_only");
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const [threadFilter, setThreadFilter] = useState<"all" | "triage" | "family_replied">("all");
@@ -84,7 +90,7 @@ export default function StaffFamilyMessagesPage() {
     setSending(true);
     try {
       const supabase = createClient();
-      const result = await postStaffMessage(supabase, selectedResidentId, draft);
+      const result = await postStaffMessage(supabase, selectedResidentId, draft, deliveryMethod);
       if (!result.ok) {
         setMsgError(result.error);
       } else {
@@ -96,7 +102,7 @@ export default function StaffFamilyMessagesPage() {
     } finally {
       setSending(false);
     }
-  }, [selectedResidentId, draft, sending, openThread]);
+  }, [selectedResidentId, draft, deliveryMethod, sending, openThread]);
 
   useEffect(() => { void loadThreads(); }, [loadThreads]);
 
@@ -323,6 +329,16 @@ export default function StaffFamilyMessagesPage() {
                              </p>
                           </div>
                           <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{m.body}</p>
+                          {m.authorKind === "staff" ? (
+                            <p className={cn("mt-2 text-[10px] font-bold uppercase tracking-widest", isStaff ? "text-indigo-200" : "text-slate-500") }>
+                              {m.deliveryMethod.replace(/_/g, " ")}
+                            </p>
+                          ) : null}
+                          {m.familyAcknowledgedAt ? (
+                            <p className={cn("mt-1 text-[10px] font-bold uppercase tracking-widest", isStaff ? "text-emerald-200" : "text-emerald-600 dark:text-emerald-300") }>
+                              Family acknowledged {new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(m.familyAcknowledgedAt))}
+                            </p>
+                          ) : null}
                         </div>
                       </div>
                     );
@@ -332,7 +348,20 @@ export default function StaffFamilyMessagesPage() {
              </div>
 
              {/* Composer */}
-             <div className="p-4 md:p-6 bg-slate-50/50 dark:bg-black/30 border-t border-slate-200/50 dark:border-white/5 flex gap-3 items-end">
+             <div className="p-4 md:p-6 bg-slate-50/50 dark:bg-black/30 border-t border-slate-200/50 dark:border-white/5 flex flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Delivery</label>
+                  <select
+                    value={deliveryMethod}
+                    onChange={(event) => setDeliveryMethod(event.target.value as FamilyDeliveryMethod)}
+                    className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs dark:border-white/10 dark:bg-black/30"
+                  >
+                    {familyDeliveryMethodOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex gap-3 items-end">
                 <textarea
                   placeholder="Type your reply to the family..."
                   value={draft}
@@ -355,6 +384,7 @@ export default function StaffFamilyMessagesPage() {
                 >
                   {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5 ml-0.5" />}
                 </button>
+             </div>
              </div>
           </div>
           <div className="flex justify-end px-4">
@@ -481,6 +511,14 @@ export default function StaffFamilyMessagesPage() {
                       </span>
                       {t.lastMessageBody}
                     </p>
+                    <p className="mt-3 text-[11px] font-mono uppercase tracking-widest text-slate-500 dark:text-zinc-400">
+                      Delivery: {t.latestDeliveryMethod.replace(/_/g, " ")}
+                    </p>
+                    {t.latestFamilyAcknowledgedAt ? (
+                      <p className="mt-1 text-[11px] font-mono uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+                        Ack: {new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(t.latestFamilyAcknowledgedAt))}
+                      </p>
+                    ) : null}
                     {t.triageKeywords.length > 0 ? (
                       <p className="mt-3 text-[11px] font-mono uppercase tracking-widest text-rose-600 dark:text-rose-400">
                         {t.triageKeywords.join(", ")}

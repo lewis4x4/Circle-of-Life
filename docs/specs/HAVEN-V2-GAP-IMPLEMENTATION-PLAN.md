@@ -149,6 +149,10 @@ Status (Slice 9G): **complete locally** — `/admin/training` now includes a sta
 
 Status (Slice 9H): **complete locally** — `/admin/settings/notifications` now includes operator/admin notification-route management backed by existing `notification_routes` (create + edit-minimal + active-route visibility by facility/channels/severity/target roles/status), with severity labels mapped to non-technical wording and no schema/auth/edge changes. Gate artifact: `test-results/agent-gates/2026-05-11T22-33-36-415Z-COL-V2-S9H.json`.
 
+### Slice 10 — Activity confirmation + family delivery metadata
+
+Status (Slice 10): **complete locally** — migration `225_col_v2_activity_and_family_message_metadata.sql` adds activity session confirmation/provider fields, creates `daily_activity_completion_check`, and adds family message `delivery_method` + `family_acknowledged_at` metadata; `/admin/activities` now provides focused recent-session confirmation UI, and `/admin/family-messages` now supports delivery-method selection and displays delivery/ack metadata in thread/message views. One-way family RLS change from handoff was intentionally **not** applied because current two-way messaging is an explicit app behavior and no later authoritative spec supersedes it. Gate artifact: `test-results/agent-gates/2026-05-11T23-01-28-176Z-COL-V2-S10.json`.
+
 Goal: make the new data understandable and usable.
 
 Includes:
