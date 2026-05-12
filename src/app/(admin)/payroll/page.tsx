@@ -192,12 +192,12 @@ export default function AdminPayrollHubPage() {
               </div>
             </V2Card>
           </div>
-          <div className="col-span-1 md:col-span-2 h-[160px]">
-            <V2Card hoverColor="blue" className="flex flex-col justify-center items-start lg:items-end">
-              <div className="relative z-10 text-left lg:text-right w-full">
-                 <p className="hidden lg:block text-xs font-mono text-slate-500 mb-4">Batches for external payroll systems. Idempotency enforced.</p>
-                 <div className="flex gap-2 justify-start lg:justify-end">
-                   <Link href="/admin/payroll/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-600 border-none")} >
+          <div className="col-span-1 md:col-span-2 h-[180px]">
+            <V2Card hoverColor="blue" className="p-5 lg:p-6">
+              <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
+                 <p className="hidden max-w-md text-xs font-mono leading-relaxed text-slate-500 lg:block">Batches for external payroll systems. Idempotency enforced.</p>
+                 <div className="flex w-full gap-2 justify-start lg:justify-end">
+                   <Link href="/admin/payroll/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-600 border-none whitespace-nowrap")} >
                      + New Batch
                    </Link>
                  </div>

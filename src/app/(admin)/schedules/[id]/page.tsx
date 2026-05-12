@@ -281,9 +281,9 @@ export default function AdminScheduleWeekDetailPage() {
 
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4 mb-2">
           <div className="col-span-1 md:col-span-2 h-[120px]">
-            <V2Card hoverColor="indigo" className="h-full flex flex-col justify-center relative overflow-hidden">
+            <V2Card hoverColor="indigo" className="p-5 lg:p-6">
               <MonolithicWatermark value={rows.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
-              <div className="relative z-10 px-4">
+              <div className="relative z-10 flex h-full flex-col justify-center">
                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
                   <PulseDot className="text-indigo-500" /> Shift assignments
                 </h3>
@@ -295,8 +295,8 @@ export default function AdminScheduleWeekDetailPage() {
             </V2Card>
           </div>
           <div className="col-span-1 h-[120px]">
-            <V2Card hoverColor="blue" className="h-full flex flex-col justify-center items-start">
-              <div className="relative z-10 px-4 w-full">
+            <V2Card hoverColor="blue" className="p-5 lg:p-6">
+              <div className="relative z-10 flex h-full w-full flex-col justify-center">
                 <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-2">Export</p>
                 <Sparkline />
               </div>

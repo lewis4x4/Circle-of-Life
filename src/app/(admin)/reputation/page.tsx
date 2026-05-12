@@ -408,12 +408,12 @@ export default function AdminReputationHubPage() {
               </div>
             </V2Card>
           </div>
-          <div className="h-[160px]">
-            <V2Card hoverColor="blue" className="flex flex-col justify-center items-start sm:items-end h-full">
-              <div className="relative z-10 text-left sm:text-right w-full">
-                 <p className="hidden sm:block text-xs font-mono text-slate-500 mb-4">Connected listings and reply workflow for the selected facility.</p>
-                 <div className="flex gap-2 justify-start sm:justify-end">
-                   <Link href="/admin/reputation/accounts/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none")} >
+          <div className="h-[180px]">
+            <V2Card hoverColor="blue" className="p-5 lg:p-6">
+              <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left sm:items-end sm:text-right">
+                 <p className="hidden max-w-md text-xs font-mono leading-relaxed text-slate-500 sm:block">Connected listings and reply workflow for the selected facility.</p>
+                 <div className="flex w-full gap-2 justify-start sm:justify-end">
+                   <Link href="/admin/reputation/accounts/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none whitespace-nowrap")} >
                      + Connect Listing
                    </Link>
                  </div>

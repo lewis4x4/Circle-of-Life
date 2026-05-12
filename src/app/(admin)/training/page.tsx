@@ -631,20 +631,20 @@ export default function AdminTrainingHubPage() {
               </div>
             </V2Card>
           </div>
-          <div className="col-span-1 md:col-span-2 h-[160px]">
-            <V2Card hoverColor="blue" className="flex flex-col justify-center items-start lg:items-end">
-              <div className="relative z-10 text-left lg:text-right w-full">
-                 <p className="hidden lg:block text-xs font-mono text-slate-500 mb-4">
+          <div className="col-span-1 md:col-span-2 h-[190px]">
+            <V2Card hoverColor="blue" className="p-5 lg:p-6">
+              <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
+                 <p className="hidden max-w-lg text-xs font-mono leading-relaxed text-slate-500 lg:block">
                    {orgWideMode
                      ? "Last 50 competency demonstrations across your accessible facilities (ordered by date). RLS enforces scope."
                      : "Documented skills demonstrations for the selected facility."}
                  </p>
-                 <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:justify-end lg:items-end">
+                 <div className="flex w-full flex-col items-start gap-2 sm:flex-row sm:flex-wrap lg:justify-end">
                    <Button
                      type="button"
                      variant="outline"
                      disabled={!facilityReady || exportingCsv}
-                     className="font-mono uppercase tracking-widest text-[10px]"
+                     className="h-auto min-h-10 whitespace-normal text-left font-mono uppercase tracking-widest text-[10px] sm:whitespace-nowrap"
                      onClick={() => void exportDemonstrationsCsv()}
                    >
                      {exportingCsv ? "Preparing…" : "Download demonstrations CSV"}
@@ -653,7 +653,7 @@ export default function AdminTrainingHubPage() {
                      <Button
                        type="button"
                        disabled
-                       className="font-mono uppercase tracking-widest text-[10px] opacity-70"
+                       className="h-auto min-h-10 whitespace-normal text-left font-mono uppercase tracking-widest text-[10px] opacity-70 sm:whitespace-nowrap"
                        title="Select a single facility in the header to record a new demonstration."
                      >
                        + New Demonstration
@@ -663,7 +663,7 @@ export default function AdminTrainingHubPage() {
                        href="/admin/training/new"
                        className={cn(
                          buttonVariants({ size: "default" }),
-                         "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none",
+                         "h-auto min-h-10 whitespace-normal text-left font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none sm:whitespace-nowrap",
                        )}
                      >
                        + New Demonstration

@@ -303,11 +303,11 @@ export function AdminStaffPageClient({
               </div>
             </V2Card>
           </div>
-          <div className="col-span-1 md:col-span-2 h-[160px]">
-            <V2Card hoverColor="indigo" className="flex flex-col justify-center items-start lg:items-end">
-              <div className="relative z-10 text-left lg:text-right w-full">
-                 <p className="hidden lg:block text-xs font-mono text-slate-500 mb-4">Certification-aware workforce array with predictive shift tracking.</p>
-                 <Link href="/admin/staff/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none")} >
+          <div className="col-span-1 md:col-span-2 h-[180px]">
+            <V2Card hoverColor="indigo" className="p-5 lg:p-6">
+              <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
+                 <p className="hidden max-w-md text-xs font-mono leading-relaxed text-slate-500 lg:block">Certification-aware workforce array with predictive shift tracking.</p>
+                 <Link href="/admin/staff/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none whitespace-nowrap")} >
                    + Add Staff Member
                  </Link>
               </div>

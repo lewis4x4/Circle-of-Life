@@ -337,9 +337,9 @@ export default function AdminShiftSwapsPage() {
 
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4 mb-2">
           <div className="h-[120px] md:col-span-2">
-            <V2Card hoverColor="indigo" className="h-full relative overflow-hidden flex flex-col justify-center">
+            <V2Card hoverColor="indigo" className="p-5 lg:p-6">
               <MonolithicWatermark value={pendingCount} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
-              <div className="relative z-10 px-4">
+              <div className="relative z-10 flex h-full flex-col justify-center">
                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
                   <ArrowLeftRight className="h-3.5 w-3.5" /> Pending
                 </h3>
@@ -348,8 +348,8 @@ export default function AdminShiftSwapsPage() {
             </V2Card>
           </div>
           <div className="h-[120px] flex items-stretch">
-            <V2Card hoverColor="blue" className="w-full flex items-center justify-center">
-              <p className="text-xs font-mono text-slate-500 px-4 text-center">Up to 500 rows loaded; CSV matches list scope.</p>
+            <V2Card hoverColor="blue" className="w-full p-5 lg:p-6">
+              <p className="flex h-full items-center justify-center text-center text-xs font-mono text-slate-500">Up to 500 rows loaded; CSV matches list scope.</p>
             </V2Card>
           </div>
         </KineticGrid>

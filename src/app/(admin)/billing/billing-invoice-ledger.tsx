@@ -201,11 +201,11 @@ export function BillingInvoiceLedger({
               </div>
             </V2Card>
           </div>
-          <div className="h-[160px]">
-            <V2Card hoverColor="indigo" className="flex flex-col justify-center items-start">
-              <div className="relative z-10 w-full text-left">
-                 <p className="hidden lg:block text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-4">Batch Actions</p>
-                 <Link href="/admin/billing/invoices/generate" className={cn(buttonVariants({ variant: "default", size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none w-full")} >
+          <div className="h-[180px]">
+            <V2Card hoverColor="indigo" className="p-5 lg:p-6">
+              <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left">
+                 <p className="hidden text-[10px] font-mono uppercase tracking-widest text-slate-500 lg:block">Batch Actions</p>
+                 <Link href="/admin/billing/invoices/generate" className={cn(buttonVariants({ variant: "default", size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none w-full whitespace-nowrap")} >
                    Generate Cycle
                  </Link>
               </div>
