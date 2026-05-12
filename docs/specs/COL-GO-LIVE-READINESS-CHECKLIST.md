@@ -130,6 +130,24 @@ These are real, but they do not block tonight's checklist work.
 
 ---
 
+## 6. Go-live KPI definitions for M19
+
+**Purpose:** These are the ten management numbers leadership will watch during launch. Each KPI needs a data source, owner, target, threshold, and action if off-track.
+
+| # | KPI | Business question | Data source | Owner | Cadence | Target | Launch threshold / action if off-track |
+|---:|---|---|---|---|---|---|---|
+| 1 | Occupancy | How full is the building? | Census / rooms-beds-residents | Executive Director / COO | Daily | Maintain target occupancy; for Homewood, compare occupied beds against 36-bed capacity. | If occupancy drops or open beds remain unfilled, review referral/admissions pipeline and discharge causes. |
+| 2 | Revenue / Rate Completeness | Are residents being billed correctly? | Resident rates, payer records, billing system | CFO / Business Office | Daily during launch; weekly steady-state | 100% active residents have current payer, rate, and billing contact. | Any active resident missing payer/rate requires business-office correction. |
+| 3 | Rounds Completion | Are required resident checks being completed on time? | Haven rounds/checks module | DON / Shift Lead | Daily at 9am huddle | 95%+ rounds completed on time. | Below 90% or missed high-risk resident round triggers same-day shift lead/DON review. |
+| 4 | Incidents / Follow-Up Timeliness | Are falls/incidents reviewed and followed up? | Incident reports, follow-up tasks, RCA where applicable | ED / DON | Daily | No unreviewed major incidents; follow-ups completed by due date. | Any major incident or overdue follow-up escalates to ED/DON and, if needed, CFO/legal/broker. |
+| 5 | Staffing Coverage | Are all required shifts covered with appropriate roles? | Schedule / staff assignments | Executive Director | Daily | 100% required shifts covered. | Any uncovered shift or missing credential coverage triggers backup staffing plan. |
+| 6 | Medication / MAR Readiness | Do we have current medication/MAR visibility? | QuickMAR export / Haven medication import or manual review | DON | Daily | Latest MAR export received/reviewed daily. | Missed export or stale MAR triggers alert to Administrator, Assistant, Michelle, and Jessica. |
+| 7 | Net Census Movement / Move-In Pipeline | Are we replacing discharges and filling open beds quickly enough? | Census, move-ins, discharges, admissions pipeline | Executive Director / COO | Daily | Maintain or grow occupied beds while keeping open rooms actively worked. | Any net census loss, stalled move-in, or unexpected vacancy triggers discharge/open-room/referral review. |
+| 8 | Care Plan / ADL Review Completion | Do we have current care needs documented for each resident? | Care plans, ADL assessments | DON / Resident Care Director | Weekly; daily during launch cleanup | 100% active residents have current care level / ADL profile. | Any resident missing care level or service-plan basics gets assigned review owner and due date. |
+| 9 | Family / Responsible-Party Contact Coverage | Can we reach the right person for every resident? | Responsible-party and emergency-contact records | Business Office Manager | Weekly; daily during launch setup | 100% active residents have responsible party, emergency contact, and communication preference. | Missing contact/authority/privacy status requires business office follow-up. |
+| 10 | Staff Credential / Training Readiness | Are staff cleared and trained for assigned roles? | Staff roster, certifications, orientation, med-tech attestations | Executive Director / HR / DON | Weekly; daily during launch setup | 100% required staff have role-appropriate credential/training status documented. | Any staff member missing required credential/training is removed from restricted assignment or escalated to ED/DON. |
+
+
 ## Go-live decision rule
 
 Do not call production PHI go-live complete until:
