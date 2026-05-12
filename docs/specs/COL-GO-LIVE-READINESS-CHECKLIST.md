@@ -11,7 +11,7 @@
 | Facility Launch Gate 2 | **BLOCKED** | Score 68/100. Blockers: data completeness under 95%, stale GL/property docs need routing/approval, rounds contradiction lacks owner, readiness below 90 target. |
 | Supabase Pro plan | **CONFIRMED** | Owner confirmed 2026-05-11. |
 | Supabase BAA | **CONFIRMED** | Owner confirmed 2026-05-11. |
-| Supabase PITR / backup posture | **OPEN** | Must confirm in Supabase dashboard before PHI production reliance. |
+| Supabase PITR / backup posture | **PARTIAL — BACKUPS ON, PITR OFF** | CLI confirmed completed physical backups through 2026-05-12, but JSON output reports `pitr_enabled: false`. Enable PITR if point-in-time restore is required before PHI production reliance. |
 | Jessica encrypted email test | **CONFIRMED** | Received 2026-05-12 from `jessicamurphy@circleoflifecommunities.com` via GoDaddy Advanced Email Security / `cloud-protect.net`; one-time-code reader flow worked; message expires in 30 days. |
 | QuickMAR upload/import | **WAITING / FUTURE BUILD** | Samples received: `Brian MAR.xlsx` and `PatientMAR.pdf` (QuickMAR/eMAR PDF, 6 pages, text-extractable). Build path: upload/dropbox → parse → review queue → approved write with provenance. |
 | User roles/access | **OPEN TONIGHT** | Need named users, roles, facility access, and least-privilege review. Facility Launch export shows M4 Employees / Users / Roles remains 25%. |
@@ -166,7 +166,7 @@ These are real, but they do not block tonight's checklist work.
 Do not call production PHI go-live complete until:
 
 1. Pro plan and BAA are confirmed. **Done.**
-2. PITR / backup posture is confirmed.
+2. PITR / backup posture is confirmed. **Partial 2026-05-12: physical backups confirmed; PITR is currently off.**
 3. User roles/access matrix is complete.
 4. Initial real data load plan is complete.
 5. UAT walkthrough has PASS evidence for the launch scope.
