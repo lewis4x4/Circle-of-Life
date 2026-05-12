@@ -48,9 +48,9 @@
 
 | Data set | Required before go-live? | Source | Owner | Status | Notes |
 |---|---:|---|---|---:|---|
-| Organization / legal entities | Yes | Existing Supabase / owner confirmation | Brian | ☐ | Confirm LLC/entity mapping. |
-| Facilities | Yes | Existing Supabase / owner confirmation | Brian | ☐ | Confirm Homewood and other facility records. |
-| Rooms / beds / units | Yes | Facility census/room list | Facility admin | ☐ | Needed before resident placement. |
+| Organization / legal entities | Yes | Facility Launch Center intake / owner confirmation | Brian | Captured — validate/import | Owner states facility/entity data is captured in the Facility Launch Center; validate from JSON export before production import. |
+| Facilities | Yes | Facility Launch Center intake / owner confirmation | Brian | Captured — validate/import | Owner states facility data is captured in the Facility Launch Center; validate from JSON export before production import. |
+| Rooms / beds / units | Yes | Facility Launch Center intake | Facility admin | Captured — validate/import | Facility Launch export reports M3 Rooms / Beds / Units at 100% completeness; validate actual room/bed rows from JSON export before production import. |
 | Residents | Yes | Census/export/manual intake | Facility admin | ☐ | Name, DOB, room, payer/rate, care level, contacts. |
 | Resident rates / payers | Yes | Business office | CFO/business office | ☐ | Needed for billing readiness. |
 | Staff / employees | Yes | HR/staff roster | Facility admin / HR | ☐ | Needed for access, scheduling, compliance. |
