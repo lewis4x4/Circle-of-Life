@@ -54,6 +54,9 @@ const trustItems = [
   { icon: ShieldCheck, label: "RLS at the data layer" },
 ];
 
+const accessEmailHref =
+  "mailto:brian.lewis@blackrockai.co?subject=Haven%20Access%20Request&body=Brian%2C%0A%0AI%27d%20like%20to%20request%20access%20to%20Haven.%0A%0AName%3A%0AOrganization%3A%0APhone%3A%0A";
+
 export default function LandingHome() {
   const { setTheme } = useTheme();
   const reduceMotion = useReducedMotion();
@@ -138,7 +141,7 @@ export default function LandingHome() {
               Sign in
             </Link>
             <Link
-              href="#demo"
+              href={accessEmailHref}
               className={cn(
                 buttonVariants({ size: "sm" }),
                 "hidden border border-teal-400/40 bg-teal-500/20 text-teal-50 hover:bg-teal-500/30 sm:inline-flex",
@@ -161,7 +164,7 @@ export default function LandingHome() {
               className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-teal-500/25 bg-teal-500/[0.08] px-4 py-1.5 text-sm text-teal-100/95 backdrop-blur-sm"
             >
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-400 opacity-40" />
+                <span className="absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-40 motion-safe:animate-ping" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-teal-400" />
               </span>
               Haven for multi-site operators
@@ -211,7 +214,7 @@ export default function LandingHome() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
               <Link
-                href="#demo"
+                href={accessEmailHref}
                 className={cn(
                   buttonVariants({ size: "lg", variant: "outline" }),
                   "h-12 rounded-xl border-white/15 bg-white/[0.04] text-white hover:bg-white/[0.08]",
@@ -299,7 +302,7 @@ export default function LandingHome() {
 
         <section
           id="platform"
-          className="relative mx-auto w-full max-w-6xl px-5 pb-24 sm:px-6"
+          className="relative mx-auto w-full max-w-6xl scroll-mt-24 px-5 pb-24 sm:px-6"
         >
           <motion.div
             initial="hidden"
@@ -391,7 +394,7 @@ export default function LandingHome() {
 
         <section
           id="clinical"
-          className="border-y border-white/[0.06] bg-white/[0.02] py-10"
+          className="scroll-mt-24 border-y border-white/[0.06] bg-white/[0.02] py-10"
         >
           <div className="landing-marquee relative overflow-hidden">
             <div className="landing-marquee-track flex w-max gap-16 px-6">
@@ -409,7 +412,7 @@ export default function LandingHome() {
 
         <section
           id="operations"
-          className="relative mx-auto w-full max-w-7xl px-5 py-24 sm:px-6 lg:py-32"
+          className="relative mx-auto w-full max-w-7xl scroll-mt-24 px-5 py-24 sm:px-6 lg:py-32"
         >
           <motion.div
             className="mb-16 text-center"
@@ -429,7 +432,6 @@ export default function LandingHome() {
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:grid-rows-[minmax(280px,auto)_minmax(240px,auto)]">
             <motion.div
-              id="security"
               className="md:row-span-2"
               initial="hidden"
               whileInView="show"
@@ -495,10 +497,12 @@ export default function LandingHome() {
             </motion.div>
 
             <motion.div
+              id="security"
               initial="hidden"
               whileInView="show"
               viewport={{ once: true, margin: "-40px" }}
               variants={bentoReveal}
+              className="scroll-mt-24"
             >
               <Card className="h-full border-white/[0.08] bg-white/[0.03] py-6 text-slate-50 ring-1 ring-white/[0.05]">
                 <CardHeader>
@@ -535,7 +539,7 @@ export default function LandingHome() {
           </div>
         </section>
 
-        <section id="demo" className="mx-auto max-w-3xl px-5 pb-28 text-center sm:px-6">
+        <section id="demo" className="mx-auto max-w-3xl scroll-mt-24 px-5 pb-28 text-center sm:px-6">
           <motion.div
             initial="hidden"
             whileInView="show"
@@ -547,13 +551,13 @@ export default function LandingHome() {
               We activate one facility pattern at a time so workflows, training, and governance stay sharp.
             </p>
             <Link
-              href="/login"
+              href={accessEmailHref}
               className={cn(
                 buttonVariants({ size: "lg" }),
                 "mt-8 inline-flex h-12 rounded-xl bg-teal-500 px-8 text-base font-semibold text-slate-950 hover:bg-teal-400",
               )}
             >
-              Sign in to the sandbox
+              Email Brian for access
             </Link>
           </motion.div>
         </section>
