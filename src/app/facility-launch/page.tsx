@@ -1,5 +1,6 @@
-/* eslint-disable @next/next/no-css-tags, @next/next/no-sync-scripts */
+/* eslint-disable @next/next/no-css-tags */
 import type { Metadata } from 'next';
+import Script from 'next/script';
 
 export const dynamic = 'force-static';
 
@@ -31,7 +32,11 @@ export default function FacilityLaunchPage() {
         </section>
       </main>
 
-      <script type="module" src="/facility-launch-static/src/app.js?v=20260506-col-responses" />
+      <Script
+        src="/facility-launch-static/src/app.js?v=20260511-next-script"
+        strategy="afterInteractive"
+        type="module"
+      />
     </>
   );
 }
