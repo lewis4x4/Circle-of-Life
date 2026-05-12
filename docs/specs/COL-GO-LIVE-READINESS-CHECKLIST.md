@@ -17,7 +17,7 @@
 | User roles/access | **OPEN TONIGHT** | Need named users, roles, facility access, and least-privilege review. Facility Launch export shows M4 Employees / Users / Roles remains 25%. |
 | Real data load plan | **PARTIAL** | Facility Launch JSON received 2026-05-12. M1 Company / Portfolio and M3 Rooms / Beds / Units are complete; M2 Facility Profile is partial; resident/staff/rate/care-plan/etc. records remain open. |
 | UAT walkthrough | **OPEN TONIGHT** | Need live role-based walkthrough evidence. |
-| Edge Functions / cron confirmation | **MOSTLY VERIFIED 2026-05-12** | Supabase migrations aligned, required functions active, secrets present, cron jobs active/recently succeeded, and Netlify env confirmed/redeployed. Remaining: Sentry dashboard health check and cron cadence decision. |
+| Edge Functions / cron confirmation | **CONFIRMED 2026-05-12** | Supabase migrations aligned, required functions active, secrets present, cron jobs active/recently succeeded, Netlify env confirmed/redeployed, 4-hour alert evaluator cadence accepted, and Sentry health confirmed. |
 
 ---
 
@@ -114,25 +114,20 @@
 | Required pg_cron jobs registered | ✅ | Remote SQL query against `cron.job` found active jobs for AR aging, eMAR schedule, missed-dose checks, KPI snapshot, monthly invoices, report scheduler, facility expiration scanner, Grace red-team, observation jobs, resident assurance jobs, and resident safety scoring. |
 | Cron jobs are running | ✅ | Remote `cron.job_run_details` showed latest runs succeeded on 2026-05-12 for daily/interval jobs; monthly invoice job last succeeded 2026-05-01. |
 | Notification secrets configured | ✅ | Supabase secrets include `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, and `DISPATCH_PUSH_SECRET`. |
-| Sentry/observability configured | ◐ | Supabase secrets include `SENTRY_DSN`, `SENTRY_ORG`, and `SENTRY_PROJECT`; live CSP includes Sentry ingest host. Still verify Sentry dashboard health: no P0/P1 unresolved issues and no PHI in captured payloads. |
+| Sentry/observability configured | ✅ | Supabase secrets include `SENTRY_DSN`, `SENTRY_ORG`, and `SENTRY_PROJECT`; live CSP includes Sentry ingest host. Owner confirmed Sentry health is good on 2026-05-12. |
 
 ### Cron schedule note
 
-Current production has `exec-alert-evaluator` active on `0 */4 * * *` rather than the older runbook expectation of `30 3 * * *`. This is more frequent than the old daily schedule. Before final closeout, decide whether to:
-
-1. accept the every-4-hours production schedule and update the older runbook, or
-2. change the cron back to daily `30 3 * * *`.
-
-Do not mark this as a blocker unless leadership wants daily-only alert evaluation.
+Current production has `exec-alert-evaluator` active on `0 */4 * * *` rather than the older runbook expectation of `30 3 * * *`. Owner accepted the every-4-hours production schedule on 2026-05-12. This is not a blocker.
 
 ### Completion plan for item 5
 
 | Step | Owner | Done when |
 |---|---|---|
 | 1. Capture Netlify dashboard env evidence | Brian / admin | Complete 2026-05-12: env names confirmed without exposing values; standalone `SUPABASE_URL` alias added as secret and site redeployed. |
-| 2. Accept or change `exec-alert-evaluator` schedule | Brian / COO / engineering | Decision recorded: keep every 4 hours or alter to daily 03:30 UTC. |
-| 3. Confirm Sentry dashboard health | Brian / engineering | Sentry project opens, current release has no P0/P1 errors, and payloads do not show PHI. |
-| 4. Update PH1 owner checklist | Agent / Brian | PH1-OA05 and PH1-OA06 are marked PASS with tester/date once Netlify + Sentry evidence is captured. |
+| 2. Accept or change `exec-alert-evaluator` schedule | Brian / COO / engineering | Complete 2026-05-12: keep every 4 hours. |
+| 3. Confirm Sentry dashboard health | Brian / engineering | Complete 2026-05-12: owner confirmed Sentry health is good. |
+| 4. Update PH1 owner checklist | Agent / Brian | Complete 2026-05-12: PH1-OA05 and PH1-OA06 marked PASS. |
 | 5. Re-run final CLI evidence | Agent | `npm run demo:ops-status`, `supabase secrets list`, `supabase functions list`, and cron SQL evidence are saved/summarized without leaking secrets. |
 
 ---
@@ -176,6 +171,6 @@ Do not call production PHI go-live complete until:
 4. Initial real data load plan is complete.
 5. UAT walkthrough has PASS evidence for the launch scope.
 6. Facility Launch Gate 2 is signed or explicitly waived for launch scope.
-7. Edge Functions, secrets, and cron jobs are confirmed on the target production project.
+7. Edge Functions, secrets, and cron jobs are confirmed on the target production project. **Done 2026-05-12.**
 8. Jessica encrypted email test is complete. **Done 2026-05-12.**
 9. QuickMAR import is either built/reviewed or explicitly deferred with a manual medication/MAR workaround.
