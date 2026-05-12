@@ -17,7 +17,7 @@
 | User roles/access | **OPEN TONIGHT** | Need named users, roles, facility access, and least-privilege review. Facility Launch export shows M4 Employees / Users / Roles remains 25%. |
 | Real data load plan | **PARTIAL** | Facility Launch JSON received 2026-05-12. M1 Company / Portfolio and M3 Rooms / Beds / Units are complete; M2 Facility Profile is partial; resident/staff/rate/care-plan/etc. records remain open. |
 | UAT walkthrough | **OPEN TONIGHT** | Need live role-based walkthrough evidence. |
-| Edge Functions / cron confirmation | **MOSTLY VERIFIED 2026-05-12** | Supabase migrations aligned, required functions active, secrets present, and cron jobs active/recently succeeded. Remaining: direct Netlify dashboard env screenshot/check and Sentry dashboard health check. |
+| Edge Functions / cron confirmation | **MOSTLY VERIFIED 2026-05-12** | Supabase migrations aligned, required functions active, secrets present, cron jobs active/recently succeeded, and Netlify env confirmed/redeployed. Remaining: Sentry dashboard health check and cron cadence decision. |
 
 ---
 
@@ -108,7 +108,7 @@
 |---|---:|---|
 | Supabase project is correct production project | ✅ | Canonical project ref is `manfqmasfqppukpobpld`; `npm run demo:ops-status` confirmed remote migration parity through migration `225`. |
 | Netlify public build points to correct Supabase project | ✅ | Live response header from `https://circleoflifealf.netlify.app` includes `connect-src` / `img-src` for `https://manfqmasfqppukpobpld.supabase.co`, proving the deployed public build used the correct `NEXT_PUBLIC_SUPABASE_URL`. |
-| Netlify production env dashboard check | ☐ | Still capture dashboard/CLI evidence for production env names: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`. Do not paste secret values into docs. Netlify CLI env lookup timed out locally, so use dashboard if needed. |
+| Netlify production env dashboard check | ✅ | Owner supplied Netlify env inventory on 2026-05-12 showing `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, cron secrets, VAPID, and Sentry build vars present across deploy contexts. Owner then added standalone `SUPABASE_URL` as a secret alias to `https://manfqmasfqppukpobpld.supabase.co` and redeployed. |
 | Supabase Edge Function secrets present | ✅ | `supabase secrets list --project-ref manfqmasfqppukpobpld` confirmed cron, push, AI, BoldSign, Sentry, OCE, resident assurance, and Supabase service secrets are present by name/digest. |
 | Required Edge Functions deployed and active | ✅ | `npm run demo:ops-status` confirmed required core functions active; `supabase functions list --project-ref manfqmasfqppukpobpld` also shows the broader function set active, including `facility-launch-parser`, BoldSign functions, Grace, OCE, and resident assurance functions. |
 | Required pg_cron jobs registered | ✅ | Remote SQL query against `cron.job` found active jobs for AR aging, eMAR schedule, missed-dose checks, KPI snapshot, monthly invoices, report scheduler, facility expiration scanner, Grace red-team, observation jobs, resident assurance jobs, and resident safety scoring. |
@@ -129,7 +129,7 @@ Do not mark this as a blocker unless leadership wants daily-only alert evaluatio
 
 | Step | Owner | Done when |
 |---|---|---|
-| 1. Capture Netlify dashboard env evidence | Brian / admin | Production env names are confirmed against `manfqmasfqppukpobpld`; values are not pasted into docs. |
+| 1. Capture Netlify dashboard env evidence | Brian / admin | Complete 2026-05-12: env names confirmed without exposing values; standalone `SUPABASE_URL` alias added as secret and site redeployed. |
 | 2. Accept or change `exec-alert-evaluator` schedule | Brian / COO / engineering | Decision recorded: keep every 4 hours or alter to daily 03:30 UTC. |
 | 3. Confirm Sentry dashboard health | Brian / engineering | Sentry project opens, current release has no P0/P1 errors, and payloads do not show PHI. |
 | 4. Update PH1 owner checklist | Agent / Brian | PH1-OA05 and PH1-OA06 are marked PASS with tester/date once Netlify + Sentry evidence is captured. |
