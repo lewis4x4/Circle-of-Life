@@ -7,13 +7,15 @@
 
 | Area | Status | Notes |
 |---|---:|---|
+| Facility Launch Gate 0 | **SIGNED** | G0 Program Charter signed by Brian Lewis as Executive Sponsor on 2026-05-12. |
+| Facility Launch Gate 2 | **BLOCKED** | Score 68/100. Blockers: data completeness under 95%, stale GL/property docs need routing/approval, rounds contradiction lacks owner, readiness below 90 target. |
 | Supabase Pro plan | **CONFIRMED** | Owner confirmed 2026-05-11. |
 | Supabase BAA | **CONFIRMED** | Owner confirmed 2026-05-11. |
 | Supabase PITR / backup posture | **OPEN** | Must confirm in Supabase dashboard before PHI production reliance. |
 | Jessica encrypted email test | **CONFIRMED** | Received 2026-05-12 from `jessicamurphy@circleoflifecommunities.com` via GoDaddy Advanced Email Security / `cloud-protect.net`; one-time-code reader flow worked; message expires in 30 days. |
 | QuickMAR upload/import | **WAITING / FUTURE BUILD** | Samples received: `Brian MAR.xlsx` and `PatientMAR.pdf` (QuickMAR/eMAR PDF, 6 pages, text-extractable). Build path: upload/dropbox → parse → review queue → approved write with provenance. |
-| User roles/access | **OPEN TONIGHT** | Need named users, roles, facility access, and least-privilege review. |
-| Real data load plan | **OPEN TONIGHT** | Need source files/owners/order for facilities, rooms, residents, staff, rates/payers, contacts, vendors, and policies. |
+| User roles/access | **OPEN TONIGHT** | Need named users, roles, facility access, and least-privilege review. Facility Launch export shows M4 Employees / Users / Roles remains 25%. |
+| Real data load plan | **PARTIAL** | Facility Launch JSON received 2026-05-12. M1 Company / Portfolio and M3 Rooms / Beds / Units are complete; M2 Facility Profile is partial; resident/staff/rate/care-plan/etc. records remain open. |
 | UAT walkthrough | **OPEN TONIGHT** | Need live role-based walkthrough evidence. |
 | Edge Functions / cron confirmation | **OPEN TONIGHT** | Prior repo docs show deployed/active as of 2026-04-10; re-confirm target production state before go-live. |
 
@@ -48,9 +50,9 @@
 
 | Data set | Required before go-live? | Source | Owner | Status | Notes |
 |---|---:|---|---|---:|---|
-| Organization / legal entities | Yes | Facility Launch Center intake / owner confirmation | Brian | Captured — validate/import | Owner states facility/entity data is captured in the Facility Launch Center; validate from JSON export before production import. |
-| Facilities | Yes | Facility Launch Center intake / owner confirmation | Brian | Captured — validate/import | Owner states facility data is captured in the Facility Launch Center; validate from JSON export before production import. |
-| Rooms / beds / units | Yes | Facility Launch Center intake | Facility admin | Captured — validate/import | Facility Launch export reports M3 Rooms / Beds / Units at 100% completeness; validate actual room/bed rows from JSON export before production import. |
+| Organization / legal entities | Yes | Facility Launch Center JSON export | Brian | Captured — import-ready after validation | M1 is 100% complete. Captured operating LLC `Sorensen, Smith & Bay LLC`, property LLC `Homewood Property Company LLC`, and linked entity IDs. |
+| Facilities | Yes | Facility Launch Center JSON export | Brian | Partial — validate/import | M2 is 63% complete. Captured Homewood Lodge ALF, FL/AHCA, capacity 36, main phone, ED, business office, mailing address. Missing license number, license expiration, physical/operating address confirmation, DON, maintenance director, after-hours phone. |
+| Rooms / beds / units | Yes | Facility Launch Center JSON export | Facility admin | Captured — import-ready after validation | M3 is 100% complete: 20 rooms / 36 beds. Rooms 1–4 are private singles; rooms 5–20 are companion doubles; single floor/no wings. |
 | Residents | Yes | Census/export/manual intake | Facility admin | ☐ | Name, DOB, room, payer/rate, care level, contacts. |
 | Resident rates / payers | Yes | Business office | CFO/business office | ☐ | Needed for billing readiness. |
 | Staff / employees | Yes | HR/staff roster | Facility admin / HR | ☐ | Needed for access, scheduling, compliance. |
@@ -137,6 +139,7 @@ Do not call production PHI go-live complete until:
 3. User roles/access matrix is complete.
 4. Initial real data load plan is complete.
 5. UAT walkthrough has PASS evidence for the launch scope.
-6. Edge Functions, secrets, and cron jobs are confirmed on the target production project.
-7. Jessica encrypted email test is complete. **Done 2026-05-12.**
-8. QuickMAR import is either built/reviewed or explicitly deferred with a manual medication/MAR workaround.
+6. Facility Launch Gate 2 is signed or explicitly waived for launch scope.
+7. Edge Functions, secrets, and cron jobs are confirmed on the target production project.
+8. Jessica encrypted email test is complete. **Done 2026-05-12.**
+9. QuickMAR import is either built/reviewed or explicitly deferred with a manual medication/MAR workaround.
