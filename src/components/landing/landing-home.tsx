@@ -16,7 +16,6 @@ import {
   ArrowRight,
   Banknote,
   CheckCircle2,
-  ClipboardList,
   Heart,
   ShieldCheck,
   Sparkles,
@@ -139,13 +138,13 @@ export default function LandingHome() {
               Sign in
             </Link>
             <Link
-              href="/onboarding"
+              href="#demo"
               className={cn(
                 buttonVariants({ size: "sm" }),
                 "hidden border border-teal-400/40 bg-teal-500/20 text-teal-50 hover:bg-teal-500/30 sm:inline-flex",
               )}
             >
-              Onboarding
+              Request access
             </Link>
           </motion.div>
         </div>
@@ -202,13 +201,13 @@ export default function LandingHome() {
               className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center"
             >
               <Link
-                href="/onboarding"
+                href="/login"
                 className={cn(
                   buttonVariants({ size: "lg" }),
                   "h-12 rounded-xl bg-white px-7 text-base font-semibold text-slate-950 shadow-[0_0_48px_-12px_rgba(45,212,191,0.55)] hover:bg-slate-100",
                 )}
               >
-                Open onboarding portal
+                Sign in to Haven
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
               <Link
@@ -248,19 +247,20 @@ export default function LandingHome() {
             >
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-500/20 text-teal-200">
-                  <ClipboardList className="h-4 w-4" />
+                  <Activity className="h-4 w-4" />
                 </div>
                 <div className="space-y-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-200/90">
-                    Onboarding Command Center
+                    Operations Command Layer
                   </p>
                   <p className="text-sm leading-relaxed text-slate-300">
-                    Separate activation portal for leadership discovery, decisions, blockers, and document collection.
+                    Role-based workspaces keep census, care execution, compliance evidence, and executive signals tied
+                    to the facility record.
                   </p>
                   <div className="flex flex-wrap gap-2 text-[11px] text-slate-300">
-                    <span className="rounded-full border border-white/15 bg-white/[0.03] px-2.5 py-1">22% complete</span>
-                    <span className="rounded-full border border-white/15 bg-white/[0.03] px-2.5 py-1">4 blockers</span>
-                    <span className="rounded-full border border-white/15 bg-white/[0.03] px-2.5 py-1">12 documents pending</span>
+                    <span className="rounded-full border border-white/15 bg-white/[0.03] px-2.5 py-1">Facility-scoped</span>
+                    <span className="rounded-full border border-white/15 bg-white/[0.03] px-2.5 py-1">Audit-ready</span>
+                    <span className="rounded-full border border-white/15 bg-white/[0.03] px-2.5 py-1">Executive visibility</span>
                   </div>
                 </div>
               </div>
@@ -544,7 +544,7 @@ export default function LandingHome() {
           >
             <h3 className="font-display text-2xl font-semibold text-white sm:text-3xl">Start with a focused pilot.</h3>
             <p className="mt-3 text-slate-400">
-              We onboard one facility pattern at a time so workflows, training, and governance stay sharp.
+              We activate one facility pattern at a time so workflows, training, and governance stay sharp.
             </p>
             <Link
               href="/login"
