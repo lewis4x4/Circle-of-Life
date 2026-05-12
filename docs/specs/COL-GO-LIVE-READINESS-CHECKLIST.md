@@ -17,7 +17,7 @@
 | User roles/access | **OPEN TONIGHT** | Need named users, roles, facility access, and least-privilege review. Facility Launch export shows M4 Employees / Users / Roles remains 25%. |
 | Real data load plan | **PARTIAL** | Facility Launch JSON received 2026-05-12. M1 Company / Portfolio and M3 Rooms / Beds / Units are complete; M2 Facility Profile is partial; resident/staff/rate/care-plan/etc. records remain open. |
 | UAT walkthrough | **OPEN TONIGHT** | Need live role-based walkthrough evidence. |
-| Edge Functions / cron confirmation | **OPEN TONIGHT** | Prior repo docs show deployed/active as of 2026-04-10; re-confirm target production state before go-live. |
+| Edge Functions / cron confirmation | **MOSTLY VERIFIED 2026-05-12** | Supabase migrations aligned, required functions active, secrets present, and cron jobs active/recently succeeded. Remaining: direct Netlify dashboard env screenshot/check and Sentry dashboard health check. |
 
 ---
 
@@ -102,20 +102,38 @@
 
 **Goal:** Confirm target production automation is active and using the right secrets.
 
-| Item | Status | Evidence needed |
+### 2026-05-12 verification snapshot
+
+| Item | Status | Evidence / next action |
 |---|---:|---|
-| Supabase project is correct production project | ☐ | Project ref / URL confirmed. |
-| Netlify env vars point to correct Supabase project | ☐ | Netlify dashboard or deploy env check. |
-| Supabase Edge Function secrets present | ☐ | Supabase dashboard / CLI output. |
-| Required Edge Functions deployed and active | ☐ | Supabase dashboard / CLI output. |
-| Required pg_cron jobs registered | ☐ | SQL query / dashboard evidence. |
-| Cron jobs are running on intended schedule | ☐ | Recent invocation evidence. |
-| Notification secrets configured, if notifications used | ☐ | VAPID / dispatch secret confirmation. |
-| Sentry/observability configured, if used | ☐ | Sentry project / DSN confirmation. |
+| Supabase project is correct production project | ✅ | Canonical project ref is `manfqmasfqppukpobpld`; `npm run demo:ops-status` confirmed remote migration parity through migration `225`. |
+| Netlify public build points to correct Supabase project | ✅ | Live response header from `https://circleoflifealf.netlify.app` includes `connect-src` / `img-src` for `https://manfqmasfqppukpobpld.supabase.co`, proving the deployed public build used the correct `NEXT_PUBLIC_SUPABASE_URL`. |
+| Netlify production env dashboard check | ☐ | Still capture dashboard/CLI evidence for production env names: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`. Do not paste secret values into docs. Netlify CLI env lookup timed out locally, so use dashboard if needed. |
+| Supabase Edge Function secrets present | ✅ | `supabase secrets list --project-ref manfqmasfqppukpobpld` confirmed cron, push, AI, BoldSign, Sentry, OCE, resident assurance, and Supabase service secrets are present by name/digest. |
+| Required Edge Functions deployed and active | ✅ | `npm run demo:ops-status` confirmed required core functions active; `supabase functions list --project-ref manfqmasfqppukpobpld` also shows the broader function set active, including `facility-launch-parser`, BoldSign functions, Grace, OCE, and resident assurance functions. |
+| Required pg_cron jobs registered | ✅ | Remote SQL query against `cron.job` found active jobs for AR aging, eMAR schedule, missed-dose checks, KPI snapshot, monthly invoices, report scheduler, facility expiration scanner, Grace red-team, observation jobs, resident assurance jobs, and resident safety scoring. |
+| Cron jobs are running | ✅ | Remote `cron.job_run_details` showed latest runs succeeded on 2026-05-12 for daily/interval jobs; monthly invoice job last succeeded 2026-05-01. |
+| Notification secrets configured | ✅ | Supabase secrets include `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, and `DISPATCH_PUSH_SECRET`. |
+| Sentry/observability configured | ◐ | Supabase secrets include `SENTRY_DSN`, `SENTRY_ORG`, and `SENTRY_PROJECT`; live CSP includes Sentry ingest host. Still verify Sentry dashboard health: no P0/P1 unresolved issues and no PHI in captured payloads. |
 
-### Functions previously documented as deployed/active
+### Cron schedule note
 
-Prior repo records say Edge Functions and cron jobs were active as of 2026-04-10. Before go-live, re-check the current production target rather than relying on stale evidence.
+Current production has `exec-alert-evaluator` active on `0 */4 * * *` rather than the older runbook expectation of `30 3 * * *`. This is more frequent than the old daily schedule. Before final closeout, decide whether to:
+
+1. accept the every-4-hours production schedule and update the older runbook, or
+2. change the cron back to daily `30 3 * * *`.
+
+Do not mark this as a blocker unless leadership wants daily-only alert evaluation.
+
+### Completion plan for item 5
+
+| Step | Owner | Done when |
+|---|---|---|
+| 1. Capture Netlify dashboard env evidence | Brian / admin | Production env names are confirmed against `manfqmasfqppukpobpld`; values are not pasted into docs. |
+| 2. Accept or change `exec-alert-evaluator` schedule | Brian / COO / engineering | Decision recorded: keep every 4 hours or alter to daily 03:30 UTC. |
+| 3. Confirm Sentry dashboard health | Brian / engineering | Sentry project opens, current release has no P0/P1 errors, and payloads do not show PHI. |
+| 4. Update PH1 owner checklist | Agent / Brian | PH1-OA05 and PH1-OA06 are marked PASS with tester/date once Netlify + Sentry evidence is captured. |
+| 5. Re-run final CLI evidence | Agent | `npm run demo:ops-status`, `supabase secrets list`, `supabase functions list`, and cron SQL evidence are saved/summarized without leaking secrets. |
 
 ---
 
