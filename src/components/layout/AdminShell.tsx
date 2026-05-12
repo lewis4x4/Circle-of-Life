@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -106,20 +106,45 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const { setTheme, theme } = useTheme();
   const selectedFacilityId = useFacilityStore((s) => s.selectedFacilityId);
   const availableFacilities = useFacilityStore((s) => s.availableFacilities);
+  const facilitiesFetchedAt = useFacilityStore((s) => s.facilitiesFetchedAt);
+  const facilitiesCacheUserId = useFacilityStore((s) => s.facilitiesCacheUserId);
   const setSelectedFacility = useFacilityStore((s) => s.setSelectedFacility);
   const setAvailableFacilities = useFacilityStore((s) => s.setAvailableFacilities);
+  const clearFacilityCache = useFacilityStore((s) => s.clearFacilityCache);
 
-  const currentFacility = availableFacilities.find((f) => f.id === selectedFacilityId);
+  const { email: sessionEmail, appRole, user, loading: authLoading } = useHavenAuth();
+  const currentUserId = user?.id ?? null;
+  const hasFreshOwnedFacilityCache =
+    currentUserId != null &&
+    facilitiesCacheUserId === currentUserId &&
+    facilitiesFetchedAt != null &&
+    availableFacilities.length > 0 &&
+    Date.now() - facilitiesFetchedAt < FACILITY_LIST_TTL_MS;
+  const visibleFacilities = hasFreshOwnedFacilityCache ? availableFacilities : [];
+  const selectedFacilityIsValid =
+    selectedFacilityId == null || visibleFacilities.some((facility) => facility.id === selectedFacilityId);
+  const safeSelectedFacilityId = selectedFacilityIsValid ? selectedFacilityId : null;
+  const currentFacility = visibleFacilities.find((f) => f.id === safeSelectedFacilityId);
 
   const [facilitiesLoading, setFacilitiesLoading] = useState(true);
   const [facilitiesLoadFailed, setFacilitiesLoadFailed] = useState(false);
-  const { email: sessionEmail, appRole } = useHavenAuth();
+  const facilityRefreshRequestRef = useRef(0);
+  const currentUserIdRef = useRef<string | null>(currentUserId);
   const roleConfig = useMemo(() => getRoleDashboardConfig(appRole), [appRole]);
   const [signingOut, setSigningOut] = useState(false);
+
+  useEffect(() => {
+    currentUserIdRef.current = currentUserId;
+  }, [currentUserId]);
 
   const handleSignOut = useCallback(async () => {
     setSigningOut(true);
     try {
+      facilityRefreshRequestRef.current += 1;
+      clearFacilityCache();
+      setSelectedFacility(null);
+      syncSelectedFacilityCookie(null);
+
       const supabase = createClient();
       await supabase.auth.signOut();
       router.replace("/login");
@@ -127,45 +152,90 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     } finally {
       setSigningOut(false);
     }
-  }, [router]);
+  }, [clearFacilityCache, router, setSelectedFacility]);
 
   const refreshFacilities = useCallback(async () => {
-    const st = useFacilityStore.getState();
-    if (
-      st.facilitiesFetchedAt != null &&
-      st.availableFacilities.length > 0 &&
-      Date.now() - st.facilitiesFetchedAt < FACILITY_LIST_TTL_MS
-    ) {
+    if (authLoading) {
+      setFacilitiesLoading(true);
+      setFacilitiesLoadFailed(false);
+      return;
+    }
+
+    if (currentUserId == null) {
+      facilityRefreshRequestRef.current += 1;
+      clearFacilityCache();
+      setSelectedFacility(null);
+      syncSelectedFacilityCookie(null);
       setFacilitiesLoading(false);
       setFacilitiesLoadFailed(false);
       return;
     }
 
+    const st = useFacilityStore.getState();
+    if (
+      st.facilitiesCacheUserId === currentUserId &&
+      st.facilitiesFetchedAt != null &&
+      st.availableFacilities.length > 0 &&
+      Date.now() - st.facilitiesFetchedAt < FACILITY_LIST_TTL_MS
+    ) {
+      if (st.selectedFacilityId != null && !st.availableFacilities.some((f) => f.id === st.selectedFacilityId)) {
+        setSelectedFacility(null);
+        syncSelectedFacilityCookie(null);
+      }
+      setFacilitiesLoading(false);
+      setFacilitiesLoadFailed(false);
+      return;
+    }
+
+    if (st.facilitiesCacheUserId != null && st.facilitiesCacheUserId !== currentUserId) {
+      facilityRefreshRequestRef.current += 1;
+      clearFacilityCache();
+      setSelectedFacility(null);
+      syncSelectedFacilityCookie(null);
+    }
+
+    const requestId = facilityRefreshRequestRef.current + 1;
+    facilityRefreshRequestRef.current = requestId;
     setFacilitiesLoading(true);
     setFacilitiesLoadFailed(false);
     try {
       const list = await fetchAdminFacilityOptions();
-      setAvailableFacilities(list);
+      if (facilityRefreshRequestRef.current !== requestId || currentUserIdRef.current !== currentUserId) {
+        return;
+      }
+
+      setAvailableFacilities(list, currentUserId);
       const persistedId = useFacilityStore.getState().selectedFacilityId;
       if (persistedId != null && !list.some((f) => f.id === persistedId)) {
         setSelectedFacility(null);
+        syncSelectedFacilityCookie(null);
       }
     } catch (err) {
+      if (facilityRefreshRequestRef.current !== requestId || currentUserIdRef.current !== currentUserId) {
+        return;
+      }
+
       console.warn("[AdminShell] refreshFacilities failed", err);
-      setAvailableFacilities([]);
+      clearFacilityCache();
       setFacilitiesLoadFailed(true);
     } finally {
-      setFacilitiesLoading(false);
+      if (facilityRefreshRequestRef.current === requestId && currentUserIdRef.current === currentUserId) {
+        setFacilitiesLoading(false);
+      }
     }
-  }, [setAvailableFacilities, setSelectedFacility]);
+  }, [authLoading, clearFacilityCache, currentUserId, setAvailableFacilities, setSelectedFacility]);
 
   useEffect(() => {
     void refreshFacilities();
   }, [refreshFacilities]);
 
   useEffect(() => {
-    syncSelectedFacilityCookie(selectedFacilityId);
-  }, [selectedFacilityId]);
+    if (authLoading) {
+      return;
+    }
+
+    syncSelectedFacilityCookie(currentUserId == null ? null : safeSelectedFacilityId);
+  }, [authLoading, currentUserId, safeSelectedFacilityId]);
 
   const handleFacilityScopeChange = useCallback((facilityId: string | null) => {
     setSelectedFacility(facilityId);
@@ -173,9 +243,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     router.refresh();
   }, [router, setSelectedFacility]);
 
-  const facilityTriggerLabel = facilitiesLoading
+  const facilityControlLoading = authLoading || facilitiesLoading;
+  const facilityTriggerLabel = facilityControlLoading
     ? "Loading facilities…"
-    : selectedFacilityId === null
+    : safeSelectedFacilityId === null
       ? "All facilities"
       : (currentFacility?.name ?? "Select facility…");
 
@@ -424,9 +495,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               aria-label={
                 facilitiesLoadFailed
                   ? "Facility filter — failed to load list, open for retry"
-                  : facilitiesLoading
+                  : facilityControlLoading
                     ? "Facility filter — loading"
-                    : `Facility filter — ${selectedFacilityId === null ? "all facilities" : currentFacility?.name ?? "selected facility"}`
+                    : `Facility filter — ${safeSelectedFacilityId === null ? "all facilities" : currentFacility?.name ?? "selected facility"}`
               }
               className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 tap-responsive focus-visible:outline-none transition-all"
             >
@@ -445,7 +516,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   <div className="w-6 h-6 rounded bg-slate-100 dark:bg-white/10 flex items-center justify-center"><Building2 className="w-3 h-3" /></div>
                   All facilities
                 </div>
-                {selectedFacilityId === null && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
+                {safeSelectedFacilityId === null && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
               </DropdownMenuItem>
 
               <DropdownMenuSeparator className="dark:bg-white/10 my-1" />
@@ -457,14 +528,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 </div>
               )}
 
-              {availableFacilities.map((facility) => (
+              {visibleFacilities.map((facility) => (
                 <DropdownMenuItem 
                   key={facility.id}
                   onClick={() => handleFacilityScopeChange(facility.id)}
                   className="flex justify-between items-center cursor-pointer rounded-lg p-3 dark:focus:bg-white/5"
                 >
                   <span className="truncate pr-2">{facility.name}</span>
-                  {selectedFacilityId === facility.id && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />}
+                  {safeSelectedFacilityId === facility.id && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -480,7 +551,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <Search className="w-5 h-5" />
           </Link>
 
-          <PilotFeedbackLauncher shellKind="admin" facilityId={selectedFacilityId} compact />
+          <PilotFeedbackLauncher shellKind="admin" facilityId={safeSelectedFacilityId} compact />
           
           <button className="relative p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-zinc-300 tap-responsive transition-colors" aria-label="Notifications">
             <Bell className="w-5 h-5" />
