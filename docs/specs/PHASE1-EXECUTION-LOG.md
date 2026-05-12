@@ -138,7 +138,7 @@ Use `Tester` to record the human who ran the step. Use `Notes` to capture:
 | PH1-P03 | Seeded users + roles + facility access | **PASS** | owner | 2026-04-09 | Pilot users sign in; JWT includes `app_metadata.app_role` after **`110`**; `user_profiles` aligned per **`111`**. Confirmed live for owner, facility_admin, caregiver, family — see **Owner verification — 2026-04-09** above. |
 | PH1-P04 | Facility context in admin shell | PENDING | | | Spot-check facility selector on `/admin` when completing §B UAT; single-facility pilot still acceptable. **Repo:** header control `data-testid="admin-facility-filter-trigger"` (commit **bd091ae**); `BASE_URL=… npm run demo:auth-smoke:real` asserts it is visible for the pilot `facility_admin` session. |
 | PH1-P05 | Storage buckets (if/when uploads added) | **N/A** | | | No Storage in Phase 1 UI per checklist |
-| PH1-P06 | Pro plan, BAA before PHI, PITR (production) | PENDING | | | Dashboard only — not inferable from repo |
+| PH1-P06 | Pro plan, BAA before PHI, PITR (production) | PARTIAL | Brian Lewis | 2026-05-11 | Owner confirmed Supabase Pro plan and BAA. PITR / backup posture still needs dashboard confirmation before marking full PASS. |
 
 ---
 
@@ -186,7 +186,7 @@ Use `Tester` to record the human who ran the step. Use `Notes` to capture:
 | PH1-OA01 | **§B–§E** depth UAT — all rows in sections **B–E** below | PENDING | | | Checklist: [PHASE1-ACCEPTANCE-CHECKLIST.md](./PHASE1-ACCEPTANCE-CHECKLIST.md) §B–§E; record each row **PASS** in place |
 | PH1-OA02 | **PH1-A04** — wrong role cannot open other-shell routes | PENDING | | | Caregiver/family attempt `/admin/*`; expect deny/redirect — see §A table **PH1-A04** |
 | PH1-OA03 | **PH1-P04** — facility context / switcher spot-check | PENDING | | | Single-facility pilot acceptable; note facility used |
-| PH1-OA04 | **PH1-P06** — Pro plan, **BAA** before PHI, **PITR** enabled | PENDING | | | Supabase Dashboard → Organization / Billing / Database settings |
+| PH1-OA04 | **PH1-P06** — Pro plan, **BAA** before PHI, **PITR** enabled | PARTIAL | Brian Lewis | 2026-05-11 | Supabase Pro plan and BAA owner-confirmed. PITR / backup posture remains open. See [COL-GO-LIVE-READINESS-CHECKLIST.md](./COL-GO-LIVE-READINESS-CHECKLIST.md). |
 | PH1-OA05 | **Edge Function secrets** (cron + VAPID + dispatch) on target | PENDING | | | Names in [supabase/functions/README.md](../../supabase/functions/README.md) § Secrets |
 | PH1-OA06 | **Scheduled invocations** (crons) for Edge functions | PENDING | | | [TRACK-C-WORKFLOW-HARDENING.md](./TRACK-C-WORKFLOW-HARDENING.md) deploy checklist + billing/KPI/report jobs |
 | PH1-OA07 | **A6** — active waivers reviewed | PENDING | | | [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) |

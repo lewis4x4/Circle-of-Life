@@ -30,6 +30,7 @@
 | **12** | ~~**Certificate PDF upload**~~ (`staff_training_completions` + `competency-demonstrations` paths) | — | — | — | **D40** — `117` + log form + hub; **D11** — demonstrations. |
 | **14** | **Automated med–texture cross-check** (e.g. Edge job flagging solid vs thickened fluid) | Medium–high | **High (clinical)** | Med orders, pharmacist rules | **Partial:** **D50**–**D52** read-only hints on **`/admin/dietary/clinical-review`** (`med-fluid-diet-hints.ts`: liquid vs thickened fluid; solid oral vs texture-modified food IDDSI 3–6). **Full Edge automation** still needs **clinical / pharmacy** sign-off. |
 | **14** | ~~**Read-only “review” panel** (diet + resident meds)~~ | — | — | — | **Shipped D13** — `/admin/dietary/clinical-review`. |
+| **06** | **QuickMAR / eMAR dropbox ingestion pipeline** | High | **High (PHI + clinical)** | Supabase Storage, parser jobs, review queue, resident matching, Jessica encrypted-email test, owner approval | **Deferred — do not build today.** Owner-proposed world-class flow: staff exports QuickMAR/MAR workbook, saves to a dedicated Google Drive/Dropbox intake folder, n8n detects the file, uploads original to Supabase Storage, creates an import job, parser extracts residents/meds/MAR facts, human reviewer approves/rejects with provenance, and only approved facts write into Haven modules. Guardrail: never auto-write parsed medication facts directly into live med orders without human approval. |
 
 ---
 
@@ -177,7 +178,7 @@
 
 **~~Recommended next segment — D84~~** **DONE (2026-04-10)** — Module **11:** **`/admin/staffing`** — **snapshots CSV matches loaded hub batch** — [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md).
 
-**Recommended next segment — D85+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; other §1 deferrals — one bounded slice at a time.
+**Recommended next segment — D85+ (owner priority):** **14** full Edge/cron cross-check after clinical rules sign-off; **06 QuickMAR / eMAR dropbox ingestion** after owner confirms intake source, sample coverage, resident matching rules, and approval workflow; other §1 deferrals — one bounded slice at a time.
 
 ---
 
@@ -221,6 +222,7 @@ Defer **23 OAuth**, **22 MLLP**, **14 full rule engine** until product/security 
 
 - **Track A** can remain skipped for **engineering** progress; PHI production still needs owner attestation separately.
 - **COL clinical sign-off** required before **automated** dietary or HL7 **lead creation**.
+- **QuickMAR / eMAR ingestion** is explicitly deferred until owner is ready. Required decisions: Google Drive vs Dropbox vs direct Haven upload as the intake source; n8n vs native Supabase/Edge job orchestration; representative sample exports; resident matching identifiers; reviewer role; and whether encrypted email is manual `[ENCRYPT]` send from `jessicamurphy@circleoflifecommunities.com` or later automated mail delivery.
 - **Next migration number** in README: **`121`** — use for the next DDL (multi-facility demo seed shipped **`120`**).
 
 ---

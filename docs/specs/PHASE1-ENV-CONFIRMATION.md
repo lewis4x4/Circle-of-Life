@@ -50,9 +50,9 @@ Command: `supabase migration list`
 
 | Check | Where | Owner |
 |-------|--------|-------|
-| Pro plan | Billing / subscription | ☐ |
-| BAA before PHI | Compliance / legal | ☐ |
-| PITR enabled | Database settings / backups | ☐ |
+| Pro plan | Billing / subscription | ✅ Owner-confirmed 2026-05-11 |
+| BAA before PHI | Compliance / legal | ✅ Owner-confirmed 2026-05-11 |
+| PITR enabled | Database settings / backups | ☐ Still needs dashboard confirmation |
 
 ---
 
