@@ -10,8 +10,8 @@
 | Supabase Pro plan | **CONFIRMED** | Owner confirmed 2026-05-11. |
 | Supabase BAA | **CONFIRMED** | Owner confirmed 2026-05-11. |
 | Supabase PITR / backup posture | **OPEN** | Must confirm in Supabase dashboard before PHI production reliance. |
-| Jessica encrypted email test | **WAITING** | Expected 2026-05-12. Sender: `jessicamurphy@circleoflifecommunities.com`; subject must start with `[ENCRYPT]`. |
-| QuickMAR upload/import | **WAITING / FUTURE BUILD** | Expected input 2026-05-12. Build path: upload/dropbox → parse → review queue → approved write with provenance. |
+| Jessica encrypted email test | **CONFIRMED** | Received 2026-05-12 from `jessicamurphy@circleoflifecommunities.com` via GoDaddy Advanced Email Security / `cloud-protect.net`; one-time-code reader flow worked; message expires in 30 days. |
+| QuickMAR upload/import | **WAITING / FUTURE BUILD** | Samples received: `Brian MAR.xlsx` and `PatientMAR.pdf` (QuickMAR/eMAR PDF, 6 pages, text-extractable). Build path: upload/dropbox → parse → review queue → approved write with provenance. |
 | User roles/access | **OPEN TONIGHT** | Need named users, roles, facility access, and least-privilege review. |
 | Real data load plan | **OPEN TONIGHT** | Need source files/owners/order for facilities, rooms, residents, staff, rates/payers, contacts, vendors, and policies. |
 | UAT walkthrough | **OPEN TONIGHT** | Need live role-based walkthrough evidence. |
@@ -123,8 +123,8 @@ These are real, but they do not block tonight's checklist work.
 
 | Item | Expected | Current action |
 |---|---|---|
-| Jessica encrypted email test | 2026-05-12 | Confirm `[ENCRYPT]` trigger, attachment behavior, and recipient experience. |
-| QuickMAR upload/import build | After sample/flow confirmation | Build as a safe parser + review queue first; no direct live med overwrite. |
+| Jessica encrypted email test | 2026-05-12 | **Confirmed.** GoDaddy Advanced Email Security delivered secure message from Jessica with one-time-code access. |
+| QuickMAR upload/import build | After sample/flow confirmation | Build as a safe parser + review queue first; no direct live med overwrite. Current samples: Excel MAR workbook and PDF MAR export. |
 
 ---
 
@@ -138,5 +138,5 @@ Do not call production PHI go-live complete until:
 4. Initial real data load plan is complete.
 5. UAT walkthrough has PASS evidence for the launch scope.
 6. Edge Functions, secrets, and cron jobs are confirmed on the target production project.
-7. Jessica encrypted email test is complete or explicitly waived.
+7. Jessica encrypted email test is complete. **Done 2026-05-12.**
 8. QuickMAR import is either built/reviewed or explicitly deferred with a manual medication/MAR workaround.

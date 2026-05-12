@@ -222,7 +222,7 @@ Defer **23 OAuth**, **22 MLLP**, **14 full rule engine** until product/security 
 
 - **Track A** can remain skipped for **engineering** progress; PHI production still needs owner attestation separately.
 - **COL clinical sign-off** required before **automated** dietary or HL7 **lead creation**.
-- **QuickMAR / eMAR ingestion** is explicitly deferred until owner is ready. Required decisions: Google Drive vs Dropbox vs direct Haven upload as the intake source; n8n vs native Supabase/Edge job orchestration; representative sample exports; resident matching identifiers; reviewer role; and whether encrypted email is manual `[ENCRYPT]` send from `jessicamurphy@circleoflifecommunities.com` or later automated mail delivery.
+- **QuickMAR / eMAR ingestion** is explicitly deferred until owner is ready. Required decisions: Google Drive vs Dropbox vs direct Haven upload as the intake source; n8n vs native Supabase/Edge job orchestration; representative sample exports (received so far: `Brian MAR.xlsx` Excel workbook and `PatientMAR.pdf` text-extractable MAR PDF); resident matching identifiers; reviewer role; and whether encrypted email is manual `[ENCRYPT]` send from `jessicamurphy@circleoflifecommunities.com` or later automated mail delivery.
 - **Next migration number** in README: **`121`** — use for the next DDL (multi-facility demo seed shipped **`120`**).
 
 ---
