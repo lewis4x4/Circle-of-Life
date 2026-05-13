@@ -57,6 +57,7 @@
 | Resident rates / payers | Yes | Business office | CFO/business office | ☐ | Needed for billing readiness. |
 | Staff / employees | Yes | HR/staff roster | Facility admin / HR | ☐ | Needed for access, scheduling, compliance. |
 | User accounts | Yes | User matrix | Brian / admin | ☐ | Must match roles/access above. |
+| Admissions / move-in readiness | Recommended before go-live; required for active new admits | `operations/compliance-checklists/admin-log.md` + `operations/compliance-checklists/lmh-admin-mgr-log.md` | Administrator / Business Office | Partial — checklist source found | Covers new-admit readiness: sexual offender search, signed contract, 1823, DNR, Face Sheet, doctor assignment, Medicaid/OSS/rep-payee/SSA items when applicable, first month/payment, A/R, Drive upload, and admit/discharge log. Active CRM/inquiry pipeline source remains open. |
 | Family/responsible-party contacts | Recommended | Admission records | Facility admin | ☐ | Needed for family portal, notifications, emergency contact. |
 | Medication/MAR data | Yes for med workflows | QuickMAR export | Facility admin / nurse | Waiting | QuickMAR build pending; do not auto-write without review. |
 | Vendors / emergency contacts | Recommended | Facility ops list | Facility admin | ☐ | Utilities, pharmacy, physician contacts, emergency services. |
@@ -67,12 +68,13 @@
 1. Organization, entities, facilities.
 2. Rooms/beds/units.
 3. Staff and user accounts.
-4. Residents.
-5. Resident rates/payers.
-6. Responsible-party/family contacts.
-7. Medication/MAR evidence after QuickMAR path is ready.
-8. Vendors/emergency contacts.
-9. Compliance/policy documents.
+4. Admissions / move-in checklist source and active pipeline, if any.
+5. Residents.
+6. Resident rates/payers.
+7. Responsible-party/family contacts.
+8. Medication/MAR evidence after QuickMAR path is ready.
+9. Vendors/emergency contacts.
+10. Compliance/policy documents.
 
 ---
 

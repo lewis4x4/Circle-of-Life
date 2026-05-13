@@ -1,0 +1,1121 @@
+{
+  "program": {
+    "id": "prog-homewood-mvp",
+    "name": "Homewood Facility Launch MVP",
+    "sponsor": "",
+    "deputySponsor": "",
+    "cfo": "",
+    "coo": "",
+    "onboarder": "",
+    "documentCustodian": "",
+    "definitionOfLive": "",
+    "homewoodScope": "Homewood Lodge ALF launch in scope; real onboarding data will be loaded from the Homewood ingestion manifest.",
+    "thresholds": {
+      "moduleReadinessTarget": 95,
+      "staleMonths": 12,
+      "gate2FacilityScoreTarget": 90
+    },
+    "createdAt": "2026-05-13T19:48:44.554Z"
+  },
+  "facility": {
+    "id": "fac-homewood",
+    "programId": "prog-homewood-mvp",
+    "name": "Homewood Lodge ALF",
+    "status": "onboarding_round_1_imported",
+    "pilotWarnings": [
+      "M6: current Homewood A/R",
+      "M6: Medicaid Log.xlsx",
+      "M14: Referral Log.xlsx",
+      "M14: tour form field extraction",
+      "M10: daily QuickMar export folder/header sample",
+      "M16: structured incident/grievance log workbook",
+      "M13: 2026 Inspections.xlsx",
+      "M12: Homewood activity calendar/source artifacts",
+      "M4: Employees Information.xlsx",
+      "M5: HW Face Sheets folder",
+      "M9: Homewood staff schedule / shift templates"
+    ],
+    "linkedEntityIds": [
+      "ent-sorensen-smith-and-bay-llc"
+    ]
+  },
+  "modules": [
+    {
+      "moduleNumber": 1,
+      "moduleCode": "M1",
+      "moduleName": "Company / Portfolio",
+      "isMvpDetailed": true,
+      "scopeStatus": "in",
+      "ownerName": "CEO / CFO",
+      "ownerTitle": "Executive / Finance",
+      "source": "Facilities Information normalized artifact",
+      "dueDate": "",
+      "openQuestions": "",
+      "status": "imported_partial",
+      "nextAction": "Confirm property LLC and corporate/billing contacts, then mark owner review complete.",
+      "evidenceCount": 1
+    },
+    {
+      "moduleNumber": 2,
+      "moduleCode": "M2",
+      "moduleName": "Facility Profile",
+      "isMvpDetailed": true,
+      "scopeStatus": "in",
+      "ownerName": "Executive Director",
+      "ownerTitle": "Facility Leader",
+      "source": "Facilities Information normalized artifact",
+      "dueDate": "",
+      "openQuestions": "",
+      "status": "needs_review",
+      "nextAction": "Confirm operating address, license number/expiration, after-hours phone, DON, and maintenance director.",
+      "evidenceCount": 1
+    },
+    {
+      "moduleNumber": 3,
+      "moduleCode": "M3",
+      "moduleName": "Rooms / Beds / Units",
+      "isMvpDetailed": true,
+      "scopeStatus": "in",
+      "ownerName": "Maintenance Director",
+      "ownerTitle": "Physical Plant",
+      "source": "Homewood room/bed model normalized artifact",
+      "dueDate": "",
+      "openQuestions": "",
+      "status": "imported_ready",
+      "nextAction": "Validate rooms against current resident assignments when face sheets/A/R arrive.",
+      "evidenceCount": 1
+    },
+    {
+      "moduleNumber": 4,
+      "moduleCode": "M4",
+      "moduleName": "Employees / Users / Roles",
+      "isMvpDetailed": true,
+      "scopeStatus": "in",
+      "ownerName": "",
+      "ownerTitle": "",
+      "source": "",
+      "dueDate": "",
+      "openQuestions": "",
+      "status": "gap_pending_source",
+      "nextAction": "Round 2 source gap recorded; continue importing unrelated ready data."
+    },
+    {
+      "moduleNumber": 5,
+      "moduleCode": "M5",
+      "moduleName": "Residents",
+      "isMvpDetailed": true,
+      "scopeStatus": "in",
+      "ownerName": "",
+      "ownerTitle": "",
+      "source": "",
+      "dueDate": "",
+      "openQuestions": "",
+      "status": "gap_pending_source",
+      "nextAction": "Round 2 source gap recorded; continue importing unrelated ready data."
+    },
+    {
+      "moduleNumber": 6,
+      "moduleCode": "M6",
+      "moduleName": "Resident Rates / Billing / Payer",
+      "isMvpDetailed": true,
+      "scopeStatus": "in",
+      "ownerName": "CFO / Business Office",
+      "ownerTitle": "Billing / Finance",
+      "source": "Historical Homewood A/R summaries + Medicaid log gap artifact",
+      "dueDate": "",
+      "openQuestions": "",
+      "status": "imported_partial",
+      "nextAction": "Import current 2026 A/R, Medicaid log, and resident-linked rate records in Round 2.",
+      "evidenceCount": 1
+    },
+    {
+      "moduleNumber": 7,
+      "moduleCode": "M7",
+      "moduleName": "Care Levels / Service Plans / ADLs",
+      "isMvpDetailed": true,
+      "scopeStatus": "in",
+      "ownerName": "",
+      "ownerTitle": "",
+      "source": "",
+      "dueDate": "",
+      "openQuestions": "",
+      "status": "not_started",
+      "nextAction": "Attach a Homewood ingestion source or mark as a Round 2 gap."
+    },
+    {
+      "moduleNumber": 8,
+      "moduleCode": "M8",
+      "moduleName": "Rounds / Checks / Care Tasks",
+      "isMvpDetailed": true,
+      "scopeStatus": "in",
+      "ownerName": "",
+      "ownerTitle": "",
+      "source": "",
+      "dueDate": "",
+      "openQuestions": "",
+      "status": "not_started",
+      "nextAction": "Attach a Homewood ingestion source or mark as a Round 2 gap."
+    },
+    {
+      "moduleNumber": 9,
+      "moduleCode": "M9",
+      "moduleName": "Schedules / Shifts / Assignments",
+      "isMvpDetailed": true,
+      "scopeStatus": "in",
+      "ownerName": "",
+      "ownerTitle": "",
+      "source": "",
+      "dueDate": "",
+      "openQuestions": "",
+      "status": "gap_pending_source",
+      "nextAction": "Round 2 source gap recorded; continue importing unrelated ready data."
+    },
+    {
+      "moduleNumber": 10,
+      "moduleCode": "M10",
+      "moduleName": "Medications (scope-dependent)",
+      "isMvpDetailed": true,
+      "scopeStatus": "in",
+      "ownerName": "DON",
+      "ownerTitle": "Medication Process",
+      "source": "QuickMar instructions + daily export workflow design artifact",
+      "dueDate": "",
+      "openQuestions": "",
+      "status": "imported_partial",
+      "nextAction": "Collect one daily QuickMar export sample/header and finalize n8n parser.",
+      "evidenceCount": 1
+    },
+    {
+      "moduleNumber": 11,
+      "moduleCode": "M11",
+      "moduleName": "Dining / Meals / Dietary",
+      "isMvpDetailed": true,
+      "scopeStatus": "in",
+      "ownerName": "Dining Manager",
+      "ownerTitle": "Dining / Dietary",
+      "source": "Food service logs normalized artifact",
+      "dueDate": "",
+      "openQuestions": "",
+      "status": "imported_partial",
+      "nextAction": "Link resident-specific dietary profiles after face sheets are available.",
+      "evidenceCount": 1
+    },
+    {
+      "moduleNumber": 12,
+      "moduleCode": "M12",
+      "moduleName": "Activities / Life Enrichment",
+      "isMvpDetailed": true,
+      "scopeStatus": "in",
+      "ownerName": "",
+      "ownerTitle": "",
+      "source": "",
+      "dueDate": "",
+      "openQuestions": "",
+      "status": "gap_pending_source",
+      "nextAction": "Round 2 source gap recorded; continue importing unrelated ready data."
+    },
+    {
+      "moduleNumber": 13,
+      "moduleCode": "M13",
+      "moduleName": "Maintenance / Work Orders / Assets",
+      "isMvpDetailed": true,
+      "scopeStatus": "in",
+      "ownerName": "Maintenance Director",
+      "ownerTitle": "Maintenance",
+      "source": "Maintenance/vendor artifact plus inspections gap record",
+      "dueDate": "",
+      "openQuestions": "",
+      "status": "imported_partial",
+      "nextAction": "Locate/import 2026 inspections workbook and maintenance asset list.",
+      "evidenceCount": 1
+    },
+    {
+      "moduleNumber": 14,
+      "moduleCode": "M14",
+      "moduleName": "Admissions / Sales / Move-In Pipeline",
+      "isMvpDetailed": true,
+      "scopeStatus": "in",
+      "ownerName": "Sales / Admissions Director",
+      "ownerTitle": "Admissions",
+      "source": "Admin/LMH new-admit checklist references + tour form artifacts",
+      "dueDate": "",
+      "openQuestions": "",
+      "status": "imported_partial",
+      "nextAction": "OCR tour forms and load active Homewood referral log before go-live readiness.",
+      "evidenceCount": 1
+    },
+    {
+      "moduleNumber": 15,
+      "moduleCode": "M15",
+      "moduleName": "Family / Responsible-Party Portal",
+      "isMvpDetailed": true,
+      "scopeStatus": "in",
+      "ownerName": "",
+      "ownerTitle": "",
+      "source": "",
+      "dueDate": "",
+      "openQuestions": "",
+      "status": "not_started",
+      "nextAction": "Attach a Homewood ingestion source or mark as a Round 2 gap."
+    },
+    {
+      "moduleNumber": 16,
+      "moduleCode": "M16",
+      "moduleName": "Incidents / Risk / Claims Awareness",
+      "isMvpDetailed": true,
+      "scopeStatus": "in",
+      "ownerName": "ED / DON / CFO",
+      "ownerTitle": "Risk / Incidents",
+      "source": "Incident/grievance forms normalized artifact",
+      "dueDate": "",
+      "openQuestions": "",
+      "status": "imported_partial",
+      "nextAction": "Confirm claims-routing owner and structured incident/grievance workbook source.",
+      "evidenceCount": 1
+    },
+    {
+      "moduleNumber": 17,
+      "moduleCode": "M17",
+      "moduleName": "Documents / Insurance / Compliance",
+      "isMvpDetailed": true,
+      "scopeStatus": "in",
+      "ownerName": "Document Custodian",
+      "ownerTitle": "Compliance Documents",
+      "source": "Homewood GL/property/bond/loss-run normalized artifact",
+      "dueDate": "",
+      "openQuestions": "",
+      "status": "needs_review",
+      "nextAction": "Custodian should confirm term/effective/expiration metadata; duplicate uploads are ignored.",
+      "evidenceCount": 1
+    },
+    {
+      "moduleNumber": 18,
+      "moduleCode": "M18",
+      "moduleName": "Vendors / Contacts / Emergency",
+      "isMvpDetailed": true,
+      "scopeStatus": "in",
+      "ownerName": "Maintenance / Business Office",
+      "ownerTitle": "Vendors / Emergency",
+      "source": "Maintenance Contact List + Homewood contract summaries",
+      "dueDate": "",
+      "openQuestions": "",
+      "status": "imported_partial",
+      "nextAction": "Extract contact-level vendor details and after-hours numbers.",
+      "evidenceCount": 1
+    },
+    {
+      "moduleNumber": 19,
+      "moduleCode": "M19",
+      "moduleName": "Launch Scoreboard / Operating Reports",
+      "isMvpDetailed": true,
+      "scopeStatus": "in",
+      "ownerName": "COO",
+      "ownerTitle": "Executive Reporting",
+      "source": "2026 Standup Call Log normalized artifact",
+      "dueDate": "",
+      "openQuestions": "",
+      "status": "needs_review",
+      "nextAction": "Define Homewood-specific KPI rows, owners, targets, and action-if-off-track.",
+      "evidenceCount": 1
+    }
+  ],
+  "mvpData": {
+    "M1": {
+      "parentLegalName": "Sorensen, Smith & Bay LLC",
+      "dba": "Homewood Lodge ALF",
+      "operatingLlc": "Sorensen, Smith & Bay LLC",
+      "propertyLlc": "",
+      "mailingAddress": "430 SE Mills St, Mayo, FL, 32066",
+      "corporateContact": "Jackie Rameriz",
+      "billingContact": "Charlene Elmore",
+      "timeZone": "America/New_York",
+      "legalEntities": [
+        {
+          "id": "ent-sorensen-smith-and-bay-llc",
+          "name": "Sorensen, Smith & Bay LLC",
+          "role": "operating",
+          "associatedFacilityId": "fac-homewood"
+        }
+      ],
+      "ambiguityCandidates": []
+    },
+    "M2": {
+      "legalName": "Sorensen, Smith & Bay LLC",
+      "dba": "Homewood Lodge ALF",
+      "facilityType": "Assisted Living Facility",
+      "licenseNumber": "",
+      "licenseState": "FL",
+      "licenseAgency": "AHCA",
+      "licenseExpiration": "",
+      "physicalAddress": "",
+      "facilityAddress": "430 SE Mills St, Mayo, FL, 32066",
+      "mailingAddress": "430 SE Mills St, Mayo, FL, 32066",
+      "mainPhone": "",
+      "afterHoursPhone": "",
+      "capacity": "36",
+      "floorsWings": "Single floor; no wings — from Homewood room model",
+      "executiveDirector": "Jackie Rameriz",
+      "don": "",
+      "maintenanceDirector": "",
+      "businessOfficeManager": "Charlene Elmore",
+      "emergencyContact": "Jackie Rameriz",
+      "operatingAddressConfirmed": false
+    },
+    "M3": {
+      "rooms": [
+        {
+          "id": "room-homewood-1",
+          "roomNumber": "1",
+          "floor": "1",
+          "wing": "None — single floor",
+          "unitType": "Private single",
+          "bedCount": 1,
+          "careDesignation": "Standard facility",
+          "status": "active",
+          "name": "1"
+        },
+        {
+          "id": "room-homewood-2",
+          "roomNumber": "2",
+          "floor": "1",
+          "wing": "None — single floor",
+          "unitType": "Private single",
+          "bedCount": 1,
+          "careDesignation": "Standard facility",
+          "status": "active",
+          "name": "2"
+        },
+        {
+          "id": "room-homewood-3",
+          "roomNumber": "3",
+          "floor": "1",
+          "wing": "None — single floor",
+          "unitType": "Private single",
+          "bedCount": 1,
+          "careDesignation": "Standard facility",
+          "status": "active",
+          "name": "3"
+        },
+        {
+          "id": "room-homewood-4",
+          "roomNumber": "4",
+          "floor": "1",
+          "wing": "None — single floor",
+          "unitType": "Private single",
+          "bedCount": 1,
+          "careDesignation": "Standard facility",
+          "status": "active",
+          "name": "4"
+        },
+        {
+          "id": "room-homewood-5",
+          "roomNumber": "5",
+          "floor": "1",
+          "wing": "None — single floor",
+          "unitType": "Companion double",
+          "bedCount": 2,
+          "careDesignation": "Standard facility",
+          "status": "active",
+          "name": "5"
+        },
+        {
+          "id": "room-homewood-6",
+          "roomNumber": "6",
+          "floor": "1",
+          "wing": "None — single floor",
+          "unitType": "Companion double",
+          "bedCount": 2,
+          "careDesignation": "Standard facility",
+          "status": "active",
+          "name": "6"
+        },
+        {
+          "id": "room-homewood-7",
+          "roomNumber": "7",
+          "floor": "1",
+          "wing": "None — single floor",
+          "unitType": "Companion double",
+          "bedCount": 2,
+          "careDesignation": "Standard facility",
+          "status": "active",
+          "name": "7"
+        },
+        {
+          "id": "room-homewood-8",
+          "roomNumber": "8",
+          "floor": "1",
+          "wing": "None — single floor",
+          "unitType": "Companion double",
+          "bedCount": 2,
+          "careDesignation": "Standard facility",
+          "status": "active",
+          "name": "8"
+        },
+        {
+          "id": "room-homewood-9",
+          "roomNumber": "9",
+          "floor": "1",
+          "wing": "None — single floor",
+          "unitType": "Companion double",
+          "bedCount": 2,
+          "careDesignation": "Standard facility",
+          "status": "active",
+          "name": "9"
+        },
+        {
+          "id": "room-homewood-10",
+          "roomNumber": "10",
+          "floor": "1",
+          "wing": "None — single floor",
+          "unitType": "Companion double",
+          "bedCount": 2,
+          "careDesignation": "Standard facility",
+          "status": "active",
+          "name": "10"
+        },
+        {
+          "id": "room-homewood-11",
+          "roomNumber": "11",
+          "floor": "1",
+          "wing": "None — single floor",
+          "unitType": "Companion double",
+          "bedCount": 2,
+          "careDesignation": "Standard facility",
+          "status": "active",
+          "name": "11"
+        },
+        {
+          "id": "room-homewood-12",
+          "roomNumber": "12",
+          "floor": "1",
+          "wing": "None — single floor",
+          "unitType": "Companion double",
+          "bedCount": 2,
+          "careDesignation": "Standard facility",
+          "status": "active",
+          "name": "12"
+        },
+        {
+          "id": "room-homewood-13",
+          "roomNumber": "13",
+          "floor": "1",
+          "wing": "None — single floor",
+          "unitType": "Companion double",
+          "bedCount": 2,
+          "careDesignation": "Standard facility",
+          "status": "active",
+          "name": "13"
+        },
+        {
+          "id": "room-homewood-14",
+          "roomNumber": "14",
+          "floor": "1",
+          "wing": "None — single floor",
+          "unitType": "Companion double",
+          "bedCount": 2,
+          "careDesignation": "Standard facility",
+          "status": "active",
+          "name": "14"
+        },
+        {
+          "id": "room-homewood-15",
+          "roomNumber": "15",
+          "floor": "1",
+          "wing": "None — single floor",
+          "unitType": "Companion double",
+          "bedCount": 2,
+          "careDesignation": "Standard facility",
+          "status": "active",
+          "name": "15"
+        },
+        {
+          "id": "room-homewood-16",
+          "roomNumber": "16",
+          "floor": "1",
+          "wing": "None — single floor",
+          "unitType": "Companion double",
+          "bedCount": 2,
+          "careDesignation": "Standard facility",
+          "status": "active",
+          "name": "16"
+        },
+        {
+          "id": "room-homewood-17",
+          "roomNumber": "17",
+          "floor": "1",
+          "wing": "None — single floor",
+          "unitType": "Companion double",
+          "bedCount": 2,
+          "careDesignation": "Standard facility",
+          "status": "active",
+          "name": "17"
+        },
+        {
+          "id": "room-homewood-18",
+          "roomNumber": "18",
+          "floor": "1",
+          "wing": "None — single floor",
+          "unitType": "Companion double",
+          "bedCount": 2,
+          "careDesignation": "Standard facility",
+          "status": "active",
+          "name": "18"
+        },
+        {
+          "id": "room-homewood-19",
+          "roomNumber": "19",
+          "floor": "1",
+          "wing": "None — single floor",
+          "unitType": "Companion double",
+          "bedCount": 2,
+          "careDesignation": "Standard facility",
+          "status": "active",
+          "name": "19"
+        },
+        {
+          "id": "room-homewood-20",
+          "roomNumber": "20",
+          "floor": "1",
+          "wing": "None — single floor",
+          "unitType": "Companion double",
+          "bedCount": 2,
+          "careDesignation": "Standard facility",
+          "status": "active",
+          "name": "20"
+        }
+      ],
+      "bedsTotal": 36,
+      "unitsTotal": 20
+    },
+    "M4": {
+      "employees": [],
+      "roleCoverageNotes": ""
+    },
+    "M5": {
+      "censusDate": "",
+      "residentSource": "",
+      "residentValidationOwner": "",
+      "residents": []
+    },
+    "M6": {
+      "billingSystemSource": "Historical Homewood A/R workbook summaries parsed from local 2025 A/R folder; current 2026 A/R still pending.",
+      "billingCycle": "Monthly; resident-level contract/rate records pending current A/R and face sheets.",
+      "rateApprovalOwner": "CFO / Business Office",
+      "postedPrivateRoomRate": "",
+      "postedCompanionRoomRate": "",
+      "medicaidProviderRule": "Provider names summarized from A/R aggregates; resident-level Medicaid/provider details pending current source files.",
+      "rateRecords": []
+    },
+    "M7": {
+      "assessmentTool": "",
+      "reassessmentCadence": "",
+      "carePlanOwner": "",
+      "carePlans": []
+    },
+    "M8": {
+      "roundingPolicySource": "",
+      "roundingDecisionOwner": "",
+      "roundingExceptionProcess": "",
+      "roundSchedules": []
+    },
+    "M9": {
+      "scheduleSource": "",
+      "staffingRatioPolicy": "",
+      "callOffOwner": "",
+      "shiftTemplates": []
+    },
+    "M10": {
+      "medicationScope": "QuickMar remains the MAR/eMAR source. Haven imports one daily QuickMar export through n8n; Haven is not replacing QuickMar.",
+      "marSource": "QuickMar daily export folder — export sample/header pending.",
+      "medicationOwner": "Administrator / Assistant / DON",
+      "medicationProfiles": []
+    },
+    "M11": {
+      "mealSchedule": "Breakfast/lunch/dinner logs found; exact meal times require facility confirmation.",
+      "dietarySource": "Food service logs and dietary source summaries imported; resident-specific diet/allergy data pending face sheets.",
+      "diningOwner": "Dining Manager / Facility staff",
+      "dietaryProfiles": []
+    },
+    "M12": {
+      "activityCalendarSource": "",
+      "attendanceTrackingRule": "",
+      "activitiesOwner": "",
+      "activityPlans": []
+    },
+    "M13": {
+      "workOrderSource": "Reactive work orders plus maintenance/vendor source artifacts; 2026 inspections workbook pending.",
+      "preventiveMaintenanceCadence": "Inspection cadence pending 2026 inspections workbook.",
+      "maintenanceOwner": "Maintenance Director",
+      "maintenanceAssets": []
+    },
+    "M14": {
+      "crmSource": "Admin Log and LMH Admin Manager new-admit checklist references imported; active referral log pending.",
+      "moveInChecklistOwner": "Sales / Admissions Director + Business Office",
+      "admissionApprovalRule": "Use imported checklist definitions; active prospect approval workflow pending Homewood referral log.",
+      "admissionsPipeline": []
+    },
+    "M15": {
+      "familyPortalScope": "",
+      "communicationPolicy": "",
+      "portalOwner": "",
+      "familyContacts": []
+    },
+    "M16": {
+      "incidentPolicySource": "Incident/grievance PDF forms and procedure templates found locally.",
+      "claimsRoutingOwner": "ED / DON / CFO — final claims-routing owner requires confirmation.",
+      "stateReportingRule": "Use incident reporting procedure; ED/DON review state-reporting threshold for major/critical events.",
+      "incidentWorkflows": [
+        {
+          "id": "incident-template-grievance-reports-log-pdf",
+          "incidentType": "Grievance Reports Log",
+          "severityRule": "Needs policy review before go-live",
+          "immediateActions": "Use imported incident/grievance form template; first-15-minute workflow requires owner review.",
+          "familyNotificationRule": "Maybe — ED/DON decide within 24 hours",
+          "stateReportingThreshold": "Maybe — ED/DON decide within 24 hours",
+          "claimsRouting": "ED/DON review first, then decide",
+          "investigationOwner": "DON + ED jointly",
+          "followUpCadence": "Event-specific — explain in actions"
+        },
+        {
+          "id": "incident-template-medication-incident-report-pdf",
+          "incidentType": "Medication Incident Report",
+          "severityRule": "Needs policy review before go-live",
+          "immediateActions": "Use imported incident/grievance form template; first-15-minute workflow requires owner review.",
+          "familyNotificationRule": "Maybe — ED/DON decide within 24 hours",
+          "stateReportingThreshold": "Maybe — ED/DON decide within 24 hours",
+          "claimsRouting": "ED/DON review first, then decide",
+          "investigationOwner": "DON + ED jointly",
+          "followUpCadence": "Event-specific — explain in actions"
+        },
+        {
+          "id": "incident-template-incident-reporting-procedure-pdf",
+          "incidentType": "Incident Reporting Procedure",
+          "severityRule": "Needs policy review before go-live",
+          "immediateActions": "Use imported incident/grievance form template; first-15-minute workflow requires owner review.",
+          "familyNotificationRule": "Maybe — ED/DON decide within 24 hours",
+          "stateReportingThreshold": "Maybe — ED/DON decide within 24 hours",
+          "claimsRouting": "ED/DON review first, then decide",
+          "investigationOwner": "DON + ED jointly",
+          "followUpCadence": "Event-specific — explain in actions"
+        },
+        {
+          "id": "incident-template-grievance-form-pdf",
+          "incidentType": "Grievance Form",
+          "severityRule": "Needs policy review before go-live",
+          "immediateActions": "Use imported incident/grievance form template; first-15-minute workflow requires owner review.",
+          "familyNotificationRule": "Maybe — ED/DON decide within 24 hours",
+          "stateReportingThreshold": "Maybe — ED/DON decide within 24 hours",
+          "claimsRouting": "ED/DON review first, then decide",
+          "investigationOwner": "DON + ED jointly",
+          "followUpCadence": "Event-specific — explain in actions"
+        },
+        {
+          "id": "incident-template-elopement-incident-form-pdf",
+          "incidentType": "Elopement Incident Form",
+          "severityRule": "Needs policy review before go-live",
+          "immediateActions": "Use imported incident/grievance form template; first-15-minute workflow requires owner review.",
+          "familyNotificationRule": "Maybe — ED/DON decide within 24 hours",
+          "stateReportingThreshold": "Maybe — ED/DON decide within 24 hours",
+          "claimsRouting": "ED/DON review first, then decide",
+          "investigationOwner": "DON + ED jointly",
+          "followUpCadence": "Event-specific — explain in actions"
+        },
+        {
+          "id": "incident-template-incident-reports-log-pdf",
+          "incidentType": "Incident Reports Log",
+          "severityRule": "Needs policy review before go-live",
+          "immediateActions": "Use imported incident/grievance form template; first-15-minute workflow requires owner review.",
+          "familyNotificationRule": "Maybe — ED/DON decide within 24 hours",
+          "stateReportingThreshold": "Maybe — ED/DON decide within 24 hours",
+          "claimsRouting": "ED/DON review first, then decide",
+          "investigationOwner": "DON + ED jointly",
+          "followUpCadence": "Event-specific — explain in actions"
+        }
+      ]
+    },
+    "M18": {
+      "vendorSource": "Maintenance Contact List PDF plus Homewood contract PDFs.",
+      "afterHoursVendorRule": "After-hours dispatch rules pending extraction from maintenance contact list/contracts.",
+      "vendorOwner": "Maintenance Director / Business Office",
+      "vendorContacts": [
+        {
+          "id": "vendor-contact-directory-summary",
+          "organization": "Maintenance Contact List",
+          "category": "Other",
+          "primaryContact": "Directory summary — extract named contacts in Round 2",
+          "phone": "25 phone entries detected",
+          "afterHoursPhone": "Pending contact-level extraction",
+          "accountNumber": "N/A — directory summary",
+          "contractStatus": "Unknown",
+          "insuranceRequired": "Unknown",
+          "escalationOwner": "Maintenance Director / Business Office"
+        }
+      ]
+    },
+    "M19": {
+      "executiveDashboardAudience": "CEO, CFO, COO, ED, DON / launch leadership",
+      "reportCadence": "Daily 9am huddle for first 30 days",
+      "kpiOwner": "COO — scoreboard assembly owner pending source-field review",
+      "kpiDefinitions": []
+    },
+    "M17": {
+      "reviewNotes": "Round 1 imported resolved Homewood GL/property/bond/loss-run source files. Document term/expiration metadata remains pending custodian review."
+    }
+  },
+  "documents": [
+    {
+      "id": "doc-gl-cert",
+      "title": "HOMEWOOD GL CERT.pdf",
+      "originalFilename": "HOMEWOOD GL CERT.pdf",
+      "artifactType": "gl_cert",
+      "documentGroupId": "grp-gl-cert",
+      "isSourceOfTruth": true,
+      "currencyStatus": "needs_review",
+      "facilityName": "Homewood Lodge ALF",
+      "entityAssociation": "Sorensen, Smith & Bay LLC",
+      "effectiveDate": "",
+      "expirationDate": "",
+      "term": "Current file present in Drive; term metadata pending document custodian review.",
+      "version": "round1-source-file",
+      "custodianApprovalStatus": "pending_review",
+      "confidence": "source_present",
+      "notes": "Imported from resolved Homewood insurance source-of-truth artifact."
+    },
+    {
+      "id": "doc-property-policy",
+      "title": "HOMEWOOD PROPERTY Policy.pdf",
+      "originalFilename": "HOMEWOOD PROPERTY Policy.pdf",
+      "artifactType": "property_policy",
+      "documentGroupId": "grp-property-policy",
+      "isSourceOfTruth": true,
+      "currencyStatus": "needs_review",
+      "facilityName": "Homewood Lodge ALF",
+      "entityAssociation": "Homewood Property Company LLC",
+      "effectiveDate": "",
+      "expirationDate": "",
+      "term": "Current file present in Drive; term metadata pending document custodian review.",
+      "version": "round1-source-file",
+      "custodianApprovalStatus": "pending_review",
+      "confidence": "source_present",
+      "notes": "Imported from resolved Homewood insurance source-of-truth artifact."
+    },
+    {
+      "id": "doc-bond-certificate",
+      "title": "HOMEWOOD BOND CERTIFICATE.pdf",
+      "originalFilename": "HOMEWOOD BOND CERTIFICATE.pdf",
+      "artifactType": "bond_certificate",
+      "documentGroupId": "grp-bond-certificate",
+      "isSourceOfTruth": true,
+      "currencyStatus": "needs_review",
+      "facilityName": "Homewood Lodge ALF",
+      "entityAssociation": "Sorensen, Smith & Bay LLC",
+      "effectiveDate": "",
+      "expirationDate": "",
+      "term": "Current file present in Drive; term metadata pending document custodian review.",
+      "version": "round1-source-file",
+      "custodianApprovalStatus": "pending_review",
+      "confidence": "source_present",
+      "notes": "Imported from resolved Homewood insurance source-of-truth artifact."
+    },
+    {
+      "id": "doc-loss-run",
+      "title": "Smith & Sorensen Loss Run.pdf",
+      "originalFilename": "Smith & Sorensen Loss Run.pdf",
+      "artifactType": "loss_run",
+      "documentGroupId": "grp-loss-run",
+      "isSourceOfTruth": true,
+      "currencyStatus": "needs_review",
+      "facilityName": "Homewood Lodge ALF",
+      "entityAssociation": "Sorensen, Smith & Bay LLC",
+      "effectiveDate": "",
+      "expirationDate": "",
+      "term": "Current file present in Drive; term metadata pending document custodian review.",
+      "version": "round1-source-file",
+      "custodianApprovalStatus": "pending_review",
+      "confidence": "source_present",
+      "notes": "Imported from resolved Homewood insurance source-of-truth artifact."
+    }
+  ],
+  "documentGroups": [
+    {
+      "id": "grp-gl-cert",
+      "name": "HOMEWOOD GL CERT",
+      "artifactType": "gl_cert",
+      "documentIds": [
+        "doc-gl-cert"
+      ],
+      "sourceOfTruthDocumentId": "doc-gl-cert"
+    },
+    {
+      "id": "grp-property-policy",
+      "name": "HOMEWOOD PROPERTY Policy",
+      "artifactType": "property_policy",
+      "documentIds": [
+        "doc-property-policy"
+      ],
+      "sourceOfTruthDocumentId": "doc-property-policy"
+    },
+    {
+      "id": "grp-bond-certificate",
+      "name": "HOMEWOOD BOND CERTIFICATE",
+      "artifactType": "bond_certificate",
+      "documentIds": [
+        "doc-bond-certificate"
+      ],
+      "sourceOfTruthDocumentId": "doc-bond-certificate"
+    },
+    {
+      "id": "grp-loss-run",
+      "name": "Smith & Sorensen Loss Run",
+      "artifactType": "loss_run",
+      "documentIds": [
+        "doc-loss-run"
+      ],
+      "sourceOfTruthDocumentId": "doc-loss-run"
+    }
+  ],
+  "gates": [
+    {
+      "code": "G0",
+      "name": "Program Charter",
+      "status": "not_started",
+      "blockers": [
+        "Round 1 real import loaded; program signer fields still require confirmation."
+      ],
+      "requiredSignerRole": "Executive Sponsor"
+    },
+    {
+      "code": "G2",
+      "name": "Owner + Intake Readiness",
+      "status": "blocked",
+      "blockers": [
+        "Round 2 gaps remain after Round 1 import."
+      ],
+      "requiredSignerRole": "Executive Sponsor / COO"
+    }
+  ],
+  "exceptions": [],
+  "contradictions": [],
+  "decisionLog": [
+    {
+      "id": "dec-homewood-round1-import-1778701724557",
+      "timestamp": "2026-05-13T19:48:44.557Z",
+      "actor": "system",
+      "actionType": "round1_real_onboarding_state_built",
+      "summary": "Built Homewood Round 1 real onboarding state from 16/16 normalized source artifacts; no demo fixture data used.",
+      "relatedType": "facility",
+      "relatedId": "fac-homewood",
+      "snapshot": {
+        "sourceArtifactCount": 16,
+        "readyRecords": 51,
+        "needsReviewRecords": 10,
+        "gapCount": 11
+      }
+    }
+  ],
+  "ingestionManifest": {
+    "facilityId": "fac-homewood",
+    "facilityName": "Homewood Lodge ALF",
+    "builtAt": "2026-05-13T19:48:44.556Z",
+    "sourceCount": 16,
+    "artifactCount": 16,
+    "roundPolicy": "Import available sources in Round 1; quarantine missing or ambiguous items as Round 2 gaps without blocking unrelated imports.",
+    "settledDecisions": {
+      "phiInfrastructure": "Supabase Pro, S3, PITR/backups, and Drive/source permissions are handled.",
+      "quickMar": "QuickMar remains active; daily export folder is ingested into Haven through n8n.",
+      "insuranceSourceOfTruth": "HOMEWOOD GL CERT.pdf and HOMEWOOD PROPERTY Policy.pdf are authoritative; duplicate * 2.pdf uploads are ignored."
+    }
+  },
+  "ingestionReviewQueue": [
+    {
+      "id": "review-src-facility-master-facility-master-fac-homewood-facility",
+      "sourceId": "src-facility-master",
+      "moduleCodes": [
+        "M2"
+      ],
+      "targetEntity": "facility_profile",
+      "sourceRowRef": "facility-master:fac-homewood:facility",
+      "reason": "Homewood facility profile imported for Round 1, but administrator/manager/address values require human confirmation."
+    },
+    {
+      "id": "review-src-admissions-checklists-admissions-checklist-lmh-admin-mgr-log-new-admit-sheet",
+      "sourceId": "src-admissions-checklists",
+      "moduleCodes": [
+        "M14"
+      ],
+      "targetEntity": "move_in_checklist_definition",
+      "sourceRowRef": "admissions-checklist:lmh-admin-mgr-log:new-admit-sheet",
+      "reason": "Source is useful as a richer checklist variant, but LMH facility identity is unconfirmed."
+    },
+    {
+      "id": "review-src-referrals-tour-referrals-tour-tour-inquiry-form-pdf",
+      "sourceId": "src-referrals-tour",
+      "moduleCodes": [
+        "M14"
+      ],
+      "targetEntity": "tour_form_template_summary",
+      "sourceRowRef": "referrals-tour:tour-inquiry-form-pdf",
+      "reason": "Tour/referral source exists but requires OCR/manual extraction before field-level import."
+    },
+    {
+      "id": "review-src-referrals-tour-referrals-tour-tour-checklist-pdf",
+      "sourceId": "src-referrals-tour",
+      "moduleCodes": [
+        "M14"
+      ],
+      "targetEntity": "tour_form_template_summary",
+      "sourceRowRef": "referrals-tour:tour-checklist-pdf",
+      "reason": "Tour/referral source exists but requires OCR/manual extraction before field-level import."
+    },
+    {
+      "id": "review-src-referrals-tour-referrals-tour-tour-survey-pdf",
+      "sourceId": "src-referrals-tour",
+      "moduleCodes": [
+        "M14"
+      ],
+      "targetEntity": "tour_form_template_summary",
+      "sourceRowRef": "referrals-tour:tour-survey-pdf",
+      "reason": "Tour/referral source exists but requires OCR/manual extraction before field-level import."
+    },
+    {
+      "id": "review-src-inspections-vendors-inspections-vendors-homewood-lodge-termite-contract-pdf",
+      "sourceId": "src-inspections-vendors",
+      "moduleCodes": [
+        "M18"
+      ],
+      "targetEntity": "vendor_contract_summary",
+      "sourceRowRef": "inspections-vendors:homewood-lodge-termite-contract-pdf",
+      "reason": "Contract PDF appears scanned/image-based; OCR/manual review required for contract term and after-hours details."
+    },
+    {
+      "id": "review-src-inspections-vendors-inspections-vendors-ringpower-homewood-pdf",
+      "sourceId": "src-inspections-vendors",
+      "moduleCodes": [
+        "M18"
+      ],
+      "targetEntity": "vendor_contract_summary",
+      "sourceRowRef": "inspections-vendors:ringpower-homewood-pdf",
+      "reason": "Contract PDF appears scanned/image-based; OCR/manual review required for contract term and after-hours details."
+    },
+    {
+      "id": "review-src-inspections-vendors-inspections-vendors-nextsteps-homewood-pdf",
+      "sourceId": "src-inspections-vendors",
+      "moduleCodes": [
+        "M18"
+      ],
+      "targetEntity": "vendor_contract_summary",
+      "sourceRowRef": "inspections-vendors:nextsteps-homewood-pdf",
+      "reason": "Contract PDF appears scanned/image-based; OCR/manual review required for contract term and after-hours details."
+    },
+    {
+      "id": "review-src-inspections-vendors-inspections-vendors-floridalab-homewood-pdf",
+      "sourceId": "src-inspections-vendors",
+      "moduleCodes": [
+        "M18"
+      ],
+      "targetEntity": "vendor_contract_summary",
+      "sourceRowRef": "inspections-vendors:floridalab-homewood-pdf",
+      "reason": "Contract PDF appears scanned/image-based; OCR/manual review required for contract term and after-hours details."
+    },
+    {
+      "id": "review-src-kpis-standup-kpis-standup-standup-log",
+      "sourceId": "src-kpis-standup",
+      "moduleCodes": [
+        "M19"
+      ],
+      "targetEntity": "launch_kpi_standup_source_summary",
+      "sourceRowRef": "kpis-standup:standup-log",
+      "reason": "Workbook exists; Homewood-specific KPI definitions and owner/action mapping still need field review."
+    }
+  ],
+  "ingestionGaps": [
+    {
+      "id": "gap-src-ar-m6-current-homewood-a-r",
+      "sourceId": "src-ar",
+      "moduleCode": "M6",
+      "round": "round_1",
+      "fieldOrRecord": "current Homewood A/R",
+      "reason": "Local parse used non-2026 A/R source; current Homewood 2026 A/R is not present locally yet."
+    },
+    {
+      "id": "gap-src-medicaid-log-m6-medicaid-log-xlsx",
+      "sourceId": "src-medicaid-log",
+      "moduleCode": "M6",
+      "round": "round_1",
+      "fieldOrRecord": "Medicaid Log.xlsx",
+      "reason": "Medicaid Log workbook is not present locally yet. Set HOMEWOOD_MEDICAID_LOG_PATH when available."
+    },
+    {
+      "id": "gap-src-referrals-tour-m14-referral-log-xlsx",
+      "sourceId": "src-referrals-tour",
+      "moduleCode": "M14",
+      "round": "round_1",
+      "fieldOrRecord": "Referral Log.xlsx",
+      "reason": "Active referral log is not present locally yet. Set HOMEWOOD_REFERRAL_LOG_PATH when available."
+    },
+    {
+      "id": "gap-src-referrals-tour-m14-tour-form-field-extraction",
+      "sourceId": "src-referrals-tour",
+      "moduleCode": "M14",
+      "round": "round_1",
+      "fieldOrRecord": "tour form field extraction",
+      "reason": "Tour form PDFs are present but not text-extractable with local pdftotext; OCR/manual transcription required before field-level import."
+    },
+    {
+      "id": "gap-src-quickmar-daily-m10-daily-quickmar-export-folder-header-sample",
+      "sourceId": "src-quickmar-daily",
+      "moduleCode": "M10",
+      "round": "round_1",
+      "fieldOrRecord": "daily QuickMar export folder/header sample",
+      "reason": "Daily QuickMar export folder/header sample is not present locally yet. n8n workflow can be finalized once one export sample exists."
+    },
+    {
+      "id": "gap-src-incidents-grievances-m16-structured-incident-grievance-log-workbook",
+      "sourceId": "src-incidents-grievances",
+      "moduleCode": "M16",
+      "round": "round_1",
+      "fieldOrRecord": "structured incident/grievance log workbook",
+      "reason": "Structured incident/grievance workbook is not present locally; only PDF forms/log templates were found."
+    },
+    {
+      "id": "gap-src-inspections-vendors-m13-2026-inspections-xlsx",
+      "sourceId": "src-inspections-vendors",
+      "moduleCode": "M13",
+      "round": "round_1",
+      "fieldOrRecord": "2026 Inspections.xlsx",
+      "reason": "2026 inspections workbook is not present locally at the expected Haven - Brian path."
+    },
+    {
+      "id": "gap-src-activities-m12-homewood-activity-calendar-source-artifacts",
+      "sourceId": "src-activities",
+      "moduleCode": "M12",
+      "round": "round_2",
+      "fieldOrRecord": "Homewood activity calendar/source artifacts",
+      "reason": "Homewood activity calendar/source artifacts are not present locally yet."
+    },
+    {
+      "id": "gap-src-employees-m4-employees-information-xlsx",
+      "sourceId": "src-employees",
+      "moduleCode": "M4",
+      "round": "round_1",
+      "fieldOrRecord": "Employees Information.xlsx",
+      "reason": "Employee workbook is not present locally yet. Set HOMEWOOD_EMPLOYEES_PATH when the CFO spreadsheet is available."
+    },
+    {
+      "id": "gap-src-face-sheets-m5-hw-face-sheets-folder",
+      "sourceId": "src-face-sheets",
+      "moduleCode": "M5",
+      "round": "round_1",
+      "fieldOrRecord": "HW Face Sheets folder",
+      "reason": "Face sheets folder is not present locally yet. Set HOMEWOOD_FACE_SHEETS_PATH when the Drive folder is available."
+    },
+    {
+      "id": "gap-src-schedules-m9-homewood-staff-schedule-shift-templates",
+      "sourceId": "src-schedules",
+      "moduleCode": "M9",
+      "round": "round_2",
+      "fieldOrRecord": "Homewood staff schedule / shift templates",
+      "reason": "Homewood staff schedule / shift template source is not present locally yet."
+    }
+  ]
+}

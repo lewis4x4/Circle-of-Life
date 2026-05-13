@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://circle-of-life.local/schemas/homewood-normalized-artifact.schema.json",
+  "title": "Homewood normalized onboarding artifact",
+  "type": "object",
+  "required": ["artifactVersion", "facilityId", "sourceId", "parser", "generatedAt", "summary", "records", "gaps"],
+  "additionalProperties": false,
+  "properties": {
+    "artifactVersion": { "type": "string", "const": "homewood-normalized-v1" },
+    "facilityId": { "type": "string", "const": "fac-homewood" },
+    "sourceId": { "type": "string", "minLength": 1 },
+    "parser": {
+      "type": "object",
+      "required": ["name", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "sourceRefs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["label", "location"],
+        "additionalProperties": false,
+        "properties": {
+          "label": { "type": "string" },
+          "location": { "type": "string" },
+          "checksum": { "type": "string" }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["recordCount", "readyCount", "needsReviewCount", "gapCount", "containsPhiOrSensitiveData"],
+      "additionalProperties": true,
+      "properties": {
+        "recordCount": { "type": "integer", "minimum": 0 },
+        "readyCount": { "type": "integer", "minimum": 0 },
+        "needsReviewCount": { "type": "integer", "minimum": 0 },
+        "gapCount": { "type": "integer", "minimum": 0 },
+        "containsPhiOrSensitiveData": { "type": "boolean" }
+      }
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["targetEntity", "sourceRowRef", "validationStatus", "data"],
+        "additionalProperties": false,
+        "properties": {
+          "targetEntity": { "type": "string" },
+          "sourceRowRef": { "type": "string" },
+          "validationStatus": { "enum": ["ready", "needs_review", "gap", "skipped"] },
+          "moduleCodes": { "type": "array", "items": { "type": "string" } },
+          "data": { "type": "object", "additionalProperties": true },
+          "issues": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["moduleCode", "fieldOrRecord", "reason", "round"],
+        "additionalProperties": false,
+        "properties": {
+          "moduleCode": { "type": "string" },
+          "fieldOrRecord": { "type": "string" },
+          "reason": { "type": "string" },
+          "round": { "enum": ["round_1", "round_2"] },
+          "owner": { "type": "string" },
+          "sourceId": { "type": "string" }
+        }
+      }
+    }
+  }
+}

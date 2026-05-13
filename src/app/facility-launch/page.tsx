@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function FacilityLaunchPage() {
   return (
     <>
-      <link rel="stylesheet" href="/facility-launch-static/styles.css?v=20260506-col-responses" />
+      <link rel="stylesheet" href="/facility-launch-static/styles.css?v=20260513-round1-import" />
       <header className="app-header">
         <h1>Facility Launch Center</h1>
         <p className="subhead">Facility DNA command center for Homewood launch readiness</p>
@@ -26,14 +26,15 @@ export default function FacilityLaunchPage() {
         <section className="panel">
           <div className="row-between">
             <h3>Decision Log (latest)</h3>
-            <button id="reset-demo" type="button">Reset Demo</button>
+            <button id="load-round1-state" type="button">Load Round 1 Import</button>
+            <button id="reset-demo" type="button">Reset Onboarding Shell</button>
           </div>
           <ul id="decision-log" />
         </section>
       </main>
 
       <Script
-        src="/facility-launch-static/src/app.js?v=20260511-next-script"
+        src="/facility-launch-static/src/app.js?v=20260513-round1-import"
         strategy="afterInteractive"
         type="module"
       />

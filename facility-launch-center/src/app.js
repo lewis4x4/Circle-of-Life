@@ -1,5 +1,6 @@
 import {
   loadState,
+  saveState,
   resetState,
   appendDecisionLog,
   updateProgramField,
@@ -42,6 +43,7 @@ const summaryEl = document.getElementById("summary");
 const viewEl = document.getElementById("view");
 const decisionLogEl = document.getElementById("decision-log");
 const resetButton = document.getElementById("reset-demo");
+const loadRound1Button = document.getElementById("load-round1-state");
 
 const MODULE_STATUSES = ["not_started", "assigned", "in_progress", "ready_for_review", "signed", "blocked"];
 const SCOPE_STATUSES = ["in", "out", "tbd"];
@@ -131,6 +133,48 @@ function renderSummary() {
       <div class="card"><h4>Gate 2</h4><p>${getGateStatusLabel(g2)}</p><small>${g2.blockers.length} blocker(s)</small></div>
       <div class="card"><h4>Documents</h4><p>${state.documents.length}</p><small>${staleCount} stale · ${score.unresolvedDuplicateGroups.length} duplicate group(s) unresolved</small></div>
       <div class="card"><h4>Contradictions</h4><p>${openContradictions}</p><small>Policy vs Reality vs App visible</small></div>
+      <div class="card"><h4>Import Reviews</h4><p>${(state.ingestionReviewQueue || []).length}</p><small>Round 1 records needing review</small></div>
+      <div class="card"><h4>Import Gaps</h4><p>${(state.ingestionGaps || []).length}</p><small>Second-pass source queue</small></div>
+    </div>
+  `;
+}
+
+function renderIngestionQueues() {
+  const gaps = state.ingestionGaps || [];
+  const reviews = state.ingestionReviewQueue || [];
+  const manifest = state.ingestionManifest || null;
+  if (!manifest && !gaps.length && !reviews.length) return "";
+  const gapRows = gaps.length
+    ? gaps.map((gap) => `<tr><td>${esc(gap.moduleCode)}</td><td>${esc(gap.sourceId)}</td><td>${esc(gap.fieldOrRecord)}</td><td>${esc(gap.reason)}</td></tr>`).join("")
+    : `<tr><td colspan="4">No Round 1/2 gap records loaded.</td></tr>`;
+  const reviewRows = reviews.length
+    ? reviews.slice(0, 12).map((item) => `<tr><td>${esc((item.moduleCodes || []).join(", "))}</td><td>${esc(item.sourceId)}</td><td>${esc(item.targetEntity)}</td><td>${esc(item.reason)}</td></tr>`).join("")
+    : `<tr><td colspan="4">No review queue records loaded.</td></tr>`;
+  return `
+    <div class="panel-ish span2">
+      <div class="row-between">
+        <div>
+          <p class="eyebrow">Round 1 Real Import</p>
+          <h3>${manifest ? "Homewood Round 1 state loaded" : "No generated import loaded"}</h3>
+        </div>
+        <div class="mini-kpis">
+          <span class="badge badge-info">${esc(manifest?.artifactCount || 0)}/${esc(manifest?.sourceCount || 0)} sources</span>
+          <span class="badge badge-watch">${reviews.length} review</span>
+          <span class="badge badge-blocked">${gaps.length} gaps</span>
+        </div>
+      </div>
+      <p>${esc(manifest?.roundPolicy || "Click Load Round 1 Import to hydrate the app from normalized artifacts.")}</p>
+      <div class="grid2">
+        <div>
+          <h4>Second-pass gap queue</h4>
+          <div class="table-wrap compact-table"><table><thead><tr><th>Module</th><th>Source</th><th>Field/source</th><th>Reason</th></tr></thead><tbody>${gapRows}</tbody></table></div>
+        </div>
+        <div>
+          <h4>Needs-review queue</h4>
+          <div class="table-wrap compact-table"><table><thead><tr><th>Module</th><th>Source</th><th>Target</th><th>Reason</th></tr></thead><tbody>${reviewRows}</tbody></table></div>
+          ${reviews.length > 12 ? `<small>Showing first 12 of ${reviews.length} review records.</small>` : ""}
+        </div>
+      </div>
     </div>
   `;
 }
@@ -158,6 +202,7 @@ function renderOverview() {
         <h3>What is blocked</h3>
         <ul>${(g2.blockers.length ? g2.blockers : ["No Gate 2 blockers"]).map((b) => `<li>${esc(b)}</li>`).join("")}</ul>
       </div>
+      ${renderIngestionQueues()}
       <div class="panel-ish">
         <h3>Homewood complexity surfaced</h3>
         <div class="complexity-list">
@@ -1070,12 +1115,33 @@ document.body.addEventListener("submit", (e) => {
   }
 });
 
+loadRound1Button?.addEventListener("click", async () => {
+  try {
+    const response = await fetch("/data/homewood-round1-state.json", { cache: "no-store" });
+    if (!response.ok) throw new Error(`Round 1 state fetch failed: ${response.status}`);
+    const importedState = await response.json();
+    state = saveState(importedState);
+    state = appendDecisionLog(state, {
+      actor: "user",
+      actionType: "round1_real_import_loaded",
+      summary: "Loaded generated Homewood Round 1 real onboarding state; no demo fixture data loaded.",
+      relatedType: "facility",
+      relatedId: state.facility?.id || "fac-homewood"
+    });
+    render();
+  } catch (error) {
+    console.error(error);
+    pipelineMessage = `Unable to load Round 1 import: ${error.message}`;
+    render();
+  }
+});
+
 resetButton.addEventListener("click", () => {
   state = resetState();
   state = appendDecisionLog(state, {
     actor: "user",
-    actionType: "data_reset",
-    summary: "Reset Demo triggered.",
+    actionType: "empty_onboarding_reset",
+    summary: "Reset onboarding shell triggered; no demo fixture data loaded.",
     relatedType: "facility",
     relatedId: state.facility.id
   });

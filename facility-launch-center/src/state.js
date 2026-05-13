@@ -1,4 +1,4 @@
-import { seedState, STORAGE_KEY } from "./seedData.js";
+import { emptyOnboardingState, STORAGE_KEY } from "./seedData.js";
 import { inferDocumentIntelligence } from "./documentIntelligence.js";
 
 let memoryFallback = null;
@@ -42,6 +42,14 @@ function seededRecordKey(record) {
   return record.id || record.roomNumber || record.roundName || record.kpiName || record.organization || record.fullLegalName || record.contactName || "";
 }
 
+function isLegacyDemoState(state) {
+  if (!state || typeof state !== "object") return false;
+  const documentIds = new Set((state.documents || []).map((document) => document?.id).filter(Boolean));
+  const hasSeedDecision = (state.decisionLog || []).some((entry) => entry?.id === "dec-seed-1" || /Seeded Homewood pilot fixture/i.test(entry?.summary || ""));
+  const hasSeedDocuments = documentIds.has("doc-gl-1") || documentIds.has("doc-prop-1");
+  return hasSeedDecision || hasSeedDocuments;
+}
+
 function mergeMissingSeedValues(current, seed) {
   if (isBlankForSeedMerge(current)) return clone(seed);
   if (Array.isArray(current) && Array.isArray(seed)) {
@@ -76,9 +84,11 @@ export function loadState() {
   const raw = readStorage();
   if (!raw) return resetState();
   try {
-    return withSaved(mergeMissingSeedValues(JSON.parse(raw), seedState));
+    const parsed = JSON.parse(raw);
+    if (isLegacyDemoState(parsed)) return resetState();
+    return withSaved(mergeMissingSeedValues(parsed, emptyOnboardingState));
   } catch (error) {
-    console.warn("Facility Launch Center storage parse failed; resetting demo state.", error);
+    console.warn("Facility Launch Center storage parse failed; resetting onboarding shell.", error);
     return resetState();
   }
 }
@@ -88,9 +98,10 @@ export function saveState(state) {
 }
 
 export function resetState() {
-  const seeded = clone(seedState);
-  return withSaved(seeded);
+  const empty = clone(emptyOnboardingState);
+  return withSaved(empty);
 }
+
 
 export function appendDecisionLog(state, entry) {
   const next = clone(state);
