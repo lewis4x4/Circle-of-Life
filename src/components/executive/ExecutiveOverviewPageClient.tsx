@@ -14,7 +14,6 @@ import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 
 import { ExecutiveHubNav } from "@/app/(admin)/executive/executive-hub-nav";
 
-import { useClientDemoMode } from "@/hooks/useClientDemoMode";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import type { AlertWithFacility } from "@/lib/executive/load-executive-overview";
@@ -44,7 +43,6 @@ export function ExecutiveOverviewPageClient({
   initialAssuranceTrends,
   initialHasServerData,
 }: ExecutiveOverviewPageClientProps) {
-  const demo = useClientDemoMode();
   const supabase = createClient();
   const { user } = useAuth();
   const roleConfig = getRoleDashboardConfig(getAppRoleFromClaims(user));
@@ -91,16 +89,7 @@ export function ExecutiveOverviewPageClient({
       
       const latestMap: Record<string, number> = {};
       
-      if (!snapData || snapData.length === 0) {
-        // DEMO HYDRATION: optional sample KPIs when DB is unseeded (NEXT_PUBLIC_DEMO_MODE=true only)
-        if (demo) {
-          latestMap['occ_pt'] = 0.861;
-          latestMap['rev_mtd'] = 84500000;
-          latestMap['labor_pct'] = 0.545;
-          latestMap['inc_rate'] = 3.5;
-          latestMap['survey_rd'] = 0.864;
-        }
-      } else {
+      if (snapData && snapData.length > 0) {
         for (const row of snapData) {
           if (!latestMap[row.metric_code]) {
             latestMap[row.metric_code] = row.metric_value_numeric || 0;
@@ -120,43 +109,7 @@ export function ExecutiveOverviewPageClient({
 
       if (alertErr) throw alertErr;
       
-      if ((!alertData || alertData.length === 0) && demo) {
-         const nowIso = new Date().toISOString();
-         const mockAlert: AlertWithFacility = {
-           id: "mock-1",
-           organization_id: "",
-           facility_id: null,
-           entity_id: null,
-           owner_user_id: null,
-           severity: "critical",
-           source_module: "system",
-           source_metric_code: null,
-           category: "growth",
-           status: "open",
-           title: "Occupancy fell below Critical Threshold (85%)",
-           body: "Oakridge has dropped from 86.2% to 84.1% occupancy over the last 14 days following 3 discharges.",
-           why_it_matters: "Cash flow break-even relies on >88%. Continuing at this rate will bleed cash reserves by $45,000 this month.",
-           score: null,
-           threshold_json: null,
-           current_value_json: null,
-           prior_value_json: null,
-           related_link_json: null,
-           deep_link_path: null,
-           first_triggered_at: nowIso,
-           last_evaluated_at: nowIso,
-           created_at: nowIso,
-           updated_at: nowIso,
-           acknowledged_at: null,
-           acknowledged_by: null,
-           resolved_at: null,
-           resolved_by: null,
-           deleted_at: null,
-           facilities: { name: "Oakridge ALF" },
-         };
-         setAlerts([mockAlert]);
-       } else {
-         setAlerts(alertData ?? []);
-       }
+      setAlerts(alertData ?? []);
 
       // 3. Fetch Portfolio Facilities
       const { data: facData, error: facErr } = await supabase
@@ -168,14 +121,6 @@ export function ExecutiveOverviewPageClient({
         
       if (!facErr && facData && facData.length > 0) {
         setFacilities(facData);
-      } else if (demo) {
-        setFacilities([
-          { id: "f1", name: "Grande Cypress ALF" },
-          { id: "f2", name: "Homewood Lodge ALF" },
-          { id: "f3", name: "Oakridge ALF" },
-          { id: "f4", name: "Plantation ALF" },
-          { id: "f5", name: "Rising Oaks ALF" },
-        ]);
       } else {
         setFacilities([]);
       }
@@ -186,110 +131,12 @@ export function ExecutiveOverviewPageClient({
       ]);
       if (assuranceRows.length > 0) {
         setAssuranceHeatMap(assuranceRows);
-      } else if (demo) {
-        setAssuranceHeatMap([
-          {
-            facilityId: "f1",
-            facilityName: "Grande Cypress ALF",
-            activeWatches: 3,
-            pendingWatchApprovals: 0,
-            openEscalations: 0,
-            openIntegrityFlags: 1,
-            criticalSafetyResidents: 0,
-            highOrCriticalSafetyResidents: 1,
-            heatScore: 3,
-            heatBand: "watch",
-          },
-          {
-            facilityId: "f2",
-            facilityName: "Homewood Lodge ALF",
-            activeWatches: 5,
-            pendingWatchApprovals: 1,
-            openEscalations: 2,
-            openIntegrityFlags: 1,
-            criticalSafetyResidents: 1,
-            highOrCriticalSafetyResidents: 2,
-            heatScore: 13,
-            heatBand: "critical",
-          },
-          {
-            facilityId: "f3",
-            facilityName: "Oakridge ALF",
-            activeWatches: 4,
-            pendingWatchApprovals: 1,
-            openEscalations: 1,
-            openIntegrityFlags: 2,
-            criticalSafetyResidents: 1,
-            highOrCriticalSafetyResidents: 3,
-            heatScore: 12,
-            heatBand: "critical",
-          },
-          {
-            facilityId: "f4",
-            facilityName: "Plantation ALF",
-            activeWatches: 2,
-            pendingWatchApprovals: 0,
-            openEscalations: 1,
-            openIntegrityFlags: 0,
-            criticalSafetyResidents: 0,
-            highOrCriticalSafetyResidents: 1,
-            heatScore: 4,
-            heatBand: "watch",
-          },
-          {
-            facilityId: "f5",
-            facilityName: "Rising Oaks ALF",
-            activeWatches: 1,
-            pendingWatchApprovals: 0,
-            openEscalations: 0,
-            openIntegrityFlags: 0,
-            criticalSafetyResidents: 0,
-            highOrCriticalSafetyResidents: 0,
-            heatScore: 0,
-            heatBand: "stable",
-          },
-        ]);
       } else {
         setAssuranceHeatMap([]);
       }
 
       if (assuranceTrendRows.length > 0) {
         setAssuranceTrends(assuranceTrendRows);
-      } else if (demo) {
-        setAssuranceTrends([
-          {
-            facilityId: "f1",
-            facilityName: "Grande Cypress ALF",
-            latestHeatScore: 3,
-            peakHeatScore: 5,
-            avgHeatScore: 2.7,
-            points: [
-              { date: "2026-04-15", watchStarts: 1, escalations: 0, integrityFlags: 0, criticalResidents: 0, heatScore: 1, heatBand: "stable" },
-              { date: "2026-04-16", watchStarts: 1, escalations: 0, integrityFlags: 0, criticalResidents: 0, heatScore: 1, heatBand: "stable" },
-              { date: "2026-04-17", watchStarts: 2, escalations: 0, integrityFlags: 0, criticalResidents: 0, heatScore: 2, heatBand: "stable" },
-              { date: "2026-04-18", watchStarts: 1, escalations: 1, integrityFlags: 0, criticalResidents: 0, heatScore: 4, heatBand: "watch" },
-              { date: "2026-04-19", watchStarts: 1, escalations: 0, integrityFlags: 1, criticalResidents: 0, heatScore: 3, heatBand: "watch" },
-              { date: "2026-04-20", watchStarts: 0, escalations: 0, integrityFlags: 0, criticalResidents: 0, heatScore: 0, heatBand: "stable" },
-              { date: "2026-04-21", watchStarts: 1, escalations: 0, integrityFlags: 1, criticalResidents: 0, heatScore: 3, heatBand: "watch" },
-            ],
-          },
-          {
-            facilityId: "f2",
-            facilityName: "Homewood Lodge ALF",
-            latestHeatScore: 9,
-            peakHeatScore: 14,
-            avgHeatScore: 8.4,
-            points: [
-              { date: "2026-04-15", watchStarts: 2, escalations: 1, integrityFlags: 0, criticalResidents: 0, heatScore: 5, heatBand: "watch" },
-              { date: "2026-04-16", watchStarts: 3, escalations: 1, integrityFlags: 1, criticalResidents: 0, heatScore: 8, heatBand: "elevated" },
-              { date: "2026-04-17", watchStarts: 2, escalations: 2, integrityFlags: 1, criticalResidents: 1, heatScore: 14, heatBand: "critical" },
-              { date: "2026-04-18", watchStarts: 1, escalations: 1, integrityFlags: 1, criticalResidents: 1, heatScore: 10, heatBand: "elevated" },
-              { date: "2026-04-19", watchStarts: 1, escalations: 1, integrityFlags: 0, criticalResidents: 1, heatScore: 8, heatBand: "elevated" },
-              { date: "2026-04-20", watchStarts: 1, escalations: 0, integrityFlags: 1, criticalResidents: 1, heatScore: 7, heatBand: "elevated" },
-              { date: "2026-04-21", watchStarts: 1, escalations: 1, integrityFlags: 1, criticalResidents: 0, heatScore: 6, heatBand: "watch" },
-            ],
-          },
-        ]);
       } else {
         setAssuranceTrends([]);
       }
@@ -299,7 +146,7 @@ export function ExecutiveOverviewPageClient({
     } finally {
       setLoading(false);
     }
-  }, [supabase, demo]);
+  }, [supabase]);
 
   useEffect(() => {
     void load();

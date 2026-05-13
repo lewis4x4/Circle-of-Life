@@ -1,6 +1,6 @@
 # Homewood Round 1 Real Ingestion Status — 2026-05-13
 
-Generated: 2026-05-13T19:59:10.442Z
+Generated: 2026-05-13T20:09:54.643Z
 
 This report is intentionally PHI-safe. It records source coverage, parser readiness, and missing-source gaps only.
 

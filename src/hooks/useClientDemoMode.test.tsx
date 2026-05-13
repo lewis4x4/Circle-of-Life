@@ -21,18 +21,11 @@ afterEach(() => {
 });
 
 describe("useClientDemoMode", () => {
-  it("reflects localStorage opt-out after env enables demo", async () => {
+  it("stays false even if legacy demo env and storage are set", async () => {
     process.env.NEXT_PUBLIC_DEMO_MODE = "true";
-    localStorage.setItem(DEMO_MODE_STORAGE_KEY, "false");
+    localStorage.setItem(DEMO_MODE_STORAGE_KEY, "true");
 
     const { result } = renderHook(() => useClientDemoMode());
     await waitFor(() => expect(result.current).toBe(false));
-  });
-
-  it("is true after mount when env enables demo and storage does not opt out", async () => {
-    process.env.NEXT_PUBLIC_DEMO_MODE = "true";
-
-    const { result } = renderHook(() => useClientDemoMode());
-    await waitFor(() => expect(result.current).toBe(true));
   });
 });

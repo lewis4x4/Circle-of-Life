@@ -1,29 +1,17 @@
 /**
- * Opt-in demo UI (mock charts, hydration rows, sample KPIs).
- * Production/UAT should leave `NEXT_PUBLIC_DEMO_MODE` unset or not `"true"` so empty states reflect real data gaps.
- * Browser storage may only disable an env-enabled demo session; it must not
- * enable demo mode on an otherwise live/UAT build.
+ * Legacy demo UI is disabled for Homewood live onboarding.
+ *
+ * The app must not hydrate seeded/demo residents, facilities, KPIs, alerts, or
+ * rounding rows while Homewood is being converted to real Facility DNA data.
+ * Keep this function false unless a future isolated demo environment is built
+ * with fixtures that cannot leak into live/UAT routes.
  */
 export const DEMO_MODE_STORAGE_KEY = "haven-demo-mode-enabled";
 
 export function isDemoModeEnabledByEnv(): boolean {
-  return process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+  return false;
 }
 
 export function isDemoMode(): boolean {
-  if (!isDemoModeEnabledByEnv()) return false;
-
-  // SSR / non-DOM: never imply demo on — client components should use
-  // `useClientDemoMode` for UI that depends on localStorage.
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  try {
-    const stored = window.localStorage.getItem(DEMO_MODE_STORAGE_KEY);
-    if (stored === "false") return false;
-  } catch {
-    // fall through to env-default
-  }
-  return true;
+  return false;
 }

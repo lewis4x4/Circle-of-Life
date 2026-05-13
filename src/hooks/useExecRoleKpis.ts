@@ -4,12 +4,10 @@ import { useState, useEffect, useCallback, useId } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   fetchExecutiveKpiSnapshot,
-  EXEC_KPI_METRICS_VERSION,
   type ExecKpiPayload,
 } from "@/lib/exec-kpi-snapshot";
 import { fetchExecutiveAlerts, type ExecutiveAlertRow } from "@/lib/exec-alerts";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
-import { isDemoMode } from "@/lib/demo-mode";
 
 export type ExecRole = "ceo" | "cfo" | "coo";
 
@@ -23,35 +21,9 @@ export interface ExecRoleKpiData {
   refetch: () => void;
 }
 
-/* ---------- demo fallback data ---------- */
-
-const DEMO_KPI_PAYLOAD: ExecKpiPayload = {
-  version: EXEC_KPI_METRICS_VERSION,
-  census: { occupiedResidents: 42, licensedBeds: 52, occupancyPct: 80.8 },
-  financial: { openInvoicesCount: 14, totalBalanceDueCents: 328_500 },
-  clinical: { openIncidents: 3, medicationErrorsMtd: 1 },
-  compliance: { openSurveyDeficiencies: 2 },
-  workforce: { certificationsExpiring30d: 5 },
-  infection: { activeOutbreaks: 0 },
-  residentAssurance: { overdueTasksCount: 0, missedRate: 0, openExceptions: 0, activeWatchCount: 0 },
-};
-
-const DEMO_FACILITIES: ExecRoleKpiData["facilities"] = [
-  { id: "demo-f1", name: "Grande Cypress ALF", total_licensed_beds: 60 },
-  { id: "demo-f2", name: "Homewood Lodge ALF", total_licensed_beds: 45 },
-  { id: "demo-f3", name: "Oakridge ALF", total_licensed_beds: 52 },
-  { id: "demo-f4", name: "Plantation ALF", total_licensed_beds: 48 },
-  { id: "demo-f5", name: "Rising Oaks ALF", total_licensed_beds: 55 },
-];
-
-const DEMO_ALERTS: ExecutiveAlertRow[] = [];
-
-/* ---------- hook ---------- */
-
 /**
  * Auto-resolves organizationId from the user's profile, then fetches
- * executive KPIs, alerts, and facility list. Falls back to demo data
- * when NEXT_PUBLIC_DEMO_MODE=true and queries fail or return empty.
+ * executive KPIs, alerts, and facility list.
  *
  * Pass `enabled=false` to defer all network work (queries + realtime
  * subscription) until the caller actually needs the data. Used by
@@ -84,14 +56,6 @@ export function useExecRoleKpis(
       const roleResult = await loadFinanceRoleContext(supabase);
       if (!roleResult.ok) {
         setOrganizationId(null);
-        if (isDemoMode()) {
-          setKpis(DEMO_KPI_PAYLOAD);
-          setAlerts(DEMO_ALERTS);
-          setFacilities(DEMO_FACILITIES);
-          setIsDemo(true);
-          setLoading(false);
-          return;
-        }
         throw new Error(roleResult.error);
       }
       const { organizationId } = roleResult.ctx;
@@ -116,20 +80,11 @@ export function useExecRoleKpis(
       }
       setFacilities(facilitiesResult.data ?? []);
     } catch (err) {
-      // In demo mode, swallow errors and fall back to sample data.
-      if (isDemoMode()) {
-        setOrganizationId(null);
-        setKpis(DEMO_KPI_PAYLOAD);
-        setAlerts(DEMO_ALERTS);
-        setFacilities(DEMO_FACILITIES);
-        setIsDemo(true);
-      } else {
-        setOrganizationId(null);
-        setKpis(null);
-        setAlerts([]);
-        setFacilities([]);
-        setError(err instanceof Error ? err.message : "Failed to load executive KPIs.");
-      }
+      setOrganizationId(null);
+      setKpis(null);
+      setAlerts([]);
+      setFacilities([]);
+      setError(err instanceof Error ? err.message : "Failed to load executive KPIs.");
     } finally {
       setLoading(false);
     }

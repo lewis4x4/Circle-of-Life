@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { DEMO_MODE_STORAGE_KEY, isDemoMode } from "./demo-mode";
+import { DEMO_MODE_STORAGE_KEY, isDemoMode, isDemoModeEnabledByEnv } from "./demo-mode";
 
 const ORIGINAL_DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE;
 const storage = new Map<string, string>();
@@ -31,31 +31,22 @@ describe("isDemoMode", () => {
   beforeEach(installLocalStorageMock);
   afterEach(resetDemoModeState);
 
-  it("does not allow stale browser storage to enable demo mode without the env flag", () => {
-    delete process.env.NEXT_PUBLIC_DEMO_MODE;
+  it("never enables legacy demo mode from browser storage", () => {
     window.localStorage.setItem(DEMO_MODE_STORAGE_KEY, "true");
 
     expect(isDemoMode()).toBe(false);
   });
 
-  it("allows browser storage to disable an env-enabled demo session", () => {
+  it("never enables legacy demo mode from environment flags", () => {
     process.env.NEXT_PUBLIC_DEMO_MODE = "true";
-    window.localStorage.setItem(DEMO_MODE_STORAGE_KEY, "false");
 
+    expect(isDemoModeEnabledByEnv()).toBe(false);
     expect(isDemoMode()).toBe(false);
   });
 
-  it("enables demo mode when explicitly configured by environment", () => {
-    process.env.NEXT_PUBLIC_DEMO_MODE = "true";
-
-    expect(isDemoMode()).toBe(true);
-  });
-
-  it("returns false when window is unavailable (SSR) even if env is true", async () => {
+  it("returns false when window is unavailable", async () => {
     const prevWindow = globalThis.window;
-    const prevEnv = process.env.NEXT_PUBLIC_DEMO_MODE;
 
-    process.env.NEXT_PUBLIC_DEMO_MODE = "true";
     // @ts-expect-error — simulate SSR
     delete globalThis.window;
 
@@ -64,7 +55,6 @@ describe("isDemoMode", () => {
     expect(isDemoModeFresh()).toBe(false);
 
     globalThis.window = prevWindow;
-    process.env.NEXT_PUBLIC_DEMO_MODE = prevEnv;
     vi.resetModules();
     await import("./demo-mode");
   });
