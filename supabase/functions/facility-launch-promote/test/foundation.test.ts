@@ -263,7 +263,7 @@ Deno.test("dry_run_writes_nothing", async () => {
   assertEquals(payload.mode, "dry_run");
   assertEquals(payload.modules_promoted.length, 1);
   assertEquals(payload.modules_promoted[0].module_code, "M1");
-  assertEquals(payload.modules_promoted[0].status, "not_implemented");
+  assertEquals(payload.modules_promoted[0].status, "skipped");
   assertEquals(payload.gap_modules, ["M2"]);
   assertEquals(admin.tables.facility_launch_promotion_runs.length, 0);
   assertEquals(admin.tables.facility_launch_promotion_run_items.length, 0);
@@ -282,12 +282,12 @@ Deno.test("omitted_dry_run_defaults_to_apply_and_writes_run_header_and_items", a
   assertEquals(payload.mode, "apply");
   assertEquals(typeof payload.run_id, "string");
   assertEquals(payload.modules_promoted.map((item: Row) => item.status), [
-    "not_implemented",
-    "not_implemented",
+    "skipped",
+    "promoted",
   ]);
   assertEquals(admin.tables.facility_launch_promotion_runs.length, 1);
   const run = admin.tables.facility_launch_promotion_runs[0];
-  assertEquals(run.status, "partial");
+  assertEquals(run.status, "succeeded");
   assertEquals(run.dry_run, false);
   assertEquals(run.triggered_by, USER_ID);
   assertEquals(run.modules_requested, []);
@@ -309,8 +309,8 @@ Deno.test("omitted_dry_run_defaults_to_apply_and_writes_run_header_and_items", a
   assertEquals(Array.isArray(item.errors), true);
   assertEquals(Object.hasOwn(item, "created_by"), false);
   assertEquals(Object.hasOwn(item, "deleted_at"), false);
-  assertEquals(admin.tables.facility_launch_promotion_run_links.length, 0);
-  assertEquals(admin.tables.rooms.length, 0);
-  assertEquals(admin.tables.beds.length, 0);
+  assertEquals(admin.tables.facility_launch_promotion_run_links.length, 3);
+  assertEquals(admin.tables.rooms.length, 1);
+  assertEquals(admin.tables.beds.length, 1);
   assertEquals(admin.tables.facility_documents.length, 0);
 });

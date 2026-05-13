@@ -114,7 +114,8 @@ function finalRunStatus(
 ): "succeeded" | "partial" | "failed" {
   if (results.length === 0) return "succeeded";
   if (results.every((result) => result.status === "failed")) return "failed";
-  if (results.some((result) => result.status !== "promoted")) return "partial";
+  if (results.some((result) => result.status === "failed")) return "partial";
+  if (results.some((result) => result.status === "not_implemented")) return "partial";
   return "succeeded";
 }
 
@@ -244,42 +245,101 @@ function toModuleValues(rows: ModuleValueRow[]): ModuleValues {
   }, {});
 }
 
-async function planModules(params: {
+function prepareModulePlan(values: ModuleValueRow[], requestedModules: string[] | null): {
+  grouped: Map<string, ModuleValueRow[]>;
+  modulesToProcess: string[];
+  gapModules: string[];
+} {
+  const grouped = groupByModule(values);
+  const availableModules = Array.from(grouped.keys()).sort();
+  const modulesToProcess = (requestedModules ?? availableModules).filter((moduleCode) => grouped.has(moduleCode));
+  const gapModules = requestedModules ? requestedModules.filter((moduleCode) => !grouped.has(moduleCode)) : [];
+  return { grouped, modulesToProcess, gapModules };
+}
+
+function moduleValueIdsByPath(rows: ModuleValueRow[]): Record<string, string> {
+  return rows.reduce<Record<string, string>>((ids, row) => {
+    ids[row.field_path] = row.id;
+    return ids;
+  }, {});
+}
+
+async function insertRunItem(
+  admin: AdminClient,
+  runId: string,
+  actor: Actor,
+  facilityId: string,
+  moduleCode: string,
+): Promise<string> {
+  const { data, error } = await admin
+    .from("facility_launch_promotion_run_items")
+    .insert({
+      run_id: runId,
+      organization_id: actor.organizationId,
+      facility_id: facilityId,
+      module_code: moduleCode,
+      status: "running",
+      summary: `${moduleCode} promotion running.`,
+      tables_touched: [],
+      warnings: [],
+      errors: [],
+      prerequisites_unmet: [],
+    })
+    .select("id")
+    .single();
+  if (error || !data?.id) {
+    throw new Error(`Promotion run item insert failed for ${moduleCode}: ${error?.message ?? "missing id"}`);
+  }
+  return String(data.id);
+}
+
+async function updateRunItem(
+  admin: AdminClient,
+  runItemId: string,
+  result: ModulePromotionResult,
+): Promise<void> {
+  const { error } = await admin
+    .from("facility_launch_promotion_run_items")
+    .update({
+      status: result.status,
+      summary: result.summary,
+      tables_touched: result.tables_touched,
+      warnings: result.warnings,
+      errors: result.errors,
+      prerequisites_unmet: result.prerequisites_unmet,
+    })
+    .eq("id", runItemId);
+  if (error) throw new Error(`Promotion run item update failed: ${error.message}`);
+}
+
+async function promoteModules(params: {
   admin: AdminClient;
   organizationId: string;
   facilityId: string;
-  actorUserId: string;
-  requestedModules: string[] | null;
-  values: ModuleValueRow[];
+  actor: Actor;
+  grouped: Map<string, ModuleValueRow[]>;
+  modulesToProcess: string[];
   dryRun: boolean;
-}): Promise<
-  {
-    results: ModulePromotionResult[];
-    gapModules: string[];
-    processedModules: string[];
-  }
-> {
-  const grouped = groupByModule(params.values);
-  const availableModules = Array.from(grouped.keys()).sort();
-  const modulesToProcess = (params.requestedModules ?? availableModules).filter(
-    (moduleCode) => grouped.has(moduleCode),
-  );
-  const gapModules = params.requestedModules
-    ? params.requestedModules.filter((moduleCode) => !grouped.has(moduleCode))
-    : [];
-
+  runId: string | null;
+}): Promise<ModulePromotionResult[]> {
   const results: ModulePromotionResult[] = [];
-  for (const moduleCode of modulesToProcess) {
+  for (const moduleCode of params.modulesToProcess) {
+    const rows = params.grouped.get(moduleCode) ?? [];
     const promoter = PROMOTERS[moduleCode];
     if (!promoter) {
-      results.push(notImplementedResult(moduleCode));
+      const result = notImplementedResult(moduleCode);
+      if (!params.dryRun && params.runId) {
+        const itemId = await insertRunItem(params.admin, params.runId, params.actor, params.facilityId, moduleCode);
+        await updateRunItem(params.admin, itemId, result);
+      }
+      results.push(result);
       continue;
     }
 
-    const moduleValues = toModuleValues(grouped.get(moduleCode) ?? []);
+    const moduleValues = toModuleValues(rows);
     const readiness = promoter.canPromote(moduleValues);
     if (!readiness.ready) {
-      results.push({
+      const result: ModulePromotionResult = {
         module_code: moduleCode,
         status: "skipped",
         summary: `${moduleCode} prerequisites unmet.`,
@@ -287,22 +347,50 @@ async function planModules(params: {
         warnings: [],
         errors: [],
         prerequisites_unmet: readiness.missing,
-      });
+      };
+      if (!params.dryRun && params.runId) {
+        const itemId = await insertRunItem(params.admin, params.runId, params.actor, params.facilityId, moduleCode);
+        await updateRunItem(params.admin, itemId, result);
+      }
+      results.push(result);
       continue;
     }
 
-    const context: PromotionContext = {
-      admin: params.admin,
-      organization_id: params.organizationId,
-      facility_id: params.facilityId,
-      actor_user_id: params.actorUserId,
-      dry_run: params.dryRun,
-      run_id: null,
-    };
-    results.push(await promoter.promote(context, moduleValues));
-  }
+    let runItemId: string | null = null;
+    if (!params.dryRun && params.runId) {
+      runItemId = await insertRunItem(params.admin, params.runId, params.actor, params.facilityId, moduleCode);
+    }
 
-  return { results, gapModules, processedModules: modulesToProcess };
+    try {
+      const context: PromotionContext = {
+        admin: params.admin,
+        organization_id: params.organizationId,
+        facility_id: params.facilityId,
+        actor_user_id: params.actor.userId,
+        dry_run: params.dryRun,
+        run_id: params.runId,
+        run_item_id: runItemId,
+        module_value_ids_by_path: moduleValueIdsByPath(rows),
+      };
+      const result = await promoter.promote(context, moduleValues);
+      if (!params.dryRun && runItemId) await updateRunItem(params.admin, runItemId, result);
+      results.push(result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const result: ModulePromotionResult = {
+        module_code: moduleCode,
+        status: "failed",
+        summary: `${moduleCode} promotion failed.`,
+        tables_touched: [],
+        warnings: [],
+        errors: [message],
+        prerequisites_unmet: [],
+      };
+      if (!params.dryRun && runItemId) await updateRunItem(params.admin, runItemId, result);
+      results.push(result);
+    }
+  }
+  return results;
 }
 
 async function insertRun(admin: AdminClient, params: {
@@ -339,33 +427,6 @@ async function insertRun(admin: AdminClient, params: {
     );
   }
   return String(data.id);
-}
-
-async function insertRunItems(
-  admin: AdminClient,
-  runId: string,
-  actor: Actor,
-  facilityId: string,
-  results: ModulePromotionResult[],
-): Promise<void> {
-  if (results.length === 0) return;
-  const rows = results.map((result) => ({
-    run_id: runId,
-    organization_id: actor.organizationId,
-    facility_id: facilityId,
-    module_code: result.module_code,
-    status: result.status,
-    summary: result.summary,
-    tables_touched: result.tables_touched,
-    warnings: result.warnings,
-    errors: result.errors,
-    prerequisites_unmet: result.prerequisites_unmet,
-  }));
-  const { error } = await admin.from("facility_launch_promotion_run_items")
-    .insert(rows);
-  if (error) {
-    throw new Error(`Promotion run item insert failed: ${error.message}`);
-  }
 }
 
 async function updateRun(
@@ -432,35 +493,40 @@ async function handlePromotion(
       actor.organizationId,
       facilityId,
     );
-    const { results, gapModules, processedModules } = await planModules({
-      admin,
-      organizationId: actor.organizationId,
-      facilityId,
-      actorUserId: actor.userId,
-      requestedModules,
-      values,
-      dryRun,
-    });
-    const summary = summarize(results, gapModules, mode);
+    const { grouped, modulesToProcess, gapModules } = prepareModulePlan(values, requestedModules);
 
     if (!dryRun) {
       runId = await insertRun(admin, {
         actor,
         facilityId,
         requestedModules: requestedModules ?? [],
-        processedModules,
+        processedModules: modulesToProcess,
         gapModules,
-        summary,
+        summary: "Promotion running.",
         now: now(),
       });
-      await insertRunItems(admin, runId, actor, facilityId, results);
+    }
+
+    const results = await promoteModules({
+      admin,
+      organizationId: actor.organizationId,
+      facilityId,
+      actor,
+      grouped,
+      modulesToProcess,
+      dryRun,
+      runId,
+    });
+    const summary = summarize(results, gapModules, mode);
+
+    if (!dryRun && runId) {
       const status = finalRunStatus(results);
       await updateRun(admin, runId, {
         status,
         finished_at: now().toISOString(),
         summary,
         metadata: {
-          processed_modules: processedModules,
+          processed_modules: modulesToProcess,
           gap_modules: gapModules,
           final_status: status,
         },

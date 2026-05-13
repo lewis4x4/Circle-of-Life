@@ -44,7 +44,12 @@ const ROUND2_GAPS = ["M4", "M5", "M7", "M8", "M9", "M12", "M15"];
 type Profile = { app_role?: string | null; organization_id?: string | null; is_active?: boolean | null };
 type Actor = { userId: string; profile: Profile };
 
-type State = { mvpData?: Record<string, Record<string, unknown>>; exportedAt?: string; _meta?: { exportedAt?: string } };
+type State = {
+  mvpData?: Record<string, Record<string, unknown>>;
+  documents?: Array<Record<string, unknown>>;
+  exportedAt?: string;
+  _meta?: { exportedAt?: string };
+};
 
 type RowPayload = {
   organization_id: string;
@@ -132,6 +137,31 @@ function buildPayloads(state: State, organizationId: string, facilityId: string 
         applied_at: new Date().toISOString(),
       });
     }
+  }
+
+  for (const doc of state.documents ?? []) {
+    const docId = typeof doc.id === "string" && doc.id.trim() ? doc.id.trim() : null;
+    if (!docId || !isMeaningful(doc)) {
+      skippedFields.push({ module: "M17", field: "documents", reason: "document missing id or metadata" });
+      continue;
+    }
+    payloads.push({
+      organization_id: organizationId,
+      facility_id: facilityId,
+      module_code: "M17",
+      field_path: `documents.${docId}`,
+      value: doc,
+      provenance: {
+        source: "facility-launch-center.documents",
+        round: 1,
+        exported_at: exportedAt,
+        captured_by: "facility-launch-center",
+      },
+      source_document_id: null,
+      source_fact_id: null,
+      applied_by: userId,
+      applied_at: new Date().toISOString(),
+    });
   }
 
   // Allowlisted modules in mvpData that yielded zero payload rows (only _sourceNotes).

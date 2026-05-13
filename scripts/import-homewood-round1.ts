@@ -209,6 +209,32 @@ function buildPayloads(
     }
   }
 
+  const documents = Array.isArray(state.documents) ? state.documents as Array<Record<string, unknown>> : [];
+  for (const doc of documents) {
+    const docId = typeof doc.id === "string" && doc.id.trim() ? doc.id.trim() : null;
+    if (!docId || !isMeaningfulValue(doc)) {
+      skippedFields.push({ module: "M17", field: "documents", reason: "document missing id or metadata" });
+      continue;
+    }
+    payloads.push({
+      organization_id: args.organizationId,
+      facility_id: args.facilityId,
+      module_code: "M17",
+      field_path: `documents.${docId}`,
+      value: doc,
+      provenance: {
+        source: "facility-launch-center.documents",
+        round: 1,
+        exported_at: exportedAt,
+        captured_by: "facility-launch-center",
+      },
+      source_document_id: null,
+      source_fact_id: null,
+      applied_by: args.appliedBy,
+      applied_at: new Date().toISOString(),
+    });
+  }
+
   // Modules that the user listed in Round-1 but provided no fields for: log them.
   for (const code of ROUND1_MODULE_ALLOWLIST) {
     if (!mvpData[code]) {

@@ -8,9 +8,12 @@ export type TablesTouched = Array<{
   table: string;
   rows_created: number;
   rows_updated: number;
+  rows_noop?: number;
 }>;
 
 export type PromotionStatus = "promoted" | "skipped" | "partial" | "failed";
+
+export type RunItemStatus = PromotionStatus | "not_implemented" | "running";
 
 export type PromotionResult = {
   module_code: string;
@@ -52,6 +55,8 @@ export type PromotionContext = {
   actor_user_id: string;
   dry_run: boolean;
   run_id: string | null;
+  run_item_id: string | null;
+  module_value_ids_by_path: Record<string, string>;
 };
 
 export type ReadinessCheck = { ready: boolean; missing: string[] };
