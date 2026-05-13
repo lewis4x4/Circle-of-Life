@@ -57,7 +57,9 @@
     "homewood:ingestion:validate:artifacts": "node scripts/onboarding/homewood/validate-normalized-artifacts.mjs",
     "homewood:ingestion:validate:reports": "node scripts/onboarding/homewood/validate-homewood-reports.mjs",
     "homewood:ingestion:build-state": "node scripts/onboarding/homewood/build-round1-state.mjs",
-    "homewood:ingestion:validate:state": "node scripts/onboarding/homewood/validate-round1-state.mjs"
+    "homewood:ingestion:validate:state": "node scripts/onboarding/homewood/validate-round1-state.mjs",
+    "import:homewood-round1": "tsx scripts/import-homewood-round1.ts",
+    "import:homewood-round1:dry": "tsx scripts/import-homewood-round1.ts --dry-run"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",
