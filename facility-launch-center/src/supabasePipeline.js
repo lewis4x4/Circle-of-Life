@@ -80,3 +80,28 @@ export async function parserAction(action, body, config = loadPipelineConfig()) 
     body: JSON.stringify({ action, ...body })
   });
 }
+
+/**
+ * Push the current Facility Launch Center state into Haven's
+ * facility_launch_module_values table via the facility-launch-import Edge Function.
+ *
+ *   state      - the FLC export JSON (anything with `mvpData`, normally what
+ *                buildStateJsonExport returns)
+ *   options    - { dryRun?: boolean }
+ *   config     - pipeline config (defaults to loadPipelineConfig())
+ *
+ * Returns the edge function response: { inserts, updates, noops, gap_report, rows, ... }
+ */
+export async function pushStateToHaven(state, options = {}, config = loadPipelineConfig()) {
+  if (!state || typeof state !== "object") throw new Error("Cannot push: state is missing.");
+  return edgeFetch(config, "facility-launch-import", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      state,
+      organization_id: config.organizationId,
+      facility_id: config.facilityId || null,
+      dry_run: Boolean(options.dryRun)
+    })
+  });
+}

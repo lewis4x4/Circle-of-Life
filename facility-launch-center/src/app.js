@@ -31,12 +31,16 @@ import { evaluateGate0, evaluateGate2 } from "./gates.js";
 import { buildReadinessMarkdown, buildStateJsonExport, buildLaunchNarrative } from "./export.js";
 import { onboardingIntakeCatalog } from "./intakeCatalog.js";
 import { inferDocumentIntelligence } from "./documentIntelligence.js";
-import { loadPipelineConfig, savePipelineConfig, pipelineConfigured, uploadDocumentToSupabasePipeline } from "./supabasePipeline.js";
+import { loadPipelineConfig, savePipelineConfig, pipelineConfigured, uploadDocumentToSupabasePipeline, pushStateToHaven } from "./supabasePipeline.js";
 
 let state = loadState();
 let activeTab = "overview";
 let lastDocumentSaveSummary = "";
 let pipelineMessage = "";
+let pushResult = null;       // last response from pushStateToHaven (success)
+let pushError = "";          // last error message from pushStateToHaven (failure)
+let pushBusy = false;        // true while a push is in flight
+let pushDryRun = true;       // toggled by the "Preview only" checkbox
 
 const tabsEl = document.getElementById("tabs");
 const summaryEl = document.getElementById("summary");
@@ -764,10 +768,66 @@ function renderGates() {
   return `<h2>Gate Checks</h2><p class="lead">Gates are deterministic snapshots. Sign-off stores signer, role, timestamp, criteria, and approved exceptions relied upon.</p>${renderGatePanel("G0", evaluateGate0(state))}${renderGatePanel("G2", evaluateGate2(state))}`;
 }
 
+function renderPushToHavenPanel() {
+  const config = loadPipelineConfig();
+  const ready = pipelineConfigured(config);
+  const buttonLabel = pushBusy
+    ? (pushDryRun ? "Previewing..." : "Pushing...")
+    : (pushDryRun ? "Preview push (no writes)" : "Push to Haven");
+  const dryRunChecked = pushDryRun ? "checked" : "";
+
+  return `
+    <div class="supabase-pipeline-panel ${ready ? "connected" : ""}">
+      <div class="row-between gap">
+        <div>
+          <p class="eyebrow">Push to Haven</p>
+          <h3>${ready ? "Write this state into Haven's facility_launch_module_values" : "Connect Supabase first (see Document Intake tab)"}</h3>
+          <p class="small-muted">Sends the current state to the <code>facility-launch-import</code> Edge Function. Source-backed fields are inserted or updated under <code>(organization_id, facility_id, module_code, field_path)</code>. Round-2 gap modules (M4, M5, M7, M8, M9, M12, M15) are skipped.</p>
+        </div>
+        <span class="confidence-pill ${ready ? "confidence-high" : "confidence-medium"}">${ready ? "ready" : "not connected"}</span>
+      </div>
+      <div class="row-between gap">
+        <label class="small-muted"><input type="checkbox" data-push-dry-run ${dryRunChecked} /> Preview only (dry-run — no writes)</label>
+        <button type="button" data-push-to-haven ${ready && !pushBusy ? "" : "disabled"}>${esc(buttonLabel)}</button>
+      </div>
+      ${pushError ? `<div class="save-callout" style="border-color:#c0392b;background:#fff5f5">${esc(pushError)}</div>` : ""}
+      ${pushResult ? renderPushResult(pushResult) : ""}
+    </div>
+  `;
+}
+
+function renderPushResult(result) {
+  const summary = `${result.mode === "dry_run" ? "Dry-run plan" : "Applied"}: inserts=${result.inserts} updates=${result.updates} noop=${result.noops} (${result.payload_count} source-backed field${result.payload_count === 1 ? "" : "s"})`;
+  const gapRows = (result.gap_report || []).map((g) => `<tr><td>${esc(g.module)}</td><td><span class="badge badge-${esc(g.status)}">${esc(g.status)}</span></td><td>${esc((g.missing_fields || []).join(", ") || "—")}</td></tr>`).join("");
+  const changeRows = (result.rows || [])
+    .filter((r) => r.change !== "noop")
+    .map((r) => `<tr><td>${esc(r.module_code)}</td><td>${esc(r.field_path)}</td><td><span class="badge badge-${r.change === "insert" ? "info" : "watch"}">${esc(r.change)}</span></td><td><code>${esc(r.preview)}</code></td></tr>`).join("");
+  const skipped = (result.skipped_modules || []).map((s) => `<li>${esc(s)}</li>`).join("");
+  return `
+    <div class="save-callout"><strong>${esc(summary)}</strong></div>
+    <details open class="pipeline-config-details">
+      <summary>Gap report (${(result.gap_report || []).length} modules)</summary>
+      <div class="table-wrap compact-table">
+        <table><thead><tr><th>Module</th><th>Status</th><th>Missing fields</th></tr></thead>
+        <tbody>${gapRows || "<tr><td colspan='3'>—</td></tr>"}</tbody></table>
+      </div>
+    </details>
+    <details class="pipeline-config-details">
+      <summary>Changes (${(result.rows || []).filter((r) => r.change !== "noop").length})</summary>
+      <div class="table-wrap compact-table">
+        <table><thead><tr><th>Module</th><th>Field</th><th>Change</th><th>Preview</th></tr></thead>
+        <tbody>${changeRows || "<tr><td colspan='4'>No changes</td></tr>"}</tbody></table>
+      </div>
+    </details>
+    ${skipped ? `<details class="pipeline-config-details"><summary>Skipped modules</summary><ul>${skipped}</ul></details>` : ""}
+  `;
+}
+
 function renderExport() {
   return `
     <h2>Executive Export</h2>
     <p class="lead">Generate a markdown packet with launch narrative, signed gates, criteria snapshot, exceptions, source-of-truth decisions, contradictions, and recent decision log excerpts.</p>
+    ${renderPushToHavenPanel()}
     <button id="generate-export">Generate Readiness Export</button>
     <h3>Markdown Readiness Summary</h3>
     <textarea id="export-markdown" rows="16" placeholder="Generate export..."></textarea>
@@ -936,6 +996,32 @@ document.body.addEventListener("click", async (e) => {
     return;
   }
 
+  const pushBtn = e.target.closest("[data-push-to-haven]");
+  if (pushBtn) {
+    if (pushBusy) return;
+    pushBusy = true;
+    pushError = "";
+    pushResult = null;
+    renderView();
+    try {
+      const exportPayload = JSON.parse(buildStateJsonExport(state));
+      const result = await pushStateToHaven(exportPayload, { dryRun: pushDryRun });
+      pushResult = result;
+      state = appendDecisionLog(state, {
+        actionType: pushDryRun ? "push_to_haven_previewed" : "push_to_haven_applied",
+        summary: `${pushDryRun ? "Previewed" : "Applied"} push to Haven — inserts=${result.inserts}, updates=${result.updates}, noop=${result.noops}.`,
+        relatedType: "facility",
+        relatedId: state.facility?.id || "facility"
+      });
+    } catch (err) {
+      pushError = err instanceof Error ? err.message : "Push failed.";
+    } finally {
+      pushBusy = false;
+      render();
+    }
+    return;
+  }
+
   const doExport = e.target.closest("#generate-export");
   if (doExport) {
     const md = buildReadinessMarkdown(state);
@@ -960,6 +1046,13 @@ function refreshAfterDataChange() {
 }
 
 document.body.addEventListener("change", (e) => {
+  const dryToggle = e.target.closest("[data-push-dry-run]");
+  if (dryToggle) {
+    pushDryRun = Boolean(dryToggle.checked);
+    renderView();
+    return;
+  }
+
   const program = e.target.closest("[data-program]");
   if (program) {
     state = updateProgramField(state, program.dataset.program, program.value);
