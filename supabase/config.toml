@@ -421,6 +421,9 @@ verify_jwt = true
 [functions."facility-launch-parser"]
 verify_jwt = true
 
+[functions."facility-launch-promote"]
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54327
