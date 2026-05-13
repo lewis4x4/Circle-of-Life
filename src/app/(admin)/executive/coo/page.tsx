@@ -229,6 +229,39 @@ export default function CooDashboardPage() {
   const [tab, setTab] = useState("Operations Hub");
   const { kpis, isDemo } = useExecRoleKpis();
 
+  if (!kpis) {
+    return (
+      <div className="relative min-h-[calc(100vh-64px)] w-full">
+        <AmbientMatrix primaryClass="bg-sky-900/10" secondaryClass="bg-emerald-900/10" />
+        <div className="relative z-10">
+          <div className="border-b border-white/5">
+            <ExecutiveNavV2
+              showTopNav={false}
+              activeTopNav="clinical"
+              activePillMenu={tab}
+              onPillMenuChange={setTab}
+              customPillTabs={COO_TABS}
+            />
+          </div>
+          <header className="px-6 sm:px-12 py-8">
+            <Link href="/admin/executive" className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors mb-3">
+              <ArrowLeft className="w-3.5 h-3.5" /> Back to Executive Overview
+            </Link>
+            <SysLabel>SYS: COMMAND CENTER</SysLabel>
+            <TitleH1>Chief Operating Officer</TitleH1>
+            <Subtitle>Live operations data is not loaded yet. Seeded COO dashboard data has been removed.</Subtitle>
+          </header>
+          <div className="px-6 sm:px-12 pb-12">
+            <Panel>
+              <SectionTitle sub="Connect operations, staffing, incident, work-order, and vendor sources before rendering COO KPIs.">No live COO data available</SectionTitle>
+              <p className="text-sm text-slate-400">This screen no longer substitutes mock alerts, residents, work orders, transport, or staffing rows. Load real Homewood operational sources to populate COO metrics.</p>
+            </Panel>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Derive COO metric card values from live data when available
   const incidentsValue = kpis ? `${kpis.clinical.openIncidents}` : "58";
   const deficienciesValue = kpis ? `${kpis.compliance.openSurveyDeficiencies}` : "4.3 / 5.0";
