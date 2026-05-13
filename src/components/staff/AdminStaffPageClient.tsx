@@ -152,28 +152,41 @@ export function AdminStaffPageClient({
   const [status, setStatus] = useState(DEFAULT_FILTERS.status);
   const [cert, setCert] = useState(DEFAULT_FILTERS.cert);
 
-  // Skip the first client-side fetch when the server already supplied data
-  // for the current facility. Any later facility scope change falls through.
-  const skipNextLoadRef = useRef(initialError == null);
+  // Treat the server-rendered cookie scope as already loaded on first mount.
+  // Any later facility scope change falls through and fetches exactly once.
+  const skippedInitialLoadRef = useRef(false);
+  const loadedFacilityIdRef = useRef<string | null>(initialError == null ? initialFacilityId : null);
+  const hasLoadedFacilityScopeRef = useRef(initialError == null);
 
   const loadStaff = useCallback(async () => {
-    if (skipNextLoadRef.current && selectedFacilityId === initialFacilityId) {
-      skipNextLoadRef.current = false;
+    if (!skippedInitialLoadRef.current) {
+      skippedInitialLoadRef.current = true;
+
+      if (initialError == null) {
+        loadedFacilityIdRef.current = initialFacilityId;
+        hasLoadedFacilityScopeRef.current = true;
+        setIsLoading(false);
+        return;
+      }
+    }
+
+    if (hasLoadedFacilityScopeRef.current && selectedFacilityId === loadedFacilityIdRef.current) {
       return;
     }
-    skipNextLoadRef.current = false;
 
     setIsLoading(true);
     setError(null);
     try {
       const liveRows = await fetchStaffFromSupabase(selectedFacilityId);
       setRows(liveRows);
+      loadedFacilityIdRef.current = selectedFacilityId;
+      hasLoadedFacilityScopeRef.current = true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
       setIsLoading(false);
     }
-  }, [selectedFacilityId, initialFacilityId]);
+  }, [selectedFacilityId, initialFacilityId, initialError]);
 
   useEffect(() => {
     void loadStaff();
