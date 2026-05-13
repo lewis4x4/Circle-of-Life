@@ -18,6 +18,11 @@ export type BillingRow = {
   updatedAt: string;
 };
 
+type SupabaseResidentMini = {
+  first_name: string | null;
+  last_name: string | null;
+};
+
 type SupabaseInvoiceRow = {
   id: string;
   resident_id: string;
@@ -28,12 +33,7 @@ type SupabaseInvoiceRow = {
   updated_at: string;
   payer_type: string | null;
   deleted_at: string | null;
-};
-
-type SupabaseResidentMini = {
-  id: string;
-  first_name: string | null;
-  last_name: string | null;
+  residents: SupabaseResidentMini | SupabaseResidentMini[] | null;
 };
 
 type QueryError = { message: string };
@@ -47,7 +47,7 @@ export async function fetchInvoicesFromSupabase(
   let invQuery = supabase
     .from("invoices" as never)
     .select(
-      "id, resident_id, invoice_number, status, balance_due, due_date, updated_at, payer_type, deleted_at",
+      "id, resident_id, invoice_number, status, balance_due, due_date, updated_at, payer_type, deleted_at, residents!invoices_resident_id_fkey(first_name,last_name)",
     )
     .is("deleted_at", null)
     .order("invoice_date", { ascending: false })
@@ -65,22 +65,8 @@ export async function fetchInvoicesFromSupabase(
   if (invResult.error) {
     throw invResult.error;
   }
-  if (invoices.length === 0) {
-    return [];
-  }
-
-  const residentIds = Array.from(new Set(invoices.map((i) => i.resident_id)));
-  const resResult = (await supabase
-    .from("residents" as never)
-    .select("id, first_name, last_name")
-    .in("id", residentIds)) as unknown as QueryResult<SupabaseResidentMini>;
-  if (resResult.error) {
-    throw resResult.error;
-  }
-  const residentById = new Map((resResult.data ?? []).map((r) => [r.id, r] as const));
-
   return invoices.map((inv) => {
-    const res = residentById.get(inv.resident_id);
+    const res = Array.isArray(inv.residents) ? inv.residents[0] : inv.residents;
     const fn = res?.first_name?.trim() ?? "";
     const ln = res?.last_name?.trim() ?? "";
     const residentName = `${fn} ${ln}`.trim() || "Resident";
