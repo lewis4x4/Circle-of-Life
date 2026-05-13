@@ -58,7 +58,7 @@ try {
   const app = await fetch(`${base}/src/app.js`);
   if (!app.ok) throw new Error(`src/app.js returned ${app.status}`);
   const appJs = await app.text();
-  for (const expected of ['./state.js', './scoring.js', './gates.js', './export.js', '/data/homewood-round1-state.json']) {
+  for (const expected of ['./state.js', './scoring.js', './gates.js', './export.js', '../data/homewood-round1-state.json']) {
     if (!appJs.includes(expected)) throw new Error(`app.js missing import ${expected}`);
   }
 

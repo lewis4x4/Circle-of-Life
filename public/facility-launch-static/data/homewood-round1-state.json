@@ -15,7 +15,7 @@
       "staleMonths": 12,
       "gate2FacilityScoreTarget": 90
     },
-    "createdAt": "2026-05-13T19:48:44.554Z"
+    "createdAt": "2026-05-13T19:59:10.620Z"
   },
   "facility": {
     "id": "fac-homewood",
@@ -898,8 +898,8 @@
   "contradictions": [],
   "decisionLog": [
     {
-      "id": "dec-homewood-round1-import-1778701724557",
-      "timestamp": "2026-05-13T19:48:44.557Z",
+      "id": "dec-homewood-round1-import-1778702350622",
+      "timestamp": "2026-05-13T19:59:10.622Z",
       "actor": "system",
       "actionType": "round1_real_onboarding_state_built",
       "summary": "Built Homewood Round 1 real onboarding state from 16/16 normalized source artifacts; no demo fixture data used.",
@@ -916,7 +916,7 @@
   "ingestionManifest": {
     "facilityId": "fac-homewood",
     "facilityName": "Homewood Lodge ALF",
-    "builtAt": "2026-05-13T19:48:44.556Z",
+    "builtAt": "2026-05-13T19:59:10.621Z",
     "sourceCount": 16,
     "artifactCount": 16,
     "roundPolicy": "Import available sources in Round 1; quarantine missing or ambiguous items as Round 2 gaps without blocking unrelated imports.",

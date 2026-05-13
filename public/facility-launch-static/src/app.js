@@ -44,6 +44,7 @@ const viewEl = document.getElementById("view");
 const decisionLogEl = document.getElementById("decision-log");
 const resetButton = document.getElementById("reset-demo");
 const loadRound1Button = document.getElementById("load-round1-state");
+const ROUND1_STATE_URL = new URL("../data/homewood-round1-state.json", import.meta.url);
 
 const MODULE_STATUSES = ["not_started", "assigned", "in_progress", "ready_for_review", "signed", "blocked"];
 const SCOPE_STATUSES = ["in", "out", "tbd"];
@@ -1115,25 +1116,44 @@ document.body.addEventListener("submit", (e) => {
   }
 });
 
-loadRound1Button?.addEventListener("click", async () => {
+function isEmptyOnboardingShell(currentState) {
+  const actionTypes = new Set((currentState.decisionLog || []).map((entry) => entry.actionType));
+  const onlyShellActions = [...actionTypes].every((actionType) => ["empty_onboarding_initialized", "empty_onboarding_reset"].includes(actionType));
+  return !currentState.ingestionManifest
+    && (currentState.documents || []).length === 0
+    && (currentState.documentGroups || []).length === 0
+    && (currentState.ingestionGaps || []).length === 0
+    && (currentState.ingestionReviewQueue || []).length === 0
+    && (currentState.mvpData?.M3?.rooms || []).length === 0
+    && onlyShellActions;
+}
+
+async function loadRound1Import({ actor = "system", actionType = "round1_real_import_loaded" } = {}) {
   try {
-    const response = await fetch("/data/homewood-round1-state.json", { cache: "no-store" });
+    const response = await fetch(ROUND1_STATE_URL, { cache: "no-store" });
     if (!response.ok) throw new Error(`Round 1 state fetch failed: ${response.status}`);
     const importedState = await response.json();
     state = saveState(importedState);
     state = appendDecisionLog(state, {
-      actor: "user",
-      actionType: "round1_real_import_loaded",
+      actor,
+      actionType,
       summary: "Loaded generated Homewood Round 1 real onboarding state; no demo fixture data loaded.",
       relatedType: "facility",
       relatedId: state.facility?.id || "fac-homewood"
     });
+    pipelineMessage = "Homewood Round 1 import loaded from generated real onboarding artifacts.";
     render();
+    return true;
   } catch (error) {
     console.error(error);
     pipelineMessage = `Unable to load Round 1 import: ${error.message}`;
     render();
+    return false;
   }
+}
+
+loadRound1Button?.addEventListener("click", async () => {
+  await loadRound1Import({ actor: "user" });
 });
 
 resetButton.addEventListener("click", () => {
@@ -1148,4 +1168,8 @@ resetButton.addEventListener("click", () => {
   render();
 });
 
-render();
+if (isEmptyOnboardingShell(state)) {
+  loadRound1Import({ actor: "system", actionType: "round1_real_import_auto_loaded" });
+} else {
+  render();
+}
