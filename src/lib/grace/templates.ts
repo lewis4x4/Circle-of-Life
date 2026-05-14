@@ -52,7 +52,7 @@ export const GRACE_TEMPLATES: GraceTemplate[] = [
     roles: ["caregiver", "nurse", "admin_assistant", "coordinator", "manager", "facility_admin", "org_admin", "owner"],
     type: "knowledge",
     phrase:
-      "How many active residents do we have right now at {facilityName}? If I asked about a different site by name (for example Oakridge), answer for that site using live census tools.",
+      "How many active residents do we have right now at {facilityName}? If I asked about a different site by name, answer for that site using live census tools.",
     action: "send_knowledge",
   },
   {

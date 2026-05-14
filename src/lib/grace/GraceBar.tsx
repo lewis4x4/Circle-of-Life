@@ -42,7 +42,7 @@ function graceContextPrefix(
   facility: { id: string; name: string } | null
 ): string {
   if (!facility) {
-    return `[Context: No facility is selected in the header. Use org-wide accessible data. When the user names a specific site (for example Oakridge), resolve it with census and facility tools.]\n\n`;
+    return `[Context: No facility is selected in the header. Use org-wide accessible data. When the user names a specific site, resolve it with census and facility tools.]\n\n`;
   }
   return `[Context: Header facility focus is "${facility.name}". Use it for "this facility" or "here". The user may still ask about other sites by name—resolve accurately with tools.]\n\n`;
 }
@@ -866,8 +866,8 @@ export function GraceBar() {
                   </div>
                   <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
                     Quick questions send immediately. For site-specific counts,
-                    pick the right facility in app header first—or name site in
-                    your message (for example Oakridge).
+                    pick the right facility in app header first—or name the site
+                    in your message.
                   </p>
                 </div>
               ) : null}

@@ -47,8 +47,8 @@ const SUGGESTED_QUERIES = [
   {
     icon: Users,
     label: "Residents",
-    text: "Oakridge",
-    hint: "Try a facility or resident name",
+    text: "resident",
+    hint: "Try a resident, staff, vendor, incident, or facility term",
   },
   {
     icon: UserCog,
@@ -218,7 +218,7 @@ export default function AdminSearchPage() {
 
                 <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-zinc-600">
                   <Building2 className="size-3.5" aria-hidden />
-                  <span>Scoped to your facility selector when records include a site.</span>
+                  <span>Limited to records your account can access.</span>
                 </div>
               </div>
             )}
