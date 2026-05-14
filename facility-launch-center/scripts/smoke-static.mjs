@@ -43,12 +43,13 @@ const server = http.createServer(async (req, res) => {
 await new Promise((resolveListen) => server.listen(0, '127.0.0.1', resolveListen));
 const { port } = server.address();
 const base = `http://127.0.0.1:${port}`;
+const cacheToken = '20260514-flc-push-hardened';
 
 try {
   const index = await fetch(`${base}/index.html`);
   if (!index.ok) throw new Error(`index.html returned ${index.status}`);
   const html = await index.text();
-  for (const expected of ['/styles.css', '/src/app.js', 'noindex']) {
+  for (const expected of [`/styles.css?v=${cacheToken}`, `/src/app.js?v=${cacheToken}`, 'noindex']) {
     if (!html.includes(expected)) throw new Error(`index.html missing ${expected}`);
   }
 
@@ -58,11 +59,30 @@ try {
   const app = await fetch(`${base}/src/app.js`);
   if (!app.ok) throw new Error(`src/app.js returned ${app.status}`);
   const appJs = await app.text();
-  for (const expected of ['./state.js', './scoring.js', './gates.js', './export.js', '../data/homewood-round1-state.json']) {
+  for (const expected of ['./state.js', './scoring.js', './gates.js', './export.js', `./supabasePipeline.js?v=${cacheToken}`, '../data/homewood-round1-state.json']) {
     if (!appJs.includes(expected)) throw new Error(`app.js missing import ${expected}`);
   }
   for (const expected of ['Push to Haven (Capture + Promote)', 'pushAndPromoteStateToHaven', 'Step 2 — Promoted to live Haven app']) {
     if (!appJs.includes(expected)) throw new Error(`app.js missing capture+promote marker ${expected}`);
+  }
+
+  const repoRootCandidates = [
+    resolve(root, '..'),
+    resolve(root, '../..')
+  ];
+  let nextFacilityLaunchPage = '';
+  let nextFacilityLaunchPagePath = '';
+  for (const candidate of repoRootCandidates) {
+    try {
+      nextFacilityLaunchPagePath = join(candidate, 'src/app/facility-launch/page.tsx');
+      nextFacilityLaunchPage = await readFile(nextFacilityLaunchPagePath, 'utf8');
+      break;
+    } catch (error) {
+      if (candidate === repoRootCandidates.at(-1)) throw error;
+    }
+  }
+  for (const expected of [`/facility-launch-static/styles.css?v=${cacheToken}`, `/facility-launch-static/src/app.js?v=${cacheToken}`]) {
+    if (!nextFacilityLaunchPage.includes(expected)) throw new Error(`${nextFacilityLaunchPagePath} missing ${expected}`);
   }
 
   const round1State = await fetch(`${base}/data/homewood-round1-state.json`);

@@ -31,7 +31,7 @@ import { evaluateGate0, evaluateGate2 } from "./gates.js";
 import { buildReadinessMarkdown, buildStateJsonExport, buildLaunchNarrative } from "./export.js";
 import { onboardingIntakeCatalog } from "./intakeCatalog.js";
 import { inferDocumentIntelligence } from "./documentIntelligence.js";
-import { loadPipelineConfig, savePipelineConfig, pipelineConfigured, promotionConfigured, uploadDocumentToSupabasePipeline, pushAndPromoteStateToHaven } from "./supabasePipeline.js?v=20260513-capture-promote";
+import { loadPipelineConfig, savePipelineConfig, pipelineConfigured, promotionConfigured, uploadDocumentToSupabasePipeline, pushAndPromoteStateToHaven } from "./supabasePipeline.js?v=20260514-flc-push-hardened";
 
 let state = loadState();
 let activeTab = "overview";

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function FacilityLaunchPage() {
   return (
     <>
-      <link rel="stylesheet" href="/facility-launch-static/styles.css?v=20260513-capture-promote" />
+      <link rel="stylesheet" href="/facility-launch-static/styles.css?v=20260514-flc-push-hardened" />
       <header className="app-header">
         <h1>Facility Launch Center</h1>
         <p className="subhead">Facility DNA command center for Homewood launch readiness</p>
@@ -34,7 +34,7 @@ export default function FacilityLaunchPage() {
       </main>
 
       <Script
-        src="/facility-launch-static/src/app.js?v=20260513-capture-promote"
+        src="/facility-launch-static/src/app.js?v=20260514-flc-push-hardened"
         strategy="afterInteractive"
         type="module"
       />
