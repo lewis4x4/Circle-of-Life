@@ -32,7 +32,6 @@ export default async function AdminResidentsPage() {
       initialRows={initialRows}
       initialError={initialError}
       initialFacilityId={initialFacilityId}
-      initialDemoFallback={false}
     />
   );
 }

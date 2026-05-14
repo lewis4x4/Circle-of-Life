@@ -13,7 +13,6 @@ import {
 } from "@/components/common/admin-list-patterns";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
-import { isDemoMode } from "@/lib/demo-mode";
 import {
   fetchResidentsFromSupabase,
   type Acuity,
@@ -28,7 +27,6 @@ import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
@@ -44,21 +42,18 @@ type AdminResidentsPageClientProps = {
   initialRows: ResidentRow[];
   initialError: string | null;
   initialFacilityId: string | null;
-  initialDemoFallback: boolean;
 };
 
 export function AdminResidentsPageClient({
   initialRows,
   initialError,
   initialFacilityId,
-  initialDemoFallback,
 }: AdminResidentsPageClientProps) {
   const searchParams = useSearchParams();
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<ResidentRow[]>(initialRows);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
-  const [demoFallbackActive, setDemoFallbackActive] = useState(initialDemoFallback);
 
   // Skip the first client-side fetch when the server already supplied data
   // for the current facility. Any later facility scope change falls through.
@@ -82,25 +77,9 @@ export function AdminResidentsPageClient({
 
     try {
       const liveRows = await fetchResidentsFromSupabase(selectedFacilityId);
-      if (liveRows.length > 0) {
-        setDemoFallbackActive(false);
-        setRows(liveRows);
-      } else if (isDemoMode()) {
-        // DEMO HYDRATION: sample roster when DB is unseeded (NEXT_PUBLIC_DEMO_MODE=true only)
-        setDemoFallbackActive(true);
-        setRows([
-          { id: "m1", name: "Margaret Sullivan", initials: "MS", room: "101-A", unit: "East Wing", acuity: 2, adlStatus: "assisted", status: "active", careSummary: "Routine assisted ADL support", updatedAt: "Oct 12, 09:42 AM" },
-          { id: "m2", name: "Arthur Pendelton", initials: "AP", room: "102-B", unit: "East Wing", acuity: 1, adlStatus: "independent", status: "active", careSummary: "Independent daily routine", updatedAt: "Oct 12, 08:30 AM" },
-          { id: "m3", name: "Eleanor Vance", initials: "EV", room: "104-A", unit: "Enhanced ALF Services", acuity: 3, adlStatus: "dependent", status: "hospital", careSummary: "Hospital hold - return coordination in progress", updatedAt: "Oct 11, 11:15 PM" },
-          { id: "m4", name: "Robert Chen", initials: "RC", room: "201-A", unit: "West Wing", acuity: 1, adlStatus: "independent", status: "active", careSummary: "Independent daily routine", updatedAt: "Oct 10, 04:20 PM" },
-          { id: "m5", name: "Lucille Booth", initials: "LB", room: "205-B", unit: "West Wing", acuity: 2, adlStatus: "assisted", status: "active", careSummary: "Routine assisted ADL support", updatedAt: "Oct 12, 07:10 AM" },
-        ]);
-      } else {
-        setDemoFallbackActive(false);
-        setRows([]);
-      }
+      setRows(liveRows);
     } catch (err) {
-      setDemoFallbackActive(false);
+      setRows([]);
       setError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
       setIsLoading(false);
@@ -233,7 +212,6 @@ export function AdminResidentsPageClient({
         <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px] lg:col-span-2">
             <V2Card hoverColor="emerald">
-              <Sparkline colorClass="text-emerald-500" variant={1} />
               <MonolithicWatermark value={residentsInViewCount} className="text-emerald-900/5 dark:text-emerald-100/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2 font-bold">
@@ -245,7 +223,6 @@ export function AdminResidentsPageClient({
           </div>
           <div className="h-[160px] lg:col-span-2">
             <V2Card hoverColor="rose" className="border-rose-500/20 dark:border-rose-500/20 shadow-[0_8px_30px_rgba(244,63,94,0.05)]">
-              <Sparkline colorClass="text-rose-500" variant={4} />
               <MonolithicWatermark value={highAcuityInViewCount} className="text-rose-600/5 dark:text-rose-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-widest uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2 font-bold">
@@ -361,17 +338,11 @@ export function AdminResidentsPageClient({
       {!isLoading && error ? (
         <AdminLiveDataFallbackNotice message={error} onRetry={() => void loadResidents()} />
       ) : null}
-      {!isLoading && !error && demoFallbackActive ? (
-        <AdminLiveDataFallbackNotice
-          message="Demo mode is active on this resident roster. These rows are illustrative sample residents because no live resident records were returned for the current scope."
-          onRetry={() => void loadResidents()}
-        />
-      ) : null}
-      {!isLoading && filteredRows.length === 0 ? (
+      {!isLoading && !error && filteredRows.length === 0 ? (
         <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />
       ) : null}
 
-      {!isLoading && filteredRows.length > 0 ? (
+      {!isLoading && !error && filteredRows.length > 0 ? (
         <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-2xl backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative">
            
            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />

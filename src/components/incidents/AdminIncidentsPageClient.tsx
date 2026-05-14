@@ -6,7 +6,6 @@ import { useSearchParams } from "next/navigation";
 import { AlertCircle, Clock, ShieldAlert, ArrowRight, CheckCircle2 } from "lucide-react";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
-import { isDemoMode } from "@/lib/demo-mode";
 import {
   fetchIncidentsFromSupabase,
   type IncidentRow,
@@ -20,7 +19,6 @@ import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
-import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 
 type BoardScope = "all" | "active" | "open";
 
@@ -28,21 +26,18 @@ type AdminIncidentsPageClientProps = {
   initialRows: IncidentRow[];
   initialError: string | null;
   initialFacilityId: string | null;
-  initialDemoFallback: boolean;
 };
 
 export function AdminIncidentsPageClient({
   initialRows,
   initialError,
   initialFacilityId,
-  initialDemoFallback,
 }: AdminIncidentsPageClientProps) {
   const searchParams = useSearchParams();
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<IncidentRow[]>(initialRows);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
-  const [demoFallbackActive, setDemoFallbackActive] = useState(initialDemoFallback);
   const [now, setNow] = useState<number>(() => Date.now());
 
   // Skip the first client-side fetch when the server already supplied data
@@ -65,22 +60,9 @@ export function AdminIncidentsPageClient({
     setError(null);
     try {
       const liveRows = await fetchIncidentsFromSupabase(selectedFacilityId);
-      if (liveRows.length > 0) {
-        setDemoFallbackActive(false);
-        setRows(liveRows);
-      } else if (isDemoMode()) {
-        setDemoFallbackActive(true);
-        setRows([
-          { id: "i1", incidentNumber: "DEMO-2025-001", residentName: "Margaret Sullivan", category: "fall", severity: "level_2", status: "new", reportedAt: "1 hour ago", reportedBy: "Demo Nurse", followupDueStr: "—", followupDueMs: 0, openFollowups: 0, overdueFollowups: 0, unassignedFollowups: 0, escalatedFollowups: 0, criticalFollowups: 0, openObligations: 2, rootCausePending: false, carePlanPending: false, ahcaReportable: false, ahcaReported: false },
-          { id: "i2", incidentNumber: "DEMO-2025-002", residentName: "Eleanor Vance", category: "elopement", severity: "level_4", status: "investigating", reportedAt: "2 hours ago", reportedBy: "Demo Staff", followupDueStr: "11 hours", followupDueMs: Date.now() + 11*3600*1000, openFollowups: 2, overdueFollowups: 1, unassignedFollowups: 1, escalatedFollowups: 1, criticalFollowups: 0, openObligations: 3, rootCausePending: true, carePlanPending: false, ahcaReportable: true, ahcaReported: false },
-          { id: "i3", incidentNumber: "DEMO-2025-003", residentName: "Robert Chen", category: "medication_error", severity: "level_3", status: "regulatory_review", reportedAt: "Yesterday", reportedBy: "Demo RN", followupDueStr: "—", followupDueMs: 0, openFollowups: 1, overdueFollowups: 0, unassignedFollowups: 0, escalatedFollowups: 0, criticalFollowups: 0, openObligations: 0, rootCausePending: true, carePlanPending: true, ahcaReportable: true, ahcaReported: true },
-        ]);
-      } else {
-        setDemoFallbackActive(false);
-        setRows([]);
-      }
+      setRows(liveRows);
     } catch (err) {
-      setDemoFallbackActive(false);
+      setRows([]);
       setError(err instanceof Error ? err.message : "Failed to load incidents");
     } finally {
       setIsLoading(false);
@@ -314,11 +296,10 @@ export function AdminIncidentsPageClient({
           </Link>
         </div>
       ) : null}
-      {!isLoading && !error && demoFallbackActive ? (
-        <AdminLiveDataFallbackNotice
-          message="Demo mode is active on this incident board. These cards are sample incident records because no live incidents were returned for the current scope."
-          onRetry={() => void loadIncidents()}
-        />
+      {rows.length === 0 ? (
+        <div className="relative z-10 rounded-2xl border border-slate-200/70 bg-white/70 p-4 text-sm font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-950/30 dark:text-slate-300">
+          No live incident records returned for this scope. No seeded incident cards are shown.
+        </div>
       ) : null}
 
       {followupPressure.length > 0 && (
