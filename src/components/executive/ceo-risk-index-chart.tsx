@@ -242,46 +242,4 @@ export function CeoRiskIndexChart({
   );
 }
 
-// ── MOCK DATA GENERATOR ──
-
-export function generateMockRiskIndexData(): RiskIndexDatum[] {
-  return [
-    {
-      facility: "Grande Cypress",
-      criticalIncidents: 1,
-      reputationInverse: 48,
-      reputationScore: 49.0,
-      facilityId: "fac-001",
-    },
-    {
-      facility: "Homewood Lodge",
-      criticalIncidents: 4,
-      reputationInverse: 39,
-      reputationScore: 42.5,
-      facilityId: "fac-002",
-    },
-    {
-      facility: "Oakridge",
-      criticalIncidents: 12,
-      reputationInverse: 25,
-      reputationScore: 35.5,
-      facilityId: "fac-003",
-    },
-    {
-      facility: "Plantation",
-      criticalIncidents: 0,
-      reputationInverse: 49,
-      reputationScore: 49.5,
-      facilityId: "fac-004",
-    },
-    {
-      facility: "Rising Oaks",
-      criticalIncidents: 2,
-      reputationInverse: 45,
-      reputationScore: 46.0,
-      facilityId: "fac-005",
-    },
-  ];
-}
-
 export default CeoRiskIndexChart;

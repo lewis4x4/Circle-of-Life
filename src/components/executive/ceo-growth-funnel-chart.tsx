@@ -141,18 +141,4 @@ export function CeoGrowthFunnelChart({
   );
 }
 
-// ── MOCK DATA GENERATOR ──
-
-export function generateMockGrowthFunnelData(): GrowthFunnelDatum[] {
-  return [
-    { stage: "Web Inquiries", count: 342, conversion: 100, fill: MOONSHOT_COLORS.blue },
-    { stage: "Phone Leads", count: 187, conversion: 54.7, fill: MOONSHOT_COLORS.cyan },
-    { stage: "Tours Scheduled", count: 98, conversion: 28.7, fill: MOONSHOT_COLORS.purple },
-    { stage: "Tours Completed", count: 76, conversion: 22.2, fill: MOONSHOT_COLORS.purple },
-    { stage: "Applications", count: 41, conversion: 12.0, fill: MOONSHOT_COLORS.emerald },
-    { stage: "Deposits", count: 29, conversion: 8.5, fill: MOONSHOT_COLORS.gold },
-    { stage: "Move-Ins", count: 22, conversion: 6.4, fill: MOONSHOT_COLORS.emerald },
-  ];
-}
-
 export default CeoGrowthFunnelChart;
