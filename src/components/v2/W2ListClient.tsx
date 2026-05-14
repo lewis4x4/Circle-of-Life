@@ -3,7 +3,7 @@
 import { T2List } from "@/design-system/templates";
 import type { DataTableColumn, DataTableRow } from "@/design-system/components/DataTable";
 
-import type { V2ListId, V2ListRow } from "@/lib/v2-lists";
+import type { V2ListId, V2ListRow, V2LiveSource } from "@/lib/v2-lists";
 
 const LIST_TITLES: Record<V2ListId, { title: string; subtitle: string; basePath: string }> = {
   residents: { title: "Residents", subtitle: "All admitted residents in scope", basePath: "/admin/residents" },
@@ -55,7 +55,7 @@ function formatTime(iso: string | null | undefined): string {
 export type W2ListClientProps = {
   listId: V2ListId;
   rows: V2ListRow[];
-  source: "live" | "fixture";
+  source: V2LiveSource;
   generatedAt: string;
   /** Optional `now` override for deterministic relative-time rendering. */
   now?: Date;
@@ -82,14 +82,17 @@ export function W2ListClient({
           : undefined,
   }));
 
+  const sourceNote =
+    source === "empty"
+      ? "No live rows in scope"
+      : source === "unavailable"
+        ? "Live source unavailable; no fixtures shown"
+        : null;
+
   return (
     <T2List<V2ListRow>
       title={meta.title}
-      subtitle={
-        source === "fixture"
-          ? `${meta.subtitle} · fixture (no rows in scope)`
-          : meta.subtitle
-      }
+      subtitle={sourceNote ? `${meta.subtitle} · ${sourceNote}` : meta.subtitle}
       filters={{
         dashboardId: meta.basePath,
         statuses: [
@@ -102,7 +105,7 @@ export function W2ListClient({
         columns: COLUMNS,
         rows: tableRows,
         userPreferencesKey: meta.basePath,
-        emptyState: <span>No {listId} in scope.</span>,
+        emptyState: <span>{sourceNote ?? `No ${listId} in scope.`}</span>,
         onRowOpenNewTab: (id) => {
           if (typeof window !== "undefined") {
             window.open(`${meta.basePath}/${id}`, "_blank", "noopener");

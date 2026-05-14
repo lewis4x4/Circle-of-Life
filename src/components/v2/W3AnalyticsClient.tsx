@@ -58,18 +58,17 @@ const COLUMNS: DataTableColumn<V2AnalyticsRollupRow>[] = [
 ];
 
 export function W3AnalyticsClient({ load }: { load: V2AnalyticsLoad }) {
-  const totalIncidents = load.rollup.reduce(
-    (acc, row) => acc + (row.open_incidents_count ?? 0),
-    0,
-  );
+  const hasRollup = load.rollup.length > 0;
+  const totalIncidents = hasRollup
+    ? load.rollup.reduce((acc, row) => acc + (row.open_incidents_count ?? 0), 0)
+    : null;
+  const riskScores = load.rollup
+    .map((row) => row.risk_score)
+    .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
   const avgRisk =
-    load.rollup.length > 0
-      ? Math.round(
-          load.rollup
-            .map((r) => r.risk_score ?? 0)
-            .reduce((a, b) => a + b, 0) / load.rollup.length,
-        )
-      : 0;
+    riskScores.length > 0
+      ? Math.round(riskScores.reduce((a, b) => a + b, 0) / riskScores.length)
+      : null;
 
   const tableRows: DataTableRow<V2AnalyticsRollupRow>[] = load.rollup.map((row) => ({
     id: row.facility_id,
@@ -86,14 +85,17 @@ export function W3AnalyticsClient({ load }: { load: V2AnalyticsLoad }) {
         : undefined,
   }));
 
+  const sourceNote =
+    load.source === "empty"
+      ? "No live rollup rows in scope"
+      : load.source === "unavailable"
+        ? "Live source unavailable; no fixtures shown"
+        : null;
+
   return (
     <T4Analytics<V2AnalyticsRollupRow>
       title={load.title}
-      subtitle={
-        load.source === "fixture"
-          ? `${load.subtitle} · fixture (no rows in scope)`
-          : load.subtitle
-      }
+      subtitle={sourceNote ? `${load.subtitle} · ${sourceNote}` : load.subtitle}
       filters={{
         dashboardId: DASHBOARD_PATH[load.id],
         statuses: [
@@ -109,14 +111,14 @@ export function W3AnalyticsClient({ load }: { load: V2AnalyticsLoad }) {
         },
         {
           label: "Open incidents",
-          value: totalIncidents,
-          info: "Sum of open incidents across the rollup",
-          tone: totalIncidents > 0 ? "warning" : "default",
+          value: totalIncidents ?? "—",
+          info: "Sum of open incidents across the live rollup",
+          tone: totalIncidents != null && totalIncidents > 0 ? "warning" : "default",
         },
         {
           label: "Avg risk score",
-          value: avgRisk,
-          info: "Mean of latest risk_score across facilities (lower = healthier)",
+          value: avgRisk ?? "—",
+          info: "Mean of latest risk_score across live facilities (lower = healthier)",
         },
         {
           label: "Generated",
@@ -156,6 +158,7 @@ export function W3AnalyticsClient({ load }: { load: V2AnalyticsLoad }) {
         columns: COLUMNS,
         rows: tableRows,
         userPreferencesKey: DASHBOARD_PATH[load.id],
+        emptyState: sourceNote ? <span>{sourceNote}.</span> : undefined,
       }}
       exportToolbar={
         <span className="text-xs text-text-muted">

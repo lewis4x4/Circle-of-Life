@@ -7,7 +7,7 @@ import {
   listV2DashboardIds,
 } from "./v2-dashboards";
 
-describe("v2-dashboards fixture surface", () => {
+describe("v2-dashboards live shell surface", () => {
   it("exports the four W1 dashboard ids in canonical order", () => {
     expect(listV2DashboardIds()).toEqual([
       "command-center",
@@ -35,15 +35,13 @@ describe("v2-dashboards fixture surface", () => {
     }
   });
 
-  it("table rows share the canonical facility shape", () => {
-    const payload = getV2DashboardPayload("command-center")!;
-    for (const row of payload.tableRows) {
-      expect(typeof row.id).toBe("string");
-      expect(typeof row.name).toBe("string");
-      expect(typeof row.occupancyPct).toBe("number");
-      expect(typeof row.laborCostPct).toBe("number");
-      expect(typeof row.openIncidents).toBe("number");
-      expect(typeof row.surveyReadinessPct).toBe("number");
+  it("does not ship facility fixture rows or seeded KPI values", () => {
+    for (const id of V2_DASHBOARD_IDS) {
+      const payload = getV2DashboardPayload(id)!;
+      expect(payload.tableRows).toEqual([]);
+      expect(payload.alerts).toEqual([]);
+      expect(payload.actionQueue).toEqual([]);
+      expect(payload.kpis.every((kpi) => kpi.value === "—")).toBe(true);
     }
   });
 

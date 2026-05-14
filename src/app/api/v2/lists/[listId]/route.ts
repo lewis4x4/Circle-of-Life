@@ -7,9 +7,8 @@ import { isV2ListId, loadV2List } from "@/lib/v2-lists";
  * `GET /api/v2/lists/[listId]` — unified list endpoint for W2 P0 lists.
  *
  * `listId ∈ { residents, incidents, alerts, admissions }`. Reads come from
- * `haven.vw_v2_<list>_list` views under the caller's RLS. Falls back to a
- * minimal fixture when the view returns 0 rows or errors so the UI always
- * renders something.
+ * `haven.vw_v2_<list>_list` views under the caller's RLS. Empty/error results
+ * return an explicit empty/unavailable state; no fixture rows are substituted.
  */
 export async function GET(
   _request: Request,

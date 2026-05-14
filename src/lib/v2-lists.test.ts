@@ -39,17 +39,18 @@ describe("v2-lists narrowing + loader", () => {
     expect(isV2ListId("")).toBe(false);
   });
 
-  it("falls back to the fixture set when the view returns no rows", async () => {
+  it("returns an explicit empty state when the view returns no rows", async () => {
     mockResult = { data: [], error: null };
     const load = await loadV2List("residents");
-    expect(load.source).toBe("fixture");
-    expect(load.rows.length).toBeGreaterThan(0);
+    expect(load.source).toBe("empty");
+    expect(load.rows).toEqual([]);
   });
 
-  it("falls back to the fixture set when the view errors", async () => {
+  it("returns an unavailable state when the view errors", async () => {
     mockResult = { data: null, error: { message: "boom" } };
     const load = await loadV2List("incidents");
-    expect(load.source).toBe("fixture");
+    expect(load.source).toBe("unavailable");
+    expect(load.rows).toEqual([]);
   });
 
   it("maps live residents view rows into the canonical V2ListRow shape", async () => {

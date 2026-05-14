@@ -4,6 +4,7 @@ import { T1Dashboard } from "@/design-system/templates";
 import type { DataTableColumn, DataTableRow } from "@/design-system/components/DataTable";
 import type { ScopeOption } from "@/design-system/components/ScopeSelector";
 
+import type { V2DashboardRowsSource } from "@/lib/v2-dashboard-loader";
 import type {
   V2DashboardId,
   V2DashboardPayload,
@@ -17,7 +18,7 @@ const DASHBOARD_BASE_PATH: Record<V2DashboardId, string> = {
   "rounding-operations": "/admin/rounding",
 };
 
-function fmtPct(value: number | null): string {
+function fmtMetric(value: number | null): string {
   if (value == null || !Number.isFinite(value)) return "—";
   // Show 1 decimal when fractional, integer otherwise.
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
@@ -29,7 +30,7 @@ const COLUMNS: DataTableColumn<V2DashboardTableRow>[] = [
     id: "occupancyPct",
     header: "Occupancy %",
     accessor: (r) => r.occupancyPct,
-    render: (r) => fmtPct(r.occupancyPct),
+    render: (r) => fmtMetric(r.occupancyPct),
     align: "right",
     numeric: true,
     metricKey: "occupancy_pct",
@@ -38,7 +39,7 @@ const COLUMNS: DataTableColumn<V2DashboardTableRow>[] = [
     id: "laborCostPct",
     header: "Labor cost %",
     accessor: (r) => r.laborCostPct,
-    render: (r) => fmtPct(r.laborCostPct),
+    render: (r) => fmtMetric(r.laborCostPct),
     align: "right",
     numeric: true,
     metricKey: "labor_cost_pct",
@@ -47,6 +48,7 @@ const COLUMNS: DataTableColumn<V2DashboardTableRow>[] = [
     id: "openIncidents",
     header: "Open incidents",
     accessor: (r) => r.openIncidents,
+    render: (r) => fmtMetric(r.openIncidents),
     align: "right",
     numeric: true,
     metricKey: "open_incidents",
@@ -55,7 +57,7 @@ const COLUMNS: DataTableColumn<V2DashboardTableRow>[] = [
     id: "surveyReadinessPct",
     header: "Survey readiness %",
     accessor: (r) => r.surveyReadinessPct,
-    render: (r) => fmtPct(r.surveyReadinessPct),
+    render: (r) => fmtMetric(r.surveyReadinessPct),
     align: "right",
     numeric: true,
     metricKey: "survey_readiness_pct",
@@ -66,6 +68,7 @@ export type W1DashboardClientProps = {
   payload: V2DashboardPayload;
   facilities: ScopeOption[];
   auditUpdatedAt: string;
+  rowsSource: V2DashboardRowsSource;
   /** Optional `now` override for deterministic relative-time rendering in tests. */
   now?: Date;
 };
@@ -74,25 +77,43 @@ export function W1DashboardClient({
   payload,
   facilities,
   auditUpdatedAt,
+  rowsSource,
   now,
 }: W1DashboardClientProps) {
   const rows: DataTableRow<V2DashboardTableRow>[] = payload.tableRows.map((row) => ({
     id: row.id,
     data: row,
     status:
-      row.openIncidents > 3 ? "critical" : row.openIncidents > 1 ? "warning" : "ok",
+      row.openIncidents == null
+        ? "warning"
+        : row.openIncidents > 3
+          ? "critical"
+          : row.openIncidents > 1
+            ? "warning"
+            : "ok",
     statusTooltip:
-      row.openIncidents > 1 ? `${row.openIncidents} open incidents` : undefined,
+      row.openIncidents == null
+        ? "Open incident count unavailable"
+        : row.openIncidents > 1
+          ? `${row.openIncidents} open incidents`
+          : undefined,
   }));
+
+  const sourceNote =
+    rowsSource === "empty"
+      ? "No live facility rollup rows in scope"
+      : rowsSource === "unavailable"
+        ? "Live facility rollup unavailable; no fixtures shown"
+        : null;
 
   return (
     <T1Dashboard<V2DashboardTableRow>
       title={payload.title}
-      subtitle={payload.subtitle}
+      subtitle={sourceNote ? `${payload.subtitle} · ${sourceNote}` : payload.subtitle}
       scope={{
-        owners: [{ id: "col", label: "Circle of Life Holdings" }],
+        owners: [{ id: "current", label: "Current organization" }],
         groups: [],
-        facilities: facilities.map((f) => ({ ...f, ownerId: "col" })),
+        facilities: facilities.map((f) => ({ ...f, ownerId: "current" })),
       }}
       filters={{
         dashboardId: DASHBOARD_BASE_PATH[payload.id],
@@ -109,6 +130,7 @@ export function W1DashboardClient({
         rows,
         thresholds: payload.thresholds,
         userPreferencesKey: `/admin/v2/${payload.id}`,
+        emptyState: sourceNote ? <span>{sourceNote}.</span> : undefined,
       }}
       alerts={payload.alerts}
       actionQueue={payload.actionQueue}

@@ -29,28 +29,13 @@ export type V2ListRow = {
   badges?: string[];
 };
 
+export type V2LiveSource = "live" | "empty" | "unavailable";
+
 export type V2ListLoad = {
   listId: V2ListId;
   rows: V2ListRow[];
-  source: "live" | "fixture";
+  source: V2LiveSource;
   generatedAt: string;
-};
-
-const FIXED_NOW = "2026-04-25T03:00:00-04:00";
-
-const FIXTURE_FALLBACK: Record<V2ListId, V2ListRow[]> = {
-  residents: [
-    { id: "r-fix-1", primary: "Sample Resident", facilityId: null, facilityName: "Oakridge ALF", status: "active", secondary: "Heart failure" },
-  ],
-  incidents: [
-    { id: "i-fix-1", primary: "INC-DEMO-1", facilityId: null, facilityName: "Oakridge ALF", status: "open", severity: "medium", secondary: "Fall — no injury", occurredAt: FIXED_NOW },
-  ],
-  alerts: [
-    { id: "a-fix-1", primary: "Variance trending up", facilityId: null, facilityName: "Oakridge ALF", status: "new", severity: "medium", secondary: "eMAR variance" },
-  ],
-  admissions: [
-    { id: "ad-fix-1", primary: "—", facilityId: null, facilityName: "Oakridge ALF", status: "pending", secondary: "Admission case" },
-  ],
 };
 
 type SupabaseRow = Record<string, unknown>;
@@ -96,20 +81,31 @@ export async function loadV2List(listId: V2ListId): Promise<V2ListLoad> {
     .select(SELECTS[listId])
     .order(ORDER_BY[listId] as never, { ascending: !ORDER_DESC[listId] })) as unknown as ListResult;
 
-  if (!result.error && Array.isArray(result.data) && result.data.length > 0) {
+  const generatedAt = new Date().toISOString();
+
+  if (result.error) {
+    return {
+      listId,
+      rows: [],
+      source: "unavailable",
+      generatedAt,
+    };
+  }
+
+  if (Array.isArray(result.data) && result.data.length > 0) {
     return {
       listId,
       rows: mapRows(listId, result.data),
       source: "live",
-      generatedAt: new Date().toISOString(),
+      generatedAt,
     };
   }
 
   return {
     listId,
-    rows: FIXTURE_FALLBACK[listId],
-    source: "fixture",
-    generatedAt: FIXED_NOW,
+    rows: [],
+    source: "empty",
+    generatedAt,
   };
 }
 

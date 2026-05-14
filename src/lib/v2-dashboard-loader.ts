@@ -9,13 +9,18 @@ import {
 
 export type V2DashboardScopeOption = { id: string; label: string };
 
+export type V2DashboardRowsSource = "live" | "empty" | "unavailable";
+
 export type V2DashboardLoad = {
   payload: V2DashboardPayload;
   facilities: V2DashboardScopeOption[];
   generatedAt: string;
-  /** "live" → table rows came from haven.vw_v2_facility_rollup;
-   *  "fixture" → view returned 0 rows or errored; UI uses fixture data. */
-  rowsSource: "live" | "fixture";
+  /**
+   * "live" → table rows came from haven.vw_v2_facility_rollup.
+   * "empty" → live view succeeded but returned no rows in scope.
+   * "unavailable" → live view errored; no fixture rows are substituted.
+   */
+  rowsSource: V2DashboardRowsSource;
 };
 
 type RollupRow = {
@@ -31,14 +36,13 @@ type ViewResult = { data: RollupRow[] | null; error: { message: string } | null 
 /**
  * Server-side dashboard loader.
  *
- * 1. Pulls the static T1 payload contract (KPIs / panels / alerts /
- *    actionQueue / thresholds) from `getV2DashboardPayload` — those values
- *    remain fixture-driven in S8.5; their backing aggregates land in later
- *    slices.
+ * 1. Pulls the T1 payload shell (labels, panels, thresholds) from
+ *    `getV2DashboardPayload`. The shell has no seeded KPI values, alerts, or
+ *    facility rows.
  * 2. Reads `haven.vw_v2_facility_rollup` under the caller's RLS to populate
  *    the table rows with real per-facility data.
- * 3. Falls back to the static fixture rows if the view returns 0 rows or
- *    errors (e.g., during local dev against a dump that predates 211).
+ * 3. Returns explicit empty/unavailable states when the view has no rows or
+ *    errors. It never substitutes deterministic fixture rows.
  */
 export async function loadV2Dashboard(
   id: V2DashboardId,
@@ -56,35 +60,41 @@ export async function loadV2Dashboard(
     )
     .order("facility_name" as never, { ascending: true })) as unknown as ViewResult;
 
-  let liveRows: V2DashboardTableRow[] | null = null;
-  if (!result.error && Array.isArray(result.data) && result.data.length > 0) {
-    liveRows = result.data.map((row) => ({
+  let tableRows: V2DashboardTableRow[] = [];
+  let rowsSource: V2DashboardRowsSource = "empty";
+
+  if (result.error) {
+    rowsSource = "unavailable";
+  } else if (Array.isArray(result.data) && result.data.length > 0) {
+    rowsSource = "live";
+    tableRows = result.data.map((row) => ({
       id: row.facility_id,
       name: (row.facility_name ?? "").trim() || "Unnamed facility",
       occupancyPct: normalizePercent(row.occupancy_pct),
       laborCostPct: null, // Source aggregate lands in payroll/finance modules.
-      openIncidents: row.open_incidents_count ?? 0,
+      openIncidents: row.open_incidents_count,
       surveyReadinessPct: normalizePercent(row.survey_readiness_pct),
     }));
   }
 
-  const tableRows = liveRows ?? payload.tableRows;
-  const rowsSource: "live" | "fixture" = liveRows ? "live" : "fixture";
-
-  // Build the scope option list from whichever rows we used so they always
-  // line up — caller's accessible facility set IS the live view's row set.
+  // Caller-visible facility filters should only list facilities actually
+  // returned by the live rollup view. Empty/unavailable means no hidden fixture
+  // facility scope is presented.
   const facilities: V2DashboardScopeOption[] = tableRows.map((row) => ({
     id: row.id,
     label: row.name,
   }));
 
+  const generatedAt = new Date().toISOString();
+
   return {
     payload: {
       ...payload,
+      generatedAt,
       tableRows,
     },
     facilities,
-    generatedAt: payload.generatedAt,
+    generatedAt,
     rowsSource,
   };
 }

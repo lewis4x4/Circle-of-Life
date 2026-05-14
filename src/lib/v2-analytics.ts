@@ -32,6 +32,8 @@ export type V2AnalyticsRollupRow = {
   survey_readiness_pct: number | null;
 };
 
+export type V2AnalyticsSource = "live" | "empty" | "unavailable";
+
 export type V2AnalyticsLoad = {
   id: V2AnalyticsId;
   title: string;
@@ -40,7 +42,7 @@ export type V2AnalyticsLoad = {
   contextId?: string;
   rollup: V2AnalyticsRollupRow[];
   generatedAt: string;
-  source: "live" | "fixture";
+  source: V2AnalyticsSource;
 };
 
 const TITLES: Record<
@@ -77,12 +79,6 @@ const TITLES: Record<
   },
 };
 
-const FIXTURE_ROLLUP: V2AnalyticsRollupRow[] = [
-  { facility_id: "fix-1", facility_name: "Oakridge ALF", occupancy_pct: null, open_incidents_count: 7, risk_score: 26, survey_readiness_pct: null },
-  { facility_id: "fix-2", facility_name: "Rising Oaks ALF", occupancy_pct: null, open_incidents_count: 0, risk_score: 48, survey_readiness_pct: null },
-  { facility_id: "fix-3", facility_name: "Plantation ALF", occupancy_pct: null, open_incidents_count: 0, risk_score: 100, survey_readiness_pct: null },
-];
-
 type RollupResult = {
   data: V2AnalyticsRollupRow[] | null;
   error: { message: string } | null;
@@ -103,11 +99,19 @@ export async function loadV2Analytics(
     )
     .order("facility_name" as never, { ascending: true })) as unknown as RollupResult;
 
-  let rollup: V2AnalyticsRollupRow[] | null = null;
-  if (!result.error && Array.isArray(result.data) && result.data.length > 0) {
-    rollup = result.data;
+  let rollup: V2AnalyticsRollupRow[] = [];
+  let source: V2AnalyticsSource = "empty";
+
+  if (result.error) {
+    source = "unavailable";
+  } else if (Array.isArray(result.data) && result.data.length > 0) {
+    source = "live";
+    rollup = result.data.map(normalizeRollupRow);
     if (id === "facility-deep-dive" && options.contextId) {
       rollup = rollup.filter((row) => row.facility_id === options.contextId);
+      if (rollup.length === 0) {
+        source = "empty";
+      }
     }
   }
 
@@ -116,8 +120,21 @@ export async function loadV2Analytics(
     title: meta.title,
     subtitle: meta.subtitle,
     contextId: options.contextId,
-    rollup: rollup ?? FIXTURE_ROLLUP,
+    rollup,
     generatedAt: new Date().toISOString(),
-    source: rollup ? "live" : "fixture",
+    source,
   };
+}
+
+function normalizeRollupRow(row: V2AnalyticsRollupRow): V2AnalyticsRollupRow {
+  return {
+    ...row,
+    occupancy_pct: normalizePercent(row.occupancy_pct),
+    survey_readiness_pct: normalizePercent(row.survey_readiness_pct),
+  };
+}
+
+function normalizePercent(value: number | null | undefined): number | null {
+  if (value == null || !Number.isFinite(value)) return null;
+  return value <= 1 ? Math.round(value * 1000) / 10 : value;
 }

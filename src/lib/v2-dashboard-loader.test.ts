@@ -38,20 +38,21 @@ describe("loadV2Dashboard", () => {
     expect(load).toBeNull();
   });
 
-  it("falls back to fixture rows when the view returns 0 rows", async () => {
+  it("returns an explicit empty state when the view returns 0 rows", async () => {
     mockViewResult = { data: [], error: null };
     const load = await loadV2Dashboard("command-center");
     expect(load).not.toBeNull();
-    expect(load!.rowsSource).toBe("fixture");
-    expect(load!.payload.tableRows.length).toBeGreaterThan(0);
-    // Fixture rows have non-null occupancy values
-    expect(load!.payload.tableRows[0]!.occupancyPct).not.toBeNull();
+    expect(load!.rowsSource).toBe("empty");
+    expect(load!.payload.tableRows).toEqual([]);
+    expect(load!.facilities).toEqual([]);
   });
 
-  it("falls back to fixture rows when the view query errors", async () => {
+  it("returns an unavailable state when the view query errors", async () => {
     mockViewResult = { data: null, error: { message: "boom" } };
     const load = await loadV2Dashboard("clinical-quality");
-    expect(load!.rowsSource).toBe("fixture");
+    expect(load!.rowsSource).toBe("unavailable");
+    expect(load!.payload.tableRows).toEqual([]);
+    expect(load!.facilities).toEqual([]);
   });
 
   it("uses live rows from the view when available", async () => {
@@ -68,7 +69,7 @@ describe("loadV2Dashboard", () => {
           facility_id: "f-2",
           facility_name: "Live Facility B",
           occupancy_pct: 88, // already a percent integer
-          open_incidents_count: 0,
+          open_incidents_count: null,
           survey_readiness_pct: 0.85,
         },
       ],
@@ -87,6 +88,7 @@ describe("loadV2Dashboard", () => {
 
     const b = load!.payload.tableRows.find((r) => r.id === "f-2")!;
     expect(b.occupancyPct).toBe(88);
+    expect(b.openIncidents).toBeNull();
     expect(b.surveyReadinessPct).toBe(85);
 
     expect(load!.facilities).toEqual([

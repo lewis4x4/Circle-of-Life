@@ -32,6 +32,7 @@ export async function V2DashboardPage({ dashboardId }: V2DashboardPageProps) {
       payload={load.payload}
       facilities={load.facilities}
       auditUpdatedAt={load.generatedAt}
+      rowsSource={load.rowsSource}
     />
   );
 }
