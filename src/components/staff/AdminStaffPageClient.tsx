@@ -198,6 +198,7 @@ export function AdminStaffPageClient({
       const matchesSearch =
         loweredSearch.length === 0 ||
         row.name.toLowerCase().includes(loweredSearch) ||
+        row.roleLabel.toLowerCase().includes(loweredSearch) ||
         row.nextShift.toLowerCase().includes(loweredSearch);
       const matchesRole = role === "all" || row.role === role;
       const matchesStatus = status === "all" || row.status === status;
@@ -433,7 +434,7 @@ export function AdminStaffPageClient({
                         )}
                         <div className="flex flex-col">
                            <span className="font-bold text-slate-900 dark:text-slate-100">{staff.name}</span>
-                           <span className="text-[10px] uppercase tracking-widest font-mono text-slate-500 mt-0.5">{staff.role}</span>
+                           <span className="text-[10px] uppercase tracking-widest font-mono text-slate-500 mt-0.5">{staff.roleLabel}</span>
                         </div>
                       </div>
 

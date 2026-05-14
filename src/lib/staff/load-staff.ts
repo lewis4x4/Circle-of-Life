@@ -13,6 +13,7 @@ export type StaffRow = {
   name: string;
   initials: string;
   role: StaffRole;
+  roleLabel: string;
   status: StaffStatus;
   certifications: CertificationStatus;
   nextShift: string;
@@ -135,6 +136,7 @@ export async function fetchStaffFromSupabase(
       name,
       initials,
       role: uiRole,
+      roleLabel: formatStaffRoleLabel(s.staff_role),
       status: uiStatus,
       certifications: certState,
       nextShift,
@@ -146,13 +148,43 @@ export async function fetchStaffFromSupabase(
 
 function mapDbStaffRoleToUi(role: string): StaffRole {
   if (role === "rn" || role === "lpn") return "nurse";
-  if (role === "cna") return "caregiver";
-  if (role === "dietary_staff") return "med_tech";
-  if (role === "administrator" || role === "activities_director" || role === "dietary_manager") return "admin";
-  if (role === "maintenance" || role === "housekeeping" || role === "driver" || role === "other") {
+  if (role === "medication_tech" || role === "dietary_staff") return "med_tech";
+  if (
+    role === "administrator" ||
+    role === "assistant_administrator" ||
+    role === "admin_support_coordinator" ||
+    role === "activities_director" ||
+    role === "dietary_manager" ||
+    role === "owner" ||
+    role === "ceo" ||
+    role === "coo" ||
+    role === "cfo"
+  ) return "admin";
+  if (
+    role === "cna" ||
+    role === "resident_aide" ||
+    role === "resident_services_coordinator" ||
+    role === "maintenance" ||
+    role === "maintenance_director" ||
+    role === "maintenance_standby" ||
+    role === "housekeeping" ||
+    role === "driver" ||
+    role === "dietary_aide" ||
+    role === "activity_aide" ||
+    role === "marketing_consultant" ||
+    role === "other"
+  ) {
     return "caregiver";
   }
   return "admin";
+}
+
+export function formatStaffRoleLabel(role: string): string {
+  const normalized = role.trim().toLowerCase();
+  if (normalized === "cna") return "CNA";
+  if (normalized === "rn") return "RN";
+  if (normalized === "lpn") return "LPN";
+  return normalized.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function mapEmploymentToUiStatus(employment: string): StaffStatus {
