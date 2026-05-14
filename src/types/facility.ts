@@ -1,7 +1,7 @@
 /**
  * Facility type extensions for Circle of Life
  * Supplements auto-generated database.ts with COL-specific facility fields
- * Source: HAVEN-COL-TECHNICAL-HANDOFF.md §2 Facility Seed Data
+ * Source: HAVEN-COL-TECHNICAL-HANDOFF.md §2 Facility reference data
  */
 
 import type { Database } from './database';
@@ -25,14 +25,14 @@ export enum LicenseType {
 }
 
 export enum County {
-  LAFAYETTE = 'LAFAYETTE',   // Oakridge, Homewood (Duke Energy)
-  SUWANNEE = 'SUWANNEE',     // Rising Oaks (Suwannee Valley Electric)
-  COLUMBIA = 'COLUMBIA',     // Plantation, Grande Cypress (FPL, Lake City PD)
+  LAFAYETTE = 'LAFAYETTE',   // Duke Energy service area
+  SUWANNEE = 'SUWANNEE',     // Suwannee Valley Electric service area
+  COLUMBIA = 'COLUMBIA',     // FPL / Lake City PD service area
 }
 
 export enum PharmacyVendor {
-  BAYA_PHARMACY = 'BAYA_PHARMACY',                   // Oakridge, Homewood, Rising Oaks
-  NORTH_FLORIDA_PHARMACY = 'NORTH_FLORIDA_PHARMACY', // Grande Cypress
+  BAYA_PHARMACY = 'BAYA_PHARMACY',                   // Baya pharmacy partner
+  NORTH_FLORIDA_PHARMACY = 'NORTH_FLORIDA_PHARMACY', // North Florida pharmacy partner
 }
 
 export enum EntityType {

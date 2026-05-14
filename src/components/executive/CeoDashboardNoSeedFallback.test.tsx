@@ -49,7 +49,7 @@ describe("CEO dashboard seeded fallback removal", () => {
     render(<CeoDashboardTabs tab="CEO View" displayAlerts={[]} />);
 
     expect(screen.getByText("Live CEO detail source is not loaded")).toBeInTheDocument();
-    expect(screen.getByText(/No seeded chart data is shown/i)).toBeInTheDocument();
+    expect(screen.getByText(/No fallback chart data is shown/i)).toBeInTheDocument();
     expect(screen.queryByText("Growth & Acumen Funnel")).not.toBeInTheDocument();
     expect(screen.queryByText("Legal & Reputation Risk Index")).not.toBeInTheDocument();
   });

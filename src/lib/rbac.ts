@@ -1,6 +1,6 @@
 /**
  * RBAC utility library — centralized role hierarchy, permission checks, and display mappings.
- * Mirrors the `role_permissions` seed data in migration 122 and the `haven.role_tier()` SQL helper.
+ * Mirrors the `role_permissions` bootstrap data in migration 122 and the `haven.role_tier()` SQL helper.
  * Pure TypeScript — no Supabase imports. Safe for Edge and client bundles.
  */
 

@@ -44,12 +44,12 @@ export function AdminDashboardPageClient({
   const [isLoading, setIsLoading] = useState(initialSnapshot == null && initialError == null);
   const [error, setError] = useState<string | null>(initialError);
 
-  // Seed the cross-nav cache with the server-rendered snapshot so clicks away
+  // Prime the cross-nav cache with the server-rendered snapshot so clicks away
   // and back hit the cache instead of refetching.
-  const seededRef = useRef(false);
+  const initialSnapshotAppliedRef = useRef(false);
   useEffect(() => {
-    if (!seededRef.current && initialSnapshot) {
-      seededRef.current = true;
+    if (!initialSnapshotAppliedRef.current && initialSnapshot) {
+      initialSnapshotAppliedRef.current = true;
       setSnapshotCache(initialFacilityId, initialSnapshot);
     }
   }, [initialSnapshot, initialFacilityId, setSnapshotCache]);

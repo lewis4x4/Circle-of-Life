@@ -18,7 +18,7 @@ export function FacilityCard({ facility, redAlertCount = 0, yellowAlertCount = 0
   const occupiedBeds = facility.occupancy_count ?? facility.current_occupancy ?? 0;
   const bedRowsTotal = facility.total_beds ?? 0;
   const licensedCapacity = facility.total_licensed_beds ?? facility.licensed_beds ?? 0;
-  // If bed census rows are not seeded yet, fall back to licensed capacity for a meaningful %.
+  // If live bed census rows are unavailable, fall back to licensed capacity for a meaningful %.
   const totalForGauge = bedRowsTotal > 0 ? bedRowsTotal : licensedCapacity;
   const administratorName = facility.administrator_name?.trim() || "Unassigned";
   const city = facility.city ?? "";

@@ -1,7 +1,7 @@
 /**
  * Housekeeper dashboard brief.
  * Room cleaning tasks, priority cleans, hours, completion rate.
- * Task-driven interface for Plantation-only role.
+ * Task-driven interface for a facility-scoped housekeeping role.
  */
 
 import { createClient } from "@/lib/supabase/client";

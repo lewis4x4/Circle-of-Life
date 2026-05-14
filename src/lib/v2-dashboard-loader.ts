@@ -18,7 +18,7 @@ export type V2DashboardLoad = {
   /**
    * "live" → table rows came from haven.vw_v2_facility_rollup.
    * "empty" → live view succeeded but returned no rows in scope.
-   * "unavailable" → live view errored; no fixture rows are substituted.
+   * "unavailable" → live view errored; no fallback rows are substituted.
    */
   rowsSource: V2DashboardRowsSource;
 };
@@ -37,12 +37,12 @@ type ViewResult = { data: RollupRow[] | null; error: { message: string } | null 
  * Server-side dashboard loader.
  *
  * 1. Pulls the T1 payload shell (labels, panels, thresholds) from
- *    `getV2DashboardPayload`. The shell has no seeded KPI values, alerts, or
- *    facility rows.
+ *    `getV2DashboardPayload`. The shell has no baked-in KPI values, alerts,
+ *    or facility rows.
  * 2. Reads `haven.vw_v2_facility_rollup` under the caller's RLS to populate
  *    the table rows with real per-facility data.
  * 3. Returns explicit empty/unavailable states when the view has no rows or
- *    errors. It never substitutes deterministic fixture rows.
+ *    errors. It never substitutes deterministic fallback rows.
  */
 export async function loadV2Dashboard(
   id: V2DashboardId,
@@ -78,7 +78,7 @@ export async function loadV2Dashboard(
   }
 
   // Caller-visible facility filters should only list facilities actually
-  // returned by the live rollup view. Empty/unavailable means no hidden fixture
+  // returned by the live rollup view. Empty/unavailable means no hidden fallback
   // facility scope is presented.
   const facilities: V2DashboardScopeOption[] = tableRows.map((row) => ({
     id: row.id,
