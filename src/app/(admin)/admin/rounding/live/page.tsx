@@ -16,7 +16,6 @@ import {
 
 import { RoundingHubNav } from "../rounding-hub-nav";
 import { QuickCheckDrawer, type QuickCheckTask } from "@/components/rounding/QuickCheckDrawer";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
@@ -27,7 +26,6 @@ import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import { useClientDemoMode } from "@/hooks/useClientDemoMode";
 import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 
 type LiveTaskRow = {
@@ -44,17 +42,6 @@ type StatusFilter = "all" | "critical" | "overdue" | "pending" | "completed" | "
 function displayName(person?: { first_name: string | null; last_name: string | null; preferred_name: string | null } | null) {
   return [person?.preferred_name ?? person?.first_name ?? null, person?.last_name ?? null].filter(Boolean).join(" ");
 }
-
-const DEMO_TASKS: LiveTaskRow[] = [
-  { id: "d1", due_at: new Date(Date.now() - 45 * 60000).toISOString(), status: "critically_overdue", residents: { first_name: "Dorothy", last_name: "Henderson", preferred_name: "Dot", room_number: "112A" }, staff: { first_name: "Maria", last_name: "Santos", preferred_name: null }, shift_assignments: { shift_type: "day" } },
-  { id: "d2", due_at: new Date(Date.now() - 12 * 60000).toISOString(), status: "overdue", residents: { first_name: "Robert", last_name: "Chen", preferred_name: "Bob", room_number: "204B" }, staff: { first_name: "James", last_name: "Wilson", preferred_name: null }, shift_assignments: { shift_type: "day" } },
-  { id: "d3", due_at: new Date(Date.now() + 5 * 60000).toISOString(), status: "pending", residents: { first_name: "Eleanor", last_name: "Vasquez", preferred_name: null, room_number: "118" }, staff: { first_name: "Sarah", last_name: "Kim", preferred_name: null }, shift_assignments: { shift_type: "day" } },
-  { id: "d4", due_at: new Date(Date.now() + 22 * 60000).toISOString(), status: "pending", residents: { first_name: "Harold", last_name: "Mitchell", preferred_name: "Harry", room_number: "301A" }, staff: { first_name: "Lisa", last_name: "Nguyen", preferred_name: null }, shift_assignments: { shift_type: "day" } },
-  { id: "d5", due_at: new Date(Date.now() + 35 * 60000).toISOString(), status: "pending", residents: { first_name: "Margaret", last_name: "Thompson", preferred_name: "Peggy", room_number: "215" }, staff: { first_name: "Maria", last_name: "Santos", preferred_name: null }, shift_assignments: { shift_type: "day" } },
-  { id: "d6", due_at: new Date(Date.now() - 90 * 60000).toISOString(), status: "completed_on_time", residents: { first_name: "William", last_name: "O'Brien", preferred_name: "Bill", room_number: "102" }, staff: { first_name: "James", last_name: "Wilson", preferred_name: null }, shift_assignments: { shift_type: "day" } },
-  { id: "d7", due_at: new Date(Date.now() - 120 * 60000).toISOString(), status: "completed_on_time", residents: { first_name: "Ruth", last_name: "Abernathy", preferred_name: null, room_number: "108" }, staff: { first_name: "Sarah", last_name: "Kim", preferred_name: null }, shift_assignments: { shift_type: "day" } },
-  { id: "d8", due_at: new Date(Date.now() - 60 * 60000).toISOString(), status: "completed_late", residents: { first_name: "Frank", last_name: "Kowalski", preferred_name: null, room_number: "220" }, staff: { first_name: "Lisa", last_name: "Nguyen", preferred_name: null }, shift_assignments: { shift_type: "day" } },
-];
 
 function statusConfig(status: string) {
   if (status === "critically_overdue" || status === "missed")
@@ -99,10 +86,9 @@ function toDrawerTask(task: LiveTaskRow): QuickCheckTask {
 export default function AdminRoundingLivePage() {
   const { selectedFacilityId } = useFacilityStore();
   const supabase = useMemo(() => createClient(), []);
-  const demo = useClientDemoMode();
   const [, setLoading] = useState(true);
   const [tasks, setTasks] = useState<LiveTaskRow[]>([]);
-  const [demoFallbackActive, setDemoFallbackActive] = useState(false);
+  const [sourceNotice, setSourceNotice] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   // Drawer state
@@ -115,11 +101,13 @@ export default function AdminRoundingLivePage() {
     setLoading(true);
 
     if (!selectedFacilityId || !isBrowserSupabaseConfigured()) {
-      setDemoFallbackActive(demo);
-      setTasks(demo ? DEMO_TASKS : []);
+      setSourceNotice("Select a facility and connect the live rounding task source to show the live board.");
+      setTasks([]);
       setLoading(false);
       return;
     }
+
+    setSourceNotice(null);
 
     try {
       const { data, error } = await supabase
@@ -133,15 +121,17 @@ export default function AdminRoundingLivePage() {
 
       if (error) throw error;
       const rows = (data ?? []) as unknown as LiveTaskRow[];
-      setDemoFallbackActive(rows.length === 0 && demo);
-      setTasks(rows.length > 0 ? rows : DEMO_TASKS);
+      if (rows.length === 0) {
+        setSourceNotice("No live rounding tasks were returned for the current facility scope.");
+      }
+      setTasks(rows);
     } catch {
-      setDemoFallbackActive(demo);
-      setTasks(DEMO_TASKS);
+      setSourceNotice("Unable to load live rounding tasks. No seeded fallback tasks are shown.");
+      setTasks([]);
     } finally {
       setLoading(false);
     }
-  }, [demo, selectedFacilityId, supabase]);
+  }, [selectedFacilityId, supabase]);
 
   useEffect(() => {
     void load();
@@ -250,9 +240,9 @@ export default function AdminRoundingLivePage() {
           </div>
         </header>
 
-        {demoFallbackActive ? (
+        {sourceNotice ? (
           <AdminLiveDataFallbackNotice
-            message="Demo mode is active on the Live Rounding Board. These tasks are illustrative sample checks because no live rounding tasks were returned for the current scope."
+            message={sourceNotice}
             onRetry={() => void load()}
           />
         ) : null}
@@ -439,9 +429,15 @@ export default function AdminRoundingLivePage() {
           {filteredTasks.length === 0 && (
             <div className="rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] p-16 text-center backdrop-blur-3xl shadow-sm">
               <Eye aria-hidden className="mx-auto h-12 w-12 text-slate-300 dark:text-white/10 mb-4" />
-              <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">All Clear</p>
+              <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
+                {sourceNotice ? "No live tasks shown" : "All Clear"}
+              </p>
               <p className="text-sm font-medium text-slate-500 dark:text-zinc-500 mt-1">
-                {statusFilter === "all" ? "No rounding tasks found for the current scope." : `No tasks match the ${statusFilter} filter.`}
+                {sourceNotice
+                  ? "No live rounding tasks are shown until the source returns rows."
+                  : statusFilter === "all"
+                    ? "No rounding tasks found for the current scope."
+                    : `No tasks match the ${statusFilter} filter.`}
               </p>
               {statusFilter !== "all" && (
                 <button
@@ -475,12 +471,12 @@ export default function AdminRoundingLivePage() {
 
 function StatCard({ label, value, color, pulse, active, onClick }: { label: string; value: string; color: string; pulse?: boolean; active?: boolean; onClick: () => void }) {
   const colorClasses = {
-    rose: { border: "border-rose-500/20", text: "text-rose-400", sparkline: "text-rose-500", ring: "ring-rose-500" },
-    amber: { border: "border-amber-500/20", text: "text-amber-400", sparkline: "text-amber-500", ring: "ring-amber-500" },
-    cyan: { border: "border-cyan-500/20", text: "text-cyan-400", sparkline: "text-cyan-500", ring: "ring-cyan-500" },
-    emerald: { border: "border-emerald-500/20", text: "text-emerald-400", sparkline: "text-emerald-500", ring: "ring-emerald-500" },
-    orange: { border: "border-orange-500/20", text: "text-orange-400", sparkline: "text-orange-500", ring: "ring-orange-500" },
-  }[color] ?? { border: "", text: "text-slate-400", sparkline: "text-slate-500", ring: "ring-slate-500" };
+    rose: { border: "border-rose-500/20", text: "text-rose-400", ring: "ring-rose-500" },
+    amber: { border: "border-amber-500/20", text: "text-amber-400", ring: "ring-amber-500" },
+    cyan: { border: "border-cyan-500/20", text: "text-cyan-400", ring: "ring-cyan-500" },
+    emerald: { border: "border-emerald-500/20", text: "text-emerald-400", ring: "ring-emerald-500" },
+    orange: { border: "border-orange-500/20", text: "text-orange-400", ring: "ring-orange-500" },
+  }[color] ?? { border: "", text: "text-slate-400", ring: "ring-slate-500" };
 
   return (
     <div className="h-[100px]">
@@ -493,7 +489,6 @@ function StatCard({ label, value, color, pulse, active, onClick }: { label: stri
           "transition-all duration-300",
           active && `ring-2 ${colorClasses.ring} ring-offset-2 ring-offset-background`
         )}>
-          <Sparkline colorClass={colorClasses.sparkline} variant={1} />
           <div className="relative z-10 flex flex-col h-full justify-between">
             <h3 className={cn("text-[10px] font-mono tracking-widest uppercase flex items-center gap-2", colorClasses.text)}>
               {label}

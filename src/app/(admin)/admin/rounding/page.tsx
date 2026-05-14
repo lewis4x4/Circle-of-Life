@@ -18,7 +18,6 @@ import {
 import { RoundingHubNav } from "./rounding-hub-nav";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -42,37 +41,39 @@ type OverviewSummary = {
   openIntegrityFlags: number;
 };
 
-const DEMO_SUMMARY: OverviewSummary = {
-  plans: 14,
-  activeTasks: 38,
-  urgentTasks: 2,
-  completionRate: 0.916,
-  onTimeRate: 0.842,
-  missedCount: 3,
-  completedCount: 87,
-  expectedCount: 95,
-  activeWatches: 4,
-  pendingApprovals: 1,
-  openEscalations: 3,
-  openIntegrityFlags: 2,
+const EMPTY_SUMMARY: OverviewSummary = {
+  plans: 0,
+  activeTasks: 0,
+  urgentTasks: 0,
+  completionRate: 0,
+  onTimeRate: 0,
+  missedCount: 0,
+  completedCount: 0,
+  expectedCount: 0,
+  activeWatches: 0,
+  pendingApprovals: 0,
+  openEscalations: 0,
+  openIntegrityFlags: 0,
 };
 
 export default function AdminRoundingHubPage() {
   const { selectedFacilityId } = useFacilityStore();
   const supabase = useMemo(() => createClient(), []);
   const [, setLoading] = useState(true);
-  const [summary, setSummary] = useState<OverviewSummary>(DEMO_SUMMARY);
-  const [demoFallbackActive, setDemoFallbackActive] = useState(true);
+  const [summary, setSummary] = useState<OverviewSummary>(EMPTY_SUMMARY);
+  const [sourceNotice, setSourceNotice] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
 
     if (!selectedFacilityId || !isBrowserSupabaseConfigured()) {
-      setDemoFallbackActive(true);
-      setSummary(DEMO_SUMMARY);
+      setSourceNotice("Select a facility and connect the live rounding source to show Resident Assurance metrics.");
+      setSummary(EMPTY_SUMMARY);
       setLoading(false);
       return;
     }
+
+    setSourceNotice(null);
 
     try {
       const [plansRes, tasksRes, watchesRes, escalationsRes, integrityRes] = await Promise.all([
@@ -127,28 +128,26 @@ export default function AdminRoundingHubPage() {
       const pendingApprovals = watchRows.filter((row) => row.status === "pending_approval").length;
 
       if (expected === 0) {
-        setDemoFallbackActive(true);
-        setSummary(DEMO_SUMMARY);
-      } else {
-        setDemoFallbackActive(false);
-        setSummary({
-          plans: planCount,
-          activeTasks: active.length,
-          urgentTasks: urgent.length,
-          completionRate: expected > 0 ? completed.length / expected : 0,
-          onTimeRate: expected > 0 ? taskRows.filter((t) => t.status === "completed_on_time").length / expected : 0,
-          missedCount: missed.length,
-          completedCount: completed.length,
-          expectedCount: expected,
-          activeWatches,
-          pendingApprovals,
-          openEscalations: escalationsRes.count ?? 0,
-          openIntegrityFlags: integrityRes.count ?? 0,
-        });
+        setSourceNotice("No live rounding tasks were returned for the current facility scope.");
       }
+
+      setSummary({
+        plans: planCount,
+        activeTasks: active.length,
+        urgentTasks: urgent.length,
+        completionRate: expected > 0 ? completed.length / expected : 0,
+        onTimeRate: expected > 0 ? taskRows.filter((t) => t.status === "completed_on_time").length / expected : 0,
+        missedCount: missed.length,
+        completedCount: completed.length,
+        expectedCount: expected,
+        activeWatches,
+        pendingApprovals,
+        openEscalations: escalationsRes.count ?? 0,
+        openIntegrityFlags: integrityRes.count ?? 0,
+      });
     } catch {
-      setDemoFallbackActive(true);
-      setSummary(DEMO_SUMMARY);
+      setSourceNotice("Unable to load live Resident Assurance metrics. No seeded fallback metrics are shown.");
+      setSummary(EMPTY_SUMMARY);
     } finally {
       setLoading(false);
     }
@@ -189,9 +188,9 @@ export default function AdminRoundingHubPage() {
            </div>
         </div>
 
-        {demoFallbackActive ? (
+        {sourceNotice ? (
           <AdminLiveDataFallbackNotice
-            message="Demo mode is active on Resident Assurance. These summary metrics are illustrative because no live rounding metrics were returned for the current scope."
+            message={sourceNotice}
             onRetry={() => void load()}
           />
         ) : null}
@@ -240,30 +239,22 @@ export default function AdminRoundingHubPage() {
             label="Active Plans"
             value={String(summary.plans)}
             hoverColor="cyan"
-            colorClass="text-cyan-500"
-            sparkVariant={2}
           />
           <MetricV2
             label="Active Tasks"
             value={String(summary.activeTasks)}
             hoverColor="indigo"
-            colorClass="text-indigo-500"
-            sparkVariant={1}
           />
           <MetricV2
             label="Urgent Now"
             value={String(summary.urgentTasks)}
             hoverColor={hasUrgent ? "rose" : "emerald"}
-            colorClass={hasUrgent ? "text-rose-500" : "text-emerald-500"}
-            sparkVariant={4}
             pulse={hasUrgent}
           />
           <MetricV2
             label="Completion Rate"
             value={`${Math.round(summary.completionRate * 100)}%`}
             hoverColor="emerald"
-            colorClass="text-emerald-500"
-            sparkVariant={3}
           />
         </KineticGrid>
 
@@ -331,7 +322,12 @@ export default function AdminRoundingHubPage() {
             hoverColor="indigo"
             metrics={[
               { label: "Open", value: String(summary.openIntegrityFlags) },
-              { label: "Late", value: `${Math.round((1 - summary.onTimeRate) * 100)}%` },
+              {
+                label: "Late",
+                value: summary.expectedCount > 0
+                  ? `${Math.round((1 - summary.onTimeRate) * 100)}%`
+                  : "—",
+              },
             ]}
           />
         </KineticGrid>
@@ -370,15 +366,11 @@ function MetricV2({
   label,
   value,
   hoverColor,
-  colorClass,
-  sparkVariant,
   pulse,
 }: {
   label: string;
   value: string;
   hoverColor: string;
-  colorClass: string;
-  sparkVariant: number;
   pulse?: boolean;
 }) {
   const borderColor = {
@@ -398,7 +390,6 @@ function MetricV2({
   return (
     <div className="h-[180px]">
       <V2Card hoverColor={hoverColor} className={cn("p-6", borderColor)}>
-        <Sparkline colorClass={colorClass} variant={sparkVariant as 1 | 2 | 3 | 4} />
         <div className="relative z-10 flex flex-col h-full justify-between">
           <h3 className={cn("text-[11px] font-bold tracking-widest uppercase flex items-center gap-2", labelColor)}>
             {label}

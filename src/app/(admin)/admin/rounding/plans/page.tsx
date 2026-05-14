@@ -23,7 +23,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
-import { useClientDemoMode } from "@/hooks/useClientDemoMode";
 import { cn } from "@/lib/utils";
 import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 
@@ -43,36 +42,26 @@ function displayName(person?: { first_name: string | null; last_name: string | n
   return [person?.preferred_name ?? person?.first_name ?? null, person?.last_name ?? null].filter(Boolean).join(" ");
 }
 
-const DEMO_PLANS: PlanRow[] = [
-  { id: "p1", status: "active", source_type: "clinical_order", effective_from: new Date(Date.now() - 7 * 86400000).toISOString(), rationale: "Fall risk protocol — Q2H checks during day shift, Q4H overnight", residents: { first_name: "Dorothy", last_name: "Henderson", preferred_name: "Dot", room_number: "112A" }, resident_observation_plan_rules: [{ id: "r1" }, { id: "r2" }] },
-  { id: "p2", status: "active", source_type: "admission_default", effective_from: new Date(Date.now() - 14 * 86400000).toISOString(), rationale: "Standard new admission monitoring — first 72 hours", residents: { first_name: "Robert", last_name: "Chen", preferred_name: "Bob", room_number: "204B" }, resident_observation_plan_rules: [{ id: "r3" }] },
-  { id: "p3", status: "active", source_type: "clinical_order", effective_from: new Date(Date.now() - 3 * 86400000).toISOString(), rationale: "Post-medication change monitoring — blood pressure checks Q4H", residents: { first_name: "Eleanor", last_name: "Vasquez", preferred_name: null, room_number: "118" }, resident_observation_plan_rules: [{ id: "r4" }, { id: "r5" }, { id: "r6" }] },
-  { id: "p4", status: "active", source_type: "family_request", effective_from: new Date(Date.now() - 30 * 86400000).toISOString(), rationale: "Family requested additional night checks — wandering concern", residents: { first_name: "Harold", last_name: "Mitchell", preferred_name: "Harry", room_number: "301A" }, resident_observation_plan_rules: [{ id: "r7" }] },
-  { id: "p5", status: "paused", source_type: "clinical_order", effective_from: new Date(Date.now() - 21 * 86400000).toISOString(), rationale: "Behavioral observation — currently paused per MD review", residents: { first_name: "Margaret", last_name: "Thompson", preferred_name: "Peggy", room_number: "215" }, resident_observation_plan_rules: [{ id: "r8" }, { id: "r9" }] },
-  { id: "p6", status: "active", source_type: "survey_visit", effective_from: new Date(Date.now() - 1 * 86400000).toISOString(), rationale: "Survey visit active — enhanced monitoring per state protocol", residents: { first_name: "William", last_name: "O'Brien", preferred_name: "Bill", room_number: "102" }, resident_observation_plan_rules: [{ id: "r10" }] },
-];
-
 export default function AdminRoundingPlansPage() {
   const { selectedFacilityId } = useFacilityStore();
   const supabase = useMemo(() => createClient(), []);
-  const demo = useClientDemoMode();
-  const emptyPlansFallback = useMemo<PlanRow[]>(() => [], []);
-  const fallbackPlans = demo ? DEMO_PLANS : emptyPlansFallback;
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [plans, setPlans] = useState<PlanRow[]>([]);
   const [filter, setFilter] = useState<FilterType>("all");
-  const [demoFallbackActive, setDemoFallbackActive] = useState(false);
+  const [sourceNotice, setSourceNotice] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
 
     if (!selectedFacilityId || !isBrowserSupabaseConfigured()) {
-      setDemoFallbackActive(false);
-      setPlans(fallbackPlans);
+      setSourceNotice("Select a facility and connect the live observation-plan source to show plans.");
+      setPlans([]);
       setLoading(false);
       return;
     }
+
+    setSourceNotice(null);
 
     try {
       const { data, error } = await supabase
@@ -84,15 +73,17 @@ export default function AdminRoundingPlansPage() {
 
       if (error) throw error;
       const rows = (data ?? []) as unknown as PlanRow[];
-      setDemoFallbackActive(rows.length === 0 && demo);
-      setPlans(rows.length > 0 ? rows : fallbackPlans);
+      if (rows.length === 0) {
+        setSourceNotice("No live observation plans were returned for the current facility.");
+      }
+      setPlans(rows);
     } catch {
-      setDemoFallbackActive(demo);
-      setPlans(fallbackPlans);
+      setSourceNotice("Unable to load live observation plans. No seeded fallback plans are shown.");
+      setPlans([]);
     } finally {
       setLoading(false);
     }
-  }, [demo, selectedFacilityId, supabase, fallbackPlans]);
+  }, [selectedFacilityId, supabase]);
 
   useEffect(() => {
     void load();
@@ -270,9 +261,9 @@ export default function AdminRoundingPlansPage() {
             New plan
           </Link>
         </div>
-        {demoFallbackActive ? (
+        {sourceNotice ? (
           <AdminLiveDataFallbackNotice
-            message="Demo mode is active on Observation Plans. These plan rows are sample plans because no live observation plans were returned for the current facility."
+            message={sourceNotice}
             onRetry={() => void load()}
           />
         ) : null}

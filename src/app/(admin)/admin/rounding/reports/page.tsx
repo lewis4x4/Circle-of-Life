@@ -12,7 +12,6 @@ import {
 import { RoundingHubNav } from "../rounding-hub-nav";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { Badge } from "@/components/ui/badge";
@@ -43,63 +42,45 @@ type ReportSummary = {
   avgDelayMin: number;
 };
 
-const DEMO_SUMMARY: ReportSummary = {
-  expected: 95,
-  completed: 87,
-  onTime: 80,
-  late: 7,
-  missed: 3,
-  completionRate: 0.916,
-  onTimeRate: 0.842,
-  missedRate: 0.032,
-  avgDelayMin: 4.2,
+const EMPTY_SUMMARY: ReportSummary = {
+  expected: 0,
+  completed: 0,
+  onTime: 0,
+  late: 0,
+  missed: 0,
+  completionRate: 0,
+  onTimeRate: 0,
+  missedRate: 0,
+  avgDelayMin: 0,
 };
 
-const DEMO_BY_SHIFT: BreakdownRow[] = [
-  { label: "Day (7a–3p)", expected: 42, completed: 40, onTime: 38, late: 2, missed: 0 },
-  { label: "Evening (3p–11p)", expected: 32, completed: 29, onTime: 26, late: 3, missed: 1 },
-  { label: "Night (11p–7a)", expected: 21, completed: 18, onTime: 16, late: 2, missed: 2 },
-];
-
-const DEMO_BY_STAFF: BreakdownRow[] = [
-  { label: "Maria Santos", expected: 24, completed: 24, onTime: 23, late: 1, missed: 0 },
-  { label: "James Wilson", expected: 22, completed: 20, onTime: 18, late: 2, missed: 1 },
-  { label: "Sarah Kim", expected: 26, completed: 24, onTime: 22, late: 2, missed: 1 },
-  { label: "Lisa Nguyen", expected: 23, completed: 19, onTime: 17, late: 2, missed: 1 },
-];
-
-const DEMO_BY_RESIDENT: BreakdownRow[] = [
-  { label: "Dorothy Henderson (112A)", expected: 12, completed: 12, onTime: 11, late: 1, missed: 0 },
-  { label: "Robert Chen (204B)", expected: 8, completed: 8, onTime: 8, late: 0, missed: 0 },
-  { label: "Eleanor Vasquez (118)", expected: 18, completed: 16, onTime: 14, late: 2, missed: 1 },
-  { label: "Harold Mitchell (301A)", expected: 6, completed: 5, onTime: 5, late: 0, missed: 1 },
-  { label: "Margaret Thompson (215)", expected: 12, completed: 11, onTime: 10, late: 1, missed: 0 },
-  { label: "William O'Brien (102)", expected: 8, completed: 7, onTime: 6, late: 1, missed: 1 },
-];
+const EMPTY_BREAKDOWNS: { byShift: BreakdownRow[]; byStaff: BreakdownRow[]; byResident: BreakdownRow[] } = {
+  byShift: [],
+  byStaff: [],
+  byResident: [],
+};
 
 export default function AdminRoundingReportsPage() {
   const { selectedFacilityId } = useFacilityStore();
   const [from, setFrom] = useState(() => new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 16));
   const [to, setTo] = useState(() => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16));
   const [, setLoading] = useState(true);
-  const [summary, setSummary] = useState<ReportSummary>(DEMO_SUMMARY);
-  const [demoFallbackActive, setDemoFallbackActive] = useState(true);
-  const [breakdowns, setBreakdowns] = useState<{ byShift: BreakdownRow[]; byStaff: BreakdownRow[]; byResident: BreakdownRow[] }>({
-    byShift: DEMO_BY_SHIFT,
-    byStaff: DEMO_BY_STAFF,
-    byResident: DEMO_BY_RESIDENT,
-  });
+  const [summary, setSummary] = useState<ReportSummary>(EMPTY_SUMMARY);
+  const [sourceNotice, setSourceNotice] = useState<string | null>(null);
+  const [breakdowns, setBreakdowns] = useState<{ byShift: BreakdownRow[]; byStaff: BreakdownRow[]; byResident: BreakdownRow[] }>(EMPTY_BREAKDOWNS);
 
   const load = useCallback(async () => {
     setLoading(true);
 
     if (!selectedFacilityId || !isBrowserSupabaseConfigured()) {
-      setDemoFallbackActive(true);
-      setSummary(DEMO_SUMMARY);
-      setBreakdowns({ byShift: DEMO_BY_SHIFT, byStaff: DEMO_BY_STAFF, byResident: DEMO_BY_RESIDENT });
+      setSourceNotice("Select a facility and connect the live rounding report source to show completion reports.");
+      setSummary(EMPTY_SUMMARY);
+      setBreakdowns(EMPTY_BREAKDOWNS);
       setLoading(false);
       return;
     }
+
+    setSourceNotice(null);
 
     try {
       const response = await fetch(
@@ -115,7 +96,6 @@ export default function AdminRoundingReportsPage() {
 
       const s = json.summary;
       if (s && s.expected > 0) {
-        setDemoFallbackActive(false);
         setSummary({
           expected: s.expected ?? 0,
           completed: s.completed ?? 0,
@@ -128,19 +108,19 @@ export default function AdminRoundingReportsPage() {
           avgDelayMin: s.avgDelayMin ?? 0,
         });
         setBreakdowns({
-          byShift: json.breakdowns?.byShift ?? DEMO_BY_SHIFT,
-          byStaff: json.breakdowns?.byStaff ?? DEMO_BY_STAFF,
-          byResident: json.breakdowns?.byResident ?? DEMO_BY_RESIDENT,
+          byShift: json.breakdowns?.byShift ?? [],
+          byStaff: json.breakdowns?.byStaff ?? [],
+          byResident: json.breakdowns?.byResident ?? [],
         });
       } else {
-        setDemoFallbackActive(true);
-        setSummary(DEMO_SUMMARY);
-        setBreakdowns({ byShift: DEMO_BY_SHIFT, byStaff: DEMO_BY_STAFF, byResident: DEMO_BY_RESIDENT });
+        setSourceNotice("No live rounding report data was returned for the selected window.");
+        setSummary(EMPTY_SUMMARY);
+        setBreakdowns(EMPTY_BREAKDOWNS);
       }
     } catch {
-      setDemoFallbackActive(true);
-      setSummary(DEMO_SUMMARY);
-      setBreakdowns({ byShift: DEMO_BY_SHIFT, byStaff: DEMO_BY_STAFF, byResident: DEMO_BY_RESIDENT });
+      setSourceNotice("Unable to load live rounding report data. No seeded fallback report rows are shown.");
+      setSummary(EMPTY_SUMMARY);
+      setBreakdowns(EMPTY_BREAKDOWNS);
     } finally {
       setLoading(false);
     }
@@ -198,9 +178,9 @@ export default function AdminRoundingReportsPage() {
           </div>
         </header>
 
-        {demoFallbackActive ? (
+        {sourceNotice ? (
           <AdminLiveDataFallbackNotice
-            message="Demo mode is active on Completion Reports. These metrics and breakdowns are illustrative because no live rounding report data was returned for the selected window."
+            message={sourceNotice}
             onRetry={() => void load()}
           />
         ) : null}
@@ -251,28 +231,24 @@ export default function AdminRoundingReportsPage() {
             value={`${Math.round(summary.completionRate * 100)}%`}
             detail={`${summary.completed} / ${summary.expected}`}
             color="emerald"
-            sparkVariant={2}
           />
           <ReportMetric
             label="On-Time Rate"
             value={`${Math.round(summary.onTimeRate * 100)}%`}
             detail={`${summary.onTime} on time`}
             color="cyan"
-            sparkVariant={1}
           />
           <ReportMetric
             label="Late Checks"
             value={String(summary.late)}
             detail={`Avg ${summary.avgDelayMin.toFixed(1)}m delay`}
             color="amber"
-            sparkVariant={4}
           />
           <ReportMetric
             label="Missed Checks"
             value={String(summary.missed)}
             detail={`${Math.round(summary.missedRate * 100)}% miss rate`}
             color={summary.missed > 0 ? "rose" : "emerald"}
-            sparkVariant={3}
           />
         </KineticGrid>
 
@@ -293,26 +269,23 @@ function ReportMetric({
   value,
   detail,
   color,
-  sparkVariant,
 }: {
   label: string;
   value: string;
   detail: string;
   color: string;
-  sparkVariant: number;
 }) {
   const colorMap = {
-    emerald: { border: "border-emerald-500/20", text: "text-emerald-400", spark: "text-emerald-500" },
-    cyan: { border: "border-cyan-500/20", text: "text-cyan-400", spark: "text-cyan-500" },
-    amber: { border: "border-amber-500/20", text: "text-amber-400", spark: "text-amber-500" },
-    rose: { border: "border-rose-500/20", text: "text-rose-400", spark: "text-rose-500" },
-    indigo: { border: "border-indigo-500/20", text: "text-indigo-400", spark: "text-indigo-500" },
-  }[color] ?? { border: "", text: "text-slate-400", spark: "text-slate-500" };
+    emerald: { border: "border-emerald-500/20", text: "text-emerald-400" },
+    cyan: { border: "border-cyan-500/20", text: "text-cyan-400" },
+    amber: { border: "border-amber-500/20", text: "text-amber-400" },
+    rose: { border: "border-rose-500/20", text: "text-rose-400" },
+    indigo: { border: "border-indigo-500/20", text: "text-indigo-400" },
+  }[color] ?? { border: "", text: "text-slate-400" };
 
   return (
     <div className="h-[120px]">
       <V2Card hoverColor={color} className={colorMap.border}>
-        <Sparkline colorClass={colorMap.spark} variant={sparkVariant as 1 | 2 | 3 | 4} />
         <div className="relative z-10 flex flex-col h-full justify-between">
           <h3 className={cn("text-[10px] font-mono tracking-widest uppercase", colorMap.text)}>{label}</h3>
           <div>
@@ -362,8 +335,8 @@ function BreakdownSection({
 
       {rows.length === 0 ? (
         <div className="px-5 py-12 text-center bg-white/50 dark:bg-white/[0.015] rounded-[2rem] border border-dashed border-slate-200 dark:border-white/10">
-          <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Data Present</p>
-          <p className="text-sm opacity-80 mt-1 font-mono tracking-wide">Select a broader window.</p>
+          <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No live rows returned</p>
+          <p className="text-sm opacity-80 mt-1 font-mono tracking-wide">This section stays empty until the live source returns rows.</p>
         </div>
       ) : (
         <MotionList className="space-y-3 min-w-[700px]">
