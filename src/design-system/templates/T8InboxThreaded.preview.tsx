@@ -14,14 +14,14 @@ export function T8InboxThreadedPreview() {
           id: "m1",
           title: "Smith family — medication question",
           preview: "Can you confirm Aria received her 8AM dose today?",
-          meta: "Oakridge ALF · 14m ago",
+          meta: "Sample Facility A · 14m ago",
           unread: true,
         },
         {
           id: "m2",
           title: "Jones family — visit confirmation",
           preview: "Confirming Saturday 2 PM visit. Park at side lot?",
-          meta: "Plantation · 41m ago",
+          meta: "Sample Facility B · 41m ago",
         },
         {
           id: "m3",
@@ -76,7 +76,7 @@ export function T8InboxThreadedPreview() {
             </div>
             <div className="flex justify-between border-b border-border py-1">
               <dt>Facility</dt>
-              <dd className="text-text-primary">Oakridge ALF</dd>
+              <dd className="text-text-primary">Sample Facility A</dd>
             </div>
             <div className="flex justify-between py-1">
               <dt>Care plan</dt>

@@ -6,10 +6,10 @@ import type { Scope } from "@/lib/scope";
 import { FilterBar, type FilterBarOption } from "./FilterBar";
 
 const facilities: FilterBarOption[] = [
-  { id: "oakridge", label: "Oakridge ALF" },
+  { id: "sample-a", label: "Sample Facility A" },
   { id: "homewood", label: "Homewood Lodge" },
-  { id: "plantation", label: "Plantation" },
-  { id: "rising-oaks", label: "Rising Oaks" },
+  { id: "sample-b", label: "Sample Facility B" },
+  { id: "sample-c", label: "Sample Facility C" },
 ];
 
 const regions: FilterBarOption[] = [
@@ -44,7 +44,7 @@ export function FilterBarPreview() {
         <ControlledFilterBar
           initial={{
             dateRange: { start: "2026-04-01", end: "2026-04-24" },
-            facilityIds: ["oakridge", "homewood"],
+            facilityIds: ["sample-a", "homewood"],
           }}
           initialStatuses={["open"]}
           initialRegion="fl-central"

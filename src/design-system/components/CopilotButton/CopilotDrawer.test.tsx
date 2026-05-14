@@ -12,7 +12,7 @@ const VALID: CopilotSuggestion = {
   body: "2 falls in Hallway A in the last 72h.",
   recordId: "unit-a",
   recordType: "facility_unit",
-  facilityId: "oakridge",
+  facilityId: "sample-a",
   generatedAt: "2026-04-24T15:58:00-04:00",
   modelVersion: "haven-copilot-2026-04-15",
   citations: [

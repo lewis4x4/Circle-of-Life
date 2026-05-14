@@ -41,8 +41,8 @@ const COLUMNS: DataTableColumn<Facility>[] = [
 function buildRows(): DataTableRow<Facility>[] {
   return [
     {
-      id: "oakridge",
-      data: { id: "oakridge", name: "Oakridge ALF", occupancyPct: 92, laborCostPct: 32 },
+      id: "sample-a",
+      data: { id: "sample-a", name: "Sample Facility A", occupancyPct: 92, laborCostPct: 32 },
     },
     {
       id: "homewood",
@@ -51,8 +51,8 @@ function buildRows(): DataTableRow<Facility>[] {
       statusTooltip: "Labor cost above target",
     },
     {
-      id: "plantation",
-      data: { id: "plantation", name: "Plantation", occupancyPct: 99, laborCostPct: 28 },
+      id: "sample-b",
+      data: { id: "sample-b", name: "Sample Facility B", occupancyPct: 99, laborCostPct: 28 },
     },
   ];
 }
@@ -93,7 +93,7 @@ describe("<DataTable />", () => {
 
     expect(screen.getByRole("columnheader", { name: /facility/i })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: /occupancy %/i })).toBeInTheDocument();
-    expect(screen.getByText("Oakridge ALF")).toBeInTheDocument();
+    expect(screen.getByText("Sample Facility A")).toBeInTheDocument();
     expect(screen.getAllByLabelText(/row status: ok/i).length).toBeGreaterThan(0);
     expect(screen.getByLabelText(/labor cost above target/i)).toBeInTheDocument();
   });
@@ -163,9 +163,9 @@ describe("<DataTable />", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: /open row oakridge in panel/i }));
+    await user.click(screen.getByRole("button", { name: /open row sample-a in panel/i }));
     await user.click(screen.getByRole("button", { name: /open row homewood in new tab/i }));
-    expect(onPanel).toHaveBeenCalledWith("oakridge", expect.objectContaining({ id: "oakridge" }));
+    expect(onPanel).toHaveBeenCalledWith("sample-a", expect.objectContaining({ id: "sample-a" }));
     expect(onNewTab).toHaveBeenCalledWith("homewood", expect.objectContaining({ id: "homewood" }));
   });
 

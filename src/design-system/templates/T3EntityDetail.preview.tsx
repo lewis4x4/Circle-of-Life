@@ -8,7 +8,7 @@ export function T3EntityDetailPreview() {
   return (
     <T3EntityDetail
       title="Resident · A. Smith"
-      subtitle="Oakridge ALF · Specialty Unit · Wing B"
+      subtitle="Sample Facility A · Specialty Unit · Wing B"
       identifiers={[
         { label: "MRN", value: "OAK-0142" },
         { label: "Admit date", value: "2024-09-01" },

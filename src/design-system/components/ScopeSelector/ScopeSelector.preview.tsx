@@ -17,11 +17,11 @@ const groups: GroupOption[] = [
 ];
 
 const facilities: FacilityOption[] = [
-  { id: "oakridge", label: "Oakridge ALF", ownerId: "col", groupId: "fl-central" },
+  { id: "sample-a", label: "Sample Facility A", ownerId: "col", groupId: "fl-central" },
   { id: "homewood", label: "Homewood Lodge", ownerId: "col", groupId: "fl-central" },
-  { id: "plantation", label: "Plantation", ownerId: "col", groupId: "fl-central" },
-  { id: "rising-oaks", label: "Rising Oaks", ownerId: "col", groupId: "fl-north" },
-  { id: "grande-cypress", label: "Grande Cypress", ownerId: "col", groupId: "fl-north" },
+  { id: "sample-b", label: "Sample Facility B", ownerId: "col", groupId: "fl-central" },
+  { id: "sample-c", label: "Sample Facility C", ownerId: "col", groupId: "fl-north" },
+  { id: "sample-d", label: "Sample Facility D", ownerId: "col", groupId: "fl-north" },
 ];
 
 export function ScopeSelectorPreview() {
@@ -38,12 +38,12 @@ export function ScopeSelectorPreview() {
         title="Owner → Group → single facility"
       >
         <ControlledScope
-          initial={{ ownerId: "col", groupId: "fl-central", facilityIds: ["oakridge"] }}
+          initial={{ ownerId: "col", groupId: "fl-central", facilityIds: ["sample-a"] }}
         />
       </PreviewSection>
       <PreviewSection state="multiFacility" title="Multi-facility selection">
         <ControlledScope
-          initial={{ ownerId: "col", facilityIds: ["oakridge", "homewood", "rising-oaks"] }}
+          initial={{ ownerId: "col", facilityIds: ["sample-a", "homewood", "sample-c"] }}
         />
       </PreviewSection>
     </div>

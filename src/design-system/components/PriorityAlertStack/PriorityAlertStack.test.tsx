@@ -13,7 +13,7 @@ function buildAlert(overrides: Partial<AlertItem> = {}): AlertItem {
     title: "Fall with injury",
     facilityId: "fac-1",
     organizationId: "org-1",
-    facilityName: "Oakridge ALF",
+    facilityName: "Sample Facility A",
     body: "Resident fall with suspected fracture — clinical review open.",
     openedAt: new Date("2026-04-24T15:57:00-04:00").toISOString(),
     status: "new",
@@ -48,7 +48,7 @@ describe("<PriorityAlertStack />", () => {
     const item = screen.getByText(/fall with injury/i).closest("li")!;
     expect(item).toHaveAttribute("data-severity", "high");
     expect(screen.getByText("NEW")).toBeInTheDocument();
-    expect(screen.getByText(/oakridge alf/i)).toBeInTheDocument();
+    expect(screen.getByText(/sample facility a/i)).toBeInTheDocument();
     expect(screen.getByText(/3m ago/i)).toBeInTheDocument();
   });
 

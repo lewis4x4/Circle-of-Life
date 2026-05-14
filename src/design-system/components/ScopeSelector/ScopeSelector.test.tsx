@@ -14,17 +14,17 @@ vi.mock("next/navigation", () => ({
 }));
 
 const owners = [
-  { id: "o1", label: "Oakridge Owner" },
-  { id: "o2", label: "Rising Oaks Owner" },
+  { id: "o1", label: "Sample Owner A" },
+  { id: "o2", label: "Sample Owner B" },
 ];
 const groups = [
   { id: "g1", label: "Florida South", ownerId: "o1" },
   { id: "g2", label: "Florida North", ownerId: "o2" },
 ];
 const facilities = [
-  { id: "f1", label: "Oakridge ALF", ownerId: "o1", groupId: "g1" },
+  { id: "f1", label: "Sample Facility A", ownerId: "o1", groupId: "g1" },
   { id: "f2", label: "Homewood Lodge", ownerId: "o1", groupId: "g1" },
-  { id: "f3", label: "Rising Oaks", ownerId: "o2", groupId: "g2" },
+  { id: "f3", label: "Sample Facility C", ownerId: "o2", groupId: "g2" },
 ];
 
 describe("<ScopeSelector />", () => {
@@ -64,8 +64,8 @@ describe("<ScopeSelector />", () => {
       />,
     );
     expect(screen.getByRole("combobox", { name: /owner/i })).toHaveValue("o1");
-    expect(screen.getByLabelText(/^oakridge alf$/i)).toBeInTheDocument();
-    expect(screen.queryByLabelText(/^rising oaks$/i)).toBeNull();
+    expect(screen.getByLabelText(/^sample facility a$/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^sample facility c$/i)).toBeNull();
   });
 
   it("renders ownerGroupFacility state with single facility selection", () => {

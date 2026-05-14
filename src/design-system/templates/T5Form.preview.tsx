@@ -8,7 +8,7 @@ export function T5FormPreview() {
   return (
     <T5Form
       title="Admit new resident"
-      subtitle="Oakridge ALF"
+      subtitle="Sample Facility A"
       steps={[
         { id: "id", label: "Identity", state: "complete" },
         { id: "care", label: "Care plan", state: "active" },

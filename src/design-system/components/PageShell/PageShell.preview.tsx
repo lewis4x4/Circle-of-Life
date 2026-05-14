@@ -49,7 +49,7 @@ export function PageShellPreview() {
       </PreviewSection>
 
       <PreviewSection state="noFilters" title="No filters">
-        <PageShell title="Facility detail" subtitle="Oakridge ALF" audit={baseAudit}>
+        <PageShell title="Facility detail" subtitle="Sample Facility A" audit={baseAudit}>
           <SamplePanel heading="Entity header" note="tabs + timeline" />
         </PageShell>
       </PreviewSection>

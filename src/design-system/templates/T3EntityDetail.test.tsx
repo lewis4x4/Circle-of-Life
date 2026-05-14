@@ -21,7 +21,7 @@ describe("<T3EntityDetail />", () => {
     render(
       <T3EntityDetail
         title="Resident · A. Smith"
-        subtitle="Oakridge ALF · Wing B"
+        subtitle="Sample Facility A · Wing B"
         identifiers={[
           { label: "MRN", value: "12345" },
           { label: "Admit", value: "2024-09-01" },

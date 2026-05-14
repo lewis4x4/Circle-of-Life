@@ -14,7 +14,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 const facilities = [
-  { id: "f1", label: "Oakridge ALF" },
+  { id: "f1", label: "Sample Facility A" },
   { id: "f2", label: "Homewood Lodge" },
 ];
 const regions = [
