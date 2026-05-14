@@ -10,7 +10,7 @@ interface FacilityHeaderProps {
 export function FacilityHeader({ facility }: FacilityHeaderProps) {
   const occupiedBeds = facility.occupancy_count ?? facility.current_occupancy ?? 0;
   const licensedBeds =
-    facility.total_beds ?? facility.licensed_beds ?? facility.total_licensed_beds ?? 0;
+    facility.total_licensed_beds ?? facility.licensed_beds ?? facility.total_beds ?? 0;
   const occupancyPercent = licensedBeds > 0 ? Math.round((occupiedBeds / licensedBeds) * 100) : 0;
 
   // Determine status badge color

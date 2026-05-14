@@ -1,4 +1,9 @@
-import type { ModulePromoter, ModuleValues, PromotionContext, PromotionResult } from "./_types.ts";
+import type {
+  ModulePromoter,
+  ModuleValues,
+  PromotionContext,
+  PromotionResult,
+} from "./_types.ts";
 import {
   asBoolean,
   asInteger,
@@ -33,25 +38,56 @@ const FIELD_MAPPINGS: FieldMapping[] = [
   { source: "mainPhone", column: "main_phone", coerce: asString },
   { source: "afterHoursPhone", column: "after_hours_phone", coerce: asString },
   { source: "capacity", column: "capacity", coerce: asInteger },
+  { source: "capacity", column: "total_licensed_beds", coerce: asInteger },
   { source: "floorsWings", column: "floors_wings", coerce: asString },
-  { source: "executiveDirector", column: "executive_director_name", coerce: asString },
+  {
+    source: "executiveDirector",
+    column: "executive_director_name",
+    coerce: asString,
+  },
   { source: "don", column: "don_name", coerce: asString },
-  { source: "maintenanceDirector", column: "maintenance_director_name", coerce: asString },
-  { source: "businessOfficeManager", column: "business_office_manager_name", coerce: asString },
-  { source: "emergencyContact", column: "emergency_contact_name", coerce: asString },
-  { source: "operatingAddressConfirmed", column: "operating_address_confirmed", coerce: asBoolean },
+  {
+    source: "maintenanceDirector",
+    column: "maintenance_director_name",
+    coerce: asString,
+  },
+  {
+    source: "businessOfficeManager",
+    column: "business_office_manager_name",
+    coerce: asString,
+  },
+  {
+    source: "emergencyContact",
+    column: "emergency_contact_name",
+    coerce: asString,
+  },
+  {
+    source: "operatingAddressConfirmed",
+    column: "operating_address_confirmed",
+    coerce: asBoolean,
+  },
 ];
 
-const READY_FIELDS = ["licenseExpiration", ...FIELD_MAPPINGS.map((field) => field.source)];
+const READY_FIELDS = [
+  "licenseExpiration",
+  ...FIELD_MAPPINGS.map((field) => field.source),
+];
 
 export const M2_PROMOTER: ModulePromoter = {
   moduleCode: "M2",
-  description: "Promote Facility Launch facility profile fields to the facility row.",
+  description:
+    "Promote Facility Launch facility profile fields to the facility row.",
   prerequisites: ["facility"],
   canPromote(values: ModuleValues) {
-    return { ready: READY_FIELDS.some((field) => isMeaningful(values[field])), missing: [] };
+    return {
+      ready: READY_FIELDS.some((field) => isMeaningful(values[field])),
+      missing: [],
+    };
   },
-  async promote(ctx: PromotionContext, values: ModuleValues): Promise<PromotionResult> {
+  async promote(
+    ctx: PromotionContext,
+    values: ModuleValues,
+  ): Promise<PromotionResult> {
     const warnings: string[] = [];
     const errors: string[] = [];
     const { data: facility, error: readError } = await ctx.admin
@@ -62,7 +98,9 @@ export const M2_PROMOTER: ModulePromoter = {
       .is("deleted_at", null)
       .maybeSingle();
 
-    if (readError) throw new Error(`M2 facility read failed: ${readError.message}`);
+    if (readError) {
+      throw new Error(`M2 facility read failed: ${readError.message}`);
+    }
     if (!facility) {
       return {
         module_code: "M2",
@@ -77,7 +115,9 @@ export const M2_PROMOTER: ModulePromoter = {
 
     const before = facility as Record<string, unknown>;
     const patch: Record<string, unknown> = {};
-    const appliedFields: Array<{ source: string; column: string; before: unknown; after: unknown }> = [];
+    const appliedFields: Array<
+      { source: string; column: string; before: unknown; after: unknown }
+    > = [];
     let noops = 0;
 
     for (const mapping of FIELD_MAPPINGS) {
@@ -91,7 +131,12 @@ export const M2_PROMOTER: ModulePromoter = {
       }
       if (valuesDiffer(existing, next)) {
         patch[mapping.column] = next;
-        appliedFields.push({ source: mapping.source, column: mapping.column, before: existing, after: next });
+        appliedFields.push({
+          source: mapping.source,
+          column: mapping.column,
+          before: existing,
+          after: next,
+        });
       } else {
         noops += 1;
       }
@@ -102,11 +147,21 @@ export const M2_PROMOTER: ModulePromoter = {
       if (parsed.warning) warnings.push(`license_expiration ${parsed.warning}`);
       if (parsed.date) {
         const existing = before.license_expiration;
-        if (!isEmptyOperationalValue(existing) && valuesDiffer(existing, parsed.date)) {
-          warnings.push(partialSafetyWarning("license_expiration", existing, parsed.date));
+        if (
+          !isEmptyOperationalValue(existing) &&
+          valuesDiffer(existing, parsed.date)
+        ) {
+          warnings.push(
+            partialSafetyWarning("license_expiration", existing, parsed.date),
+          );
         } else if (valuesDiffer(existing, parsed.date)) {
           patch.license_expiration = parsed.date;
-          appliedFields.push({ source: "licenseExpiration", column: "license_expiration", before: existing, after: parsed.date });
+          appliedFields.push({
+            source: "licenseExpiration",
+            column: "license_expiration",
+            before: existing,
+            after: parsed.date,
+          });
         } else {
           noops += 1;
         }
@@ -119,7 +174,9 @@ export const M2_PROMOTER: ModulePromoter = {
         .update({ ...patch, updated_by: ctx.actor_user_id })
         .eq("id", ctx.facility_id)
         .eq("organization_id", ctx.organization_id);
-      if (updateError) throw new Error(`M2 facility update failed: ${updateError.message}`);
+      if (updateError) {
+        throw new Error(`M2 facility update failed: ${updateError.message}`);
+      }
 
       for (const field of appliedFields) {
         await insertPromotionLink(ctx, {
@@ -134,12 +191,25 @@ export const M2_PROMOTER: ModulePromoter = {
     }
 
     const rowsUpdated = Object.keys(patch).length > 0 ? 1 : 0;
-    const status = rowsUpdated > 0 ? "promoted" : warnings.length > 0 ? "partial" : "promoted";
+    const status = rowsUpdated > 0
+      ? "promoted"
+      : warnings.length > 0
+      ? "partial"
+      : "promoted";
     return {
       module_code: "M2",
       status,
-      summary: rowsUpdated > 0 ? `Facility profile updated (${appliedFields.length} field(s)).` : "Facility profile already current or skipped by partial-safety.",
-      tables_touched: compactTables([tableCount("facilities", 0, rowsUpdated, noops > 0 && rowsUpdated === 0 ? 1 : 0)]),
+      summary: rowsUpdated > 0
+        ? `Facility profile updated (${appliedFields.length} field(s)).`
+        : "Facility profile already current or skipped by partial-safety.",
+      tables_touched: compactTables([
+        tableCount(
+          "facilities",
+          0,
+          rowsUpdated,
+          noops > 0 && rowsUpdated === 0 ? 1 : 0,
+        ),
+      ]),
       warnings,
       errors,
       prerequisites_unmet: [],

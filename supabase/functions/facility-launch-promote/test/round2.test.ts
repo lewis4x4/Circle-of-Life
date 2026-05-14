@@ -179,6 +179,7 @@ class FakeAdminClient {
       incident_workflow_templates: [],
       facility_vendors: [],
       facility_kpi_definitions: [],
+      rate_schedule_versions: [],
     };
   }
 
@@ -256,6 +257,8 @@ const scalarRows = [
   ),
   mv("M6", "billingCycle", "Monthly."),
   mv("M6", "rateApprovalOwner", "CFO / Business Office"),
+  mv("M6", "postedPrivateRoomRate", "5550"),
+  mv("M6", "postedCompanionRoomRate", "4000"),
   mv(
     "M6",
     "medicaidProviderRule",
@@ -381,7 +384,8 @@ Deno.test("round2 scalar config modules promote source-backed settings", async (
   const body = await apply(admin, ["M6", "M10", "M11", "M13", "M14", "M19"]);
 
   assertEquals(body.modules_promoted.length, 6);
-  assertEquals(admin.select("facility_billing_config").length, 4);
+  assertEquals(admin.select("facility_billing_config").length, 6);
+  assertEquals(admin.select("rate_schedule_versions").length, 2);
   assertEquals(admin.select("facility_medication_config").length, 3);
   assertEquals(admin.select("facility_dining_config").length, 3);
   assertEquals(admin.select("facility_maintenance_config").length, 3);
@@ -392,6 +396,24 @@ Deno.test("round2 scalar config modules promote source-backed settings", async (
       row.field_path === "rateApprovalOwner"
     )?.value,
     "CFO / Business Office",
+  );
+  assertEquals(
+    admin.select("rate_schedule_versions").find((row) =>
+      row.rate_type === "private_room"
+    )?.amount_cents,
+    555000,
+  );
+  assertEquals(
+    admin.select("rate_schedule_versions").find((row) =>
+      row.rate_type === "semi_private_room"
+    )?.amount_cents,
+    400000,
+  );
+  assertEquals(
+    admin.select("rate_schedule_versions").every((row) =>
+      row.rate_confirmed === true
+    ),
+    true,
   );
 });
 
