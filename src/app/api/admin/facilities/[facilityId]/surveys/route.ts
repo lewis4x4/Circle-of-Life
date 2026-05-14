@@ -53,8 +53,53 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
     return NextResponse.json({ error: "Failed to fetch surveys" }, { status: 500 });
   }
 
+  if ((surveys ?? []).length > 0) {
+    return NextResponse.json({
+      data: surveys ?? [],
+    });
+  }
+
+  const { data: surveySummary, error: summaryError } = await untypedAdmin
+    .from("facilities")
+    .select("id, last_survey_date, last_survey_result, updated_at")
+    .eq("id", facilityId)
+    .eq("organization_id", actor.organization_id!)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (summaryError) {
+    return NextResponse.json({ error: "Failed to fetch survey summary" }, { status: 500 });
+  }
+
+  const summary = surveySummary as Record<string, unknown> | null;
+  const lastSurveyDate = typeof summary?.last_survey_date === "string" ? summary.last_survey_date : null;
+  const lastSurveyResult = typeof summary?.last_survey_result === "string" ? summary.last_survey_result : null;
+  const updatedAt = typeof summary?.updated_at === "string" ? summary.updated_at : null;
+
+  if (!lastSurveyDate) {
+    return NextResponse.json({ data: [] });
+  }
+
   return NextResponse.json({
-    data: surveys ?? [],
+    data: [
+      {
+        id: `facility-summary-${summary?.id ?? facilityId}`,
+        survey_date: lastSurveyDate,
+        survey_type: "annual",
+        result: lastSurveyResult ?? "unknown",
+        citation_count: lastSurveyResult === "no_citations" ? 0 : 1,
+        citation_details: null,
+        poc_submitted_date: null,
+        poc_accepted_date: null,
+        surveyor_names: null,
+        document_id: null,
+        notes: "Facility summary survey record imported from the facility profile; detailed survey history has not been uploaded yet.",
+        created_at: updatedAt ?? lastSurveyDate,
+        created_by: null,
+        updated_at: updatedAt ?? lastSurveyDate,
+        source: "facility_summary",
+      },
+    ],
   });
 }
 
