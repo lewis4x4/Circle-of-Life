@@ -31,14 +31,14 @@ import { evaluateGate0, evaluateGate2 } from "./gates.js";
 import { buildReadinessMarkdown, buildStateJsonExport, buildLaunchNarrative } from "./export.js";
 import { onboardingIntakeCatalog } from "./intakeCatalog.js";
 import { inferDocumentIntelligence } from "./documentIntelligence.js";
-import { loadPipelineConfig, savePipelineConfig, pipelineConfigured, uploadDocumentToSupabasePipeline, pushStateToHaven } from "./supabasePipeline.js";
+import { loadPipelineConfig, savePipelineConfig, pipelineConfigured, promotionConfigured, uploadDocumentToSupabasePipeline, pushAndPromoteStateToHaven } from "./supabasePipeline.js?v=20260513-capture-promote";
 
 let state = loadState();
 let activeTab = "overview";
 let lastDocumentSaveSummary = "";
 let pipelineMessage = "";
-let pushResult = null;       // last response from pushStateToHaven (success)
-let pushError = "";          // last error message from pushStateToHaven (failure)
+let pushResult = null;       // last response from pushAndPromoteStateToHaven (success)
+let pushError = "";          // last error message from pushAndPromoteStateToHaven (failure)
 let pushBusy = false;        // true while a push is in flight
 let pushDryRun = true;       // toggled by the "Preview only" checkbox
 
@@ -770,21 +770,32 @@ function renderGates() {
 
 function renderPushToHavenPanel() {
   const config = loadPipelineConfig();
-  const ready = pipelineConfigured(config);
+  const connected = pipelineConfigured(config);
+  const ready = promotionConfigured(config);
   const buttonLabel = pushBusy
     ? (pushDryRun ? "Previewing..." : "Pushing...")
-    : (pushDryRun ? "Preview push (no writes)" : "Push to Haven");
+    : (pushDryRun ? "Preview capture (no writes)" : "Push to Haven (Capture + Promote)");
   const dryRunChecked = pushDryRun ? "checked" : "";
+  const title = ready
+    ? "Capture current intake and promote ready modules into Haven"
+    : connected
+      ? "Add facility id before promotion"
+      : "Connect Supabase first (see Document Intake tab)";
+  const guidance = ready
+    ? "One click first writes the current Facility Launch state to <code>facility_launch_module_values</code>, then calls <code>facility-launch-promote</code> so ready modules become app-visible operational data. Partial promotion is expected; gaps stay queued."
+    : connected
+      ? "The import connection is saved, but promotion requires a facility id so Haven knows which operational facility to update."
+      : "Enter Supabase URL, anon key, current user JWT, organization id, and facility id on the Document Intake tab before pushing.";
 
   return `
     <div class="supabase-pipeline-panel ${ready ? "connected" : ""}">
       <div class="row-between gap">
         <div>
           <p class="eyebrow">Push to Haven</p>
-          <h3>${ready ? "Write this state into Haven's facility_launch_module_values" : "Connect Supabase first (see Document Intake tab)"}</h3>
-          <p class="small-muted">Sends the current state to the <code>facility-launch-import</code> Edge Function. Source-backed fields are inserted or updated under <code>(organization_id, facility_id, module_code, field_path)</code>. Round-2 gap modules (M4, M5, M7, M8, M9, M12, M15) are skipped.</p>
+          <h3>${esc(title)}</h3>
+          <p class="small-muted">${guidance}</p>
         </div>
-        <span class="confidence-pill ${ready ? "confidence-high" : "confidence-medium"}">${ready ? "ready" : "not connected"}</span>
+        <span class="confidence-pill ${ready ? "confidence-high" : "confidence-medium"}">${ready ? "ready" : connected ? "facility id needed" : "not connected"}</span>
       </div>
       <div class="row-between gap">
         <label class="small-muted"><input type="checkbox" data-push-dry-run ${dryRunChecked} /> Preview only (dry-run — no writes)</label>
@@ -797,27 +808,50 @@ function renderPushToHavenPanel() {
 }
 
 function renderPushResult(result) {
-  const summary = `${result.mode === "dry_run" ? "Dry-run plan" : "Applied"}: inserts=${result.inserts} updates=${result.updates} noop=${result.noops} (${result.payload_count} source-backed field${result.payload_count === 1 ? "" : "s"})`;
-  const gapRows = (result.gap_report || []).map((g) => `<tr><td>${esc(g.module)}</td><td><span class="badge badge-${esc(g.status)}">${esc(g.status)}</span></td><td>${esc((g.missing_fields || []).join(", ") || "—")}</td></tr>`).join("");
-  const changeRows = (result.rows || [])
+  const captured = result.captured || result;
+  const promoted = result.promoted || null;
+  const captureWasDryRun = captured.mode === "dry_run" || captured.dry_run || result.dry_run;
+  const captureSummary = `${captureWasDryRun ? "Capture dry-run" : "Captured"}: inserts=${captured.inserts || 0} updates=${captured.updates || 0} noop=${captured.noops || 0} (${captured.payload_count || 0} source-backed field${captured.payload_count === 1 ? "" : "s"})`;
+  const gapRows = (captured.gap_report || []).map((g) => `<tr><td>${esc(g.module)}</td><td><span class="badge badge-${esc(g.status)}">${esc(g.status)}</span></td><td>${esc((g.missing_fields || []).join(", ") || "—")}</td></tr>`).join("");
+  const changeRows = (captured.rows || [])
     .filter((r) => r.change !== "noop")
     .map((r) => `<tr><td>${esc(r.module_code)}</td><td>${esc(r.field_path)}</td><td><span class="badge badge-${r.change === "insert" ? "info" : "watch"}">${esc(r.change)}</span></td><td><code>${esc(r.preview)}</code></td></tr>`).join("");
-  const skipped = (result.skipped_modules || []).map((s) => `<li>${esc(s)}</li>`).join("");
+  const skipped = (captured.skipped_modules || []).map((s) => `<li>${esc(s)}</li>`).join("");
+  const promotionRows = (promoted?.modules_promoted || []).map((m) => {
+    const tables = (m.tables_touched || []).map((t) => `${t.table}: +${t.rows_created || 0}/~${t.rows_updated || 0}`).join("; ") || "—";
+    const warnings = (m.warnings || []).length ? `<br><small><strong>Warnings:</strong> ${esc((m.warnings || []).join(" | "))}</small>` : "";
+    const errors = (m.errors || []).length ? `<br><small><strong>Errors:</strong> ${esc((m.errors || []).join(" | "))}</small>` : "";
+    const prerequisites = (m.prerequisites_unmet || []).length ? `<br><small><strong>Waiting for:</strong> ${esc((m.prerequisites_unmet || []).join(", "))}</small>` : "";
+    return `<tr><td>${esc(m.module_code)}</td><td><span class="badge badge-${m.status === "promoted" ? "info" : m.status === "partial" ? "watch" : m.status === "failed" ? "fail" : "assigned"}">${esc(m.status)}</span></td><td>${esc(m.summary || "")}${warnings}${errors}${prerequisites}</td><td>${esc(tables)}</td></tr>`;
+  }).join("");
+  const promoteSummary = promoted
+    ? `${promoted.mode === "dry_run" ? "Promotion dry-run" : "Promoted"}: ${promoted.summary || "No promotion summary returned."}${promoted.error ? ` Error: ${promoted.error}` : ""}`
+    : "Promotion was not run.";
+  const promotionGaps = (promoted?.gap_modules || []).map((moduleCode) => `<li>${esc(moduleCode)}</li>`).join("");
   return `
-    <div class="save-callout"><strong>${esc(summary)}</strong></div>
+    <div class="save-callout"><strong>${esc(captureSummary)}</strong>${result.note ? `<br><small>${esc(result.note)}</small>` : ""}</div>
     <details open class="pipeline-config-details">
-      <summary>Gap report (${(result.gap_report || []).length} modules)</summary>
+      <summary>Step 1 — Captured to intake table</summary>
+      <div class="table-wrap compact-table">
+        <table><thead><tr><th>Module</th><th>Field</th><th>Change</th><th>Preview</th></tr></thead>
+        <tbody>${changeRows || "<tr><td colspan='4'>No capture changes</td></tr>"}</tbody></table>
+      </div>
+    </details>
+    <details open class="pipeline-config-details">
+      <summary>Step 2 — Promoted to live Haven app</summary>
+      <div class="save-callout"><strong>${esc(promoteSummary)}</strong></div>
+      <div class="table-wrap compact-table">
+        <table><thead><tr><th>Module</th><th>Status</th><th>Summary</th><th>Tables</th></tr></thead>
+        <tbody>${promotionRows || "<tr><td colspan='4'>No promotion modules returned</td></tr>"}</tbody></table>
+      </div>
+    </details>
+    <details class="pipeline-config-details">
+      <summary>Step 3 — Gaps remaining (${(captured.gap_report || []).length + (promoted?.gap_modules || []).length})</summary>
       <div class="table-wrap compact-table">
         <table><thead><tr><th>Module</th><th>Status</th><th>Missing fields</th></tr></thead>
         <tbody>${gapRows || "<tr><td colspan='3'>—</td></tr>"}</tbody></table>
       </div>
-    </details>
-    <details class="pipeline-config-details">
-      <summary>Changes (${(result.rows || []).filter((r) => r.change !== "noop").length})</summary>
-      <div class="table-wrap compact-table">
-        <table><thead><tr><th>Module</th><th>Field</th><th>Change</th><th>Preview</th></tr></thead>
-        <tbody>${changeRows || "<tr><td colspan='4'>No changes</td></tr>"}</tbody></table>
-      </div>
+      ${promotionGaps ? `<p class="small-muted"><strong>Promotion modules without intake data:</strong></p><ul>${promotionGaps}</ul>` : ""}
     </details>
     ${skipped ? `<details class="pipeline-config-details"><summary>Skipped modules</summary><ul>${skipped}</ul></details>` : ""}
   `;
@@ -867,6 +901,8 @@ function decisionActionLabel(actionType = "") {
     contradiction_updated: "Policy/reality check updated",
     contradiction_resolved: "Policy/reality check resolved",
     gate_signed: "Gate signed",
+    push_to_haven_previewed: "Push to Haven previewed",
+    push_to_haven_applied: "Push to Haven applied",
     export_generated: "Readiness export generated"
   };
   return labels[actionType] || String(actionType || "Activity").replaceAll("_", " ");
@@ -1005,11 +1041,13 @@ document.body.addEventListener("click", async (e) => {
     renderView();
     try {
       const exportPayload = JSON.parse(buildStateJsonExport(state));
-      const result = await pushStateToHaven(exportPayload, { dryRun: pushDryRun });
+      const result = await pushAndPromoteStateToHaven(exportPayload, { dryRun: pushDryRun });
       pushResult = result;
+      const captured = result.captured || {};
+      const promoted = result.promoted || {};
       state = appendDecisionLog(state, {
         actionType: pushDryRun ? "push_to_haven_previewed" : "push_to_haven_applied",
-        summary: `${pushDryRun ? "Previewed" : "Applied"} push to Haven — inserts=${result.inserts}, updates=${result.updates}, noop=${result.noops}.`,
+        summary: `${pushDryRun ? "Previewed" : "Applied"} push to Haven — capture inserts=${captured.inserts || 0}, updates=${captured.updates || 0}, noop=${captured.noops || 0}; promotion=${promoted.summary || "not run"}.`,
         relatedType: "facility",
         relatedId: state.facility?.id || "facility"
       });

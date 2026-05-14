@@ -61,6 +61,9 @@ try {
   for (const expected of ['./state.js', './scoring.js', './gates.js', './export.js', '../data/homewood-round1-state.json']) {
     if (!appJs.includes(expected)) throw new Error(`app.js missing import ${expected}`);
   }
+  for (const expected of ['Push to Haven (Capture + Promote)', 'pushAndPromoteStateToHaven', 'Step 2 — Promoted to live Haven app']) {
+    if (!appJs.includes(expected)) throw new Error(`app.js missing capture+promote marker ${expected}`);
+  }
 
   const round1State = await fetch(`${base}/data/homewood-round1-state.json`);
   if (!round1State.ok) throw new Error(`data/homewood-round1-state.json returned ${round1State.status}`);
@@ -71,6 +74,58 @@ try {
   for (const file of moduleFiles) {
     const response = await fetch(`${base}/src/${file}`);
     if (!response.ok) throw new Error(`src/${file} returned ${response.status}`);
+    if (file === 'supabasePipeline.js') {
+      const pipelineJs = await response.text();
+      for (const expected of ['facility-launch-import', 'facility-launch-promote', 'pushAndPromoteStateToHaven']) {
+        if (!pipelineJs.includes(expected)) throw new Error(`supabasePipeline.js missing ${expected}`);
+      }
+    }
+  }
+
+  const pipelineModule = await import(new URL('../src/supabasePipeline.js', import.meta.url));
+  const testConfig = {
+    supabaseUrl: 'https://example.supabase.co',
+    anonKey: 'anon',
+    accessToken: 'jwt',
+    organizationId: '00000000-0000-0000-0000-000000000001',
+    facilityId: '00000000-0000-0000-0002-000000000003'
+  };
+  const originalFetch = globalThis.fetch;
+  try {
+    const calls = [];
+    globalThis.fetch = async (url, init = {}) => {
+      calls.push({ url: String(url), body: JSON.parse(init.body || '{}') });
+      const functionName = String(url).split('/').pop();
+      const payload = functionName === 'facility-launch-import'
+        ? { mode: init.body?.includes('"dry_run":true') ? 'dry_run' : 'apply', inserts: 1, updates: 0, noops: 0, payload_count: 1, rows: [], gap_report: [] }
+        : { mode: 'apply', summary: 'Apply recorded 1 module(s); 0 not implemented, 0 failed, 0 gap module(s).', modules_promoted: [], gap_modules: [] };
+      return new Response(JSON.stringify(payload), { status: 200, headers: { 'content-type': 'application/json' } });
+    };
+    const applied = await pipelineModule.pushAndPromoteStateToHaven({ mvpData: { M1: { dba: 'Homewood' } } }, { dryRun: false }, testConfig);
+    if (calls.length !== 2) throw new Error(`apply push expected 2 edge calls, got ${calls.length}`);
+    if (!calls[0].url.endsWith('/facility-launch-import') || !calls[1].url.endsWith('/facility-launch-promote')) throw new Error('apply push did not call import before promote');
+    if (calls[0].body.dry_run !== false || calls[1].body.dry_run !== false) throw new Error('apply push did not pass dry_run=false to both functions');
+    if (!applied.captured || !applied.promoted) throw new Error('apply push did not return captured + promoted sections');
+
+    calls.length = 0;
+    const preview = await pipelineModule.pushAndPromoteStateToHaven({ mvpData: { M1: { dba: 'Homewood' } } }, { dryRun: true }, testConfig);
+    if (calls.length !== 1 || !calls[0].url.endsWith('/facility-launch-import')) throw new Error('dry-run should preview capture only to avoid stale promotion data');
+    if (calls[0].body.dry_run !== true || preview.promoted?.modules_promoted?.length !== 0) throw new Error('dry-run did not preserve no-write capture-only behavior');
+
+    calls.length = 0;
+    globalThis.fetch = async (url, init = {}) => {
+      calls.push({ url: String(url), body: JSON.parse(init.body || '{}') });
+      if (String(url).endsWith('/facility-launch-promote')) {
+        return new Response(JSON.stringify({ error: 'promotion exploded' }), { status: 500, headers: { 'content-type': 'application/json' } });
+      }
+      return new Response(JSON.stringify({ mode: 'apply', inserts: 1, updates: 0, noops: 0, payload_count: 1, rows: [], gap_report: [] }), { status: 200, headers: { 'content-type': 'application/json' } });
+    };
+    const partial = await pipelineModule.pushAndPromoteStateToHaven({ mvpData: { M1: { dba: 'Homewood' } } }, { dryRun: false }, testConfig);
+    if (partial.mode !== 'partial' || !partial.captured || !partial.promoted?.error?.includes('promotion exploded')) {
+      throw new Error('promotion failure did not preserve successful capture context');
+    }
+  } finally {
+    globalThis.fetch = originalFetch;
   }
 
   console.log(`PASS static smoke: index/css/modules served over HTTP from ${base}`);
