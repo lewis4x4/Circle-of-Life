@@ -54,6 +54,9 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
     entity_id?: string | null;
     total_licensed_beds?: number;
     license_number?: string | null;
+    ahca_license_number?: string | null;
+    license_expiration?: string | null;
+    ahca_license_expiration?: string | null;
   };
 
   // Associated entity (must match facility.entity_id, not org-wide first row)
@@ -97,8 +100,8 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
       total_beds,
       current_occupancy: occupancy_count,
       licensed_beds: fac.total_licensed_beds ?? 0,
-      ahca_license_number: fac.license_number ?? null,
-      ahca_license_expiration: null as string | null,
+      ahca_license_number: fac.license_number ?? fac.ahca_license_number ?? null,
+      ahca_license_expiration: fac.license_expiration ?? fac.ahca_license_expiration ?? null,
     },
   });
 }
