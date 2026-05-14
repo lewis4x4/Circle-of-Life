@@ -3,10 +3,34 @@ import {
   assertEquals,
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { createHandler } from "../index.ts";
+import { valuesDiffer } from "../promoters/_helpers.ts";
 
 const ORG_ID = "00000000-0000-4000-8000-000000000001";
 const FACILITY_ID = "10000000-0000-4000-8000-000000000001";
 const USER_ID = "20000000-0000-4000-8000-000000000001";
+
+Deno.test("valuesDiffer treats reordered jsonb objects as equal", () => {
+  assertEquals(
+    valuesDiffer(
+      {
+        field_path: "billingCycle",
+        module_code: "M6",
+        source: "facility-launch-promote",
+      },
+      {
+        source: "facility-launch-promote",
+        module_code: "M6",
+        field_path: "billingCycle",
+      },
+    ),
+    false,
+  );
+  assertEquals(
+    valuesDiffer({ nested: { b: 2, a: 1 } }, { nested: { a: 1, b: 2 } }),
+    false,
+  );
+  assertEquals(valuesDiffer({ nested: { a: 1 } }, { nested: { a: 2 } }), true);
+});
 
 type Row = Record<string, unknown>;
 type Filter = { kind: "eq" | "is" | "in"; column: string; value: unknown };

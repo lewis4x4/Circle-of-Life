@@ -1,4 +1,8 @@
-import type { ModuleValues, PromotionContext, TablesTouched } from "./_types.ts";
+import type {
+  ModuleValues,
+  PromotionContext,
+  TablesTouched,
+} from "./_types.ts";
 
 export type JsonRecord = Record<string, unknown>;
 
@@ -63,7 +67,9 @@ export function asBoolean(value: unknown): boolean | null {
 }
 
 export function asInteger(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) return Math.trunc(value);
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.trunc(value);
+  }
   if (typeof value === "string" && value.trim()) {
     const parsed = Number.parseInt(value.trim(), 10);
     if (Number.isFinite(parsed)) return parsed;
@@ -71,25 +77,54 @@ export function asInteger(value: unknown): number | null {
   return null;
 }
 
-export function parseDateOrNull(value: unknown): { date: string | null; warning?: string } {
+export function parseDateOrNull(
+  value: unknown,
+): { date: string | null; warning?: string } {
   const raw = asString(value);
   if (!raw) return { date: null };
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw) && !Number.isNaN(Date.parse(`${raw}T00:00:00Z`))) {
+  if (
+    /^\d{4}-\d{2}-\d{2}$/.test(raw) &&
+    !Number.isNaN(Date.parse(`${raw}T00:00:00Z`))
+  ) {
     return { date: raw };
   }
   const parsed = new Date(raw);
-  if (!Number.isNaN(parsed.getTime())) return { date: parsed.toISOString().slice(0, 10) };
+  if (!Number.isNaN(parsed.getTime())) {
+    return { date: parsed.toISOString().slice(0, 10) };
+  }
   return { date: null, warning: `Could not parse date value '${raw}'.` };
+}
+
+function stableJson(value: unknown): string {
+  if (value instanceof Date) return JSON.stringify(value.toISOString());
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableJson(item)).join(",")}]`;
+  }
+  if (isRecord(value)) {
+    const entries = Object.entries(value)
+      .filter(([, entryValue]) => entryValue !== undefined)
+      .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+      .map(([key, entryValue]) =>
+        `${JSON.stringify(key)}:${stableJson(entryValue)}`
+      );
+    return `{${entries.join(",")}}`;
+  }
+  return JSON.stringify(value ?? null);
 }
 
 export function valuesDiffer(left: unknown, right: unknown): boolean {
   if (left instanceof Date) left = left.toISOString();
   if (right instanceof Date) right = right.toISOString();
-  if (typeof left === "string" && typeof right === "string") return left.trim() !== right.trim();
-  return JSON.stringify(left ?? null) !== JSON.stringify(right ?? null);
+  if (typeof left === "string" && typeof right === "string") {
+    return left.trim() !== right.trim();
+  }
+  return stableJson(left ?? null) !== stableJson(right ?? null);
 }
 
-export function moduleValueId(ctx: PromotionContext, fieldPath: string): string | null {
+export function moduleValueId(
+  ctx: PromotionContext,
+  fieldPath: string,
+): string | null {
   return ctx.module_value_ids_by_path?.[fieldPath] ?? null;
 }
 
@@ -111,11 +146,17 @@ export function compactTables(tables: TableCount[]): TablesTouched {
   })) as TablesTouched;
 }
 
-export function mergeMetadata(existing: unknown, patch: JsonRecord): JsonRecord {
+export function mergeMetadata(
+  existing: unknown,
+  patch: JsonRecord,
+): JsonRecord {
   return { ...asRecord(existing), ...patch };
 }
 
-export function pickMeaningful(values: ModuleValues, keys: string[]): JsonRecord {
+export function pickMeaningful(
+  values: ModuleValues,
+  keys: string[],
+): JsonRecord {
   const out: JsonRecord = {};
   for (const key of keys) {
     const value = values[key];
@@ -128,7 +169,10 @@ export function normalizeUnitName(room: JsonRecord): string {
   const wing = asString(room.wing);
   const floor = asString(room.floor);
   const normalizedWing = (wing ?? "").toLowerCase();
-  if (!wing || normalizedWing === "none" || normalizedWing.includes("single floor")) return "Main";
+  if (
+    !wing || normalizedWing === "none" ||
+    normalizedWing.includes("single floor")
+  ) return "Main";
   if (floor) return `${wing} Floor ${floor}`;
   return wing;
 }
@@ -138,9 +182,15 @@ export function normalizeFloor(value: unknown): number {
   return parsed && parsed > 0 ? parsed : 1;
 }
 
-export function roomTypeFromUnitType(value: unknown, bedCount: number): "private" | "semi_private" | "shared" {
+export function roomTypeFromUnitType(
+  value: unknown,
+  bedCount: number,
+): "private" | "semi_private" | "shared" {
   const normalized = String(value ?? "").toLowerCase();
-  if (normalized.includes("companion") || normalized.includes("double") || bedCount === 2) return "semi_private";
+  if (
+    normalized.includes("companion") || normalized.includes("double") ||
+    bedCount === 2
+  ) return "semi_private";
   if (bedCount > 2) return "shared";
   return "private";
 }
@@ -155,24 +205,34 @@ export function bedLabel(index: number): string {
   return label;
 }
 
-export async function insertPromotionLink(ctx: PromotionContext, input: LinkInput): Promise<void> {
+export async function insertPromotionLink(
+  ctx: PromotionContext,
+  input: LinkInput,
+): Promise<void> {
   if (ctx.dry_run || !ctx.run_item_id) return;
   // Re-runs should not create new ledger rows for no-op operational rows.
   if (input.action === "noop") return;
-  const { error } = await ctx.admin.from("facility_launch_promotion_run_links").insert({
-    run_item_id: ctx.run_item_id,
-    organization_id: ctx.organization_id,
-    facility_id: ctx.facility_id,
-    module_value_id: input.module_value_id ?? null,
-    target_table: input.target_table,
-    target_row_id: input.target_row_id,
-    action: input.action,
-    before_value: input.before_value ?? null,
-    after_value: input.after_value ?? null,
-  });
+  const { error } = await ctx.admin.from("facility_launch_promotion_run_links")
+    .insert({
+      run_item_id: ctx.run_item_id,
+      organization_id: ctx.organization_id,
+      facility_id: ctx.facility_id,
+      module_value_id: input.module_value_id ?? null,
+      target_table: input.target_table,
+      target_row_id: input.target_row_id,
+      action: input.action,
+      before_value: input.before_value ?? null,
+      after_value: input.after_value ?? null,
+    });
   if (error) throw new Error(`Promotion link insert failed: ${error.message}`);
 }
 
-export function partialSafetyWarning(column: string, existing: unknown, intake: unknown): string {
-  return `${column} has existing value '${String(existing)}'; intake value '${String(intake)}' was skipped. Set force_overwrite=true to override.`;
+export function partialSafetyWarning(
+  column: string,
+  existing: unknown,
+  intake: unknown,
+): string {
+  return `${column} has existing value '${String(existing)}'; intake value '${
+    String(intake)
+  }' was skipped. Set force_overwrite=true to override.`;
 }
