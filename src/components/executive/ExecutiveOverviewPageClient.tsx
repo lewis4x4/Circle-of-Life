@@ -16,7 +16,12 @@ import { ExecutiveHubNav } from "@/app/(admin)/executive/executive-hub-nav";
 
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
-import type { AlertWithFacility } from "@/lib/executive/load-executive-overview";
+import {
+  attachFacilityMetrics,
+  buildLatestMetricMap,
+  type AlertWithFacility,
+  type ExecutiveOverviewFacility,
+} from "@/lib/executive/overview-model";
 import { useAuth } from "@/hooks/useAuth";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import {
@@ -29,7 +34,7 @@ import {
 type ExecutiveOverviewPageClientProps = {
   initialMetrics: Record<string, number>;
   initialAlerts: AlertWithFacility[];
-  initialFacilities: Array<{ id: string; name: string }>;
+  initialFacilities: ExecutiveOverviewFacility[];
   initialAssuranceHeatMap: ResidentAssuranceFacilityRollup[];
   initialAssuranceTrends: ResidentAssuranceFacilityTrendRow[];
   initialHasServerData: boolean;
@@ -56,13 +61,13 @@ export function ExecutiveOverviewPageClient({
   const [alerts, setAlerts] = useState<AlertWithFacility[]>(initialAlerts);
 
   // Portfolio Facilities
-  const [facilities, setFacilities] = useState<{ id: string; name: string }[]>(initialFacilities);
+  const [facilities, setFacilities] = useState<ExecutiveOverviewFacility[]>(initialFacilities);
   const [assuranceHeatMap, setAssuranceHeatMap] = useState<ResidentAssuranceFacilityRollup[]>(initialAssuranceHeatMap);
   const [assuranceTrends, setAssuranceTrends] = useState<ResidentAssuranceFacilityTrendRow[]>(initialAssuranceTrends);
 
-  // Skip the first client-side fetch when the server already supplied real
-  // data. If the server returned empty arrays (demo-mode, unseeded DB), let
-  // the client load() run so the existing demo-fallback logic kicks in.
+  // Skip the first client-side fetch when the server already supplied scoped
+  // live data. If the server returned empty arrays, the client retries once;
+  // it must still render blanks rather than demo fallback values.
   const skipNextLoadRef = useRef(initialHasServerData);
 
   const load = useCallback(async () => {
@@ -78,25 +83,32 @@ export function ExecutiveOverviewPageClient({
       const ctx = await loadFinanceRoleContext(supabase);
       if (!ctx.ok) throw new Error(ctx.error);
 
-      // 1. Fetch latest snapshots from the synthetic data
+      // 1. Fetch latest scoped executive snapshots. Aggregate metrics stay
+      // separate from facility metrics; never smear portfolio averages into
+      // facility rows.
       const { data: snapData, error: snapErr } = await supabase
         .from("exec_metric_snapshots")
-        .select("metric_code, metric_value_numeric")
+        .select("facility_id, metric_code, metric_value_numeric")
+        .eq("organization_id", ctx.ctx.organizationId)
+        .is("facility_id", null)
+        .is("deleted_at", null)
         .order("snapshot_date", { ascending: false })
-        .limit(20);
+        .limit(50);
         
       if (snapErr) throw snapErr;
-      
-      const latestMap: Record<string, number> = {};
-      
-      if (snapData && snapData.length > 0) {
-        for (const row of snapData) {
-          if (!latestMap[row.metric_code]) {
-            latestMap[row.metric_code] = row.metric_value_numeric || 0;
-          }
-        }
-      }
-      setMetrics(latestMap);
+
+      const { data: facilityMetricData, error: facilityMetricErr } = await supabase
+        .from("exec_metric_snapshots")
+        .select("facility_id, metric_code, metric_value_numeric")
+        .eq("organization_id", ctx.ctx.organizationId)
+        .not("facility_id", "is", null)
+        .is("deleted_at", null)
+        .order("snapshot_date", { ascending: false })
+        .limit(500);
+
+      if (facilityMetricErr) throw facilityMetricErr;
+
+      setMetrics(buildLatestMetricMap(snapData ?? []));
 
       // 2. Fetch Executive Alerts
       const { data: alertData, error: alertErr } = await supabase
@@ -104,6 +116,7 @@ export function ExecutiveOverviewPageClient({
         .select("*, facilities(name)")
         .eq("organization_id", ctx.ctx.organizationId)
         .eq("status", "open")
+        .is("deleted_at", null)
         .order("severity", { ascending: false })
         .limit(5);
 
@@ -120,7 +133,7 @@ export function ExecutiveOverviewPageClient({
         .order("name", { ascending: true });
         
       if (!facErr && facData && facData.length > 0) {
-        setFacilities(facData);
+        setFacilities(attachFacilityMetrics(facData, facilityMetricData ?? []));
       } else {
         setFacilities([]);
       }
@@ -153,9 +166,10 @@ export function ExecutiveOverviewPageClient({
   }, [load]);
 
   // View helpers
-  const formatPct = (val?: number) => val !== undefined ? `${(val * 100).toFixed(1)}%` : "--%";
-  const formatNum = (val?: number) => val !== undefined ? Math.round(val).toLocaleString() : "--";
-  const formatCur = (val?: number) => val !== undefined ? `$${(val / 100).toLocaleString()}` : "--";
+  const hasMetric = (val: number | null | undefined): val is number => typeof val === "number" && Number.isFinite(val);
+  const formatPct = (val?: number | null) => hasMetric(val) ? `${(val * 100).toFixed(1)}%` : "--%";
+  const formatNum = (val?: number | null) => hasMetric(val) ? Math.round(val).toLocaleString() : "--";
+  const formatCur = (val?: number | null) => hasMetric(val) ? `$${(val / 100).toLocaleString()}` : "--";
   const ownerPriorityCards = [
     {
       title: "Executive Alerts",
@@ -265,7 +279,7 @@ export function ExecutiveOverviewPageClient({
                  </h3>
                  <div className="flex items-end gap-3 mt-auto">
                    <p className="text-5xl font-display font-medium tracking-tight text-emerald-600 dark:text-emerald-400">{formatPct(metrics['occ_pt'])}</p>
-                   <TrendingUp className="h-5 w-5 text-emerald-500 mb-1.5" />
+                   {hasMetric(metrics['occ_pt']) && <TrendingUp className="h-5 w-5 text-emerald-500 mb-1.5" />}
                  </div>
                </div>
              </V2Card>
@@ -290,7 +304,7 @@ export function ExecutiveOverviewPageClient({
                  </h3>
                  <div className="flex items-end gap-3 mt-auto">
                    <p className="text-5xl font-display font-medium tracking-tight text-amber-600 dark:text-amber-500">{formatPct(metrics['labor_pct'])}</p>
-                   <TrendingDown className="h-5 w-5 text-amber-500 mb-1.5" />
+                   {hasMetric(metrics['labor_pct']) && <TrendingDown className="h-5 w-5 text-amber-500 mb-1.5" />}
                  </div>
                </div>
              </V2Card>
@@ -404,38 +418,47 @@ export function ExecutiveOverviewPageClient({
                </div>
 
                <div className="space-y-3 mt-4">
-                 {facilities.map((fac, idx) => {
-                    const variance = (idx * 0.05) - 0.025; 
-                    const occ = metrics['occ_pt'] ? metrics['occ_pt'] + variance : undefined;
-                    const labor = metrics['labor_pct'] ? metrics['labor_pct'] - variance : undefined;
-                    const inc = metrics['inc_rate'] ? metrics['inc_rate'] + (idx * 0.4) : undefined;
-                    const survey = metrics['survey_rd'] ? metrics['survey_rd'] - variance : undefined;
-                    
-                    const occGood = occ && occ > 0.9;
-                    const laborGood = labor && labor < 0.55;
+                 {facilities.map((fac) => {
+                    const facilityMetrics = fac.metrics ?? {};
+                    const occ = facilityMetrics['occ_pt'];
+                    const labor = facilityMetrics['labor_pct'];
+                    const inc = facilityMetrics['inc_rate'];
+                    const survey = facilityMetrics['survey_rd'];
+
+                    const occGood = hasMetric(occ) && occ > 0.9;
+                    const laborGood = hasMetric(labor) && labor < 0.55;
+                    const facilityAlerts = alerts.filter((alert) => alert.facility_id === fac.id);
+                    const hasCriticalAlert = facilityAlerts.some((alert) => alert.severity === "critical");
+                    const hasWarningAlert = facilityAlerts.length > 0;
 
                     return (
                       <div key={fac.id} className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 items-center p-5 rounded-[1.5rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-colors cursor-pointer">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                            {idx === 1 ? <PulseDot colorClass="bg-amber-500" /> : idx === 2 ? <PulseDot colorClass="bg-rose-500" /> : <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />}
+                            {hasCriticalAlert ? (
+                              <PulseDot colorClass="bg-rose-500" />
+                            ) : hasWarningAlert ? (
+                              <PulseDot colorClass="bg-amber-500" />
+                            ) : (
+                              <div className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-zinc-500" />
+                            )}
                           </div>
                           <span className="font-semibold text-[15px] text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">{fac.name}</span>
                         </div>
                         
                         <div className="flex flex-row justify-between lg:justify-end items-center">
                           <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Occupancy</span>
-                          <span className={cn("text-lg font-display tabular-nums inline-flex items-center gap-1.5", occGood ? "text-emerald-500 dark:text-emerald-400" : "text-amber-500 dark:text-amber-400")}>
+                          <span className={cn("text-lg font-display tabular-nums inline-flex items-center gap-1.5", !hasMetric(occ) ? "text-slate-400 dark:text-zinc-500" : occGood ? "text-emerald-500 dark:text-emerald-400" : "text-amber-500 dark:text-amber-400")}>
                             {formatPct(occ)}
-                            {occGood ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                            {hasMetric(occ) && (occGood ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />)}
                           </span>
                         </div>
                         
                         <div className="flex flex-row justify-between lg:justify-end items-center">
                           <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Labor %</span>
-                          <span className={cn("text-lg font-display tabular-nums inline-flex items-center gap-1.5", laborGood ? "text-emerald-500 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400")}>
+                          <span className={cn("text-lg font-display tabular-nums inline-flex items-center gap-1.5", !hasMetric(labor) ? "text-slate-400 dark:text-zinc-500" : laborGood ? "text-emerald-500 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400")}>
                             {formatPct(labor)}
-                            {laborGood ? <TrendingDown className="h-4 w-4" /> : <TrendingUp className="h-4 w-4" />}
+                            {hasMetric(labor) && (laborGood ? <TrendingDown className="h-4 w-4" /> : <TrendingUp className="h-4 w-4" />)}
                           </span>
                         </div>
                         

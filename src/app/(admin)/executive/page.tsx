@@ -36,9 +36,9 @@ export default async function ExecutiveOverviewPage() {
 
   try {
     data = await loadExecutiveOverview(supabase, roleContext.ctx.organizationId);
-    // Mark "has server data" only when at least one dataset is non-empty, so
-    // demo-mode / unseeded installs still let the client's demo-fallback
-    // logic kick in on mount.
+    // Mark "has server data" only when at least one scoped live dataset is
+    // non-empty. Empty installs render blanks; demo fallback is intentionally
+    // disabled globally.
     hasServerData =
       Object.keys(data.metrics).length > 0 ||
       data.alerts.length > 0 ||
