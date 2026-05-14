@@ -59,7 +59,9 @@
     "homewood:ingestion:build-state": "node scripts/onboarding/homewood/build-round1-state.mjs",
     "homewood:ingestion:validate:state": "node scripts/onboarding/homewood/validate-round1-state.mjs",
     "import:homewood-round1": "tsx scripts/import-homewood-round1.ts",
-    "import:homewood-round1:dry": "tsx scripts/import-homewood-round1.ts --dry-run"
+    "import:homewood-round1:dry": "tsx scripts/import-homewood-round1.ts --dry-run",
+    "import:homewood-ar": "node scripts/import-homewood-ar.mjs",
+    "import:homewood-ar:dry": "node scripts/import-homewood-ar.mjs --dry-run"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",
