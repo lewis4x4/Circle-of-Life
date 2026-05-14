@@ -11,7 +11,6 @@ import { MetricCardMoonshot } from "@/components/executive/metric-card-moonshot"
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { Subtitle, SysLabel, TitleH1 } from "@/components/ui/moonshot/typography";
-import { useClientDemoMode } from "@/hooks/useClientDemoMode";
 import type { CeoAlertDisplay } from "@/lib/executive/load-ceo-dashboard-data";
 import type { ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
 import { CEO_PALETTE } from "@/lib/moonshot-theme";
@@ -31,62 +30,6 @@ const CeoDashboardTabs = dynamic(
 
 const CEO_TABS = ["CEO View", "Alerts", "Reports", "Benchmarks", "Haven Insight"];
 
-const DEMO_ALERTS: CeoAlertDisplay[] = [
-  {
-    id: "demo-1",
-    severity: "critical",
-    title: "Occupancy Below 85% — Oakridge",
-    description:
-      "Dropped from 86.2% to 84.1% over 14 days. Cash flow break-even requires >88%.",
-    facility: "Oakridge ALF",
-    age: "2h ago",
-  },
-  {
-    id: "demo-2",
-    severity: "critical",
-    title: "Staffing Ratio Breach — Cedar Park Night Shift",
-    description:
-      "Night shift at 5/7 required (71%). Agency unable to fill 2 remaining slots.",
-    facility: "Cedar Park",
-    age: "4h ago",
-  },
-  {
-    id: "demo-3",
-    severity: "warning",
-    title: "AR > 90 Days Exceeds Threshold — Cedar Park",
-    description:
-      "$60K in AR over 90 days, up 40% from prior month. Collection activities initiated.",
-    facility: "Cedar Park",
-    age: "1d ago",
-  },
-  {
-    id: "demo-4",
-    severity: "warning",
-    title: "Medication Error Rate Elevated — Plantation",
-    description: "3 errors in past 7 days (vs 0.8 avg). Root cause analysis requested.",
-    facility: "Plantation",
-    age: "1d ago",
-  },
-  {
-    id: "demo-5",
-    severity: "warning",
-    title: "Survey Deficiency Open > 30 Days",
-    description:
-      "Tag F-241 dignity violation POC still in draft status. Due date approaching.",
-    facility: "Homewood Lodge",
-    age: "3d ago",
-  },
-  {
-    id: "demo-6",
-    severity: "info",
-    title: "Lease Renewal Due — Grande Cypress",
-    description:
-      "Commercial lease expires Aug 2026. Renewal negotiation should begin.",
-    facility: "Grande Cypress",
-    age: "5d ago",
-  },
-];
-
 type CeoDashboardPageClientProps = {
   initialKpis: ExecKpiPayload | null;
   initialAlerts: CeoAlertDisplay[];
@@ -99,20 +42,18 @@ export default function CeoDashboardPageClient({
   initialError,
 }: CeoDashboardPageClientProps) {
   const [tab, setTab] = useState("CEO View");
-  const demo = useClientDemoMode();
-
   const kpis = initialKpis;
-  const displayAlerts = initialAlerts.length > 0 ? initialAlerts : DEMO_ALERTS;
+  const displayAlerts = initialAlerts;
 
   const occupancyValue =
-    kpis?.census.occupancyPct != null ? `${kpis.census.occupancyPct}%` : "91.8%";
-  const incidentsValue = kpis ? `${kpis.clinical.openIncidents}` : "1.2x";
+    kpis?.census.occupancyPct != null ? `${kpis.census.occupancyPct}%` : "—";
+  const incidentsValue = kpis ? `${kpis.clinical.openIncidents}` : "—";
   const arValue = kpis
     ? `$${(kpis.financial.totalBalanceDueCents / 100).toLocaleString()}`
-    : "342";
+    : "—";
   const deficienciesValue = kpis
     ? `${kpis.compliance.openSurveyDeficiencies}`
-    : "+18";
+    : "—";
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full">
@@ -162,30 +103,25 @@ export default function CeoDashboardPageClient({
               label="PORTFOLIO OCCUPANCY"
               value={occupancyValue}
               color={CEO_PALETTE.positive}
-              trend="up"
-              trendValue={demo ? "+2.3%" : undefined}
-              sparklineVariant={2}
+              showSparkline={false}
             />
             <MetricCardMoonshot
               label="OPEN DEFICIENCIES"
               value={deficienciesValue}
               color={CEO_PALETTE.growth}
-              trend="flat"
-              sparklineVariant={1}
+              showSparkline={false}
             />
             <MetricCardMoonshot
               label="TOTAL AR OUTSTANDING"
               value={arValue}
               color={CEO_PALETTE.info}
-              trend="flat"
-              sparklineVariant={3}
+              showSparkline={false}
             />
             <MetricCardMoonshot
               label="OPEN INCIDENTS"
               value={incidentsValue}
               color={CEO_PALETTE.critical}
-              trend="flat"
-              sparklineVariant={4}
+              showSparkline={false}
             />
           </KineticGrid>
 
