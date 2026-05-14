@@ -45,10 +45,10 @@ describe("rounding pages seeded fallback removal", () => {
   it("keeps explicit live-source empty states instead of seeded fallback rows", () => {
     const sources = ROUNDING_SOURCES.map(readSource).join("\n");
 
-    expect(sources).toContain("No seeded fallback metrics are shown");
-    expect(sources).toContain("No seeded fallback report rows are shown");
-    expect(sources).toContain("No seeded fallback tasks are shown");
-    expect(sources).toContain("No seeded fallback plans are shown");
+    expect(sources).toContain("No fallback metrics are shown");
+    expect(sources).toContain("No fallback report rows are shown");
+    expect(sources).toContain("No fallback tasks are shown");
+    expect(sources).toContain("No fallback plans are shown");
   });
 
   it("does not render healthy or fake-derived statuses for empty live sources", () => {

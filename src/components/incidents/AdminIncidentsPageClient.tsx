@@ -298,7 +298,7 @@ export function AdminIncidentsPageClient({
       ) : null}
       {rows.length === 0 ? (
         <div className="relative z-10 rounded-2xl border border-slate-200/70 bg-white/70 p-4 text-sm font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-950/30 dark:text-slate-300">
-          No live incident records returned for this scope. No seeded incident cards are shown.
+          No live incident records returned for this scope. No fallback incident cards are shown.
         </div>
       ) : null}
 

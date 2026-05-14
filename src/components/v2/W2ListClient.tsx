@@ -86,7 +86,7 @@ export function W2ListClient({
     source === "empty"
       ? "No live rows in scope"
       : source === "unavailable"
-        ? "Live source unavailable; no fixtures shown"
+        ? "Live source unavailable; no fallback rows shown"
         : null;
 
   return (

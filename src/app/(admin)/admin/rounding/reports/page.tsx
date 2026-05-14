@@ -118,7 +118,7 @@ export default function AdminRoundingReportsPage() {
         setBreakdowns(EMPTY_BREAKDOWNS);
       }
     } catch {
-      setSourceNotice("Unable to load live rounding report data. No seeded fallback report rows are shown.");
+      setSourceNotice("Unable to load live rounding report data. No fallback report rows are shown.");
       setSummary(EMPTY_SUMMARY);
       setBreakdowns(EMPTY_BREAKDOWNS);
     } finally {

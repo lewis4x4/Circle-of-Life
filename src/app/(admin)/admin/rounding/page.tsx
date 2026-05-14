@@ -146,7 +146,7 @@ export default function AdminRoundingHubPage() {
         openIntegrityFlags: integrityRes.count ?? 0,
       });
     } catch {
-      setSourceNotice("Unable to load live Resident Assurance metrics. No seeded fallback metrics are shown.");
+      setSourceNotice("Unable to load live Resident Assurance metrics. No fallback metrics are shown.");
       setSummary(EMPTY_SUMMARY);
     } finally {
       setLoading(false);

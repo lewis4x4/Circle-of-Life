@@ -143,7 +143,7 @@ export default function CeoDashboardTabs({
     return (
       <EmptyLiveSourcePanel
         title="Live CEO reports source is not loaded"
-        detail="Portfolio trend charts and facility scorecards stay empty until real census, billing, incident, staffing, and survey sources are connected. No seeded report rows are shown."
+        detail="Portfolio trend charts and facility scorecards stay empty until real census, billing, incident, staffing, and survey sources are connected. No fallback report rows are shown."
       />
     );
   }
@@ -182,7 +182,7 @@ export default function CeoDashboardTabs({
   return (
     <EmptyLiveSourcePanel
       title="Live CEO detail source is not loaded"
-      detail="Growth funnel and risk-index panels stay empty until real admissions, reputation, incident, and portfolio analytics sources are connected. No seeded chart data is shown."
+      detail="Growth funnel and risk-index panels stay empty until real admissions, reputation, incident, and portfolio analytics sources are connected. No fallback chart data is shown."
     />
   );
 }

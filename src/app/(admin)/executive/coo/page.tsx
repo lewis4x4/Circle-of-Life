@@ -64,7 +64,7 @@ function SourceStatusPanel({ loading, error }: { loading: boolean; error: string
     return (
       <Panel>
         <SectionTitle sub="Waiting for the live executive KPI query to finish.">Loading live COO data</SectionTitle>
-        <p className="text-sm text-slate-400">No seeded operations values are rendered while the source is loading.</p>
+        <p className="text-sm text-slate-400">Operations values stay empty while the live source is loading.</p>
       </Panel>
     );
   }
@@ -74,7 +74,7 @@ function SourceStatusPanel({ loading, error }: { loading: boolean; error: string
       <Panel>
         <SectionTitle sub="The live COO source returned an error.">Unable to load live COO data</SectionTitle>
         <p className="text-sm text-rose-300">{error}</p>
-        <p className="mt-2 text-sm text-slate-400">No seeded operations fallback is shown.</p>
+        <p className="mt-2 text-sm text-slate-400">No operations fallback is shown.</p>
       </Panel>
     );
   }

@@ -126,7 +126,7 @@ export default function AdminRoundingLivePage() {
       }
       setTasks(rows);
     } catch {
-      setSourceNotice("Unable to load live rounding tasks. No seeded fallback tasks are shown.");
+      setSourceNotice("Unable to load live rounding tasks. No fallback tasks are shown.");
       setTasks([]);
     } finally {
       setLoading(false);

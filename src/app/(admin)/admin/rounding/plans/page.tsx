@@ -78,7 +78,7 @@ export default function AdminRoundingPlansPage() {
       }
       setPlans(rows);
     } catch {
-      setSourceNotice("Unable to load live observation plans. No seeded fallback plans are shown.");
+      setSourceNotice("Unable to load live observation plans. No fallback plans are shown.");
       setPlans([]);
     } finally {
       setLoading(false);

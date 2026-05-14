@@ -62,7 +62,7 @@ function SourceStatusPanel({ loading, error }: { loading: boolean; error: string
     return (
       <Panel>
         <SectionTitle sub="Waiting for the live executive KPI query to finish.">Loading live CFO data</SectionTitle>
-        <p className="text-sm text-slate-400">No seeded finance values are rendered while the source is loading.</p>
+        <p className="text-sm text-slate-400">Finance values stay empty while the live source is loading.</p>
       </Panel>
     );
   }
@@ -72,7 +72,7 @@ function SourceStatusPanel({ loading, error }: { loading: boolean; error: string
       <Panel>
         <SectionTitle sub="The live CFO source returned an error.">Unable to load live CFO data</SectionTitle>
         <p className="text-sm text-rose-300">{error}</p>
-        <p className="mt-2 text-sm text-slate-400">No seeded finance fallback is shown.</p>
+        <p className="mt-2 text-sm text-slate-400">No finance fallback is shown.</p>
       </Panel>
     );
   }

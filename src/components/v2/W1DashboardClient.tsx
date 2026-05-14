@@ -103,7 +103,7 @@ export function W1DashboardClient({
     rowsSource === "empty"
       ? "No live facility rollup rows in scope"
       : rowsSource === "unavailable"
-        ? "Live facility rollup unavailable; no fixtures shown"
+        ? "Live facility rollup unavailable; no fallback rows shown"
         : null;
 
   return (

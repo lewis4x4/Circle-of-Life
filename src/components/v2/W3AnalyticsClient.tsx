@@ -89,7 +89,7 @@ export function W3AnalyticsClient({ load }: { load: V2AnalyticsLoad }) {
     load.source === "empty"
       ? "No live rollup rows in scope"
       : load.source === "unavailable"
-        ? "Live source unavailable; no fixtures shown"
+        ? "Live source unavailable; no fallback rows shown"
         : null;
 
   return (
