@@ -141,7 +141,7 @@ function inferDraft(document: ObsidianDraftDocument): DraftInference {
       relatedLinks: [
         "Transportation Scheduling SOP",
         "Grace Pack - Transport Trips",
-        "Grande Cypress Override - Transportation Scheduling Window",
+        "Facility Override - Transportation Scheduling Window",
         "Memory Map - Grace Control Plane",
       ],
       aliases: ["transport request", "ride scheduling", "trip scheduling"],
@@ -157,7 +157,7 @@ function inferDraft(document: ObsidianDraftDocument): DraftInference {
         "Emergency Preparedness SOP",
         "Survey Readiness Playbook",
         "Grace Pack - Executive Alerts",
-        "Rising Oaks Override - Generator and Weather Readiness",
+        "Facility Override - Generator and Weather Readiness",
         "Homewood Lodge Override - Emergency Vendor Contacts",
       ],
       aliases: ["storm prep", "generator readiness", "weather readiness"],

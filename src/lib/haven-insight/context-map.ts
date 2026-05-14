@@ -66,7 +66,7 @@ const ROUTE_CONTEXTS: Array<{ prefix: string; context: ModuleContext }> = [
       suggestedQuestions: [
         "What's our shift fill rate across all facilities today?",
         "How many work orders are open and overdue?",
-        "What's driving the incident rate at Cedar Park?",
+        "What's driving the highest incident rate by facility?",
         "Are there any dining satisfaction concerns?",
         "Which facilities have certification expirations coming up?",
         "Give me today's operational readiness summary.",

@@ -731,8 +731,8 @@ export default function AdminTrainingHubPage() {
               <div className="rounded-2xl border border-white/20 bg-white/30 p-8 text-center text-slate-500 dark:border-white/5 dark:bg-slate-900/30">
                 <p className="font-medium text-slate-700 dark:text-slate-300">No completion rows yet</p>
                 <p className="mt-1 text-sm opacity-80">
-                  Florida catalog programs are seeded. Select a facility and use{" "}
-                  <span className="font-mono">+ Log completion</span> to add a row.
+                  Florida catalog programs are ready to assign. Select a facility and use{" "}
+                  <span className="font-mono">+ Log completion</span> to add a live completion row.
                 </p>
               </div>
             ) : (
