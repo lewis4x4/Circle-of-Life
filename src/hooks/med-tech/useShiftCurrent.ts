@@ -11,6 +11,8 @@ import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type R = Record<string, any>;
 
+const UNRESOLVED_UNIT_LABEL = "Assigned facility";
+
 interface ShiftData {
   userId: string;
   shift: ShiftBarProps;
@@ -60,6 +62,11 @@ function elapsed(clockedIn: string | null): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
+function facilityLabelFrom(row: R | null | undefined): string {
+  const name = typeof row?.name === "string" ? row.name.trim() : "";
+  return name || UNRESOLVED_UNIT_LABEL;
+}
+
 /** Raw Supabase query helper — casts to bypass generated type depth issues */
 async function q(table: string, select: string, filters: Record<string, any> = {}) {
   const sb = createClient();
@@ -79,7 +86,7 @@ async function q(table: string, select: string, filters: Record<string, any> = {
 export function useShiftCurrent(): ShiftData {
   const [data, setData] = useState<ShiftData>({
     userId: "",
-    shift: { techName: "", techInitials: "", shiftLabel: "", unitLabel: "Oakridge ALF", assignedCount: 0, elapsedLabel: "00:00", shiftType: "day" },
+    shift: { techName: "", techInitials: "", shiftLabel: "", unitLabel: UNRESOLVED_UNIT_LABEL, assignedCount: 0, elapsedLabel: "00:00", shiftType: "day" },
     passes: [], residents: [], tape: [], shiftId: "", loading: true, error: null,
   });
 
@@ -99,6 +106,11 @@ export function useShiftCurrent(): ShiftData {
       if (shiftRes.error) { setData(d => ({ ...d, loading: false, error: shiftRes.error.message })); return; }
       const shift = shiftRes.data as R | null;
       if (!shift) { setData(d => ({ ...d, loading: false, error: "No active shift" })); return; }
+
+      const facilityRes = shift.facility_id
+        ? await q("facilities", "name", { id: shift.facility_id, _single: true })
+        : { data: null };
+      const facilityLabel = facilityLabelFrom(facilityRes.data as R | null);
 
       // Profile
       const profRes = await q("user_profiles", "full_name", { id: user.id, _single: true });
@@ -186,7 +198,7 @@ export function useShiftCurrent(): ShiftData {
         shift: {
           techName: fullName, techInitials: initials,
           shiftLabel: `${isPM ? "PM" : "AM"} · ${startH} - ${endH}`,
-          unitLabel: "Oakridge ALF",
+          unitLabel: facilityLabel,
           assignedCount: resItems.length,
           elapsedLabel: elapsed(shift.clocked_in_at),
           shiftType,

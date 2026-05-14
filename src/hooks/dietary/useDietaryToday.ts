@@ -19,10 +19,12 @@ import type {
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type R = Record<string, any>;
 
+const UNRESOLVED_FACILITY_LABEL = "Assigned facility";
+
 const EMPTY_BAR = {
   cook_name: "Lead Cook",
   cook_initials: "LC",
-  facility_name: "Oakridge ALF",
+  facility_name: UNRESOLVED_FACILITY_LABEL,
   meal_period: "Lunch",
   scheduled_time: "11:30",
   countdown_min: 0,
@@ -100,6 +102,11 @@ function residentInitials(name: string): string {
   return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
 }
 
+function facilityDisplayName(row: R | undefined): string {
+  const name = typeof row?.name === "string" ? row.name.trim() : "";
+  return name || UNRESOLVED_FACILITY_LABEL;
+}
+
 export function useDietaryToday(): DietaryDeckState {
   const [state, setState] = useState<DietaryDeckState>(EMPTY_STATE);
 
@@ -123,6 +130,12 @@ export function useDietaryToday(): DietaryDeckState {
         setState((s) => ({ ...s, loading: false, error: "No facility assigned" }));
         return;
       }
+
+      const { data: facilityRows } = await q("facilities", "name", {
+        id: facilityId,
+        _limit: 1,
+      });
+      const facilityName = facilityDisplayName(facilityRows?.[0] as R | undefined);
 
       // User profile
       const { data: profRows } = await q("user_profiles", "full_name", {
@@ -344,7 +357,7 @@ export function useDietaryToday(): DietaryDeckState {
         service_bar: {
           cook_name: fullName,
           cook_initials: initials,
-          facility_name: "Oakridge ALF",
+          facility_name: facilityName,
           meal_period: primarySvc ? mealLabels[primarySvc.meal_period] ?? "Service" : "Service",
           scheduled_time: primarySvc ? fmtTime(primarySvc.scheduled_start) : "--:--",
           countdown_min: primarySvc ? countdownMin(primarySvc.scheduled_start) : 0,

@@ -54,6 +54,7 @@ type ResRow = {
   first_name: string | null;
   last_name: string | null;
   bed_id: string | null;
+  facility_id: string | null;
 };
 
 type ProfileRow = {
@@ -71,6 +72,14 @@ type TriageMini = {
 
 function residentName(r: ResRow): string {
   return `${r.first_name?.trim() ?? ""} ${r.last_name?.trim() ?? ""}`.trim() || "Resident";
+}
+
+function facilityNameForResident(
+  resident: ResRow | undefined,
+  facilityNames: Map<string, string>,
+): string {
+  if (!resident?.facility_id) return "Facility";
+  return facilityNames.get(resident.facility_id) ?? "Facility";
 }
 
 function timeAgo(iso: string): string {
@@ -102,13 +111,32 @@ export async function fetchStaffMessageThreads(
 
   const { data: residents } = await supabase
     .from("residents")
-    .select("id, first_name, last_name, bed_id")
+    .select("id, first_name, last_name, bed_id, facility_id")
     .in("id", residentIds)
     .is("deleted_at", null);
-  const resMap = new Map((((residents ?? []) as unknown as ResRow[]).map((r) => [r.id, r])));
+  const residentRows = (residents ?? []) as unknown as ResRow[];
+  const resMap = new Map(residentRows.map((r) => [r.id, r]));
+
+  const facilityIds = [...new Set(
+    residentRows
+      .map((r) => r.facility_id)
+      .filter(Boolean),
+  )] as string[];
+  const facilityNames = new Map<string, string>();
+  if (facilityIds.length > 0) {
+    const { data: facilities } = await supabase
+      .from("facilities")
+      .select("id, name")
+      .in("id", facilityIds)
+      .is("deleted_at", null);
+    for (const facility of (facilities ?? []) as unknown as { id: string; name: string | null }[]) {
+      const name = facility.name?.trim();
+      if (name) facilityNames.set(facility.id, name);
+    }
+  }
 
   const bedIds = [...new Set(
-    (residents as unknown as ResRow[] ?? [])
+    residentRows
       .map((r) => r.bed_id)
       .filter(Boolean),
   )] as string[];
@@ -135,7 +163,7 @@ export async function fetchStaffMessageThreads(
       const bedToRoom = new Map(
         ((beds ?? []) as unknown as { id: string; room_id: string | null }[]).map((b) => [b.id, b.room_id]),
       );
-      for (const res of (residents ?? []) as unknown as ResRow[]) {
+      for (const res of residentRows) {
         if (!res.bed_id) continue;
         const roomId = bedToRoom.get(res.bed_id);
         if (roomId) {
@@ -177,7 +205,7 @@ export async function fetchStaffMessageThreads(
       residentId: resId,
       residentName: res ? residentName(res) : "Unknown Resident",
       roomLabel: roomByResident.get(resId) ?? "—",
-      facilityName: "Oakridge ALF",
+      facilityName: facilityNameForResident(res, facilityNames),
       lastMessageBody: latest.body.length > 120 ? latest.body.slice(0, 120) + "…" : latest.body,
       lastMessageAt: timeAgo(latest.created_at),
       lastMessageAtIso: latest.created_at,
