@@ -207,7 +207,16 @@ export default function JournalEntryDetailPage() {
         setError(uErr.message);
         return;
       }
-      const { error: dErr } = await supabase.from("journal_entry_lines").delete().eq("journal_entry_id", header.id);
+      // Soft-delete prior lines instead of DELETE. Per the project
+      // non-negotiable rule (CLAUDE.md / AGENTS.md): no hard deletes on
+      // financial data. The read path at load() filters `deleted_at IS NULL`,
+      // so previous rows are immediately hidden and remain in audit history.
+      const removedAt = new Date().toISOString();
+      const { error: dErr } = await supabase
+        .from("journal_entry_lines")
+        .update({ deleted_at: removedAt })
+        .eq("journal_entry_id", header.id)
+        .is("deleted_at", null);
       if (dErr) {
         setError(dErr.message);
         return;
