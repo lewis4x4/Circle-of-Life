@@ -816,9 +816,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
         <SurveyVisitModeBar />
 
-        {/* Scrolling main */}
+        {/* Scrolling main — full-bleed, no mx-auto/max-w. Pages that need a
+            narrow column for long-form content (settings forms, etc.) apply
+            max-w on an inner block, not on this wrapper. */}
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-[1600px] px-5 py-5 lg:px-8 lg:py-6 2xl:px-10 2xl:py-8">
+          <div className="w-full px-5 py-5 lg:px-6 lg:py-6 2xl:px-8 2xl:py-8">
             {children}
           </div>
         </main>
