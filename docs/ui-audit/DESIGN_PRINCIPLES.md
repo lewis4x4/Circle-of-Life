@@ -114,6 +114,11 @@ Locked-in standards for the Haven admin UI. Reviewers MAY block a PR that violat
 | Hand-rolled `<nav className="fixed bottom-0 ...">` bottom tab bar | `<BottomNav>` / `<BottomNavItem>` from `@/components/ui/bottom-nav` |
 | Hand-rolled colored dot + label sync/status indicators | `<StatusPill>` from `@/components/ui/status-pill` |
 | `hover:` utilities without a matching `active:` on caregiver routes | always pair `hover:X active:X` so touch devices that never fire hover still render pressed feedback |
+| Warm-cream / pastel radial-gradient body backgrounds (`.family-shell { background: radial-gradient(...) }`) | flat `bg-background` |
+| `rounded-[2.5rem]`, `rounded-[1.8rem]`, `rounded-[3rem]` on cards or chrome | `rounded-xl` (or `rounded-2xl` only with an inline code comment justifying the exception) |
+| `glass-card-light` / any `glass-*` utility on portal chrome | flat `bg-card border border-border` — no glass, no `backdrop-blur` outside Dialog/Sheet/Popover primitives |
+| Floating iPadOS-style dock at `rounded-[2.5rem]` | reuse `<BottomNav>` — extend the primitive with new variants rather than forking |
+| `hover:` states on touch-screen tablet shells (family) | replace with `active:` + `focus-visible:` only — no hover at all |
 
 ## 13 · Mobile-first cockpit standards
 
@@ -127,7 +132,18 @@ The caregiver portal is the only Haven surface where mobile is the **canonical**
 - **Status pills are a primitive.** Sync state, shift state, "currently on break" / "off duty" — all use `<StatusPill variant="…" dot pulsing>` from `@/components/ui/status-pill`. The variant resolves the dot color (`success` / `warning` / `destructive`) via semantic tokens; the consumer doesn't pick raw hex.
 - **Forced-dark.** Caregiver shifts include night rotations and bedside use in dim resident rooms. The shell wraps content in `<div className="dark">` at the root regardless of `next-themes` state. Belt and suspenders with `setTheme("dark")`.
 
-## 14 · PR review checklist
+## 14 · Touch-screen tablet standards
+
+The family portal runs on tablets in living-room and resident-room settings. The user is typically an older family member at 18–24 inches reading distance, not a worker at arm's length on a phone. These rules apply to the family route group (`/family/*`) and any future surface where a tablet is the canonical device:
+
+- **Forced light.** Living-room reading conditions are bright; a dark portal at 11pm on an iPad in a residential setting is visually wrong. The shell wraps content in `<div className="light">` at the root regardless of `next-themes` state or system preference. Belt and suspenders with `setTheme("light")` for cross-component side effects.
+- **44px touch minimum.** Same iOS HIG floor as caregiver. Bell, account-menu, and dock items all clear `min-h-11`.
+- **Primary action labels can stretch to 15px.** Card body copy stays at 14px (the design-system standard), but oversized primary buttons (e.g., "Message Mom", "View today's photos") may go to 15px for reading-distance legibility. Nothing in the shell drops below 13px.
+- **No hover states.** Tablet-only — `:hover` is not a reliable input signal. Every interactive element pairs `active:` with `focus-visible:`, no `hover:`. CI enforces this on `src/components/family/**`.
+- **Reduce information density vs admin.** The portal surfaces 3–5 prominent actions plus a small recent-activity feed, not a dashboard.
+- **Reuse `<BottomNav>`, do not fork.** The floating "iPadOS dock" pattern (`fixed bottom-6 ... rounded-[2.5rem] glass-card-light`) is forbidden — same primitive Caregiver uses. Add variants to `BottomNav` if a legitimate need emerges; never fork.
+
+## 15 · PR review checklist
 
 Reviewers run this before merging anything visual:
 

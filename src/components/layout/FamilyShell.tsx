@@ -1,23 +1,22 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Bell,
   CalendarDays,
   CalendarHeart,
   CreditCard,
+  HeartPulse,
   Loader2,
   LogOut,
   MessageSquare,
   UserCircle2,
-  HeartPulse
 } from "lucide-react";
 import { useTheme } from "next-themes";
-import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 
-import { createClient } from "@/lib/supabase/client";
+import { BottomNav, BottomNavItem } from "@/components/ui/bottom-nav";
+import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { createClient } from "@/lib/supabase/client";
 
 export function FamilyShell({ children }: { children: React.ReactNode }) {
   const { setTheme } = useTheme();
@@ -48,6 +48,14 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
     }
   }, [router]);
 
+  // Family portal is light-only by design: older residents and family members
+  // read this on tablets in living-room settings. A late-night dark flash on
+  // grandma's iPad is the same kind of mistake as the caregiver light flash —
+  // wrong tool for the context. The `light` class on the outer wrapper
+  // enforces light-variant tokens even if a future theme toggle or `useTheme`
+  // race momentarily flips the theme state. `setTheme("light")` below remains
+  // for cross-component side effects (portals rendering outside this wrapper)
+  // but is no longer the only guardrail.
   useEffect(() => {
     if (!themeSet.current) {
       setTheme("light");
@@ -75,128 +83,112 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  return (
-    <div className="family-shell min-h-screen text-stone-900 flex flex-col font-sans selection:bg-rose-100 selection:text-rose-900 relative">
-      
-      {/* Floating Top-Right Utilities */}
-      <div className="absolute top-4 right-4 md:top-6 md:right-6 z-50 flex items-center gap-2">
-         <PilotFeedbackLauncher shellKind="family" compact />
-         <button className="relative p-3 rounded-full bg-stone-50/60 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.05)] text-stone-600 hover:text-stone-900 tap-responsive transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-rose-400"></span>
-         </button>
-
-         <DropdownMenu>
-            <DropdownMenuTrigger className="p-3 rounded-full bg-stone-50/60 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.05)] text-stone-600 hover:text-stone-900 tap-responsive transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50">
-               <UserCircle2 className="w-5 h-5" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 glass-card-light rounded-2xl p-2 mt-2 border-white/70 shadow-lg">
-               <DropdownMenuGroup>
-                 <DropdownMenuLabel className="font-medium text-stone-600">
-                    {sessionEmail ?? "Family Portal"}
-                 </DropdownMenuLabel>
-                 <DropdownMenuSeparator className="bg-stone-200/50 my-1" />
-                 <DropdownMenuItem
-                    variant="destructive"
-                    className="cursor-pointer rounded-xl font-medium focus:bg-rose-50 focus:text-rose-600 tap-responsive"
-                    disabled={signingOut}
-                    onClick={() => void handleSignOut()}
-                 >
-                    {signingOut ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Signing out…
-                      </>
-                    ) : (
-                      <>
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Sign out
-                      </>
-                    )}
-                  </DropdownMenuItem>
-               </DropdownMenuGroup>
-            </DropdownMenuContent>
-         </DropdownMenu>
-      </div>
-
-      {/* Main Content Area */}
-      <main className="flex-1 w-full pb-32 relative z-10">
-        {children}
-      </main>
-
-      {/* Floating iPadOS Style Dock */}
-      <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
-         <nav className="glass-card-light pointer-events-auto rounded-[2.5rem] px-2 py-2 flex items-center gap-1 shadow-[0_12px_40px_rgb(0,0,0,0.08)] bg-white/70">
-            <DockTab
-              href="/family"
-              label="Today"
-              icon={<CalendarHeart className="h-6 w-6" />}
-              active={pathname === "/family" || pathname === "/family/"}
-            />
-            <DockTab
-              href="/family/calendar"
-              label="Calendar"
-              icon={<CalendarDays className="h-6 w-6" />}
-              active={pathname.startsWith("/family/calendar")}
-            />
-            <DockTab
-              href="/family/care-plan"
-              label="Care"
-              icon={<HeartPulse className="h-6 w-6" />}
-              active={pathname.startsWith("/family/care-plan")}
-            />
-            <DockTab
-              href="/family/messages"
-              label="Messages"
-              icon={<MessageSquare className="h-6 w-6" />}
-              active={pathname.startsWith("/family/messages")}
-            />
-            <DockTab
-              href="/family/billing"
-              label="Billing"
-              icon={<CreditCard className="h-6 w-6" />}
-              active={
-                pathname.startsWith("/family/billing") ||
-                pathname.startsWith("/family/invoices") ||
-                pathname.startsWith("/family/payments")
-              }
-            />
-         </nav>
-      </div>
-
-    </div>
+  const navItems = useMemo(
+    () => [
+      {
+        href: "/family",
+        label: "Today",
+        icon: <CalendarHeart className="h-5 w-5" aria-hidden />,
+        active: pathname === "/family" || pathname === "/family/",
+      },
+      {
+        href: "/family/calendar",
+        label: "Calendar",
+        icon: <CalendarDays className="h-5 w-5" aria-hidden />,
+        active: pathname.startsWith("/family/calendar"),
+      },
+      {
+        href: "/family/care-plan",
+        label: "Care",
+        icon: <HeartPulse className="h-5 w-5" aria-hidden />,
+        active: pathname.startsWith("/family/care-plan"),
+      },
+      {
+        href: "/family/messages",
+        label: "Messages",
+        icon: <MessageSquare className="h-5 w-5" aria-hidden />,
+        active: pathname.startsWith("/family/messages"),
+      },
+      {
+        href: "/family/billing",
+        label: "Billing",
+        icon: <CreditCard className="h-5 w-5" aria-hidden />,
+        active:
+          pathname.startsWith("/family/billing") ||
+          pathname.startsWith("/family/invoices") ||
+          pathname.startsWith("/family/payments"),
+      },
+    ],
+    [pathname],
   );
-}
 
-function DockTab({
-  href,
-  label,
-  icon,
-  active,
-}: {
-  href: string;
-  label: string;
-  icon: React.ReactNode;
-  active: boolean;
-}) {
   return (
-    <Link
-      href={href}
-      className={`relative flex flex-col items-center justify-center gap-1 w-16 h-16 md:w-[4.5rem] md:h-[4.5rem] rounded-[1.8rem] tap-responsive transition-all ${
-        active 
-          ? "bg-white shadow-[0_2px_15px_rgb(0,0,0,0.04)] text-stone-900 border border-white" 
-          : "text-stone-500 hover:text-stone-800 hover:bg-white/40 border border-transparent"
-      }`}
-    >
-      <div className={`${active ? "text-rose-500 scale-110 drop-shadow-sm" : "scale-100 text-stone-400"} transition-all duration-300`}>
-        {icon}
+    <div className="light">
+      <div className="relative flex min-h-screen flex-col bg-background pb-[calc(3.5rem+env(safe-area-inset-bottom))] font-sans text-foreground antialiased">
+        <div className="absolute right-4 top-4 z-50 flex items-center gap-2 md:right-6 md:top-6">
+          <PilotFeedbackLauncher shellKind="family" compact />
+          <button
+            type="button"
+            aria-label="Notifications"
+            className="tap-responsive relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:bg-accent active:text-accent-foreground"
+          >
+            <Bell className="h-5 w-5" aria-hidden />
+            <span
+              aria-hidden
+              className="absolute right-2 top-2 h-2 w-2 rounded-full bg-warning"
+            />
+          </button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              aria-label="Family account menu"
+              className="tap-responsive inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:bg-accent active:text-accent-foreground"
+            >
+              <UserCircle2 className="h-5 w-5" aria-hidden />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="mt-2 w-56">
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="text-muted-foreground">
+                  {sessionEmail ?? "Family Portal"}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  variant="destructive"
+                  className="cursor-pointer"
+                  disabled={signingOut}
+                  onClick={() => void handleSignOut()}
+                >
+                  {signingOut ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                      Signing out…
+                    </>
+                  ) : (
+                    <>
+                      <LogOut className="mr-2 h-4 w-4" aria-hidden />
+                      Sign out
+                    </>
+                  )}
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <main className="relative z-10 w-full flex-1">{children}</main>
+
+        <BottomNav aria-label="Family navigation">
+          {navItems.map((item) => (
+            <BottomNavItem
+              key={item.href}
+              href={item.href}
+              icon={item.icon}
+              label={item.label}
+              active={item.active}
+            />
+          ))}
+        </BottomNav>
       </div>
-      <span className={`text-[10px] tracking-wide transition-all ${active ? "font-bold text-stone-800" : "font-medium"}`}>{label}</span>
-      
-      {/* Active Dot Indicator underneath */}
-      {active && (
-         <div className="absolute -bottom-[2px] w-1 h-1 rounded-full bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.8)]"></div>
-      )}
-    </Link>
+    </div>
   );
 }

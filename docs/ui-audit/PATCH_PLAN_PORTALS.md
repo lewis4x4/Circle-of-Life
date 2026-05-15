@@ -22,11 +22,11 @@ Total estimate: **3 engineering days** across all five shells.
 
 Smallest blast radius first so each PR can land independently and visual regression catches it.
 
-1. **Dietary** (0.25 day). 89 LOC. No moonshot tells, only `text-slate-*` chrome. Replace with semantic tokens, drop the gradient backdrop. Single PR.
-2. **MedTech** (0.25 day). 96 LOC. Same shape as Dietary. Single PR.
-3. **Onboarding** (0.5 day). 116 LOC. Marketing-leaning header (`font-display text-xl font-semibold tracking-tight text-white` on `bg-slate-950/90 backdrop-blur`). Replace with admin topbar pattern; keep wizard step indicator (will need a new primitive).
-4. **Caregiver** (1 day). 322 LOC, mobile-first cockpit. Most complex. The `.caregiver-shell` radial-gradient body, `bg-black/40 backdrop-blur-xl` rails, `font-display`, `tracking-widest` micro-caps, and the bottom-nav with safe-area inset all need updates. Bottom-nav stays — it's correct for a tablet/phone caregiver workflow — but its chrome should match.
-5. **Family** (1 day). 202 LOC, also mobile-first. The `.family-shell` warm-cream radial gradient, `glass-card-light` floating dock at `rounded-[2.5rem]`, oversized `rounded-[1.8rem]` nav tiles. This is by far the most "moonshot"; defer it last so each preceding portal validates the standards.
+1. **Dietary** (0.25 day) — **shipped 2026-05-14** ([PR #35](https://github.com/lewis4x4/Circle-of-Life/pull/35), merged `21efc44`). 89 LOC. No moonshot tells, only `text-slate-*` chrome. Replaced with semantic tokens, dropped the gradient backdrop. Single PR.
+2. **MedTech** (0.25 day) — **shipped 2026-05-15** ([PR #36](https://github.com/lewis4x4/Circle-of-Life/pull/36), merged `aa76646`). 96 LOC. Same shape as Dietary plus an enforced `<div className="dark">` wrap.
+3. **Onboarding** (0.5 day) — **shipped 2026-05-15** ([PR #37](https://github.com/lewis4x4/Circle-of-Life/pull/37), merged `84f0652`). 116 LOC. Marketing-leaning header lifted to admin topbar pattern. New `WizardSteps` primitive (`src/components/ui/wizard-steps.tsx`).
+4. **Caregiver** (1 day) — **shipped 2026-05-15** ([PR #38](https://github.com/lewis4x4/Circle-of-Life/pull/38), merged `0e42604`). 322 LOC, mobile-first cockpit. New `BottomNav` + `StatusPill` primitives. Forced-dark via `<div className="dark">` wrap. 9 baselines including a CSS-injected simulated iPhone home-indicator capture.
+5. **Family** (1 day) — **shipped 2026-05-15**. 202 LOC, tablet-first. Most moonshot: `glass-card-light` floating dock at `rounded-[2.5rem]`, oversized `rounded-[1.8rem]` nav tiles, warm-cream gradient. All dropped; reuses the `BottomNav` primitive. Forced-light via `<div className="light">` wrap.
 
 ## Cross-cutting offenders to fix in each PR
 
