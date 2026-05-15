@@ -7,17 +7,30 @@
  * `bundle-size-budget.json` if it exists; fails CI when any entry exceeds
  * its budget by more than 10%.
  *
+ * Also enforces hard route-level first-load gzip budgets for the audited
+ * routes (see ROUTE_GZIP_BUDGETS_KB). These are absolute caps, not
+ * percent-over-baseline — fail-on-regression for the UI audit.
+ *
  * Usage:
  *   node scripts/bundle-size-check.mjs            # record + enforce
  *   node scripts/bundle-size-check.mjs --update    # rewrite budget file
  */
 import fs from "node:fs";
 import path from "node:path";
+import zlib from "node:zlib";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const BUILD_DIR = path.join(ROOT, ".next");
 const BUDGET_PATH = path.join(ROOT, "bundle-size-budget.json");
 const TOLERANCE = 0.10; // 10% over budget before failing
+
+// Hard route-level first-load JS gzip budgets (kB). The audited routes
+// MUST stay under these caps. Linear/Vercel-class dashboards land around
+// 180-220 kB gzip first-load; 250 kB is the ceiling.
+const ROUTE_GZIP_BUDGETS_KB = {
+  "/admin": 250,
+  "/admin/executive": 250,
+};
 
 function readBuildManifest() {
   const manifestPath = path.join(BUILD_DIR, "build-manifest.json");
@@ -98,6 +111,45 @@ for (const [label, budgetBytes] of Object.entries(budget.entries || {})) {
   const actual = entries[label] || 0;
   if (actual > budgetBytes * (1 + TOLERANCE)) {
     console.error(`FAIL: ${label} ${formatKB(actual)} exceeds budget ${formatKB(budgetBytes)} by >${(TOLERANCE * 100).toFixed(0)}%`);
+    failed = true;
+  }
+}
+
+// Per-route first-load JS gzip enforcement against the absolute budget.
+function gzippedSize(filePath) {
+  if (!fs.existsSync(filePath)) return 0;
+  return zlib.gzipSync(fs.readFileSync(filePath)).length;
+}
+
+function routeChunks(route) {
+  // app-build-manifest.json maps route → list of chunk paths.
+  const appManifest = path.join(BUILD_DIR, "app-build-manifest.json");
+  if (!fs.existsSync(appManifest)) return null;
+  const manifest = JSON.parse(fs.readFileSync(appManifest, "utf-8"));
+  const pages = manifest.pages ?? {};
+  // /admin → "/admin/page", /admin/executive → "/admin/executive/page"
+  const key = route === "/" ? "/page" : `${route}/page`;
+  const chunks = pages[key];
+  if (!Array.isArray(chunks)) return null;
+  return chunks;
+}
+
+console.log("\nRoute first-load JS (gzip):");
+for (const [route, capKb] of Object.entries(ROUTE_GZIP_BUDGETS_KB)) {
+  const chunks = routeChunks(route);
+  if (!chunks) {
+    console.log(`  ${route}: skipped (route not in app-build-manifest.json)`);
+    continue;
+  }
+  let bytes = 0;
+  for (const rel of chunks) {
+    bytes += gzippedSize(path.join(BUILD_DIR, rel));
+  }
+  const kb = bytes / 1024;
+  const within = kb <= capKb;
+  console.log(`  ${route}: ${kb.toFixed(1)} kB gzip (cap ${capKb} kB) ${within ? "✓" : "✗"}`);
+  if (!within) {
+    console.error(`FAIL: ${route} first-load gzip ${kb.toFixed(1)} kB exceeds hard cap ${capKb} kB`);
     failed = true;
   }
 }

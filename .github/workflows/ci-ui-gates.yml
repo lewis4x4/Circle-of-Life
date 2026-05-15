@@ -1,0 +1,135 @@
+name: CI — UI gates
+
+# UI-specific gates that run in addition to ci-gates.yml.
+# Each job is independent so a failure surfaces specifically.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    paths:
+      - "src/**"
+      - "docs/ui-audit/**"
+      - "tailwind.config.ts"
+      - "components.json"
+      - ".github/workflows/ci-ui-gates.yml"
+      - "scripts/bundle-size-check.mjs"
+      - "scripts/visual-regression.mjs"
+      - "scripts/a11y-authenticated.mjs"
+      - "scripts/a11y-axe-routes.mjs"
+      - "scripts/screenshot-dashboard.mjs"
+
+jobs:
+  bundle:
+    name: Bundle size budget
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci --no-audit --no-fund
+      - name: Next build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+          NEXT_PUBLIC_SUPABASE_URL: "https://dummy.supabase.co"
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "dummy-key"
+      - name: Bundle size check
+        run: node scripts/bundle-size-check.mjs
+
+  a11y:
+    name: Authenticated axe
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Requires repo secrets: SUPABASE_URL_TEST, SUPABASE_ANON_KEY_TEST,
+    # PHASE1_DEMO_PASSWORD, AUTH_SCREENSHOT_USER_EMAIL.
+    # Skipped if NEXT_PUBLIC_SUPABASE_URL secret is not set so forks can
+    # still run the rest of the matrix.
+    if: ${{ vars.HAVEN_UI_GATES_ENABLED == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci --no-audit --no-fund
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
+      - name: Start server
+        run: |
+          npm run start -- --hostname 127.0.0.1 --port 4310 > /tmp/haven.log 2>&1 &
+          for i in {1..60}; do
+            if curl -sSf -o /dev/null http://127.0.0.1:4310/login; then break; fi
+            sleep 1
+          done
+          curl -sSf http://127.0.0.1:4310/login >/dev/null
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
+      - name: Authenticated a11y
+        run: node scripts/a11y-authenticated.mjs
+        env:
+          BASE_URL: "http://127.0.0.1:4310"
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
+          PHASE1_DEMO_PASSWORD: ${{ secrets.PHASE1_DEMO_PASSWORD }}
+          SCREENSHOT_USER_EMAIL: ${{ secrets.AUTH_SCREENSHOT_USER_EMAIL }}
+
+  visual:
+    name: Visual regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: ${{ vars.HAVEN_UI_GATES_ENABLED == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci --no-audit --no-fund
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
+      - name: Start server
+        run: |
+          npm run start -- --hostname 127.0.0.1 --port 4310 > /tmp/haven.log 2>&1 &
+          for i in {1..60}; do
+            if curl -sSf -o /dev/null http://127.0.0.1:4310/login; then break; fi
+            sleep 1
+          done
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
+      - name: Visual regression
+        # NOTE: baselines were captured on macOS. CI (linux) renders fonts
+        # differently; this gate is allowed up to 2% per-image diff via
+        # VR_THRESHOLD_PCT. Tighten once Linux baselines are committed.
+        run: node scripts/visual-regression.mjs
+        env:
+          BASE_URL: "http://127.0.0.1:4310"
+          VR_THRESHOLD_PCT: "2"
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
+          PHASE1_DEMO_PASSWORD: ${{ secrets.PHASE1_DEMO_PASSWORD }}
+          SCREENSHOT_USER_EMAIL: ${{ secrets.AUTH_SCREENSHOT_USER_EMAIL }}
+      - name: Upload diffs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-regression-diffs
+          path: docs/ui-audit/screenshots/diff/
+          retention-days: 14

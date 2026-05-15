@@ -679,24 +679,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         {renderSidebarFooter()}
       </aside>
 
-      {/* Mobile drawer (shadcn Sheet) */}
-      <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-        <SheetContent
-          side="left"
-          className="w-[280px] border-r border-border bg-card p-0 [&>button]:hidden"
-        >
-          <SheetHeader className="sr-only">
-            <SheetTitle>Primary navigation</SheetTitle>
-          </SheetHeader>
-          <div className="flex h-full flex-col">
-            {renderBrand()}
-            {renderFacilityScope()}
-            {renderNav()}
-            {renderSidebarFooter()}
-          </div>
-        </SheetContent>
-      </Sheet>
-
       {/* Main column */}
       <div className="flex flex-1 flex-col min-w-0">
         {/* Topbar */}
@@ -707,21 +689,33 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             "sticky top-0 z-30",
           )}
         >
-          {/* Mobile hamburger */}
+          {/* Mobile hamburger — single Sheet hosts both trigger and drawer */}
           <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-            <SheetTrigger asChild>
-              <button
-                type="button"
-                className={cn(
-                  "grid size-8 place-items-center rounded-md text-muted-foreground lg:hidden",
-                  "transition-colors hover:bg-secondary hover:text-foreground",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                )}
-                aria-label="Open navigation"
-              >
-                <Menu className="size-4" />
-              </button>
+            <SheetTrigger
+              className={cn(
+                "grid size-8 place-items-center rounded-md text-muted-foreground lg:hidden",
+                "transition-colors hover:bg-secondary hover:text-foreground",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              )}
+              aria-label="Open navigation"
+            >
+              <Menu className="size-4" aria-hidden />
             </SheetTrigger>
+            <SheetContent
+              side="left"
+              className="w-[280px] border-r border-border bg-card p-0"
+              showCloseButton={false}
+            >
+              <SheetHeader className="sr-only">
+                <SheetTitle>Primary navigation</SheetTitle>
+              </SheetHeader>
+              <div className="flex h-full flex-col">
+                {renderBrand()}
+                {renderFacilityScope()}
+                {renderNav()}
+                {renderSidebarFooter()}
+              </div>
+            </SheetContent>
           </Sheet>
 
           {/* Search */}
@@ -744,18 +738,20 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
           <div className="ml-auto flex items-center gap-0.5">
             <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href="/admin/search"
-                  className={cn(
-                    "grid size-8 place-items-center rounded-md text-muted-foreground md:hidden",
-                    "transition-colors hover:bg-secondary hover:text-foreground",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  )}
-                  aria-label="Search"
-                >
-                  <Search className="size-4" />
-                </Link>
+              <TooltipTrigger
+                render={
+                  <Link
+                    href="/admin/search"
+                    aria-label="Search"
+                    className={cn(
+                      "grid size-8 place-items-center rounded-md text-muted-foreground md:hidden",
+                      "transition-colors hover:bg-secondary hover:text-foreground",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    )}
+                  />
+                }
+              >
+                <Search className="size-4" aria-hidden />
               </TooltipTrigger>
               <TooltipContent side="bottom">Search (⌘K)</TooltipContent>
             </Tooltip>
@@ -763,19 +759,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <PilotFeedbackLauncher shellKind="admin" facilityId={safeSelectedFacilityId} compact />
 
             <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  className={cn(
-                    "relative grid size-8 place-items-center rounded-md text-muted-foreground",
-                    "transition-colors hover:bg-secondary hover:text-foreground",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  )}
-                  aria-label="Notifications"
-                >
-                  <Bell className="size-4" />
-                  <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-destructive" />
-                </button>
+              <TooltipTrigger
+                aria-label="Notifications"
+                className={cn(
+                  "relative grid size-8 place-items-center rounded-md text-muted-foreground",
+                  "transition-colors hover:bg-secondary hover:text-foreground",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                )}
+              >
+                <Bell className="size-4" aria-hidden />
+                <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-destructive" aria-hidden />
               </TooltipTrigger>
               <TooltipContent side="bottom">Notifications</TooltipContent>
             </Tooltip>
