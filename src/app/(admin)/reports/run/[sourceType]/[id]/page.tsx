@@ -243,9 +243,9 @@ export default function ReportRunPage() {
         </p>
       )}
 
-      <div className="glass-panel relative z-10 mb-6 w-full overflow-visible rounded-[2rem] border border-slate-200 bg-white/40 p-6 shadow-sm backdrop-blur-3xl transition-all dark:border-white/5 dark:bg-black/20 sm:p-8">
+      <div className="relative z-10 mb-6 w-full overflow-visible rounded-lg border border-slate-200 bg-card p-6 shadow-sm transition-all dark:border-white/5 sm:p-8">
         <div className="mb-6">
-          <h3 className="font-display text-xl font-semibold text-slate-900 dark:text-white">
+          <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
             Execution
           </h3>
           <p className="font-mono text-sm text-slate-500 dark:text-slate-400">
@@ -256,7 +256,7 @@ export default function ReportRunPage() {
           <div className="grid max-w-lg gap-2">
             <Label
               htmlFor="report-facility-scope"
-              className="flex items-center gap-2 text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500 dark:text-slate-400"
+              className="flex items-center gap-2 text-[10px] font-bold font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400"
             >
               <Building2 className="h-3.5 w-3.5 text-indigo-500" aria-hidden />
               Facility scope
@@ -284,7 +284,7 @@ export default function ReportRunPage() {
           </div>
           <div className="mt-4 flex flex-wrap gap-3">
             <Button
-              className="h-10 rounded-full border-0 bg-indigo-600 px-8 font-mono text-[10px] font-semibold uppercase tracking-widest text-white shadow-lg hover:-translate-y-0.5 hover:bg-indigo-700"
+              className="h-10 rounded-full border-0 bg-indigo-600 px-8 font-mono text-[10px] font-semibold uppercase tracking-wider text-white shadow-lg hover:-translate-y-0.5 hover:bg-indigo-700"
               onClick={() => void onRun()}
               disabled={running || !orgId}
             >
@@ -292,7 +292,7 @@ export default function ReportRunPage() {
             </Button>
             <Button
               variant="secondary"
-              className="h-10 rounded-full border border-slate-200 bg-slate-100 px-6 font-mono text-[10px] uppercase tracking-widest text-slate-900 shadow-sm hover:-translate-y-0.5 hover:bg-slate-200 dark:border-white/10 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
+              className="h-10 rounded-full border border-slate-200 bg-slate-100 px-6 font-mono text-[10px] uppercase tracking-wider text-slate-900 shadow-sm hover:-translate-y-0.5 hover:bg-slate-200 dark:border-white/10 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
               onClick={() => void onExportCsv()}
               disabled={!result}
             >
@@ -300,7 +300,7 @@ export default function ReportRunPage() {
             </Button>
             <Button
               variant="outline"
-              className="h-10 rounded-full border border-slate-300 bg-transparent px-6 font-mono text-[10px] uppercase tracking-widest text-slate-700 hover:-translate-y-0.5 hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10"
+              className="h-10 rounded-full border border-slate-300 bg-transparent px-6 font-mono text-[10px] uppercase tracking-wider text-slate-700 hover:-translate-y-0.5 hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10"
               onClick={() => void onPrint()}
               disabled={!result}
             >
@@ -311,9 +311,9 @@ export default function ReportRunPage() {
       </div>
 
       {result && (
-        <div className="glass-panel relative z-10 w-full overflow-visible rounded-[2rem] border border-slate-200 bg-white/40 p-6 shadow-sm backdrop-blur-3xl transition-all dark:border-white/5 dark:bg-black/20 sm:p-8">
+        <div className="relative z-10 w-full overflow-visible rounded-lg border border-slate-200 bg-card p-6 shadow-sm transition-all dark:border-white/5 sm:p-8">
           <div className="mb-6">
-            <h3 className="font-display text-xl font-semibold text-slate-900 dark:text-white">
+            <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
               Run result
             </h3>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">

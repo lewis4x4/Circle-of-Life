@@ -237,8 +237,8 @@ export function AdminCompliancePageClient({
       <div className="relative z-10 space-y-8 max-w-6xl mx-auto">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between py-6">
           <div>
-            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 08 / Quality & Risk</p>
-            <h1 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            
+            <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
               Compliance {(emergencyItems.some((e) => e.overdue) || (complianceScore?.percentage ?? 100) < 75) && <PulseDot colorClass="bg-rose-500" />}
             </h1>
             <p className="mt-2 max-w-xl text-sm text-slate-600 dark:text-slate-400">
@@ -250,37 +250,37 @@ export function AdminCompliancePageClient({
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Link href="/admin/compliance/audit-export" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "glass-panel bg-white/50 dark:bg-zinc-900/40 text-[10px] uppercase tracking-widest font-mono text-slate-700 dark:text-slate-300")}>
+            <Link href="/admin/compliance/audit-export" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-white/50 dark:bg-zinc-900/40 text-[10px] uppercase tracking-wider font-mono text-slate-700 dark:text-slate-300")}>
               Audit log export
             </Link>
-            <Link href="/admin/compliance/policies" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "glass-panel bg-white/50 dark:bg-zinc-900/40 text-[10px] uppercase tracking-widest font-mono text-slate-700 dark:text-slate-300")}>
+            <Link href="/admin/compliance/policies" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-white/50 dark:bg-zinc-900/40 text-[10px] uppercase tracking-wider font-mono text-slate-700 dark:text-slate-300")}>
               Policy library
             </Link>
-            <Link href="/admin/compliance/deficiencies/new" className={cn(buttonVariants({ size: "sm" }), "text-[10px] uppercase tracking-widest font-mono bg-indigo-600 hover:bg-indigo-700 text-white")}>
+            <Link href="/admin/compliance/deficiencies/new" className={cn(buttonVariants({ size: "sm" }), "text-[10px] uppercase tracking-wider font-mono bg-indigo-600 hover:bg-indigo-700 text-white")}>
               Add deficiencies
             </Link>
-            <Link href="/admin/certifications" className={cn(buttonVariants({ variant: "secondary", size: "sm" }), "text-[10px] uppercase tracking-widest font-mono glass-panel bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50")}>
+            <Link href="/admin/certifications" className={cn(buttonVariants({ variant: "secondary", size: "sm" }), "text-[10px] uppercase tracking-wider font-mono bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50")}>
               Certifications
             </Link>
             {/* Enhanced tier links */}
-            <Link href="/admin/compliance/rules" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "glass-panel bg-indigo-50/30 dark:bg-indigo-900/20 text-[10px] uppercase tracking-widest font-mono text-indigo-700 dark:text-indigo-300")}>
+            <Link href="/admin/compliance/rules" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-indigo-50/30 dark:bg-indigo-900/20 text-[10px] uppercase tracking-wider font-mono text-indigo-700 dark:text-indigo-300")}>
               Compliance Rules
             </Link>
-            <Link href="/admin/compliance/scan" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "glass-panel bg-indigo-50/30 dark:bg-indigo-900/20 text-[10px] uppercase tracking-widest font-mono text-indigo-700 dark:text-indigo-300")}>
+            <Link href="/admin/compliance/scan" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-indigo-50/30 dark:bg-indigo-900/20 text-[10px] uppercase tracking-wider font-mono text-indigo-700 dark:text-indigo-300")}>
               Run Scan
             </Link>
-            <Link href="/admin/compliance/deficiencies/analysis" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "glass-panel bg-indigo-50/30 dark:bg-indigo-900/20 text-[10px] uppercase tracking-widest font-mono text-indigo-700 dark:text-indigo-300")}>
+            <Link href="/admin/compliance/deficiencies/analysis" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-indigo-50/30 dark:bg-indigo-900/20 text-[10px] uppercase tracking-wider font-mono text-indigo-700 dark:text-indigo-300")}>
               Analysis
             </Link>
-            <Link href="/admin/compliance/emergency-preparedness" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "glass-panel bg-orange-50/30 dark:bg-orange-950/20 text-[10px] uppercase tracking-widest font-mono text-orange-700 dark:text-orange-300")}>
+            <Link href="/admin/compliance/emergency-preparedness" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-orange-50/30 dark:bg-orange-950/20 text-[10px] uppercase tracking-wider font-mono text-orange-700 dark:text-orange-300")}>
               Emergency Prep
             </Link>
           </div>
         </div>
 
         {!facilityReady ? (
-          <div className="rounded-[2rem] glass-panel bg-amber-50/40 dark:bg-amber-950/20 p-8 border border-amber-200/50 dark:border-amber-900/50 backdrop-blur-md">
-            <h3 className="text-lg font-display font-semibold text-amber-900 dark:text-amber-300 mb-2">Select a facility</h3>
+          <div className="rounded-lg bg-amber-50/40 dark:bg-amber-950/20 p-8 border border-amber-200/50 dark:border-amber-900/50 backdrop-blur-md">
+            <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-300 mb-2">Select a facility</h3>
             <p className="text-sm font-medium text-amber-700 dark:text-amber-500">
               Choose a facility in header to load compliance metrics for that site.
             </p>
@@ -352,7 +352,7 @@ export function AdminCompliancePageClient({
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <FileWarning className="h-6 w-6 text-indigo-500 drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
-            <h2 className="text-xl font-display font-semibold tracking-tight text-slate-800 dark:text-slate-100">Open Deficiencies</h2>
+            <h2 className="text-xl font-semibold tracking-tight text-slate-800 dark:text-slate-100">Open Deficiencies</h2>
           </div>
           <p className="text-sm font-mono text-slate-500 mb-6">Survey citations that still need correction or verification.</p>
 
@@ -361,24 +361,24 @@ export function AdminCompliancePageClient({
           ) : defLoading ? (
             <p className="text-sm font-mono text-slate-500">Loading…</p>
           ) : defRows.length === 0 ? (
-            <div className="p-8 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md max-w-xl mx-auto mt-8">
+            <div className="p-8 text-center text-slate-500 bg-white/30 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md max-w-xl mx-auto mt-8">
                <p className="font-medium">All Clear</p>
                <p className="text-sm opacity-80 mt-1">No open deficiencies for this facility.</p>
             </div>
           ) : (
             <MotionList className="space-y-3">
               {defRows.map((row) => (
-                <MotionItem key={row.id} className="p-4 rounded-2xl glass-panel group transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/40 dark:border-white/5 bg-white/50 dark:bg-slate-900/30">
+                <MotionItem key={row.id} className="p-4 rounded-2xl group transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/40 dark:border-white/5 bg-white/50 dark:bg-slate-900/30">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800/80 flex flex-col items-center justify-center border border-slate-200 dark:border-slate-700/50 flex-shrink-0">
-                        <span className="text-[10px] uppercase font-mono tracking-widest text-slate-400">Tag</span>
+                        <span className="text-[10px] uppercase font-mono tracking-wider text-slate-400">Tag</span>
                         <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{row.tag_number}</span>
                       </div>
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="font-mono text-[9px] uppercase tracking-widest shadow-sm bg-white dark:bg-black/40">Severity {row.severity}</Badge>
-                          <span className="text-[10px] font-mono tracking-widest text-slate-400 uppercase">{row.status.replace(/_/g, " ")}</span>
+                          <Badge variant="outline" className="font-mono text-[9px] uppercase tracking-wider shadow-sm bg-white dark:bg-black/40">Severity {row.severity}</Badge>
+                          <span className="text-[10px] font-mono tracking-wider text-slate-400 uppercase">{row.status.replace(/_/g, " ")}</span>
                         </div>
                         <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">POC Due: {row.submission_due_date ?? "—"}</span>
                       </div>
@@ -386,7 +386,7 @@ export function AdminCompliancePageClient({
 
                     <Link
                       href={`/admin/compliance/deficiencies/${row.id}`}
-                      className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full sm:w-auto font-mono text-[10px] uppercase tracking-widest shadow-none bg-transparent border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 group-hover:border-indigo-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400")}
+                      className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full sm:w-auto font-mono text-[10px] uppercase tracking-wider shadow-none bg-transparent border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 group-hover:border-indigo-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400")}
                     >
                       Manage Finding
                     </Link>
@@ -399,22 +399,22 @@ export function AdminCompliancePageClient({
 
         {/* Enhanced Tier: Compliance Score */}
         {complianceScore && (
-          <div className="rounded-3xl glass-panel p-6 border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/30">
+          <div className="rounded-lg p-6 border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/30">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <TrendingUp className="h-6 w-6 text-indigo-500" />
                 <div>
-                  <h2 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100">Compliance Score</h2>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Compliance Score</h2>
                   <p className="text-sm text-slate-500">Based on latest rule-based scan</p>
                 </div>
               </div>
-              <Link href="/admin/compliance/scan" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "glass-panel bg-indigo-50/30 dark:bg-indigo-900/20 text-[10px] uppercase tracking-widest font-mono text-indigo-700 dark:text-indigo-300")}>
+              <Link href="/admin/compliance/scan" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-indigo-50/30 dark:bg-indigo-900/20 text-[10px] uppercase tracking-wider font-mono text-indigo-700 dark:text-indigo-300")}>
                 Run New Scan
               </Link>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-6 rounded-xl bg-slate-50 dark:bg-slate-900/30 text-center">
-                <p className="text-5xl font-bold text-slate-900 dark:text-slate-100">
+                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                   {complianceScore.percentage}%
                 </p>
                 <p className="text-xs text-slate-500 mt-2 uppercase">Pass Rate</p>
@@ -443,7 +443,7 @@ export function AdminCompliancePageClient({
 
         {/* Enhanced Tier: Emergency Preparedness */}
         {emergencyItems.length > 0 && (
-          <div className="rounded-3xl glass-panel p-6 border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/30">
+          <div className="rounded-lg p-6 border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/30">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className={`p-3 rounded-lg ${
@@ -458,11 +458,11 @@ export function AdminCompliancePageClient({
                   )}
                 </div>
                 <div>
-                  <h2 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100">Emergency Preparedness</h2>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Emergency Preparedness</h2>
                   <p className="text-sm text-slate-500">Next required drills and checks</p>
                 </div>
               </div>
-              <Link href="/admin/compliance/emergency-preparedness" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "glass-panel bg-orange-50/30 dark:bg-orange-950/20 text-[10px] uppercase tracking-widest font-mono text-orange-700 dark:text-orange-300")}>
+              <Link href="/admin/compliance/emergency-preparedness" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-orange-50/30 dark:bg-orange-950/20 text-[10px] uppercase tracking-wider font-mono text-orange-700 dark:text-orange-300")}>
                 Manage Checklist
               </Link>
             </div>
@@ -512,7 +512,7 @@ export function AdminCompliancePageClient({
 
         {/* Enhanced Tier: Compliance Reminders */}
         {reminders.length > 0 && (
-          <div className="rounded-3xl glass-panel p-6 border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/30">
+          <div className="rounded-lg p-6 border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/30">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className={`p-3 rounded-lg ${
@@ -523,11 +523,11 @@ export function AdminCompliancePageClient({
                   <Bell className="h-6 w-6 text-indigo-600" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100">Pending Reminders</h2>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Pending Reminders</h2>
                   <p className="text-sm text-slate-500">Action items requiring attention</p>
                 </div>
               </div>
-              <Link href="/admin/compliance/deficiencies/new" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "glass-panel bg-indigo-50/30 dark:bg-indigo-900/20 text-[10px] uppercase tracking-widest font-mono text-indigo-700 dark:text-indigo-300")}>
+              <Link href="/admin/compliance/deficiencies/new" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-indigo-50/30 dark:bg-indigo-900/20 text-[10px] uppercase tracking-wider font-mono text-indigo-700 dark:text-indigo-300")}>
                 View All
               </Link>
             </div>
@@ -536,7 +536,7 @@ export function AdminCompliancePageClient({
                 const isWeekly = reminder.reminder_type === 'weekly_digest';
                 const isUrgent = reminder.reminder_type === 'poc_due' || reminder.reminder_type === 'assessment_overdue';
                 return (
-                  <MotionItem key={reminder.id} className="p-4 rounded-xl glass-panel transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/40 dark:border-white/5 bg-white/50 dark:bg-slate-900/30">
+                  <MotionItem key={reminder.id} className="p-4 rounded-xl transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/40 dark:border-white/5 bg-white/50 dark:bg-slate-900/30">
                     <div className="flex items-start justify-between gap-4 w-full">
                       <div className="flex items-start gap-3 flex-1">
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
@@ -554,7 +554,7 @@ export function AdminCompliancePageClient({
                           <div className="flex items-center gap-2 mb-1">
                             <p className="font-medium text-slate-900 dark:text-slate-100">{reminder.title}</p>
                             {isUrgent && (
-                              <Badge variant="destructive" className="text-[9px] uppercase tracking-widest">Urgent</Badge>
+                              <Badge variant="destructive" className="text-[9px] uppercase tracking-wider">Urgent</Badge>
                             )}
                           </div>
                           {reminder.description && (
@@ -586,35 +586,35 @@ export function AdminCompliancePageClient({
 
         {/* Survey Mode and Quick Links */}
         <div className="grid gap-5 md:grid-cols-2 mt-8">
-          <div className="rounded-3xl glass-panel p-6 border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/30">
+          <div className="rounded-lg p-6 border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/30">
             <div className="flex items-center gap-3 mb-4">
               <Shield className="h-6 w-6 text-indigo-500" />
               <div>
-                <h3 className="text-lg font-display font-semibold text-slate-800 dark:text-slate-200">Survey visit mode</h3>
+                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">Survey visit mode</h3>
                 <p className="text-xs font-medium text-slate-500 mb-4">Use bar below header to activate logging while a regulator is on site.</p>
-                <div className="bg-white/60 dark:bg-black/30 p-4 rounded-xl border border-white/40 dark:border-white/5 font-mono text-sm text-slate-700 dark:text-slate-300">
+                <div className="bg-card p-4 rounded-xl border border-white/40 dark:border-white/5 font-mono text-sm text-slate-700 dark:text-slate-300">
                    {snapLoading ? "—" : snapshot?.surveyVisitActive ? <span className="text-emerald-600 dark:text-emerald-400 font-bold">● Session active for this facility.</span> : "No active session."}
                 </div>
               </div>
             </div>
           </div>
-          <div className="rounded-3xl glass-panel p-6 border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/30">
+          <div className="rounded-lg p-6 border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/30">
             <div className="flex items-center gap-3 mb-4">
               <ClipboardList className="h-6 w-6 text-emerald-500" />
               <div>
-                <h3 className="text-lg font-display font-semibold text-slate-800 dark:text-slate-200">Quick Links</h3>
+                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">Quick Links</h3>
               </div>
             </div>
             <div className="flex flex-col gap-3">
-              <Link href="/admin/compliance/policies" className="group flex items-center justify-between p-3 rounded-xl hover:bg-white/60 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-white/10">
+              <Link href="/admin/compliance/policies" className="group flex items-center justify-between p-3 rounded-xl hover:bg-card dark:hover:bg-white/5 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-white/10">
                 <span className="font-medium text-sm text-slate-700 dark:text-slate-300">Policy library</span>
                 <span className="text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">→</span>
               </Link>
-              <Link href="/admin/compliance/deficiencies/new" className="group flex items-center justify-between p-3 rounded-xl hover:bg-white/60 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-white/10">
+              <Link href="/admin/compliance/deficiencies/new" className="group flex items-center justify-between p-3 rounded-xl hover:bg-card dark:hover:bg-white/5 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-white/10">
                 <span className="font-medium text-sm text-slate-700 dark:text-slate-300">Enter survey deficiencies</span>
                 <span className="text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">→</span>
               </Link>
-              <Link href="/admin/incidents" className="group flex items-center justify-between p-3 rounded-xl hover:bg-white/60 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-white/10">
+              <Link href="/admin/incidents" className="group flex items-center justify-between p-3 rounded-xl hover:bg-card dark:hover:bg-white/5 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-white/10">
                 <span className="font-medium text-sm text-slate-700 dark:text-slate-300">Incidents & follow-ups</span>
                 <span className="text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">→</span>
               </Link>
@@ -662,7 +662,7 @@ function Tile({
         <MonolithicWatermark value={value ?? 0} className={cn("opacity-50", isDanger ? "text-red-500/5" : "text-slate-500/5 dark:text-white/5")} />
         <div className="relative z-10 flex flex-col h-full justify-between">
           <div className="flex items-center justify-between">
-             <h3 className={cn("text-[10px] font-mono tracking-widest uppercase", isDanger ? "text-red-600 dark:text-red-400" : "text-slate-500 dark:text-slate-400")}>
+             <h3 className={cn("text-[10px] font-mono tracking-wider uppercase", isDanger ? "text-red-600 dark:text-red-400" : "text-slate-500 dark:text-slate-400")}>
                {title}
              </h3>
              <div className="flex items-center gap-2">

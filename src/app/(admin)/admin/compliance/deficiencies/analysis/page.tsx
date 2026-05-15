@@ -66,7 +66,7 @@ function CustomTooltip({
   if (active && payload && payload.length) {
     return (
       <div className="bg-slate-900/90 backdrop-blur-md border border-slate-700/50 p-3 rounded-lg shadow-2xl">
-        <p className="text-xs font-mono text-slate-400 mb-2 uppercase tracking-widest">{label}</p>
+        <p className="text-xs font-mono text-slate-400 mb-2 uppercase tracking-wider">{label}</p>
         {payload.map((p, idx) => (
           <div key={idx} className="flex items-center gap-2 mb-1 last:mb-0">
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
@@ -178,8 +178,8 @@ export default function DeficienciesAnalysisPage() {
       <div className="relative z-10 space-y-8 max-w-7xl mx-auto">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between py-6">
           <div>
-            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 08 / Quality & Risk</p>
-            <h1 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            
+            <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
               <BarChart3 className="h-8 w-8 text-indigo-500" />
               Deficiencies Analysis
             </h1>
@@ -188,15 +188,15 @@ export default function DeficienciesAnalysisPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Link href={homeHref} className="text-[10px] uppercase tracking-widest font-mono text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+            <Link href={homeHref} className="text-[10px] uppercase tracking-wider font-mono text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
               ← Back to Dashboard
             </Link>
           </div>
         </div>
 
         {!facilityReady ? (
-          <div className="rounded-[2rem] glass-panel bg-amber-50/40 dark:bg-amber-950/20 p-8 border border-amber-200/50 dark:border-amber-900/50 backdrop-blur-md">
-            <h3 className="text-lg font-display font-semibold text-amber-900 dark:text-amber-300 mb-2">Select a facility</h3>
+          <div className="rounded-lg bg-amber-50/40 dark:bg-amber-950/20 p-8 border border-amber-200/50 dark:border-amber-900/50 backdrop-blur-md">
+            <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-300 mb-2">Select a facility</h3>
             <p className="text-sm font-medium text-amber-700 dark:text-amber-500">
               Choose a facility in header to load deficiency analysis.
             </p>
@@ -204,7 +204,7 @@ export default function DeficienciesAnalysisPage() {
         ) : null}
 
         {error ? (
-          <div className="rounded-[2rem] glass-panel bg-red-50/40 dark:bg-red-950/20 p-8 border border-red-200/50 dark:border-red-900/50 backdrop-blur-md">
+          <div className="rounded-lg bg-red-50/40 dark:bg-red-950/20 p-8 border border-red-200/50 dark:border-red-900/50 backdrop-blur-md">
             <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error}</p>
           </div>
         ) : null}
@@ -274,7 +274,7 @@ export default function DeficienciesAnalysisPage() {
                 <div className="flex items-center gap-3 mb-6">
                   <TrendingUp className="h-5 w-5 text-indigo-500" />
                   <div>
-                    <h2 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                       Deficiency Trend Over Time
                     </h2>
                     <p className="text-sm text-slate-500">
@@ -309,7 +309,7 @@ export default function DeficienciesAnalysisPage() {
                 <div className="flex items-center gap-3 mb-6">
                   <AlertTriangle className="h-5 w-5 text-rose-500" />
                   <div>
-                    <h2 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                       Most Cited Tags
                     </h2>
                     <p className="text-sm text-slate-500">
@@ -337,7 +337,7 @@ export default function DeficienciesAnalysisPage() {
                 <div className="flex items-center gap-3 mb-6">
                   <Filter className="h-5 w-5 text-amber-500" />
                   <div>
-                    <h2 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                       Recurring Tags Analysis
                     </h2>
                     <p className="text-sm text-slate-500">
@@ -349,12 +349,12 @@ export default function DeficienciesAnalysisPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-slate-200 dark:border-slate-700">
-                        <th className="text-left py-3 px-4 font-mono text-xs uppercase tracking-widest text-slate-500">Tag</th>
-                        <th className="text-left py-3 px-4 font-mono text-xs uppercase tracking-widest text-slate-500">Title</th>
-                        <th className="text-center py-3 px-4 font-mono text-xs uppercase tracking-widest text-slate-500">Occurrences</th>
-                        <th className="text-center py-3 px-4 font-mono text-xs uppercase tracking-widest text-slate-500">Avg Gap (Days)</th>
-                        <th className="text-center py-3 px-4 font-mono text-xs uppercase tracking-widest text-slate-500">Last Status</th>
-                        <th className="text-center py-3 px-4 font-mono text-xs uppercase tracking-widest text-slate-500">Action</th>
+                        <th className="text-left py-3 px-4 font-mono text-xs uppercase tracking-wider text-slate-500">Tag</th>
+                        <th className="text-left py-3 px-4 font-mono text-xs uppercase tracking-wider text-slate-500">Title</th>
+                        <th className="text-center py-3 px-4 font-mono text-xs uppercase tracking-wider text-slate-500">Occurrences</th>
+                        <th className="text-center py-3 px-4 font-mono text-xs uppercase tracking-wider text-slate-500">Avg Gap (Days)</th>
+                        <th className="text-center py-3 px-4 font-mono text-xs uppercase tracking-wider text-slate-500">Last Status</th>
+                        <th className="text-center py-3 px-4 font-mono text-xs uppercase tracking-wider text-slate-500">Action</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -390,7 +390,7 @@ export default function DeficienciesAnalysisPage() {
                             </Badge>
                           </td>
                           <td className="py-3 px-4 text-center">
-                            <Button variant="outline" size="sm" className="text-[10px] uppercase tracking-widest">
+                            <Button variant="outline" size="sm" className="text-[10px] uppercase tracking-wider">
                               View Details
                             </Button>
                           </td>
@@ -401,7 +401,7 @@ export default function DeficienciesAnalysisPage() {
                 </div>
               </V2Card>
             ) : (
-              <div className="rounded-2xl glass-panel bg-slate-50/40 dark:bg-slate-900/20 p-8 border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-md text-center">
+              <div className="rounded-2xl bg-slate-50/40 dark:bg-slate-900/20 p-8 border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-md text-center">
                 <p className="font-medium text-slate-700 dark:text-slate-300">No recurring deficiencies</p>
                 <p className="text-sm text-slate-500 mt-1">
                   Great job! No tags have been cited multiple times in the selected period.

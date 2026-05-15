@@ -159,10 +159,10 @@ export default function ExecutiveStandupPage() {
       <div className="relative z-10 space-y-6">
         <ExecutiveHubNav />
 
-        <header className="rounded-[2rem] border border-slate-200/70 bg-white/70 p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+        <header className="rounded-lg border border-slate-200/70 bg-white/70 p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
                 <FileSpreadsheet className="h-3.5 w-3.5" />
                 Owner Operating System
               </div>
@@ -174,16 +174,16 @@ export default function ExecutiveStandupPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-widest">
+              <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-wider">
                 <CalendarDays className="mr-1.5 h-3.5 w-3.5" />
                 Week Of {weekOf}
               </Badge>
               {draftStatus ? (
-                <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-widest">
+                <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-wider">
                   Draft {draftStatus.status} · {draftStatus.completenessPct.toFixed(0)}% complete
                 </Badge>
               ) : (
-                <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-widest">
+                <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-wider">
                   No draft yet
                 </Badge>
               )}
@@ -193,14 +193,14 @@ export default function ExecutiveStandupPage() {
               </Button>
               <Link
                 href="/admin/executive/standup/history"
-                className="inline-flex h-10 items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-4 text-xs font-semibold uppercase tracking-widest text-slate-700 transition-colors hover:bg-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10"
+                className="inline-flex h-10 items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-4 text-xs font-semibold uppercase tracking-wider text-slate-700 transition-colors hover:bg-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10"
               >
                 History
               </Link>
               {draftStatus ? (
                 <Link
                   href={`/admin/executive/standup/${weekOf}`}
-                  className="inline-flex h-10 items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-4 text-xs font-semibold uppercase tracking-widest text-indigo-700 transition-colors hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/15"
+                  className="inline-flex h-10 items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-4 text-xs font-semibold uppercase tracking-wider text-indigo-700 transition-colors hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/15"
                 >
                   Open draft
                 </Link>
@@ -226,11 +226,11 @@ export default function ExecutiveStandupPage() {
           {(loading ? Array.from({ length: 6 }) : ["current_ar_cents", "current_total_census", "total_beds_open", "expected_discharges", "overtime_hours", "hospital_and_rehab_total"]).map(
             (metricKey, index) => {
               if (loading) {
-                return <Skeleton key={`standup-kpi-${index}`} className="h-[140px] rounded-[1.75rem]" />;
+                return <Skeleton key={`standup-kpi-${index}`} className="h-[140px] rounded-lg" />;
               }
               const metric = totalRow?.metrics[metricKey as string];
               return (
-                <Card key={metricKey as string} className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+                <Card key={metricKey as string} className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                   <CardHeader className="pb-3">
                     <CardDescription className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">
                       {metric?.label ?? "Metric"}
@@ -265,9 +265,9 @@ export default function ExecutiveStandupPage() {
           </div>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 xl:grid-cols-5">
             {loading
-              ? Array.from({ length: 5 }).map((_, index) => <Skeleton key={`facility-card-${index}`} className="h-[200px] rounded-[1.75rem]" />)
+              ? Array.from({ length: 5 }).map((_, index) => <Skeleton key={`facility-card-${index}`} className="h-[200px] rounded-lg" />)
               : facilityCards.map((facility) => (
-                  <Card key={facility.facilityId} className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+                  <Card key={facility.facilityId} className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                     <CardHeader>
                       <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white">{facility.facilityName}</CardTitle>
                       <CardDescription>{facility.topConcern}</CardDescription>
@@ -295,7 +295,7 @@ export default function ExecutiveStandupPage() {
         </section>
 
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-          <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+          <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
             <CardHeader>
               <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white">Intervention queue</CardTitle>
               <CardDescription>Highest-leverage actions derived from the current facility pressure board.</CardDescription>
@@ -324,7 +324,7 @@ export default function ExecutiveStandupPage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+          <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
             <CardHeader>
               <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white">Variance flags</CardTitle>
               <CardDescription>Week-over-week shifts versus the last published packet.</CardDescription>
@@ -355,7 +355,7 @@ export default function ExecutiveStandupPage() {
           </div>
 
           {sections.map((section) => (
-            <Card key={section.sectionKey} className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <Card key={section.sectionKey} className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
               <CardHeader>
                 <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white">{section.sectionLabel}</CardTitle>
               </CardHeader>

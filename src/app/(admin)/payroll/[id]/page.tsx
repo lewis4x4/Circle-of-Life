@@ -342,10 +342,8 @@ export default function AdminPayrollBatchDetailPage() {
     <div className="mx-auto max-w-4xl space-y-6 p-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500">
-            SYS: Module 13 / Payroll
-          </p>
-          <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+          
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
             Payroll batch
           </h1>
         </div>

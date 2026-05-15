@@ -39,11 +39,11 @@ export default function HousekeeperDashboardPage() {
   return (
     <div className="space-y-8 pb-12 px-4">
       {/* Header */}
-      <div className="bg-white/5 dark:bg-white/[0.03] p-6 rounded-2xl border border-white/10 backdrop-blur-xl">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-[10px] font-bold uppercase tracking-widest text-violet-300 mb-3">
+      <div className="bg-white/5 p-6 rounded-2xl border border-white/10">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-[10px] font-bold uppercase tracking-wider text-violet-300 mb-3">
           <Sparkles className="w-3.5 h-3.5" /> Housekeeping
         </div>
-        <h1 className="text-3xl font-display font-light tracking-tight text-white">
+        <h1 className="text-3xl font-semibold tracking-tight text-white">
           My Dashboard
         </h1>
         <p className="text-zinc-400 font-medium tracking-wide mt-1 text-sm">
@@ -60,10 +60,10 @@ export default function HousekeeperDashboardPage() {
       </div>
 
       {/* Completion Progress */}
-      <div className="bg-white/5 dark:bg-white/[0.03] p-5 rounded-2xl border border-white/10 backdrop-blur-xl">
+      <div className="bg-white/5 p-5 rounded-2xl border border-white/10">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400">Completion</span>
-          <span className={cn("text-2xl font-display font-medium tabular-nums", completionColor)}>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Completion</span>
+          <span className={cn("text-2xl font-medium tabular-nums", completionColor)}>
             {brief.completionPct}%
           </span>
         </div>
@@ -79,8 +79,8 @@ export default function HousekeeperDashboardPage() {
       </div>
 
       {/* Task List */}
-      <div className="bg-white/5 dark:bg-white/[0.03] p-5 rounded-2xl border border-white/10 backdrop-blur-xl">
-        <h3 className="text-lg font-display font-medium text-white mb-4 flex items-center gap-2">
+      <div className="bg-white/5 p-5 rounded-2xl border border-white/10">
+        <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
           <BedDouble className="w-4 h-4 text-violet-400" /> Today&apos;s Rooms
         </h3>
         {brief.tasks.length === 0 ? (
@@ -109,7 +109,7 @@ export default function HousekeeperDashboardPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   {t.isPriority && (
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-rose-400 px-2 py-0.5 rounded-full bg-rose-500/10">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-rose-400 px-2 py-0.5 rounded-full bg-rose-500/10">
                       Priority
                     </span>
                   )}
@@ -133,12 +133,12 @@ function MobileStat({ title, value, icon: Icon, color }: {
   title: string; value: string | number; icon: React.ElementType<{ className?: string }>; color: string;
 }) {
   return (
-    <div className="bg-white/5 dark:bg-white/[0.03] p-4 rounded-xl border border-white/10 backdrop-blur-xl">
+    <div className="bg-white/5 p-4 rounded-xl border border-white/10">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{title}</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">{title}</span>
         <Icon className={cn("w-4 h-4", color)} />
       </div>
-      <span className={cn("text-3xl font-display font-medium tabular-nums", color)}>{value}</span>
+      <span className={cn("text-3xl font-medium tabular-nums", color)}>{value}</span>
     </div>
   );
 }

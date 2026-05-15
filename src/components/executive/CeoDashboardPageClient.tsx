@@ -81,7 +81,7 @@ export default function CeoDashboardPageClient({
               >
                 <ArrowLeft className="h-3.5 w-3.5" /> Back to Executive Overview
               </Link>
-              <SysLabel>SYS: COMMAND CENTER</SysLabel>
+              
               <TitleH1>Chief Executive Officer</TitleH1>
               <Subtitle>Enterprise Growth &amp; Risk Matrix</Subtitle>
             </div>

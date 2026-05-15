@@ -194,7 +194,7 @@ export default function AdminNewResidentPage() {
       <div className="flex items-center gap-2">
         <UserPlus className="h-6 w-6 text-slate-500" />
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Add resident (override)</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Add resident (override)</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
             Administrative override for emergency cases or data migration.
           </p>

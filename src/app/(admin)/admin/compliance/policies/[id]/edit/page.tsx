@@ -170,7 +170,7 @@ export default function EditPolicyPage() {
           ← Policies
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          <h1 className="font-display text-2xl font-semibold text-slate-900 dark:text-slate-100">Edit policy</h1>
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Edit policy</h1>
           <Badge>{status}</Badge>
         </div>
       </div>

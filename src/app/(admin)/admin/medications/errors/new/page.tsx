@@ -146,7 +146,7 @@ export default function NewMedicationErrorPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-display">Report medication error</CardTitle>
+          <CardTitle className="">Report medication error</CardTitle>
           <CardDescription>Structured capture for quality improvement.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

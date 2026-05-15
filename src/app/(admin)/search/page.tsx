@@ -150,7 +150,7 @@ export default function AdminSearchPage() {
                   <Sparkles className="size-3.5 text-indigo-400" aria-hidden />
                   Find records
                 </div>
-                <h1 className="font-display text-3xl font-semibold tracking-tight text-zinc-100 sm:text-4xl">
+                <h1 className="text-3xl font-semibold tracking-tight text-zinc-100 sm:text-4xl">
                   Unified Search
                 </h1>
                 <p className="max-w-xl text-base leading-relaxed text-zinc-400">
@@ -186,7 +186,7 @@ export default function AdminSearchPage() {
                     <Search className="size-8 text-white" strokeWidth={2} />
                   </div>
                   <div>
-                    <h2 className="font-display text-xl font-semibold text-zinc-100 sm:text-2xl">What are you looking for?</h2>
+                    <h2 className="text-xl font-semibold text-zinc-100 sm:text-2xl">What are you looking for?</h2>
                     <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-zinc-500">
                       Type at least two characters in the bar below, or start from a suggestion.
                     </p>

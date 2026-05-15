@@ -202,7 +202,7 @@ export default function AdminNewCertificationPage() {
       <div className="flex items-center gap-2">
         <Award className="h-6 w-6 text-slate-500" />
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Add certification</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Add certification</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
             Record a license or training credential for a staff member at this facility.
           </p>

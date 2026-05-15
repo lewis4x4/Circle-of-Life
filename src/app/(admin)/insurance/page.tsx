@@ -165,7 +165,7 @@ export default function AdminInsuranceHubPage() {
             <Link
               key={item.title}
               href={item.href}
-              className="rounded-[1.5rem] border border-slate-200/70 bg-white/70 p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg dark:border-white/5 dark:bg-white/[0.03] dark:hover:border-indigo-500/30"
+              className="rounded-lg border border-slate-200/70 bg-white/70 p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg dark:border-white/5 dark:hover:border-indigo-500/30"
             >
               <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">{item.title}</h3>
               <p className="mt-3 text-sm leading-relaxed text-slate-700 dark:text-zinc-300">{item.description}</p>
@@ -179,10 +179,10 @@ export default function AdminInsuranceHubPage() {
               <Sparkline colorClass="text-slate-400" variant={1} />
               <MonolithicWatermark value={activePolicies ?? 0} className="text-slate-800/5 dark:text-white/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-slate-500 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-slate-500 flex items-center gap-2">
                   Active Policies
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-500 dark:from-white dark:to-slate-500 pb-1">{loading ? "…" : activePolicies ?? "—"}</p>
+                <p className="text-4xl font-mono tracking-tighter pb-1">{loading ? "…" : activePolicies ?? "—"}</p>
               </div>
             </V2Card>
           </div>
@@ -191,7 +191,7 @@ export default function AdminInsuranceHubPage() {
               <Sparkline colorClass="text-emerald-500" variant={3} />
               <MonolithicWatermark value={renewalsInFlight ?? 0} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                    Renewals in Flight
                 </h3>
                 <p className="text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1">{loading ? "…" : renewalsInFlight ?? "—"}</p>
@@ -204,7 +204,7 @@ export default function AdminInsuranceHubPage() {
               <MonolithicWatermark value={openClaims ?? 0} className="text-red-600/5 dark:text-red-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-[10px] font-mono tracking-widest uppercase text-red-600 dark:text-red-400 flex items-center gap-2">
+                  <h3 className="text-[10px] font-mono tracking-wider uppercase text-red-600 dark:text-red-400 flex items-center gap-2">
                      Open Claims
                   </h3>
                   {openClaims != null && openClaims > 0 && <PulseDot colorClass="bg-red-500" />}
@@ -217,15 +217,15 @@ export default function AdminInsuranceHubPage() {
 
       <div className="relative overflow-visible z-10 w-full mt-4 space-y-8">
         <div className="relative overflow-visible z-10 w-full">
-          <div className="glass-panel p-4 sm:p-6 mb-4 rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-xl">
-            <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Total cost of risk (TCoR)</h3>
+          <div className="p-4 sm:p-6 mb-4 rounded-lg border border-white/20 dark:border-white/5 bg-card shadow-xl">
+            <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-1">Total cost of risk (TCoR)</h3>
             <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
               Module 18 Enhanced — rolling ~12 months. Premiums sum stated policy premiums for in-force policies
               overlapping the window; losses sum paid + reserve on claims whose loss date (or reported date) falls in the
               window. Operational estimate, not GAAP.
             </p>
           </div>
-          <div className="glass-panel p-6 rounded-2xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 text-sm backdrop-blur-2xl shadow-sm space-y-4">
+          <div className="p-6 rounded-2xl border border-white/20 dark:border-white/5 bg-card text-sm shadow-sm space-y-4">
           <div className="flex flex-wrap items-end gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="tcor-entity">Entity</Label>
@@ -286,27 +286,27 @@ export default function AdminInsuranceHubPage() {
         </div>
 
         <div className="relative overflow-visible z-10 w-full mt-4">
-          <div className="glass-panel p-4 sm:p-6 mb-4 rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-xl">
-            <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Quick links</h3>
+          <div className="p-4 sm:p-6 mb-4 rounded-lg border border-white/20 dark:border-white/5 bg-card shadow-xl">
+            <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-1">Quick links</h3>
             <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">Navigate insurance workflows.</p>
           </div>
-          <div className="glass-panel p-6 rounded-2xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 flex flex-col gap-3 text-sm backdrop-blur-2xl shadow-sm">
-          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-widest hover:text-indigo-500 transition-colors" href="/admin/insurance/policies">
+          <div className="p-6 rounded-2xl border border-white/20 dark:border-white/5 bg-card flex flex-col gap-3 text-sm shadow-sm">
+          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/insurance/policies">
             Policy inventory
           </Link>
-          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-widest hover:text-indigo-500 transition-colors" href="/admin/insurance/renewals">
+          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/insurance/renewals">
             Renewals
           </Link>
-          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-widest hover:text-indigo-500 transition-colors" href="/admin/insurance/renewal-packages">
+          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/insurance/renewal-packages">
             Renewal data packages
           </Link>
-          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-widest hover:text-indigo-500 transition-colors" href="/admin/insurance/claims">
+          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/insurance/claims">
             Claims
           </Link>
-          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-widest hover:text-indigo-500 transition-colors" href="/admin/insurance/coi">
+          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/insurance/coi">
             Certificates of insurance
           </Link>
-          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-widest hover:text-indigo-500 transition-colors" href="/admin/insurance/workers-comp">
+          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/insurance/workers-comp">
             Workers’ comp
           </Link>
         </div>

@@ -353,7 +353,7 @@ export default function CaregiverResidentLogPage() {
 
       <Card className="border-zinc-800 bg-zinc-950/80 text-zinc-100">
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-lg font-display">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <FileText className="h-5 w-5 text-teal-400" />
             Shift log
           </CardTitle>

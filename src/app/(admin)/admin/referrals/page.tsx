@@ -451,12 +451,10 @@ export default function AdminReferralsHubPage() {
     <div className="mx-auto max-w-5xl space-y-10 pb-12 w-full">
       
       {/* ─── MOONSHOT HEADER ─── */}
-      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
          <div className="space-y-2">
-           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
-               SYS: Module 22
-           </div>
-           <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+           
+           <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
               Referral CRM
            </h1>
            <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400">
@@ -469,7 +467,7 @@ export default function AdminReferralsHubPage() {
       </div>
 
       {noFacility ? (
-        <div className="rounded-[1.5rem] border border-amber-500/20 bg-amber-500/5 p-6 text-sm text-amber-700 dark:text-amber-400 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm">
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-6 text-sm text-amber-700 dark:text-amber-400 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm">
            <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 border border-amber-500/30">
               <span className="font-bold">!</span>
            </div>
@@ -482,10 +480,10 @@ export default function AdminReferralsHubPage() {
         <div className="h-[180px]">
            <V2Card hoverColor="emerald" className="border-emerald-500/20 shadow-[0_8px_30px_rgba(16,185,129,0.05)]">
              <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+               <h3 className="text-xs font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                  New Leads
                </h3>
-               <p className="text-6xl font-display font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
+               <p className="text-2xl font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
                  {noFacility ? "—" : loading ? "—" : counts.new}
                </p>
              </div>
@@ -494,10 +492,10 @@ export default function AdminReferralsHubPage() {
         <div className="h-[180px]">
            <V2Card hoverColor="indigo" className="border-indigo-500/20 shadow-[0_8px_30px_rgba(99,102,241,0.05)]">
              <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-widest uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+               <h3 className="text-xs font-bold tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
                  Active Pipeline
                </h3>
-               <p className="text-6xl font-display font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
+               <p className="text-2xl font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
                  {noFacility ? "—" : loading ? "—" : counts.pipeline}
                </p>
              </div>
@@ -506,10 +504,10 @@ export default function AdminReferralsHubPage() {
         <div className="h-[180px]">
            <V2Card hoverColor="blue" className="border-blue-500/20 shadow-[0_8px_30px_rgba(59,130,246,0.05)]">
              <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-widest uppercase text-blue-600 dark:text-blue-400 flex items-center gap-2">
+               <h3 className="text-xs font-bold tracking-wider uppercase text-blue-600 dark:text-blue-400 flex items-center gap-2">
                  Converted
                </h3>
-               <p className="text-6xl font-display font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
+               <p className="text-2xl font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
                  {noFacility ? "—" : loading ? "—" : counts.converted}
                </p>
              </div>
@@ -518,11 +516,11 @@ export default function AdminReferralsHubPage() {
         <div className="h-[180px]">
            <V2Card hoverColor="rose" className="border-rose-500/20 shadow-[0_8px_30px_rgba(244,63,94,0.05)]">
              <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-widest uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2">
+               <h3 className="text-xs font-bold tracking-wider uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2">
                  Needs Attention
                </h3>
                <div className="flex items-center gap-3">
-                 <p className="text-6xl font-display font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
+                 <p className="text-2xl font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
                    {noFacility ? "—" : loading ? "—" : counts.attention}
                  </p>
                </div>
@@ -532,10 +530,10 @@ export default function AdminReferralsHubPage() {
         <div className="h-[180px]">
            <V2Card hoverColor="amber" className="border-amber-500/20 shadow-[0_8px_30px_rgba(245,158,11,0.05)]">
              <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-widest uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
+               <h3 className="text-xs font-bold tracking-wider uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
                  In Admissions
                </h3>
-               <p className="text-6xl font-display font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
+               <p className="text-2xl font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
                  {noFacility ? "—" : loading ? "—" : counts.inAdmissions}
                </p>
              </div>
@@ -550,7 +548,7 @@ export default function AdminReferralsHubPage() {
               <UserPlus className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
-              <h3 className="font-display text-xl lg:text-2xl font-medium tracking-tight text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+              <h3 className="text-xl lg:text-2xl font-medium tracking-tight text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                 New Prospect Lead
               </h3>
               <p className="text-sm text-slate-500 dark:text-zinc-400 tracking-wide mt-1">Add an inquiry directly to the chosen facility pipeline.</p>
@@ -561,7 +559,7 @@ export default function AdminReferralsHubPage() {
       </div>
 
       {!noFacility ? (
-        <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2rem] bg-white/50 dark:bg-black/20 shadow-sm backdrop-blur-3xl overflow-hidden p-6">
+        <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-white/50 shadow-sm overflow-hidden p-6">
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
               <p className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Upcoming tours</p>
@@ -585,7 +583,7 @@ export default function AdminReferralsHubPage() {
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <div className="font-medium text-slate-900 dark:text-white">{row.first_name} {row.last_name}</div>
-                      <div className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-400">{formatStatus(row.status)}</div>
+                      <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-400">{formatStatus(row.status)}</div>
                     </div>
                     <div className="text-xs text-slate-500 dark:text-zinc-400">
                       {row.tour_scheduled_for ? new Date(row.tour_scheduled_for).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "—"}
@@ -599,7 +597,7 @@ export default function AdminReferralsHubPage() {
       ) : null}
 
       {!noFacility ? (
-        <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2rem] bg-white/50 dark:bg-black/20 shadow-sm backdrop-blur-3xl overflow-hidden p-6">
+        <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-white/50 shadow-sm overflow-hidden p-6">
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
               <p className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Outreach & provider activity</p>
@@ -614,7 +612,7 @@ export default function AdminReferralsHubPage() {
             <div className="grid gap-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <select
-                  className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-sm"
+                  className="rounded-xl border border-slate-200 dark:border-white/10 bg-white px-3 py-2 text-sm"
                   value={activityType}
                   onChange={(e) => setActivityType(e.target.value)}
                 >
@@ -625,7 +623,7 @@ export default function AdminReferralsHubPage() {
                   <option value="digital_outreach">Digital outreach</option>
                 </select>
                 <select
-                  className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-sm"
+                  className="rounded-xl border border-slate-200 dark:border-white/10 bg-white px-3 py-2 text-sm"
                   value={activityStatus}
                   onChange={(e) => setActivityStatus(e.target.value)}
                 >
@@ -636,18 +634,18 @@ export default function AdminReferralsHubPage() {
               </div>
               <input
                 type="datetime-local"
-                className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-sm"
+                className="rounded-xl border border-slate-200 dark:border-white/10 bg-white px-3 py-2 text-sm"
                 value={scheduledFor}
                 onChange={(e) => setScheduledFor(e.target.value)}
               />
               <input
-                className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-sm"
+                className="rounded-xl border border-slate-200 dark:border-white/10 bg-white px-3 py-2 text-sm"
                 placeholder="Partner / facility / event name"
                 value={partnerName}
                 onChange={(e) => setPartnerName(e.target.value)}
               />
               <textarea
-                className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-sm"
+                className="rounded-xl border border-slate-200 dark:border-white/10 bg-white px-3 py-2 text-sm"
                 rows={3}
                 placeholder="Notes"
                 value={activityNotes}
@@ -689,7 +687,7 @@ export default function AdminReferralsHubPage() {
                         <div className="font-medium text-slate-900 dark:text-white">
                           {row.external_partner_name ?? row.activity_type.replace(/_/g, " ")}
                         </div>
-                        <div className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-400">
+                        <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-400">
                           {row.activity_type.replace(/_/g, " ")} · {row.status}
                         </div>
                       </div>
@@ -700,7 +698,7 @@ export default function AdminReferralsHubPage() {
                     {row.notes ? <p className="mt-2 text-sm text-slate-600 dark:text-zinc-300">{row.notes}</p> : null}
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       <select
-                        className="rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-xs uppercase tracking-widest"
+                        className="rounded-lg border border-slate-200 dark:border-white/10 bg-white px-3 py-2 text-xs uppercase tracking-wider"
                         value={outreachStatusDrafts[row.id] ?? row.status}
                         onChange={(e) => setOutreachStatusDrafts((current) => ({ ...current, [row.id]: e.target.value }))}
                       >
@@ -736,7 +734,7 @@ export default function AdminReferralsHubPage() {
       ) : null}
 
       {!noFacility ? (
-        <div className="glass-panel border-amber-200/60 dark:border-amber-500/20 rounded-[2rem] bg-amber-50/50 dark:bg-amber-950/20 shadow-sm backdrop-blur-3xl overflow-hidden p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="border-amber-200/60 dark:border-amber-500/20 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 shadow-sm overflow-hidden p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
             <p className="text-base font-bold text-slate-900 dark:text-white mb-1 tracking-tight">Admissions Handoff</p>
             <p className="text-sm text-slate-600 dark:text-zinc-400 tracking-wide">
@@ -752,7 +750,7 @@ export default function AdminReferralsHubPage() {
           </div>
           <Link
             href="/admin/referrals/in-admissions"
-            className={cn(buttonVariants({ variant: "outline" }), "shrink-0 shadow-sm rounded-full bg-white dark:bg-black/50 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/5 w-full sm:w-auto px-6 tap-responsive font-bold uppercase tracking-widest text-xs")}
+            className={cn(buttonVariants({ variant: "outline" }), "shrink-0 shadow-sm rounded-full bg-white dark:bg-black/50 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/5 w-full sm:w-auto px-6 tap-responsive font-bold uppercase tracking-wider text-xs")}
           >
             Open Handoff Queue
           </Link>
@@ -760,7 +758,7 @@ export default function AdminReferralsHubPage() {
       ) : null}
 
       {!noFacility ? (
-        <div className="glass-panel border-amber-200/60 dark:border-amber-500/20 rounded-[2rem] bg-amber-50/50 dark:bg-amber-950/20 shadow-sm backdrop-blur-3xl overflow-hidden p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="border-amber-200/60 dark:border-amber-500/20 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 shadow-sm overflow-hidden p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
             <p className="text-base font-bold text-slate-900 dark:text-white mb-1 tracking-tight">HL7 ADT Inbound Queue</p>
             <p className="text-sm text-slate-600 dark:text-zinc-400 tracking-wide">
@@ -771,7 +769,7 @@ export default function AdminReferralsHubPage() {
           </div>
           <Link
             href="/admin/referrals/hl7-inbound"
-            className={cn(buttonVariants({ variant: "outline" }), "shrink-0 shadow-sm rounded-full bg-white dark:bg-black/50 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/5 w-full sm:w-auto px-6 tap-responsive font-bold uppercase tracking-widest text-xs")}
+            className={cn(buttonVariants({ variant: "outline" }), "shrink-0 shadow-sm rounded-full bg-white dark:bg-black/50 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/5 w-full sm:w-auto px-6 tap-responsive font-bold uppercase tracking-wider text-xs")}
           >
             Review Pipeline
           </Link>
@@ -784,7 +782,7 @@ export default function AdminReferralsHubPage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <ClipboardList className="h-5 w-5 text-indigo-500" />
-              <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white tracking-tight">
+              <h3 className="text-xl font-medium text-slate-900 dark:text-white tracking-tight">
                 Pipeline Leads
               </h3>
             </div>
@@ -793,7 +791,7 @@ export default function AdminReferralsHubPage() {
               variant="outline"
               size="sm"
               disabled={noFacility || exportingCsv}
-              className="h-10 shrink-0 gap-2 rounded-full text-[10px] font-bold uppercase tracking-widest sm:self-start"
+              className="h-10 shrink-0 gap-2 rounded-full text-[10px] font-bold uppercase tracking-wider sm:self-start"
               title={
                 (statusFilter === "all"
                   ? "Export up to 500 leads (all statuses), most recently updated first."
@@ -820,7 +818,7 @@ export default function AdminReferralsHubPage() {
                 />
               </label>
               <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400">Status</span>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Status</span>
                 <select
                   className={cn(
                     "h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-900 outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-100",
@@ -837,7 +835,7 @@ export default function AdminReferralsHubPage() {
                 </select>
               </label>
               {rows.length > 0 ? (
-                <p className="text-[10px] font-mono tracking-widest text-slate-400 uppercase">
+                <p className="text-[10px] font-mono tracking-wider text-slate-400 uppercase">
                   {searchQuery.trim() ? (
                     <>
                       Showing {featuredRows.length} of {displayRows.length} · Search
@@ -857,14 +855,14 @@ export default function AdminReferralsHubPage() {
            <p className="text-sm text-rose-600 dark:text-rose-400" role="alert">{loadError}</p>
         ) : null}
 
-        <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-2xl backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative">
+        <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] shadow-2xl overflow-hidden p-6 md:p-8 relative">
            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
 
            <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
-             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Lead Name</div>
-             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Status</div>
-             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Source</div>
-             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Updated</div>
+             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Lead Name</div>
+             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Status</div>
+             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">Source</div>
+             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">Updated</div>
            </div>
 
            <div className="space-y-4 mt-6 relative z-10">
@@ -877,15 +875,15 @@ export default function AdminReferralsHubPage() {
                  Loading pipeline...
                </div>
              ) : rows.length === 0 ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
+               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10">
                  No leads yet. Starts with <strong>New lead</strong>.
                </div>
              ) : filteredRows.length === 0 ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
+               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10">
                  No leads match this status filter.
                </div>
              ) : displayRows.length === 0 ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
+               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10">
                  No leads match this search.
                </div>
              ) : (
@@ -900,41 +898,41 @@ export default function AdminReferralsHubPage() {
                       <MotionItem key={r.id}>
                         <Link
                           href={`/admin/referrals/${r.id}`}
-                          className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-4 items-center p-6 rounded-[1.8rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 w-full cursor-pointer outline-none hover:shadow-lg dark:hover:bg-white/[0.05]"
+                          className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-4 items-center p-6 rounded-lg bg-white border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 w-full cursor-pointer outline-none hover:shadow-lg dark:hover:bg-white/[0.05]"
                         >
                           <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
                               {isNew ? <PulseDot colorClass="bg-emerald-500" /> : <div className="w-2 h-2 rounded-full bg-indigo-500" />}
                             </div>
-                            <span className="font-semibold text-xl text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors tracking-tight font-display">
+                            <span className="font-semibold text-xl text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors tracking-tight">
                                {r.first_name} {r.last_name}
                             </span>
                           </div>
                           
                           <div className="flex flex-row justify-between lg:justify-start items-center">
-                            <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Status</span>
+                            <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Status</span>
                             <div className="flex items-center gap-2">
                               <span className={cn(
-                                "text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded-full border shadow-inner",
+                                "text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full border shadow-inner",
                                 isNew ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400" : "bg-slate-500/10 text-slate-600 border-slate-500/20 dark:text-slate-400"
                               )}>
                                 {formatStatus(r.status)}
                               </span>
                               {linkedAdmissionCaseId ? (
-                                <span className="text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded-full border shadow-inner bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300">
+                                <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full border shadow-inner bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300">
                                   In admissions
                                 </span>
                               ) : null}
                               {handoffPhase === "blocked" ? (
-                                <span className="text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded-full border shadow-inner bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300">
+                                <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full border shadow-inner bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300">
                                   Blocked
                                 </span>
                               ) : handoffPhase === "ready" ? (
-                                <span className="text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded-full border shadow-inner bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300">
+                                <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full border shadow-inner bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300">
                                   Ready
                                 </span>
                               ) : handoffPhase === "onboarding" ? (
-                                <span className="text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded-full border shadow-inner bg-indigo-500/10 text-indigo-700 border-indigo-500/20 dark:text-indigo-300">
+                                <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full border shadow-inner bg-indigo-500/10 text-indigo-700 border-indigo-500/20 dark:text-indigo-300">
                                   Onboarding
                                 </span>
                               ) : null}
@@ -942,14 +940,14 @@ export default function AdminReferralsHubPage() {
                           </div>
                           
                           <div className="flex flex-row justify-between lg:justify-end items-center">
-                            <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Source</span>
+                            <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Source</span>
                             <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 truncate">
                               {r.referral_sources?.name ?? "—"}
                             </span>
                           </div>
 
                           <div className="flex flex-row justify-between lg:justify-end items-center">
-                            <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Updated</span>
+                            <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Updated</span>
                           <div className="flex flex-col items-end">
                             <span className="text-[11px] font-mono tracking-wide text-slate-500 dark:text-zinc-500">
                               {new Date(r.updated_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}

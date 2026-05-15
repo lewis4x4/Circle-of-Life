@@ -323,10 +323,8 @@ export default function AdminShiftSwapsPage() {
 
       <div className="relative z-10 space-y-6">
         <header className="mb-6">
-          <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">
-            SYS: Module 11 / Shift swap requests
-          </p>
-          <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+          
+          <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
             Shift swaps {pendingCount > 0 ? <PulseDot colorClass="bg-amber-500" /> : null}
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-2xl">
@@ -340,7 +338,7 @@ export default function AdminShiftSwapsPage() {
             <V2Card hoverColor="indigo" className="p-5 lg:p-6">
               <MonolithicWatermark value={pendingCount} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
               <div className="relative z-10 flex h-full flex-col justify-center">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
                   <ArrowLeftRight className="h-3.5 w-3.5" /> Pending
                 </h3>
                 <p className="text-3xl font-mono tracking-tighter text-indigo-600 dark:text-indigo-400">{pendingCount}</p>
@@ -396,16 +394,16 @@ export default function AdminShiftSwapsPage() {
           <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />
         ) : null}
         {!isLoading && !loadError && filteredRows.length > 0 ? (
-          <div className="relative z-10 p-4 sm:p-6 mb-4 glass-panel rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="relative z-10 p-4 sm:p-6 mb-4 rounded-lg border border-white/20 dark:border-white/5 bg-card shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h3 className="text-lg font-display font-semibold text-slate-900 dark:text-slate-100">Requests</h3>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Requests</h3>
               <p className="text-sm font-mono text-slate-500">{filteredRows.length} shown</p>
             </div>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="shrink-0 font-mono text-[10px] uppercase tracking-widest"
+              className="shrink-0 font-mono text-[10px] uppercase tracking-wider"
               disabled={exportingCsv}
               aria-busy={exportingCsv}
               onClick={() => void exportShiftSwapsCsv()}
@@ -420,7 +418,7 @@ export default function AdminShiftSwapsPage() {
           <MotionList className="space-y-3">
             {filteredRows.map((row) => (
               <MotionItem key={row.id}>
-                <div className="p-4 sm:p-5 rounded-2xl glass-panel border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 w-full flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="p-4 sm:p-5 rounded-2xl border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/40 w-full flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <div className="flex flex-col gap-1 min-w-0 flex-1">
                     <span className="font-semibold text-slate-900 dark:text-slate-100 truncate">
                       {row.requestingName}
@@ -440,7 +438,7 @@ export default function AdminShiftSwapsPage() {
                         <Button
                           type="button"
                           size="sm"
-                          className="font-mono text-[10px] uppercase tracking-widest"
+                          className="font-mono text-[10px] uppercase tracking-wider"
                           disabled={actionId !== null}
                           onClick={() => void approveSwap(row.id)}
                         >
@@ -453,7 +451,7 @@ export default function AdminShiftSwapsPage() {
                           type="button"
                           size="sm"
                           variant="outline"
-                          className="font-mono text-[10px] uppercase tracking-widest"
+                          className="font-mono text-[10px] uppercase tracking-wider"
                           disabled={actionId !== null}
                           onClick={() => {
                             setDenyTargetId(row.id);
@@ -481,7 +479,7 @@ export default function AdminShiftSwapsPage() {
             aria-labelledby="deny-swap-title"
           >
             <div className="w-full max-w-md rounded-2xl border border-white/20 bg-white p-5 shadow-xl dark:bg-slate-900 dark:border-white/10">
-              <h3 id="deny-swap-title" className="font-display text-lg font-semibold text-slate-900 dark:text-slate-100">
+              <h3 id="deny-swap-title" className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                 Deny swap request
               </h3>
               <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 mb-3">

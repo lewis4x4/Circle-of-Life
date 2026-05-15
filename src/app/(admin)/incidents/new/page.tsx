@@ -233,11 +233,11 @@ function AdminIncidentFormInner() {
   if (submittedNumber) {
     return (
       <div className="max-w-lg mx-auto mt-16">
-        <div className="glass-panel rounded-[2rem] p-8 md:p-12 text-center flex flex-col items-center border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-sm">
+        <div className="rounded-lg p-8 md:p-12 text-center flex flex-col items-center border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-sm">
           <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mb-6 border border-emerald-400/50">
             <CheckCircle2 className="w-10 h-10 text-emerald-500" />
           </div>
-          <h2 className="text-3xl font-display font-light tracking-tight text-slate-900 dark:text-white mb-2">Incident Logged</h2>
+          <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-2">Incident Logged</h2>
           <p className="text-slate-600 dark:text-zinc-400 mb-8 max-w-md leading-relaxed">
             Report <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold tracking-wider">{submittedNumber}</span> has been filed and is in the incident queue.
           </p>
@@ -261,12 +261,12 @@ function AdminIncidentFormInner() {
   return (
     <div className="max-w-[900px] mx-auto pb-8 space-y-8">
       {/* Header */}
-      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm">
+      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-100/50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-[10px] font-bold uppercase tracking-widest text-rose-800 dark:text-rose-300 mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-100/50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-[10px] font-bold uppercase tracking-wider text-rose-800 dark:text-rose-300 mb-2">
             <AlertTriangle className="w-3.5 h-3.5" /> Incident Report
           </div>
-          <h1 className="text-4xl md:text-5xl font-display font-light tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
             Report Incident
           </h1>
           <p className="text-slate-600 dark:text-zinc-400 font-medium tracking-wide mt-2">
@@ -280,14 +280,14 @@ function AdminIncidentFormInner() {
 
       <form onSubmit={onSubmit} className="space-y-6">
         {/* Primary Classification */}
-        <div className="glass-panel rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-white/60 dark:bg-white/[0.02] backdrop-blur-3xl p-6 lg:p-8 shadow-sm">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-rose-500 mb-6 flex items-center gap-2">
+        <div className="rounded-lg border border-slate-200/60 dark:border-white/5 bg-card p-6 lg:p-8 shadow-sm">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-rose-500 mb-6 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-rose-500"></span> Primary Classification
           </h3>
 
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 pl-1">Resident <span className="font-normal opacity-70">(Optional)</span></label>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Resident <span className="font-normal opacity-70">(Optional)</span></label>
               <div className="relative">
                 <select className="w-full h-14 appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-5 text-[15px] font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50" {...form.register("residentId")}>
                   <option value="">Not resident-specific</option>
@@ -299,7 +299,7 @@ function AdminIncidentFormInner() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 pl-1">Category</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Category</label>
                 <div className="relative">
                   <select className="w-full h-14 appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-5 text-[15px] font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50" {...form.register("category")}>
                     {caregiverIncidentCategoryValues.map((v) => (<option key={v} value={v}>{CATEGORY_LABELS[v]}</option>))}
@@ -308,7 +308,7 @@ function AdminIncidentFormInner() {
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 pl-1">Severity</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Severity</label>
                 <div className="relative">
                   <select className="w-full h-14 appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-5 text-[15px] font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50" {...form.register("severity")}>
                     {caregiverIncidentSeverityValues.map((v) => (<option key={v} value={v}>{SEVERITY_LABELS[v]}</option>))}
@@ -320,11 +320,11 @@ function AdminIncidentFormInner() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 pl-1">Date & Time</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Date & Time</label>
                 <input type="datetime-local" className="w-full h-14 appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-5 text-[15px] font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50" {...form.register("occurredAtLocal")} />
               </div>
               <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 pl-1">Shift</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Shift</label>
                 <div className="relative">
                   <select className="w-full h-14 appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-5 text-[15px] font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50" {...form.register("shift")}>
                     {caregiverIncidentShiftValues.map((v) => (<option key={v} value={v}>{SHIFT_LABELS[v]}</option>))}
@@ -337,26 +337,26 @@ function AdminIncidentFormInner() {
         </div>
 
         {/* Details */}
-        <div className="glass-panel rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-white/60 dark:bg-white/[0.02] backdrop-blur-3xl p-6 lg:p-8 shadow-sm">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-rose-500 mb-6 flex items-center gap-2">
+        <div className="rounded-lg border border-slate-200/60 dark:border-white/5 bg-card p-6 lg:p-8 shadow-sm">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-rose-500 mb-6 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-rose-500"></span> Details & Location
           </h3>
 
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 pl-1">Specific Location</label>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Specific Location</label>
               <input type="text" placeholder="e.g. Room 114, east hall near nurses' station" className="w-full h-14 appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-5 text-[15px] font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50 placeholder:text-slate-400 dark:placeholder:text-zinc-600" {...form.register("locationDescription")} />
             </div>
             <div className="space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 pl-1">Factual Description</label>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Factual Description</label>
               <textarea rows={4} placeholder="Objective facts: what you saw, heard, or verified." className="w-full resize-none appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 p-5 text-[15px] leading-relaxed text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50 placeholder:text-slate-400 dark:placeholder:text-zinc-600" {...form.register("description")} />
             </div>
             <div className="space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 pl-1">Immediate Actions Taken</label>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Immediate Actions Taken</label>
               <textarea rows={3} placeholder="First aid given, supervision adjusted, area secured..." className="w-full resize-none appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 p-5 text-[15px] leading-relaxed text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50 placeholder:text-slate-400 dark:placeholder:text-zinc-600" {...form.register("immediateActions")} />
             </div>
             <div className="pt-2">
-              <label className="flex items-center gap-4 cursor-pointer w-fit border border-slate-200 dark:border-white/5 bg-white dark:bg-white/[0.02] hover:bg-slate-50 dark:hover:bg-white/[0.05] transition-colors pr-6 pl-4 py-4 rounded-2xl">
+              <label className="flex items-center gap-4 cursor-pointer w-fit border border-slate-200 dark:border-white/5 bg-white hover:bg-slate-50 dark:hover:bg-white/[0.05] transition-colors pr-6 pl-4 py-4 rounded-2xl">
                 <div className="relative w-6 h-6 rounded-md border-2 border-slate-300 dark:border-zinc-500 bg-white dark:bg-black/40 flex items-center justify-center shrink-0">
                   <input type="checkbox" className="absolute inset-0 opacity-0 cursor-pointer peer" {...form.register("injuryOccurred")} />
                   <CheckCircle2 className="w-5 h-5 text-rose-500 opacity-0 peer-checked:opacity-100 transition-opacity" />
@@ -374,7 +374,7 @@ function AdminIncidentFormInner() {
         )}
 
         <div className="pt-4">
-          <button type="submit" disabled={submitting || !facilityId} className="w-full h-16 rounded-[1.5rem] flex items-center justify-center font-bold tracking-widest uppercase transition-all shadow-lg bg-gradient-to-r from-rose-600 to-rose-500 text-white hover:from-rose-500 hover:to-rose-400 disabled:opacity-50 disabled:grayscale text-lg">
+          <button type="submit" disabled={submitting || !facilityId} className="w-full h-16 rounded-lg flex items-center justify-center font-bold tracking-wider uppercase transition-all shadow-lg bg-gradient-to-r from-rose-600 to-rose-500 text-white hover:from-rose-500 hover:to-rose-400 disabled:opacity-50 disabled:grayscale text-lg">
             {submitting ? (<><Loader2 className="mr-3 h-6 w-6 animate-spin" />Submitting Report...</>) : "Submit Official Record"}
           </button>
         </div>

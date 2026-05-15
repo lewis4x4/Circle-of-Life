@@ -183,12 +183,12 @@ export default function CaregiverClockPage() {
         title="Start or end the shift cleanly, then move back into care work."
         description="Use the clock here, then head back to the shift dashboard or check your schedule if something looks off."
       />
-      <div className="glass-panel p-6 sm:p-10 rounded-[3rem] border border-white/5 bg-gradient-to-br from-indigo-950/40 via-slate-900/60 to-black/80 backdrop-blur-3xl shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100 flex flex-col items-center text-center">
-        <div className="w-16 h-16 rounded-[2rem] bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30 mb-6 shadow-inner">
+      <div className="p-6 sm:p-10 rounded-[3rem] border border-white/5 bg-gradient-to-br from-indigo-950/40 via-slate-900/60 to-black/80 shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100 flex flex-col items-center text-center">
+        <div className="w-16 h-16 rounded-lg bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30 mb-6 shadow-inner">
           <Clock3 className="h-8 w-8 text-indigo-400" />
         </div>
         
-            <h3 className="text-3xl font-display font-semibold text-white tracking-wide mb-2">Time clock</h3>
+            <h3 className="text-3xl font-semibold text-white tracking-wide mb-2">Time clock</h3>
             <p className="text-sm font-mono text-indigo-200/60 max-w-xs mb-8">
           {facilityName ? `Punch in and out for ${facilityName}.` : "Mobile punch tied to your staff profile."}
             </p>
@@ -196,8 +196,8 @@ export default function CaregiverClockPage() {
         <div className="w-full space-y-6">
           {staff ? (
             <div className="py-2">
-              <p className="text-[10px] uppercase tracking-widest font-mono text-zinc-500 font-bold mb-1">Authenticated As</p>
-              <p className="text-xl font-display text-white">
+              <p className="text-[10px] uppercase tracking-wider font-mono text-zinc-500 font-bold mb-1">Authenticated As</p>
+              <p className="text-xl text-white">
                 {staff.first_name} {staff.last_name}
               </p>
             </div>
@@ -208,11 +208,11 @@ export default function CaregiverClockPage() {
           {staff && !msg?.includes("No staff profile") ? (
             <div className="space-y-6 mt-4">
               {openPunch ? (
-                <div className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-[11px] uppercase tracking-widest font-mono text-emerald-300 font-bold w-fit mx-auto shadow-[inset_0_1px_10px_rgba(16,185,129,0.1)]">
+                <div className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-[11px] uppercase tracking-wider font-mono text-emerald-300 font-bold w-fit mx-auto shadow-[inset_0_1px_10px_rgba(16,185,129,0.1)]">
                   Clocked in at {new Date(openPunch.clock_in).toLocaleTimeString()}
                 </div>
               ) : (
-                <div className="rounded-full border border-white/10 bg-black/40 px-5 py-3 text-[11px] uppercase tracking-widest font-mono text-zinc-400 font-bold w-fit mx-auto shadow-inner">
+                <div className="rounded-full border border-white/10 bg-black/40 px-5 py-3 text-[11px] uppercase tracking-wider font-mono text-zinc-400 font-bold w-fit mx-auto shadow-inner">
                   You are not clocked in
                 </div>
               )}
@@ -220,7 +220,7 @@ export default function CaregiverClockPage() {
               {openPunch ? (
                 <Button
                   type="button"
-                  className="h-16 rounded-full font-mono uppercase tracking-widest text-xs px-8 w-full shadow-[0_4px_20px_rgba(225,29,72,0.15)] transition-all hover:scale-[1.02] border-0 text-white font-bold bg-rose-600 hover:bg-rose-500 disabled:opacity-50 tap-responsive"
+                  className="h-16 rounded-full font-mono uppercase tracking-wider text-xs px-8 w-full shadow-[0_4px_20px_rgba(225,29,72,0.15)] transition-all hover:scale-[1.02] border-0 text-white font-bold bg-rose-600 hover:bg-rose-500 disabled:opacity-50 tap-responsive"
                   disabled={acting}
                   onClick={() => void clockOut()}
                 >
@@ -234,7 +234,7 @@ export default function CaregiverClockPage() {
               ) : (
                 <Button
                   type="button"
-                  className="h-16 rounded-full font-mono uppercase tracking-widest text-xs px-8 w-full shadow-[0_4px_20px_rgba(16,185,129,0.15)] transition-all hover:scale-[1.02] border-0 text-zinc-950 font-bold bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 tap-responsive"
+                  className="h-16 rounded-full font-mono uppercase tracking-wider text-xs px-8 w-full shadow-[0_4px_20px_rgba(16,185,129,0.15)] transition-all hover:scale-[1.02] border-0 text-zinc-950 font-bold bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 tap-responsive"
                   disabled={acting}
                   onClick={() => void clockIn()}
                 >
@@ -251,7 +251,7 @@ export default function CaregiverClockPage() {
 
           <Link
             href={homeHref}
-            className="inline-flex h-14 w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-[11px] uppercase tracking-widest font-mono font-bold text-zinc-300 hover:bg-white/[0.08] hover:text-white transition-colors tap-responsive shadow-inner mt-4"
+            className="inline-flex h-14 w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-[11px] uppercase tracking-wider font-mono font-bold text-zinc-300 hover:bg-white/[0.08] hover:text-white transition-colors tap-responsive shadow-inner mt-4"
           >
             Back to shift home
           </Link>

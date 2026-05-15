@@ -145,7 +145,7 @@ export default function ExecutiveStandupBoardPage() {
             </Button>
             <Link
               href={`/admin/executive/standup/${week}`}
-              className="inline-flex h-10 items-center justify-center rounded-full border border-slate-300 px-4 text-xs font-semibold uppercase tracking-widest text-slate-700"
+              className="inline-flex h-10 items-center justify-center rounded-full border border-slate-300 px-4 text-xs font-semibold uppercase tracking-wider text-slate-700"
             >
               Back to draft
             </Link>
@@ -160,11 +160,11 @@ export default function ExecutiveStandupBoardPage() {
           <div className="text-sm text-slate-500">No standup data found for this week.</div>
         ) : (
           <div className="space-y-8">
-            <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 px-8 py-10 text-white shadow-none">
+            <section className="overflow-hidden rounded-lg border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 px-8 py-10 text-white shadow-none">
               <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-300">Haven executive standup packet</p>
-                  <h2 className="mt-3 text-5xl font-semibold tracking-tight">{packet?.title ?? "Executive Standup Pack"}</h2>
+                  <h2 className="mt-3 text-2xl font-semibold tracking-tight">{packet?.title ?? "Executive Standup Pack"}</h2>
                   <p className="mt-2 text-sm uppercase tracking-[0.18em] text-slate-400">Week of {detail.snapshot.weekOf}</p>
                   <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-300">
                     {packet?.subtitle ?? "Owner and board operating packet"}. Designed for fast comprehension, defensible trust, and immediate action.

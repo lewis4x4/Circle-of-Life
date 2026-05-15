@@ -115,7 +115,7 @@ export default function OnboardingQuestionsPage() {
     <div className="space-y-8 pb-10">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h2 className="font-display text-2xl font-semibold text-white">Onboarding Questions</h2>
+          <h2 className="text-2xl font-semibold text-white">Onboarding Questions</h2>
           <p className="mt-1 max-w-2xl text-sm text-slate-400">
             Answer the questions you can. Your answers save automatically and are visible to the rest of the leadership
             team. Use <strong className="text-slate-200">Core</strong> first, then Extended Discovery when ready.

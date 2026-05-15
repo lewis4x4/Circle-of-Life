@@ -128,11 +128,11 @@ export default function PilotFeedbackInboxPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-8 pb-12">
-      <div className="rounded-[2rem] border border-slate-200/60 bg-white/60 p-8 shadow-sm backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.03]">
-        <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
+      <div className="rounded-lg border border-slate-200/60 bg-card p-8 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+        <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
           Pilot Feedback
         </div>
-        <h1 className="mt-4 text-4xl font-display font-semibold tracking-tight text-slate-900 dark:text-white">
+        <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 dark:text-white">
           COL Feedback Inbox
         </h1>
         <p className="mt-3 max-w-3xl text-sm text-slate-600 dark:text-zinc-400">
@@ -147,31 +147,31 @@ export default function PilotFeedbackInboxPage() {
       ) : null}
 
       {loading ? (
-        <div className="rounded-2xl border border-slate-200 bg-white/60 px-5 py-10 text-center text-sm text-slate-500 backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.03] dark:text-zinc-400">
+        <div className="rounded-2xl border border-slate-200 bg-card px-5 py-10 text-center text-sm text-slate-500 dark:border-white/10 dark:text-zinc-400">
           Loading feedback…
         </div>
       ) : rows.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white/40 px-5 py-10 text-center text-sm text-slate-500 backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.03] dark:text-zinc-400">
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-card px-5 py-10 text-center text-sm text-slate-500 dark:border-white/10 dark:text-zinc-400">
           No pilot feedback has been submitted yet.
         </div>
       ) : (
         <div className="space-y-8">
-          <div className="grid gap-3 rounded-[1.5rem] border border-slate-200/70 bg-white/70 p-4 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.03] md:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,1fr))]">
-            <label className="grid gap-1 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-zinc-400">
+          <div className="grid gap-3 rounded-lg border border-slate-200/70 bg-white/70 p-4 shadow-sm dark:border-white/10 md:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,1fr))]">
+            <label className="grid gap-1 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
               Search
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Title, detail, route, user…"
-                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-900 dark:border-white/10 dark:bg-black/20 dark:text-zinc-100"
+                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-900 dark:border-white/10 dark:text-zinc-100"
               />
             </label>
-            <label className="grid gap-1 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-zinc-400">
+            <label className="grid gap-1 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
               Category
               <select
                 value={categoryFilter}
                 onChange={(event) => setCategoryFilter(event.target.value)}
-                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-900 dark:border-white/10 dark:bg-black/20 dark:text-zinc-100"
+                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-900 dark:border-white/10 dark:text-zinc-100"
               >
                 <option value="all">All</option>
                 <option value="bug">Bug</option>
@@ -181,12 +181,12 @@ export default function PilotFeedbackInboxPage() {
                 <option value="praise">Praise</option>
               </select>
             </label>
-            <label className="grid gap-1 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-zinc-400">
+            <label className="grid gap-1 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
               Severity
               <select
                 value={severityFilter}
                 onChange={(event) => setSeverityFilter(event.target.value)}
-                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-900 dark:border-white/10 dark:bg-black/20 dark:text-zinc-100"
+                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-900 dark:border-white/10 dark:text-zinc-100"
               >
                 <option value="all">All</option>
                 <option value="low">Low</option>
@@ -195,12 +195,12 @@ export default function PilotFeedbackInboxPage() {
                 <option value="critical">Critical</option>
               </select>
             </label>
-            <label className="grid gap-1 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-zinc-400">
+            <label className="grid gap-1 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
               Shell
               <select
                 value={shellFilter}
                 onChange={(event) => setShellFilter(event.target.value)}
-                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-900 dark:border-white/10 dark:bg-black/20 dark:text-zinc-100"
+                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-900 dark:border-white/10 dark:text-zinc-100"
               >
                 <option value="all">All</option>
                 <option value="admin">Admin</option>
@@ -239,18 +239,18 @@ export default function PilotFeedbackInboxPage() {
 
               <div className="grid gap-4">
                 {items.map((row) => (
-                  <div key={row.id} className="rounded-[1.5rem] border border-slate-200/70 bg-white/70 p-5 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.03]">
+                  <div key={row.id} className="rounded-lg border border-slate-200/70 bg-white/70 p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
+                          <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
                             <Flag className="h-3.5 w-3.5" />
                             {row.category}
                           </span>
-                          <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:border-white/10 dark:bg-black/30 dark:text-zinc-300">
+                          <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:border-white/10 dark:text-zinc-300">
                             {row.severity}
                           </span>
-                          <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:border-white/10 dark:bg-black/30 dark:text-zinc-300">
+                          <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:border-white/10 dark:text-zinc-300">
                             {row.shell_kind}
                           </span>
                         </div>
@@ -275,7 +275,7 @@ export default function PilotFeedbackInboxPage() {
                         </div>
                       </div>
 
-                      <div className="min-w-[240px] rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-xs text-slate-600 dark:border-white/10 dark:bg-black/20 dark:text-zinc-400">
+                      <div className="min-w-[240px] rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-xs text-slate-600 dark:border-white/10 dark:text-zinc-400">
                         <div>User: {row.user_email ?? "unknown"}</div>
                         <div>Role: {row.app_role}</div>
                         <div>Route: <span className="font-mono">{row.route}</span></div>

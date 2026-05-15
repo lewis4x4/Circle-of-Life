@@ -121,7 +121,7 @@ export default function CaregiverHomePage() {
   if (loadError || !brief) {
     return (
       <div className="space-y-4 max-w-md mx-auto mt-12">
-        <div className="rounded-xl glass-card border-rose-800/60 bg-rose-950/30 px-6 py-5 text-sm text-rose-100 text-center">
+        <div className="rounded-xl border-rose-800/60 bg-rose-950/30 px-6 py-5 text-sm text-rose-100 text-center">
           <AlertTriangle className="w-8 h-8 mx-auto mb-3 text-rose-400" />
           <p>{loadError ?? "Shift brief unavailable."}</p>
         </div>
@@ -143,14 +143,14 @@ export default function CaregiverHomePage() {
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 max-w-[1400px] mx-auto pb-6">
       
       {/* ─── ROW 1: MISSION CONTROL OVERVIEW ─────────────────────────────────── */}
-      <div className="glass-panel rounded-[2rem] md:col-span-full p-6 md:p-8 relative overflow-hidden flex flex-col justify-between">
+      <div className="rounded-lg md:col-span-full p-6 md:p-8 relative overflow-hidden flex flex-col justify-between">
         {/* Ambient background glow */}
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-teal-500/10 rounded-full blur-[80px] pointer-events-none" />
         
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
           <div>
-            <h2 className="text-3xl md:text-4xl font-display font-light text-white tracking-tight">Shift Overview</h2>
-            <p className="text-zinc-400 mt-1 uppercase tracking-widest text-xs font-semibold">{shiftLine}</p>
+            <h2 className="text-3xl md:text-4xl font-semibold text-white tracking-tight">Shift Overview</h2>
+            <p className="text-zinc-400 mt-1 uppercase tracking-wider text-xs font-semibold">{shiftLine}</p>
           </div>
           <div className="flex items-center gap-2 text-sm text-zinc-300 bg-white/5 px-4 py-2 rounded-full border border-white/10 w-fit">
             <Activity className="w-4 h-4 text-emerald-400" /> 
@@ -194,10 +194,10 @@ export default function CaregiverHomePage() {
       </div>
 
       {/* ─── ROW 2: QUICK ACTIONS & ALERTS ───────────────────────────────────── */}
-      <div className="glass-card rounded-[1.5rem] md:col-span-2 p-6 flex flex-col border-t border-t-white/20">
+      <div className="rounded-lg md:col-span-2 p-6 flex flex-col border-t border-t-white/20">
         <div className="flex items-center gap-2 mb-6">
           <div className="w-1.5 h-6 bg-teal-400 rounded-full" />
-          <h3 className="text-lg font-display font-medium text-white">Work Now</h3>
+          <h3 className="text-lg font-medium text-white">Work Now</h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
           <ActionTile 
@@ -234,12 +234,12 @@ export default function CaregiverHomePage() {
       {/* ALERTS COLUMN */}
       <div className="md:col-span-2 flex flex-col gap-4 md:gap-6">
         {activeOutbreak && (
-          <div className="rounded-[1.5rem] bg-rose-950/40 backdrop-blur-xl border border-rose-500/30 p-5 shadow-[0_0_30px_rgba(225,29,72,0.15)] relative overflow-hidden group">
+          <div className="rounded-lg bg-rose-950/40 border border-rose-500/30 p-5 shadow-[0_0_30px_rgba(225,29,72,0.15)] relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <ShieldAlert className="w-24 h-24 text-rose-500" />
             </div>
             <div className="relative z-10">
-              <h3 className="text-rose-200 font-display font-semibold mb-1 flex items-center gap-2">
+              <h3 className="text-rose-200 font-semibold mb-1 flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-rose-400" />
                 Active Protocol: {activeOutbreak.infection_type.replace(/_/g, " ")}
               </h3>
@@ -256,10 +256,10 @@ export default function CaregiverHomePage() {
           </div>
         )}
 
-        <div className="glass-card rounded-[1.5rem] flex-1 p-6 flex flex-col">
+        <div className="rounded-lg flex-1 p-6 flex flex-col">
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle className="w-5 h-5 text-amber-400" />
-            <h3 className="text-lg font-display font-medium text-white">Critical Updates</h3>
+            <h3 className="text-lg font-medium text-white">Critical Updates</h3>
           </div>
           
           <div className="space-y-3 flex-1">
@@ -289,8 +289,8 @@ export default function CaregiverHomePage() {
       </div>
 
       {/* ─── ROW 3: WORKFLOWS & WATCHLIST ───────────────────────────────────── */}
-      <div className="glass-card rounded-[1.5rem] md:col-span-2 p-6 flex flex-col">
-        <h3 className="text-lg font-display font-medium text-white mb-1">Shift Workflows</h3>
+      <div className="rounded-lg md:col-span-2 p-6 flex flex-col">
+        <h3 className="text-lg font-medium text-white mb-1">Shift Workflows</h3>
         <p className="text-xs tracking-wide text-zinc-400 uppercase mb-6 font-semibold">Routine & Follow-ups</p>
         
         <div className="flex flex-col gap-2 flex-1">
@@ -301,8 +301,8 @@ export default function CaregiverHomePage() {
         </div>
       </div>
 
-      <div className="glass-panel rounded-[1.5rem] md:col-span-2 p-6 flex flex-col border border-zinc-800/80 bg-zinc-950/80">
-        <h3 className="text-lg font-display font-medium text-white mb-1">Watchlist</h3>
+      <div className="rounded-lg md:col-span-2 p-6 flex flex-col border border-zinc-800/80 bg-zinc-950/80">
+        <h3 className="text-lg font-medium text-white mb-1">Watchlist</h3>
         <p className="text-xs tracking-wide text-zinc-400 uppercase mb-4 font-semibold">Elevated Acuity / Safety</p>
         
         <div className="flex-1 overflow-y-auto max-h-[300px] pr-2 space-y-3 premium-scrollbar">
@@ -367,7 +367,7 @@ function HeroStat({
     <div className="flex flex-col gap-1 z-10 relative">
       <div className="flex items-center gap-2 mb-2 text-zinc-400">
         <div className="w-5 h-5 opacity-80">{icon}</div>
-        <span className="text-[10px] font-bold uppercase tracking-widest">{label}</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider">{label}</span>
       </div>
       <div className={`text-4xl md:text-5xl font-display font-medium tabular-nums tracking-tight ${valueColor}`}>
         {value}

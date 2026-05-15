@@ -134,7 +134,7 @@ export default function AdminDischargeNewPage() {
     <div className="mx-auto max-w-3xl space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
             New med reconciliation
           </h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
@@ -150,7 +150,7 @@ export default function AdminDischargeNewPage() {
 
       <Card className="border-slate-200/80 shadow-soft dark:border-slate-800">
         <CardHeader>
-          <CardTitle className="font-display text-lg">Resident</CardTitle>
+          <CardTitle className="text-lg">Resident</CardTitle>
         </CardHeader>
         <CardContent>
           {noFacility ? (

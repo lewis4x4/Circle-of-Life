@@ -64,7 +64,7 @@ export default function FamilyBillingSummaryPage() {
 
   if (configError) {
     return (
-      <div className="rounded-xl border border-rose-200 bg-white/60 backdrop-blur-md px-6 py-4 text-sm text-rose-800 shadow-sm max-w-lg mx-auto mt-20">{configError}</div>
+      <div className="rounded-xl border border-rose-200 bg-card backdrop-blur-md px-6 py-4 text-sm text-rose-800 shadow-sm max-w-lg mx-auto mt-20">{configError}</div>
     );
   }
 
@@ -80,7 +80,7 @@ export default function FamilyBillingSummaryPage() {
   if (loadError) {
     return (
      <div className="space-y-4 pb-16 md:pb-0 max-w-md mx-auto text-center mt-20">
-        <div className="rounded-2xl border border-rose-200 bg-white/70 backdrop-blur-xl px-4 py-6 text-sm text-rose-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+        <div className="rounded-2xl border border-rose-200 bg-white/70 px-4 py-6 text-sm text-rose-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
           <Banknote className="w-8 h-8 text-rose-400 mx-auto mb-3" />
           <p>{loadError}</p>
         </div>
@@ -130,24 +130,24 @@ export default function FamilyBillingSummaryPage() {
          </div>
 
          {/* Invoices */}
-         <div className="glass-card-light rounded-[2rem] p-6 md:p-8 bg-white/70">
+         <div className="rounded-lg p-6 md:p-8 bg-white/70">
             <h2 className="text-2xl font-serif text-stone-800 tracking-tight mb-6 flex items-center gap-2">Recent Invoices</h2>
             
             {recent.length === 0 ? (
-               <div className="p-8 text-center border-dashed border-2 border-stone-200/50 rounded-3xl">
+               <div className="p-8 text-center border-dashed border-2 border-stone-200/50 rounded-lg">
                   <p className="text-stone-500 font-medium">No invoices to show yet.</p>
                </div>
             ) : (
                <div className="space-y-3">
                   {recent.map((invoice) => (
-                    <div key={invoice.id} className="rounded-3xl border border-stone-100 bg-white/50 p-5 shadow-sm transition-all hover:bg-white hover:shadow-md">
+                    <div key={invoice.id} className="rounded-lg border border-stone-100 bg-white/50 p-5 shadow-sm transition-all hover:bg-white hover:shadow-md">
                       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                         <div>
-                           <p className="text-xs uppercase tracking-widest text-stone-400 font-bold mb-0.5">{invoice.invoiceNumber}</p>
+                           <p className="text-xs uppercase tracking-wider text-stone-400 font-bold mb-0.5">{invoice.invoiceNumber}</p>
                            <p className="text-lg font-serif text-stone-800">{invoice.periodLabel}</p>
                         </div>
                         <span className={cn(
-                           "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest",
+                           "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider",
                            invoice.status === "paid" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700" 
                         )}>
                            {invoice.statusLabel}
@@ -168,9 +168,9 @@ export default function FamilyBillingSummaryPage() {
          </div>
 
          {/* VISIBILITY SCOPE FOOTER */}
-         <div className="glass-card-light rounded-[2rem] p-6 md:p-8 bg-white/70">
+         <div className="rounded-lg p-6 md:p-8 bg-white/70">
            <div className="mb-4 flex items-center justify-between gap-2">
-             <p className="inline-flex items-center gap-2 text-sm font-semibold text-stone-800 uppercase tracking-widest">
+             <p className="inline-flex items-center gap-2 text-sm font-semibold text-stone-800 uppercase tracking-wider">
                <ShieldCheck className="h-4 w-4 text-emerald-500" />
                What you can do here
              </p>
@@ -222,7 +222,7 @@ function SummaryBlock({
 
   return (
     <div className={`glass-card-light rounded-[2rem] p-6 shadow-sm border ${styleClass}`}>
-      <p className="text-xs uppercase font-bold tracking-widest text-stone-400 mb-1">{label}</p>
+      <p className="text-xs uppercase font-bold tracking-wider text-stone-400 mb-1">{label}</p>
       <p className={`text-2xl md:text-3xl font-serif tracking-tight ${textTone}`}>{value}</p>
     </div>
   );

@@ -141,7 +141,7 @@ export default function NewInfectionSurveillancePage() {
         <Link href="/admin/infection-control" className={cn(buttonVariants({ variant: "link", size: "sm" }), "h-auto p-0 text-xs")}>
           ← Infection control
         </Link>
-        <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight">New surveillance</h1>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight">New surveillance</h1>
       </div>
 
       <Card>

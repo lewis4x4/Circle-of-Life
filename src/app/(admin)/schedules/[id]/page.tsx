@@ -254,7 +254,7 @@ export default function AdminScheduleWeekDetailPage() {
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <CalendarDays className="h-7 w-7 text-indigo-500" />
-            <h1 className="font-display text-2xl font-semibold tracking-tight">
+            <h1 className="text-2xl font-semibold tracking-tight">
               {schedule ? weekLabel : "Schedule week"}
             </h1>
           </div>
@@ -284,7 +284,7 @@ export default function AdminScheduleWeekDetailPage() {
             <V2Card hoverColor="indigo" className="p-5 lg:p-6">
               <MonolithicWatermark value={rows.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
               <div className="relative z-10 flex h-full flex-col justify-center">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
                   <PulseDot className="text-indigo-500" /> Shift assignments
                 </h3>
                 <p className="text-3xl font-mono tracking-tighter text-indigo-600 dark:text-indigo-400 pb-1">
@@ -297,7 +297,7 @@ export default function AdminScheduleWeekDetailPage() {
           <div className="col-span-1 h-[120px]">
             <V2Card hoverColor="blue" className="p-5 lg:p-6">
               <div className="relative z-10 flex h-full w-full flex-col justify-center">
-                <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-2">Export</p>
+                <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-2">Export</p>
                 <Sparkline />
               </div>
             </V2Card>
@@ -317,9 +317,9 @@ export default function AdminScheduleWeekDetailPage() {
 
         {!isLoading && schedule ? (
           <div className="relative overflow-visible z-10 w-full mt-2">
-            <div className="relative z-10 p-4 sm:p-6 mb-4 glass-panel rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="relative z-10 p-4 sm:p-6 mb-4 rounded-lg border border-white/20 dark:border-white/5 bg-card shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-1">
                   Assignments
                 </h3>
                 <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
@@ -330,7 +330,7 @@ export default function AdminScheduleWeekDetailPage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="shrink-0 font-mono text-[10px] uppercase tracking-widest"
+                className="shrink-0 font-mono text-[10px] uppercase tracking-wider"
                 disabled={exportingCsv || rawAssignments.length === 0}
                 aria-busy={exportingCsv}
                 onClick={() => exportAssignmentsCsv()}
@@ -349,13 +349,13 @@ export default function AdminScheduleWeekDetailPage() {
               <MotionList className="space-y-3">
                 {rows.map((row) => (
                   <MotionItem key={row.id}>
-                    <div className="p-4 sm:p-5 rounded-2xl glass-panel border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="p-4 sm:p-5 rounded-2xl border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/40 w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div className="flex flex-col gap-1">
                         <span className="font-semibold text-slate-900 dark:text-slate-100">{row.staffName}</span>
                         <span className="text-xs text-slate-500">{formatIsoDate(row.shiftDate)}</span>
                       </div>
                       <div className="flex flex-wrap gap-2 items-center">
-                        <Badge className="font-mono text-[9px] uppercase tracking-widest">{row.shiftType}</Badge>
+                        <Badge className="font-mono text-[9px] uppercase tracking-wider">{row.shiftType}</Badge>
                         <Badge variant="outline" className="font-mono text-[9px]">
                           {row.shiftClassification}
                         </Badge>
@@ -412,13 +412,13 @@ function ScheduleStatusBadge({ status }: { status: string }) {
     archived: { label: "Archived", className: "bg-slate-200/50 text-slate-800" },
   };
   const m = map[status] ?? { label: status, className: "bg-slate-100 text-slate-600" };
-  return <Badge className={cn("uppercase tracking-widest font-mono text-[9px] font-bold border-0", m.className)}>{m.label}</Badge>;
+  return <Badge className={cn("uppercase tracking-wider font-mono text-[9px] font-bold border-0", m.className)}>{m.label}</Badge>;
 }
 
 function AssignmentStatusBadge({ status }: { status: string }) {
   const label = status.replace(/_/g, " ");
   return (
-    <Badge variant="secondary" className="font-mono text-[9px] uppercase tracking-widest">
+    <Badge variant="secondary" className="font-mono text-[9px] uppercase tracking-wider">
       {label}
     </Badge>
   );

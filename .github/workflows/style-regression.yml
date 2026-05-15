@@ -1,0 +1,57 @@
+name: style-regression
+
+# Blocks anti-pattern strings from re-entering the codebase. Each step is
+# a single grep that fails the job if it finds anything. Scoped to `src/`
+# because this repo has no top-level `app/` or `components/` directories.
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - ".github/workflows/style-regression.yml"
+
+jobs:
+  forbidden-patterns:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "SYS: eyebrow pills"
+        run: |
+          ! grep -rnE "SYS:\s*(MODULE|[A-Z])" \
+            src/ \
+            --include="*.tsx" \
+            --exclude-dir=node_modules \
+            || (echo "::error::SYS: eyebrow pills found"; exit 1)
+
+      - name: "Oversized dashboard numerics (text-5xl+ on PageClient)"
+        run: |
+          ! grep -rnE 'className="[^"]*\btext-(5xl|6xl|7xl|8xl|9xl)\b' \
+            src/ \
+            --include="*PageClient.tsx" \
+            --exclude-dir=node_modules \
+            || (echo "::error::text-5xl+ found on PageClient"; exit 1)
+
+      - name: "Hero-card radii (rounded-3xl/[2.5rem] on PageClient)"
+        run: |
+          ! grep -rnE 'rounded-\[2\.5rem\]|rounded-3xl' \
+            src/ \
+            --include="*PageClient.tsx" \
+            --exclude-dir=node_modules \
+            || (echo "::error::rounded-3xl on PageClient"; exit 1)
+
+      - name: "Uppercase CTAs"
+        run: |
+          ! grep -rnE 'uppercase tracking-(wider|widest)[^"]*\b(button|cta|primary)' \
+            src/ \
+            --include="*.tsx" \
+            --exclude-dir=node_modules \
+            || (echo "::error::uppercase CTA found"; exit 1)
+
+      - name: "Gradient text on chrome (bg-clip-text + gradient on PageClient)"
+        run: |
+          ! grep -rnE 'bg-clip-text.*text-transparent.*bg-gradient' \
+            src/ \
+            --include="*PageClient.tsx" \
+            --exclude-dir=node_modules \
+            || (echo "::error::gradient text on PageClient"; exit 1)

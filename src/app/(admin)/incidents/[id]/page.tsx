@@ -417,10 +417,10 @@ export default function AdminIncidentDetailPage() {
               <ShieldAlert className="h-5 w-5 text-red-600 dark:text-red-400" />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 {incident.incident_number}
               </p>
-              <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
                 Incident detail
               </h1>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
@@ -501,7 +501,7 @@ export default function AdminIncidentDetailPage() {
         ) : null}
         <Card className="border-slate-200/70 shadow-soft dark:border-slate-800 lg:col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-display text-lg">
+            <CardTitle className="flex items-center gap-2 text-lg">
               {workflowSummary.tone === "clear" ? (
                 <CheckCircle2 className="h-4 w-4 text-emerald-600" />
               ) : (
@@ -553,7 +553,7 @@ export default function AdminIncidentDetailPage() {
         {watchInstances.length > 0 ? (
           <Card className="border-cyan-200/60 shadow-soft dark:border-cyan-900/30 lg:col-span-2">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-display text-lg">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <GitBranch className="h-4 w-4 text-cyan-600" />
                 Resident Assurance Timeline
               </CardTitle>
@@ -652,7 +652,7 @@ export default function AdminIncidentDetailPage() {
         {assuranceEscalations.length > 0 ? (
           <Card className="border-rose-200/60 shadow-soft dark:border-rose-900/30 lg:col-span-2">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-display text-lg">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <AlertTriangle className="h-4 w-4 text-rose-600" />
                 Active Resident Assurance Escalations
               </CardTitle>
@@ -700,7 +700,7 @@ export default function AdminIncidentDetailPage() {
         ) : null}
         <Card className="border-slate-200/70 shadow-soft dark:border-slate-800">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-display text-lg">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <MapPin className="h-4 w-4 text-brand-600" />
               Context
             </CardTitle>
@@ -720,7 +720,7 @@ export default function AdminIncidentDetailPage() {
 
         <Card className="border-slate-200/70 shadow-soft dark:border-slate-800">
           <CardHeader>
-            <CardTitle className="font-display text-lg">Resident</CardTitle>
+            <CardTitle className="text-lg">Resident</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             {incident.resident_id && residentName ? (
@@ -746,7 +746,7 @@ export default function AdminIncidentDetailPage() {
 
         <Card className="border-slate-200/70 shadow-soft dark:border-slate-800 lg:col-span-2">
           <CardHeader>
-            <CardTitle className="font-display text-lg">Narrative</CardTitle>
+            <CardTitle className="text-lg">Narrative</CardTitle>
             <CardDescription>Structured capture from the reporting workflow</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
@@ -776,7 +776,7 @@ export default function AdminIncidentDetailPage() {
         {incident.injury_occurred ? (
           <Card className="border-red-200/60 shadow-soft dark:border-red-900/40 lg:col-span-2">
             <CardHeader>
-              <CardTitle className="font-display text-lg text-red-800 dark:text-red-200">Injury</CardTitle>
+              <CardTitle className="text-lg text-red-800 dark:text-red-200">Injury</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
               <DetailRow label="Description" value={incident.injury_description ?? "—"} />
@@ -789,7 +789,7 @@ export default function AdminIncidentDetailPage() {
         {categoryUi === "fall" ? (
           <Card className="border-slate-200/70 shadow-soft dark:border-slate-800 lg:col-span-2">
             <CardHeader>
-              <CardTitle className="font-display text-lg">Fall specifics</CardTitle>
+              <CardTitle className="text-lg">Fall specifics</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
               <DetailRow
@@ -804,7 +804,7 @@ export default function AdminIncidentDetailPage() {
 
         <Card className="border-slate-200/70 shadow-soft dark:border-slate-800 lg:col-span-2">
           <CardHeader>
-            <CardTitle className="font-display text-lg">Notifications &amp; regulatory</CardTitle>
+            <CardTitle className="text-lg">Notifications &amp; regulatory</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-wrap gap-2">
@@ -1003,7 +1003,7 @@ export default function AdminIncidentDetailPage() {
         {(incident.resolved_at || incident.resolution_notes) && (
           <Card className="border-emerald-200/50 shadow-soft dark:border-emerald-900/30 lg:col-span-2">
             <CardHeader>
-              <CardTitle className="font-display text-lg">Resolution</CardTitle>
+              <CardTitle className="text-lg">Resolution</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               {incident.resolved_at ? <DetailRow label="Resolved" value={formatTs(incident.resolved_at)} /> : null}
@@ -1025,7 +1025,7 @@ export default function AdminIncidentDetailPage() {
 
         <Card className="border-slate-200/70 shadow-soft dark:border-slate-800 lg:col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-display text-lg">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <ClipboardList className="h-4 w-4 text-brand-600" />
               Follow-ups
             </CardTitle>

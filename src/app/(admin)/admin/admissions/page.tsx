@@ -245,13 +245,13 @@ function LifecycleSection({
       <div className="flex items-center justify-between border-b border-slate-200/50 dark:border-white/10 pb-3">
         <div className="flex items-center gap-2">
           <Icon className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-          <h3 className="text-lg font-display font-medium text-slate-900 dark:text-white tracking-tight">
+          <h3 className="text-lg font-medium text-slate-900 dark:text-white tracking-tight">
             {title}
           </h3>
         </div>
         <Link
           href={allHref}
-          className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+          className="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
         >
           View all →
         </Link>
@@ -262,16 +262,16 @@ function LifecycleSection({
         {metrics.map((m) => (
           <div
             key={m.label}
-            className="px-4 py-2 rounded-full bg-white/60 dark:bg-white/5 border border-slate-200 dark:border-white/10 backdrop-blur-sm"
+            className="px-4 py-2 rounded-full bg-card dark:bg-white/5 border border-slate-200 dark:border-white/10 backdrop-blur-sm"
           >
-            <span className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-zinc-500 mr-2">{m.label}</span>
+            <span className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-zinc-500 mr-2">{m.label}</span>
             <span className="text-sm font-semibold text-slate-900 dark:text-white">{m.value}</span>
           </div>
         ))}
       </div>
 
       {/* Content */}
-      <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2rem] bg-white/60 dark:bg-white/[0.015] shadow-sm backdrop-blur-3xl overflow-hidden p-4 md:p-6 relative">
+      <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] shadow-sm overflow-hidden p-4 md:p-6 relative">
         <div className={cn(
           "absolute top-0 right-0 w-48 h-48 rounded-full blur-[60px] -mr-12 -mt-12 pointer-events-none opacity-50",
           `bg-${color}-500/10`
@@ -638,12 +638,10 @@ export default function AdminAdmissionsHubPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-10 pb-12 w-full">
       {/* ─── HEADER ─── */}
-      <div className="bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+      <div className="bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
-            SYS: Lifecycle
-          </div>
-          <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white">
+          
+          <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
             Admissions
           </h1>
           <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400">
@@ -653,7 +651,7 @@ export default function AdminAdmissionsHubPage() {
       </div>
 
       {noFacility ? (
-        <div className="rounded-[1.5rem] border border-amber-500/20 bg-amber-500/5 p-6 text-sm text-amber-700 dark:text-amber-400 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm">
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-6 text-sm text-amber-700 dark:text-amber-400 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm">
           <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 border border-amber-500/30">
             <span className="font-bold">!</span>
           </div>
@@ -669,7 +667,7 @@ export default function AdminAdmissionsHubPage() {
               <Plus className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="font-display text-base font-semibold tracking-tight text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
+              <h3 className="text-base font-semibold tracking-tight text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
                 New Referral
               </h3>
               <p className="text-xs text-slate-500 dark:text-zinc-400 truncate">Add an inquiry to the pipeline</p>
@@ -683,7 +681,7 @@ export default function AdminAdmissionsHubPage() {
               <Home className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="font-display text-base font-semibold tracking-tight text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
+              <h3 className="text-base font-semibold tracking-tight text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
                 Start Admission
               </h3>
               <p className="text-xs text-slate-500 dark:text-zinc-400 truncate">Begin the intake workflow</p>
@@ -697,7 +695,7 @@ export default function AdminAdmissionsHubPage() {
               <DoorOpen className="h-5 w-5 text-rose-600 dark:text-rose-400" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="font-display text-base font-semibold tracking-tight text-slate-900 dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors truncate">
+              <h3 className="text-base font-semibold tracking-tight text-slate-900 dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors truncate">
                 Process Discharge
               </h3>
               <p className="text-xs text-slate-500 dark:text-zinc-400 truncate">Medication reconciliation</p>
@@ -707,7 +705,7 @@ export default function AdminAdmissionsHubPage() {
       </div>
 
       {loadError ? (
-        <div className="rounded-[1.5rem] border border-rose-500/20 bg-rose-500/5 p-6 text-sm text-rose-700 dark:text-rose-400">
+        <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-6 text-sm text-rose-700 dark:text-rose-400">
           {loadError}
         </div>
       ) : null}
@@ -729,7 +727,7 @@ export default function AdminAdmissionsHubPage() {
         ) : loading ? (
           <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500">Loading...</p>
         ) : referrals.length === 0 ? (
-          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
+          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10">
             No active leads. <Link href="/admin/referrals/new" className="underline text-emerald-600 dark:text-emerald-400">Create a referral</Link> to get started.
           </p>
         ) : (
@@ -742,7 +740,7 @@ export default function AdminAdmissionsHubPage() {
                 <MotionItem key={r.id}>
                   <Link
                     href={`/admin/referrals/${r.id}`}
-                    className="flex items-center gap-3 p-4 rounded-[1.5rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 hover:border-emerald-200 dark:hover:border-emerald-500/30 transition-all duration-300 w-full cursor-pointer group"
+                    className="flex items-center gap-3 p-4 rounded-lg bg-white border border-slate-100 dark:border-white/5 hover:border-emerald-200 dark:hover:border-emerald-500/30 transition-all duration-300 w-full cursor-pointer group"
                   >
                     <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
                       {isNew ? <PulseDot colorClass="bg-emerald-500" /> : <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
@@ -752,19 +750,19 @@ export default function AdminAdmissionsHubPage() {
                         <span className="font-medium text-slate-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                           {r.first_name} {r.last_name}
                         </span>
-                        <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
                           {formatStatus(r.status)}
                         </span>
                         {handoffPhase === "blocked" ? (
-                          <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300">
+                          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300">
                             Blocked
                           </span>
                         ) : handoffPhase === "ready" ? (
-                          <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300">
+                          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300">
                             Ready
                           </span>
                         ) : handoffPhase === "onboarding" ? (
-                          <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 border-indigo-500/20 dark:text-indigo-300">
+                          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 border-indigo-500/20 dark:text-indigo-300">
                             Onboarding
                           </span>
                         ) : null}
@@ -815,31 +813,31 @@ export default function AdminAdmissionsHubPage() {
         ) : loading ? (
           <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500">Loading...</p>
         ) : admissions.length === 0 ? (
-          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
+          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10">
             No active cases. <Link href="/admin/admissions/new" className="underline text-indigo-600 dark:text-indigo-400">Start an admission</Link>.
           </p>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center justify-between gap-3 rounded-[1.5rem] border border-indigo-200/70 bg-indigo-50/60 dark:border-indigo-900/40 dark:bg-indigo-950/20 p-4">
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-indigo-200/70 bg-indigo-50/60 dark:border-indigo-900/40 dark:bg-indigo-950/20 p-4">
               <div>
-                <p className="text-[10px] uppercase tracking-widest font-mono text-indigo-700 dark:text-indigo-300">Onboarding queue</p>
+                <p className="text-[10px] uppercase tracking-wider font-mono text-indigo-700 dark:text-indigo-300">Onboarding queue</p>
                 <p className="text-sm text-indigo-900 dark:text-indigo-100">Cases already at move-in can continue through downstream onboarding from a single queue.</p>
               </div>
-              <Link href="/admin/admissions/onboarding" className="text-[10px] font-bold uppercase tracking-widest text-indigo-700 hover:text-indigo-900 dark:text-indigo-300 dark:hover:text-indigo-100">
+              <Link href="/admin/admissions/onboarding" className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 hover:text-indigo-900 dark:text-indigo-300 dark:hover:text-indigo-100">
                 Open onboarding →
               </Link>
             </div>
 
             {blockedAdmissions.length > 0 && (
-              <div className="rounded-[1.5rem] border border-amber-200/70 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/20 p-4">
+              <div className="rounded-lg border border-amber-200/70 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/20 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-[10px] uppercase tracking-widest font-mono text-amber-700 dark:text-amber-300">Move-in readiness pressure</p>
+                    <p className="text-[10px] uppercase tracking-wider font-mono text-amber-700 dark:text-amber-300">Move-in readiness pressure</p>
                     <p className="text-sm text-amber-900 dark:text-amber-100">These admissions are missing key readiness steps.</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-amber-900 dark:text-amber-100">{blockedAdmissions.length}</span>
-                    <Link href="/admin/admissions/blocked" className="text-[10px] font-bold uppercase tracking-widest text-amber-700 hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-100">
+                    <Link href="/admin/admissions/blocked" className="text-[10px] font-bold uppercase tracking-wider text-amber-700 hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-100">
                       Open blocked queue →
                     </Link>
                   </div>
@@ -849,7 +847,7 @@ export default function AdminAdmissionsHubPage() {
                     <Link
                       key={row.id}
                       href={`/admin/admissions/${row.id}`}
-                      className="rounded-xl border border-amber-200/70 bg-white/80 dark:border-amber-900/40 dark:bg-black/20 p-4 transition-colors hover:bg-white dark:hover:bg-black/30"
+                      className="rounded-xl border border-amber-200/70 bg-white/80 dark:border-amber-900/40 p-4 transition-colors hover:bg-white dark:hover:bg-black/30"
                     >
                       <div className="font-medium text-slate-900 dark:text-white">
                         {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Unlinked case"}
@@ -863,12 +861,12 @@ export default function AdminAdmissionsHubPage() {
               </div>
             )}
 
-            <div className="flex items-center justify-between gap-3 rounded-[1.5rem] border border-emerald-200/70 bg-emerald-50/60 dark:border-emerald-900/40 dark:bg-emerald-950/20 p-4">
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-emerald-200/70 bg-emerald-50/60 dark:border-emerald-900/40 dark:bg-emerald-950/20 p-4">
               <div>
-                <p className="text-[10px] uppercase tracking-widest font-mono text-emerald-700 dark:text-emerald-300">Ready queue</p>
+                <p className="text-[10px] uppercase tracking-wider font-mono text-emerald-700 dark:text-emerald-300">Ready queue</p>
                 <p className="text-sm text-emerald-900 dark:text-emerald-100">Cases with core readiness items complete can be worked from one queue.</p>
               </div>
-              <Link href="/admin/admissions/move-in-ready" className="text-[10px] font-bold uppercase tracking-widest text-emerald-700 hover:text-emerald-900 dark:text-emerald-300 dark:hover:text-emerald-100">
+              <Link href="/admin/admissions/move-in-ready" className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 hover:text-emerald-900 dark:text-emerald-300 dark:hover:text-emerald-100">
                 Open move-in ready →
               </Link>
             </div>
@@ -881,7 +879,7 @@ export default function AdminAdmissionsHubPage() {
                 <MotionItem key={r.id}>
                   <Link
                     href={`/admin/admissions/${r.id}`}
-                    className="flex items-center gap-3 p-4 rounded-[1.5rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 w-full cursor-pointer group"
+                    className="flex items-center gap-3 p-4 rounded-lg bg-white border border-slate-100 dark:border-white/5 hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 w-full cursor-pointer group"
                   >
                     <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
                       {isPending ? <PulseDot colorClass="bg-rose-500" /> : <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />}
@@ -892,7 +890,7 @@ export default function AdminAdmissionsHubPage() {
                           {r.residents ? `${r.residents.first_name} ${r.residents.last_name}` : "Unlinked case"}
                         </span>
                         <span className={cn(
-                          "text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full border",
+                          "text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border",
                           isPending
                             ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
                             : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
@@ -900,15 +898,15 @@ export default function AdminAdmissionsHubPage() {
                           {formatStatus(r.status)}
                         </span>
                         {phase.phase === "blocked" ? (
-                          <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full border bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300">
+                          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300">
                             Blocked
                           </span>
                         ) : phase.phase === "ready" ? (
-                          <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full border bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300">
+                          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300">
                             Ready
                           </span>
                         ) : phase.phase === "onboarding" ? (
-                          <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full border bg-indigo-500/10 text-indigo-700 border-indigo-500/20 dark:text-indigo-300">
+                          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border bg-indigo-500/10 text-indigo-700 border-indigo-500/20 dark:text-indigo-300">
                             Onboarding
                           </span>
                         ) : null}
@@ -934,7 +932,7 @@ export default function AdminAdmissionsHubPage() {
                     </div>
                     <div className="shrink-0 hidden xl:flex">
                       <span className={cn(
-                        "rounded-full px-3 py-1.5 text-[10px] uppercase font-bold tracking-widest border",
+                        "rounded-full px-3 py-1.5 text-[10px] uppercase font-bold tracking-wider border",
                         phase.phase === "blocked"
                           ? "bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300"
                           : phase.phase === "ready"
@@ -972,7 +970,7 @@ export default function AdminAdmissionsHubPage() {
         ) : loading ? (
           <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500">Loading...</p>
         ) : discharges.length === 0 ? (
-          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
+          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10">
             No active reconciliations. <Link href="/admin/discharge/new" className="underline text-rose-600 dark:text-rose-400">Start a discharge</Link>.
           </p>
         ) : (
@@ -984,7 +982,7 @@ export default function AdminAdmissionsHubPage() {
                 <MotionItem key={r.id}>
                   <Link
                     href={`/admin/discharge/${r.id}`}
-                    className="flex items-center gap-3 p-4 rounded-[1.5rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 hover:border-rose-200 dark:hover:border-rose-500/30 transition-all duration-300 w-full cursor-pointer group"
+                    className="flex items-center gap-3 p-4 rounded-lg bg-white border border-slate-100 dark:border-white/5 hover:border-rose-200 dark:hover:border-rose-500/30 transition-all duration-300 w-full cursor-pointer group"
                   >
                     <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
                       {isDraft ? <PulseDot colorClass="bg-rose-500" /> : <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
@@ -995,7 +993,7 @@ export default function AdminAdmissionsHubPage() {
                           {r.residents ? `${r.residents.first_name} ${r.residents.last_name}` : "Unlinked reconciliation"}
                         </span>
                         <span className={cn(
-                          "text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full border",
+                          "text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border",
                           isDraft
                             ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
                             : r.status === "pharmacist_review"
@@ -1005,7 +1003,7 @@ export default function AdminAdmissionsHubPage() {
                           {formatStatus(r.status)}
                         </span>
                         <span className={cn(
-                          "text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full border",
+                          "text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border",
                           phase.phase === "planning"
                             ? "bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300"
                             : phase.phase === "pharmacist_review"
@@ -1054,12 +1052,12 @@ export default function AdminAdmissionsHubPage() {
         ]}
       >
         {familyActionError ? (
-          <div className="rounded-[1.5rem] border border-rose-500/20 bg-rose-500/5 p-4 text-sm text-rose-700 dark:text-rose-400">
+          <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-4 text-sm text-rose-700 dark:text-rose-400">
             {familyActionError}
           </div>
         ) : null}
         {familyActionMessage ? (
-          <div className="rounded-[1.5rem] border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-emerald-700 dark:text-emerald-300">
+          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-emerald-700 dark:text-emerald-300">
             {familyActionMessage}
           </div>
         ) : null}
@@ -1068,7 +1066,7 @@ export default function AdminAdmissionsHubPage() {
         ) : loading ? (
           <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500">Loading...</p>
         ) : triage.length === 0 && conferences.length === 0 ? (
-          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
+          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10">
             No items needing attention. View <Link href="/admin/family-messages" className="underline text-amber-600 dark:text-amber-400">direct messages</Link> for all conversations.
           </p>
         ) : (
@@ -1078,7 +1076,7 @@ export default function AdminAdmissionsHubPage() {
               <MotionItem key={`triage-${t.id}`}>
                 <Link
                   href="/admin/family-portal"
-                  className="flex items-center gap-3 p-4 rounded-[1.5rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 hover:border-rose-200 dark:hover:border-rose-500/30 transition-all duration-300 w-full cursor-pointer group"
+                  className="flex items-center gap-3 p-4 rounded-lg bg-white border border-slate-100 dark:border-white/5 hover:border-rose-200 dark:hover:border-rose-500/30 transition-all duration-300 w-full cursor-pointer group"
                 >
                   <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 flex items-center justify-center shrink-0">
                     <PulseDot colorClass="bg-rose-500" />
@@ -1088,7 +1086,7 @@ export default function AdminAdmissionsHubPage() {
                       <span className="font-medium text-slate-900 dark:text-white truncate group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
                         {t.residents ? `${t.residents.first_name} ${t.residents.last_name}` : "Unknown resident"}
                       </span>
-                      <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 border-rose-500/20">
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 border-rose-500/20">
                         Triage Alert
                       </span>
                     </div>
@@ -1142,7 +1140,7 @@ export default function AdminAdmissionsHubPage() {
               <MotionItem key={`conf-${c.id}`}>
                 <Link
                   href="/admin/family-portal"
-                  className="flex items-center gap-3 p-4 rounded-[1.5rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 w-full cursor-pointer group"
+                  className="flex items-center gap-3 p-4 rounded-lg bg-white border border-slate-100 dark:border-white/5 hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 w-full cursor-pointer group"
                 >
                   <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 flex items-center justify-center shrink-0">
                     <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
@@ -1152,7 +1150,7 @@ export default function AdminAdmissionsHubPage() {
                       <span className="font-medium text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                         {c.residents ? `${c.residents.first_name} ${c.residents.last_name}` : "Unknown resident"}
                       </span>
-                      <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 border-indigo-500/20">
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 border-indigo-500/20">
                         Conference
                       </span>
                     </div>

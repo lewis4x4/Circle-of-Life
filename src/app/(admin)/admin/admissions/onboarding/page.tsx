@@ -225,7 +225,7 @@ export default function AdminAdmissionsOnboardingPage() {
         <div className="space-y-4">
           <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Top missing work</span>
+              <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Top missing work</span>
               {missingCounts.map(([label, count]) => (
                 <Badge key={label} variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
                   {label}: {count}
@@ -304,10 +304,10 @@ export default function AdminAdmissionsOnboardingPage() {
                 </div>
                 <div className="grid gap-2">
                   {checklist.map((item) => (
-                    <div key={item.key} className="rounded-xl border border-slate-200/70 dark:border-white/5 bg-white/80 dark:bg-black/20 px-4 py-3 flex items-center justify-between gap-3">
+                    <div key={item.key} className="rounded-xl border border-slate-200/70 dark:border-white/5 bg-white/80 px-4 py-3 flex items-center justify-between gap-3">
                       <span className="text-sm font-medium text-slate-900 dark:text-white">{item.label}</span>
                       <span className={cn(
-                        "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-widest",
+                        "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider",
                         item.passed
                           ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
                           : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",

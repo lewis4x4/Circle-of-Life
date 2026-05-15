@@ -156,12 +156,10 @@ export default function AdminArAgingPage() {
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <BillingHubNav />
         
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-emerald-50/20 dark:bg-black/20 p-8 rounded-[2.5rem] border border-emerald-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-emerald-50/20 p-8 rounded-lg border border-emerald-200/50 dark:border-white/5 shadow-sm mt-4">
           <div className="space-y-3">
-             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
-                 <FileClock className="h-3.5 w-3.5" aria-hidden /> SYS: Module 16
-             </div>
-             <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+             
+             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
                AR Aging
                {totals.b91 > 0 && <PulseDot colorClass="bg-rose-500" />}
              </h1>
@@ -180,11 +178,11 @@ export default function AdminArAgingPage() {
                  <Sparkline colorClass="text-emerald-500" variant={2} />
                  <MonolithicWatermark value={Math.round((totals.total / 100) / 1000) + 'k'} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
                  <div className="relative z-10 flex flex-col h-full justify-between p-2">
-                   <h3 className="text-[11px] font-bold tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+                   <h3 className="text-[11px] font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                      <Timer className="h-4 w-4" /> Total Open AR
                    </h3>
                    <div>
-                     <p className="text-4xl lg:text-5xl font-display font-medium tracking-tight tabular-nums text-emerald-600 dark:text-emerald-400 pb-1 flex flex-col">
+                     <p className="text-4xl lg:text-2xl font-medium tracking-tight tabular-nums text-emerald-600 dark:text-emerald-400 pb-1 flex flex-col">
                        {billingCurrency.format(totals.total / 100)}
                      </p>
                    </div>
@@ -222,10 +220,10 @@ export default function AdminArAgingPage() {
         ) : null}
         
         {!isLoading && rows.length > 0 ? (
-          <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all">
+          <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all">
             <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
-              <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1">Outstanding by Resident</h3>
-              <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-1 uppercase">
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1">Outstanding by Resident</h3>
+              <p className="text-[10px] font-mono tracking-wider text-slate-400 mt-1 uppercase">
                  Sorted descending
               </p>
             </div>
@@ -236,7 +234,7 @@ export default function AdminArAgingPage() {
                     <MotionItem key={r.residentId}>
                       <Link
                         href={`/admin/residents/${r.residentId}/billing`}
-                        className="group flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between p-5 rounded-[1.5rem] border border-slate-200/90 bg-white dark:border-white/5 dark:bg-white/[0.03] shadow-sm transform-gpu transition-all hover:border-emerald-300 dark:hover:border-emerald-500/40 hover:shadow-md outline-none"
+                        className="group flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between p-5 rounded-lg border border-slate-200/90 bg-white dark:border-white/5 shadow-sm transform-gpu transition-all hover:border-emerald-300 dark:hover:border-emerald-500/40 hover:shadow-md outline-none"
                       >
                          <div className="min-w-0 flex items-center gap-4">
                            <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-500/10 group-hover:border-emerald-200 dark:group-hover:border-emerald-500/20 transition-colors">
@@ -251,8 +249,8 @@ export default function AdminArAgingPage() {
                          
                          <div className="flex flex-wrap items-center gap-4 lg:gap-8 lg:mr-4">
                             <div className="flex flex-col">
-                               <span className="font-bold uppercase tracking-widest text-[10px] text-slate-400 mb-1">Total Outstanding</span>
-                               <span className="text-lg font-display font-medium text-slate-900 dark:text-slate-100 tabular-nums">
+                               <span className="font-bold uppercase tracking-wider text-[10px] text-slate-400 mb-1">Total Outstanding</span>
+                               <span className="text-lg font-medium text-slate-900 dark:text-slate-100 tabular-nums">
                                   {billingCurrency.format(r.totalCents / 100)}
                                </span>
                             </div>
@@ -260,25 +258,25 @@ export default function AdminArAgingPage() {
                             <div className="h-10 w-px bg-slate-200 dark:bg-white/10 hidden md:block mx-2"></div>
                             
                             <div className="flex flex-col hidden md:flex text-right">
-                               <span className="font-bold uppercase tracking-widest text-[9px] text-slate-400 mb-1 leading-none">0–30</span>
+                               <span className="font-bold uppercase tracking-wider text-[9px] text-slate-400 mb-1 leading-none">0–30</span>
                                <span className="text-xs font-mono font-medium text-slate-600 dark:text-slate-400 tabular-nums leading-none">
                                   {billingCurrency.format(r.b0_30 / 100)}
                                </span>
                             </div>
                             <div className="flex flex-col hidden md:flex text-right">
-                               <span className="font-bold uppercase tracking-widest text-[9px] text-slate-400 mb-1 leading-none">31–60</span>
+                               <span className="font-bold uppercase tracking-wider text-[9px] text-slate-400 mb-1 leading-none">31–60</span>
                                <span className="text-xs font-mono font-medium text-slate-600 dark:text-slate-400 tabular-nums leading-none">
                                   {billingCurrency.format(r.b31_60 / 100)}
                                </span>
                             </div>
                             <div className="flex flex-col hidden lg:flex text-right">
-                               <span className="font-bold uppercase tracking-widest text-[9px] text-slate-400 mb-1 leading-none">61–90</span>
+                               <span className="font-bold uppercase tracking-wider text-[9px] text-slate-400 mb-1 leading-none">61–90</span>
                                <span className="text-xs font-mono font-medium text-slate-600 dark:text-slate-400 tabular-nums leading-none">
                                   {billingCurrency.format(r.b61_90 / 100)}
                                </span>
                             </div>
                             <div className="flex flex-col hidden lg:flex text-right">
-                               <span className="font-bold uppercase tracking-widest text-[9px] text-slate-400 mb-1 leading-none">91+</span>
+                               <span className="font-bold uppercase tracking-wider text-[9px] text-slate-400 mb-1 leading-none">91+</span>
                                <span className={cn("text-xs font-mono font-medium tabular-nums leading-none", r.b91 > 0 ? "text-rose-600 dark:text-rose-400 font-bold" : "text-slate-600 dark:text-slate-400")}>
                                   {billingCurrency.format(r.b91 / 100)}
                                </span>

@@ -307,7 +307,7 @@ function CaregiverIncidentDraftPageInner() {
   if (loadError) {
     return (
       <div className="space-y-4 max-w-md mx-auto mt-12">
-        <div className="rounded-[1.5rem] border border-rose-800/60 bg-rose-950/30 px-6 py-5 text-sm text-rose-100 text-center">
+        <div className="rounded-lg border border-rose-800/60 bg-rose-950/30 px-6 py-5 text-sm text-rose-100 text-center">
           <AlertTriangle className="w-8 h-8 mx-auto mb-3 text-rose-400" />
           <p>{loadError}</p>
         </div>
@@ -324,11 +324,11 @@ function CaregiverIncidentDraftPageInner() {
   if (submittedNumber) {
     return (
       <div className="max-w-[700px] mx-auto mt-12">
-        <div className="glass-panel p-8 md:p-12 text-center flex flex-col items-center border border-emerald-500/30 bg-emerald-950/20 shadow-[inset_0_0_40px_rgba(16,185,129,0.05)] rounded-[2rem]">
+        <div className="p-8 md:p-12 text-center flex flex-col items-center border border-emerald-500/30 bg-emerald-950/20 shadow-[inset_0_0_40px_rgba(16,185,129,0.05)] rounded-lg">
           <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mb-6 border border-emerald-400/50">
              <CheckCircle2 className="w-10 h-10 text-emerald-400" />
           </div>
-          <h2 className="text-3xl font-display font-light text-white mb-2 tracking-tight">Incident Logged</h2>
+          <h2 className="text-3xl font-semibold text-white mb-2 tracking-tight">Incident Logged</h2>
           <p className="text-zinc-400 mb-8 max-w-md leading-relaxed text-[15px]">
              Report <span className="text-emerald-300 font-mono font-bold tracking-wider">{submittedNumber}</span> is securely on file. Nursing and administration can follow up in the operations console.
           </p>
@@ -375,7 +375,7 @@ function CaregiverIncidentDraftPageInner() {
         <div className="md:hidden w-16 h-16 mx-auto bg-amber-500/20 rounded-full flex items-center justify-center mb-4 border border-amber-500/30">
            <AlertTriangle className="w-8 h-8 text-amber-400" />
         </div>
-        <h1 className="text-3xl md:text-5xl font-display font-light text-white tracking-tight flex items-center gap-4">
+        <h1 className="text-3xl md:text-2xl font-semibold text-white tracking-tight flex items-center gap-4">
            <AlertTriangle className="hidden md:block w-10 h-10 text-amber-500" />
            Report Incident
         </h1>
@@ -391,14 +391,14 @@ function CaregiverIncidentDraftPageInner() {
       <form onSubmit={onSubmit} className="space-y-6">
         
         {/* SECTION 1: WHAT HAPPENED */}
-        <div className="glass-panel rounded-[2rem] p-6 md:p-10">
-          <h3 className="text-sm font-semibold tracking-widest uppercase text-amber-400 mb-8 flex items-center gap-2">
+        <div className="rounded-lg p-6 md:p-10">
+          <h3 className="text-sm font-semibold tracking-wider uppercase text-amber-400 mb-8 flex items-center gap-2">
              <span className="w-2 h-2 rounded-full bg-amber-400"></span> Primary Classification
           </h3>
           
           <div className="space-y-6">
             <div className="space-y-2">
-               <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 pl-1">Resident <span className="text-zinc-600 font-normal opacity-70">(Optional)</span></label>
+               <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 pl-1">Resident <span className="text-zinc-600 font-normal opacity-70">(Optional)</span></label>
                <div className="relative">
                  <select
                    className="w-full h-14 appearance-none rounded-[1.2rem] border border-white/10 bg-black/40 px-5 text-[15px] font-medium text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-inner tap-responsive"
@@ -415,7 +415,7 @@ function CaregiverIncidentDraftPageInner() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 pl-1">Category</label>
+                  <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 pl-1">Category</label>
                   <div className="relative">
                     <select
                       className="w-full h-14 appearance-none rounded-[1.2rem] border border-white/10 bg-black/40 px-5 text-[15px] font-medium text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-inner tap-responsive"
@@ -430,7 +430,7 @@ function CaregiverIncidentDraftPageInner() {
                </div>
 
                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 pl-1">Severity</label>
+                  <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 pl-1">Severity</label>
                   <div className="relative">
                     <select
                       className="w-full h-14 appearance-none rounded-[1.2rem] border border-white/10 bg-black/40 px-5 text-[15px] font-medium text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-inner tap-responsive"
@@ -447,7 +447,7 @@ function CaregiverIncidentDraftPageInner() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 pl-1">Date & Time</label>
+                  <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 pl-1">Date & Time</label>
                   <input 
                      type="datetime-local" 
                      className="w-full h-14 appearance-none rounded-[1.2rem] border border-white/10 bg-black/40 px-5 text-[15px] font-medium text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-inner tap-responsive"
@@ -456,7 +456,7 @@ function CaregiverIncidentDraftPageInner() {
                </div>
 
                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 pl-1">Shift</label>
+                  <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 pl-1">Shift</label>
                   <div className="relative">
                     <select
                       className="w-full h-14 appearance-none rounded-[1.2rem] border border-white/10 bg-black/40 px-5 text-[15px] font-medium text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-inner tap-responsive"
@@ -474,14 +474,14 @@ function CaregiverIncidentDraftPageInner() {
         </div>
 
         {/* SECTION 2: WHERE & NARRATIVE */}
-        <div className="glass-panel rounded-[2rem] p-6 md:p-10">
-          <h3 className="text-sm font-semibold tracking-widest uppercase text-amber-400 mb-8 flex items-center gap-2">
+        <div className="rounded-lg p-6 md:p-10">
+          <h3 className="text-sm font-semibold tracking-wider uppercase text-amber-400 mb-8 flex items-center gap-2">
              <span className="w-2 h-2 rounded-full bg-amber-400"></span> Details & Location
           </h3>
           
           <div className="space-y-6">
             <div className="space-y-2">
-               <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 pl-1">Specific Location</label>
+               <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 pl-1">Specific Location</label>
                <input
                   type="text"
                   placeholder="e.g. Room 114, east hall near nurses' station"
@@ -491,7 +491,7 @@ function CaregiverIncidentDraftPageInner() {
             </div>
 
             <div className="space-y-2">
-               <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 pl-1">Factual Description</label>
+               <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 pl-1">Factual Description</label>
                <textarea
                   rows={4}
                   placeholder="Objective facts: what you saw, heard, or verified."
@@ -501,7 +501,7 @@ function CaregiverIncidentDraftPageInner() {
             </div>
 
             <div className="space-y-2">
-               <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 pl-1">Immediate Actions Taken</label>
+               <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 pl-1">Immediate Actions Taken</label>
                <textarea
                   rows={3}
                   placeholder="First aid given, supervision adjusted, area secured..."
@@ -537,7 +537,7 @@ function CaregiverIncidentDraftPageInner() {
           <button
             type="submit"
             disabled={submitting || !facilityId}
-            className="w-full h-16 rounded-[1.5rem] flex items-center justify-center font-bold tracking-widest uppercase transition-all shadow-[0_4px_30px_rgba(245,158,11,0.2)] bg-gradient-to-r from-amber-600 to-amber-500 text-black hover:from-amber-500 hover:to-amber-400 disabled:opacity-50 disabled:grayscale tap-responsive text-lg"
+            className="w-full h-16 rounded-lg flex items-center justify-center font-bold tracking-wider uppercase transition-all shadow-[0_4px_30px_rgba(245,158,11,0.2)] bg-gradient-to-r from-amber-600 to-amber-500 text-black hover:from-amber-500 hover:to-amber-400 disabled:opacity-50 disabled:grayscale tap-responsive text-lg"
           >
             {submitting ? (
               <>

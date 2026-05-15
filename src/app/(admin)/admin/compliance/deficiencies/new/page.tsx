@@ -130,7 +130,7 @@ export default function NewDeficiencyPage() {
         <Link href="/admin/compliance" className="text-sm text-slate-600 underline-offset-4 hover:underline dark:text-slate-400">
           ← Compliance
         </Link>
-        <h1 className="mt-2 font-display text-2xl font-semibold text-slate-900 dark:text-slate-100">New deficiency</h1>
+        <h1 className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">New deficiency</h1>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
           Creates a deficiency and a draft Plan of Correction (POC due 10 days after survey date).
         </p>

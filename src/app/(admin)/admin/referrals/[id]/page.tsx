@@ -184,7 +184,7 @@ export default function AdminReferralLeadDetailPage() {
             </Link>{" "}
             / Lead
           </p>
-          <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
             Lead detail
           </h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
@@ -253,7 +253,7 @@ export default function AdminReferralLeadDetailPage() {
 
           <Card className="border-slate-200/80 shadow-soft dark:border-slate-800">
             <CardHeader>
-              <CardTitle className="font-display text-lg">
+              <CardTitle className="text-lg">
                 {lead.first_name} {lead.last_name}
                 {lead.preferred_name ? (
                   <span className="ml-2 text-base font-normal text-slate-600 dark:text-slate-400">

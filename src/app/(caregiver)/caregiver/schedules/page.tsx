@@ -108,7 +108,7 @@ export default function CaregiverSchedulesPage() {
       />
       <Card className="border-zinc-800 bg-gradient-to-br from-zinc-950 to-zinc-900 text-zinc-100">
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-xl font-display">
+          <CardTitle className="flex items-center gap-2 text-xl">
             <CalendarDays className="h-5 w-5 text-teal-400" />
             My schedule
           </CardTitle>

@@ -256,11 +256,11 @@ export default function AdminStaffDetailPage() {
       <AmbientMatrix hasCriticals={certAgg === "expired"} />
 
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm overflow-hidden relative">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm overflow-hidden relative">
           <div className="flex flex-col gap-5 relative z-10">
             <Link
               href="/admin/staff"
-              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex w-fit gap-2 -ml-2 text-slate-500 dark:text-slate-400 font-mono tracking-widest uppercase text-[10px] items-center hover:bg-slate-200/50 dark:hover:bg-white/5 rounded-full px-4")}
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex w-fit gap-2 -ml-2 text-slate-500 dark:text-slate-400 font-mono tracking-wider uppercase text-[10px] items-center hover:bg-slate-200/50 dark:hover:bg-white/5 rounded-full px-4")}
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               Roster
@@ -269,20 +269,20 @@ export default function AdminStaffDetailPage() {
               {staff.photo_url ? (
                 <Avatar className="h-20 w-20 ring-4 ring-white/50 dark:ring-white/10 shadow-lg rounded-[1.2rem]">
                   <AvatarImage src={staff.photo_url} alt={fullName} className="object-cover rounded-[1.2rem]"/>
-                  <AvatarFallback className="bg-gradient-to-br from-indigo-100 to-slate-200 text-xl font-display font-medium text-indigo-900 dark:from-indigo-900 dark:to-slate-800 dark:text-indigo-100 rounded-[1.2rem]">
+                  <AvatarFallback className="bg-gradient-to-br from-indigo-100 to-slate-200 text-xl font-medium text-indigo-900 dark:from-indigo-900 dark:to-slate-800 dark:text-indigo-100 rounded-[1.2rem]">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
               ) : (
                 <div
-                  className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.2rem] bg-gradient-to-br from-slate-200 to-slate-300 text-xl font-display font-medium text-slate-600 ring-4 ring-white/50 dark:from-slate-800 dark:to-slate-900 dark:text-slate-300 dark:ring-white/10 shadow-lg"
+                  className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.2rem] bg-gradient-to-br from-slate-200 to-slate-300 text-xl font-medium text-slate-600 ring-4 ring-white/50 dark:from-slate-800 dark:to-slate-900 dark:text-slate-300 dark:ring-white/10 shadow-lg"
                   aria-hidden
                 >
                   {fullName.charAt(0).toUpperCase()}
                 </div>
               )}
               <div className="flex flex-col">
-                 <h1 className="font-display text-4xl lg:text-5xl font-light tracking-tight text-slate-900 dark:text-white">
+                 <h1 className="text-4xl lg:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
                   {fullName}
                  </h1>
                 {staff.preferred_name ? (
@@ -290,7 +290,7 @@ export default function AdminStaffDetailPage() {
                     &ldquo;{staff.preferred_name}&rdquo;
                   </p>
                 ) : null}
-                <p className="mt-2 text-xs font-mono uppercase tracking-widest text-slate-500 dark:text-slate-400 flex flex-wrap gap-2 items-center">
+                <p className="mt-2 text-xs font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 flex flex-wrap gap-2 items-center">
                   <span className="font-semibold text-slate-700 dark:text-slate-300">{formatSnake(staff.staff_role)}</span>
                   <span className="opacity-50">·</span>
                   <span>Updated {formatTs(staff.updated_at)}</span>
@@ -300,7 +300,7 @@ export default function AdminStaffDetailPage() {
                   <RoleBadge role={roleUi} />
                   <CertificationBadge certifications={certAgg} />
                   {staff.is_float_pool ? (
-                    <Badge variant="outline" className="border-slate-300 dark:border-slate-600 uppercase tracking-widest font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full">
+                    <Badge variant="outline" className="border-slate-300 dark:border-slate-600 uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full">
                       Float pool
                     </Badge>
                   ) : null}
@@ -311,12 +311,12 @@ export default function AdminStaffDetailPage() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all">
+          <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all">
             <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center gap-3">
                <div className="w-10 h-10 flex shrink-0 items-center justify-center rounded-full border border-indigo-200 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-500/10">
                    <Phone className="h-4 w-4 text-indigo-500" />
                </div>
-               <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white capitalize tracking-tight">Contact</h3>
+               <h3 className="text-xl font-semibold text-slate-900 dark:text-white capitalize tracking-tight">Contact</h3>
             </div>
             <div className="space-y-4 text-sm relative z-10">
               <DetailRow label="Phone" value={staff.phone ?? "—"} />
@@ -340,12 +340,12 @@ export default function AdminStaffDetailPage() {
             </div>
           </div>
 
-          <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all">
+          <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all">
             <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center gap-3">
                <div className="w-10 h-10 flex shrink-0 items-center justify-center rounded-full border border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10">
                    <User className="h-4 w-4 text-rose-500" />
                </div>
-               <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white capitalize tracking-tight">Emergency</h3>
+               <h3 className="text-xl font-semibold text-slate-900 dark:text-white capitalize tracking-tight">Emergency</h3>
             </div>
             <div className="space-y-4 text-sm relative z-10">
               <DetailRow label="Name" value={staff.emergency_contact_name ?? "—"} />
@@ -354,9 +354,9 @@ export default function AdminStaffDetailPage() {
             </div>
           </div>
 
-          <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all lg:col-span-2">
+          <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all lg:col-span-2">
             <div className="mb-4 pb-2">
-               <h3 className="text-[10px] font-mono tracking-widest uppercase text-slate-400">Address Info</h3>
+               <h3 className="text-[10px] font-mono tracking-wider uppercase text-slate-400">Address Info</h3>
             </div>
             <div className="text-sm font-semibold text-slate-800 dark:text-slate-200 relative z-10 text-lg">
               {!addressLine && !addrRest ? (
@@ -369,12 +369,12 @@ export default function AdminStaffDetailPage() {
             </div>
           </div>
 
-          <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all">
+          <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all">
             <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center gap-3">
                <div className="w-10 h-10 flex shrink-0 items-center justify-center rounded-full border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10">
                    <Briefcase className="h-4 w-4 text-emerald-500" />
                </div>
-               <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white capitalize tracking-tight">Employment</h3>
+               <h3 className="text-xl font-semibold text-slate-900 dark:text-white capitalize tracking-tight">Employment</h3>
             </div>
             <div className="space-y-4 text-sm relative z-10">
               <DetailRow label="Hire date" value={formatDateOnly(staff.hire_date)} />
@@ -393,10 +393,10 @@ export default function AdminStaffDetailPage() {
             </div>
           </div>
 
-          <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all">
+          <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all">
              <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4">
-                 <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1">Compensation</h3>
-                <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-1 uppercase">Rates stored in cents (internal)</p>
+                 <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1">Compensation</h3>
+                <p className="text-[10px] font-mono tracking-wider text-slate-400 mt-1 uppercase">Rates stored in cents (internal)</p>
              </div>
             <div className="space-y-4 text-sm relative z-10">
               <DetailRow label="Base hourly" value={<span className="font-mono text-lg">{formatCents(staff.hourly_rate)}</span>} />
@@ -404,10 +404,10 @@ export default function AdminStaffDetailPage() {
             </div>
           </div>
 
-          <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all lg:col-span-2">
+          <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all lg:col-span-2">
             <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4">
-                 <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1">Certifications</h3>
-                <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-1 uppercase">Active directory credentials</p>
+                 <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1">Certifications</h3>
+                <p className="text-[10px] font-mono tracking-wider text-slate-400 mt-1 uppercase">Active directory credentials</p>
              </div>
             <div className="relative z-10">
               {certs.length === 0 ? (
@@ -418,12 +418,12 @@ export default function AdminStaffDetailPage() {
                     <li key={c.id} className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between group">
                       <div>
                         <p className="font-semibold text-slate-900 dark:text-slate-100">{c.certification_name}</p>
-                        <p className="text-xs uppercase font-mono tracking-widest text-slate-500 dark:text-slate-400 mt-1">
+                        <p className="text-xs uppercase font-mono tracking-wider text-slate-500 dark:text-slate-400 mt-1">
                           {c.certification_type}
                           {c.issuing_authority ? ` · ${c.issuing_authority}` : ""}
                         </p>
                       </div>
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono tracking-widest uppercase">
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono tracking-wider uppercase">
                         <span>Issued: {formatDateOnly(c.issue_date)}</span>
                         {c.expiration_date ? <span>Exp: {formatDateOnly(c.expiration_date)}</span> : null}
                         <Badge className="bg-slate-100 text-slate-700 border border-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 font-bold px-2 py-0.5 rounded-full shadow-sm text-[9px]">
@@ -437,14 +437,14 @@ export default function AdminStaffDetailPage() {
             </div>
           </div>
 
-          <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all lg:col-span-2">
+          <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all lg:col-span-2">
             <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center gap-3">
                <div className="w-10 h-10 flex shrink-0 items-center justify-center rounded-full border border-cyan-200 dark:border-cyan-500/20 bg-cyan-50 dark:bg-cyan-500/10">
                    <Calendar className="h-4 w-4 text-cyan-500" />
                </div>
                <div>
-                  <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white capitalize tracking-tight">Upcoming Shifts</h3>
-                  <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-0.5 uppercase">Next assigned blocks</p>
+                  <h3 className="text-xl font-semibold text-slate-900 dark:text-white capitalize tracking-tight">Upcoming Shifts</h3>
+                  <p className="text-[10px] font-mono tracking-wider text-slate-400 mt-0.5 uppercase">Next assigned blocks</p>
                </div>
             </div>
             <div className="relative z-10">
@@ -455,12 +455,12 @@ export default function AdminStaffDetailPage() {
                   {shifts.map((s, i) => (
                     <li
                       key={`${s.shift_date}-${s.shift_type}-${i}`}
-                      className="rounded-2xl border border-slate-200/60 bg-white/60 px-4 py-2.5 text-sm dark:border-white/5 dark:bg-white/5 backdrop-blur-md shadow-sm transition-transform hover:-translate-y-0.5"
+                      className="rounded-2xl border border-slate-200/60 bg-card px-4 py-2.5 text-sm dark:border-white/5 dark:bg-white/5 backdrop-blur-md shadow-sm transition-transform hover:-translate-y-0.5"
                     >
                       <span className="font-semibold text-slate-800 dark:text-slate-200">
                         {formatShiftLabel(s.shift_date, s.shift_type)}
                       </span>
-                      <span className="ml-3 text-[10px] font-mono uppercase tracking-widest font-bold text-slate-500">{s.status}</span>
+                      <span className="ml-3 text-[10px] font-mono uppercase tracking-wider font-bold text-slate-500">{s.status}</span>
                     </li>
                   ))}
                 </ul>
@@ -469,12 +469,12 @@ export default function AdminStaffDetailPage() {
           </div>
 
           {staff.notes ? (
-            <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all lg:col-span-2">
+            <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all lg:col-span-2">
               <div className="mb-4 pb-2">
-                  <h3 className="text-[10px] font-mono tracking-widest uppercase text-slate-400">Notes</h3>
+                  <h3 className="text-[10px] font-mono tracking-wider uppercase text-slate-400">Notes</h3>
               </div>
               <div className="relative z-10">
-                <p className="whitespace-pre-wrap text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300 bg-white/40 dark:bg-black/20 p-6 rounded-2xl border border-slate-200/40 dark:border-white/5">{staff.notes}</p>
+                <p className="whitespace-pre-wrap text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300 bg-card p-6 rounded-2xl border border-slate-200/40 dark:border-white/5">{staff.notes}</p>
               </div>
             </div>
           ) : null}
@@ -614,7 +614,7 @@ function RoleBadge({ role }: { role: StaffRoleUi }) {
     },
     admin: { label: "Admin", className: "bg-slate-100 text-slate-700 border-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-300" },
   };
-  return <Badge className={cn("uppercase tracking-widest font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full border", map[role].className)}>{map[role].label}</Badge>;
+  return <Badge className={cn("uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full border", map[role].className)}>{map[role].label}</Badge>;
 }
 
 function StatusBadge({ status }: { status: StaffStatusUi }) {
@@ -626,7 +626,7 @@ function StatusBadge({ status }: { status: StaffStatusUi }) {
     },
     on_leave: { label: "On Leave", className: "bg-amber-50 text-amber-700 border-amber-200 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-400" },
   };
-  return <Badge className={cn("uppercase tracking-widest font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full border", map[status].className)}>{map[status].label}</Badge>;
+  return <Badge className={cn("uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full border", map[status].className)}>{map[status].label}</Badge>;
 }
 
 function CertificationBadge({ certifications }: { certifications: CertificationStatus }) {
@@ -638,5 +638,5 @@ function CertificationBadge({ certifications }: { certifications: CertificationS
     },
     expired: { label: "Cert issue", className: "bg-red-50 text-red-700 border-red-200 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-400" },
   };
-  return <Badge className={cn("uppercase tracking-widest font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full border", map[certifications].className)}>{map[certifications].label}</Badge>;
+  return <Badge className={cn("uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full border", map[certifications].className)}>{map[certifications].label}</Badge>;
 }

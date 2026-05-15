@@ -239,12 +239,10 @@ export default function TransportationWeekCalendarPage() {
       <AmbientMatrix hasCriticals={false} primaryClass="bg-indigo-700/10" secondaryClass="bg-slate-900/10" />
 
       <div className="relative z-10 space-y-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
-              SYS: Module 15 — {viewMode === "week" ? "Week" : "Month"} view
-            </div>
-            <h1 className="font-display text-3xl md:text-4xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
+            
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
               <CalendarDays className="h-8 w-8 text-indigo-600 dark:text-indigo-400 shrink-0" />
               Transport calendar
             </h1>
@@ -260,7 +258,7 @@ export default function TransportationWeekCalendarPage() {
                 type="button"
                 onClick={() => setCalendarView("week")}
                 className={cn(
-                  "h-10 rounded-full px-4 text-[10px] font-bold uppercase tracking-widest transition-colors",
+                  "h-10 rounded-full px-4 text-[10px] font-bold uppercase tracking-wider transition-colors",
                   viewMode === "week"
                     ? "bg-white text-indigo-700 shadow-sm dark:bg-white/10 dark:text-indigo-300"
                     : "text-slate-500 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-zinc-200",
@@ -272,7 +270,7 @@ export default function TransportationWeekCalendarPage() {
                 type="button"
                 onClick={() => setCalendarView("month")}
                 className={cn(
-                  "h-10 rounded-full px-4 text-[10px] font-bold uppercase tracking-widest transition-colors",
+                  "h-10 rounded-full px-4 text-[10px] font-bold uppercase tracking-wider transition-colors",
                   viewMode === "month"
                     ? "bg-white text-indigo-700 shadow-sm dark:bg-white/10 dark:text-indigo-300"
                     : "text-slate-500 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-zinc-200",
@@ -286,7 +284,7 @@ export default function TransportationWeekCalendarPage() {
               onClick={viewMode === "week" ? goThisWeek : goThisMonth}
               className={cn(
                 buttonVariants({ variant: "outline", size: "default" }),
-                "h-11 rounded-full text-[10px] font-bold uppercase tracking-widest",
+                "h-11 rounded-full text-[10px] font-bold uppercase tracking-wider",
               )}
             >
               {viewMode === "week" ? "This week" : "This month"}
@@ -295,7 +293,7 @@ export default function TransportationWeekCalendarPage() {
               href="/admin/transportation"
               className={cn(
                 buttonVariants({ variant: "outline", size: "default" }),
-                "h-11 rounded-full gap-2 text-[10px] font-bold uppercase tracking-widest",
+                "h-11 rounded-full gap-2 text-[10px] font-bold uppercase tracking-wider",
               )}
             >
               <ArrowLeft className="h-4 w-4" />
@@ -305,13 +303,13 @@ export default function TransportationWeekCalendarPage() {
         </div>
 
         {!facilityReady && (
-          <p className="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-6 py-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-6 py-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
             Select a facility to load the calendar.
           </p>
         )}
 
         {error && (
-          <p className="rounded-[1.5rem] border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100">
+          <p className="rounded-lg border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100">
             {error}
           </p>
         )}
@@ -355,7 +353,7 @@ export default function TransportationWeekCalendarPage() {
                   disabled={loading}
                   className={cn(
                     buttonVariants({ variant: "outline", size: "default" }),
-                    "h-11 rounded-full gap-2 text-[10px] font-bold uppercase tracking-widest",
+                    "h-11 rounded-full gap-2 text-[10px] font-bold uppercase tracking-wider",
                     loading && "pointer-events-none opacity-50",
                   )}
                   aria-label="Download calendar as ICS file"
@@ -365,7 +363,7 @@ export default function TransportationWeekCalendarPage() {
                 </button>
                 <Link
                   href="/admin/transportation/requests/new"
-                  className={cn(buttonVariants({ size: "default" }), "h-11 rounded-full text-[10px] font-bold uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 text-white")}
+                  className={cn(buttonVariants({ size: "default" }), "h-11 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-600 hover:bg-indigo-700 text-white")}
                 >
                   + Request
                 </Link>
@@ -395,7 +393,7 @@ export default function TransportationWeekCalendarPage() {
                       <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         {format(day, "EEE")}
                       </span>
-                      <span className="text-lg sm:text-xl font-display font-semibold text-slate-900 dark:text-white">
+                      <span className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-white">
                         {format(day, "d")}
                       </span>
                       <span
@@ -443,7 +441,7 @@ export default function TransportationWeekCalendarPage() {
                           today && !selected && "ring-1 ring-slate-300 dark:ring-white/20",
                         )}
                       >
-                        <span className="text-base sm:text-lg font-display font-semibold text-slate-900 dark:text-white">
+                        <span className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white">
                           {format(day, "d")}
                         </span>
                         <span
@@ -461,8 +459,8 @@ export default function TransportationWeekCalendarPage() {
               </div>
             )}
 
-            <div className="glass-panel rounded-[2rem] border border-slate-200/60 bg-white/60 p-6 md:p-8 dark:border-white/5 dark:bg-white/[0.015]">
-              <h2 className="text-[12px] font-bold uppercase tracking-widest text-slate-600 dark:text-slate-400 mb-6 px-1">
+            <div className="rounded-lg border border-slate-200/60 bg-card p-6 md:p-8 dark:border-white/5 dark:bg-white/[0.015]">
+              <h2 className="text-[12px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-6 px-1">
                 {format(selectedDay, "EEEE, MMMM d")}
               </h2>
               {loading ? (
@@ -479,7 +477,7 @@ export default function TransportationWeekCalendarPage() {
                       <MotionItem key={row.id}>
                         <Link
                           href={`/admin/transportation/requests/${row.id}`}
-                          className="flex flex-col gap-3 rounded-[1.5rem] border border-slate-200/90 bg-white p-5 shadow-sm transition-colors hover:border-indigo-300 dark:border-white/5 dark:bg-white/[0.03] dark:hover:border-indigo-500/40 sm:flex-row sm:items-center sm:justify-between"
+                          className="flex flex-col gap-3 rounded-lg border border-slate-200/90 bg-white p-5 shadow-sm transition-colors hover:border-indigo-300 dark:border-white/5 dark:hover:border-indigo-500/40 sm:flex-row sm:items-center sm:justify-between"
                         >
                           <div className="flex min-w-0 items-center gap-4">
                             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-white/5">
@@ -508,7 +506,7 @@ export default function TransportationWeekCalendarPage() {
                             </span>
                             <span
                               className={cn(
-                                "rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-widest",
+                                "rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wider",
                                 row.status === "scheduled"
                                   ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400"
                                   : row.status === "completed"

@@ -387,12 +387,10 @@ export default function AdminTransportationHubPage() {
       <div className="relative z-10 space-y-6">
         
         {/* ─── MOONSHOT HEADER ─── */}
-        <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+        <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
            <div className="space-y-2">
-             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
-                 SYS: Module 15
-             </div>
-             <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+             
+             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
                 Fleet Operations
                 {hasCriticalAlerts && <PulseDot colorClass="bg-rose-500" />}
              </h1>
@@ -405,7 +403,7 @@ export default function AdminTransportationHubPage() {
                href="/admin/transportation/mileage-approvals"
                className={cn(
                  buttonVariants({ size: "default", variant: "outline" }),
-                 "h-12 gap-2 rounded-full border-slate-300/80 px-5 text-[10px] font-bold uppercase tracking-widest dark:border-white/15 dark:bg-white/5",
+                 "h-12 gap-2 rounded-full border-slate-300/80 px-5 text-[10px] font-bold uppercase tracking-wider dark:border-white/15 dark:bg-white/5",
                )}
              >
                <CircleDollarSign className="h-4 w-4" aria-hidden />
@@ -415,23 +413,23 @@ export default function AdminTransportationHubPage() {
                href="/admin/transportation/calendar"
                className={cn(
                  buttonVariants({ size: "default", variant: "outline" }),
-                 "h-12 gap-2 rounded-full border-slate-300/80 px-5 text-[10px] font-bold uppercase tracking-widest dark:border-white/15 dark:bg-white/5",
+                 "h-12 gap-2 rounded-full border-slate-300/80 px-5 text-[10px] font-bold uppercase tracking-wider dark:border-white/15 dark:bg-white/5",
                )}
              >
                <CalendarDays className="h-4 w-4" aria-hidden />
                Week view
              </Link>
-             <Link href="/admin/transportation/requests/new" className={cn(buttonVariants({ size: "default" }), "h-12 px-6 rounded-full font-bold uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg")} >
+             <Link href="/admin/transportation/requests/new" className={cn(buttonVariants({ size: "default" }), "h-12 px-6 rounded-full font-bold uppercase tracking-wider text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg")} >
                + Transport request
              </Link>
-             <Link href="/admin/transportation/vehicles/new" className={cn(buttonVariants({ size: "default" }), "h-12 px-6 rounded-full font-bold uppercase tracking-widest text-[10px] tap-responsive bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg")} >
+             <Link href="/admin/transportation/vehicles/new" className={cn(buttonVariants({ size: "default" }), "h-12 px-6 rounded-full font-bold uppercase tracking-wider text-[10px] tap-responsive bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg")} >
                + Vehicle
              </Link>
              <Link
                href="/admin/transportation/settings"
                className={cn(
                  buttonVariants({ size: "default", variant: "outline" }),
-                 "h-12 gap-2 rounded-full border-slate-300/80 px-5 text-[10px] font-bold uppercase tracking-widest dark:border-white/15 dark:bg-white/5",
+                 "h-12 gap-2 rounded-full border-slate-300/80 px-5 text-[10px] font-bold uppercase tracking-wider dark:border-white/15 dark:bg-white/5",
                )}
              >
                <Settings2 className="h-4 w-4" aria-hidden />
@@ -446,10 +444,10 @@ export default function AdminTransportationHubPage() {
               <Sparkline colorClass="text-indigo-500" variant={3} />
               <MonolithicWatermark value={fleet.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between p-2">
-                <h3 className="text-[11px] font-bold tracking-widest uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                <h3 className="text-[11px] font-bold tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
                   <Bus className="h-4 w-4" /> Active Fleet Size
                 </h3>
-                <p className="text-6xl font-display font-medium tracking-tight text-indigo-600 dark:text-indigo-400 pb-1">{fleet.length}</p>
+                <p className="text-2xl font-medium tracking-tight text-indigo-600 dark:text-indigo-400 pb-1">{fleet.length}</p>
               </div>
             </V2Card>
           </div>
@@ -458,20 +456,20 @@ export default function AdminTransportationHubPage() {
               <Sparkline colorClass="text-emerald-500" variant={1} />
               <MonolithicWatermark value={drivers.length} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between p-2">
-                <h3 className="text-[11px] font-bold tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+                <h3 className="text-[11px] font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                    Active Drivers
                 </h3>
-                <p className="text-6xl font-display font-medium tracking-tight text-emerald-600 dark:text-emerald-400 pb-1">{drivers.length}</p>
+                <p className="text-2xl font-medium tracking-tight text-emerald-600 dark:text-emerald-400 pb-1">{drivers.length}</p>
               </div>
             </V2Card>
           </div>
         </KineticGrid>
 
       {facilityReady && (
-        <div className="glass-panel rounded-[2.5rem] border border-slate-200/60 bg-white/60 p-6 md:p-8 shadow-sm backdrop-blur-3xl dark:border-white/5 dark:bg-white/[0.015]">
+        <div className="rounded-lg border border-slate-200/60 bg-card p-6 md:p-8 shadow-sm dark:border-white/5 dark:bg-white/[0.015]">
           <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between px-2 text-slate-800 dark:text-slate-200">
             <div>
-              <h3 className="text-[14px] font-bold uppercase tracking-widest flex items-center gap-2">
+              <h3 className="text-[14px] font-bold uppercase tracking-wider flex items-center gap-2">
                 <PulseDot colorClass="bg-indigo-500" />
                 Upcoming Resident Transport
               </h3>
@@ -488,7 +486,7 @@ export default function AdminTransportationHubPage() {
             </div>
             <div className="flex flex-wrap gap-2 items-center">
               <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                <span className="whitespace-nowrap font-bold uppercase tracking-widest">Status</span>
+                <span className="whitespace-nowrap font-bold uppercase tracking-wider">Status</span>
                 <select
                   className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-white/15 dark:bg-white/5 dark:text-slate-100"
                   value={transportStatusFilter}
@@ -508,7 +506,7 @@ export default function AdminTransportationHubPage() {
                 type="button"
                 variant="outline"
                 disabled={!facilityReady || exportingCsv}
-                className="shrink-0 h-12 gap-2 rounded-full px-5 text-[10px] font-bold uppercase tracking-widest dark:border-white/10 bg-white dark:bg-white/5 shadow-sm"
+                className="shrink-0 h-12 gap-2 rounded-full px-5 text-[10px] font-bold uppercase tracking-wider dark:border-white/10 bg-white dark:bg-white/5 shadow-sm"
                 onClick={() => void exportTransportRequestsCsv()}
               >
                 <Download className="h-4 w-4" aria-hidden />
@@ -518,7 +516,7 @@ export default function AdminTransportationHubPage() {
                 href="/admin/transportation/calendar"
                 className={cn(
                   buttonVariants({ size: "default", variant: "outline" }),
-                  "shrink-0 h-12 gap-2 rounded-full px-5 text-[10px] font-bold uppercase tracking-widest dark:border-white/10 bg-white dark:bg-white/5 shadow-sm",
+                  "shrink-0 h-12 gap-2 rounded-full px-5 text-[10px] font-bold uppercase tracking-wider dark:border-white/10 bg-white dark:bg-white/5 shadow-sm",
                 )}
               >
                 <CalendarDays className="h-4 w-4" aria-hidden />
@@ -526,7 +524,7 @@ export default function AdminTransportationHubPage() {
               </Link>
               <Link
                 href="/admin/transportation/requests/new"
-                className={cn(buttonVariants({ size: "default", variant: "outline" }), "shrink-0 h-12 rounded-full px-6 text-[10px] font-bold uppercase tracking-widest dark:border-white/10 bg-white dark:bg-white/5 shadow-sm")}
+                className={cn(buttonVariants({ size: "default", variant: "outline" }), "shrink-0 h-12 rounded-full px-6 text-[10px] font-bold uppercase tracking-wider dark:border-white/10 bg-white dark:bg-white/5 shadow-sm")}
               >
                 Log Request
               </Link>
@@ -535,12 +533,12 @@ export default function AdminTransportationHubPage() {
           {loading ? (
             <p className="text-sm font-mono text-slate-500 py-10 pl-2">Loading trips…</p>
           ) : transportRequests.length === 0 ? (
-            <div className="p-16 text-center text-slate-500 bg-white/50 dark:bg-white/[0.02] rounded-[2.5rem] border border-dashed border-slate-200 dark:border-white/10 mx-2">
+            <div className="p-16 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-2">
                <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No scheduled trips</p>
               <p className="text-sm opacity-80 mt-1">No upcoming transport requests on file.</p>
             </div>
           ) : filteredTransportRequests.length === 0 ? (
-            <div className="p-16 text-center text-slate-500 bg-white/50 dark:bg-white/[0.02] rounded-[2.5rem] border border-dashed border-slate-200 dark:border-white/10 mx-2">
+            <div className="p-16 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-2">
               <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No trips match this status</p>
               <p className="text-sm opacity-80 mt-1">Try &quot;All statuses&quot; or another filter.</p>
             </div>
@@ -548,7 +546,7 @@ export default function AdminTransportationHubPage() {
             <div className="space-y-12">
               {upcomingByDay.map((group) => (
                 <div key={group.dateStr}>
-                  <p className="mb-4 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 pl-2">
+                  <p className="mb-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 pl-2">
                     {formatUpcomingDayLabel(group.dateStr)}
                     <span className="ml-2 font-normal text-slate-400">
                       — {group.rows.length} Trip{group.rows.length === 1 ? "" : "s"}
@@ -563,7 +561,7 @@ export default function AdminTransportationHubPage() {
                       return (
                         <MotionItem
                           key={row.id}
-                          className="rounded-[1.5rem] border border-slate-200/90 bg-white dark:border-white/5 dark:bg-white/[0.03] shadow-sm transform-gpu transition-colors hover:border-indigo-300 dark:hover:border-indigo-500/40 group overflow-hidden"
+                          className="rounded-lg border border-slate-200/90 bg-white dark:border-white/5 shadow-sm transform-gpu transition-colors hover:border-indigo-300 dark:hover:border-indigo-500/40 group overflow-hidden"
                         >
                           <Link
                             href={`/admin/transportation/requests/${row.id}`}
@@ -584,16 +582,16 @@ export default function AdminTransportationHubPage() {
                             </div>
                             <div className="flex shrink-0 flex-wrap items-center gap-4">
                               <div className="flex flex-col items-end">
-                                <span className="font-bold uppercase tracking-widest text-[10px] text-slate-400 mb-1">Time</span>
+                                <span className="font-bold uppercase tracking-wider text-[10px] text-slate-400 mb-1">Time</span>
                                 <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 flex items-center gap-1.5 border border-indigo-100 dark:border-indigo-500/20">
                                   <Clock className="w-3 h-3" />
                                   {format(apptDate, "EEE MMM d")} · {formatAppointmentTime(row.appointment_time)}
                                 </span>
                               </div>
                               <div className="flex flex-col items-end">
-                                <span className="font-bold uppercase tracking-widest text-[10px] text-slate-400 mb-1">Status</span>
+                                <span className="font-bold uppercase tracking-wider text-[10px] text-slate-400 mb-1">Status</span>
                                 <span className={cn(
-                                  "rounded-full px-4 py-1 text-xs font-bold uppercase tracking-widest border",
+                                  "rounded-full px-4 py-1 text-xs font-bold uppercase tracking-wider border",
                                   row.status === "scheduled" ? "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" :
                                   row.status === "completed" ? "bg-slate-100 border-slate-200 text-slate-600 dark:bg-white/5 dark:text-slate-400 dark:border-white/10" :
                                   "bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20"
@@ -615,13 +613,13 @@ export default function AdminTransportationHubPage() {
       )}
 
       {!facilityReady && (
-        <p className="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-6 py-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100 shadow-sm font-medium">
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-6 py-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100 shadow-sm font-medium">
           Select a facility to load fleet and driver records.
         </p>
       )}
 
       {error && (
-        <p className="rounded-[1.5rem] border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100 shadow-sm font-medium">
+        <p className="rounded-lg border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100 shadow-sm font-medium">
           {error}
         </p>
       )}
@@ -632,7 +630,7 @@ export default function AdminTransportationHubPage() {
           {/* ACTION QUEUE: Credential & Insurance Expiries */}
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-white/10 dark:border-white/5 mb-4 pl-2">
-              <h3 className="text-[12px] font-bold uppercase tracking-widest text-slate-800 dark:text-slate-200">
+              <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                 Compliance Blockers
               </h3>
             </div>
@@ -641,7 +639,7 @@ export default function AdminTransportationHubPage() {
               {loading ? (
                 <p className="text-sm font-mono text-slate-500 pl-2">Loading…</p>
               ) : driverAlerts.length === 0 ? (
-                <div className="p-12 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-[2rem] border border-dashed border-white/20 dark:border-white/5 backdrop-blur-md">
+                <div className="p-12 text-center text-slate-500 bg-white/30 rounded-lg border border-dashed border-white/20 dark:border-white/5 backdrop-blur-md">
                   <p className="font-semibold text-lg">
                     {drivers.length === 0 && fleet.length === 0 ? "Inbox Zero" : "No Driver Alerts"}
                   </p>
@@ -658,7 +656,7 @@ export default function AdminTransportationHubPage() {
                     <MotionItem
                       key={a.key}
                       className={cn(
-                        "p-6 rounded-[2rem] border shadow-sm backdrop-blur-xl relative overflow-hidden group transition-colors",
+                        "p-6 rounded-lg border shadow-sm relative overflow-hidden group transition-colors",
                         critical
                           ? "border-red-200 dark:border-red-900/40 bg-white/60 dark:bg-slate-900/60 hover:border-red-300 dark:hover:border-red-800/60"
                           : "border-amber-200 dark:border-amber-900/40 bg-white/60 dark:bg-slate-900/60 hover:border-amber-300 dark:hover:border-amber-800/60",
@@ -673,7 +671,7 @@ export default function AdminTransportationHubPage() {
                       <div className="flex justify-between items-start mb-4 pl-1">
                         <span
                           className={cn(
-                            "text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border",
+                            "text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border",
                             critical
                               ? "text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20"
                               : "text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20",
@@ -681,7 +679,7 @@ export default function AdminTransportationHubPage() {
                         >
                           {a.daysUntil < 0 ? "Expired" : a.daysUntil <= 14 ? "Action needed" : "Upcoming"}
                         </span>
-                        <span className="text-xs text-slate-500 font-bold uppercase tracking-widest">
+                        <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">
                           {formatAlertDeadline(a.daysUntil)}
                         </span>
                       </div>
@@ -698,7 +696,7 @@ export default function AdminTransportationHubPage() {
                           href={`/admin/staff/${a.staffId}`}
                           className={cn(
                             buttonVariants({ variant: "default", size: "sm" }),
-                            "h-10 rounded-full px-6 font-bold uppercase tracking-widest text-[10px]",
+                            "h-10 rounded-full px-6 font-bold uppercase tracking-wider text-[10px]",
                             critical ? "bg-red-600 hover:bg-red-700 text-white shadow-md" : "bg-amber-500 hover:bg-amber-600 text-white shadow-md",
                           )}
                         >
@@ -716,7 +714,7 @@ export default function AdminTransportationHubPage() {
           {/* WATCHLIST: Fleet Inspections */}
           <div className="space-y-4 lg:pl-6 lg:border-l border-transparent dark:border-transparent pt-6 lg:pt-0">
             <div className="flex items-center justify-between pb-2 border-b border-white/10 dark:border-white/5 mb-4 pl-2">
-              <h3 className="text-[12px] font-bold uppercase tracking-widest text-slate-800 dark:text-slate-200">
+              <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                 Fleet Readiness
               </h3>
             </div>
@@ -725,7 +723,7 @@ export default function AdminTransportationHubPage() {
               {loading ? (
                 <p className="text-sm font-mono text-slate-500 pl-2">Loading…</p>
               ) : vehicleAlerts.length === 0 ? (
-                <div className="p-12 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-[2rem] border border-dashed border-white/20 dark:border-white/5 backdrop-blur-md">
+                <div className="p-12 text-center text-slate-500 bg-white/30 rounded-lg border border-dashed border-white/20 dark:border-white/5 backdrop-blur-md">
                   <p className="font-semibold text-lg">
                     {fleet.length === 0 ? "No Fleet Units" : "No Vehicle Alerts"}
                   </p>
@@ -742,7 +740,7 @@ export default function AdminTransportationHubPage() {
                     <MotionItem
                       key={a.key}
                       className={cn(
-                        "p-6 rounded-[2rem] border shadow-sm backdrop-blur-xl relative overflow-hidden group transition-colors",
+                        "p-6 rounded-lg border shadow-sm relative overflow-hidden group transition-colors",
                         critical
                           ? "border-red-200 dark:border-red-900/40 bg-white/60 dark:bg-slate-900/60 hover:border-red-300 dark:hover:border-red-800/60"
                           : "border-amber-200 dark:border-amber-900/40 bg-white/60 dark:bg-slate-900/60 hover:border-amber-300 dark:hover:border-amber-800/60",
@@ -757,7 +755,7 @@ export default function AdminTransportationHubPage() {
                       <div className="flex justify-between items-start mb-4 pl-1">
                         <span
                           className={cn(
-                            "text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border",
+                            "text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border",
                             critical
                               ? "text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20"
                               : "text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20",
@@ -765,7 +763,7 @@ export default function AdminTransportationHubPage() {
                         >
                           {a.title}
                         </span>
-                        <span className="text-xs text-slate-500 font-bold uppercase tracking-widest">
+                        <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">
                           {formatAlertDeadline(a.daysUntil)}
                         </span>
                       </div>
@@ -782,7 +780,7 @@ export default function AdminTransportationHubPage() {
                           href="/admin/transportation/inspections/new"
                           className={cn(
                             buttonVariants({ variant: "default", size: "sm" }),
-                            "h-10 rounded-full px-6 font-bold uppercase tracking-widest text-[10px]",
+                            "h-10 rounded-full px-6 font-bold uppercase tracking-wider text-[10px]",
                             critical ? "bg-white text-red-600 hover:bg-slate-100 shadow-md border border-red-200 dark:border-red-500/30 dark:bg-white/5 dark:text-red-400 dark:hover:bg-red-500/20" : "bg-white text-amber-600 hover:bg-slate-100 shadow-md border border-amber-200 dark:border-amber-500/30 dark:bg-white/5 dark:text-amber-400 dark:hover:bg-amber-500/20",
                           )}
                         >
@@ -795,11 +793,11 @@ export default function AdminTransportationHubPage() {
               )}
 
               {/* Real historical inspections */}
-              <div className="glass-panel mt-10 p-6 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.015]">
-                 <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 mb-4 ml-2">Recent Logs</h4>
+              <div className="mt-10 p-6 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.015]">
+                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 mb-4 ml-2">Recent Logs</h4>
                  <MotionList className="space-y-3">
                    {inspections.slice(0, 3).map(row => (
-                     <MotionItem key={row.id} className="p-4 rounded-[1.5rem] border border-slate-200/60 dark:border-white/5 bg-white dark:bg-white/[0.03] flex gap-4 items-center shadow-sm">
+                     <MotionItem key={row.id} className="p-4 rounded-lg border border-slate-200/60 dark:border-white/5 bg-white flex gap-4 items-center shadow-sm">
                        <div className="flex-1 min-w-0">
                          <p className="text-sm font-semibold text-slate-900 dark:text-slate-300 tracking-tight truncate">
                            {row.fleet_vehicles?.name ?? "Unknown"}
@@ -808,7 +806,7 @@ export default function AdminTransportationHubPage() {
                            Result: {formatEnum(row.result)}
                          </p>
                        </div>
-                       <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 text-right bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 px-3 py-1.5 rounded-full shrink-0">
+                       <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 text-right bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 px-3 py-1.5 rounded-full shrink-0">
                          {format(new Date(row.inspected_at), "MMM d")}
                        </span>
                      </MotionItem>

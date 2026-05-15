@@ -211,8 +211,8 @@ export function AdminIncidentsPageClient({
       />
       <header className="relative z-10 shrink-0 flex items-end justify-between px-1">
         <div>
-           <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-1">SYS: Module 07 / Incident Command Center</p>
-           <h2 className="text-4xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+           
+           <h2 className="text-4xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
              Safety Operations Kanban {visibleRows.filter(r => r.status === "new").length > 0 && <PulseDot colorClass="bg-rose-500" />}
            </h2>
         </div>
@@ -303,20 +303,20 @@ export function AdminIncidentsPageClient({
       ) : null}
 
       {followupPressure.length > 0 && (
-        <div className="relative z-10 rounded-[1.8rem] border border-amber-200/70 bg-amber-50/70 dark:border-amber-900/40 dark:bg-amber-950/20 p-4 sm:p-5 backdrop-blur-xl">
+        <div className="relative z-10 rounded-lg border border-amber-200/70 bg-amber-50/70 dark:border-amber-900/40 dark:bg-amber-950/20 p-4 sm:p-5">
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[10px] uppercase tracking-widest font-mono text-amber-700 dark:text-amber-300">Follow-up pressure</p>
+                <p className="text-[10px] uppercase tracking-wider font-mono text-amber-700 dark:text-amber-300">Follow-up pressure</p>
                 <p className="text-sm text-amber-900 dark:text-amber-100">
                   These incidents still have unresolved follow-up, reporting, RCA, or care-plan workflow pressure.
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="border-amber-300 bg-white/70 text-amber-800 dark:border-amber-800 dark:bg-black/20 dark:text-amber-200">
+                <Badge variant="outline" className="border-amber-300 bg-white/70 text-amber-800 dark:border-amber-800 dark:text-amber-200">
                   {followupPressure.length} incident{followupPressure.length === 1 ? "" : "s"} need attention
                 </Badge>
-                <Link href={pressureBacklogHref} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-amber-300 bg-white/70 text-amber-800 hover:bg-white dark:border-amber-800 dark:bg-black/20 dark:text-amber-200 dark:hover:bg-black/30")}>
+                <Link href={pressureBacklogHref} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-amber-300 bg-white/70 text-amber-800 hover:bg-white dark:border-amber-800 dark:text-amber-200 dark:hover:bg-black/30")}>
                   Open backlog
                 </Link>
                 <Link
@@ -329,7 +329,7 @@ export function AdminIncidentsPageClient({
                         ? `/admin/incidents/obligations?severity=${severityFilter}`
                         : `/admin/incidents/obligations?severity=${severityFilter}&scope=${scopeFilter}`
                   }
-                  className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-blue-300 bg-white/70 text-blue-800 hover:bg-white dark:border-blue-800 dark:bg-black/20 dark:text-blue-200 dark:hover:bg-black/30")}
+                  className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-blue-300 bg-white/70 text-blue-800 hover:bg-white dark:border-blue-800 dark:text-blue-200 dark:hover:bg-black/30")}
                 >
                   Work obligations
                 </Link>
@@ -341,11 +341,11 @@ export function AdminIncidentsPageClient({
                 <Link
                   key={incident.id}
                   href={`/admin/incidents/${incident.id}`}
-                  className="rounded-xl border border-amber-200/70 bg-white/80 dark:border-amber-900/40 dark:bg-black/20 p-4 transition-colors hover:bg-white dark:hover:bg-black/30"
+                  className="rounded-xl border border-amber-200/70 bg-white/80 dark:border-amber-900/40 p-4 transition-colors hover:bg-white dark:hover:bg-black/30"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs font-mono tracking-widest text-slate-500">{incident.incidentNumber}</p>
+                      <p className="text-xs font-mono tracking-wider text-slate-500">{incident.incidentNumber}</p>
                       <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">{incident.residentName}</p>
                     </div>
                     <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
@@ -409,13 +409,13 @@ export function AdminIncidentsPageClient({
         {columns.map((col) => {
           const colRows = visibleRows.filter(r => r.status === col.id);
           return (
-            <div key={col.id} className="flex-1 min-w-[340px] flex flex-col glass-panel rounded-[2rem] border border-white/20 dark:border-white/5 overflow-hidden shadow-2xl relative bg-white/30 dark:bg-black/20">
-               <div className="shrink-0 p-5 border-b border-white/20 dark:border-white/5 flex items-center justify-between bg-white/40 dark:bg-black/40 backdrop-blur-md relative z-10">
+            <div key={col.id} className="flex-1 min-w-[340px] flex flex-col rounded-lg border border-white/20 dark:border-white/5 overflow-hidden shadow-2xl relative bg-white/30">
+               <div className="shrink-0 p-5 border-b border-white/20 dark:border-white/5 flex items-center justify-between bg-card dark:bg-black/40 backdrop-blur-md relative z-10">
                  <div className="flex items-center gap-3">
                    <div className={cn("w-3 h-3 rounded-full shadow-sm", col.dot)}></div>
-                   <h3 className="font-semibold text-slate-800 dark:text-slate-200 text-sm tracking-widest uppercase font-mono">{col.label}</h3>
+                   <h3 className="font-semibold text-slate-800 dark:text-slate-200 text-sm tracking-wider uppercase font-mono">{col.label}</h3>
                  </div>
-                 <Badge variant="secondary" className="bg-white/60 dark:bg-white/10 text-slate-800 dark:text-slate-200 shadow-none font-mono">{colRows.length}</Badge>
+                 <Badge variant="secondary" className="bg-card dark:bg-white/10 text-slate-800 dark:text-slate-200 shadow-none font-mono">{colRows.length}</Badge>
                </div>
                
                <ScrollArea className="flex-1 p-3">
@@ -450,19 +450,19 @@ function KanbanCard({ incident, now }: { incident: IncidentRow; now: number }) {
     const hoursLeft = (incident.followupDueMs - now) / 3600000;
     if (hoursLeft < 0) {
       countdownRibbon = (
-        <div className="w-full bg-rose-500/10 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 py-2 flex justify-center border-b border-rose-500/20 font-mono text-[10px] tracking-widest font-bold">
+        <div className="w-full bg-rose-500/10 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 py-2 flex justify-center border-b border-rose-500/20 font-mono text-[10px] tracking-wider font-bold">
           <AlertCircle className="w-3.5 h-3.5 mr-2 animate-bounce" /> DOH DEADLINE BREACHED
         </div>
       );
     } else if (hoursLeft <= 24) {
       countdownRibbon = (
-        <div className="w-full bg-rose-500 text-white py-2 flex justify-center font-mono text-[10px] tracking-widest font-bold shadow-sm">
+        <div className="w-full bg-rose-500 text-white py-2 flex justify-center font-mono text-[10px] tracking-wider font-bold shadow-sm">
           <Clock className="w-3 h-3 mr-2 animate-pulse" /> {Math.ceil(hoursLeft)} HOURS TO DOH DEADLINE
         </div>
       );
     } else if (hoursLeft <= 72) {
       countdownRibbon = (
-        <div className="w-full bg-amber-100/50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-400 py-1.5 flex justify-center border-b border-amber-200/50 dark:border-amber-900/50 font-mono text-[10px] tracking-widest font-bold">
+        <div className="w-full bg-amber-100/50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-400 py-1.5 flex justify-center border-b border-amber-200/50 dark:border-amber-900/50 font-mono text-[10px] tracking-wider font-bold">
            {Math.ceil(hoursLeft / 24)} DAYS TO REGULATORY DEADLINE
         </div>
       );
@@ -471,12 +471,12 @@ function KanbanCard({ incident, now }: { incident: IncidentRow; now: number }) {
 
   return (
     <Link href={`/admin/incidents/${incident.id}`} className="block">
-    <div className="relative overflow-hidden rounded-2xl glass-panel group transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] cursor-pointer border border-white/40 dark:border-white/10 bg-white/70 dark:bg-slate-900/60 backdrop-blur-md">
+    <div className="relative overflow-hidden rounded-2xl group transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] cursor-pointer border border-white/40 dark:border-white/10 bg-white/70 dark:bg-slate-900/60 backdrop-blur-md">
       {countdownRibbon}
       <div className="p-5 flex flex-col gap-4">
         <div className="flex items-start justify-between">
            <div className="flex flex-col">
-             <span className="text-[10px] font-mono tracking-widest uppercase text-slate-500 mb-1">{incident.incidentNumber}</span>
+             <span className="text-[10px] font-mono tracking-wider uppercase text-slate-500 mb-1">{incident.incidentNumber}</span>
              <span className="font-bold text-slate-900 dark:text-slate-100 text-base">{incident.residentName}</span>
            </div>
            {incident.severity === "level_4" ? (
@@ -488,13 +488,13 @@ function KanbanCard({ incident, now }: { incident: IncidentRow; now: number }) {
            )}
         </div>
         
-        <div className="grid grid-cols-2 gap-3 text-xs bg-white/50 dark:bg-black/20 p-3 rounded-xl border border-white/20 dark:border-white/5">
+        <div className="grid grid-cols-2 gap-3 text-xs bg-white/50 p-3 rounded-xl border border-white/20 dark:border-white/5">
           <div className="flex flex-col gap-1">
-            <span className="font-mono text-[9px] uppercase tracking-widest text-slate-400">Class</span>
+            <span className="font-mono text-[9px] uppercase tracking-wider text-slate-400">Class</span>
             <span className="font-medium capitalize text-slate-800 dark:text-slate-300">{incident.category.replace(/_/g, ' ')}</span>
           </div>
           <div className="flex flex-col gap-1">
-            <span className="font-mono text-[9px] uppercase tracking-widest text-slate-400">Reported</span>
+            <span className="font-mono text-[9px] uppercase tracking-wider text-slate-400">Reported</span>
             <span className="font-medium text-slate-800 dark:text-slate-300">{incident.reportedAt}</span>
           </div>
         </div>
@@ -564,7 +564,7 @@ function KanbanCard({ incident, now }: { incident: IncidentRow; now: number }) {
              </Button>
            )}
            {incident.status === "investigating" && (
-             <Button size="sm" variant="outline" className="h-8 text-xs px-3 shadow-none font-medium rounded-lg border-white/40 dark:border-white/10 glass-panel hover:bg-white dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 transition-colors">
+             <Button size="sm" variant="outline" className="h-8 text-xs px-3 shadow-none font-medium rounded-lg border-white/40 dark:border-white/10 hover:bg-white dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 transition-colors">
                Manage Follow-ups
              </Button>
            )}

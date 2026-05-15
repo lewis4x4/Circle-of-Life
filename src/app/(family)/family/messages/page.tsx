@@ -115,7 +115,7 @@ export default function FamilyMessagesPage() {
 
   if (configError) {
      return (
-      <div className="rounded-xl border border-rose-200 bg-white/60 backdrop-blur-md px-6 py-4 text-sm text-rose-800 shadow-sm max-w-lg mx-auto mt-20">{configError}</div>
+      <div className="rounded-xl border border-rose-200 bg-card backdrop-blur-md px-6 py-4 text-sm text-rose-800 shadow-sm max-w-lg mx-auto mt-20">{configError}</div>
     );
   }
 
@@ -131,7 +131,7 @@ export default function FamilyMessagesPage() {
   if (loadError && residents.length === 0) {
     return (
      <div className="space-y-4 pb-16 md:pb-0 max-w-md mx-auto text-center mt-20">
-        <div className="rounded-2xl border border-rose-200 bg-white/70 backdrop-blur-xl px-4 py-6 text-sm text-rose-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+        <div className="rounded-2xl border border-rose-200 bg-white/70 px-4 py-6 text-sm text-rose-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
           <MessageSquare className="w-8 h-8 text-rose-400 mx-auto mb-3" />
           <p>{loadError}</p>
         </div>
@@ -157,7 +157,7 @@ export default function FamilyMessagesPage() {
 
       <div className="w-full space-y-6">
          {/* VISIBILITY SCOPE */}
-         <div className="glass-card-light rounded-[2rem] p-6 bg-white/60 text-center">
+         <div className="rounded-lg p-6 bg-card text-center">
             <p className="inline-flex items-center justify-center gap-2 text-sm text-stone-600 font-medium w-full">
                <ShieldCheck className="h-5 w-5 text-emerald-500" />
                Messages are private, time-stamped, and visible to the care team.
@@ -168,19 +168,19 @@ export default function FamilyMessagesPage() {
          </div>
 
          {residents.length === 0 ? (
-           <div className="glass-card-light rounded-[2rem] p-10 text-center border-dashed border-2 border-stone-200/50">
+           <div className="rounded-lg p-10 text-center border-dashed border-2 border-stone-200/50">
              <p className="text-stone-600 font-serif text-xl italic mb-2">No linked residents.</p>
              <p className="text-sm text-stone-500 max-w-md mx-auto">
                Messaging is not available until your account is linked to a resident.
              </p>
            </div>
          ) : (
-           <div className="glass-card-light rounded-[2.5rem] bg-white/80 overflow-hidden shadow-sm border-white">
+           <div className="rounded-lg bg-white/80 overflow-hidden shadow-sm border-white">
              {/* Conversation Header & Target Selector */}
              <div className="px-6 py-4 border-b border-stone-100 bg-stone-50/50 flex flex-wrap items-center justify-between gap-4">
                {residents.length > 1 ? (
                  <div className="flex items-center gap-3">
-                   <span className="text-xs font-bold uppercase tracking-widest text-stone-400">Conversation for</span>
+                   <span className="text-xs font-bold uppercase tracking-wider text-stone-400">Conversation for</span>
                    <select
                      className="bg-transparent font-serif text-lg text-stone-800 cursor-pointer focus:outline-none"
                      value={selectedResidentId ?? ""}
@@ -193,7 +193,7 @@ export default function FamilyMessagesPage() {
                  </div>
                ) : (
                  <div className="flex items-center gap-3">
-                   <span className="text-xs font-bold uppercase tracking-widest text-stone-400">Conversation for</span>
+                   <span className="text-xs font-bold uppercase tracking-wider text-stone-400">Conversation for</span>
                    <span className="font-serif text-lg text-stone-800">{residents[0]?.displayName}</span>
                  </div>
                )}
@@ -204,7 +204,7 @@ export default function FamilyMessagesPage() {
                {loadError && residents.length > 0 ? (
                   <button
                     type="button"
-                    className="text-stone-500 hover:text-stone-800 text-xs uppercase tracking-widest font-bold tap-responsive"
+                    className="text-stone-500 hover:text-stone-800 text-xs uppercase tracking-wider font-bold tap-responsive"
                     onClick={() => selectedResidentId && void loadMessages(selectedResidentId)}
                   >
                     Refresh
@@ -263,7 +263,7 @@ export default function FamilyMessagesPage() {
                          value={draft}
                          onChange={(e) => setDraft(e.target.value)}
                          placeholder="Type a secure message…"
-                         className="w-full resize-none rounded-[1.5rem] border border-stone-200 bg-stone-50/50 px-5 pt-3.5 pb-3 text-[15px] text-stone-900 placeholder:text-stone-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:bg-white transition-all shadow-inner"
+                         className="w-full resize-none rounded-lg border border-stone-200 bg-stone-50/50 px-5 pt-3.5 pb-3 text-[15px] text-stone-900 placeholder:text-stone-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:bg-white transition-all shadow-inner"
                          disabled={!selectedResidentId || sending}
                        />
                    </div>
@@ -279,7 +279,7 @@ export default function FamilyMessagesPage() {
                      {sending ? <Loader2 className="h-5 w-5 animate-spin text-stone-500" /> : <Send className="h-5 w-5 ml-0.5" />}
                    </button>
                </div>
-               <p className="mt-3 text-[10px] uppercase font-bold tracking-widest text-stone-400 text-center">
+               <p className="mt-3 text-[10px] uppercase font-bold tracking-wider text-stone-400 text-center">
                  Max 8,000 characters
                </p>
              </div>

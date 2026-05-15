@@ -311,8 +311,8 @@ export default function AdminReputationHubPage() {
       <div className="relative z-10 space-y-6">
         <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 23 / Reputation & Online Presence</p>
-            <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
               Reputation Control
             </h2>
           </div>
@@ -321,7 +321,7 @@ export default function AdminReputationHubPage() {
                 href="/admin/reputation/integrations"
                 className={cn(
                   buttonVariants({ variant: "secondary", size: "default" }),
-                  "font-mono uppercase tracking-widest text-[10px]",
+                  "font-mono uppercase tracking-wider text-[10px]",
                 )}
               >
                 Integrations
@@ -374,7 +374,7 @@ export default function AdminReputationHubPage() {
               <Sparkline colorClass="text-indigo-500" variant={3} />
               <MonolithicWatermark value={accounts.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
                   <Star className="h-3.5 w-3.5" /> Tracked Listings
                 </h3>
                 <p className="text-4xl font-mono tracking-tighter text-indigo-600 dark:text-indigo-400 pb-1">{accounts.length}</p>
@@ -387,7 +387,7 @@ export default function AdminReputationHubPage() {
               <MonolithicWatermark value={draftReplies.length} className="text-red-600/5 dark:text-red-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-[10px] font-mono tracking-widest uppercase text-red-600 dark:text-red-400 flex items-center gap-2">
+                  <h3 className="text-[10px] font-mono tracking-wider uppercase text-red-600 dark:text-red-400 flex items-center gap-2">
                      Draft Replies
                   </h3>
                   {draftReplies.length > 0 && <PulseDot colorClass="bg-red-500" />}
@@ -401,7 +401,7 @@ export default function AdminReputationHubPage() {
               <Sparkline colorClass="text-emerald-500" variant={1} />
               <MonolithicWatermark value={postedReplies.length} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-emerald-600 dark:text-emerald-400">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400">
                   Posted Replies
                 </h3>
                 <p className="text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1">{postedReplies.length}</p>
@@ -413,7 +413,7 @@ export default function AdminReputationHubPage() {
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left sm:items-end sm:text-right">
                  <p className="hidden max-w-md text-xs font-mono leading-relaxed text-slate-500 sm:block">Connected listings and reply workflow for the selected facility.</p>
                  <div className="flex w-full gap-2 justify-start sm:justify-end">
-                   <Link href="/admin/reputation/accounts/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none whitespace-nowrap")} >
+                   <Link href="/admin/reputation/accounts/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-wider text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none whitespace-nowrap")} >
                      + Connect Listing
                    </Link>
                  </div>
@@ -449,13 +449,13 @@ export default function AdminReputationHubPage() {
               {loading ? (
                 <p className="text-sm font-mono text-slate-500">Loading replies…</p>
               ) : draftReplies.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md">
+                <div className="p-8 text-center text-slate-500 bg-white/30 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md">
                    <p className="font-medium">Inbox Zero</p>
                    <p className="text-sm opacity-80">All reputation exceptions resolved.</p>
                 </div>
               ) : (
                 draftReplies.map((row) => (
-                  <MotionItem key={row.id} className="glass-panel rounded-2xl p-6 border border-indigo-500/10 dark:border-indigo-500/5 bg-white/50 dark:bg-slate-900/40 relative overflow-hidden group transition-all hover:bg-white/70 dark:hover:bg-slate-900/60 hover:border-indigo-500/30">
+                  <MotionItem key={row.id} className="rounded-2xl p-6 border border-indigo-500/10 dark:border-indigo-500/5 bg-white/50 dark:bg-slate-900/40 relative overflow-hidden group transition-all hover:bg-white/70 dark:hover:bg-slate-900/60 hover:border-indigo-500/30">
                     <div className="absolute top-0 left-0 w-1 h-full bg-red-500" />
                     <div className="flex justify-between items-start mb-3">
                        <span className="text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 px-2 py-1 rounded-md uppercase tracking-wider">
@@ -493,7 +493,7 @@ export default function AdminReputationHubPage() {
                             type="button"
                             className={cn(
                               buttonVariants({ variant: "default", size: "sm" }),
-                              "bg-indigo-600 hover:bg-indigo-700 text-white font-mono uppercase tracking-widest text-[10px]",
+                              "bg-indigo-600 hover:bg-indigo-700 text-white font-mono uppercase tracking-wider text-[10px]",
                             )}
                             disabled={
                               postingGoogleId === row.id ||
@@ -515,7 +515,7 @@ export default function AdminReputationHubPage() {
                             type="button"
                             className={cn(
                               buttonVariants({ variant: "default", size: "sm" }),
-                              "bg-red-700 hover:bg-red-800 text-white font-mono uppercase tracking-widest text-[10px]",
+                              "bg-red-700 hover:bg-red-800 text-white font-mono uppercase tracking-wider text-[10px]",
                             )}
                             disabled={
                               postingYelpId === row.id ||
@@ -534,7 +534,7 @@ export default function AdminReputationHubPage() {
                         ) : null}
                         <button
                           type="button"
-                          className={cn(buttonVariants({ variant: "default", size: "sm" }), "bg-red-600 hover:bg-red-700 text-white font-mono uppercase tracking-widest text-[10px]")}
+                          className={cn(buttonVariants({ variant: "default", size: "sm" }), "bg-red-600 hover:bg-red-700 text-white font-mono uppercase tracking-wider text-[10px]")}
                           disabled={
                             updatingId === row.id ||
                             postingGoogleId === row.id ||
@@ -555,7 +555,7 @@ export default function AdminReputationHubPage() {
               <MotionList className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Recently Posted</h4>
                  {postedReplies.slice(0, 3).map((row) => (
-                   <MotionItem key={row.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-black/20 flex gap-4 items-center">
+                   <MotionItem key={row.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-card flex gap-4 items-center">
                      <div className="flex-1 min-w-0">
                        <p className="text-xs font-medium text-slate-900 dark:text-slate-300 truncate">{row.reputation_accounts?.label}</p>
                        <p className="text-[10px] text-slate-500 truncate">{row.reply_body}</p>
@@ -585,7 +585,7 @@ export default function AdminReputationHubPage() {
             ) : (
                <div className="space-y-2">
                  {accounts.map(row => (
-                   <div key={row.id} className="p-3 rounded-xl border border-white/20 dark:border-white/10 bg-white/30 dark:bg-black/20 flex items-center justify-between">
+                   <div key={row.id} className="p-3 rounded-xl border border-white/20 dark:border-white/10 bg-white/30 flex items-center justify-between">
                      <div>
                        <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">{row.label}</p>
                        <p className="text-[9px] font-mono text-slate-500 mt-1 uppercase">{formatPlatform(row.platform)}</p>

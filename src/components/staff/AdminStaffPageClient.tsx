@@ -285,8 +285,8 @@ export function AdminStaffPageClient({
       <div className="relative z-10 space-y-6">
         <header className="mb-8">
           <div>
-            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 06 / Human Capital</p>
-            <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
               Staffing Roster {certRiskCount > 0 && <PulseDot colorClass="bg-amber-500" />}
             </h2>
           </div>
@@ -298,10 +298,10 @@ export function AdminStaffPageClient({
               <Sparkline colorClass="text-blue-500" variant={3} />
               <MonolithicWatermark value={activeCount} className="text-blue-900/5 dark:text-blue-100/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-slate-500 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-slate-500 flex items-center gap-2">
                   <UserRoundCheck className="h-3.5 w-3.5" /> Total Active Roster
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-500 dark:from-white dark:to-slate-500 pb-1">{activeCount}</p>
+                <p className="text-4xl font-mono tracking-tighter pb-1">{activeCount}</p>
               </div>
             </V2Card>
           </div>
@@ -310,7 +310,7 @@ export function AdminStaffPageClient({
               <Sparkline colorClass="text-amber-500" variant={4} />
               <MonolithicWatermark value={certRiskCount} className="text-amber-600/5 dark:text-amber-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
                    Cert Attention
                 </h3>
                 <p className="text-4xl font-mono tracking-tighter text-amber-600 dark:text-amber-400 pb-1">{certRiskCount}</p>
@@ -321,7 +321,7 @@ export function AdminStaffPageClient({
             <V2Card hoverColor="indigo" className="p-5 lg:p-6">
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
                  <p className="hidden max-w-md text-xs font-mono leading-relaxed text-slate-500 lg:block">Certification-aware workforce array with predictive shift tracking.</p>
-                 <Link href="/admin/staff/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none whitespace-nowrap")} >
+                 <Link href="/admin/staff/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-wider text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none whitespace-nowrap")} >
                    + Add Staff Member
                  </Link>
               </div>
@@ -387,9 +387,9 @@ export function AdminStaffPageClient({
 
       {!isLoading && filteredRows.length > 0 ? (
         <div className="relative overflow-visible z-10 w-full mt-4">
-          <div className="relative z-10 p-4 sm:p-6 mb-4 glass-panel rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="relative z-10 p-4 sm:p-6 mb-4 rounded-lg border border-white/20 dark:border-white/5 bg-card shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Team Directory</h3>
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-1">Team Directory</h3>
               <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
                 Roster from staff, certifications, and upcoming shift assignments.
               </p>
@@ -398,7 +398,7 @@ export function AdminStaffPageClient({
               type="button"
               variant="outline"
               size="sm"
-              className="shrink-0 font-mono text-[10px] uppercase tracking-widest"
+              className="shrink-0 font-mono text-[10px] uppercase tracking-wider"
               disabled={exportingCsv}
               aria-busy={exportingCsv}
               onClick={() => void exportStaffRosterCsv()}
@@ -412,7 +412,7 @@ export function AdminStaffPageClient({
             {filteredRows.map((staff) => (
               <MotionItem key={staff.id}>
                 <Link href={`/admin/staff/${staff.id}`} className="block focus-visible:outline-none focus:ring-2 focus:ring-indigo-500 rounded-2xl">
-                  <div className="p-4 sm:p-5 rounded-2xl glass-panel group transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 w-full">
+                  <div className="p-4 sm:p-5 rounded-2xl group transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/40 w-full">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       
                       {/* Avatar and Name */}
@@ -434,26 +434,26 @@ export function AdminStaffPageClient({
                         )}
                         <div className="flex flex-col">
                            <span className="font-bold text-slate-900 dark:text-slate-100">{staff.name}</span>
-                           <span className="text-[10px] uppercase tracking-widest font-mono text-slate-500 mt-0.5">{staff.roleLabel}</span>
+                           <span className="text-[10px] uppercase tracking-wider font-mono text-slate-500 mt-0.5">{staff.roleLabel}</span>
                         </div>
                       </div>
 
                       {/* Role & Status Data */}
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full md:w-3/4 items-center">
                         <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Status</span>
+                          <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Status</span>
                           <div><StatusBadge status={staff.status} /></div>
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Certifications</span>
+                          <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Certifications</span>
                           <div><CertificationBadge certifications={staff.certifications} /></div>
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Next Shift</span>
-                          <span className="font-mono text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white/60 dark:bg-black/30 w-fit px-2 py-0.5 rounded shadow-sm">{staff.nextShift}</span>
+                          <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Next Shift</span>
+                          <span className="font-mono text-xs font-semibold text-slate-700 dark:text-slate-300 bg-card w-fit px-2 py-0.5 rounded shadow-sm">{staff.nextShift}</span>
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400 flex items-center gap-1">Overtime Risk <ArrowUpDown className="h-2.5 w-2.5" /></span>
+                          <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400 flex items-center gap-1">Overtime Risk <ArrowUpDown className="h-2.5 w-2.5" /></span>
                           <div><OvertimeRiskBadge risk={staff.overtimeRisk} /></div>
                         </div>
                       </div>

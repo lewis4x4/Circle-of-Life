@@ -303,8 +303,8 @@ export default function AdminCertificationsPage() {
       <div className="relative z-10 space-y-6">
         <header className="mb-8">
           <div>
-            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 07 / Certifications</p>
-            <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
               Credential Tracking {expiredCount > 0 && <PulseDot />}
             </h2>
           </div>
@@ -316,7 +316,7 @@ export default function AdminCertificationsPage() {
               <Sparkline colorClass="text-amber-500" variant={2} />
               <MonolithicWatermark value={expiringCount} className="text-amber-600/5 dark:text-amber-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
                   <Award className="h-3.5 w-3.5" /> {windowFilter === "30d" ? "Expiring (30D)" : "Expiring (60D)"}
                 </h3>
                 <p className="text-4xl font-mono tracking-tighter text-amber-600 dark:text-amber-400 pb-1">{expiringCount}</p>
@@ -328,7 +328,7 @@ export default function AdminCertificationsPage() {
               <Sparkline colorClass="text-rose-500" variant={4} />
               <MonolithicWatermark value={expiredCount} className="text-rose-600/5 dark:text-rose-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2">
                    Expired / Revoked
                 </h3>
                 <p className="text-4xl font-mono tracking-tighter text-rose-600 dark:text-rose-400 pb-1">{expiredCount}</p>
@@ -339,7 +339,7 @@ export default function AdminCertificationsPage() {
             <V2Card hoverColor="indigo" className="p-5 lg:p-6">
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
                  <p className="hidden max-w-md text-xs font-mono leading-relaxed text-slate-500 lg:block">Facility-scoped license and training records.</p>
-                 <Link href="/admin/certifications/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none whitespace-nowrap")} >
+                 <Link href="/admin/certifications/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-wider text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none whitespace-nowrap")} >
                    + Log Certification
                  </Link>
               </div>
@@ -427,9 +427,9 @@ export default function AdminCertificationsPage() {
       ) : null}
       {!isLoading && filteredRows.length > 0 ? (
         <div className="relative overflow-visible z-10 w-full mt-4">
-          <div className="relative z-10 p-4 sm:p-6 mb-4 glass-panel rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="relative z-10 p-4 sm:p-6 mb-4 rounded-lg border border-white/20 dark:border-white/5 bg-card shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Certifications Matrix</h3>
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-1">Certifications Matrix</h3>
               <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
                 Track state-mandated training, background checks, and clinical licenses.
               </p>
@@ -438,7 +438,7 @@ export default function AdminCertificationsPage() {
               type="button"
               variant="outline"
               size="sm"
-              className="shrink-0 font-mono text-[10px] uppercase tracking-widest"
+              className="shrink-0 font-mono text-[10px] uppercase tracking-wider"
               disabled={exportingCsv}
               aria-busy={exportingCsv}
               onClick={() => void exportCertificationsCsv()}
@@ -452,30 +452,30 @@ export default function AdminCertificationsPage() {
             {filteredRows.map((row) => (
               <MotionItem key={row.id}>
                 <Link href={`/admin/staff/${row.staffId}`} className="block focus-visible:outline-none focus:ring-2 focus:ring-indigo-500 rounded-2xl">
-                  <div className="p-4 sm:p-5 rounded-2xl glass-panel group transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 w-full">
+                  <div className="p-4 sm:p-5 rounded-2xl group transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/40 w-full">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       
                       <div className="flex flex-col min-w-[200px]">
                          <span className="font-bold text-slate-900 dark:text-slate-100">{row.staffName}</span>
-                         <span className="text-[10px] uppercase font-mono tracking-widest text-slate-500 my-1 font-bold bg-white/50 dark:bg-slate-900/50 w-fit px-2 py-0.5 rounded shadow-sm">{row.certificationName}</span>
+                         <span className="text-[10px] uppercase font-mono tracking-wider text-slate-500 my-1 font-bold bg-white/50 dark:bg-slate-900/50 w-fit px-2 py-0.5 rounded shadow-sm">{row.certificationName}</span>
                          <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">{formatCertTypeLabel(row.certificationType)}</span>
                       </div>
 
                       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full md:w-3/4 items-center">
                         <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Timeline</span>
+                          <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Timeline</span>
                           <div><TimelineBadge timeline={row.timeline} /></div>
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Record Status</span>
+                          <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Record Status</span>
                           <div><DbStatusBadge status={row.dbStatus} /></div>
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Issued</span>
+                          <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Issued</span>
                           <span className="font-mono text-xs text-slate-700 dark:text-slate-300">{formatIsoDate(row.issueDate)}</span>
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Expires</span>
+                          <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Expires</span>
                           <span className="font-mono text-xs text-slate-700 dark:text-slate-300 uppercase">{row.expirationDate ? formatIsoDate(row.expirationDate) : "No expiry"}</span>
                         </div>
                       </div>

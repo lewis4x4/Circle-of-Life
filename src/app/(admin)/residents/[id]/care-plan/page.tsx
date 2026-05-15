@@ -229,8 +229,8 @@ export default function AdminResidentCarePlanPage() {
           <ArrowLeft className="h-4 w-4" />
           Back to census
         </Link>
-        <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-slate-200/70 dark:border-slate-800 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm">
-          <h2 className="font-display text-xl font-semibold text-slate-900 dark:text-white">Resident not found</h2>
+        <div className="p-6 sm:p-8 rounded-lg border border-slate-200/70 dark:border-slate-800 bg-slate-50/50 shadow-sm">
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Resident not found</h2>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
             This care plan route is tied to a resident record. Adjust your facility filter or return to the
             census list.
@@ -267,15 +267,15 @@ export default function AdminResidentCarePlanPage() {
       <AmbientMatrix />
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
           <div className="space-y-3">
              <Link
                href={`/admin/residents/${residentId}`}
-               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-2 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
              >
                  <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> BACK TO PROFILE
              </Link>
-             <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
                Care Plan <span className="font-semibold text-brand-600 dark:text-brand-400 opacity-60 ml-2">/ {residentName}</span>
              </h1>
             <p className="mt-2 text-sm font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
@@ -292,11 +292,11 @@ export default function AdminResidentCarePlanPage() {
         ) : (
           <div className="space-y-6">
             
-            <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all">
+            <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all">
               <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                   <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1">Plan Configuration</h3>
-                   <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-1 uppercase">
+                   <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1">Plan Configuration</h3>
+                   <p className="text-[10px] font-mono tracking-wider text-slate-400 mt-1 uppercase">
                       Operational metadata
                    </p>
                 </div>
@@ -304,12 +304,12 @@ export default function AdminResidentCarePlanPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   {plan?.status ? <CarePlanStatusBadge status={plan.status} /> : null}
                   {plan && plan.version != null && (
-                    <Badge variant="outline" className="font-mono text-[10px] uppercase font-bold tracking-widest bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 px-3">
+                    <Badge variant="outline" className="font-mono text-[10px] uppercase font-bold tracking-wider bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 px-3">
                       v{plan.version}
                     </Badge>
                   )}
                   {reviewState ? (
-                    <Badge variant="outline" className={cn("font-mono text-[10px] uppercase font-bold tracking-widest px-3 border border-transparent", reviewState.className)}>
+                    <Badge variant="outline" className={cn("font-mono text-[10px] uppercase font-bold tracking-wider px-3 border border-transparent", reviewState.className)}>
                       Review: {reviewState.label}
                     </Badge>
                   ) : null}
@@ -318,7 +318,7 @@ export default function AdminResidentCarePlanPage() {
                     <button
                       type="button"
                       onClick={() => setSigningOpen(true)}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold uppercase tracking-widest transition-colors shadow-sm"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold uppercase tracking-wider transition-colors shadow-sm"
                     >
                       Review & Sign
                     </button>
@@ -327,16 +327,16 @@ export default function AdminResidentCarePlanPage() {
               </div>
               
               <div className="grid gap-6 pt-2 sm:grid-cols-2 lg:grid-cols-3">
-                 <div className="bg-white dark:bg-slate-950/50 p-5 rounded-[1.5rem] border border-slate-200/90 dark:border-white/5 shadow-sm">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2 mb-2">
+                 <div className="bg-white dark:bg-slate-950/50 p-5 rounded-lg border border-slate-200/90 dark:border-white/5 shadow-sm">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2 mb-2">
                        <CalendarClock className="w-3.5 h-3.5" /> Effective Date
                     </p>
                     <p className="text-lg font-medium text-slate-900 dark:text-slate-100">
                        {formatDate(plan?.effective_date ?? null)}
                     </p>
                  </div>
-                 <div className="bg-white dark:bg-slate-950/50 p-5 rounded-[1.5rem] border border-slate-200/90 dark:border-white/5 shadow-sm">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2 mb-2">
+                 <div className="bg-white dark:bg-slate-950/50 p-5 rounded-lg border border-slate-200/90 dark:border-white/5 shadow-sm">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2 mb-2">
                        <CalendarClock className="w-3.5 h-3.5" /> Next Review
                     </p>
                     <p className="text-lg font-medium text-slate-900 dark:text-slate-100">
@@ -344,8 +344,8 @@ export default function AdminResidentCarePlanPage() {
                     </p>
                  </div>
                  {plan?.notes ? (
-                   <div className="sm:col-span-2 lg:col-span-3 bg-white dark:bg-slate-950/50 p-5 rounded-[1.5rem] border border-slate-200/90 dark:border-white/5 shadow-sm">
-                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Documentation Notes</p>
+                   <div className="sm:col-span-2 lg:col-span-3 bg-white dark:bg-slate-950/50 p-5 rounded-lg border border-slate-200/90 dark:border-white/5 shadow-sm">
+                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Documentation Notes</p>
                      <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{plan.notes}</p>
                    </div>
                  ) : null}
@@ -360,14 +360,14 @@ export default function AdminResidentCarePlanPage() {
             ) : (
               <div className="grid grid-cols-1 gap-6">
                 {Array.from(groupedItems.entries()).map(([category, rows]) => (
-                  <div key={category} className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all">
+                  <div key={category} className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all">
                     
                     <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
-                       <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1 flex items-center gap-3">
+                       <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1 flex items-center gap-3">
                           <Activity className="w-5 h-5 text-brand-500" />
                           {formatCategoryLabel(category)}
                        </h3>
-                       <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-1 uppercase font-bold">
+                       <p className="text-[10px] font-mono tracking-wider text-slate-400 mt-1 uppercase font-bold">
                           {rows.length} Configured Rule{rows.length > 1 && "s"}
                        </p>
                     </div>
@@ -376,14 +376,14 @@ export default function AdminResidentCarePlanPage() {
                        <MotionList className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {rows.map((row) => (
                              <MotionItem key={row.id}>
-                                <div className="group flex flex-col h-full justify-between p-6 rounded-[1.5rem] border border-slate-200/90 bg-white dark:border-white/5 dark:bg-white/[0.03] shadow-sm transition-all outline-none relative overflow-hidden focus-within:ring-2 focus-within:ring-brand-500/50 hover:border-brand-300 dark:hover:border-brand-500/40 hover:shadow-md">
+                                <div className="group flex flex-col h-full justify-between p-6 rounded-lg border border-slate-200/90 bg-white dark:border-white/5 shadow-sm transition-all outline-none relative overflow-hidden focus-within:ring-2 focus-within:ring-brand-500/50 hover:border-brand-300 dark:hover:border-brand-500/40 hover:shadow-md">
                                    <div className="space-y-4 relative z-10">
                                       <div className="flex items-start justify-between gap-3">
                                          <h4 className="font-semibold text-slate-900 dark:text-white leading-tight pr-4">
                                             {row.title ?? "—"}
                                          </h4>
                                          {row.assistance_level ? (
-                                            <Badge className="bg-slate-100 text-slate-700 border-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 uppercase tracking-widest font-mono text-[9px] font-bold px-2.5 py-0.5 shadow-none whitespace-nowrap">
+                                            <Badge className="bg-slate-100 text-slate-700 border-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 uppercase tracking-wider font-mono text-[9px] font-bold px-2.5 py-0.5 shadow-none whitespace-nowrap">
                                                {formatSnakeLabel(row.assistance_level)}
                                             </Badge>
                                          ) : null}
@@ -395,7 +395,7 @@ export default function AdminResidentCarePlanPage() {
                                       
                                       {row.frequency && (
                                          <div className="pt-2">
-                                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-1">Frequency</span>
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Frequency</span>
                                             <span className="text-sm font-mono bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded inline-block text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-800">
                                                {row.frequency}
                                             </span>
@@ -404,7 +404,7 @@ export default function AdminResidentCarePlanPage() {
 
                                       {row.interventions?.length ? (
                                          <div className="pt-2">
-                                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-1">Prescribed Interventions</span>
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Prescribed Interventions</span>
                                             <ul className="space-y-1.5 w-full">
                                                {row.interventions.filter(Boolean).map((iv) => (
                                                   <li key={iv} className="text-sm text-slate-700 dark:text-slate-300 flex items-start">
@@ -418,7 +418,7 @@ export default function AdminResidentCarePlanPage() {
 
                                       {row.goal && (
                                          <div className="pt-2">
-                                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-1">Outcome Goal</span>
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Outcome Goal</span>
                                             <p className="text-sm text-brand-700 dark:text-brand-400 font-medium">
                                                {row.goal}
                                             </p>
@@ -428,7 +428,7 @@ export default function AdminResidentCarePlanPage() {
                                       {row.special_instructions && (
                                          <div className="pt-4 mt-auto">
                                             <div className="rounded-[1rem] border border-amber-200/80 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 p-4">
-                                               <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400 block mb-1.5 flex items-center gap-1.5">
+                                               <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 block mb-1.5 flex items-center gap-1.5">
                                                   <Brain className="w-3.5 h-3.5" /> High-Priority Protocol
                                                </span>
                                                <p className="text-xs font-medium text-amber-900 dark:text-amber-200">
@@ -593,5 +593,5 @@ function CarePlanStatusBadge({ status }: { status: string }) {
     under_review: "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200 border-amber-200 dark:border-amber-500/20",
     archived: "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-slate-300 dark:border-slate-700",
   };
-  return <Badge className={cn("font-mono text-[10px] uppercase font-bold tracking-widest px-3 border shadow-none", map[status] ?? "bg-slate-100 text-slate-700")}>{formatSnakeLabel(status)}</Badge>;
+  return <Badge className={cn("font-mono text-[10px] uppercase font-bold tracking-wider px-3 border shadow-none", map[status] ?? "bg-slate-100 text-slate-700")}>{formatSnakeLabel(status)}</Badge>;
 }

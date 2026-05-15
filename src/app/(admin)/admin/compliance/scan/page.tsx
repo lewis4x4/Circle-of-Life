@@ -86,8 +86,8 @@ export default function ComplianceScanPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Compliance Scoring</p>
-          <h1 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+          
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
             Compliance Scan
           </h1>
         </div>

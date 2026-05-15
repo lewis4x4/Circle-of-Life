@@ -114,7 +114,7 @@ export default function FamilyInvoicesPage() {
         Back to billing summary
       </Link>
 
-      <div className="glass-card-light rounded-[2rem] p-6 md:p-8 bg-white/70">
+      <div className="rounded-lg p-6 md:p-8 bg-white/70">
         <div className="mb-5 flex items-center gap-3">
           <FileText className="h-6 w-6 text-amber-600" />
           <div>
@@ -131,10 +131,10 @@ export default function FamilyInvoicesPage() {
             </p>
           ) : (
             data.invoices.map((inv) => (
-              <div key={inv.id} className="rounded-[1.5rem] border border-stone-200 bg-white/60 p-5 shadow-sm">
+              <div key={inv.id} className="rounded-lg border border-stone-200 bg-card p-5 shadow-sm">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <p className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">{inv.invoiceNumber}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-stone-400 font-bold">{inv.invoiceNumber}</p>
                     <p className="text-lg font-serif text-stone-800">{inv.periodLabel}</p>
                   </div>
                   <Badge className={invoiceStatusBadgeClass(inv.status)}>{inv.statusLabel}</Badge>

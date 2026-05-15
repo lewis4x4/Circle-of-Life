@@ -159,7 +159,7 @@ export default function ReputationIntegrationsPage() {
       <div className="flex items-center gap-2">
         <PlugZap className="h-6 w-6 text-indigo-500" />
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Integrations</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Integrations</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
             Import public reviews into Haven drafts (owner only). Google uses OAuth; Yelp uses a server API key
             (Fusion — up to 3 excerpts per listing).

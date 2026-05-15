@@ -298,8 +298,8 @@ export function AdminStaffingConsolePageClient({
       
       <header className="relative z-10 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between shrink-0 pl-1 mb-8">
         <div>
-          <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 18 / Command</p>
-          <h2 className="font-display text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+          
+          <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
             Workforce Command 
             {(shiftGaps.length > 0 || certWarnings.length > 0) && <PulseDot colorClass="bg-rose-500" />}
           </h2>
@@ -319,7 +319,7 @@ export function AdminStaffingConsolePageClient({
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 text-xs font-medium font-mono uppercase tracking-widest"
+              className="h-8 text-xs font-medium font-mono uppercase tracking-wider"
               disabled={exportingCsv}
               aria-busy={exportingCsv}
               onClick={() => void exportStaffingSnapshotsCsv()}
@@ -363,19 +363,19 @@ export function AdminStaffingConsolePageClient({
           <V2Card hoverColor="blue">
             <Sparkline colorClass="text-blue-500" variant={3} />
              <div className="relative z-10 flex flex-col h-full justify-between">
-               <span className="text-[10px] font-mono tracking-widest uppercase flex items-center gap-2 text-slate-500"><Activity className="w-3.5 h-3.5" /> Current Ratio</span>
+               <span className="text-[10px] font-mono tracking-wider uppercase flex items-center gap-2 text-slate-500"><Activity className="w-3.5 h-3.5" /> Current Ratio</span>
                <div>
                   <div className="mt-2 flex items-baseline gap-3">
-                    <span className={cn("text-5xl font-mono tracking-tighter pb-1", ratioCardTone)}>
+                    <span className={cn("text-2xl font-mono tracking-tighter pb-1", ratioCardTone)}>
                       {currentRatio != null ? currentRatio.toFixed(1) : "—"}
                     </span>
-                    <span className="text-xs font-mono text-slate-400 uppercase tracking-widest">
+                    <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">
                       {requiredRatio != null ? `vs ${requiredRatio.toFixed(1)} required` : "No live snapshot"}
                     </span>
                   </div>
                   <p
                     className={cn(
-                      "mt-1 text-[10px] uppercase font-mono tracking-widest font-bold",
+                      "mt-1 text-[10px] uppercase font-mono tracking-wider font-bold",
                       latestVisibleSnapshot == null
                         ? "text-slate-500"
                         : latestVisibleSnapshot.isCompliant
@@ -395,15 +395,15 @@ export function AdminStaffingConsolePageClient({
           <V2Card hoverColor="rose" className="border-rose-500/20 shadow-[inset_0_0_15px_rgba(244,63,94,0.05)] bg-rose-500/5">
              <MonolithicWatermark value={shiftGaps.reduce((sum, g) => sum + g.shortage, 0).toString()} className="text-rose-500/10" />
              <div className="relative z-10 flex flex-col h-full justify-between">
-               <span className="text-[10px] font-mono tracking-widest uppercase flex items-center gap-2 text-rose-500"><Users className="w-3.5 h-3.5" /> Open Shifts (48h)</span>
+               <span className="text-[10px] font-mono tracking-wider uppercase flex items-center gap-2 text-rose-500"><Users className="w-3.5 h-3.5" /> Open Shifts (48h)</span>
                <div>
                   <div className="mt-2 flex items-baseline gap-3">
-                    <span className="text-5xl font-mono tracking-tighter text-rose-500 pb-1">
+                    <span className="text-2xl font-mono tracking-tighter text-rose-500 pb-1">
                       {shiftGaps.reduce((sum, g) => sum + g.shortage, 0)}
                     </span>
-                    <span className="text-xs text-rose-500/70 font-mono uppercase tracking-widest">roles unfilled</span>
+                    <span className="text-xs text-rose-500/70 font-mono uppercase tracking-wider">roles unfilled</span>
                   </div>
-                  <p className="mt-1 text-[10px] uppercase font-mono tracking-widest text-rose-500 font-bold">Critical coverage gaps detected in Night shift.</p>
+                  <p className="mt-1 text-[10px] uppercase font-mono tracking-wider text-rose-500 font-bold">Critical coverage gaps detected in Night shift.</p>
                </div>
              </div>
           </V2Card>
@@ -414,15 +414,15 @@ export function AdminStaffingConsolePageClient({
           <V2Card href="/admin/certifications?timeline=expired" hoverColor="amber" className="border-amber-500/20 shadow-[inset_0_0_15px_rgba(245,158,11,0.05)] bg-amber-500/5">
              <MonolithicWatermark value={certWarnings.length.toString()} className="text-amber-500/10" />
              <div className="relative z-10 flex flex-col h-full justify-between">
-               <span className="text-[10px] font-mono tracking-widest uppercase flex items-center gap-2 text-amber-500"><FileWarning className="w-3.5 h-3.5" /> Expired Credentials</span>
+               <span className="text-[10px] font-mono tracking-wider uppercase flex items-center gap-2 text-amber-500"><FileWarning className="w-3.5 h-3.5" /> Expired Credentials</span>
                <div>
                   <div className="mt-2 flex items-baseline gap-3">
-                    <span className="text-5xl font-mono tracking-tighter text-amber-500 pb-1">
+                    <span className="text-2xl font-mono tracking-tighter text-amber-500 pb-1">
                       {certWarnings.length}
                     </span>
-                    <span className="text-xs text-amber-500/70 font-mono uppercase tracking-widest">staff on duty</span>
+                    <span className="text-xs text-amber-500/70 font-mono uppercase tracking-wider">staff on duty</span>
                   </div>
-                  <p className="mt-1 text-[10px] uppercase font-mono tracking-widest text-amber-500 font-bold">1 staff member blocked from assignment due to state registry expiry.</p>
+                  <p className="mt-1 text-[10px] uppercase font-mono tracking-wider text-amber-500 font-bold">1 staff member blocked from assignment due to state registry expiry.</p>
                </div>
              </div>
           </V2Card>
@@ -430,9 +430,9 @@ export function AdminStaffingConsolePageClient({
       </KineticGrid>
 
       <div className="grid gap-6 lg:grid-cols-2 relative z-10">
-        <div className="glass-panel p-5 rounded-2xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40">
+        <div className="p-5 rounded-2xl border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/40">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-display font-semibold text-slate-900 dark:text-slate-100">Log callout / attendance event</h3>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Log callout / attendance event</h3>
             <Badge className="border-none bg-indigo-500/10 text-indigo-600 dark:text-indigo-300">Drives standup</Badge>
           </div>
           <div className="grid gap-3">
@@ -495,7 +495,7 @@ export function AdminStaffingConsolePageClient({
           </div>
 
           <div className="mt-5 space-y-2">
-            <div className="text-xs font-mono uppercase tracking-widest text-slate-500 dark:text-zinc-400">Recent attendance events</div>
+            <div className="text-xs font-mono uppercase tracking-wider text-slate-500 dark:text-zinc-400">Recent attendance events</div>
             {attendanceRows.length === 0 ? (
               <p className="text-xs font-mono text-slate-500 dark:text-zinc-400">No attendance events recorded yet for this scope.</p>
             ) : (
@@ -506,7 +506,7 @@ export function AdminStaffingConsolePageClient({
                       <div className="font-medium text-slate-100">
                         {row.staff ? `${row.staff.first_name} ${row.staff.last_name}` : "Staff member"}
                       </div>
-                      <div className="text-xs uppercase tracking-widest text-slate-400">
+                      <div className="text-xs uppercase tracking-wider text-slate-400">
                         {row.event_type.replace(/_/g, " ")}
                       </div>
                     </div>
@@ -519,9 +519,9 @@ export function AdminStaffingConsolePageClient({
           </div>
         </div>
 
-        <div className="glass-panel p-5 rounded-2xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40">
+        <div className="p-5 rounded-2xl border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/40">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-display font-semibold text-slate-900 dark:text-slate-100">Open positions / requisitions</h3>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Open positions / requisitions</h3>
             <Badge className="border-none bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">Drives standup</Badge>
           </div>
           <div className="grid gap-3">
@@ -592,7 +592,7 @@ export function AdminStaffingConsolePageClient({
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <select
-                      className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs uppercase tracking-widest text-slate-100"
+                      className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs uppercase tracking-wider text-slate-100"
                       value={requisitionStatusDrafts[row.id] ?? row.status}
                       onChange={(e) => setRequisitionStatusDrafts((current) => ({ ...current, [row.id]: e.target.value as RequisitionStatus }))}
                     >
@@ -631,30 +631,30 @@ export function AdminStaffingConsolePageClient({
          {/* Exception UI: Unstaffed Gaps */}
          <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between pb-2 border-b border-white/10">
-               <h3 className="text-sm font-display font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">Shift Assignment Gaps</h3>
-               <Badge className="font-bold text-[9px] uppercase tracking-widest bg-rose-500/20 text-rose-500 dark:text-rose-400 border-none shadow-sm">Priority Dispatch</Badge>
+               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">Shift Assignment Gaps</h3>
+               <Badge className="font-bold text-[9px] uppercase tracking-wider bg-rose-500/20 text-rose-500 dark:text-rose-400 border-none shadow-sm">Priority Dispatch</Badge>
             </div>
             <MotionList className="space-y-3">
               {shiftGaps.map(gap => (
                  <MotionItem key={gap.id}>
-                    <div className="glass-panel p-5 rounded-2xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 relative overflow-hidden group">
+                    <div className="p-5 rounded-2xl border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/40 relative overflow-hidden group">
                        <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center gap-3">
                              <Clock className={cn("w-5 h-5", gap.urgency === "critical" ? "text-rose-500" : "text-amber-500")} />
-                             <span className="font-bold font-mono text-xs text-slate-900 dark:text-slate-100 uppercase tracking-widest">{gap.date} · {gap.shift}</span>
+                             <span className="font-bold font-mono text-xs text-slate-900 dark:text-slate-100 uppercase tracking-wider">{gap.date} · {gap.shift}</span>
                           </div>
                           <Badge variant="outline" className={cn(
-                             "h-6 px-2 text-[10px] tracking-widest font-mono font-bold rounded-md border-0 uppercase uppercase",
+                             "h-6 px-2 text-[10px] tracking-wider font-mono font-bold rounded-md border-0 uppercase uppercase",
                              gap.urgency === "critical" ? "bg-rose-500/20 text-rose-800 dark:text-rose-300" : "bg-amber-500/20 text-amber-800 dark:text-amber-300"
                           )}>
                              SHORT {gap.shortage} {gap.role}
                           </Badge>
                        </div>
                        <div className="flex gap-2 w-full">
-                          <Button size="sm" className="w-full font-mono uppercase tracking-widest text-[9px] font-bold h-9 bg-slate-900/90 dark:bg-white/90 hover:bg-black dark:hover:bg-white text-white dark:text-black">
+                          <Button size="sm" className="w-full font-mono uppercase tracking-wider text-[9px] font-bold h-9 bg-slate-900/90 dark:bg-white/90 hover:bg-black dark:hover:bg-white text-white dark:text-black">
                              <CalendarPlus className="w-3.5 h-3.5 mr-2" /> Broadcast to PRN
                           </Button>
-                          <Button size="sm" variant="outline" className="w-full font-mono uppercase tracking-widest text-[9px] font-bold h-9 bg-white/50 dark:bg-black/50 border-white/20 dark:border-white/5">
+                          <Button size="sm" variant="outline" className="w-full font-mono uppercase tracking-wider text-[9px] font-bold h-9 bg-white/50 dark:bg-black/50 border-white/20 dark:border-white/5">
                              Mandate Agency
                           </Button>
                        </div>
@@ -667,14 +667,14 @@ export function AdminStaffingConsolePageClient({
          {/* Exception UI: Credential Blocks */}
          <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between pb-2 border-b border-white/10">
-               <h3 className="text-sm font-display font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">Credential Warnings (Blockers)</h3>
-               <Link href="/admin/certifications?timeline=expired" className="text-[10px] font-mono tracking-widest uppercase font-bold text-indigo-500 hover:text-indigo-400">Expired certs</Link>
+               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">Credential Warnings (Blockers)</h3>
+               <Link href="/admin/certifications?timeline=expired" className="text-[10px] font-mono tracking-wider uppercase font-bold text-indigo-500 hover:text-indigo-400">Expired certs</Link>
             </div>
             
             <MotionList className="space-y-3">
               {certWarnings.map(cert => (
                  <MotionItem key={cert.id}>
-                    <div className="glass-panel p-4 rounded-2xl border border-rose-500/30 dark:border-rose-500/20 bg-rose-500/5 relative overflow-hidden group flex items-center justify-between">
+                    <div className="p-4 rounded-2xl border border-rose-500/30 dark:border-rose-500/20 bg-rose-500/5 relative overflow-hidden group flex items-center justify-between">
                        <div className="flex flex-col gap-1">
                           <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                             {cert.staffName} <Badge className="text-[9px] uppercase font-mono bg-white/50 dark:bg-black/50 text-slate-900 dark:text-slate-100 border-none shadow-sm">{cert.role}</Badge>
@@ -683,7 +683,7 @@ export function AdminStaffingConsolePageClient({
                             {cert.certName} expired {cert.daysExpired} days ago
                           </span>
                        </div>
-                       <Button size="sm" variant="outline" className="font-mono uppercase tracking-widest text-[9px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20">
+                       <Button size="sm" variant="outline" className="font-mono uppercase tracking-wider text-[9px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20">
                           Remove from Shift
                        </Button>
                     </div>
@@ -691,9 +691,9 @@ export function AdminStaffingConsolePageClient({
               ))}
             </MotionList>
             
-            <div className="mt-4 glass-panel p-5 rounded-2xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40">
+            <div className="mt-4 p-5 rounded-2xl border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/40">
                <div className="mb-4 flex flex-wrap items-center gap-2">
-                 <p className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500">
+                 <p className="text-[10px] font-bold font-mono uppercase tracking-wider text-slate-500">
                    {windowFilter === "24h" ? "Recent Ratio Snapshots (24h)" : "Recent Ratio Snapshots (Historical)"}
                  </p>
                  {([
@@ -706,7 +706,7 @@ export function AdminStaffingConsolePageClient({
                      type="button"
                      onClick={() => setComplianceFilter(option.value)}
                      className={cn(
-                       "rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors",
+                       "rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors",
                        complianceFilter === option.value
                          ? "bg-indigo-600 text-white"
                          : "bg-white/80 text-slate-600 hover:bg-white dark:bg-black/20 dark:text-zinc-300 dark:hover:bg-black/30",
@@ -720,7 +720,7 @@ export function AdminStaffingConsolePageClient({
                  {visibleSnapshots.slice(0, 3).map(snap => (
                     <div key={snap.id} className="flex justify-between items-center text-sm">
                       <span className="font-mono text-xs text-slate-600 dark:text-slate-400">{new Date(snap.snapshotAt).toLocaleDateString()} {snap.shift}</span>
-                      <span className={cn("font-mono text-xs font-bold uppercase tracking-widest", snap.isCompliant ? "text-emerald-500" : "text-rose-500")}>
+                      <span className={cn("font-mono text-xs font-bold uppercase tracking-wider", snap.isCompliant ? "text-emerald-500" : "text-rose-500")}>
                          {snap.ratio.toFixed(1)} Ratio {snap.isCompliant ? "(OK)" : "(Fail)"}
                       </span>
                     </div>

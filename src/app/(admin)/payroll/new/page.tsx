@@ -60,7 +60,7 @@ export default function AdminPayrollNewBatchPage() {
   return (
     <div className="mx-auto max-w-lg space-y-6 p-6">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
           New payroll batch
         </h1>
         <Link href="/admin/payroll" className={cn(buttonVariants({ variant: "outline" }), "shrink-0")}>

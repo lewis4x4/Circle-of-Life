@@ -108,8 +108,8 @@ export default function ExecutiveAlertsPage() {
         <header className="mb-6 mt-2">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6 mb-4">
             <div>
-              <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Exception Engine</p>
-              <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+              
+              <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
                 Executive Alerts
               </h2>
               <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">Workflow routing and leadership intervention queue</p>
@@ -128,7 +128,7 @@ export default function ExecutiveAlertsPage() {
             <Link
               key={item.title}
               href={item.href}
-              className="rounded-[1.5rem] border border-slate-200/70 bg-white/70 p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg dark:border-white/5 dark:bg-white/[0.03] dark:hover:border-indigo-500/30"
+              className="rounded-lg border border-slate-200/70 bg-white/70 p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg dark:border-white/5 dark:hover:border-indigo-500/30"
             >
               <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">
                 {item.title}
@@ -148,26 +148,26 @@ export default function ExecutiveAlertsPage() {
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4 mb-6" staggerMs={50}>
           <div className="h-[140px]">
              <V2Card hoverColor="rose" className="border-rose-500/20 shadow-[inset_0_0_15px_rgba(244,63,94,0.05)] bg-rose-950/10 items-center justify-center flex flex-col text-center">
-               <h3 className="text-[10px] font-mono tracking-widest uppercase text-rose-600 dark:text-rose-400 mb-2">
+               <h3 className="text-[10px] font-mono tracking-wider uppercase text-rose-600 dark:text-rose-400 mb-2">
                  Critical Thresholds
                </h3>
-               <p className="text-5xl font-mono tracking-tighter text-rose-600 dark:text-rose-500">{criticals.length}</p>
+               <p className="text-2xl font-mono tracking-tighter text-rose-600 dark:text-rose-500">{criticals.length}</p>
              </V2Card>
           </div>
           <div className="h-[140px]">
              <V2Card hoverColor="amber" className="border-amber-500/20 shadow-[inset_0_0_15px_rgba(245,158,11,0.05)] bg-amber-950/10 items-center justify-center flex flex-col text-center">
-               <h3 className="text-[10px] font-mono tracking-widest uppercase text-amber-600 dark:text-amber-500 mb-2">
+               <h3 className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-500 mb-2">
                  Active Warnings
                </h3>
-               <p className="text-5xl font-mono tracking-tighter text-amber-600 dark:text-amber-500">{warnings.length}</p>
+               <p className="text-2xl font-mono tracking-tighter text-amber-600 dark:text-amber-500">{warnings.length}</p>
              </V2Card>
           </div>
           <div className="h-[140px]">
              <V2Card hoverColor="indigo" className="border-indigo-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)] bg-indigo-950/10 items-center justify-center flex flex-col text-center">
-               <h3 className="text-[10px] font-mono tracking-widest uppercase text-indigo-600 dark:text-indigo-400 mb-2">
+               <h3 className="text-[10px] font-mono tracking-wider uppercase text-indigo-600 dark:text-indigo-400 mb-2">
                  Routing Actions
                </h3>
-               <p className="text-5xl font-mono tracking-tighter text-indigo-600 dark:text-indigo-400">{infos.length}</p>
+               <p className="text-2xl font-mono tracking-tighter text-indigo-600 dark:text-indigo-400">{infos.length}</p>
              </V2Card>
           </div>
         </KineticGrid>
@@ -182,7 +182,7 @@ export default function ExecutiveAlertsPage() {
         </div>
 
         {loading ? (
-           <div className="flex items-center justify-center py-20 text-slate-500 font-mono text-sm uppercase tracking-widest animate-pulse">
+           <div className="flex items-center justify-center py-20 text-slate-500 font-mono text-sm uppercase tracking-wider animate-pulse">
              Syncing Exception Engine...
            </div>
         ) : rows.length === 0 ? (
@@ -217,13 +217,13 @@ export default function ExecutiveAlertsPage() {
                              <div className="flex items-center gap-2 mb-3">
                                 <PulseDot colorClass={isCrit ? "bg-rose-500" : isWarn ? "bg-amber-500" : "bg-slate-500"} />
                                 <span className={cn(
-                                   "text-[10px] uppercase font-mono font-bold tracking-widest px-2 py-0.5 rounded",
+                                   "text-[10px] uppercase font-mono font-bold tracking-wider px-2 py-0.5 rounded",
                                    isCrit ? "bg-rose-500/20 text-rose-500" : isWarn ? "bg-amber-500/20 text-amber-500" : "bg-slate-500/20 text-slate-500"
                                 )}>
                                    {a.severity}
                                 </span>
                              </div>
-                             <p className={cn("text-xs font-mono uppercase tracking-widest opacity-70", isCrit ? "text-rose-500" : isWarn ? "text-amber-500" : "text-slate-500")}>
+                             <p className={cn("text-xs font-mono uppercase tracking-wider opacity-70", isCrit ? "text-rose-500" : isWarn ? "text-amber-500" : "text-slate-500")}>
                                 Module • {a.source_module.replace(/_/g, " ")}
                              </p>
                           </div>
@@ -235,7 +235,7 @@ export default function ExecutiveAlertsPage() {
                              </div>
                              
                              <div className="flex items-center justify-between mt-6">
-                                <div className="text-[10px] font-mono tracking-widest text-slate-500 uppercase flex items-center gap-4">
+                                <div className="text-[10px] font-mono tracking-wider text-slate-500 uppercase flex items-center gap-4">
                                    <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {format(new Date(a.created_at), 'MMM d, h:mm a')}</span>
                                    {(a as AlertWithFacility).facilities?.name && (
                                      <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {(a as AlertWithFacility).facilities!.name}</span>

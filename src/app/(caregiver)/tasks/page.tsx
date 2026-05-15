@@ -204,9 +204,9 @@ export default function CaregiverTasksPage() {
         title="Document routine care while the resident context is in front of you."
         description="Use the ADL queue for routine support passes, then move to rounds for due checks or meds when a medication window is active."
       />
-      <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-white/5 bg-gradient-to-br from-cyan-950/40 via-slate-900/40 to-black/60 backdrop-blur-3xl shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
+      <div className="p-6 sm:p-8 rounded-lg border border-white/5 bg-gradient-to-br from-cyan-950/40 via-slate-900/40 to-black/60 shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
         <div className="mb-6">
-          <h3 className="text-2xl font-display font-semibold text-white tracking-wide">Task &amp; ADL queue</h3>
+          <h3 className="text-2xl font-semibold text-white tracking-wide">Task &amp; ADL queue</h3>
           <p className="text-sm font-mono text-cyan-400/80 mt-1">
             {ctx?.facilityName ? (
               <>
@@ -231,7 +231,7 @@ export default function CaregiverTasksPage() {
       ) : null}
 
       {sortedResidents.length === 0 ? (
-        <div className="glass-panel p-8 rounded-2xl border border-white/5 bg-slate-900/40 text-center backdrop-blur-xl">
+        <div className="p-8 rounded-2xl border border-white/5 bg-slate-900/40 text-center">
           <p className="text-sm font-mono text-zinc-400">No active residents in this facility scope. Add census in the admin console.</p>
         </div>
       ) : (
@@ -272,8 +272,8 @@ function MetricPill({
 
   return (
     <div className={`rounded-xl border p-4 backdrop-blur-xl ${toneClass}`}>
-      <p className="text-[9px] uppercase tracking-widest font-mono text-zinc-400">{label}</p>
-      <p className="mt-1.5 text-2xl font-semibold font-display text-white">{value}</p>
+      <p className="text-[9px] uppercase tracking-wider font-mono text-zinc-400">{label}</p>
+      <p className="mt-1.5 text-2xl font-semibold text-white">{value}</p>
     </div>
   );
 }
@@ -318,7 +318,7 @@ function ResidentAdlCard({
             </div>
             <div>
               <p className="text-base font-semibold text-white tracking-wide">{resident.displayName}</p>
-              <p className="text-[11px] font-mono uppercase tracking-widest text-zinc-400 mt-0.5">Room {resident.roomLabel}</p>
+              <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 mt-0.5">Room {resident.roomLabel}</p>
             </div>
           </div>
           <div className="flex flex-col items-end gap-1.5 shrink-0">
@@ -333,7 +333,7 @@ function ResidentAdlCard({
             >
               {priority === "critical" ? "No ADL yet" : priority === "high" ? "Light pass" : "Stable"}
             </Badge>
-            <span className="inline-flex items-center gap-1.5 text-[10px] uppercase font-mono tracking-widest text-zinc-400">
+            <span className="inline-flex items-center gap-1.5 text-[10px] uppercase font-mono tracking-wider text-zinc-400">
               <Clock3 className="h-3 w-3" />
               {passesToday} pass{passesToday === 1 ? "" : "es"} today
             </span>
@@ -342,7 +342,7 @@ function ResidentAdlCard({
 
         <div className="grid gap-3 sm:grid-cols-2 pt-2">
           <div className="space-y-1.5 focus-within:text-cyan-400 transition-colors">
-            <Label className="text-[10px] uppercase font-mono tracking-widest text-zinc-500 font-bold">ADL Type</Label>
+            <Label className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 font-bold">ADL Type</Label>
             <select
               className="flex h-12 w-full rounded-full border border-white/10 bg-black/40 px-4 text-sm text-zinc-200 outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 appearance-none font-mono"
               value={adlType}
@@ -356,7 +356,7 @@ function ResidentAdlCard({
             </select>
           </div>
           <div className="space-y-1.5 focus-within:text-cyan-400 transition-colors">
-            <Label className="text-[10px] uppercase font-mono tracking-widest text-zinc-500 font-bold">Assistance</Label>
+            <Label className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 font-bold">Assistance</Label>
             <select
               className="flex h-12 w-full rounded-full border border-white/10 bg-black/40 px-4 text-sm text-zinc-200 outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 appearance-none font-mono"
               value={assistance}
@@ -392,7 +392,7 @@ function ResidentAdlCard({
                 checked={refused}
                 onChange={(e) => setRefused(e.target.checked)}
               />
-              <span className="font-mono text-xs uppercase tracking-widest select-none">Refused / deferred</span>
+              <span className="font-mono text-xs uppercase tracking-wider select-none">Refused / deferred</span>
             </label>
 
             <Button

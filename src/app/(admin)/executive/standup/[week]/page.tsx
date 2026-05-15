@@ -294,10 +294,10 @@ export default function ExecutiveStandupWeekDetailPage() {
       <div className="relative z-10 space-y-6">
         <ExecutiveHubNav />
 
-        <header className="rounded-[2rem] border border-slate-200/70 bg-white/70 p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+        <header className="rounded-lg border border-slate-200/70 bg-white/70 p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
                 Weekly packet detail
               </div>
               <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Standup Week {week}</h1>
@@ -308,7 +308,7 @@ export default function ExecutiveStandupWeekDetailPage() {
             <div className="flex flex-wrap items-center gap-3">
               {detail ? (
                 <>
-                  <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-widest">
+                  <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-wider">
                     {detail.snapshot.status} · {detail.snapshot.completenessPct.toFixed(0)}% complete
                   </Badge>
                   <Button type="button" variant="outline" onClick={() => void load()} disabled={loading}>
@@ -317,7 +317,7 @@ export default function ExecutiveStandupWeekDetailPage() {
                   </Button>
                   <Link
                     href={`/admin/executive/standup/${week}/board`}
-                    className="inline-flex h-10 items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-4 text-xs font-semibold uppercase tracking-widest text-slate-700 transition-colors hover:bg-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10"
+                    className="inline-flex h-10 items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-4 text-xs font-semibold uppercase tracking-wider text-slate-700 transition-colors hover:bg-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10"
                   >
                     <FileSpreadsheet className="mr-2 h-4 w-4" />
                     Board preview
@@ -351,14 +351,14 @@ export default function ExecutiveStandupWeekDetailPage() {
         ) : null}
 
         {loading ? (
-          <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+          <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
             <CardContent className="flex items-center gap-3 p-6 text-sm text-slate-500 dark:text-zinc-400">
               <Loader2 className="h-4 w-4 animate-spin" />
               Loading standup week…
             </CardContent>
           </Card>
         ) : !detail ? (
-          <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+          <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
             <CardHeader>
               <CardTitle>No standup found for this week</CardTitle>
               <CardDescription>Generate a draft from the standup pack page first.</CardDescription>
@@ -366,7 +366,7 @@ export default function ExecutiveStandupWeekDetailPage() {
             <CardContent>
               <Link
                 href="/admin/executive/standup"
-                className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-slate-700 transition-colors hover:bg-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10"
+                className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-slate-700 transition-colors hover:bg-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10"
               >
                 Back to standup pack
               </Link>
@@ -375,25 +375,25 @@ export default function ExecutiveStandupWeekDetailPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-              <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                 <CardHeader className="pb-2">
                   <CardDescription>Generated</CardDescription>
                   <CardTitle className="text-lg">{new Date(detail.snapshot.generatedAt).toLocaleString()}</CardTitle>
                 </CardHeader>
               </Card>
-              <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                 <CardHeader className="pb-2">
                   <CardDescription>Published</CardDescription>
                   <CardTitle className="text-lg">{detail.snapshot.publishedAt ? new Date(detail.snapshot.publishedAt).toLocaleString() : "Not yet"}</CardTitle>
                 </CardHeader>
               </Card>
-              <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                 <CardHeader className="pb-2">
                   <CardDescription>Completeness</CardDescription>
                   <CardTitle className="text-lg">{detail.snapshot.completenessPct.toFixed(0)}%</CardTitle>
                 </CardHeader>
               </Card>
-              <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                 <CardHeader className="pb-2">
                   <CardDescription>Confidence</CardDescription>
                   <CardTitle className="text-lg capitalize">{detail.snapshot.confidenceBand}</CardTitle>
@@ -402,7 +402,7 @@ export default function ExecutiveStandupWeekDetailPage() {
             </div>
 
             {narrative ? (
-              <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                 <CardHeader>
                   <CardTitle className="text-lg">Executive narrative</CardTitle>
                   <CardDescription>{narrative.headline}</CardDescription>
@@ -445,7 +445,7 @@ export default function ExecutiveStandupWeekDetailPage() {
             ) : null}
 
             {narrative && narrative.facilityActions.length > 0 ? (
-              <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                 <CardHeader>
                   <CardTitle className="text-lg">Why Is This Red?</CardTitle>
                   <CardDescription>Per-facility pressure reasons, variance flags, and intervention recommendations.</CardDescription>
@@ -492,7 +492,7 @@ export default function ExecutiveStandupWeekDetailPage() {
               </Card>
             ) : null}
 
-            <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
               <CardHeader>
                 <CardTitle className="text-lg">Weekly close status</CardTitle>
                 <CardDescription>Track the unresolved rows before publishing the standup packet.</CardDescription>
@@ -517,7 +517,7 @@ export default function ExecutiveStandupWeekDetailPage() {
               </CardContent>
             </Card>
 
-            <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
               <CardHeader>
                 <CardTitle className="text-lg">Section completion</CardTitle>
                 <CardDescription>Each section closes independently so the standup week can be reviewed like a lightweight executive close.</CardDescription>
@@ -543,7 +543,7 @@ export default function ExecutiveStandupWeekDetailPage() {
               </CardContent>
             </Card>
 
-            <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
               <CardHeader>
                 <CardTitle className="text-lg">Publish gating</CardTitle>
                 <CardDescription>Published weeks stay immutable, so the draft must clear these checks before publish.</CardDescription>
@@ -560,14 +560,14 @@ export default function ExecutiveStandupWeekDetailPage() {
               </CardContent>
             </Card>
 
-            <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
               <CardHeader>
                 <CardTitle className="text-lg">Draft notes</CardTitle>
                 <CardDescription>Internal prep notes for admins before the week is published.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <textarea
-                  className="min-h-[120px] w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 px-4 py-3 text-sm"
+                  className="min-h-[120px] w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white px-4 py-3 text-sm"
                   value={draftNotesDraft}
                   onChange={(event) => setDraftNotesDraft(event.target.value)}
                   placeholder="Working notes, unresolved follow-ups, or prep context for this week's packet."
@@ -575,14 +575,14 @@ export default function ExecutiveStandupWeekDetailPage() {
               </CardContent>
             </Card>
 
-            <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
               <CardHeader>
                 <CardTitle className="text-lg">Review notes</CardTitle>
                 <CardDescription>These notes are required and stored with the published weekly packet.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <textarea
-                  className="min-h-[120px] w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 px-4 py-3 text-sm"
+                  className="min-h-[120px] w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white px-4 py-3 text-sm"
                   value={reviewNotesDraft}
                   onChange={(event) => setReviewNotesDraft(event.target.value)}
                   placeholder="Add owner/admin review notes, context, or board commentary."
@@ -600,7 +600,7 @@ export default function ExecutiveStandupWeekDetailPage() {
               const metricKeys = sectionMetricKeys.get(sectionKey) ?? [];
               if (metricKeys.length === 0) return null;
               return (
-                <Card key={sectionKey} className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+                <Card key={sectionKey} className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                   <CardHeader>
                     <CardTitle className="text-xl">{sectionLabel}</CardTitle>
                   </CardHeader>

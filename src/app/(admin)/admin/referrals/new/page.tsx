@@ -210,7 +210,7 @@ export default function AdminReferralsNewPage() {
     <div className="mx-auto max-w-3xl space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
             New referral lead
           </h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
@@ -226,7 +226,7 @@ export default function AdminReferralsNewPage() {
 
       <Card className="border-slate-200/80 shadow-soft dark:border-slate-800">
         <CardHeader>
-          <CardTitle className="font-display text-lg">Lead form</CardTitle>
+          <CardTitle className="text-lg">Lead form</CardTitle>
           <p className="text-sm text-slate-600 dark:text-slate-300">
             Creates a row in <code className="text-xs">referral_leads</code> for the facility selected in the admin header.
           </p>

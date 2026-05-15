@@ -97,7 +97,7 @@ export default function AdminActivitiesPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 pb-12">
-      <div className="rounded-3xl border border-slate-200/60 bg-white/70 p-6 shadow-sm">
+      <div className="rounded-lg border border-slate-200/60 bg-white/70 p-6 shadow-sm">
         <h1 className="text-2xl font-semibold text-slate-900">Activity Session Confirmation</h1>
         <p className="mt-2 text-sm text-slate-600">Recent sessions with completion confirmation metadata.</p>
         <p className="mt-2 text-xs font-medium text-slate-500">Pending confirmations: {pendingCount}</p>
@@ -107,7 +107,7 @@ export default function AdminActivitiesPage() {
         <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div>
       ) : null}
 
-      <div className="overflow-x-auto rounded-3xl border border-slate-200/60 bg-white/70 shadow-sm">
+      <div className="overflow-x-auto rounded-lg border border-slate-200/60 bg-white/70 shadow-sm">
         <table className="min-w-full text-sm">
           <thead className="bg-slate-100/80 text-left text-xs uppercase tracking-wide text-slate-600">
             <tr>

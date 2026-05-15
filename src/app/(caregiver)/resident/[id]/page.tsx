@@ -106,13 +106,13 @@ export default function CaregiverResidentQuickProfilePage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-12">
       {vitalAlerts.length > 0 && (
-        <div className="rounded-[2xl] border border-rose-500/40 bg-gradient-to-r from-rose-500/20 to-rose-900/10 px-6 py-4 text-sm text-rose-100 shadow-[0_4px_30px_rgba(225,29,72,0.1)] backdrop-blur-xl">
+        <div className="rounded-[2xl] border border-rose-500/40 bg-gradient-to-r from-rose-500/20 to-rose-900/10 px-6 py-4 text-sm text-rose-100 shadow-[0_4px_30px_rgba(225,29,72,0.1)]">
           <div className="flex items-start gap-4">
             <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/40 mt-1">
                <AlertTriangle className="h-5 w-5 text-rose-400" />
             </div>
             <div className="flex-1">
-              <h4 className="text-rose-300 font-display font-semibold tracking-wide text-lg mb-1">Vital Sign Alert</h4>
+              <h4 className="text-rose-300 font-semibold tracking-wide text-lg mb-1">Vital Sign Alert</h4>
               {vitalAlerts.map((a) => (
                 <p key={a.id} className="text-rose-200 mt-1 font-mono leading-relaxed">
                   <span className="font-bold text-white capitalize">{a.vital_type.replace(/_/g, " ")}</span> is <span className="font-bold text-rose-300">{a.recorded_value}</span> — exceeds threshold <span className="font-bold">{a.threshold_value}</span> ({a.direction}). Notify nurse immediately.
@@ -124,13 +124,13 @@ export default function CaregiverResidentQuickProfilePage() {
       )}
       
       {/* ─── RESIDENT HEADER & METRICS ──────────────────────────────────────────── */}
-      <div className="glass-panel p-8 md:p-10 rounded-[3rem] border border-white/5 bg-gradient-to-br from-indigo-950/40 via-slate-900/60 to-black/80 backdrop-blur-3xl shadow-2xl relative overflow-hidden z-10 w-full transition-all text-zinc-100">
+      <div className="p-8 md:p-10 rounded-[3rem] border border-white/5 bg-gradient-to-br from-indigo-950/40 via-slate-900/60 to-black/80 shadow-2xl relative overflow-hidden z-10 w-full transition-all text-zinc-100">
          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
 
          <div className="flex flex-col md:flex-row gap-8 relative z-10">
            <div className="flex-1">
               <div className="flex flex-wrap items-center gap-4 mb-3">
-                 <h2 className="text-4xl md:text-5xl font-display font-semibold tracking-tight text-white mb-1">{p.displayName}</h2>
+                 <h2 className="text-4xl md:text-2xl font-semibold tracking-tight text-white mb-1">{p.displayName}</h2>
               </div>
               <p className="text-zinc-400 text-lg flex items-center gap-3 font-mono font-medium tracking-wide">
                 <span className="bg-white/10 px-3 py-1 rounded-full text-white">{p.roomLabel}</span>
@@ -140,17 +140,17 @@ export default function CaregiverResidentQuickProfilePage() {
               
               <div className="flex flex-wrap gap-2 mt-6">
                  {p.fallRiskLevel === "high" && (
-                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-rose-500/40 bg-rose-500/20 text-[10px] uppercase tracking-widest font-mono font-bold text-rose-300 shadow-inner">
+                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-rose-500/40 bg-rose-500/20 text-[10px] uppercase tracking-wider font-mono font-bold text-rose-300 shadow-inner">
                      <AlertTriangle className="w-3.5 h-3.5" /> High Fall Risk
                    </span>
                  )}
                  {p.fallRiskLevel === "moderate" && (
-                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-amber-500/40 bg-amber-500/20 text-[10px] uppercase tracking-widest font-mono font-bold text-amber-300 shadow-inner">
+                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-amber-500/40 bg-amber-500/20 text-[10px] uppercase tracking-wider font-mono font-bold text-amber-300 shadow-inner">
                      <AlertTriangle className="w-3.5 h-3.5" /> Fall Risk
                    </span>
                  )}
                  {p.elopementRisk && (
-                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-rose-500/40 bg-rose-500/20 text-[10px] uppercase tracking-widest font-mono font-bold text-rose-300 shadow-inner">
+                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-rose-500/40 bg-rose-500/20 text-[10px] uppercase tracking-wider font-mono font-bold text-rose-300 shadow-inner">
                      <AlertTriangle className="w-3.5 h-3.5" /> Elopement Risk
                    </span>
                  )}
@@ -176,8 +176,8 @@ export default function CaregiverResidentQuickProfilePage() {
 
       {/* ─── RISK BANNERS ──────────────────────────────────────────────────────── */}
       {p.riskBanners.length > 0 && (
-         <div className="glass-panel p-8 rounded-[2rem] border border-amber-500/30 bg-gradient-to-br from-amber-950/20 to-black/40 backdrop-blur-3xl shadow-[0_8px_32px_rgba(217,119,6,0.1)] relative w-full text-zinc-100">
-           <h3 className="flex items-center gap-3 text-xl font-display font-semibold text-amber-300 tracking-wide mb-6">
+         <div className="p-8 rounded-lg border border-amber-500/30 bg-gradient-to-br from-amber-950/20 to-black/40 shadow-[0_8px_32px_rgba(217,119,6,0.1)] relative w-full text-zinc-100">
+           <h3 className="flex items-center gap-3 text-xl font-semibold text-amber-300 tracking-wide mb-6">
               <AlertTriangle className="h-5 w-5" />
               Risk Considerations
            </h3>
@@ -190,8 +190,8 @@ export default function CaregiverResidentQuickProfilePage() {
       )}
 
       {/* ─── ACTION GRID ───────────────────────────────────────────────────────── */}
-      <div className="glass-panel p-8 rounded-[2rem] border border-white/5 bg-white/[0.02] backdrop-blur-xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
-         <h4 className="text-xl font-display font-semibold text-white tracking-wide mb-6">Shift Actions</h4>
+      <div className="p-8 rounded-lg border border-white/5 bg-white/[0.02] relative overflow-visible z-10 w-full transition-all text-zinc-100">
+         <h4 className="text-xl font-semibold text-white tracking-wide mb-6">Shift Actions</h4>
          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
             <ActionLink
               href="/caregiver/meds"
@@ -226,24 +226,24 @@ export default function CaregiverResidentQuickProfilePage() {
          {!noteOpen ? (
            <Button
              type="button"
-             className="w-full h-16 rounded-[1.5rem] flex items-center justify-center font-bold tracking-widest uppercase transition-all shadow-[0_4px_30px_rgba(16,185,129,0.15)] bg-gradient-to-r from-emerald-600 to-emerald-500 text-black hover:from-emerald-500 hover:to-emerald-400 tap-responsive text-sm font-mono border-0"
+             className="w-full h-16 rounded-lg flex items-center justify-center font-bold tracking-wider uppercase transition-all shadow-[0_4px_30px_rgba(16,185,129,0.15)] bg-gradient-to-r from-emerald-600 to-emerald-500 text-black hover:from-emerald-500 hover:to-emerald-400 tap-responsive text-sm font-mono border-0"
              onClick={() => { setNoteOpen(true); setNoteSaved(false); }}
            >
              <Plus className="mr-3 h-5 w-5" />
              Quick Note
            </Button>
          ) : (
-           <div className="glass-panel p-6 rounded-[2rem] border border-emerald-500/30 bg-emerald-950/20 backdrop-blur-xl relative overflow-visible z-10 w-full transition-all text-zinc-100 shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]">
+           <div className="p-6 rounded-lg border border-emerald-500/30 bg-emerald-950/20 relative overflow-visible z-10 w-full transition-all text-zinc-100 shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]">
                {noteSaved ? (
                  <div className="flex flex-col items-center justify-center py-6">
                     <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/40 mb-4">
                        <Check className="h-8 w-8 text-emerald-400" />
                     </div>
-                    <p className="text-xl font-display text-emerald-300 font-semibold tracking-wide">Note Saved.</p>
+                    <p className="text-xl text-emerald-300 font-semibold tracking-wide">Note Saved.</p>
                  </div>
                ) : (
                  <div className="space-y-4">
-                     <p className="text-xs font-bold uppercase tracking-widest text-emerald-300/80 font-mono">Quick Shift Note for {p.displayName}</p>
+                     <p className="text-xs font-bold uppercase tracking-wider text-emerald-300/80 font-mono">Quick Shift Note for {p.displayName}</p>
                      <textarea
                        rows={4}
                        autoFocus
@@ -256,14 +256,14 @@ export default function CaregiverResidentQuickProfilePage() {
                        <Button
                          type="button"
                          disabled={noteSaving || !noteDraft.trim()}
-                         className="flex-1 h-14 rounded-full font-mono uppercase tracking-widest text-xs px-8 shadow-lg transition-all hover:scale-[1.02] border-0 text-black font-bold bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 tap-responsive"
+                         className="flex-1 h-14 rounded-full font-mono uppercase tracking-wider text-xs px-8 shadow-lg transition-all hover:scale-[1.02] border-0 text-black font-bold bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 tap-responsive"
                          onClick={() => { void saveQuickNote(); }}
                        >
                          {noteSaving ? <Loader2 className="mr-3 h-5 w-5 animate-spin" /> : "Save"}
                        </Button>
                        <Button
                          type="button"
-                         className="flex-[0.5] h-14 rounded-full font-mono uppercase tracking-widest text-xs px-8 transition-all border border-white/10 bg-black/40 text-zinc-300 hover:bg-white/10 hover:text-white tap-responsive shadow-inner font-bold"
+                         className="flex-[0.5] h-14 rounded-full font-mono uppercase tracking-wider text-xs px-8 transition-all border border-white/10 bg-black/40 text-zinc-300 hover:bg-white/10 hover:text-white tap-responsive shadow-inner font-bold"
                          onClick={() => { setNoteOpen(false); setNoteDraft(""); setNoteSaved(false); }}
                        >
                          Cancel
@@ -360,8 +360,8 @@ function MetricPill({
 
   return (
     <div className={`rounded-2xl border px-4 py-3 flex flex-col justify-center min-h-[5rem] ${toneClass}`}>
-      <p className="text-[9px] uppercase tracking-widest font-mono font-bold opacity-70 mb-1">{label}</p>
-      <p className="text-2xl font-display font-semibold tracking-tight">{value}</p>
+      <p className="text-[9px] uppercase tracking-wider font-mono font-bold opacity-70 mb-1">{label}</p>
+      <p className="text-2xl font-semibold tracking-tight">{value}</p>
     </div>
   );
 }
@@ -384,7 +384,7 @@ function BannerRow({
 
   return (
     <div className={`rounded-xl border p-4 ${toneClass} shadow-inner`}>
-      <p className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest font-mono text-white mb-1">
+      <p className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider font-mono text-white mb-1">
         <ShieldCheck className="h-4 w-4" />
         {title}
       </p>
@@ -402,7 +402,7 @@ function ActionLink({ href, icon, label }: { href: string; icon: React.ReactNode
       <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
         {icon}
       </div>
-      <span className="text-[10px] font-mono font-bold uppercase tracking-widest">{label}</span>
+      <span className="text-[10px] font-mono font-bold uppercase tracking-wider">{label}</span>
     </Link>
   );
 }

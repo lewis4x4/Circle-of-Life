@@ -85,7 +85,7 @@ export default function UserManagementPage() {
       <div className="flex justify-end">
         <Link
           href={homeHref}
-          className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest font-mono text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+          className="inline-flex items-center gap-2 text-[10px] uppercase tracking-wider font-mono text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to Dashboard

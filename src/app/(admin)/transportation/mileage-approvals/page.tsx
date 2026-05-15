@@ -277,12 +277,10 @@ export default function MileageApprovalsPage() {
       <AmbientMatrix hasCriticals={false} primaryClass="bg-emerald-700/10" secondaryClass="bg-slate-900/10" />
 
       <div className="relative z-10 space-y-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
-              SYS: Module 15 — Mileage
-            </div>
-            <h1 className="font-display text-3xl md:text-4xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
+            
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
               <CircleDollarSign className="h-8 w-8 text-emerald-600 dark:text-emerald-400 shrink-0" />
               Mileage approvals
             </h1>
@@ -293,7 +291,7 @@ export default function MileageApprovalsPage() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-              <span className="whitespace-nowrap font-bold uppercase tracking-widest">CSV</span>
+              <span className="whitespace-nowrap font-bold uppercase tracking-wider">CSV</span>
               <select
                 className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-white/15 dark:bg-white/5 dark:text-slate-100"
                 value={mileageCsvScope}
@@ -311,7 +309,7 @@ export default function MileageApprovalsPage() {
               type="button"
               variant="outline"
               disabled={!facilityReady || exportingCsv}
-              className="h-11 gap-2 rounded-full text-[10px] font-bold uppercase tracking-widest"
+              className="h-11 gap-2 rounded-full text-[10px] font-bold uppercase tracking-wider"
               onClick={() => void exportMileageLogsCsv()}
             >
               <Download className="h-4 w-4" aria-hidden />
@@ -321,7 +319,7 @@ export default function MileageApprovalsPage() {
               href="/admin/transportation"
               className={cn(
                 buttonVariants({ variant: "outline", size: "default" }),
-                "h-11 rounded-full gap-2 text-[10px] font-bold uppercase tracking-widest",
+                "h-11 rounded-full gap-2 text-[10px] font-bold uppercase tracking-wider",
               )}
             >
               <ArrowLeft className="h-4 w-4" />
@@ -331,13 +329,13 @@ export default function MileageApprovalsPage() {
         </div>
 
         {!facilityReady && (
-          <p className="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-6 py-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-6 py-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
             Select a facility first.
           </p>
         )}
 
         {error && (
-          <p className="rounded-[1.5rem] border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100">
+          <p className="rounded-lg border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100">
             {error}
           </p>
         )}
@@ -349,7 +347,7 @@ export default function MileageApprovalsPage() {
                 type="button"
                 onClick={() => setTab("pending")}
                 className={cn(
-                  "rounded-full px-5 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors",
+                  "rounded-full px-5 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors",
                   tab === "pending"
                     ? "bg-emerald-600 text-white shadow"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/10 dark:text-slate-300",
@@ -364,7 +362,7 @@ export default function MileageApprovalsPage() {
                 type="button"
                 onClick={() => setTab("approved")}
                 className={cn(
-                  "rounded-full px-5 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors",
+                  "rounded-full px-5 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors",
                   tab === "approved"
                     ? "bg-emerald-600 text-white shadow"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/10 dark:text-slate-300",
@@ -396,7 +394,7 @@ export default function MileageApprovalsPage() {
                   return (
                     <MotionItem
                       key={row.id}
-                      className="rounded-[1.5rem] border border-slate-200/90 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]"
+                      className="rounded-lg border border-slate-200/90 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]"
                     >
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div className="min-w-0 space-y-1">
@@ -421,14 +419,14 @@ export default function MileageApprovalsPage() {
                           {row.transport_request_id ? (
                             <Link
                               href={`/admin/transportation/requests/${row.transport_request_id}`}
-                              className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+                              className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
                             >
                               <Bus className="h-3.5 w-3.5" />
                               Open transport request
                             </Link>
                           ) : null}
                           {!isPending && row.approved_at ? (
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                               Approved {format(parseISO(row.approved_at), "MMM d, yyyy h:mm a")}
                               {row.payroll_export_id ? " · marked for payroll export" : ""}
                             </p>
@@ -442,7 +440,7 @@ export default function MileageApprovalsPage() {
                               onClick={() => void approve(row)}
                               className={cn(
                                 buttonVariants({ size: "default" }),
-                                "h-10 gap-2 rounded-full bg-emerald-600 px-5 text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-700 text-white",
+                                "h-10 gap-2 rounded-full bg-emerald-600 px-5 text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-700 text-white",
                               )}
                             >
                               <CheckCircle2 className="h-4 w-4" />
@@ -456,7 +454,7 @@ export default function MileageApprovalsPage() {
                               onClick={() => void unapprove(row)}
                               className={cn(
                                 buttonVariants({ variant: "outline", size: "default" }),
-                                "h-10 gap-2 rounded-full text-[10px] font-bold uppercase tracking-widest",
+                                "h-10 gap-2 rounded-full text-[10px] font-bold uppercase tracking-wider",
                               )}
                             >
                               <Undo2 className="h-4 w-4" />

@@ -291,7 +291,7 @@ export default function AdminNewInserviceSessionPage() {
       <div className="flex items-center gap-2">
         <GraduationCap className="h-6 w-6 text-slate-500" />
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">New in-service session</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">New in-service session</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
             Record an in-service training event and who attended (digital sign-in).
           </p>

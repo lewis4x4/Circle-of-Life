@@ -138,17 +138,17 @@ export default function InsightsPage() {
 
         <div className="grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4">
-            <p className="text-[10px] uppercase font-mono tracking-widest text-violet-300">Insight backlog</p>
+            <p className="text-[10px] uppercase font-mono tracking-wider text-violet-300">Insight backlog</p>
             <p className="mt-2 text-3xl font-semibold text-white">{rows.length}</p>
             <p className="mt-1 text-xs text-slate-400">Current resident safety insights in scope</p>
           </div>
           <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4">
-            <p className="text-[10px] uppercase font-mono tracking-widest text-amber-300">New patterns</p>
+            <p className="text-[10px] uppercase font-mono tracking-wider text-amber-300">New patterns</p>
             <p className="mt-2 text-3xl font-semibold text-white">{rows.filter((row) => row.status === "new").length}</p>
             <p className="mt-1 text-xs text-slate-400">Unacknowledged findings from the latest runs</p>
           </div>
           <div className="rounded-2xl border border-sky-500/20 bg-sky-500/5 p-4">
-            <p className="text-[10px] uppercase font-mono tracking-widest text-sky-300">Voice & AI lane</p>
+            <p className="text-[10px] uppercase font-mono tracking-wider text-sky-300">Voice & AI lane</p>
             <p className="mt-2 flex items-center gap-2 text-sm text-white">
               <Mic className="h-4 w-4 text-sky-300" />
               Voice check-off now feeds this safety model.
@@ -162,7 +162,7 @@ export default function InsightsPage() {
             type="button"
             onClick={() => void runAnalysis()}
             disabled={running}
-            className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-violet-200 transition hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-violet-200 transition hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             {running ? "Running analysis" : "Run analysis"}

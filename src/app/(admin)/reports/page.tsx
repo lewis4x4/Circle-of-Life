@@ -267,19 +267,19 @@ export default function ReportsOverviewPage() {
       <div className="relative z-10 mx-auto max-w-7xl space-y-8 px-4 sm:px-6 xl:px-0">
         <ReportsHubNav />
 
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
           <div className="space-y-3">
             <Link href={homeHref} className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
               <ArrowLeft className="w-3.5 h-3.5" /> Back to Dashboard
             </Link>
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary" className="rounded-full border border-indigo-500/20 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 uppercase tracking-widest text-[9px] font-bold px-2 py-0.5">
+              <Badge variant="secondary" className="rounded-full border border-indigo-500/20 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 uppercase tracking-wider text-[9px] font-bold px-2 py-0.5">
                 <Sparkles className="mr-1 size-3" aria-hidden />
                 Governed exports
               </Badge>
-              <span className="text-[10px] font-mono tracking-widest uppercase text-slate-500 dark:text-slate-400">Template → schedule → audit trail</span>
+              <span className="text-[10px] font-mono tracking-wider uppercase text-slate-500 dark:text-slate-400">Template → schedule → audit trail</span>
             </div>
-            <h1 className="font-display flex items-center gap-4 text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white">
+            <h1 className="flex items-center gap-4 text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
               <Layers className="size-10 shrink-0 text-indigo-500" strokeWidth={1.5} aria-hidden />
               Reporting Hub
             </h1>
@@ -289,13 +289,13 @@ export default function ReportsOverviewPage() {
             </p>
           </div>
           <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
-            <Link href="/admin/reports/templates" className={cn(buttonVariants({ variant: "default", size: "lg" }), "gap-2 rounded-xl text-xs uppercase tracking-widest font-bold")}>
+            <Link href="/admin/reports/templates" className={cn(buttonVariants({ variant: "default", size: "lg" }), "gap-2 rounded-xl text-xs uppercase tracking-wider font-bold")}>
               Browse templates
               <ArrowRight className="size-4" aria-hidden />
             </Link>
             <Link
               href="/admin/reports/nlq"
-              className={cn(buttonVariants({ variant: "outline", size: "lg" }), "gap-2 border-indigo-500/30 dark:border-indigo-400/30 rounded-xl text-xs uppercase tracking-widest font-bold")}
+              className={cn(buttonVariants({ variant: "outline", size: "lg" }), "gap-2 border-indigo-500/30 dark:border-indigo-400/30 rounded-xl text-xs uppercase tracking-wider font-bold")}
             >
               <MessageSquareText className="size-4" aria-hidden />
               Ask Haven Insight
@@ -324,14 +324,14 @@ export default function ReportsOverviewPage() {
               >
                 <V2Card
                   hoverColor={colorName}
-                  className="flex flex-col h-full bg-white/40 dark:bg-black/20 p-5 rounded-3xl border border-white/20 dark:border-white/5 backdrop-blur-2xl shadow-xl transition-all hover:-translate-y-1 overflow-hidden"
+                  className="flex flex-col h-full bg-card p-5 rounded-lg border border-white/20 dark:border-white/5 shadow-xl transition-all hover:-translate-y-1 overflow-hidden"
                 >
                   <Sparkline colorClass={`text-${colorName}-500`} variant={card.variant} />
                   <MonolithicWatermark value={loading ? 0 : card.value} className="opacity-40" />
 
                   <div className="relative z-10 flex flex-col h-full justify-between">
                     <div className="flex justify-between items-start gap-2">
-                       <h3 className={cn("text-[10px] font-mono tracking-widest uppercase w-2/3 leading-snug flex items-center gap-2", `text-${colorName}-600 dark:text-${colorName}-400`)}>
+                       <h3 className={cn("text-[10px] font-mono tracking-wider uppercase w-2/3 leading-snug flex items-center gap-2", `text-${colorName}-600 dark:text-${colorName}-400`)}>
                          {card.title}
                        </h3>
                        <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-opacity-20 transition-colors border", `border-${colorName}-500/20 text-${colorName}-600 dark:text-${colorName}-400 bg-${colorName}-500/10 shadow-inner`)}>
@@ -340,10 +340,10 @@ export default function ReportsOverviewPage() {
                     </div>
                     
                     <div className="flex flex-col">
-                       <span className={cn("text-4xl lg:text-5xl font-mono tracking-tighter tabular-nums pb-1 leading-none text-slate-800 dark:text-slate-100 group-hover:text-transparent group-hover:bg-clip-text transition-all duration-300", `group-hover:bg-gradient-to-b group-hover:from-${colorName}-600 group-hover:to-${colorName}-400 dark:group-hover:from-${colorName}-300 dark:group-hover:to-${colorName}-500`)}>
+                       <span className={cn("text-4xl lg:text-2xl font-mono tracking-tighter tabular-nums pb-1 leading-none text-slate-800 dark:text-slate-100 group-hover:text-transparent group-hover:bg-clip-text transition-all duration-300", `group-hover:bg-gradient-to-b group-hover:from-${colorName}-600 group-hover:to-${colorName}-400 dark:group-hover:from-${colorName}-300 dark:group-hover:to-${colorName}-500`)}>
                           {loading ? "-" : card.value.toLocaleString()}
                        </span>
-                       <span className="text-[9px] uppercase tracking-widest font-mono text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-tight">
+                       <span className="text-[9px] uppercase tracking-wider font-mono text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-tight">
                           {card.hint}
                        </span>
                     </div>
@@ -356,12 +356,12 @@ export default function ReportsOverviewPage() {
 
         {/* Workflow strip */}
         <section
-          className="rounded-[2rem] border border-slate-200/60 bg-gradient-to-br from-slate-50/90 to-white/80 p-6 shadow-sm backdrop-blur-xl dark:border-white/5 dark:from-white/[0.04] dark:to-black/20 sm:p-8"
+          className="rounded-lg border border-slate-200/60 bg-gradient-to-br from-slate-50/90 to-white/80 p-6 shadow-sm dark:border-white/5 dark:from-white/[0.04] dark:to-black/20 sm:p-8"
           aria-labelledby="reports-workflow-heading"
         >
           <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 id="reports-workflow-heading" className="font-display text-xl font-semibold text-slate-900 dark:text-white">
+              <h2 id="reports-workflow-heading" className="text-xl font-semibold text-slate-900 dark:text-white">
                 How reporting works here
               </h2>
               <p className="mt-1 max-w-2xl text-sm text-slate-600 dark:text-slate-400">
@@ -381,7 +381,7 @@ export default function ReportsOverviewPage() {
               <li key={step.n}>
                 <Link
                   href={step.href}
-                  className="flex h-full flex-col rounded-2xl border border-slate-200/80 bg-white/70 p-5 transition hover:border-indigo-400/40 hover:shadow-md dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-indigo-400/30"
+                  className="flex h-full flex-col rounded-2xl border border-slate-200/80 bg-white/70 p-5 transition hover:border-indigo-400/40 hover:shadow-md dark:border-white/10 dark:hover:border-indigo-400/30"
                 >
                   <span className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                     <span className="flex size-7 items-center justify-center rounded-full bg-indigo-500/15 text-xs font-bold text-indigo-700 dark:text-indigo-300">
@@ -402,7 +402,7 @@ export default function ReportsOverviewPage() {
         <div className="grid gap-8 lg:grid-cols-12">
           {/* Quick actions */}
           <section className="lg:col-span-7" aria-labelledby="quick-actions-heading">
-            <h2 id="quick-actions-heading" className="mb-4 font-display text-lg font-semibold text-slate-900 dark:text-white">
+            <h2 id="quick-actions-heading" className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
               Jump in
             </h2>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -430,7 +430,7 @@ export default function ReportsOverviewPage() {
                     key={action.href}
                     href={action.href}
                     className={cn(
-                      "group flex gap-4 rounded-2xl border border-slate-200/80 bg-white/60 p-4 shadow-sm backdrop-blur transition hover:-translate-y-0.5 dark:border-white/10 dark:bg-white/[0.03]",
+                      "group flex gap-4 rounded-2xl border border-slate-200/80 bg-card p-4 shadow-sm backdrop-blur transition hover:-translate-y-0.5 dark:border-white/10 dark:bg-white/[0.03]",
                       ring
                     )}
                   >
@@ -452,11 +452,11 @@ export default function ReportsOverviewPage() {
 
           {/* Recent activity */}
           <section
-            className="flex flex-col rounded-[2rem] border border-slate-200/60 bg-white/50 p-6 shadow-sm backdrop-blur-xl dark:border-white/5 dark:bg-black/20 lg:col-span-5"
+            className="flex flex-col rounded-lg border border-slate-200/60 bg-white/50 p-6 shadow-sm dark:border-white/5 lg:col-span-5"
             aria-labelledby="recent-activity-heading"
           >
             <div className="mb-4 flex items-center justify-between gap-2">
-              <h2 id="recent-activity-heading" className="font-display text-lg font-semibold text-slate-900 dark:text-white">
+              <h2 id="recent-activity-heading" className="text-lg font-semibold text-slate-900 dark:text-white">
                 Recent activity
               </h2>
               <Link

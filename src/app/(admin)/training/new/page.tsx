@@ -164,7 +164,7 @@ export default function AdminTrainingNewDemonstrationPage() {
   return (
     <div className="mx-auto max-w-lg space-y-6 p-6">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
           New demonstration
         </h1>
         <Link href="/admin/training" className={cn(buttonVariants({ variant: "outline" }), "shrink-0")}>

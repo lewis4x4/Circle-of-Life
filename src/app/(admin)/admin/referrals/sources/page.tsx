@@ -149,19 +149,19 @@ export default function AdminReferralSourcesPage() {
       
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <ReferralsHubNav />
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
           <div className="space-y-3">
-             <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
                Referral Sources
              </h1>
             <p className="mt-2 text-sm font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl text-balance">
-               Master list for attribution (hospital, agency, family, web, other). Ties to <code className="rounded bg-white/50 dark:bg-white/10 px-1.5 py-0.5 text-[10px] uppercase font-bold tracking-widest text-slate-500 dark:text-slate-300">residents.referral_source_id</code> when set.
+               Master list for attribution (hospital, agency, family, web, other). Ties to <code className="rounded bg-white/50 dark:bg-white/10 px-1.5 py-0.5 text-[10px] uppercase font-bold tracking-wider text-slate-500 dark:text-slate-300">residents.referral_source_id</code> when set.
             </p>
           </div>
           <div>
             <Link
               href="/admin/referrals"
-              className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-widest text-xs tap-responsive bg-slate-100 hover:bg-slate-200 text-slate-900 shadow-lg flex items-center gap-2 border border-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100 dark:border-white/10")}
+              className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-wider text-xs tap-responsive bg-slate-100 hover:bg-slate-200 text-slate-900 shadow-lg flex items-center gap-2 border border-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100 dark:border-white/10")}
             >
               Back to Pipeline
             </Link>
@@ -169,12 +169,12 @@ export default function AdminReferralSourcesPage() {
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-           <div className="lg:col-span-1 border-brand-500/20 dark:border-brand-500/10 rounded-[2.5rem] bg-brand-50/50 dark:bg-brand-900/10 shadow-sm backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative h-fit order-last lg:order-first">
+           <div className="lg:col-span-1 border-brand-500/20 dark:border-brand-500/10 rounded-lg bg-brand-50/50 dark:bg-brand-900/10 shadow-sm overflow-hidden p-6 md:p-8 relative h-fit order-last lg:order-first">
              <div className="mb-6 border-b border-brand-200/50 dark:border-white/5 pb-4 flex flex-col gap-1">
-                <h3 className="text-xl font-display font-semibold text-brand-900 dark:text-brand-100 flex items-center gap-2">
+                <h3 className="text-xl font-semibold text-brand-900 dark:text-brand-100 flex items-center gap-2">
                   <Plus className="h-5 w-5 text-brand-500" /> Add Source
                 </h3>
-                <p className="text-[10px] uppercase tracking-widest font-bold text-brand-700/60 dark:text-brand-400/60">
+                <p className="text-[10px] uppercase tracking-wider font-bold text-brand-700/60 dark:text-brand-400/60">
                    Requires Owner or Org Admin
                 </p>
              </div>
@@ -187,16 +187,16 @@ export default function AdminReferralSourcesPage() {
                <form onSubmit={(e) => void handleCreate(e)} className="space-y-4">
                  <div className="space-y-4">
                    <div className="space-y-1.5 focus-within:text-brand-600 dark:focus-within:text-brand-400">
-                     <Label htmlFor="src-name" className="text-xs uppercase tracking-widest font-bold text-slate-500 inherit-text">Name</Label>
-                     <Input id="src-name" value={name} onChange={(e) => setName(e.target.value)} required className="h-12 bg-white/70 dark:bg-black/20 border-slate-200 dark:border-white/10 rounded-xl focus-visible:ring-brand-500" />
+                     <Label htmlFor="src-name" className="text-xs uppercase tracking-wider font-bold text-slate-500 inherit-text">Name</Label>
+                     <Input id="src-name" value={name} onChange={(e) => setName(e.target.value)} required className="h-12 bg-white/70 border-slate-200 dark:border-white/10 rounded-xl focus-visible:ring-brand-500" />
                    </div>
                    <div className="space-y-1.5 focus-within:text-brand-600 dark:focus-within:text-brand-400">
-                     <Label htmlFor="src-type" className="text-xs uppercase tracking-widest font-bold text-slate-500 inherit-text">Type</Label>
+                     <Label htmlFor="src-type" className="text-xs uppercase tracking-wider font-bold text-slate-500 inherit-text">Type</Label>
                      <select
                        id="src-type"
                        value={sourceType}
                        onChange={(e) => setSourceType(e.target.value)}
-                       className="flex h-12 w-full rounded-xl border border-slate-200 bg-white/70 px-3 py-1 text-sm outline-none focus-visible:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-500/50 dark:border-white/10 dark:bg-black/20 dark:text-slate-100"
+                       className="flex h-12 w-full rounded-xl border border-slate-200 bg-white/70 px-3 py-1 text-sm outline-none focus-visible:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-500/50 dark:border-white/10 dark:text-slate-100"
                      >
                        {SOURCE_TYPES.map((t) => (
                          <option key={t.value} value={t.value} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
@@ -224,7 +224,7 @@ export default function AdminReferralSourcesPage() {
                      {formError}
                    </div>
                  )}
-                 <Button type="submit" disabled={submitting} className="w-full h-12 rounded-xl font-bold tracking-widest uppercase text-[10px] bg-brand-600 hover:bg-brand-700 text-white shadow">
+                 <Button type="submit" disabled={submitting} className="w-full h-12 rounded-xl font-bold tracking-wider uppercase text-[10px] bg-brand-600 hover:bg-brand-700 text-white shadow">
                    {submitting ? (
                      <>
                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -238,12 +238,12 @@ export default function AdminReferralSourcesPage() {
              )}
            </div>
 
-           <div className="lg:col-span-2 glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-slate-50/50 dark:bg-white/[0.02] shadow-sm backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative">
+           <div className="lg:col-span-2 border-slate-200/60 dark:border-white/5 rounded-lg bg-slate-50/50 shadow-sm overflow-hidden p-6 md:p-8 relative">
               <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
-                <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1 flex items-center gap-2">
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1 flex items-center gap-2">
                    <Link2 className="h-5 w-5 text-indigo-500" /> Configured Sources
                 </h3>
-                <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-1 uppercase">Org & Facility Scoped</p>
+                <p className="text-[10px] font-mono tracking-wider text-slate-400 mt-1 uppercase">Org & Facility Scoped</p>
               </div>
 
               <div className="relative z-10 w-full overflow-hidden">
@@ -252,16 +252,16 @@ export default function AdminReferralSourcesPage() {
                      <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading Sources...
                   </div>
                 ) : loadError ? (
-                  <div className="p-6 rounded-[1.5rem] bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 font-medium text-sm">
+                  <div className="p-6 rounded-lg bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 font-medium text-sm">
                     {loadError}
                   </div>
                 ) : (
                   <>
                     <div className="hidden sm:grid grid-cols-[1.5fr_1fr_1fr_0.5fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10 text-left">
-                       <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Name</div>
-                       <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Type</div>
-                       <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Scope</div>
-                       <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Active</div>
+                       <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Name</div>
+                       <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Type</div>
+                       <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Scope</div>
+                       <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">Active</div>
                     </div>
 
                     <div className="space-y-3 mt-6 relative z-10">
@@ -275,32 +275,32 @@ export default function AdminReferralSourcesPage() {
                                 const TypeIcon = r.source_type === "hospital" ? Building2 : r.source_type === "agency" ? Server : r.source_type === "web" ? Globe : r.source_type === "family" ? User : HelpCircle;
                                 return (
                                  <MotionItem key={r.id}>
-                                    <div className="grid grid-cols-1 sm:grid-cols-[1.5fr_1fr_1fr_0.5fr] gap-4 sm:items-center p-5 rounded-2xl bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg transition-all duration-300 w-full outline-none">
+                                    <div className="grid grid-cols-1 sm:grid-cols-[1.5fr_1fr_1fr_0.5fr] gap-4 sm:items-center p-5 rounded-2xl bg-white border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg transition-all duration-300 w-full outline-none">
                                       <div className="flex flex-col">
-                                         <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Name</span>
+                                         <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Name</span>
                                          <span className="font-semibold text-base text-slate-900 dark:text-slate-100 tracking-tight leading-tight">{r.name}</span>
                                       </div>
                                       <div className="flex items-center gap-2">
-                                         <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400">Type:</span>
-                                         <Badge className="bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-white/10 dark:hover:bg-white/20 dark:text-slate-300 border-none shadow-none text-[10px] uppercase font-bold tracking-widest">
+                                         <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-slate-400">Type:</span>
+                                         <Badge className="bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-white/10 dark:hover:bg-white/20 dark:text-slate-300 border-none shadow-none text-[10px] uppercase font-bold tracking-wider">
                                             <TypeIcon className="w-3 h-3 mr-1.5 opacity-50" />
                                             {r.source_type.replace(/_/g, " ")}
                                          </Badge>
                                       </div>
                                       <div className="flex flex-col">
-                                         <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Scope</span>
+                                         <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Scope</span>
                                          <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
                                            {r.facility_id ? "This Facility" : "Organization"}
                                          </span>
                                       </div>
                                       <div className="flex flex-col sm:items-end">
-                                         <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Active</span>
+                                         <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Active</span>
                                          {r.is_active ? (
                                             <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 self-start sm:self-auto">
                                               <Check className="h-3.5 w-3.5" />
                                             </span>
                                          ) : (
-                                            <span className="inline-flex h-6 px-2.5 items-center justify-center rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-widest dark:bg-white/5 dark:text-slate-400 self-start sm:self-auto">
+                                            <span className="inline-flex h-6 px-2.5 items-center justify-center rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-wider dark:bg-white/5 dark:text-slate-400 self-start sm:self-auto">
                                               No
                                             </span>
                                          )}
