@@ -2,14 +2,17 @@
 
 import { T1Dashboard } from "@/design-system/templates";
 import type { DataTableColumn, DataTableRow } from "@/design-system/components/DataTable";
-import type { ScopeOption } from "@/design-system/components/ScopeSelector";
+import { PageShell } from "@/design-system/components/PageShell";
+import { ScopeSelector, type ScopeOption } from "@/design-system/components/ScopeSelector";
 
+import { useFacilityStore } from "@/hooks/useFacilityStore";
 import type { V2DashboardRowsSource } from "@/lib/v2-dashboard-loader";
 import type {
   V2DashboardId,
   V2DashboardPayload,
   V2DashboardTableRow,
 } from "@/lib/v2-dashboards";
+import { V2EmptyOnboarding } from "./V2EmptyOnboarding";
 
 const DASHBOARD_BASE_PATH: Record<V2DashboardId, string> = {
   "command-center": "/admin",
@@ -67,6 +70,12 @@ const COLUMNS: DataTableColumn<V2DashboardTableRow>[] = [
 export type W1DashboardClientProps = {
   payload: V2DashboardPayload;
   facilities: ScopeOption[];
+  /**
+   * Total org facilities visible under RLS (regardless of rollup data).
+   * Drives empty-install onboarding copy. Optional — falls back to
+   * `facilities.length` then to the shell facility store.
+   */
+  orgFacilityCount?: number;
   auditUpdatedAt: string;
   rowsSource: V2DashboardRowsSource;
   /** Optional `now` override for deterministic relative-time rendering in tests. */
@@ -76,6 +85,7 @@ export type W1DashboardClientProps = {
 export function W1DashboardClient({
   payload,
   facilities,
+  orgFacilityCount,
   auditUpdatedAt,
   rowsSource,
   now,
@@ -105,6 +115,52 @@ export function W1DashboardClient({
       : rowsSource === "unavailable"
         ? "Live facility rollup unavailable; no fallback rows shown"
         : null;
+
+  // "Empty install" — the underlying jobs haven't run yet, so every KPI is
+  // the seeded "—" placeholder, the alerts/action-queue/table arrays are
+  // empty, and the panels carry the "Live source pending; no fixture value
+  // is shown" subtitle. Render an onboarding card instead of the empty
+  // dashboard chrome so the page tells the operator what to do next.
+  const shellAvailableFacilities = useFacilityStore((s) => s.availableFacilities);
+  const allKpisEmpty = payload.kpis.every((k) => k.value === "—" || k.value == null || k.value === "");
+  const allTableRowsEmpty = payload.tableRows.length === 0;
+  const allAlertsEmpty = payload.alerts.length === 0;
+  const allActionsEmpty = payload.actionQueue.length === 0;
+  const isOrgEmpty = allKpisEmpty && allTableRowsEmpty && allAlertsEmpty && allActionsEmpty;
+
+  if (isOrgEmpty) {
+    // Onboarding copy needs the *org* facility count, not the rollup-derived
+    // `facilities` (which is 0 on empty installs because the view returns
+    // nothing yet). Source of truth: `orgFacilityCount` from the server
+    // loader (counts public.facilities under RLS). Fallback: the shell-level
+    // facility store, populated by the AdminShell's facility-scope dropdown.
+    const shellFacilityCount = shellAvailableFacilities.length;
+    const reportedFacilityCount = Math.max(
+      orgFacilityCount ?? 0,
+      facilities.length,
+      shellFacilityCount,
+    );
+    return (
+      <PageShell
+        title={payload.title}
+        subtitle={sourceNote ? `${payload.subtitle} · ${sourceNote}` : payload.subtitle}
+        scope={
+          <ScopeSelector
+            owners={[{ id: "current", label: "Current organization" }]}
+            groups={[]}
+            facilities={facilities.map((f) => ({ ...f, ownerId: "current" }))}
+          />
+        }
+        audit={{
+          auditHref: "/admin/audit-log",
+          updatedAt: auditUpdatedAt,
+          now,
+        }}
+      >
+        <V2EmptyOnboarding dashboardId={payload.id} facilityCount={reportedFacilityCount} />
+      </PageShell>
+    );
+  }
 
   return (
     <T1Dashboard<V2DashboardTableRow>

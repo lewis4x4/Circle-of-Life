@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { Activity, AlertTriangle, ArrowRight, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  Activity,
+  AlertTriangle,
+  ArrowRight,
+  CheckCircle2,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -226,6 +233,33 @@ export function ExecutiveOverviewPageClient({
     return formatted ?? dashEm;
   }
 
+  /**
+   * "Empty install" detection — an organization is connected and has facilities,
+   * but no operational data has flowed yet. We replace the dashboard body with
+   * a single onboarding card to avoid presenting a wall of "—" tiles, "0 OPEN"
+   * priority cards, and "STABLE 0/0/0/0" heat-map rows that read as broken UI.
+   *
+   * The trigger is intentionally strict: any one of metrics / alerts / per-
+   * facility metrics being non-empty means we have *something* worth showing,
+   * so we render the full dashboard instead.
+   */
+  const orgHasMetrics = Object.values(metrics).some(hasMetric);
+  const orgHasAlerts = alerts.length > 0;
+  const orgHasFacilityMetrics = facilities.some(
+    (f) => f.metrics && Object.values(f.metrics).some(hasMetric),
+  );
+  const orgHasAssurance = assuranceHeatMap.some(
+    (r) =>
+      r.activeWatches > 0 ||
+      r.pendingWatchApprovals > 0 ||
+      r.openEscalations > 0 ||
+      r.openIntegrityFlags > 0 ||
+      r.criticalSafetyResidents > 0 ||
+      r.highOrCriticalSafetyResidents > 0,
+  );
+  const isOrgEmpty =
+    !orgHasMetrics && !orgHasAlerts && !orgHasFacilityMetrics && !orgHasAssurance;
+
   return (
     <div className="flex flex-col gap-6">
       {/* Page header */}
@@ -246,6 +280,144 @@ export function ExecutiveOverviewPageClient({
         </div>
       </div>
 
+      {isOrgEmpty ? (
+        <ExecutiveEmptyOnboarding facilityCount={facilities.length} />
+      ) : (
+        <ExecutiveDashboardBody
+          metrics={metrics}
+          alerts={alerts}
+          facilities={facilities}
+          assuranceHeatMap={assuranceHeatMap}
+          assuranceTrends={assuranceTrends}
+          ownerPriorityCards={ownerPriorityCards}
+          roleConfig={roleConfig}
+          KPI_TILES={KPI_TILES}
+          hasMetric={hasMetric}
+          renderMetric={renderMetric}
+          assuranceBandClass={assuranceBandClass}
+          assuranceBandText={assuranceBandText}
+        />
+      )}
+    </div>
+  );
+}
+
+function ExecutiveEmptyOnboarding({ facilityCount }: { facilityCount: number }) {
+  const steps = [
+    {
+      title: "Run the executive KPI snapshot",
+      body: "Generates occupancy, billed MTD, labor cost %, incident rate, and survey readiness from live operational data.",
+      href: "/admin/executive/settings",
+      cta: "Open snapshot settings",
+    },
+    {
+      title: "Generate the first resident assurance rollup",
+      body: "Computes watch load, escalation pressure, and integrity flags per facility. Populates the heat map and 7-day trend chart.",
+      href: "/admin/rounding",
+      cta: "Open assurance hub",
+    },
+    {
+      title: "Configure executive alert rules",
+      body: "Define the thresholds that surface critical alerts in the watchlist (occupancy drop, labor overrun, severity-4 incident, etc.).",
+      href: "/admin/executive/alerts",
+      cta: "Open alerts",
+    },
+    {
+      title: "Set facility-level metric thresholds",
+      body: "Each facility can carry its own occupancy / labor / incident thresholds. The dashboard colors these once they're set.",
+      href: "/admin/settings/thresholds",
+      cta: "Open thresholds",
+    },
+  ] as const;
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-5 lg:p-6">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-[16px] font-semibold tracking-tight text-foreground">
+          You&rsquo;re connected, but no live data has landed yet
+        </h2>
+        <p className="max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
+          {facilityCount > 0
+            ? `${facilityCount} ${facilityCount === 1 ? "facility is" : "facilities are"} in scope. Once the executive snapshot runs and the first rollups complete, this dashboard fills in automatically.`
+            : "Add a facility to start collecting operational data. Once it's in scope, the executive snapshot and rollups will populate this dashboard."}
+        </p>
+      </div>
+
+      <ol className="mt-5 flex flex-col gap-3">
+        {steps.map((step, i) => (
+          <li key={step.title} className="flex items-start gap-3">
+            <span className="grid size-6 shrink-0 place-items-center rounded-full border border-border bg-secondary/60 text-[11px] font-medium tabular-nums text-foreground">
+              {i + 1}
+            </span>
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <div className="flex flex-col items-start gap-1.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
+                <h3 className="text-[14px] font-semibold tracking-tight text-foreground">
+                  {step.title}
+                </h3>
+                <Link
+                  href={step.href}
+                  className={cn(
+                    "inline-flex h-7 shrink-0 items-center gap-1 rounded-md border border-border bg-card px-2.5",
+                    "text-[12px] font-medium text-muted-foreground transition-colors",
+                    "hover:bg-secondary hover:text-foreground",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  )}
+                >
+                  {step.cta} <ArrowRight className="size-3" aria-hidden />
+                </Link>
+              </div>
+              <p className="text-[12px] leading-relaxed text-muted-foreground">
+                {step.body}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ol>
+
+      <div className="mt-5 flex items-center gap-2 border-t border-border/60 pt-4 text-[12px] text-muted-foreground">
+        <CheckCircle2 className="size-3.5 text-success" aria-hidden />
+        Connection status: organization is set up and reachable from the executive shell.
+      </div>
+    </div>
+  );
+}
+
+type DashboardBodyProps = {
+  metrics: Record<string, number>;
+  alerts: AlertWithFacility[];
+  facilities: ExecutiveOverviewFacility[];
+  assuranceHeatMap: ResidentAssuranceFacilityRollup[];
+  assuranceTrends: ResidentAssuranceFacilityTrendRow[];
+  ownerPriorityCards: Array<{ title: string; description: string; href: string; stat: string }>;
+  roleConfig: ReturnType<typeof getRoleDashboardConfig>;
+  KPI_TILES: ReadonlyArray<{
+    key: string;
+    label: string;
+    format: "pct" | "num" | "cur";
+    trend: "up" | "down" | null;
+  }>;
+  hasMetric: (v: number | null | undefined) => v is number;
+  renderMetric: (value: number | undefined, format: "pct" | "num" | "cur") => ReactNode;
+  assuranceBandClass: Record<ResidentAssuranceFacilityRollup["heatBand"], string>;
+  assuranceBandText: Record<ResidentAssuranceFacilityRollup["heatBand"], string>;
+};
+
+function ExecutiveDashboardBody({
+  metrics,
+  alerts,
+  facilities,
+  assuranceHeatMap,
+  assuranceTrends,
+  ownerPriorityCards,
+  roleConfig,
+  KPI_TILES,
+  hasMetric,
+  renderMetric,
+  assuranceBandClass,
+  assuranceBandText,
+}: DashboardBodyProps) {
+  return (
+    <>
       {/* KPI strip — 2/3/5 responsive */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         {KPI_TILES.map((tile) => {
@@ -675,7 +847,7 @@ export function ExecutiveOverviewPageClient({
           </div>
         )}
       </section>
-    </div>
+    </>
   );
 }
 

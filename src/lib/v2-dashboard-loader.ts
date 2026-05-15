@@ -14,6 +14,13 @@ export type V2DashboardRowsSource = "live" | "empty" | "unavailable";
 export type V2DashboardLoad = {
   payload: V2DashboardPayload;
   facilities: V2DashboardScopeOption[];
+  /**
+   * Total non-deleted facilities visible to the caller under RLS, regardless
+   * of whether they have rollup data yet. Drives the empty-install
+   * onboarding copy ("5 facilities are in scope") since `facilities` only
+   * contains rows the rollup view has data for and is 0 on empty installs.
+   */
+  orgFacilityCount: number;
   generatedAt: string;
   /**
    * "live" → table rows came from haven.vw_v2_facility_rollup.
@@ -85,6 +92,14 @@ export async function loadV2Dashboard(
     label: row.name,
   }));
 
+  // Org-wide facility count for the empty-install onboarding copy. Counts
+  // non-deleted facilities the caller can see via RLS. We `count: "exact"`
+  // with `head: true` so no rows transit the wire — just the count header.
+  const { count: orgFacilityCount } = await supabase
+    .from("facilities")
+    .select("id", { count: "exact", head: true })
+    .is("deleted_at", null);
+
   const generatedAt = new Date().toISOString();
 
   return {
@@ -94,6 +109,7 @@ export async function loadV2Dashboard(
       tableRows,
     },
     facilities,
+    orgFacilityCount: orgFacilityCount ?? 0,
     generatedAt,
     rowsSource,
   };

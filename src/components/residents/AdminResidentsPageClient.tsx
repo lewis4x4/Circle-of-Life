@@ -23,11 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 const DEFAULT_FILTERS = {
@@ -183,56 +179,57 @@ export function AdminResidentsPageClient({
   const highAcuityInViewCount = filteredRows.filter((row) => row.acuity === 3).length;
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={highAcuityInViewCount > 0} />
-      
-      <div className="relative z-10 space-y-6">
-        
-        {/* ─── MOONSHOT HEADER ─── */}
-        <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
-           <div className="space-y-2">
-             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
-                 SYS: Module 08
-             </div>
-             <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-                Resident Hub
-                {highAcuityInViewCount > 0 && <PulseDot colorClass="bg-rose-500" />}
-             </h1>
-             <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400">
-               Unified census view with acuity & ADL scope.
-             </p>
-           </div>
-           <div>
-              <Link href="/admin/residents/new" className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-widest text-xs tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg")} >
-                + Initialize Intake
-              </Link>
-           </div>
+    <div className="flex flex-col gap-6">
+      {/* Page header — flat, dense, no hero card. */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
+          <h1 className="inline-flex items-center gap-2 text-[20px] font-semibold tracking-tight text-foreground">
+            Resident hub
+            {highAcuityInViewCount > 0 && <PulseDot colorClass="bg-destructive" />}
+          </h1>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            Unified census view with acuity &amp; ADL scope.
+          </p>
         </div>
+        <Link
+          href="/admin/residents/new"
+          className={cn(
+            buttonVariants({ size: "default" }),
+            "h-9 px-3 text-[12px] font-medium",
+          )}
+        >
+          New resident
+        </Link>
+      </div>
 
-        <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
-          <div className="h-[160px] lg:col-span-2">
-            <V2Card hoverColor="emerald">
-              <MonolithicWatermark value={residentsInViewCount} className="text-emerald-900/5 dark:text-emerald-100/5 opacity-50" />
-              <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2 font-bold">
-                  <Users className="h-4 w-4" /> Residents In View
-                </h3>
-                <p className="text-6xl font-display font-medium tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-500 dark:from-white dark:to-slate-400 pb-1">{residentsInViewCount}</p>
-              </div>
-            </V2Card>
-          </div>
-          <div className="h-[160px] lg:col-span-2">
-            <V2Card hoverColor="rose" className="border-rose-500/20 dark:border-rose-500/20 shadow-[0_8px_30px_rgba(244,63,94,0.05)]">
-              <MonolithicWatermark value={highAcuityInViewCount} className="text-rose-600/5 dark:text-rose-400/5 opacity-50" />
-              <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2 font-bold">
-                  High Acuity In View
-                </h3>
-                <p className="text-6xl font-display font-medium tracking-tight text-rose-600 dark:text-rose-400 pb-1">{highAcuityInViewCount}</p>
-              </div>
-            </V2Card>
-          </div>
-        </KineticGrid>
+      {/* KPI strip — flat tiles, tabular-nums, no gradient text.
+          Two tiles → cap at max-w-2xl so they don't stretch into a wide
+          band on >= 2xl viewports. (When this strip grows to 4+ tiles,
+          drop the cap and use the 2/3/5 responsive grid.) */}
+      <div className="grid max-w-2xl grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-card p-4">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            <Users className="size-3.5" aria-hidden /> Residents in view
+          </span>
+          <span className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+            {residentsInViewCount}
+          </span>
+        </div>
+        <div className={cn(
+          "flex flex-col gap-1.5 rounded-lg border bg-card p-4",
+          highAcuityInViewCount > 0 ? "border-destructive/30" : "border-border",
+        )}>
+          <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            High acuity in view
+          </span>
+          <span className={cn(
+            "text-2xl font-semibold tabular-nums tracking-tight",
+            highAcuityInViewCount > 0 ? "text-destructive" : "text-foreground",
+          )}>
+            {highAcuityInViewCount}
+          </span>
+        </div>
+      </div>
 
       <AdminFilterBar
         searchValue={search}
@@ -343,127 +340,132 @@ export function AdminResidentsPageClient({
       ) : null}
 
       {!isLoading && !error && filteredRows.length > 0 ? (
-        <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-2xl backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative">
-           
-           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
-
-           <div className="hidden lg:grid grid-cols-[3fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
-             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Resident</div>
-             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Location</div>
-             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Acuity</div>
-             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">ADL Status</div>
-             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Current Status</div>
-             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Updated</div>
-           </div>
-
-           <div className="space-y-4 mt-6 relative z-10">
-             <MotionList className="space-y-4">
-             {filteredRows.map((resident) => (
-                <MotionItem key={resident.id}>
-                  <Link
-                    href={`/admin/residents/${resident.id}`}
-                    className="grid grid-cols-1 lg:grid-cols-[3fr_1fr_1fr_1fr_1fr_1fr] gap-4 items-center p-6 rounded-[1.8rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg dark:hover:bg-white/[0.05] transition-all duration-300 w-full cursor-pointer outline-none"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 flex flex-col items-center justify-center shrink-0">
-                        <span className="text-indigo-600 dark:text-indigo-400 font-bold text-sm">{resident.initials}</span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-xl font-display text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors tracking-tight">{resident.name}</span>
-                        <span className="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-[250px] truncate">{resident.careSummary}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-row justify-between lg:justify-start items-center">
-                      <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Location</span>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-semibold text-slate-900 dark:text-slate-200">{resident.room}</span>
-                        <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">{resident.unit}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex flex-row justify-between lg:justify-start items-center">
-                      <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Acuity</span>
-                      <AcuityBadge acuity={resident.acuity} />
-                    </div>
-
-                    <div className="flex flex-row justify-between lg:justify-start items-center">
-                      <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">ADL Status</span>
-                      <AdlBadge status={resident.adlStatus} />
-                    </div>
-
-                    <div className="flex flex-row justify-between lg:justify-start items-center">
-                      <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Current Status</span>
-                      <ResidentStatusBadge status={resident.status} />
-                    </div>
-
-                    <div className="flex flex-row justify-between lg:justify-end items-center">
-                      <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Updated</span>
-                      <span className="text-[11px] font-mono tracking-widest text-slate-500 dark:text-zinc-500 whitespace-nowrap">
-                        {resident.updatedAt}
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
+          <div className="hidden lg:grid grid-cols-[3fr_1fr_1fr_1fr_1fr_1fr] gap-4 border-b border-border/60 bg-secondary/30 px-4 py-2.5">
+            <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Resident</div>
+            <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Location</div>
+            <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Acuity</div>
+            <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">ADL</div>
+            <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Status</div>
+            <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground text-right">Updated</div>
+          </div>
+          <MotionList className="flex flex-col">
+            {filteredRows.map((resident) => (
+              <MotionItem key={resident.id}>
+                <Link
+                  href={`/admin/residents/${resident.id}`}
+                  className={cn(
+                    "grid grid-cols-1 lg:grid-cols-[3fr_1fr_1fr_1fr_1fr_1fr] gap-3 items-center px-4 py-2.5",
+                    "border-b border-border/60 last:border-b-0",
+                    "transition-colors hover:bg-secondary/40",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+                  )}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="grid size-8 shrink-0 place-items-center rounded-full bg-secondary text-[11px] font-semibold text-foreground">
+                      {resident.initials}
+                    </span>
+                    <div className="flex flex-col leading-tight min-w-0">
+                      <span className="truncate text-[13px] font-medium text-foreground">
+                        {resident.name}
+                      </span>
+                      <span className="truncate text-[11px] text-muted-foreground">
+                        {resident.careSummary}
                       </span>
                     </div>
-                  </Link>
-                </MotionItem>
-             ))}
-             </MotionList>
-           </div>
+                  </div>
+
+                  <div className="flex flex-row items-center justify-between lg:justify-start">
+                    <span className="lg:hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Location</span>
+                    <div className="flex flex-col leading-tight">
+                      <span className="text-[13px] font-medium text-foreground">{resident.room}</span>
+                      <span className="text-[11px] text-muted-foreground tabular-nums">{resident.unit}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-row items-center justify-between lg:justify-start">
+                    <span className="lg:hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Acuity</span>
+                    <AcuityBadge acuity={resident.acuity} />
+                  </div>
+
+                  <div className="flex flex-row items-center justify-between lg:justify-start">
+                    <span className="lg:hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground">ADL</span>
+                    <AdlBadge status={resident.adlStatus} />
+                  </div>
+
+                  <div className="flex flex-row items-center justify-between lg:justify-start">
+                    <span className="lg:hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Status</span>
+                    <ResidentStatusBadge status={resident.status} />
+                  </div>
+
+                  <div className="flex flex-row items-center justify-between lg:justify-end">
+                    <span className="lg:hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Updated</span>
+                    <span className="text-[11px] tabular-nums text-muted-foreground whitespace-nowrap">
+                      {resident.updatedAt}
+                    </span>
+                  </div>
+                </Link>
+              </MotionItem>
+            ))}
+          </MotionList>
         </div>
       ) : null}
-      </div>
     </div>
   );
 }
 
+const CHIP_BASE =
+  "inline-flex h-5 items-center rounded border px-1.5 text-[10px] font-medium uppercase tracking-wider";
+
 function AcuityBadge({ acuity }: { acuity: Acuity }) {
   if (acuity === 3) {
     return (
-      <Badge className="border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400 gap-1.5 flex items-center shadow-[inset_0_0_10px_rgba(244,63,94,0.1)] px-2 py-0.5 text-[10px] uppercase font-bold tracking-widest">
-        <PulseDot className="h-1.5 w-1.5" colorClass="bg-rose-500" />
+      <span className={cn(CHIP_BASE, "gap-1 border-destructive/30 bg-destructive/10 text-destructive")}>
+        <PulseDot className="h-1.5 w-1.5" colorClass="bg-destructive" />
         Acuity 3
-      </Badge>
+      </span>
     );
   }
   if (acuity === 2) {
-    return <Badge className="border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 text-[10px] uppercase font-bold tracking-widest">Acuity 2</Badge>;
+    return <span className={cn(CHIP_BASE, "border-warning/30 bg-warning/10 text-warning")}>Acuity 2</span>;
   }
-  return <Badge className="border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-[10px] uppercase font-bold tracking-widest">Acuity 1</Badge>;
+  return <span className={cn(CHIP_BASE, "border-success/30 bg-success/10 text-success")}>Acuity 1</span>;
 }
 
 function AdlBadge({ status }: { status: AdlStatus }) {
   const map: Record<AdlStatus, { label: string; className: string }> = {
     independent: {
       label: "Independent",
-      className: "border-slate-500/20 bg-slate-500/10 text-slate-600 dark:text-slate-400",
+      className: "border-border bg-secondary/60 text-muted-foreground",
     },
     assisted: {
       label: "Assisted",
-      className: "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400",
+      className: "border-info/30 bg-info/10 text-info",
     },
     dependent: {
       label: "Dependent",
-      className: "border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-400",
+      className: "border-warning/30 bg-warning/10 text-warning",
     },
   };
 
-  return <Badge className={cn("px-2 py-0.5 text-[10px] uppercase font-bold tracking-widest", map[status].className)}>{map[status].label}</Badge>;
+  return <span className={cn(CHIP_BASE, map[status].className)}>{map[status].label}</span>;
 }
 
 function ResidentStatusBadge({ status }: { status: ResidencyStatus }) {
   const map: Record<ResidencyStatus, { label: string; className: string }> = {
     active: {
-      label: "In Facility",
-      className: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+      label: "In facility",
+      className: "border-success/30 bg-success/10 text-success",
     },
     hospital: {
       label: "Hospital",
-      className: "border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400",
+      className: "border-destructive/30 bg-destructive/10 text-destructive",
     },
     loa: {
       label: "LOA",
-      className: "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+      className: "border-warning/30 bg-warning/10 text-warning",
     },
   };
 
-  return <Badge className={cn("px-2 py-0.5 text-[10px] uppercase font-bold tracking-widest", map[status].className)}>{map[status].label}</Badge>;
+  return <span className={cn(CHIP_BASE, map[status].className)}>{map[status].label}</span>;
 }
