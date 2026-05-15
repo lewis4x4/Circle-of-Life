@@ -55,3 +55,19 @@ jobs:
             --include="*PageClient.tsx" \
             --exclude-dir=node_modules \
             || (echo "::error::gradient text on PageClient"; exit 1)
+
+      - name: "Hand-rolled wizard step indicators (use WizardSteps primitive)"
+        # Catches dynamic ad-hoc step indicators outside the canonical
+        # primitive at `src/components/ui/wizard-steps.tsx`. Scoped to
+        # interpolated/variable forms (`Step ${n} of`, `step-${current}`,
+        # `currentStep` paired with `totalSteps`) — literal 2-step modal
+        # status text inside a ternary is intentionally NOT caught; the
+        # rule targets indicator chrome, not status strings.
+        # See docs/ui-audit/DESIGN_PRINCIPLES.md §11.
+        run: |
+          ! grep -rnE 'Step\s+\$\{[^}]+\}\s+of\b|step-\$\{(current|active|step|stepIndex)\b|currentStep[^,)]*of[^,)]*totalSteps' \
+            src/ \
+            --include="*.tsx" \
+            --exclude="src/components/ui/wizard-steps.tsx" \
+            --exclude-dir=node_modules \
+            || (echo "::error::hand-rolled step indicator found — use <WizardSteps>/<WizardStep> from @/components/ui/wizard-steps"; exit 1)

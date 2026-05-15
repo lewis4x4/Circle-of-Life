@@ -135,6 +135,7 @@ async function runArAgingSummary(params: ExecuteParams): Promise<ReportExecution
     });
   }
 
+  // Metric keys — scanner false positive, see .gitleaksignore.
   const summary: ReportSummaryRow[] = [
     { metricKey: "arOpenInvoiceCount", value: invRows.length },
     { metricKey: "arTotalBalanceCents", value: total },
@@ -252,6 +253,7 @@ async function runStaffingCoverageByShift(params: ExecuteParams): Promise<Report
   const shiftAssignmentRowCount = rows.length;
 
   return {
+    // Metric keys — scanner false positive, see .gitleaksignore.
     summary: [
       { metricKey: "shiftAssignmentsScheduled14d", value: shiftAssignmentRowCount },
       { metricKey: "coverageDayShifts14d", value: dayCt },
@@ -572,6 +574,7 @@ async function runSurveyReadinessSummary(params: ExecuteParams): Promise<ReportE
   const deficienciesClosedInWindow = count ?? 0;
 
   return {
+    // Metric keys — scanner false positive, see .gitleaksignore.
     summary: [
       { metricKey: "openSurveyDeficiencies", value: kpi.compliance.openSurveyDeficiencies },
       { metricKey: "surveyDeficienciesClosed30d", value: deficienciesClosedInWindow },
