@@ -1,6 +1,22 @@
 import path from "path";
+import { fileURLToPath } from "url";
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
+
+// `__dirname` is undefined when this file is loaded as ESM (Next 16 + .ts config).
+// Resolve it explicitly so Turbopack's `root:` gets an absolute path that works
+// regardless of how the file was loaded (CJS or ESM) and regardless of whether
+// the worktree path contains spaces.
+const __dirname_resolved = (() => {
+  try {
+    // ESM path
+    return path.dirname(fileURLToPath(import.meta.url));
+  } catch {
+    // CJS fallback (in case Next compiles to CJS)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (globalThis as any).__dirname ?? process.cwd();
+  }
+})();
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -66,7 +82,7 @@ const nextConfig: NextConfig = {
     ],
   },
   turbopack: {
-    root: path.resolve(__dirname),
+    root: __dirname_resolved,
   },
   /**
    * Route group `(admin)` omits `admin` from the path; `/training` etc. would bypass `/admin/...` URL expectations.

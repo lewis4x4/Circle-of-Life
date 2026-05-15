@@ -118,8 +118,10 @@ export function PilotFeedbackLauncher({
         size={compact ? "icon-sm" : "sm"}
         className={compact ? "" : "rounded-xl"}
         onClick={() => setOpen(true)}
+        aria-label={compact ? "Pilot feedback" : undefined}
+        title={compact ? "Pilot feedback" : undefined}
       >
-        {compact ? <Flag className="h-4 w-4" /> : <><MessageSquareWarning className="mr-2 h-4 w-4" />Feedback</>}
+        {compact ? <Flag className="h-4 w-4" aria-hidden /> : <><MessageSquareWarning className="mr-2 h-4 w-4" aria-hidden />Feedback</>}
       </Button>
 
       <Dialog open={open} onOpenChange={(next) => {

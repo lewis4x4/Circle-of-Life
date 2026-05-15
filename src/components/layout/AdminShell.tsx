@@ -4,62 +4,63 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { 
-  Bell,
-  Loader2,
-  LogOut,
-  Search,
-  Settings,
-  UserCircle2,
-  ChevronDown, 
-  Check,
-  LayoutDashboard,
-  Users,
-  UserPlus,
-  Home,
-  DoorOpen,
-  ShieldAlert,
-  UserCog,
-  CreditCard,
-  ClipboardCheck,
-  ClipboardList,
-  Award,
-  GraduationCap,
-  Utensils,
-  Bus,
-  CalendarDays,
-  ArrowLeftRight,
-  Clock,
-  Banknote,
+import {
   Activity,
-  Pill,
-  Biohazard,
-  Scale,
-  Landmark,
-  Umbrella,
-  Truck,
-  MessageCircle,
-  Heart,
-  Sun,
-  Moon,
-  Monitor,
-  BarChart3,
-  LineChart,
-  FileText,
-  Smartphone,
-  Star,
   ActivitySquare,
-  BriefcaseMedical,
-  Stethoscope,
-  Building2,
-  ShieldCheck,
-  Zap,
-  Hotel,
-  House,
+  ArrowLeftRight,
+  Award,
+  Banknote,
+  Bell,
+  Biohazard,
   BookOpen,
   BrainCircuit,
+  BriefcaseMedical,
+  Building2,
+  CalendarDays,
+  Check,
+  ChevronDown,
+  ChevronsRight,
+  ClipboardCheck,
+  ClipboardList,
+  Clock,
+  CreditCard,
+  DoorOpen,
+  FileText,
+  GraduationCap,
+  Heart,
+  Home,
+  Hotel,
+  House,
+  Landmark,
+  LayoutDashboard,
+  LineChart,
+  Loader2,
+  LogOut,
+  Menu,
+  MessageCircle,
   MessageSquare,
+  Monitor,
+  Moon,
+  NotebookPen,
+  Pill,
   Radar,
+  Scale,
+  Search,
+  Settings,
+  ShieldAlert,
+  ShieldCheck,
+  Smartphone,
+  Star,
+  Stethoscope,
+  Sun,
+  Truck,
+  Umbrella,
+  UserCircle2,
+  UserCog,
+  UserPlus,
+  Users,
+  Utensils,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -75,9 +76,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SurveyVisitModeBar } from "@/components/compliance/SurveyVisitModeBar";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
+import { cn } from "@/lib/utils";
 
 type AdminNavItem = {
   key: string;
@@ -85,6 +95,12 @@ type AdminNavItem = {
   label: string;
   enabled: boolean;
   icon: LucideIcon;
+};
+
+type AdminNavGroup = {
+  group: string;
+  icon: LucideIcon;
+  items: AdminNavItem[];
 };
 
 function getRoleHomeLabel(appRole: string, roleLabel: string): string {
@@ -122,7 +138,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     Date.now() - facilitiesFetchedAt < FACILITY_LIST_TTL_MS;
   const visibleFacilities = hasFreshOwnedFacilityCache ? availableFacilities : [];
   const selectedFacilityIsValid =
-    selectedFacilityId == null || visibleFacilities.some((facility) => facility.id === selectedFacilityId);
+    selectedFacilityId == null ||
+    visibleFacilities.some((facility) => facility.id === selectedFacilityId);
   const safeSelectedFacilityId = selectedFacilityIsValid ? selectedFacilityId : null;
   const currentFacility = visibleFacilities.find((f) => f.id === safeSelectedFacilityId);
 
@@ -132,6 +149,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const currentUserIdRef = useRef<string | null>(currentUserId);
   const roleConfig = useMemo(() => getRoleDashboardConfig(appRole), [appRole]);
   const [signingOut, setSigningOut] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     currentUserIdRef.current = currentUserId;
@@ -178,7 +197,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       st.availableFacilities.length > 0 &&
       Date.now() - st.facilitiesFetchedAt < FACILITY_LIST_TTL_MS
     ) {
-      if (st.selectedFacilityId != null && !st.availableFacilities.some((f) => f.id === st.selectedFacilityId)) {
+      if (
+        st.selectedFacilityId != null &&
+        !st.availableFacilities.some((f) => f.id === st.selectedFacilityId)
+      ) {
         setSelectedFacility(null);
         syncSelectedFacilityCookie(null);
       }
@@ -200,7 +222,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     setFacilitiesLoadFailed(false);
     try {
       const list = await fetchAdminFacilityOptions();
-      if (facilityRefreshRequestRef.current !== requestId || currentUserIdRef.current !== currentUserId) {
+      if (
+        facilityRefreshRequestRef.current !== requestId ||
+        currentUserIdRef.current !== currentUserId
+      ) {
         return;
       }
 
@@ -211,7 +236,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         syncSelectedFacilityCookie(null);
       }
     } catch (err) {
-      if (facilityRefreshRequestRef.current !== requestId || currentUserIdRef.current !== currentUserId) {
+      if (
+        facilityRefreshRequestRef.current !== requestId ||
+        currentUserIdRef.current !== currentUserId
+      ) {
         return;
       }
 
@@ -219,7 +247,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       clearFacilityCache();
       setFacilitiesLoadFailed(true);
     } finally {
-      if (facilityRefreshRequestRef.current === requestId && currentUserIdRef.current === currentUserId) {
+      if (
+        facilityRefreshRequestRef.current === requestId &&
+        currentUserIdRef.current === currentUserId
+      ) {
         setFacilitiesLoading(false);
       }
     }
@@ -230,18 +261,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   }, [refreshFacilities]);
 
   useEffect(() => {
-    if (authLoading) {
-      return;
-    }
-
+    if (authLoading) return;
     syncSelectedFacilityCookie(currentUserId == null ? null : safeSelectedFacilityId);
   }, [authLoading, currentUserId, safeSelectedFacilityId]);
 
-  const handleFacilityScopeChange = useCallback((facilityId: string | null) => {
-    setSelectedFacility(facilityId);
-    syncSelectedFacilityCookie(facilityId);
-    router.refresh();
-  }, [router, setSelectedFacility]);
+  const handleFacilityScopeChange = useCallback(
+    (facilityId: string | null) => {
+      setSelectedFacility(facilityId);
+      syncSelectedFacilityCookie(facilityId);
+      router.refresh();
+    },
+    [router, setSelectedFacility],
+  );
 
   const facilityControlLoading = authLoading || facilitiesLoading;
   const facilityTriggerLabel = facilityControlLoading
@@ -253,94 +284,102 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const allNavGroups = useMemo(() => [
-    {
-      group: "Command",
-      icon: Zap,
-      items: [
-        { key: "dashboard", href: "/admin", label: "Triage Inbox", enabled: true, icon: LayoutDashboard },
-        { key: "executive", href: "/admin/executive", label: "Executive summary", enabled: true, icon: BarChart3 },
-        { key: "reports", href: "/admin/reports", label: "Reports hub", enabled: true, icon: FileText },
-        { key: "facilities", href: "/admin/facilities", label: "Facilities", enabled: true, icon: Hotel },
-      ]
-    },
-    {
-      group: "Pipeline",
-      icon: ActivitySquare,
-      items: [
-        { key: "referrals", href: "/admin/referrals", label: "Referrals CRM", enabled: true, icon: UserPlus },
-        { key: "admissions", href: "/admin/admissions", label: "Recent admissions", enabled: true, icon: Home },
-        { key: "discharge", href: "/admin/discharge", label: "Discharge management", enabled: true, icon: DoorOpen },
-        { key: "family-portal", href: "/admin/family-portal", label: "Family Portal connections", enabled: true, icon: Heart },
-        { key: "family-messages", href: "/admin/family-messages", label: "Family Messages triage", enabled: true, icon: MessageCircle },
-      ]
-    },
-    {
-      group: "Clinical Ops",
-      icon: Stethoscope,
-      items: [
-        { key: "residents", href: "/admin/residents", label: "Resident roster", enabled: true, icon: Users },
-        { key: "care-plans", href: "/admin/care-plans/reviews-due", label: "Care plan reviews", enabled: true, icon: ClipboardList },
-        { key: "assessments", href: "/admin/assessments/overdue", label: "Clinical Desk (Assessments)", enabled: true, icon: ClipboardCheck },
-        { key: "rounding", href: "/admin/rounding", label: "Smart Rounding", enabled: true, icon: Clock },
-        { key: "med-tech", href: "/med-tech", label: "Med-Tech cockpit", enabled: true, icon: Pill },
-        { key: "medication-errors", href: "/admin/medications/errors", label: "Medication errors", enabled: true, icon: ShieldAlert },
-        { key: "medications", href: "/admin/medications", label: "Medication management", enabled: true, icon: Pill },
-        { key: "dietary", href: "/admin/dietary", label: "Dietary & Nutrition", enabled: true, icon: Utensils },
-        { key: "transportation", href: "/admin/transportation", label: "Transportation log", enabled: true, icon: Bus },
-      ]
-    },
-    {
-      group: "Quality & Risk",
-      icon: ShieldCheck,
-      items: [
-        { key: "risk", href: "/admin/risk", label: "Risk command", enabled: true, icon: Radar },
-        { key: "incidents-new", href: "/admin/incidents/new", label: "Report Incident", enabled: true, icon: ShieldAlert },
-        { key: "incidents", href: "/admin/incidents", label: "Incident queue", enabled: true, icon: ShieldAlert },
-        { key: "infection", href: "/admin/infection-control", label: "Infection Control", enabled: true, icon: Biohazard },
-        { key: "compliance", href: "/admin/compliance", label: "Compliance & Safety", enabled: true, icon: Scale },
-        { key: "quality", href: "/admin/quality", label: "Quality Metrics", enabled: true, icon: LineChart },
-        { key: "reputation", href: "/admin/reputation", label: "Reputation tracker", enabled: true, icon: Star },
-      ]
-    },
-    {
-      group: "Knowledge",
-      icon: BrainCircuit,
-      items: [
-        { key: "kb-chat", href: "/admin/knowledge", label: "Ask Knowledge Base", enabled: true, icon: MessageSquare },
-        { key: "kb-admin", href: "/admin/knowledge/admin", label: "KB Admin", enabled: true, icon: BookOpen },
-      ]
-    },
-    {
-      group: "Workforce",
-      icon: BriefcaseMedical,
-      items: [
-        { key: "staff", href: "/admin/staff", label: "Staff Roster", enabled: true, icon: UserCog },
-        { key: "schedules", href: "/admin/schedules", label: "Schedules", enabled: true, icon: CalendarDays },
-        { key: "shift-swaps", href: "/admin/shift-swaps", label: "Shift swaps", enabled: true, icon: ArrowLeftRight },
-        { key: "staffing", href: "/admin/staffing", label: "Staffing alerts", enabled: true, icon: Activity },
-        { key: "certifications", href: "/admin/certifications", label: "Certifications tracker", enabled: true, icon: Award },
-        { key: "training", href: "/admin/training", label: "Training hub", enabled: true, icon: GraduationCap },
-        { key: "time-records", href: "/admin/time-records", label: "Time records", enabled: true, icon: Clock },
-        { key: "payroll", href: "/admin/payroll", label: "Payroll integrations", enabled: true, icon: Banknote },
-        { key: "users", href: "/admin/settings/users", label: "User Management", enabled: true, icon: Users },
-      ]
-    },
-    {
-      group: "Finance",
-      icon: Building2,
-      items: [
-        { key: "billing", href: "/admin/billing", label: "Billing & AR", enabled: true, icon: CreditCard },
-        { key: "finance", href: "/admin/finance", label: "Finance Hub", enabled: true, icon: Landmark },
-        { key: "vendors", href: "/admin/vendors", label: "Vendors & AP", enabled: true, icon: Truck },
-        { key: "insurance", href: "/admin/insurance", label: "Insurance", enabled: true, icon: Umbrella },
-        { key: "feedback", href: "/admin/feedback", label: "Pilot feedback", enabled: true, icon: MessageSquare },
-        { key: "notifications", href: "/admin/settings/notifications", label: "Settings", enabled: true, icon: Smartphone },
-      ]
-    }
-  ], []);
+  // Close mobile nav when route changes
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [pathname]);
 
-  const navGroups = useMemo(() => {
+  const allNavGroups = useMemo<AdminNavGroup[]>(
+    () => [
+      {
+        group: "Command",
+        icon: Zap,
+        items: [
+          { key: "dashboard", href: "/admin", label: "Triage Inbox", enabled: true, icon: LayoutDashboard },
+          { key: "executive", href: "/admin/executive", label: "Executive summary", enabled: true, icon: LineChart },
+          { key: "reports", href: "/admin/reports", label: "Reports hub", enabled: true, icon: FileText },
+          { key: "facilities", href: "/admin/facilities", label: "Facilities", enabled: true, icon: Hotel },
+        ],
+      },
+      {
+        group: "Pipeline",
+        icon: ActivitySquare,
+        items: [
+          { key: "referrals", href: "/admin/referrals", label: "Referrals CRM", enabled: true, icon: UserPlus },
+          { key: "admissions", href: "/admin/admissions", label: "Recent admissions", enabled: true, icon: Home },
+          { key: "discharge", href: "/admin/discharge", label: "Discharge management", enabled: true, icon: DoorOpen },
+          { key: "family-portal", href: "/admin/family-portal", label: "Family Portal", enabled: true, icon: Heart },
+          { key: "family-messages", href: "/admin/family-messages", label: "Family Messages", enabled: true, icon: MessageCircle },
+        ],
+      },
+      {
+        group: "Clinical Ops",
+        icon: Stethoscope,
+        items: [
+          { key: "residents", href: "/admin/residents", label: "Resident roster", enabled: true, icon: Users },
+          { key: "care-plans", href: "/admin/care-plans/reviews-due", label: "Care plan reviews", enabled: true, icon: ClipboardList },
+          { key: "assessments", href: "/admin/assessments/overdue", label: "Clinical Desk", enabled: true, icon: ClipboardCheck },
+          { key: "rounding", href: "/admin/rounding", label: "Smart Rounding", enabled: true, icon: Clock },
+          { key: "med-tech", href: "/med-tech", label: "Med-Tech cockpit", enabled: true, icon: Pill },
+          { key: "medication-errors", href: "/admin/medications/errors", label: "Medication errors", enabled: true, icon: ShieldAlert },
+          { key: "medications", href: "/admin/medications", label: "Medication management", enabled: true, icon: Pill },
+          { key: "dietary", href: "/admin/dietary", label: "Dietary & Nutrition", enabled: true, icon: Utensils },
+          { key: "transportation", href: "/admin/transportation", label: "Transportation", enabled: true, icon: Truck },
+        ],
+      },
+      {
+        group: "Quality & Risk",
+        icon: ShieldCheck,
+        items: [
+          { key: "risk", href: "/admin/risk", label: "Risk command", enabled: true, icon: Radar },
+          { key: "incidents-new", href: "/admin/incidents/new", label: "Report incident", enabled: true, icon: ShieldAlert },
+          { key: "incidents", href: "/admin/incidents", label: "Incident queue", enabled: true, icon: ShieldAlert },
+          { key: "infection", href: "/admin/infection-control", label: "Infection Control", enabled: true, icon: Biohazard },
+          { key: "compliance", href: "/admin/compliance", label: "Compliance & Safety", enabled: true, icon: Scale },
+          { key: "quality", href: "/admin/quality", label: "Quality metrics", enabled: true, icon: LineChart },
+          { key: "reputation", href: "/admin/reputation", label: "Reputation", enabled: true, icon: Star },
+        ],
+      },
+      {
+        group: "Knowledge",
+        icon: BrainCircuit,
+        items: [
+          { key: "kb-chat", href: "/admin/knowledge", label: "Ask knowledge base", enabled: true, icon: MessageSquare },
+          { key: "kb-admin", href: "/admin/knowledge/admin", label: "KB admin", enabled: true, icon: BookOpen },
+        ],
+      },
+      {
+        group: "Workforce",
+        icon: BriefcaseMedical,
+        items: [
+          { key: "staff", href: "/admin/staff", label: "Staff roster", enabled: true, icon: UserCog },
+          { key: "schedules", href: "/admin/schedules", label: "Schedules", enabled: true, icon: CalendarDays },
+          { key: "shift-swaps", href: "/admin/shift-swaps", label: "Shift swaps", enabled: true, icon: ArrowLeftRight },
+          { key: "staffing", href: "/admin/staffing", label: "Staffing alerts", enabled: true, icon: Activity },
+          { key: "certifications", href: "/admin/certifications", label: "Certifications", enabled: true, icon: Award },
+          { key: "training", href: "/admin/training", label: "Training", enabled: true, icon: GraduationCap },
+          { key: "time-records", href: "/admin/time-records", label: "Time records", enabled: true, icon: Clock },
+          { key: "payroll", href: "/admin/payroll", label: "Payroll", enabled: true, icon: Banknote },
+          { key: "users", href: "/admin/settings/users", label: "User management", enabled: true, icon: Users },
+        ],
+      },
+      {
+        group: "Finance",
+        icon: Building2,
+        items: [
+          { key: "billing", href: "/admin/billing", label: "Billing & AR", enabled: true, icon: CreditCard },
+          { key: "finance", href: "/admin/finance", label: "Finance hub", enabled: true, icon: Landmark },
+          { key: "vendors", href: "/admin/vendors", label: "Vendors & AP", enabled: true, icon: Truck },
+          { key: "insurance", href: "/admin/insurance", label: "Insurance", enabled: true, icon: Umbrella },
+          { key: "feedback", href: "/admin/feedback", label: "Pilot feedback", enabled: true, icon: MessageSquare },
+          { key: "notifications", href: "/admin/settings/notifications", label: "Settings", enabled: true, icon: Smartphone },
+        ],
+      },
+    ],
+    [],
+  );
+
+  const navGroups = useMemo<AdminNavGroup[]>(() => {
     const visibleKeySet = roleConfig.visibleItemKeys ? new Set(roleConfig.visibleItemKeys) : null;
     const baseGroups = allNavGroups
       .filter((group) => roleConfig.visibleGroups.includes(group.group))
@@ -348,7 +387,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         ...group,
         items: visibleKeySet
           ? group.items.filter((item) => visibleKeySet.has(item.key))
-          : group.items.filter((item) => (roleConfig.route === "/admin" ? true : item.key !== "dashboard")),
+          : group.items.filter((item) =>
+              roleConfig.route === "/admin" ? true : item.key !== "dashboard",
+            ),
       }))
       .filter((group) => group.items.length > 0);
 
@@ -368,9 +409,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       ? "Command"
       : baseGroups[0]?.group;
 
-    if (!preferredHomeGroup) {
-      return baseGroups;
-    }
+    if (!preferredHomeGroup) return baseGroups;
 
     const existingGroup = baseGroups.find((group) => group.group === preferredHomeGroup);
     if (existingGroup) {
@@ -380,260 +419,410 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     }
 
     const groupTemplate = allNavGroups.find((group) => group.group === preferredHomeGroup);
-    if (!groupTemplate) {
-      return baseGroups;
-    }
+    if (!groupTemplate) return baseGroups;
 
     return [{ ...groupTemplate, items: [homeItem] }, ...baseGroups];
-  }, [allNavGroups, appRole, roleConfig.roleLabel, roleConfig.route, roleConfig.visibleGroups, roleConfig.visibleItemKeys]);
+  }, [
+    allNavGroups,
+    appRole,
+    roleConfig.roleLabel,
+    roleConfig.route,
+    roleConfig.visibleGroups,
+    roleConfig.visibleItemKeys,
+  ]);
 
-  // Determine active group for styling the top-nav pill
-  const activeGroup = useMemo(() => {
-    let active = "";
-    navGroups.forEach(g => {
-      g.items.forEach(item => {
-        if (pathname === item.href || pathname.startsWith(item.href + "/") && item.href !== "/admin") {
-          active = g.group;
-        }
-        if (item.href === "/admin" && pathname === "/admin") {
-          active = g.group;
-        }
-      });
+  const isItemActive = useCallback(
+    (href: string) => {
+      if (href === "/admin") return pathname === "/admin";
+      return pathname === href || pathname.startsWith(`${href}/`);
+    },
+    [pathname],
+  );
+
+  const toggleGroup = useCallback((groupName: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupName)) next.delete(groupName);
+      else next.add(groupName);
+      return next;
     });
-    return active;
-  }, [pathname, navGroups]);
+  }, []);
 
-  return (
-    <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-[#050505] font-sans transition-colors duration-300">
-      
-      {/* ─── MOONSHOT UNIFIED TOP NAVIGATION ───────────────────────────────────── */}
-      <header className="h-16 flex items-center justify-between px-4 lg:px-8 border-b border-slate-200 dark:border-white/5 bg-white/70 dark:bg-black/40 backdrop-blur-xl z-50 sticky top-0 shrink-0">
-        
-        <div className="flex items-center gap-6">
-          {/* Logo / Brand */}
-          <Link
-            href={roleConfig.route}
-            className="flex items-center gap-2 tap-responsive shrink-0 rounded-lg outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-indigo-500/80 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#050505]"
-            aria-label={`Haven — go to ${roleConfig.roleLabel.toLowerCase()} home`}
-          >
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.4)]">
-              <span className="text-white font-display font-bold text-lg leading-none mt-0.5">H</span>
+  const renderNav = (className?: string) => (
+    <nav
+      className={cn(
+        "flex-1 overflow-y-auto px-2 py-3 [scrollbar-gutter:stable]",
+        className,
+      )}
+      aria-label="Primary"
+    >
+      <div className="flex flex-col gap-4">
+        {navGroups.map((group) => {
+          const GroupIcon = group.icon;
+          const collapsed = collapsedGroups.has(group.group);
+          return (
+            <div key={group.group} className="flex flex-col">
+              <button
+                type="button"
+                onClick={() => toggleGroup(group.group)}
+                className={cn(
+                  "group/header flex h-7 w-full items-center gap-2 rounded-md px-2",
+                  "text-[11px] font-medium uppercase tracking-wider text-muted-foreground",
+                  "transition-colors hover:text-foreground",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
+                )}
+                aria-expanded={!collapsed}
+              >
+                <GroupIcon className="size-3.5 opacity-70 transition-opacity group-hover/header:opacity-100" />
+                <span className="flex-1 text-left">{group.group}</span>
+                <ChevronDown
+                  className={cn(
+                    "size-3 opacity-50 transition-transform",
+                    collapsed && "-rotate-90",
+                  )}
+                />
+              </button>
+              {!collapsed && (
+                <ul className="mt-1 flex flex-col gap-px">
+                  {group.items.map((item) => {
+                    if (!item.enabled) return null;
+                    const ItemIcon = item.icon;
+                    const active = isItemActive(item.href);
+                    return (
+                      <li key={item.key}>
+                        <Link
+                          href={item.href}
+                          className={cn(
+                            "group/item flex h-8 items-center gap-2.5 rounded-md px-2 text-[13px]",
+                            "transition-colors duration-100",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                            active
+                              ? "bg-secondary text-foreground font-medium"
+                              : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
+                          )}
+                        >
+                          <ItemIcon
+                            className={cn(
+                              "size-4 shrink-0 transition-colors",
+                              active ? "text-foreground" : "text-muted-foreground group-hover/item:text-foreground",
+                            )}
+                          />
+                          <span className="truncate">{item.label}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
-            <span className="text-xl font-semibold font-display text-slate-900 dark:text-white tracking-tight hidden md:block">
-              Haven
+          );
+        })}
+      </div>
+    </nav>
+  );
+
+  const renderBrand = () => (
+    <Link
+      href={roleConfig.route}
+      className={cn(
+        "flex h-14 shrink-0 items-center gap-2 border-b border-border/60 px-4",
+        "text-foreground transition-opacity hover:opacity-90",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+      )}
+      aria-label={`Haven — go to ${roleConfig.roleLabel.toLowerCase()} home`}
+    >
+      <span
+        aria-hidden
+        className="grid size-7 place-items-center rounded-md bg-foreground text-background"
+      >
+        <span className="text-[13px] font-semibold leading-none">H</span>
+      </span>
+      <span className="text-[14px] font-semibold tracking-tight">Haven</span>
+      <span className="ml-auto rounded border border-border/60 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        {roleConfig.roleLabel}
+      </span>
+    </Link>
+  );
+
+  const renderFacilityScope = () => (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        data-testid="admin-facility-filter-trigger"
+        aria-label={
+          facilitiesLoadFailed
+            ? "Facility filter — failed to load list, open for retry"
+            : facilityControlLoading
+              ? "Facility filter — loading"
+              : `Facility filter — ${
+                  safeSelectedFacilityId === null ? "all facilities" : currentFacility?.name ?? "selected facility"
+                }`
+        }
+        className={cn(
+          "mx-2 my-2 flex h-9 items-center gap-2 rounded-md border border-border/60 bg-card px-2.5",
+          "text-[13px] font-medium text-foreground transition-colors",
+          "hover:bg-secondary/60",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        )}
+      >
+        <Building2 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+        <span className="flex-1 truncate text-left">{facilityTriggerLabel}</span>
+        <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-[244px] p-1">
+        <DropdownMenuItem
+          onClick={() => handleFacilityScopeChange(null)}
+          className="flex h-8 cursor-pointer items-center justify-between rounded-md px-2 text-[13px]"
+        >
+          <span className="flex items-center gap-2">
+            <Building2 className="size-3.5 text-muted-foreground" />
+            All facilities
+          </span>
+          {safeSelectedFacilityId === null && <Check className="size-3.5 text-success" />}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator className="my-1" />
+        {facilitiesLoadFailed && (
+          <div className="px-2 py-2 text-[12px] text-warning">
+            Could not load facilities.
+            <button
+              onClick={() => void refreshFacilities()}
+              className="ml-1 underline-offset-2 hover:underline"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+        {visibleFacilities.map((facility) => (
+          <DropdownMenuItem
+            key={facility.id}
+            onClick={() => handleFacilityScopeChange(facility.id)}
+            className="flex h-8 cursor-pointer items-center justify-between rounded-md px-2 text-[13px]"
+          >
+            <span className="truncate pr-2">{facility.name}</span>
+            {safeSelectedFacilityId === facility.id && (
+              <Check className="size-3.5 shrink-0 text-success" />
+            )}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
+  const renderSidebarFooter = () => (
+    <div className="shrink-0 border-t border-border/60 p-2">
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          className={cn(
+            "flex h-10 w-full items-center gap-2 rounded-md px-2 text-left",
+            "transition-colors hover:bg-secondary/60",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          )}
+          aria-label="Account menu"
+        >
+          <span className="grid size-7 place-items-center rounded-full bg-secondary text-foreground">
+            <UserCircle2 className="size-4" />
+          </span>
+          <span className="flex flex-1 flex-col leading-tight min-w-0">
+            <span className="truncate text-[12px] font-medium text-foreground">
+              {sessionEmail ?? "Signed in"}
             </span>
-            <span className="hidden 2xl:inline-flex items-center rounded-full border border-slate-200/70 bg-slate-100/60 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-400">
+            <span className="truncate text-[11px] text-muted-foreground">
               {roleConfig.roleLabel}
             </span>
-          </Link>
-
-          {/* Module Switcher (The Mega Menu) */}
-          <nav className="hidden xl:flex items-center gap-1 bg-slate-100/50 dark:bg-white/[0.03] p-1 rounded-2xl border border-slate-200/50 dark:border-white/5">
-             {navGroups.map((group) => {
-               const isActive = activeGroup === group.group;
-               const GroupIcon = group.icon;
-
-               return (
-                 <DropdownMenu key={group.group}>
-                   <DropdownMenuTrigger className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all outline-none tap-responsive ${
-                     isActive 
-                       ? "bg-white dark:bg-white/10 text-indigo-600 dark:text-white shadow-sm border border-slate-200 dark:border-white/10" 
-                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-white/5"
-                   }`}>
-                     <GroupIcon className={`w-4 h-4 ${isActive ? 'text-indigo-500 dark:text-indigo-400' : ''}`} />
-                     {group.group}
-                     <ChevronDown className="w-3.5 h-3.5 opacity-50 ml-1" />
-                   </DropdownMenuTrigger>
-                   <DropdownMenuContent align="start" sideOffset={12} className="w-[320px] rounded-[1.5rem] p-3 dark:bg-zinc-950/95 dark:backdrop-blur-3xl dark:border-white/10 shadow-2xl">
-                      <div className="mb-2 px-3 pt-2">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-zinc-500">{group.group} Hub</span>
-                      </div>
-                      <div className="grid grid-cols-1 gap-1">
-                        {group.items.map((item) => {
-                           const ItemIcon = item.icon;
-                           const isItemActive = pathname === item.href || (pathname.startsWith(item.href + "/") && item.href !== "/admin") || (item.href === "/admin" && pathname === "/admin");
-                           
-                           if (!item.enabled) return null;
-
-                           return (
-                             <DropdownMenuItem
-                               key={item.key}
-                               className="p-0"
-                               nativeButton={false}
-                               render={
-                                 <Link
-                                   href={item.href}
-                                   className={`flex items-center gap-3 rounded-xl px-3 py-3 w-full cursor-pointer transition-all outline-none ${
-                                     isItemActive
-                                       ? "bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white"
-                                       : "text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-white/5"
-                                   }`}
-                                 >
-                                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isItemActive ? "bg-indigo-100 dark:bg-white/10" : "bg-slate-100 dark:bg-white/5"}`}>
-                                     <ItemIcon className={`w-4 h-4 ${isItemActive ? "text-indigo-600 dark:text-indigo-300" : "text-slate-500 dark:text-zinc-400"}`} />
-                                   </div>
-                                   <span className="text-sm font-medium tracking-wide">{item.label}</span>
-                                 </Link>
-                               }
-                             />
-                           );
-                        })}
-                      </div>
-                   </DropdownMenuContent>
-                 </DropdownMenu>
-               );
-             })}
-          </nav>
-        </div>
-        
-        {/* Right Nav Utilities */}
-        <div className="flex items-center gap-3">
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              data-testid="admin-facility-filter-trigger"
-              aria-label={
-                facilitiesLoadFailed
-                  ? "Facility filter — failed to load list, open for retry"
-                  : facilityControlLoading
-                    ? "Facility filter — loading"
-                    : `Facility filter — ${safeSelectedFacilityId === null ? "all facilities" : currentFacility?.name ?? "selected facility"}`
-              }
-              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 tap-responsive focus-visible:outline-none transition-all"
+          </span>
+          <ChevronsRight className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" side="top" className="w-56 p-1">
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              className="flex h-8 cursor-pointer items-center gap-2 rounded-md px-2 text-[13px]"
+              onClick={() => router.push("/admin/settings/notifications")}
             >
-              <Building2 className="w-4 h-4 text-slate-500 dark:text-zinc-400" aria-hidden />
-              <span className="text-sm font-medium text-slate-900 dark:text-slate-200 truncate max-w-[140px] md:max-w-[200px]">
-                {facilityTriggerLabel}
-              </span>
-              <ChevronDown className="h-4 w-4 text-slate-400 dark:text-zinc-500 ml-1" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[260px] rounded-[1.2rem] p-2 dark:bg-zinc-950/95 dark:backdrop-blur-xl dark:border-white/10">
-              <DropdownMenuItem
-                onClick={() => handleFacilityScopeChange(null)}
-                className="flex cursor-pointer items-center justify-between font-medium rounded-lg p-3 dark:focus:bg-white/5"
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded bg-slate-100 dark:bg-white/10 flex items-center justify-center"><Building2 className="w-3 h-3" /></div>
-                  All facilities
-                </div>
-                {safeSelectedFacilityId === null && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
-              </DropdownMenuItem>
-
-              <DropdownMenuSeparator className="dark:bg-white/10 my-1" />
-
-              {facilitiesLoadFailed && (
-                <div className="px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
-                  Could not load facilities. Check login and Supabase access.
-                  <button onClick={() => void refreshFacilities()} className="mt-2 text-indigo-400 underline">Retry</button>
-                </div>
+              <Settings className="size-3.5 text-muted-foreground" /> Account settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="my-1" />
+            <DropdownMenuItem
+              variant="destructive"
+              className="flex h-8 cursor-pointer items-center gap-2 rounded-md px-2 text-[13px]"
+              disabled={signingOut}
+              onClick={() => void handleSignOut()}
+            >
+              {signingOut ? (
+                <>
+                  <Loader2 className="size-3.5 animate-spin" />
+                  Signing out…
+                </>
+              ) : (
+                <>
+                  <LogOut className="size-3.5" />
+                  Sign out
+                </>
               )}
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
 
-              {visibleFacilities.map((facility) => (
-                <DropdownMenuItem 
-                  key={facility.id}
-                  onClick={() => handleFacilityScopeChange(facility.id)}
-                  className="flex justify-between items-center cursor-pointer rounded-lg p-3 dark:focus:bg-white/5"
-                >
-                  <span className="truncate pr-2">{facility.name}</span>
-                  {safeSelectedFacilityId === facility.id && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+  return (
+    <div className="flex h-dvh w-full overflow-hidden bg-background text-foreground antialiased">
+      {/* Desktop sidebar */}
+      <aside
+        className={cn(
+          "hidden lg:flex w-[260px] shrink-0 flex-col border-r border-border/60 bg-card/40",
+        )}
+        aria-label="Sidebar"
+      >
+        {renderBrand()}
+        {renderFacilityScope()}
+        {renderNav()}
+        {renderSidebarFooter()}
+      </aside>
 
-          <div className="h-8 w-px bg-slate-200 dark:bg-white/10 mx-1 hidden md:block" />
+      {/* Main column */}
+      <div className="flex flex-1 flex-col min-w-0">
+        {/* Topbar */}
+        <header
+          className={cn(
+            "flex h-14 shrink-0 items-center gap-2 border-b border-border/60 bg-background/95 px-3 lg:px-5",
+            "backdrop-blur supports-[backdrop-filter]:bg-background/80",
+            "sticky top-0 z-30",
+          )}
+        >
+          {/* Mobile hamburger — single Sheet hosts both trigger and drawer */}
+          <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+            <SheetTrigger
+              className={cn(
+                "grid size-8 place-items-center rounded-md text-muted-foreground lg:hidden",
+                "transition-colors hover:bg-secondary hover:text-foreground",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              )}
+              aria-label="Open navigation"
+            >
+              <Menu className="size-4" aria-hidden />
+            </SheetTrigger>
+            <SheetContent
+              side="left"
+              className="w-[280px] border-r border-border bg-card p-0"
+              showCloseButton={false}
+            >
+              <SheetHeader className="sr-only">
+                <SheetTitle>Primary navigation</SheetTitle>
+              </SheetHeader>
+              <div className="flex h-full flex-col">
+                {renderBrand()}
+                {renderFacilityScope()}
+                {renderNav()}
+                {renderSidebarFooter()}
+              </div>
+            </SheetContent>
+          </Sheet>
 
+          {/* Search */}
           <Link
             href="/admin/search"
-            className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-zinc-300 tap-responsive transition-colors"
+            className={cn(
+              "ml-1 hidden md:flex h-8 max-w-[440px] flex-1 items-center gap-2 rounded-md border border-border/60 bg-card",
+              "px-2.5 text-[12px] text-muted-foreground transition-colors",
+              "hover:border-border hover:bg-secondary/60 hover:text-foreground",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            )}
             aria-label="Search"
           >
-            <Search className="w-5 h-5" />
+            <Search className="size-3.5 shrink-0" />
+            <span className="truncate">Search residents, staff, incidents…</span>
+            <kbd className="ml-auto rounded border border-border/60 bg-secondary/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+              ⌘K
+            </kbd>
           </Link>
 
-          <PilotFeedbackLauncher shellKind="admin" facilityId={safeSelectedFacilityId} compact />
-          
-          <button className="relative p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-zinc-300 tap-responsive transition-colors" aria-label="Notifications">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-rose-500 border-2 border-white dark:border-[#050505]"></span>
-          </button>
-          
-          {/* Global Theme Toggle */}
-          <DropdownMenu>
-            <DropdownMenuTrigger className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-zinc-300 tap-responsive outline-none transition-colors">
-              {mounted && theme === "dark" ? <Moon className="w-5 h-5" /> : mounted && theme === "light" ? <Sun className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-36 rounded-xl dark:bg-zinc-950 dark:border-white/10">
-              <DropdownMenuItem onClick={() => setTheme("light")} className="cursor-pointer rounded-lg dark:focus:bg-white/5">
-                <Sun className="mr-2 h-4 w-4" /> Light
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme("dark")} className="cursor-pointer rounded-lg dark:focus:bg-white/5">
-                <Moon className="mr-2 h-4 w-4" /> Dark
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme("system")} className="cursor-pointer rounded-lg dark:focus:bg-white/5">
-                <Monitor className="mr-2 h-4 w-4" /> System
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="ml-auto flex items-center gap-0.5">
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Link
+                    href="/admin/search"
+                    aria-label="Search"
+                    className={cn(
+                      "grid size-8 place-items-center rounded-md text-muted-foreground md:hidden",
+                      "transition-colors hover:bg-secondary hover:text-foreground",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    )}
+                  />
+                }
+              >
+                <Search className="size-4" aria-hidden />
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Search (⌘K)</TooltipContent>
+            </Tooltip>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              className="ml-2 rounded-full p-1 tap-responsive outline-none border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/40 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
-              aria-label="Account menu"
-            >
-              <UserCircle2 className="h-7 w-7 text-slate-600 dark:text-zinc-300" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64 rounded-xl dark:border-white/10 dark:bg-zinc-950 p-2">
-              <DropdownMenuGroup>
-                {sessionEmail && (
-                  <div className="px-3 py-2 mb-2 flex flex-col gap-1 border-b border-slate-100 dark:border-white/10">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Signed In</span>
-                    <span className="truncate font-medium text-sm text-slate-900 dark:text-zinc-200">
-                      {sessionEmail}
-                    </span>
-                  </div>
+            <PilotFeedbackLauncher shellKind="admin" facilityId={safeSelectedFacilityId} compact />
+
+            <Tooltip>
+              <TooltipTrigger
+                aria-label="Notifications"
+                className={cn(
+                  "relative grid size-8 place-items-center rounded-md text-muted-foreground",
+                  "transition-colors hover:bg-secondary hover:text-foreground",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 )}
+              >
+                <Bell className="size-4" aria-hidden />
+                <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-destructive" aria-hidden />
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Notifications</TooltipContent>
+            </Tooltip>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className={cn(
+                  "grid size-8 place-items-center rounded-md text-muted-foreground outline-none",
+                  "transition-colors hover:bg-secondary hover:text-foreground",
+                  "focus-visible:ring-2 focus-visible:ring-ring",
+                )}
+                aria-label="Toggle theme"
+              >
+                {mounted && theme === "dark" ? (
+                  <Moon className="size-4" />
+                ) : mounted && theme === "light" ? (
+                  <Sun className="size-4" />
+                ) : (
+                  <Monitor className="size-4" />
+                )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-36 p-1">
                 <DropdownMenuItem
-                  className="cursor-pointer rounded-lg dark:focus:bg-white/5 py-2.5"
-                  onClick={() => router.push("/admin/settings/notifications")}
+                  onClick={() => setTheme("light")}
+                  className="flex h-8 cursor-pointer items-center gap-2 rounded-md px-2 text-[13px]"
                 >
-                  <Settings className="mr-2 h-4 w-4" />
-                  Account Settings
+                  <Sun className="size-3.5" /> Light
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  variant="destructive"
-                  className="cursor-pointer rounded-lg dark:focus:bg-white/5 py-2.5 mt-1"
-                  disabled={signingOut}
-                  onClick={() => void handleSignOut()}
+                  onClick={() => setTheme("dark")}
+                  className="flex h-8 cursor-pointer items-center gap-2 rounded-md px-2 text-[13px]"
                 >
-                  {signingOut ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin text-rose-500" />
-                      <span className="text-rose-500 font-medium">Signing out…</span>
-                    </>
-                  ) : (
-                    <>
-                      <LogOut className="mr-2 h-4 w-4 text-rose-500" />
-                      <span className="text-rose-500 font-medium">Sign out securely</span>
-                    </>
-                  )}
+                  <Moon className="size-3.5" /> Dark
                 </DropdownMenuItem>
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </header>
-      
-      {/* Mobile Nav Warning / Trigger could go here in future */}
-      <SurveyVisitModeBar />
+                <DropdownMenuItem
+                  onClick={() => setTheme("system")}
+                  className="flex h-8 cursor-pointer items-center gap-2 rounded-md px-2 text-[13px]"
+                >
+                  <Monitor className="size-3.5" /> System
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 overflow-auto relative">
-        <div className="relative z-10 w-full h-full p-6 lg:p-10 max-w-[1600px] mx-auto">
-          {children}
-        </div>
-      </main>
+        <SurveyVisitModeBar />
 
+        {/* Scrolling main */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="mx-auto w-full max-w-[1600px] px-5 py-5 lg:px-8 lg:py-6 2xl:px-10 2xl:py-8">
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

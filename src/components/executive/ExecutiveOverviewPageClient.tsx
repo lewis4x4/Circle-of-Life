@@ -1,16 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Activity, AlertTriangle, ArrowRight, CheckCircle2, TrendingDown, TrendingUp } from "lucide-react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { Activity, AlertTriangle, ArrowRight, TrendingDown, TrendingUp } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 
 import { ExecutiveHubNav } from "@/app/(admin)/executive/executive-hub-nav";
 
@@ -167,420 +163,505 @@ export function ExecutiveOverviewPageClient({
 
   // View helpers
   const hasMetric = (val: number | null | undefined): val is number => typeof val === "number" && Number.isFinite(val);
-  const formatPct = (val?: number | null) => hasMetric(val) ? `${(val * 100).toFixed(1)}%` : "--%";
-  const formatNum = (val?: number | null) => hasMetric(val) ? Math.round(val).toLocaleString() : "--";
-  const formatCur = (val?: number | null) => hasMetric(val) ? `$${(val / 100).toLocaleString()}` : "--";
+  const formatPct = (val?: number | null) => hasMetric(val) ? `${(val * 100).toFixed(1)}%` : null;
+  const formatNum = (val?: number | null) => hasMetric(val) ? Math.round(val).toLocaleString() : null;
+  const formatCur = (val?: number | null) => hasMetric(val) ? `$${(val / 100).toLocaleString()}` : null;
   const ownerPriorityCards = [
     {
-      title: "Executive Alerts",
-      description: "Work high-severity operational exceptions across the portfolio first.",
+      title: "Executive alerts",
+      description: "High-severity portfolio exceptions to clear first.",
       href: "/admin/executive/alerts",
       stat: `${alerts.length} open`,
     },
     {
-      title: "Finance Hub",
-      description: "Review billed revenue, labor pressure, and monthly financial movement.",
+      title: "Finance hub",
+      description: "Billed revenue, labor pressure, monthly financials.",
       href: "/admin/finance",
-      stat: formatCur(metrics["rev_mtd"]),
+      stat: formatCur(metrics["rev_mtd"]) ?? "—",
     },
     {
-      title: "Insurance & Risk",
-      description: "Keep claims, renewals, and facility risk posture visible at leadership level.",
+      title: "Insurance & risk",
+      description: "Claims, renewals, and portfolio risk posture.",
       href: "/admin/insurance",
       stat: `${alerts.filter((alert) => alert.category === "risk").length} risk alerts`,
     },
     {
-      title: "High-Severity Incidents",
-      description: "Jump directly into open incident exceptions without entering the facility-operator backlog first.",
+      title: "High-severity incidents",
+      description: "Open incident exceptions, leadership-level only.",
       href: "/admin/incidents?scope=open&severity=level_4",
-      stat: `${alerts.filter((alert) => alert.category === "incident").length} related alerts`,
+      stat: `${alerts.filter((alert) => alert.category === "incident").length} related`,
     },
   ];
 
   const assuranceBandClass: Record<ResidentAssuranceFacilityRollup["heatBand"], string> = {
-    stable: "border-emerald-200 dark:border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/10",
-    watch: "border-amber-200 dark:border-amber-500/20 bg-amber-50/50 dark:bg-amber-950/10",
-    elevated: "border-orange-200 dark:border-orange-500/20 bg-orange-50/50 dark:bg-orange-950/10",
-    critical: "border-rose-200 dark:border-rose-500/20 bg-rose-50/60 dark:bg-rose-950/15",
+    stable: "border-success/20",
+    watch: "border-warning/30",
+    elevated: "border-warning/40",
+    critical: "border-destructive/30",
   };
 
   const assuranceBandText: Record<ResidentAssuranceFacilityRollup["heatBand"], string> = {
-    stable: "text-emerald-700 dark:text-emerald-300",
-    watch: "text-amber-700 dark:text-amber-300",
-    elevated: "text-orange-700 dark:text-orange-300",
-    critical: "text-rose-700 dark:text-rose-300",
+    stable: "text-success",
+    watch: "text-warning",
+    elevated: "text-warning",
+    critical: "text-destructive",
   };
 
+  const KPI_TILES = [
+    { key: "occ_pt", label: "Occupancy", format: "pct" as const, trend: "up" as const },
+    { key: "rev_mtd", label: "Billed MTD", format: "cur" as const, trend: null },
+    { key: "labor_pct", label: "Labor cost %", format: "pct" as const, trend: "down" as const },
+    { key: "inc_rate", label: "Incidents / 1k days", format: "num" as const, trend: null },
+    { key: "survey_rd", label: "Survey readiness", format: "pct" as const, trend: null },
+  ];
+
+  const dashEm = <span className="text-muted-foreground/60 tabular-nums">—</span>;
+
+  function renderMetric(value: number | undefined, format: "pct" | "num" | "cur"): ReactNode {
+    if (!hasMetric(value)) return dashEm;
+    const formatted =
+      format === "pct" ? formatPct(value) :
+      format === "cur" ? formatCur(value) :
+      formatNum(value);
+    return formatted ?? dashEm;
+  }
+
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-8 pb-12 overflow-x-hidden">
-      <AmbientMatrix hasCriticals={alerts.some(a => a.severity === 'critical')} />
-      
-      <div className="relative z-10 space-y-10 max-w-[1600px] mx-auto">
-        <header>
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-200/50 dark:border-white/10 pb-8 mb-4 pt-4">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-4">
-                 SYS: Command Center
+    <div className="flex flex-col gap-6">
+      {/* Page header */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-[20px] font-semibold tracking-tight text-foreground">
+            Executive intelligence
+          </h1>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            Enterprise portfolio overview
+          </p>
+          <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
+            {roleConfig.roleLabel} home — portfolio movement, exception pressure, leadership decisions only.
+          </p>
+        </div>
+        <div className="hidden md:block">
+          <ExecutiveHubNav />
+        </div>
+      </div>
+
+      {/* KPI strip — 2/3/5 responsive */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+        {KPI_TILES.map((tile) => {
+          const value = metrics[tile.key];
+          const present = hasMetric(value);
+          return (
+            <div
+              key={tile.key}
+              className="flex flex-col gap-1.5 rounded-lg border border-border bg-card p-4"
+            >
+              <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                {tile.label}
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+                  {renderMetric(value, tile.format)}
+                </span>
+                {present && tile.trend === "up" && <TrendingUp className="size-3.5 text-success" />}
+                {present && tile.trend === "down" && <TrendingDown className="size-3.5 text-warning" />}
               </div>
-              <h2 className="text-4xl md:text-5xl font-display font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-                Executive Intelligence
-              </h2>
-              <p className="text-sm md:text-base text-slate-500 dark:text-zinc-400 mt-2 font-medium tracking-wide">
-                Enterprise Portfolio Overview
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Owner priority lanes */}
+      <section className="flex flex-col gap-3">
+        <div>
+          <h2 className="text-[14px] font-semibold tracking-tight text-foreground">Enterprise priorities</h2>
+          <p className="mt-0.5 text-[12px] text-muted-foreground">
+            {roleConfig.firstScreenPriority.join(" · ").replace(/_/g, " ")}
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {ownerPriorityCards.map((card) => (
+            <Link
+              key={card.title}
+              href={card.href}
+              className={cn(
+                "group flex flex-col gap-2 rounded-lg border border-border bg-card p-4",
+                "transition-colors hover:bg-secondary/40",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              )}
+            >
+              <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                {card.stat}
+              </span>
+              <h3 className="text-[14px] font-semibold tracking-tight text-foreground">
+                {card.title}
+              </h3>
+              <p className="text-[12px] leading-relaxed text-muted-foreground">
+                {card.description}
               </p>
-              <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-zinc-400">
-                {roleConfig.roleLabel} home: see portfolio movement, exception pressure, and the next leadership decision without dropping into facility-operator queue noise.
+              <span className="mt-auto inline-flex items-center gap-1 text-[12px] font-medium text-foreground transition-colors group-hover:text-foreground/80">
+                Open lane <ArrowRight className="size-3" />
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Watchlist (4/12) + Portfolio Health table (8/12) */}
+      <div className="grid grid-cols-12 gap-6">
+        {/* Watchlist */}
+        <div className="col-span-12 lg:col-span-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h2 className="inline-flex items-center gap-2 text-[14px] font-semibold tracking-tight text-foreground">
+              <AlertTriangle className="size-4 text-warning" /> Executive watchlist
+            </h2>
+            <span className="text-[11px] tabular-nums text-muted-foreground">
+              {alerts.length} {alerts.length === 1 ? "alert" : "alerts"}
+            </span>
+          </div>
+
+          {alerts.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border bg-card px-4 py-6">
+              <p className="text-[13px] font-medium text-foreground">No critical alerts.</p>
+              <p className="mt-1 text-[12px] text-muted-foreground">
+                Nothing requires leadership intervention right now.
               </p>
             </div>
-            <div className="hidden md:block">
-              <ExecutiveHubNav />
-            </div>
-          </div>
-        </header>
-
-        <section className="space-y-4">
-          <div className="flex items-center justify-between gap-4 border-b border-slate-200/50 dark:border-white/10 pb-4">
-            <div>
-              <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white">Enterprise Priorities</h3>
-              <p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">
-                {roleConfig.firstScreenPriority.join(" · ").replace(/_/g, " ")}
-              </p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {ownerPriorityCards.map((card) => (
-              <Link
-                key={card.title}
-                href={card.href}
-                className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg dark:border-white/5 dark:bg-white/[0.03] dark:hover:border-indigo-500/30"
-              >
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">
-                  {card.stat}
-                </p>
-                <h4 className="mt-3 text-lg font-semibold text-slate-900 dark:text-white">{card.title}</h4>
-                <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-zinc-400">{card.description}</p>
-                <div className="mt-4 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-300">
-                  Open lane
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        {/* Top Command Strip */}
-        <KineticGrid className="grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 mb-8" staggerMs={50}>
-          <div className="h-[180px]">
-             <V2Card hoverColor="emerald" className="border-emerald-500/20 shadow-[0_8px_30px_rgba(16,185,129,0.05)]">
-               <Sparkline colorClass="text-emerald-500" variant={2} />
-               <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-                 <h3 className="text-xs font-bold tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
-                   Occupancy
-                 </h3>
-                 <div className="flex items-end gap-3 mt-auto">
-                   <p className="text-5xl font-display font-medium tracking-tight text-emerald-600 dark:text-emerald-400">{formatPct(metrics['occ_pt'])}</p>
-                   {hasMetric(metrics['occ_pt']) && <TrendingUp className="h-5 w-5 text-emerald-500 mb-1.5" />}
-                 </div>
-               </div>
-             </V2Card>
-          </div>
-          <div className="h-[180px]">
-             <V2Card hoverColor="indigo" className="border-indigo-500/20 shadow-[0_8px_30px_rgba(99,102,241,0.05)]">
-               <Sparkline colorClass="text-indigo-500" variant={1} />
-               <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-                 <h3 className="text-xs font-bold tracking-widest uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
-                   Billed MTD
-                 </h3>
-                 <p className="text-4xl font-display font-medium tracking-tight text-indigo-600 dark:text-indigo-400 mt-auto">{formatCur(metrics['rev_mtd'])}</p>
-               </div>
-             </V2Card>
-          </div>
-          <div className="h-[180px]">
-             <V2Card hoverColor="amber" className="border-amber-500/20 shadow-[0_8px_30px_rgba(245,158,11,0.05)]">
-               <Sparkline colorClass="text-amber-500" variant={3} />
-               <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-                 <h3 className="text-xs font-bold tracking-widest uppercase text-amber-600 dark:text-amber-500 flex items-center gap-2">
-                   Labor Cost %
-                 </h3>
-                 <div className="flex items-end gap-3 mt-auto">
-                   <p className="text-5xl font-display font-medium tracking-tight text-amber-600 dark:text-amber-500">{formatPct(metrics['labor_pct'])}</p>
-                   {hasMetric(metrics['labor_pct']) && <TrendingDown className="h-5 w-5 text-amber-500 mb-1.5" />}
-                 </div>
-               </div>
-             </V2Card>
-          </div>
-          <div className="h-[180px]">
-             <V2Card hoverColor="rose" className="border-rose-500/20 shadow-[0_8px_30px_rgba(244,63,94,0.05)]">
-               <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-                 <h3 className="text-xs font-bold tracking-widest uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2">
-                   Incidents / 1k Days
-                 </h3>
-                 <p className="text-5xl font-display font-medium tracking-tight text-rose-600 dark:text-rose-400 mt-auto">{formatNum(metrics['inc_rate'])}</p>
-               </div>
-             </V2Card>
-          </div>
-          <div className="h-[180px]">
-             <V2Card hoverColor="blue" className="border-blue-500/20 shadow-[0_8px_30px_rgba(59,130,246,0.05)]">
-               <Sparkline colorClass="text-blue-500" variant={2} />
-               <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-                 <h3 className="text-xs font-bold tracking-widest uppercase text-blue-600 dark:text-blue-400 flex items-center gap-2">
-                   Survey Readiness
-                 </h3>
-                 <p className="text-5xl font-display font-medium tracking-tight text-blue-600 dark:text-blue-400 mt-auto">{formatPct(metrics['survey_rd'])}</p>
-               </div>
-             </V2Card>
-          </div>
-        </KineticGrid>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* ─── EXACT MATCH OF TRIAGE DASHBOARD ACTION QUEUE PATTERN ─── */}
-          <div className="lg:col-span-1 space-y-6">
-            <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white flex items-center gap-3 border-b border-slate-200/50 dark:border-white/10 pb-4">
-              <AlertTriangle className="h-5 w-5 text-amber-500" /> Executive Watchlist
-            </h3>
-            
-            {alerts.length === 0 ? (
-               <div className="p-10 border-2 border-dashed border-slate-200 dark:border-white/5 rounded-[2rem] text-center flex flex-col items-center justify-center bg-white/40 dark:bg-white/[0.01]">
-                 <CheckCircle2 className="h-12 w-12 text-emerald-500 mb-4 opacity-50" />
-                 <p className="text-sm font-medium text-slate-500 dark:text-zinc-500">No critical alerts requiring leadership intervention.</p>
-               </div>
-            ) : (
-              <div className="space-y-4">
-                {alerts.map((alert) => {
-                  const isCritical = alert.severity === 'critical';
-                  return (
-                    <div 
-                      key={alert.id} 
-                      className={cn(
-                        "p-6 flex flex-col gap-4 rounded-[1.5rem] border backdrop-blur-3xl shadow-sm transition-all",
-                        isCritical 
-                           ? "bg-rose-50/80 dark:bg-rose-950/20 border-rose-200 dark:border-rose-500/30" 
-                           : "bg-amber-50/80 dark:bg-amber-950/20 border-amber-200 dark:border-amber-500/30"
-                      )}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2.5">
-                          {isCritical && <PulseDot colorClass="bg-rose-500" />}
-                          <span className={cn(
-                            "text-[10px] uppercase font-bold tracking-widest",
-                            isCritical ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'
-                          )}>
-                             {alert.category} • {alert.facilities?.name || 'Enterprise'}
-                          </span>
-                        </div>
-                        <span className={cn(
-                          "text-[10px] uppercase tracking-widest font-black px-2 py-0.5 rounded border leading-none pt-1",
-                          isCritical ? "bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400" : "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400"
-                        )}>
-                          {alert.severity}
+          ) : (
+            <div className="flex flex-col gap-2">
+              {alerts.map((alert) => {
+                const isCritical = alert.severity === "critical";
+                return (
+                  <div
+                    key={alert.id}
+                    className={cn(
+                      "flex flex-col gap-2 rounded-lg border bg-card p-3",
+                      isCritical
+                        ? "border-destructive/30"
+                        : "border-warning/30",
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        {isCritical && <PulseDot colorClass="bg-destructive" />}
+                        <span
+                          className={cn(
+                            "truncate text-[10px] font-medium uppercase tracking-wider",
+                            isCritical ? "text-destructive" : "text-warning",
+                          )}
+                        >
+                          {alert.category} · {alert.facilities?.name || "Enterprise"}
                         </span>
                       </div>
-                      
-                      <div>
-                        <h4 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 leading-snug">{alert.title}</h4>
-                        {alert.body && <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">{alert.body}</p>}
-                      </div>
-                      
-                      {alert.why_it_matters && (
-                        <div className="mt-2 text-xs bg-slate-100/50 dark:bg-black/40 p-4 rounded-xl text-slate-700 dark:text-zinc-300 border border-slate-200/50 dark:border-white/5 shadow-inner">
-                          <span className="font-bold tracking-wide uppercase text-[10px] text-slate-500 dark:text-zinc-500 block mb-1">Business Impact</span>
-                          <span className="leading-relaxed">{alert.why_it_matters}</span>
-                        </div>
-                      )}
+                      <span
+                        className={cn(
+                          "inline-flex h-5 shrink-0 items-center rounded border px-1.5 text-[10px] font-medium uppercase tracking-wider",
+                          isCritical
+                            ? "border-destructive/30 bg-destructive/10 text-destructive"
+                            : "border-warning/30 bg-warning/10 text-warning",
+                        )}
+                      >
+                        {alert.severity}
+                      </span>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* ─── PORTFOLIO HEALTH (REBUILT WITH FLOATING ROWS) ─── */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="flex justify-between items-center border-b border-slate-200/50 dark:border-white/10 pb-4">
-              <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white flex items-center gap-3">
-                <Activity className="h-5 w-5 text-indigo-500" /> Portfolio Health
-              </h3>
-              <Link className="px-4 py-2 rounded-full border border-slate-200 dark:border-white/10 text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2 tap-responsive bg-white dark:bg-black/40 shadow-sm" href="/admin/executive/reports">
-                Detailed Views <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-            
-            <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-sm backdrop-blur-3xl overflow-hidden p-4 md:p-6 lg:p-8">
-               
-               {/* Custom Headers */}
-               <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5">
-                 <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Facility</div>
-                 <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Occupancy</div>
-                 <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Labor %</div>
-                 <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Inc/1k</div>
-                 <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Survey %</div>
-               </div>
-
-               <div className="space-y-3 mt-4">
-                 {facilities.map((fac) => {
-                    const facilityMetrics = fac.metrics ?? {};
-                    const occ = facilityMetrics['occ_pt'];
-                    const labor = facilityMetrics['labor_pct'];
-                    const inc = facilityMetrics['inc_rate'];
-                    const survey = facilityMetrics['survey_rd'];
-
-                    const occGood = hasMetric(occ) && occ > 0.9;
-                    const laborGood = hasMetric(labor) && labor < 0.55;
-                    const facilityAlerts = alerts.filter((alert) => alert.facility_id === fac.id);
-                    const hasCriticalAlert = facilityAlerts.some((alert) => alert.severity === "critical");
-                    const hasWarningAlert = facilityAlerts.length > 0;
-
-                    return (
-                      <div key={fac.id} className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 items-center p-5 rounded-[1.5rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-colors cursor-pointer">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                            {hasCriticalAlert ? (
-                              <PulseDot colorClass="bg-rose-500" />
-                            ) : hasWarningAlert ? (
-                              <PulseDot colorClass="bg-amber-500" />
-                            ) : (
-                              <div className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-zinc-500" />
-                            )}
-                          </div>
-                          <span className="font-semibold text-[15px] text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">{fac.name}</span>
-                        </div>
-                        
-                        <div className="flex flex-row justify-between lg:justify-end items-center">
-                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Occupancy</span>
-                          <span className={cn("text-lg font-display tabular-nums inline-flex items-center gap-1.5", !hasMetric(occ) ? "text-slate-400 dark:text-zinc-500" : occGood ? "text-emerald-500 dark:text-emerald-400" : "text-amber-500 dark:text-amber-400")}>
-                            {formatPct(occ)}
-                            {hasMetric(occ) && (occGood ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />)}
-                          </span>
-                        </div>
-                        
-                        <div className="flex flex-row justify-between lg:justify-end items-center">
-                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Labor %</span>
-                          <span className={cn("text-lg font-display tabular-nums inline-flex items-center gap-1.5", !hasMetric(labor) ? "text-slate-400 dark:text-zinc-500" : laborGood ? "text-emerald-500 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400")}>
-                            {formatPct(labor)}
-                            {hasMetric(labor) && (laborGood ? <TrendingDown className="h-4 w-4" /> : <TrendingUp className="h-4 w-4" />)}
-                          </span>
-                        </div>
-                        
-                        <div className="flex flex-row justify-between lg:justify-end items-center">
-                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Incidents</span>
-                          <span className="text-lg font-display tabular-nums text-slate-600 dark:text-zinc-300">
-                            {formatNum(inc)}
-                          </span>
-                        </div>
-
-                        <div className="flex flex-row justify-between lg:justify-end items-center">
-                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Survey Readiness</span>
-                          <span className="text-lg font-display tabular-nums text-blue-600 dark:text-blue-400">
-                            {formatPct(survey)}
-                          </span>
-                        </div>
+                    <h3 className="text-[13px] font-semibold leading-snug text-foreground">
+                      {alert.title}
+                    </h3>
+                    {alert.body && (
+                      <p className="text-[12px] leading-relaxed text-muted-foreground">
+                        {alert.body}
+                      </p>
+                    )}
+                    {alert.why_it_matters && (
+                      <div className="rounded-md border border-border bg-secondary/50 px-2.5 py-2 text-[12px] leading-relaxed text-muted-foreground">
+                        <span className="block text-[10px] font-medium uppercase tracking-wider text-muted-foreground/80">
+                          Business impact
+                        </span>
+                        <span className="mt-0.5 block text-foreground/80">{alert.why_it_matters}</span>
                       </div>
-                    )
-                 })}
-                 
-                 {/* Total Enterprise Averages */}
-                 <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 items-center p-6 rounded-[1.5rem] bg-indigo-50/50 dark:bg-indigo-950/20 border-2 border-indigo-100 dark:border-indigo-500/20 shadow-inner mt-6">
-                    <div className="font-bold text-base text-indigo-900 dark:text-indigo-200">Enterprise Total Avg</div>
-                    <div className="lg:text-right font-display text-xl tabular-nums text-amber-600 dark:text-amber-400">{formatPct(metrics['occ_pt'])}</div>
-                    <div className="lg:text-right font-display text-xl tabular-nums text-amber-600 dark:text-amber-400">{formatPct(metrics['labor_pct'])}</div>
-                    <div className="lg:text-right font-display text-xl tabular-nums text-indigo-900 dark:text-indigo-200">{formatNum(metrics['inc_rate'])}</div>
-                    <div className="lg:text-right font-display text-xl tabular-nums text-amber-600 dark:text-amber-400">{formatPct(metrics['survey_rd'])}</div>
-                 </div>
-               </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          </div>
+          )}
         </div>
 
-        <section className="space-y-4">
-          <div className="flex justify-between items-center border-b border-slate-200/50 dark:border-white/10 pb-4">
-            <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white flex items-center gap-3">
-              <Activity className="h-5 w-5 text-rose-500" /> Resident Assurance Heat Map
-            </h3>
-            <Link className="px-4 py-2 rounded-full border border-slate-200 dark:border-white/10 text-xs font-bold uppercase tracking-widest text-rose-600 dark:text-rose-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2 tap-responsive bg-white dark:bg-black/40 shadow-sm" href="/admin/rounding">
-              Open assurance hub <ArrowRight className="h-3.5 w-3.5" />
+        {/* Portfolio health table */}
+        <div className="col-span-12 lg:col-span-8 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h2 className="inline-flex items-center gap-2 text-[14px] font-semibold tracking-tight text-foreground">
+              <Activity className="size-4 text-info" /> Portfolio health
+            </h2>
+            <Link
+              href="/admin/executive/reports"
+              className={cn(
+                "inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2.5 text-[12px] font-medium",
+                "text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground",
+              )}
+            >
+              Detailed views <ArrowRight className="size-3" />
             </Link>
           </div>
 
-          <div className="grid gap-3">
+          <div className="overflow-hidden rounded-lg border border-border bg-card">
+            <div className="max-h-[480px] overflow-auto">
+              <table className="w-full text-[13px]">
+                <thead className="sticky top-0 z-10 bg-background/95 backdrop-blur">
+                  <tr className="border-b border-border">
+                    <th className="h-9 px-3 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                      Facility
+                    </th>
+                    <th className="h-9 px-3 text-right text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                      Occupancy
+                    </th>
+                    <th className="h-9 px-3 text-right text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                      Labor %
+                    </th>
+                    <th className="h-9 px-3 text-right text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                      Inc / 1k
+                    </th>
+                    <th className="h-9 px-3 text-right text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                      Survey %
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {facilities.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-8">
+                        <div className="text-[13px] font-medium text-foreground">No facilities in scope.</div>
+                        <div className="mt-0.5 text-[12px] text-muted-foreground">
+                          Adjust the facility scope filter or wait for the next snapshot.
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    facilities.map((fac) => {
+                      const fm = fac.metrics ?? {};
+                      const occ = fm["occ_pt"];
+                      const labor = fm["labor_pct"];
+                      const inc = fm["inc_rate"];
+                      const survey = fm["survey_rd"];
+                      const occGood = hasMetric(occ) && occ > 0.9;
+                      const laborGood = hasMetric(labor) && labor < 0.55;
+                      const facilityAlerts = alerts.filter((a) => a.facility_id === fac.id);
+                      const hasCritical = facilityAlerts.some((a) => a.severity === "critical");
+                      const hasWarning = facilityAlerts.length > 0;
+                      return (
+                        <tr
+                          key={fac.id}
+                          className="border-b border-border/60 transition-colors even:bg-muted/30 hover:bg-muted/50"
+                        >
+                          <td className="h-9 px-3">
+                            <span className="inline-flex items-center gap-2">
+                              {hasCritical ? (
+                                <PulseDot colorClass="bg-destructive" />
+                              ) : hasWarning ? (
+                                <PulseDot colorClass="bg-warning" />
+                              ) : (
+                                <span className="size-1.5 rounded-full bg-muted-foreground/40" />
+                              )}
+                              <span className="font-medium text-foreground">{fac.name}</span>
+                            </span>
+                          </td>
+                          <td className="h-9 px-3 text-right">
+                            <span
+                              className={cn(
+                                "inline-flex items-center justify-end gap-1 tabular-nums",
+                                hasMetric(occ)
+                                  ? occGood
+                                    ? "text-success"
+                                    : "text-warning"
+                                  : "text-muted-foreground/60",
+                              )}
+                            >
+                              {renderMetric(occ, "pct")}
+                              {hasMetric(occ) && (occGood ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />)}
+                            </span>
+                          </td>
+                          <td className="h-9 px-3 text-right">
+                            <span
+                              className={cn(
+                                "inline-flex items-center justify-end gap-1 tabular-nums",
+                                hasMetric(labor)
+                                  ? laborGood
+                                    ? "text-success"
+                                    : "text-destructive"
+                                  : "text-muted-foreground/60",
+                              )}
+                            >
+                              {renderMetric(labor, "pct")}
+                              {hasMetric(labor) && (laborGood ? <TrendingDown className="size-3" /> : <TrendingUp className="size-3" />)}
+                            </span>
+                          </td>
+                          <td className="h-9 px-3 text-right tabular-nums text-foreground">
+                            {renderMetric(inc, "num")}
+                          </td>
+                          <td className="h-9 px-3 text-right tabular-nums text-foreground">
+                            {renderMetric(survey, "pct")}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+                {facilities.length > 0 && (
+                  <tfoot>
+                    <tr className="border-t border-border bg-secondary/40">
+                      <td className="h-9 px-3 text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Enterprise avg
+                      </td>
+                      <td className="h-9 px-3 text-right text-[13px] font-semibold tabular-nums text-foreground">
+                        {renderMetric(metrics["occ_pt"], "pct")}
+                      </td>
+                      <td className="h-9 px-3 text-right text-[13px] font-semibold tabular-nums text-foreground">
+                        {renderMetric(metrics["labor_pct"], "pct")}
+                      </td>
+                      <td className="h-9 px-3 text-right text-[13px] font-semibold tabular-nums text-foreground">
+                        {renderMetric(metrics["inc_rate"], "num")}
+                      </td>
+                      <td className="h-9 px-3 text-right text-[13px] font-semibold tabular-nums text-foreground">
+                        {renderMetric(metrics["survey_rd"], "pct")}
+                      </td>
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Resident assurance heat map */}
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <h2 className="inline-flex items-center gap-2 text-[14px] font-semibold tracking-tight text-foreground">
+            <Activity className="size-4 text-destructive" /> Resident assurance heat map
+          </h2>
+          <Link
+            href="/admin/rounding"
+            className={cn(
+              "inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2.5 text-[12px] font-medium",
+              "text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground",
+            )}
+          >
+            Open assurance hub <ArrowRight className="size-3" />
+          </Link>
+        </div>
+
+        {assuranceHeatMap.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border bg-card px-4 py-6">
+            <p className="text-[13px] font-medium text-foreground">No heat map data in scope.</p>
+            <p className="mt-1 text-[12px] text-muted-foreground">
+              Wait for the next assurance rollup or change the facility scope.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
             {assuranceHeatMap.map((row) => (
               <Link
                 key={row.facilityId}
                 href={`/admin/executive/facility/${row.facilityId}`}
                 className={cn(
-                  "grid grid-cols-1 gap-4 rounded-[1.5rem] border p-5 shadow-sm transition-colors hover:bg-white dark:hover:bg-white/[0.05] md:grid-cols-[2fr_repeat(5,minmax(0,1fr))]",
+                  "grid grid-cols-1 gap-3 rounded-lg border bg-card p-3 transition-colors hover:bg-secondary/40",
+                  "md:grid-cols-[2fr_repeat(5,minmax(0,1fr))] md:items-center",
                   assuranceBandClass[row.heatBand],
                 )}
               >
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                     {row.heatBand}
                   </p>
-                  <h4 className="mt-1 text-base font-semibold text-slate-900 dark:text-white">{row.facilityName}</h4>
+                  <h3 className="mt-0.5 truncate text-[13px] font-semibold text-foreground">
+                    {row.facilityName}
+                  </h3>
                 </div>
                 <HeatMetric label="Watches" value={row.activeWatches} />
                 <HeatMetric label="Pending" value={row.pendingWatchApprovals} />
                 <HeatMetric label="Escalations" value={row.openEscalations} danger={row.openEscalations > 0} />
                 <HeatMetric label="Integrity" value={row.openIntegrityFlags} danger={row.openIntegrityFlags > 0} />
-                <div className="flex items-center justify-between md:justify-end">
-                  <div className="flex flex-col items-start md:items-end">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Critical risk</span>
-                    <span className={cn("text-2xl font-display tabular-nums", assuranceBandText[row.heatBand])}>{row.criticalSafetyResidents}</span>
-                    <span className="text-xs text-slate-500 dark:text-zinc-500">{row.highOrCriticalSafetyResidents} high+critical</span>
-                  </div>
+                <div className="flex flex-col items-start md:items-end leading-tight">
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Critical risk</span>
+                  <span className={cn("text-[18px] font-semibold tabular-nums tracking-tight", assuranceBandText[row.heatBand])}>
+                    {row.criticalSafetyResidents}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {row.highOrCriticalSafetyResidents} high + critical
+                  </span>
                 </div>
               </Link>
             ))}
           </div>
-        </section>
+        )}
+      </section>
 
-        <section className="space-y-4">
-          <div className="flex justify-between items-center border-b border-slate-200/50 dark:border-white/10 pb-4">
-            <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white flex items-center gap-3">
-              <Activity className="h-5 w-5 text-cyan-500" /> Resident Assurance Trend (7d)
-            </h3>
-            <div className="flex items-center gap-3">
-              <p className="text-sm text-slate-500 dark:text-zinc-400">Daily heat pressure by facility</p>
-              <Link
-                href="/admin/reports/run/template/resident-assurance-heat-trend"
-                className="px-4 py-2 rounded-full border border-slate-200 dark:border-white/10 text-xs font-bold uppercase tracking-widest text-cyan-600 dark:text-cyan-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2 tap-responsive bg-white dark:bg-black/40 shadow-sm"
-              >
-                Run report <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
+      {/* Resident assurance trend */}
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <div className="min-w-0">
+            <h2 className="inline-flex items-center gap-2 text-[14px] font-semibold tracking-tight text-foreground">
+              <Activity className="size-4 text-info" /> Resident assurance trend (7d)
+            </h2>
+            <p className="mt-0.5 text-[12px] text-muted-foreground">
+              Daily heat pressure by facility.
+            </p>
           </div>
+          <Link
+            href="/admin/reports/run/template/resident-assurance-heat-trend"
+            className={cn(
+              "inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2.5 text-[12px] font-medium",
+              "text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground",
+            )}
+          >
+            Run report <ArrowRight className="size-3" />
+          </Link>
+        </div>
 
-          <div className="space-y-3">
+        {assuranceTrends.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border bg-card px-4 py-6">
+            <p className="text-[13px] font-medium text-foreground">No 7-day heat data.</p>
+            <p className="mt-1 text-[12px] text-muted-foreground">
+              The trend chart appears once rollups have been generated.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
             {assuranceTrends.map((row) => (
               <Link
                 key={row.facilityId}
                 href={`/admin/executive/facility/${row.facilityId}`}
-                className="grid grid-cols-1 gap-4 rounded-[1.5rem] border border-slate-200/70 bg-white/70 p-5 shadow-sm transition-colors hover:bg-white dark:border-white/5 dark:bg-white/[0.03] dark:hover:bg-white/[0.05] lg:grid-cols-[1.6fr_2.4fr_0.8fr_0.8fr_0.8fr]"
+                className={cn(
+                  "grid grid-cols-1 gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:bg-secondary/40",
+                  "lg:grid-cols-[1.6fr_2.4fr_0.8fr_0.8fr_0.8fr] lg:items-center",
+                )}
               >
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Facility</p>
-                  <h4 className="mt-1 text-base font-semibold text-slate-900 dark:text-white">{row.facilityName}</h4>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Facility</p>
+                  <h3 className="mt-0.5 truncate text-[13px] font-semibold text-foreground">
+                    {row.facilityName}
+                  </h3>
                 </div>
-                <div className="flex items-end gap-2">
+                <div className="flex items-end gap-1.5">
                   {row.points.map((point) => (
-                    <div key={`${row.facilityId}:${point.date}`} className="flex flex-1 flex-col items-center gap-2">
-                      <div className="flex h-24 w-full items-end">
+                    <div key={`${row.facilityId}:${point.date}`} className="flex flex-1 flex-col items-center gap-1.5">
+                      <div className="flex h-16 w-full items-end">
                         <div
                           className={cn(
-                            "w-full rounded-t-md",
+                            "w-full rounded-t-sm",
                             point.heatBand === "critical"
-                              ? "bg-rose-500"
+                              ? "bg-destructive"
                               : point.heatBand === "elevated"
-                                ? "bg-orange-500"
+                                ? "bg-warning"
                                 : point.heatBand === "watch"
-                                  ? "bg-amber-500"
-                                  : "bg-emerald-500",
+                                  ? "bg-warning/60"
+                                  : "bg-success",
                           )}
                           style={{ height: `${Math.max(10, Math.min(100, point.heatScore * 7))}%` }}
                           title={`${point.date}: heat ${point.heatScore}`}
                         />
                       </div>
-                      <span className="text-[10px] font-mono text-slate-500 dark:text-zinc-500">
+                      <span className="text-[10px] font-mono text-muted-foreground">
                         {point.date.slice(5)}
                       </span>
                     </div>
@@ -592,9 +673,8 @@ export function ExecutiveOverviewPageClient({
               </Link>
             ))}
           </div>
-        </section>
-
-      </div>
+        )}
+      </section>
     </div>
   );
 }
@@ -609,13 +689,18 @@ function HeatMetric({
   danger?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between md:justify-end">
-      <div className="flex flex-col items-start md:items-end">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">{label}</span>
-        <span className={cn("text-2xl font-display tabular-nums text-slate-900 dark:text-white", danger && "text-rose-600 dark:text-rose-300")}>
-          {value}
-        </span>
-      </div>
+    <div className="flex flex-col items-start md:items-end leading-tight">
+      <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
+      <span
+        className={cn(
+          "text-[18px] font-semibold tabular-nums tracking-tight",
+          danger ? "text-destructive" : "text-foreground",
+        )}
+      >
+        {value}
+      </span>
     </div>
   );
 }
