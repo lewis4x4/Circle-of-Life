@@ -72,17 +72,21 @@ export function DietaryShell({ children }: { children: React.ReactNode }) {
 
   if (checking || !authorized) {
     return (
-      <div className="min-h-screen bg-stone-950 flex items-center justify-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-stone-300">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Loading kitchen cockpit...
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          Loading kitchen cockpit…
         </div>
       </div>
     );
   }
 
+  // Kitchen cockpit is dark-only by design (line-cook station glare).
+  // Token names below resolve correctly in light + dark; the `setTheme("dark")`
+  // above forces dark unconditionally so the surrounding chrome reads the
+  // dark variant of every token regardless of system preference.
   return (
-    <div className="dietary-shell min-h-screen bg-stone-950 text-white font-sans antialiased">
+    <div className="min-h-screen bg-background font-sans text-foreground antialiased">
       {children}
     </div>
   );
