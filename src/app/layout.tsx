@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/sonner";
 
 const interSans = Inter({
   variable: "--font-inter",
@@ -51,16 +53,19 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <ServiceWorkerRegister />
-          <div id="haven-app-root" className="flex min-h-full flex-col">
-            <a
-              href="#main-content"
-              className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-slate-900 focus:shadow-md focus:outline-none focus:ring-2 focus:ring-teal-600 dark:focus:bg-slate-900 dark:focus:text-slate-100"
-            >
-              Skip to main content
-            </a>
-            <div id="main-content">{children}</div>
-          </div>
+          <TooltipProvider delayDuration={250} skipDelayDuration={100}>
+            <ServiceWorkerRegister />
+            <div id="haven-app-root" className="flex min-h-full flex-col">
+              <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-card focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground focus:shadow-md focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                Skip to main content
+              </a>
+              <div id="main-content">{children}</div>
+            </div>
+            <Toaster richColors closeButton position="bottom-right" />
+          </TooltipProvider>
         </ThemeProvider>
       </body>
     </html>

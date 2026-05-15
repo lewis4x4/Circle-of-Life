@@ -19,7 +19,6 @@ import {
   CalendarDays,
   Check,
   ChevronDown,
-  ChevronsLeft,
   ChevronsRight,
   ClipboardCheck,
   ClipboardList,
@@ -61,7 +60,6 @@ import {
   UserPlus,
   Users,
   Utensils,
-  X,
   Zap,
   type LucideIcon,
 } from "lucide-react";
@@ -78,6 +76,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SurveyVisitModeBar } from "@/components/compliance/SurveyVisitModeBar";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
@@ -673,33 +679,23 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         {renderSidebarFooter()}
       </aside>
 
-      {/* Mobile drawer */}
-      {mobileNavOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
-          <button
-            type="button"
-            aria-label="Close navigation"
-            className="absolute inset-0 bg-background/60 backdrop-blur-sm"
-            onClick={() => setMobileNavOpen(false)}
-          />
-          <aside className="relative ml-0 flex h-full w-[280px] flex-col border-r border-border bg-card">
-            <div className="flex h-14 items-center justify-between border-b border-border/60 px-2">
-              {renderBrand()}
-              <button
-                type="button"
-                onClick={() => setMobileNavOpen(false)}
-                className="grid size-9 place-items-center rounded-md text-muted-foreground hover:bg-secondary"
-                aria-label="Close navigation"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
+      {/* Mobile drawer (shadcn Sheet) */}
+      <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+        <SheetContent
+          side="left"
+          className="w-[280px] border-r border-border bg-card p-0 [&>button]:hidden"
+        >
+          <SheetHeader className="sr-only">
+            <SheetTitle>Primary navigation</SheetTitle>
+          </SheetHeader>
+          <div className="flex h-full flex-col">
+            {renderBrand()}
             {renderFacilityScope()}
             {renderNav()}
             {renderSidebarFooter()}
-          </aside>
-        </div>
-      )}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Main column */}
       <div className="flex flex-1 flex-col min-w-0">
@@ -712,32 +708,21 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           )}
         >
           {/* Mobile hamburger */}
-          <button
-            type="button"
-            onClick={() => setMobileNavOpen(true)}
-            className={cn(
-              "grid size-8 place-items-center rounded-md text-muted-foreground lg:hidden",
-              "transition-colors hover:bg-secondary hover:text-foreground",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            )}
-            aria-label="Open navigation"
-          >
-            <Menu className="size-4" />
-          </button>
-
-          {/* Collapsed sidebar toggle slot — could host breadcrumb in the future */}
-          <button
-            type="button"
-            className={cn(
-              "hidden lg:grid size-8 place-items-center rounded-md text-muted-foreground",
-              "transition-colors hover:bg-secondary hover:text-foreground",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            )}
-            aria-label="Toggle sidebar"
-            onClick={() => setMobileNavOpen((v) => !v)}
-          >
-            <ChevronsLeft className="size-4" />
-          </button>
+          <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                className={cn(
+                  "grid size-8 place-items-center rounded-md text-muted-foreground lg:hidden",
+                  "transition-colors hover:bg-secondary hover:text-foreground",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                )}
+                aria-label="Open navigation"
+              >
+                <Menu className="size-4" />
+              </button>
+            </SheetTrigger>
+          </Sheet>
 
           {/* Search */}
           <Link
@@ -758,32 +743,42 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </Link>
 
           <div className="ml-auto flex items-center gap-0.5">
-            <Link
-              href="/admin/search"
-              className={cn(
-                "grid size-8 place-items-center rounded-md text-muted-foreground md:hidden",
-                "transition-colors hover:bg-secondary hover:text-foreground",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              )}
-              aria-label="Search"
-            >
-              <Search className="size-4" />
-            </Link>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href="/admin/search"
+                  className={cn(
+                    "grid size-8 place-items-center rounded-md text-muted-foreground md:hidden",
+                    "transition-colors hover:bg-secondary hover:text-foreground",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  )}
+                  aria-label="Search"
+                >
+                  <Search className="size-4" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Search (⌘K)</TooltipContent>
+            </Tooltip>
 
             <PilotFeedbackLauncher shellKind="admin" facilityId={safeSelectedFacilityId} compact />
 
-            <button
-              type="button"
-              className={cn(
-                "relative grid size-8 place-items-center rounded-md text-muted-foreground",
-                "transition-colors hover:bg-secondary hover:text-foreground",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              )}
-              aria-label="Notifications"
-            >
-              <Bell className="size-4" />
-              <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-destructive" />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "relative grid size-8 place-items-center rounded-md text-muted-foreground",
+                    "transition-colors hover:bg-secondary hover:text-foreground",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  )}
+                  aria-label="Notifications"
+                >
+                  <Bell className="size-4" />
+                  <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-destructive" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Notifications</TooltipContent>
+            </Tooltip>
 
             <DropdownMenu>
               <DropdownMenuTrigger
