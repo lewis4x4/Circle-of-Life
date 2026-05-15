@@ -17,6 +17,8 @@
  *   PHASE1_DEMO_PASSWORD     default HavenDemo2026!
  *   SCREENSHOT_USER_EMAIL    default milton.smith@circleoflifealf.com
  *   SCREENSHOT_OUT_DIR       default docs/ui-audit/screenshots
+ *   ROUTES_JSON              optional override, e.g. '[{"id":"med-tech","path":"/med-tech"}]'
+ *   SETTLE_MS                additional settle delay after networkidle (default 600)
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -56,10 +58,12 @@ const VIEWPORTS = [
   { name: "2560x1440", width: 2560, height: 1440 },
 ];
 const THEMES = ["light", "dark"];
-const ROUTES = [
-  { id: "admin", path: "/admin" },
-  { id: "executive", path: "/admin/executive" },
-];
+const ROUTES = process.env.ROUTES_JSON
+  ? JSON.parse(process.env.ROUTES_JSON)
+  : [
+      { id: "admin", path: "/admin" },
+      { id: "executive", path: "/admin/executive" },
+    ];
 
 if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 
@@ -139,7 +143,8 @@ async function capture(page, route, viewport, theme) {
   await page.goto(`${baseUrl}${route.path}`, { waitUntil: "domcontentloaded", timeout: 25000 });
   // Settle: wait for either the sidebar (logged-in shell) or a known sentinel.
   await page.waitForLoadState("networkidle", { timeout: 15000 }).catch(() => {});
-  await page.waitForTimeout(600);
+  const settleMs = Number(process.env.SETTLE_MS ?? 600);
+  await page.waitForTimeout(settleMs);
   const target = path.join(outDir, `${route.id}-${viewport.name}-${theme}.png`);
   await page.screenshot({ path: target, fullPage: false });
   return target;

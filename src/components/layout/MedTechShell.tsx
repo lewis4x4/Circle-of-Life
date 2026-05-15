@@ -76,21 +76,36 @@ export function MedTechShell({ children }: { children: React.ReactNode }) {
 
   if (checking || !authorized) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Loading Med-Tech cockpit...
+      // `dark` class on the outer wrapper forces the dark-variant tokens
+      // regardless of next-themes state (see comment on the main wrapper
+      // below for the full rationale).
+      <div className="dark">
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            Loading Med-Tech cockpit…
+          </div>
         </div>
       </div>
     );
   }
 
+  // Med-Tech cockpit is dark-only by design: med pass at 05:00 over a
+  // line-cook-style station, full-screen on a tablet — a light flash is
+  // both glare-painful and clinically risky (misreads of low-contrast PRN
+  // text). The `dark` class on the outer wrapper enforces dark-variant
+  // semantic tokens even if a future theme toggle or `useTheme` race
+  // momentarily flips the theme state. `setTheme("dark")` above remains
+  // for cross-component side effects (e.g., portals rendering outside
+  // this wrapper) but it is no longer the only guardrail.
   return (
-    <div className="med-tech-shell min-h-screen bg-slate-950 text-white font-sans antialiased">
-      <div className="fixed right-4 top-4 z-50">
-        <PilotFeedbackLauncher shellKind="med-tech" compact />
+    <div className="dark">
+      <div className="min-h-screen bg-background font-sans text-foreground antialiased">
+        <div className="fixed right-4 top-4 z-50">
+          <PilotFeedbackLauncher shellKind="med-tech" compact />
+        </div>
+        {children}
       </div>
-      {children}
     </div>
   );
 }
