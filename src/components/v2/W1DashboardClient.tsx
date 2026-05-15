@@ -2,7 +2,8 @@
 
 import { T1Dashboard } from "@/design-system/templates";
 import type { DataTableColumn, DataTableRow } from "@/design-system/components/DataTable";
-import type { ScopeOption } from "@/design-system/components/ScopeSelector";
+import { PageShell } from "@/design-system/components/PageShell";
+import { ScopeSelector, type ScopeOption } from "@/design-system/components/ScopeSelector";
 
 import type { V2DashboardRowsSource } from "@/lib/v2-dashboard-loader";
 import type {
@@ -10,6 +11,7 @@ import type {
   V2DashboardPayload,
   V2DashboardTableRow,
 } from "@/lib/v2-dashboards";
+import { V2EmptyOnboarding } from "./V2EmptyOnboarding";
 
 const DASHBOARD_BASE_PATH: Record<V2DashboardId, string> = {
   "command-center": "/admin",
@@ -105,6 +107,40 @@ export function W1DashboardClient({
       : rowsSource === "unavailable"
         ? "Live facility rollup unavailable; no fallback rows shown"
         : null;
+
+  // "Empty install" — the underlying jobs haven't run yet, so every KPI is
+  // the seeded "—" placeholder, the alerts/action-queue/table arrays are
+  // empty, and the panels carry the "Live source pending; no fixture value
+  // is shown" subtitle. Render an onboarding card instead of the empty
+  // dashboard chrome so the page tells the operator what to do next.
+  const allKpisEmpty = payload.kpis.every((k) => k.value === "—" || k.value == null || k.value === "");
+  const allTableRowsEmpty = payload.tableRows.length === 0;
+  const allAlertsEmpty = payload.alerts.length === 0;
+  const allActionsEmpty = payload.actionQueue.length === 0;
+  const isOrgEmpty = allKpisEmpty && allTableRowsEmpty && allAlertsEmpty && allActionsEmpty;
+
+  if (isOrgEmpty) {
+    return (
+      <PageShell
+        title={payload.title}
+        subtitle={sourceNote ? `${payload.subtitle} · ${sourceNote}` : payload.subtitle}
+        scope={
+          <ScopeSelector
+            owners={[{ id: "current", label: "Current organization" }]}
+            groups={[]}
+            facilities={facilities.map((f) => ({ ...f, ownerId: "current" }))}
+          />
+        }
+        audit={{
+          auditHref: "/admin/audit-log",
+          updatedAt: auditUpdatedAt,
+          now,
+        }}
+      >
+        <V2EmptyOnboarding dashboardId={payload.id} facilityCount={facilities.length} />
+      </PageShell>
+    );
+  }
 
   return (
     <T1Dashboard<V2DashboardTableRow>
