@@ -36,3 +36,11 @@ a8f62351936c752c9383622dff0a0e21bd71511f:src/lib/reports/executors/index.ts:gene
 21efc448533d0e7ed64b0885b24cb4df0ce2341b:src/lib/reports/executors/index.ts:generic-api-key:144
 21efc448533d0e7ed64b0885b24cb4df0ce2341b:src/lib/reports/executors/index.ts:generic-api-key:256
 21efc448533d0e7ed64b0885b24cb4df0ce2341b:src/lib/reports/executors/index.ts:generic-api-key:577
+
+# 0e42604 — caregiver merge + inline `// scanner false positive` comments shifted line numbers
+# by +1, +2, +3 across the three metric-key clusters.
+0e426040e4532d551e06c033f6170d0f9666eddd:src/lib/reports/executors/index.ts:generic-api-key:143
+0e426040e4532d551e06c033f6170d0f9666eddd:src/lib/reports/executors/index.ts:generic-api-key:144
+0e426040e4532d551e06c033f6170d0f9666eddd:src/lib/reports/executors/index.ts:generic-api-key:145
+0e426040e4532d551e06c033f6170d0f9666eddd:src/lib/reports/executors/index.ts:generic-api-key:258
+0e426040e4532d551e06c033f6170d0f9666eddd:src/lib/reports/executors/index.ts:generic-api-key:580

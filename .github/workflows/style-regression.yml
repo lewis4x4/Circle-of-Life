@@ -90,6 +90,74 @@ jobs:
             --exclude-dir=node_modules \
             || (echo "::error::hand-rolled bottom-nav <nav> found — use <BottomNav>/<BottomNavItem> from @/components/ui/bottom-nav"; exit 1)
 
+      - name: "Oversized hero radii on portal shells (rounded-[2.5rem]/[1.8rem]/[3rem])"
+        # Catches the moonshot floating-dock / hero-tile radii that Family
+        # shipped before §13/§14 standardization. Scoped to layout shells
+        # only — existing violations in route-page workflows (e.g. caregiver
+        # resident pages, family calendar/billing) are Phase D scope, not
+        # shell scope. Expand the scope as those files migrate.
+        # See docs/ui-audit/DESIGN_PRINCIPLES.md §12.
+        run: |
+          ! grep -rnE 'rounded-\[(2\.5rem|2rem|1\.8rem|1\.75rem|3rem)\]' \
+            src/components/layout/ \
+            --include="*.tsx" \
+            --exclude-dir=node_modules \
+            || (echo "::error::hero/dock radii (rounded-[2.5rem]/[1.8rem]/[3rem]) on a layout shell — use rounded-xl"; exit 1)
+
+      - name: "glass-card-* utilities on portal shells (use flat bg-card)"
+        # Catches the moonshot `glass-card`, `glass-card-light`, `glass-panel`
+        # utility set. Scoped to layout shells only — existing violations
+        # in route-page workflows (caregiver/tasks, caregiver/meds,
+        # family/calendar, family/billing) are Phase D scope. The
+        # `src/components/ui/moonshot/v2-card.tsx` defanged stub contains
+        # the string in a comment describing what it used to be; the layout
+        # scope avoids both cases. See docs/ui-audit/DESIGN_PRINCIPLES.md §12.
+        run: |
+          ! grep -rnE '\bglass-(card|panel|card-light)\b' \
+            src/components/layout/ \
+            --include="*.tsx" \
+            --exclude-dir=node_modules \
+            || (echo "::error::glass-card-* utility on a layout shell — use flat bg-card border-border"; exit 1)
+
+      - name: "backdrop-blur on portal shells (Dialog/Sheet/Popover only)"
+        # `backdrop-blur` is fine on overlay primitives (Dialog, Sheet,
+        # Popover, DropdownMenu) but not on portal shell chrome. Layout
+        # shells render their backdrop as semantic `bg-background/95
+        # supports-[backdrop-filter]:bg-background/80 backdrop-blur` —
+        # the supports-fallback is the pattern; raw `backdrop-blur-xl` is not.
+        # Heuristic: catch `backdrop-blur-xl` or `backdrop-blur-3xl` in
+        # `src/components/layout/**`. The standard pattern uses
+        # `backdrop-blur` (no modifier) and survives.
+        # See docs/ui-audit/DESIGN_PRINCIPLES.md §12.
+        run: |
+          ! grep -rnE '\bbackdrop-blur-(xl|2xl|3xl)\b' \
+            src/components/layout/ \
+            --include="*.tsx" \
+            --exclude-dir=node_modules \
+            || (echo "::error::backdrop-blur-{xl,2xl,3xl} on layout shell — use plain backdrop-blur with supports-[backdrop-filter]:bg-background/80 fallback"; exit 1)
+
+      - name: "Hover states in family route group (replace with active: + focus-visible:)"
+        # Family portal is tablet-only — hover is not a reliable input.
+        # Replace every `hover:X` with `active:X` + `focus-visible:X`.
+        # Scoped narrowly to the shell + family-specific components. The
+        # family route group (`src/app/(family)/**`) is NOT scanned here;
+        # those pages are Phase D scope.
+        # See docs/ui-audit/DESIGN_PRINCIPLES.md §14.
+        run: |
+          set +e
+          MATCHES=$(grep -rEn 'className=("|`|cn\()[^"`]*\bhover:[a-z-]' \
+            src/components/layout/FamilyShell.tsx \
+            src/components/family/ \
+            --include="*.tsx" \
+            --exclude-dir=node_modules 2>/dev/null \
+            | grep -v 'group-hover:')
+          set -e
+          if [ -n "$MATCHES" ]; then
+            echo "::error::family chrome contains hover:* — tablet-only, replace with active: + focus-visible:"
+            echo "$MATCHES"
+            exit 1
+          fi
+
       - name: "Hover-only states on audited caregiver chrome (pair with active:)"
         # On the caregiver shell + caregiver-scoped primitives, every
         # hover:X utility must ship with a matching active:X so touch

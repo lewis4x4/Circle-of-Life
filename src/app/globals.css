@@ -169,6 +169,49 @@
 }
 
 /* =============================================================================
+   Forced-light override — re-applies the `:root` light tokens regardless of
+   any parent `.dark` class.
+
+   Used by FamilyShell (tablet portal — older family members read in
+   living-room conditions, so a dark flash at 11pm is wrong). The shell
+   wraps content in `<div className="light">`; without this rule, the
+   semantic tokens (`--background`, `--foreground`, etc.) inherit from the
+   `.dark` block on `<html>` that `next-themes` sets, and the wrapper would
+   silently render dark anyway.
+
+   Mirror this block whenever the `:root` light tokens above change. The
+   Tailwind `dark:` variant is `@custom-variant dark (&:is(.dark *))`, so any
+   `dark:bg-X` utility inside this wrapper would still match — Family
+   intentionally avoids those utilities and relies on semantic tokens for
+   exactly this reason.
+   ========================================================================= */
+.light {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 4%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 4%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 4%;
+  --primary: 240 6% 10%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 5% 96%;
+  --secondary-foreground: 240 6% 10%;
+  --muted: 240 5% 96%;
+  --muted-foreground: 240 4% 46%;
+  --accent: 240 5% 96%;
+  --accent-foreground: 240 6% 10%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 98%;
+  --success: 142 71% 35%;
+  --warning: 38 92% 45%;
+  --info: 217 91% 55%;
+  --border: 240 6% 90%;
+  --input: 240 6% 90%;
+  --ring: 240 5% 65%;
+  color-scheme: light;
+}
+
+/* =============================================================================
    Dark theme — pure neutral, no blue cast.
    ========================================================================= */
 .dark {
