@@ -142,6 +142,7 @@ The family portal runs on tablets in living-room and resident-room settings. The
 - **No hover states.** Tablet-only — `:hover` is not a reliable input signal. Every interactive element pairs `active:` with `focus-visible:`, no `hover:`. CI enforces this on `src/components/family/**`.
 - **Reduce information density vs admin.** The portal surfaces 3–5 prominent actions plus a small recent-activity feed, not a dashboard.
 - **Reuse `<BottomNav>`, do not fork.** The floating "iPadOS dock" pattern (`fixed bottom-6 ... rounded-[2.5rem] glass-card-light`) is forbidden — same primitive Caregiver uses. Add variants to `BottomNav` if a legitimate need emerges; never fork.
+- **Forced-theme correctness is verified by capturing both system preferences and asserting visual identity, not by runtime checks.** Capture the same route at `prefers-color-scheme: light` and `prefers-color-scheme: dark`. If the wrap is doing its job, the two PNGs are pixel-identical. Anything else (a JS-runtime assertion, an integration test) is bypassable by a future contributor; the visual identity gate is not. This applies to every forced-theme shell (MedTech / Caregiver / Dietary forced-dark, Family forced-light).
 
 ## 15 · PR review checklist
 
