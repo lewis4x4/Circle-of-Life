@@ -6,15 +6,72 @@
 
 @theme inline {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  /* Single font stack (Inter only) — display/serif map to sans for fewer network requests */
   --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "JetBrains Mono", "IBM Plex Mono", SFMono-Regular, Menlo, monospace;
 
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-border: var(--border);
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-success: hsl(var(--success));
+  --color-warning: hsl(var(--warning));
+  --color-info: hsl(var(--info));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
 
-  /* Deep Midnight Slate Palette */
+  /* Charts (kept for recharts compatibility) */
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+
+  /* Sidebar tokens (legacy names kept for shadcn primitives) */
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  /* Haven domain status tokens (unchanged — preserved) */
+  --color-acuity-1: var(--acuity-1);
+  --color-acuity-2: var(--acuity-2);
+  --color-acuity-3: var(--acuity-3);
+  --color-severity-1: var(--severity-1);
+  --color-severity-2: var(--severity-2);
+  --color-severity-3: var(--severity-3);
+  --color-severity-4: var(--severity-4);
+  --color-bed-available: var(--bed-available);
+  --color-bed-occupied: var(--bed-occupied);
+  --color-bed-hold: var(--bed-hold);
+  --color-bed-maintenance: var(--bed-maintenance);
+  --color-emar-scheduled: var(--emar-scheduled);
+  --color-emar-given: var(--emar-given);
+  --color-emar-refused: var(--emar-refused);
+  --color-emar-held: var(--emar-held);
+  --color-emar-unavailable: var(--emar-unavailable);
+  --color-compliance-good: var(--compliance-good);
+  --color-compliance-warning: var(--compliance-warning);
+  --color-compliance-critical: var(--compliance-critical);
+
+  /* Legacy brand palette (preserved for marketing landing) */
   --color-brand-50: #f0f4f8;
   --color-brand-100: #d9e2ec;
   --color-brand-200: #bcccdc;
@@ -27,187 +84,212 @@
   --color-brand-900: #102a43;
   --color-brand-950: #0a192f;
 
-  /* Haven Dedicated Tokens */
-  --color-acuity-1: var(--acuity-1);
-  --color-acuity-2: var(--acuity-2);
-  --color-acuity-3: var(--acuity-3);
-
-  --color-severity-1: var(--severity-1);
-  --color-severity-2: var(--severity-2);
-  --color-severity-3: var(--severity-3);
-  --color-severity-4: var(--severity-4);
-
-  --color-bed-available: var(--bed-available);
-  --color-bed-occupied: var(--bed-occupied);
-  --color-bed-hold: var(--bed-hold);
-  --color-bed-maintenance: var(--bed-maintenance);
-
-  --color-emar-scheduled: var(--emar-scheduled);
-  --color-emar-given: var(--emar-given);
-  --color-emar-refused: var(--emar-refused);
-  --color-emar-held: var(--emar-held);
-  --color-emar-unavailable: var(--emar-unavailable);
-
-  --color-compliance-good: var(--compliance-good);
-  --color-compliance-warning: var(--compliance-warning);
-  --color-compliance-critical: var(--compliance-critical);
-
   --radius-card: 0.75rem;
   --radius-element: 0.375rem;
-
-  --shadow-soft: 0 4px 20px -2px rgba(15, 23, 42, 0.04);
-  --shadow-elevated: 0 10px 30px -5px rgba(15, 23, 42, 0.08);
-  --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 16px);
+  --radius-4xl: calc(var(--radius) + 24px);
+
+  --shadow-soft: 0 1px 2px rgb(15 23 42 / 0.04), 0 1px 1px rgb(15 23 42 / 0.06);
+  --shadow-elevated: 0 4px 12px rgb(15 23 42 / 0.06), 0 1px 3px rgb(15 23 42 / 0.04);
+  --font-heading: var(--font-sans);
 }
 
+/* =============================================================================
+   Light theme — single source of truth (HSL).
+   Surfaces are near-white, text is near-black, borders are barely-there.
+   This is the Linear / Vercel / Stripe / Notion baseline.
+   ========================================================================= */
 :root {
-  --border: oklch(0.922 0 0);
+  --background: 0 0% 100%;
+  --foreground: 240 10% 4%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 4%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 4%;
+  --primary: 240 6% 10%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 5% 96%;
+  --secondary-foreground: 240 6% 10%;
+  --muted: 240 5% 96%;
+  --muted-foreground: 240 4% 46%;
+  --accent: 240 5% 96%;
+  --accent-foreground: 240 6% 10%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 98%;
+  --success: 142 71% 35%;
+  --warning: 38 92% 45%;
+  --info: 217 91% 55%;
+  --border: 240 6% 90%;
+  --input: 240 6% 90%;
+  --ring: 240 5% 65%;
+  --radius: 0.625rem;
 
+  /* Charts */
+  --chart-1: 217 91% 60%;
+  --chart-2: 142 71% 45%;
+  --chart-3: 38 92% 50%;
+  --chart-4: 280 65% 60%;
+  --chart-5: 0 72% 51%;
+
+  /* Sidebar tokens — match foreground/background so shadcn primitives feel native */
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 240 10% 4%;
+  --sidebar-primary: 240 6% 10%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 240 5% 96%;
+  --sidebar-accent-foreground: 240 6% 10%;
+  --sidebar-border: 240 6% 90%;
+  --sidebar-ring: 240 5% 65%;
+
+  /* Haven domain status tokens (unchanged) */
   --acuity-1: #059669;
   --acuity-2: #d97706;
   --acuity-3: #dc2626;
-
   --severity-1: #475569;
   --severity-2: #eab308;
   --severity-3: #ea580c;
   --severity-4: #991b1b;
-
   --bed-available: #10b981;
   --bed-occupied: #64748b;
   --bed-hold: #f59e0b;
   --bed-maintenance: #94a3b8;
-
   --emar-scheduled: #64748b;
   --emar-given: #10b981;
   --emar-refused: #f59e0b;
   --emar-held: #8b5cf6;
   --emar-unavailable: #ef4444;
-
   --compliance-good: #059669;
   --compliance-warning: #d97706;
   --compliance-critical: #dc2626;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root { /* Admin Default Dark */
-    --border: #1e293b;
+/* =============================================================================
+   Dark theme — pure neutral, no blue cast.
+   ========================================================================= */
+.dark {
+  --background: 240 10% 4%;
+  --foreground: 0 0% 98%;
+  --card: 240 10% 6%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 10% 6%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 240 6% 10%;
+  --secondary: 240 4% 12%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 4% 12%;
+  --muted-foreground: 240 5% 65%;
+  --accent: 240 4% 14%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 63% 45%;
+  --destructive-foreground: 0 0% 98%;
+  --success: 142 71% 45%;
+  --warning: 38 92% 50%;
+  --info: 217 91% 60%;
+  --border: 240 4% 16%;
+  --input: 240 4% 16%;
+  --ring: 240 5% 35%;
 
-    /* Dark equivalents */
-    --acuity-1: #34d399;
-    --acuity-2: #fbbf24;
-    --acuity-3: #f87171;
+  --chart-1: 217 91% 60%;
+  --chart-2: 142 71% 45%;
+  --chart-3: 38 92% 50%;
+  --chart-4: 280 65% 60%;
+  --chart-5: 0 72% 51%;
 
-    --severity-1: #94a3b8;
-    --severity-2: #facc15;
-    --severity-3: #fb923c;
-    --severity-4: #ef4444;
+  --sidebar: 240 10% 5%;
+  --sidebar-foreground: 0 0% 98%;
+  --sidebar-primary: 0 0% 98%;
+  --sidebar-primary-foreground: 240 6% 10%;
+  --sidebar-accent: 240 4% 12%;
+  --sidebar-accent-foreground: 0 0% 98%;
+  --sidebar-border: 240 4% 16%;
+  --sidebar-ring: 240 5% 35%;
 
-    --bed-available: #10b981;
-    --bed-occupied: #94a3b8;
-    --bed-hold: #fbbf24;
-    --bed-maintenance: #64748b;
+  /* Domain status (preserved) */
+  --acuity-1: #34d399;
+  --acuity-2: #fbbf24;
+  --acuity-3: #f87171;
+  --severity-1: #94a3b8;
+  --severity-2: #facc15;
+  --severity-3: #fb923c;
+  --severity-4: #ef4444;
+  --bed-available: #10b981;
+  --bed-occupied: #94a3b8;
+  --bed-hold: #fbbf24;
+  --bed-maintenance: #64748b;
+  --emar-scheduled: #94a3b8;
+  --emar-given: #34d399;
+  --emar-refused: #fbbf24;
+  --emar-held: #a78bfa;
+  --emar-unavailable: #f87171;
+  --compliance-good: #34d399;
+  --compliance-warning: #fbbf24;
+  --compliance-critical: #f87171;
+}
 
-    --emar-scheduled: #94a3b8;
-    --emar-given: #34d399;
-    --emar-refused: #fbbf24;
-    --emar-held: #a78bfa;
-    --emar-unavailable: #f87171;
-
-    --compliance-good: #34d399;
-    --compliance-warning: #fbbf24;
-    --compliance-critical: #f87171;
+/* =============================================================================
+   Base — density, typography, OpenType.
+   13px is the body size for dense app chrome (Linear / Notion / Stripe baseline).
+   Tables and prose can override to 14px locally.
+   ========================================================================= */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    font-feature-settings: "cv11", "ss01", "ss03", "cv02";
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight;
+    line-height: 1.2;
+  }
+  /* Inputs and form controls inherit the body density */
+  input, select, textarea, button {
+    font-size: inherit;
+  }
+  /* Tabular numerics by default in tables (Linear/Stripe convention) */
+  table, .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Cleaner focus ring across the app */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
   }
 }
 
-/* Caregiver Shell Moonshot Gradient Override */
+/* =============================================================================
+   Caregiver / Family shell gradient backgrounds — legacy, preserved.
+   Not loaded on admin/login pages.
+   ========================================================================= */
 .caregiver-shell {
-  --background: #060913;
-  --border: #1e293b; /* slate-800 */
-  background-image: 
-    radial-gradient(at 0% 0%, hsla(253, 16%, 15%, 1) 0, transparent 50%), 
+  --background: 240 10% 4%;
+  --border: 217 33% 17%;
+  background-image:
+    radial-gradient(at 0% 0%, hsla(253, 16%, 15%, 1) 0, transparent 50%),
     radial-gradient(at 100% 100%, hsla(225, 39%, 20%, 1) 0, transparent 50%);
   background-attachment: fixed;
 }
 
-@layer utilities {
-  .glass-card {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-xl;
-  }
-  .glass-panel {
-    @apply bg-zinc-950/40 backdrop-blur-lg border border-zinc-800/50 shadow-2xl;
-  }
-}
-
-/* Family Shell Rich Mockup Gradient Override */
 .family-shell {
-  --background: #fffafa; /* Base warm white */
-  background-image: 
+  --background: 30 100% 99%;
+  background-image:
     radial-gradient(ellipse at 0% 0%, rgba(255, 235, 205, 1) 0%, transparent 60%),
     radial-gradient(ellipse at 100% 0%, rgba(255, 204, 188, 1) 0%, transparent 70%),
     radial-gradient(ellipse at 50% -20%, rgba(255, 228, 196, 1) 0%, transparent 50%),
@@ -216,131 +298,60 @@
 }
 
 @layer utilities {
+  /* Legacy glass utilities — kept so non-admin shells still render. */
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-xl;
+  }
+  .glass-panel {
+    @apply bg-zinc-950/40 backdrop-blur-lg border border-zinc-800/50 shadow-2xl;
+  }
   .glass-card-light {
     @apply bg-white/60 backdrop-blur-2xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)];
   }
-}
-
-/* Micro-interaction definitions */
-@layer utilities {
+  /* Tactile press for mobile/touch surfaces only. */
   .tap-responsive {
     @apply transition-transform duration-150 active:scale-[0.98];
   }
 }
 
+/* =============================================================================
+   Decorative animations (preserved from legacy build).
+   ========================================================================= */
 @keyframes grace-scan {
-  0% {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-  20% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(100%);
-    opacity: 0;
-  }
+  0% { transform: translateX(-100%); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
 }
 
 @keyframes grace-node {
-  0%,
-  100% {
-    opacity: 0.18;
-    transform: scaleY(0.7);
-  }
-  50% {
-    opacity: 1;
-    transform: scaleY(1.5);
-  }
+  0%, 100% { opacity: 0.18; transform: scaleY(0.7); }
+  50% { opacity: 1; transform: scaleY(1.5); }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-  html {
-    @apply font-sans;
-  }
-}
-
-/* Premium Webkit Scrollbars for high-density tables/panels */
+/* =============================================================================
+   Scrollbars — neutral, thin, OS-native feel.
+   ========================================================================= */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: var(--color-brand-200, #bcccdc);
+  background: hsl(var(--border));
   border-radius: 9999px;
-  border: 2px solid transparent; /* padding effect */
+  border: 2px solid transparent;
   background-clip: padding-box;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-brand-400, #829ab1);
-  border: 1px solid transparent; 
+  background: hsl(var(--muted-foreground) / 0.5);
   background-clip: padding-box;
 }
 
-/* Dark mode scrollbars */
-.dark ::-webkit-scrollbar-thumb {
-  background: var(--color-brand-800, #243b53);
-  background-clip: padding-box;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-brand-600, #486581);
-  background-clip: padding-box;
-}
-
-/* --- Marketing landing (Haven homepage) --- */
+/* =============================================================================
+   Marketing landing (Haven homepage) — preserved.
+   ========================================================================= */
 .landing-noise::after {
   content: "";
   position: absolute;
@@ -365,10 +376,6 @@ body {
 }
 
 @keyframes landing-marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }
