@@ -2,7 +2,7 @@ import type { Config } from "tailwindcss";
 import { tokens } from "./src/design-system/tokens";
 
 const config: Config = {
-  darkMode: ["class"],
+  darkMode: "class",
   theme: {
     container: {
       center: false,

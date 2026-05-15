@@ -53,7 +53,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <TooltipProvider delayDuration={250} skipDelayDuration={100}>
+          <TooltipProvider delay={250} closeDelay={100}>
             <ServiceWorkerRegister />
             <div id="haven-app-root" className="flex min-h-full flex-col">
               <a
