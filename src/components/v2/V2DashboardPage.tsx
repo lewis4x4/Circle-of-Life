@@ -31,6 +31,7 @@ export async function V2DashboardPage({ dashboardId }: V2DashboardPageProps) {
     <W1DashboardClient
       payload={load.payload}
       facilities={load.facilities}
+      orgFacilityCount={load.orgFacilityCount}
       auditUpdatedAt={load.generatedAt}
       rowsSource={load.rowsSource}
     />
