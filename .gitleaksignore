@@ -19,3 +19,7 @@ a8f62351936c752c9383622dff0a0e21bd71511f:src/lib/reports/executors/index.ts:gene
 17b59846bc87c6f13b34621f2c7a9ace56819bb8:src/lib/reports/executors/index.ts:generic-api-key:143
 17b59846bc87c6f13b34621f2c7a9ace56819bb8:src/lib/reports/executors/index.ts:generic-api-key:242
 17b59846bc87c6f13b34621f2c7a9ace56819bb8:src/lib/reports/executors/index.ts:generic-api-key:505
+
+# 21efc44 — dietary merge re-fingerprinted the same `{ metricKey: "arDays…", value: bucket… }` rows
+21efc448533d0e7ed64b0885b24cb4df0ce2341b:src/lib/reports/executors/index.ts:generic-api-key:142
+21efc448533d0e7ed64b0885b24cb4df0ce2341b:src/lib/reports/executors/index.ts:generic-api-key:143
