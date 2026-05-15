@@ -66,6 +66,38 @@ function classify(filePath) {
   return { status: hits.length === 0 ? "AUDITED" : "DRIFT", hits, lineCount };
 }
 
+/**
+ * Maps each route group to the app roles that can actually enter it in
+ * production. Source of truth: the role-guard logic inside each shell
+ * (`src/components/layout/*.tsx`) and the middleware
+ * (`src/lib/auth/onboarding-shell.ts`, `src/proxy.ts`). Re-validate when
+ * RBAC changes.
+ */
+const ROLES_BY_GROUP = {
+  "Command — Triage": "owner, org_admin, facility_admin, manager, admin_assistant, coordinator, nurse, maintenance_role, broker",
+  "Command — Executive": "owner, org_admin, facility_admin, manager, admin_assistant, coordinator, nurse, maintenance_role, broker",
+  "Command — Reports": "owner, org_admin, facility_admin, manager, admin_assistant, coordinator, nurse, maintenance_role, broker",
+  "Command — Settings": "owner, org_admin, facility_admin, manager, admin_assistant, coordinator, nurse, maintenance_role, broker",
+  "Clinical Ops": "owner, org_admin, facility_admin, manager, admin_assistant, coordinator, nurse, maintenance_role, broker",
+  "Quality & Risk": "owner, org_admin, facility_admin, manager, admin_assistant, coordinator, nurse, maintenance_role, broker",
+  Workforce: "owner, org_admin, facility_admin, manager, admin_assistant, coordinator, nurse, maintenance_role, broker",
+  Pipeline: "owner, org_admin, facility_admin, manager, admin_assistant, coordinator, nurse, maintenance_role, broker",
+  Finance: "owner, org_admin, facility_admin, manager, admin_assistant, coordinator, nurse, maintenance_role, broker",
+  Knowledge: "owner, org_admin, facility_admin, manager, admin_assistant, coordinator, nurse, maintenance_role, broker",
+  "Admin (legacy shortcut)": "owner, org_admin, facility_admin, manager, admin_assistant, coordinator, nurse, maintenance_role, broker",
+  Caregiver: "caregiver, housekeeper",
+  Family: "family",
+  Dietary: "dietary, dietary_aide + admin-eligible (owner, org_admin, facility_admin, manager, admin_assistant, coordinator, nurse, maintenance_role, broker)",
+  "Med-Tech": "med_tech, nurse",
+  Onboarding: "onboarding, owner, org_admin",
+  "Marketing / Auth": "public (unauthenticated)",
+  Other: "—",
+};
+
+function rolesForGroup(group) {
+  return ROLES_BY_GROUP[group] ?? "—";
+}
+
 function groupForRoute(routePath) {
   if (routePath.startsWith("/admin/executive") || routePath === "/admin/executive") return "Command — Executive";
   if (routePath === "/admin" || routePath.startsWith("/admin/v2")) return "Command — Triage";
@@ -123,9 +155,11 @@ md.push("- **AUDITED** — page.tsx contains zero anti-pattern hits (no `SYS:`, 
 md.push("- **DRIFT** — at least one anti-pattern present. Hits listed inline. Refactor to AUDITED.");
 md.push("- **STUB** — under 20 lines; usually a `export { default } from …` re-export. Treat as AUDITED once the underlying client component is.\n");
 md.push("> The classifier scans page.tsx only. Many routes delegate to a `<RouteNamePageClient>` component under `src/components/…`. Refactoring the client component flips the page to AUDITED automatically since the underlying file is what ships to the browser.\n");
+md.push("> Each group lists its **Roles allowed** line — the union of `app_role` values that can enter at least one route in that group. Sourced from the role-guard logic in the shell components (`src/components/layout/*.tsx`) and the Edge middleware (`src/proxy.ts`, `src/lib/auth/*.ts`). When RBAC changes, update `ROLES_BY_GROUP` in `scripts/build-route-coverage.mjs`.\n");
 
 for (const [group, items] of grouped) {
   md.push(`\n## ${group}\n`);
+  md.push(`Roles allowed: ${rolesForGroup(group)}\n`);
   md.push("| | Route | File | Hits |");
   md.push("|---|---|---|---|");
   for (const r of items) {

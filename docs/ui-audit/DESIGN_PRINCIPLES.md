@@ -85,6 +85,15 @@ Locked-in standards for the Haven admin UI. Reviewers MAY block a PR that violat
 - **Pills/chips** are `h-5 inline-flex items-center rounded border px-1.5 text-[10px] font-medium uppercase tracking-wider`.
 - **Tables** use `@tanstack/react-table` and the `DataTable` primitive in `src/design-system/components/DataTable`.
 - **Empty states** are `border-dashed border-border/80 rounded-lg p-10 text-center` with one short sentence and one icon at 60% opacity.
+- **Multi-step flows** (onboarding, admissions wizard, settings migration, intake) use the `WizardSteps` / `WizardStep` primitive in `src/components/ui/wizard-steps.tsx`. Never hand-roll a `Step N of M` indicator inside a page. The primitive owns the indicator chrome (`h-8 sm:h-9` numbered circles), the connector line between steps, the three states (`complete` / `current` / `upcoming`) keyed off semantic tokens (`bg-primary`, `bg-muted`, `ring-ring`), and the mobile collapse (`hidden sm:inline` labels under `640px`). The consumer passes `state` per step — the primitive does not infer progress. CI enforces this at `.github/workflows/style-regression.yml`.
+
+  ```tsx
+  <WizardSteps aria-label="Onboarding progress">
+    <WizardStep label="Overview" state="complete" href="/onboarding" />
+    <WizardStep label="Departments" state="current" href="/onboarding/departments" />
+    <WizardStep label="Questions" state="upcoming" href="/onboarding/questions" />
+  </WizardSteps>
+  ```
 
 ## 12 · What's forbidden in admin chrome
 
@@ -101,6 +110,7 @@ Locked-in standards for the Haven admin UI. Reviewers MAY block a PR that violat
 | `shadow-[0_8px_30px_rgba(...)]` bespoke shadows | `shadow-soft` / `shadow-elevated` |
 | `ALL CAPS` button labels | sentence case |
 | `font-display font-light` | `font-semibold` |
+| Hand-rolled `Step N of M` indicators in JSX | `<WizardSteps>` / `<WizardStep>` from `@/components/ui/wizard-steps` |
 
 ## 13 · PR review checklist
 

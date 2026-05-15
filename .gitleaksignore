@@ -1,3 +1,12 @@
+# TODO(infra): replace this per-commit fingerprint list with a path-scoped
+# allowlist in `.gitleaks.toml` for `src/lib/reports/executors/index.ts`.
+# The `{ metricKey: "…", value: … }` row shape will keep producing new
+# fingerprints on every commit that touches that file, and someone will
+# eventually rubber-stamp a real leak buried in the same noise floor.
+# Until then, every new commit SHA that bumps the line needs an entry
+# here. See the inline `// scanner false positive, see .gitleaksignore`
+# comments in executors/index.ts for the source-side breadcrumbs.
+#
 # Historical false positives: report executor `{ key, value }` rows; generic-api-key matched
 # variable names like d1_30 and expressions like rows.length (see a8f6235; code renamed thereafter).
 a8f62351936c752c9383622dff0a0e21bd71511f:src/lib/reports/executors/index.ts:generic-api-key:141
