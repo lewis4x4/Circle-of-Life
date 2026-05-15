@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, FileClock, Timer, UserCircle } from "lucide-react";
+import { ArrowRight, Timer, UserCircle } from "lucide-react";
 
 import {
   AdminEmptyState,

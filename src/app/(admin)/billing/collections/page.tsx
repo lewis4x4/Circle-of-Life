@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, CalendarClock, MessageSquareQuote, Phone } from "lucide-react";
+import { ArrowRight, CalendarClock, MessageSquareQuote } from "lucide-react";
 
 import {
   AdminEmptyState,
