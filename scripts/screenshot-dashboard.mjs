@@ -18,6 +18,7 @@
  *   SCREENSHOT_USER_EMAIL    default milton.smith@circleoflifealf.com
  *   SCREENSHOT_OUT_DIR       default docs/ui-audit/screenshots
  *   ROUTES_JSON              optional override, e.g. '[{"id":"med-tech","path":"/med-tech"}]'
+ *   VIEWPORTS_JSON           optional override, e.g. '[{"name":"393x852","width":393,"height":852}]'
  *   SETTLE_MS                additional settle delay after networkidle (default 600)
  */
 import fs from "node:fs";
@@ -52,11 +53,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
   process.exit(2);
 }
 
-const VIEWPORTS = [
-  { name: "1440x900", width: 1440, height: 900 },
-  { name: "1920x1080", width: 1920, height: 1080 },
-  { name: "2560x1440", width: 2560, height: 1440 },
-];
+const VIEWPORTS = process.env.VIEWPORTS_JSON
+  ? JSON.parse(process.env.VIEWPORTS_JSON)
+  : [
+      { name: "1440x900", width: 1440, height: 900 },
+      { name: "1920x1080", width: 1920, height: 1080 },
+      { name: "2560x1440", width: 2560, height: 1440 },
+    ];
 const THEMES = ["light", "dark"];
 const ROUTES = process.env.ROUTES_JSON
   ? JSON.parse(process.env.ROUTES_JSON)

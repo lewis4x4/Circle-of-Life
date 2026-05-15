@@ -71,3 +71,50 @@ jobs:
             --exclude="src/components/ui/wizard-steps.tsx" \
             --exclude-dir=node_modules \
             || (echo "::error::hand-rolled step indicator found — use <WizardSteps>/<WizardStep> from @/components/ui/wizard-steps"; exit 1)
+
+      - name: "Hand-rolled bottom-nav (use BottomNav primitive)"
+        # Catches fixed-position bottom tab bars built as inline `<nav>`
+        # elements outside the canonical primitive at
+        # `src/components/ui/bottom-nav.tsx`. Scoped to the `<nav>` tag
+        # specifically — fixed-bottom action bars (e.g. operations CTA
+        # strip) and bottom-drawer chrome (e.g. QuickCheckDrawer) are NOT
+        # nav-bar patterns and intentionally NOT caught here. Re-tune if
+        # a legitimate `<nav class="fixed bottom-0 …">` pattern emerges
+        # outside the caregiver portal.
+        # See docs/ui-audit/DESIGN_PRINCIPLES.md §12 / §13.
+        run: |
+          ! grep -rnE '<nav\b[^>]*className="[^"]*\b(fixed|inset-x-0)\b[^"]*\bbottom-0\b' \
+            src/ \
+            --include="*.tsx" \
+            --exclude="src/components/ui/bottom-nav.tsx" \
+            --exclude-dir=node_modules \
+            || (echo "::error::hand-rolled bottom-nav <nav> found — use <BottomNav>/<BottomNavItem> from @/components/ui/bottom-nav"; exit 1)
+
+      - name: "Hover-only states on audited caregiver chrome (pair with active:)"
+        # On the caregiver shell + caregiver-scoped primitives, every
+        # hover:X utility must ship with a matching active:X so touch
+        # devices that never fire hover still render pressed-state
+        # feedback. Heuristic: flag any className that contains `hover:`
+        # without a corresponding `active:` token in the same string.
+        # Scoped narrowly to the files Phase C has audited — caregiver
+        # route-page workflows (`src/app/(caregiver)/**`) are NOT scanned
+        # here; their hover/active pairing is the responsibility of a
+        # future Phase D workflow-page audit. Expand the scope incrementally
+        # as those files migrate.
+        # See docs/ui-audit/DESIGN_PRINCIPLES.md §13.
+        run: |
+          set +e
+          MATCHES=$(grep -rEn 'className=("|`|cn\()[^"`]*\bhover:[a-z-]' \
+            src/components/layout/CaregiverShell.tsx \
+            src/components/ui/bottom-nav.tsx \
+            src/components/ui/status-pill.tsx \
+            --include="*.tsx" \
+            --exclude-dir=node_modules 2>/dev/null \
+            | grep -v 'active:' \
+            | grep -v 'group-hover:')
+          set -e
+          if [ -n "$MATCHES" ]; then
+            echo "::error::caregiver chrome hover:* without a matching active:* — pair them so touch devices render pressed feedback"
+            echo "$MATCHES"
+            exit 1
+          fi

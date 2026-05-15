@@ -111,8 +111,23 @@ Locked-in standards for the Haven admin UI. Reviewers MAY block a PR that violat
 | `ALL CAPS` button labels | sentence case |
 | `font-display font-light` | `font-semibold` |
 | Hand-rolled `Step N of M` indicators in JSX | `<WizardSteps>` / `<WizardStep>` from `@/components/ui/wizard-steps` |
+| Hand-rolled `<nav className="fixed bottom-0 ...">` bottom tab bar | `<BottomNav>` / `<BottomNavItem>` from `@/components/ui/bottom-nav` |
+| Hand-rolled colored dot + label sync/status indicators | `<StatusPill>` from `@/components/ui/status-pill` |
+| `hover:` utilities without a matching `active:` on caregiver routes | always pair `hover:X active:X` so touch devices that never fire hover still render pressed feedback |
 
-## 13 · PR review checklist
+## 13 · Mobile-first cockpit standards
+
+The caregiver portal is the only Haven surface where mobile is the **canonical** device, not a fallback — caregivers work bedside on tablets and phones during shifts that span low-light night rotations (11P-7A). These rules apply to the caregiver route group (`/caregiver/*`) and any future surface where mobile is primary:
+
+- **Touch targets ≥ 44px.** iOS HIG. Every interactive element (`<button>`, `<Link>`, tap-area) renders at `min-h-11` or larger. Bottom-nav items are `min-h-11` even though the parent bar is `h-14` (56px) — the extra height is label-padding, not tap surface.
+- **Safe-area inset respected.** Bottom-fixed chrome wraps content in `pb-[env(safe-area-inset-bottom)]` and grows the container to `h-[calc(3.5rem+env(safe-area-inset-bottom))]`. The iPhone 14 Pro home-indicator strip (34px) clears cleanly. `BottomNav` from `@/components/ui/bottom-nav` does this automatically.
+- **No hover-only states.** Touch devices never fire `:hover`. Every `hover:X` utility ships with a matching `active:X` so the pressed-state feedback survives on tap. Verify by capturing the same screenshot at desktop + mobile viewports — the active-item chrome must render identically.
+- **Pressed-state feedback.** Tappable items use the `tap-responsive` utility (`transition-transform duration-150 active:scale-[0.98]`) for the brief press-shrink, plus a color swap (`hover:bg-accent active:bg-accent`). The double-cue tells caregivers their tap registered without waiting for the route to render.
+- **Bottom-nav is a primitive.** Use `<BottomNav>` / `<BottomNavItem>` from `@/components/ui/bottom-nav`. Hand-rolling a `<nav className="fixed bottom-0 left-0 right-0 ...">` is blocked by the CI guardrail in `.github/workflows/style-regression.yml`.
+- **Status pills are a primitive.** Sync state, shift state, "currently on break" / "off duty" — all use `<StatusPill variant="…" dot pulsing>` from `@/components/ui/status-pill`. The variant resolves the dot color (`success` / `warning` / `destructive`) via semantic tokens; the consumer doesn't pick raw hex.
+- **Forced-dark.** Caregiver shifts include night rotations and bedside use in dim resident rooms. The shell wraps content in `<div className="dark">` at the root regardless of `next-themes` state. Belt and suspenders with `setTheme("dark")`.
+
+## 14 · PR review checklist
 
 Reviewers run this before merging anything visual:
 
