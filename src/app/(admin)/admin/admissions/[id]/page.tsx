@@ -510,15 +510,15 @@ export default function AdminAdmissionCaseDetailPage() {
       
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <AdmissionsHubNav />
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
           <div className="space-y-3">
              <Link
                href="/admin/admissions"
-               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-2 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
              >
                  <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> BACK TO ADMISSIONS
              </Link>
-            <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+            <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
                Admission Case
              </h1>
             <p className="mt-2 text-sm font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
@@ -529,7 +529,7 @@ export default function AdminAdmissionCaseDetailPage() {
             {row?.resident_id && (
               <Link
                 href={`/admin/residents/${row.resident_id}`}
-                className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-widest text-xs tap-responsive bg-brand-600 hover:bg-brand-700 text-white shadow-lg flex items-center gap-2")}
+                className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-wider text-xs tap-responsive bg-brand-600 hover:bg-brand-700 text-white shadow-lg flex items-center gap-2")}
               >
                 Resident Profile
               </Link>
@@ -538,39 +538,39 @@ export default function AdminAdmissionCaseDetailPage() {
         </header>
 
         {loading ? (
-          <div className="flex items-center justify-center p-12 text-sm text-slate-500 font-medium bg-white/50 dark:bg-white/5 rounded-[2.5rem] border border-slate-200/50 dark:border-white/10 backdrop-blur-3xl">
+          <div className="flex items-center justify-center p-12 text-sm text-slate-500 font-medium bg-white/50 dark:bg-white/5 rounded-lg border border-slate-200/50 dark:border-white/10">
              <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading Case...
           </div>
         ) : error ? (
-           <div className="p-6 rounded-[2.5rem] bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 font-medium">
+           <div className="p-6 rounded-lg bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 font-medium">
               {error}
            </div>
         ) : !row ? (
-          <div className="flex items-center justify-center p-12 text-center text-sm text-slate-500 bg-white/50 dark:bg-white/5 rounded-[2.5rem] border border-slate-200/50 dark:border-white/10 backdrop-blur-3xl">
+          <div className="flex items-center justify-center p-12 text-center text-sm text-slate-500 bg-white/50 dark:bg-white/5 rounded-lg border border-slate-200/50 dark:border-white/10">
             No case found for this id, or you do not have access.
           </div>
         ) : (
           <>
             {actionError ? (
-              <div className="p-6 rounded-[2.5rem] bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 font-medium text-sm">
+              <div className="p-6 rounded-lg bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 font-medium text-sm">
                 {actionError}
               </div>
             ) : null}
             {actionMessage ? (
-              <div className="p-6 rounded-[2.5rem] bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-medium text-sm">
+              <div className="p-6 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-medium text-sm">
                 {actionMessage}
               </div>
             ) : null}
             {wrongFacility && (
-              <div className="p-6 rounded-[2.5rem] bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-500/20 text-amber-700 dark:text-amber-400 font-medium text-sm">
+              <div className="p-6 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-500/20 text-amber-700 dark:text-amber-400 font-medium text-sm">
                 This case belongs to another facility. Switch the facility in the header to match.
               </div>
             )}
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all h-fit">
+              <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all h-fit">
                 <div className="mb-8 border-b border-slate-200 dark:border-white/5 pb-4 flex flex-col gap-2">
-                   <h3 className="text-2xl font-display font-semibold text-slate-900 dark:text-white flex items-center gap-3">
+                   <h3 className="text-2xl font-semibold text-slate-900 dark:text-white flex items-center gap-3">
                      <UserPlus className="h-6 w-6 text-brand-500" />
                      {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Resident"}
                    </h3>
@@ -579,37 +579,37 @@ export default function AdminAdmissionCaseDetailPage() {
                 
                 <dl className="grid gap-4 sm:grid-cols-2">
                   <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                    <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Status</dt>
+                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Status</dt>
                     <dd className="text-base font-semibold text-slate-900 dark:text-slate-100 capitalize">{formatStatus(row.status)}</dd>
                   </div>
                   <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                    <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Medicaid Stage</dt>
+                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Medicaid Stage</dt>
                     <dd className="text-base font-semibold text-slate-900 dark:text-slate-100 capitalize">{formatStatus(row.medicaid_pipeline_stage ?? "prospect")}</dd>
                   </div>
                   <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                    <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Target Move-In</dt>
+                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Target Move-In</dt>
                     <dd className="text-base font-semibold text-slate-900 dark:text-slate-100">{row.target_move_in_date ?? "—"}</dd>
                   </div>
                   <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                    <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Referral Lead</dt>
+                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Referral Lead</dt>
                     <dd className="text-sm font-medium text-slate-900 dark:text-slate-100">
                       {row.referral_leads ? `${row.referral_leads.first_name} ${row.referral_leads.last_name}` : "—"}
                     </dd>
                   </div>
                   <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                    <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Bed</dt>
+                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Bed</dt>
                     <dd className="text-sm font-medium text-slate-900 dark:text-slate-100">{row.beds?.bed_label ?? "—"}</dd>
                   </div>
                   <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                    <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Financial Clearance</dt>
+                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Financial Clearance</dt>
                     <dd className="text-sm font-mono text-slate-900 dark:text-slate-300">{formatTs(row.financial_clearance_at)}</dd>
                   </div>
                   <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                    <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Physician Orders</dt>
+                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Physician Orders</dt>
                     <dd className="text-sm font-mono text-slate-900 dark:text-slate-300">{formatTs(row.physician_orders_received_at)}</dd>
                   </div>
                   <div className="sm:col-span-2 bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                    <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Medicaid Pipeline Tracking</dt>
+                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Medicaid Pipeline Tracking</dt>
                     <dd className="space-y-3">
                       <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
                         <select
@@ -638,7 +638,7 @@ export default function AdminAdmissionCaseDetailPage() {
                     </dd>
                   </div>
                   <div className="sm:col-span-2 bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                    <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Physician Orders Summary</dt>
+                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Physician Orders Summary</dt>
                     <dd className="space-y-3">
                       <textarea
                         value={physicianOrdersSummaryDraft}
@@ -664,7 +664,7 @@ export default function AdminAdmissionCaseDetailPage() {
                     </dd>
                   </div>
                   <div className="sm:col-span-2 bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                    <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Notes</dt>
+                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Notes</dt>
                     <dd className="space-y-3">
                       <textarea
                         value={caseNotesDraft}
@@ -689,23 +689,23 @@ export default function AdminAdmissionCaseDetailPage() {
                       </div>
                     </dd>
                   </div>
-                  <div className="sm:col-span-2 flex items-center justify-end text-[10px] text-slate-400 uppercase tracking-widest font-mono mt-2">
+                  <div className="sm:col-span-2 flex items-center justify-end text-[10px] text-slate-400 uppercase tracking-wider font-mono mt-2">
                     Updated: {formatTs(row.updated_at)}
                   </div>
                 </dl>
               </div>
 
-              <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-amber-200/70 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-950/20 backdrop-blur-3xl shadow-sm relative overflow-hidden h-fit">
+              <div className="p-6 sm:p-8 rounded-lg border border-amber-200/70 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-950/20 shadow-sm relative overflow-hidden h-fit">
                 <div className="mb-6 border-b border-amber-200/70 dark:border-amber-900/40 pb-4 flex items-center justify-between">
-                  <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white">Move-In Readiness</h3>
-                  <span className="text-[10px] font-mono tracking-widest text-amber-700 dark:text-amber-300 uppercase">Operational checklist</span>
+                  <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Move-In Readiness</h3>
+                  <span className="text-[10px] font-mono tracking-wider text-amber-700 dark:text-amber-300 uppercase">Operational checklist</span>
                 </div>
                 <div className="space-y-3">
                   {readiness.map((item) => (
-                    <div key={item.key} className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/80 dark:bg-black/20 px-4 py-3 flex items-center justify-between gap-3">
+                    <div key={item.key} className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/80 px-4 py-3 flex items-center justify-between gap-3">
                       <span className="text-sm font-medium text-slate-900 dark:text-white">{item.label}</span>
                       <span className={cn(
-                        "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-widest",
+                        "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider",
                         item.passed
                           ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
                           : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
@@ -715,8 +715,8 @@ export default function AdminAdmissionCaseDetailPage() {
                     </div>
                   ))}
                 </div>
-                <div className="mt-5 rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/80 dark:bg-black/20 p-4">
-                  <p className="text-[10px] font-mono tracking-widest uppercase text-slate-500 mb-2">Next actions</p>
+                <div className="mt-5 rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/80 p-4">
+                  <p className="text-[10px] font-mono tracking-wider uppercase text-slate-500 mb-2">Next actions</p>
                   <ul className="list-inside list-disc space-y-1 text-sm text-slate-700 dark:text-slate-300">
                     {!row.financial_clearance_at ? <li>Record financial clearance before move-in.</li> : null}
                     {!row.physician_orders_received_at ? <li>Capture physician orders receipt before move-in.</li> : null}
@@ -729,8 +729,8 @@ export default function AdminAdmissionCaseDetailPage() {
                     ) : null}
                   </ul>
                 </div>
-                <div className="mt-5 rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/80 dark:bg-black/20 p-4 space-y-4">
-                  <p className="text-[10px] font-mono tracking-widest uppercase text-slate-500">Workflow actions</p>
+                <div className="mt-5 rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/80 p-4 space-y-4">
+                  <p className="text-[10px] font-mono tracking-wider uppercase text-slate-500">Workflow actions</p>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <Button
                       type="button"
@@ -752,13 +752,13 @@ export default function AdminAdmissionCaseDetailPage() {
                 <div className="rounded-2xl border border-indigo-200/70 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20 p-4 space-y-4">
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <p className="text-[10px] font-mono tracking-widest uppercase text-slate-500">Form 1823 gate</p>
+                      <p className="text-[10px] font-mono tracking-wider uppercase text-slate-500">Form 1823 gate</p>
                       <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
                         Move-in requires a received Form 1823 for this admission case.
                       </p>
                     </div>
                     <span className={cn(
-                      "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-widest",
+                      "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider",
                       form1823Satisfied
                         ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
                         : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
@@ -897,7 +897,7 @@ export default function AdminAdmissionCaseDetailPage() {
                   </div>
                 </div>
                 <div className="mt-5 rounded-2xl border border-indigo-200/70 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20 p-4 space-y-3">
-                  <p className="text-[10px] font-mono tracking-widest uppercase text-slate-500">Downstream onboarding work</p>
+                  <p className="text-[10px] font-mono tracking-wider uppercase text-slate-500">Downstream onboarding work</p>
                   {row.status !== "move_in" ? (
                     <p className="text-sm text-slate-700 dark:text-slate-300">
                       Advance this case to <span className="font-semibold">move in</span> before completing downstream onboarding work across resident, care plan, medications, billing, and family coordination.
@@ -906,10 +906,10 @@ export default function AdminAdmissionCaseDetailPage() {
                     <>
                       <div className="space-y-2">
                         {onboarding.map((item) => (
-                          <div key={item.key} className="rounded-xl border border-slate-200/70 dark:border-white/5 bg-white/80 dark:bg-black/20 px-4 py-3 flex items-center justify-between gap-3">
+                          <div key={item.key} className="rounded-xl border border-slate-200/70 dark:border-white/5 bg-white/80 px-4 py-3 flex items-center justify-between gap-3">
                             <span className="text-sm font-medium text-slate-900 dark:text-white">{item.label}</span>
                             <span className={cn(
-                              "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-widest",
+                              "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider",
                               item.passed
                                 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
                                 : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
@@ -924,7 +924,7 @@ export default function AdminAdmissionCaseDetailPage() {
                           <Link
                             key={item.href}
                             href={item.href}
-                            className="rounded-xl border border-slate-200/70 dark:border-white/5 bg-white/80 dark:bg-black/20 px-4 py-3 text-sm font-medium text-slate-900 dark:text-white transition-colors hover:bg-white dark:hover:bg-black/30"
+                            className="rounded-xl border border-slate-200/70 dark:border-white/5 bg-white/80 px-4 py-3 text-sm font-medium text-slate-900 dark:text-white transition-colors hover:bg-white dark:hover:bg-black/30"
                           >
                             {item.label}
                           </Link>
@@ -941,17 +941,17 @@ export default function AdminAdmissionCaseDetailPage() {
                 </div>
               </div>
 
-              <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-2xl backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative h-fit">
+              <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] shadow-2xl overflow-hidden p-6 md:p-8 relative h-fit">
                 <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
-                  <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1 flex items-center gap-2">
+                  <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1 flex items-center gap-2">
                      <FileText className="h-5 w-5 text-indigo-500" /> Quoted Rate Terms
                   </h3>
-                  <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-1 uppercase">Saved in admission_case_rate_terms</p>
+                  <p className="text-[10px] font-mono tracking-wider text-slate-400 mt-1 uppercase">Saved in admission_case_rate_terms</p>
                 </div>
 
-                <div className="mb-6 rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/80 dark:bg-black/20 p-4 space-y-4">
+                <div className="mb-6 rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/80 p-4 space-y-4">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-[10px] font-mono tracking-widest uppercase text-slate-500">
+                    <p className="text-[10px] font-mono tracking-wider uppercase text-slate-500">
                       {editingRateTermId ? "Edit quoted terms" : "Add quoted terms"}
                     </p>
                     {editingRateTermId ? (
@@ -962,7 +962,7 @@ export default function AdminAdmissionCaseDetailPage() {
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Rate schedule</label>
+                      <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Rate schedule</label>
                       <select
                         value={rateScheduleDraft}
                         onChange={(event) => setRateScheduleDraft(event.target.value)}
@@ -977,7 +977,7 @@ export default function AdminAdmissionCaseDetailPage() {
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Accommodation</label>
+                      <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Accommodation</label>
                       <select
                         value={rateAccommodationDraft}
                         onChange={(event) => setRateAccommodationDraft(event.target.value as Database["public"]["Enums"]["admission_accommodation_quote"])}
@@ -988,7 +988,7 @@ export default function AdminAdmissionCaseDetailPage() {
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Care level helper</label>
+                      <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Care level helper</label>
                       <select
                         value={rateCareLevelDraft}
                         onChange={(event) => setRateCareLevelDraft(event.target.value as "1" | "2" | "3")}
@@ -1010,7 +1010,7 @@ export default function AdminAdmissionCaseDetailPage() {
                       </Button>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Quoted base rate (cents)</label>
+                      <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Quoted base rate (cents)</label>
                       <input
                         type="number"
                         min="0"
@@ -1020,7 +1020,7 @@ export default function AdminAdmissionCaseDetailPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Quoted care surcharge (cents)</label>
+                      <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Quoted care surcharge (cents)</label>
                       <input
                         type="number"
                         min="0"
@@ -1030,7 +1030,7 @@ export default function AdminAdmissionCaseDetailPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Effective date</label>
+                      <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Effective date</label>
                       <input
                         type="date"
                         value={effectiveDateDraft}
@@ -1050,7 +1050,7 @@ export default function AdminAdmissionCaseDetailPage() {
                     </div>
                   ) : null}
                   <div className="space-y-2">
-                    <label className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Notes</label>
+                    <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Notes</label>
                     <textarea
                       value={rateNotesDraft}
                       onChange={(event) => setRateNotesDraft(event.target.value)}
@@ -1079,31 +1079,31 @@ export default function AdminAdmissionCaseDetailPage() {
                    ) : (
                      <>
                         <div className="hidden sm:grid grid-cols-[2fr_1fr_1fr_1.5fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10 text-left">
-                           <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Accommodation</div>
-                           <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Base (¢)</div>
-                           <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Care (¢)</div>
-                           <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Effective</div>
+                           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Accommodation</div>
+                           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">Base (¢)</div>
+                           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">Care (¢)</div>
+                           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Effective</div>
                         </div>
 
                         <div className="space-y-3 mt-6 relative z-10">
                            <MotionList className="space-y-3">
                               {rateTerms.map((t) => (
                                  <MotionItem key={t.id}>
-                                    <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_1.5fr] gap-4 sm:items-center p-5 rounded-2xl bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg transition-all duration-300 w-full outline-none">
+                                    <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_1.5fr] gap-4 sm:items-center p-5 rounded-2xl bg-white border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg transition-all duration-300 w-full outline-none">
                                       <div className="flex flex-col">
-                                         <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Accommodation</span>
+                                         <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Accommodation</span>
                                          <span className="font-semibold text-base text-slate-900 dark:text-slate-100 tracking-tight leading-tight">{formatColLabel(t.accommodation_type)}</span>
                                       </div>
                                       <div className="flex flex-col sm:items-end">
-                                         <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Base (¢)</span>
+                                         <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Base (¢)</span>
                                          <span className="text-sm font-mono text-slate-700 dark:text-slate-300">{formatCents(t.quoted_base_rate_cents)}</span>
                                       </div>
                                       <div className="flex flex-col sm:items-end">
-                                         <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Care (¢)</span>
+                                         <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Care (¢)</span>
                                          <span className="text-sm font-mono text-slate-700 dark:text-slate-300">{formatCents(t.quoted_care_surcharge_cents)}</span>
                                       </div>
                                      <div className="flex flex-col">
-                                         <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Effective</span>
+                                         <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Effective</span>
                                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2"><CalendarDays className="h-3.5 w-3.5 text-slate-400" /> {t.effective_date ?? "—"}</span>
                                       </div>
                                       <div className="sm:col-span-4 flex justify-end">

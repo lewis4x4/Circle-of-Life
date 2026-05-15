@@ -101,7 +101,7 @@ export default function FamilyPaymentsPage() {
         Back to billing summary
       </Link>
 
-      <div className="glass-card-light rounded-[2rem] p-6 md:p-8 bg-white/70">
+      <div className="rounded-lg p-6 md:p-8 bg-white/70">
         <div className="mb-5 flex items-center gap-3">
           <Banknote className="h-6 w-6 text-amber-600" />
           <div>
@@ -123,7 +123,7 @@ export default function FamilyPaymentsPage() {
             rows.map((p) => (
               <div
                 key={p.id}
-                className="flex flex-col gap-1 rounded-[1.5rem] border border-stone-200 bg-white/60 p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-1 rounded-lg border border-stone-200 bg-card p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
                   <p className="text-lg font-serif text-stone-900">{formatUsd(p.amount)}</p>

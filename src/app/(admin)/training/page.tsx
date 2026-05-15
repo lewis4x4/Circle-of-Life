@@ -609,10 +609,8 @@ export default function AdminTrainingHubPage() {
       <div className="relative z-10 space-y-6">
         <header className="mb-8">
           <div>
-            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">
-              SYS: Module 12 / Training and Competency
-            </p>
-            <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
               Training & Competency
             </h2>
           </div>
@@ -624,7 +622,7 @@ export default function AdminTrainingHubPage() {
               <Sparkline colorClass="text-indigo-500" variant={3} />
               <MonolithicWatermark value={rows.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
                   <GraduationCap className="h-3.5 w-3.5" /> Demos Completed
                 </h3>
                 <p className="text-4xl font-mono tracking-tighter text-indigo-600 dark:text-indigo-400 pb-1">{rows.length}</p>
@@ -644,7 +642,7 @@ export default function AdminTrainingHubPage() {
                      type="button"
                      variant="outline"
                      disabled={!facilityReady || exportingCsv}
-                     className="h-auto min-h-10 whitespace-normal text-left font-mono uppercase tracking-widest text-[10px] sm:whitespace-nowrap"
+                     className="h-auto min-h-10 whitespace-normal text-left font-mono uppercase tracking-wider text-[10px] sm:whitespace-nowrap"
                      onClick={() => void exportDemonstrationsCsv()}
                    >
                      {exportingCsv ? "Preparing…" : "Download demonstrations CSV"}
@@ -653,7 +651,7 @@ export default function AdminTrainingHubPage() {
                      <Button
                        type="button"
                        disabled
-                       className="h-auto min-h-10 whitespace-normal text-left font-mono uppercase tracking-widest text-[10px] opacity-70 sm:whitespace-nowrap"
+                       className="h-auto min-h-10 whitespace-normal text-left font-mono uppercase tracking-wider text-[10px] opacity-70 sm:whitespace-nowrap"
                        title="Select a single facility in the header to record a new demonstration."
                      >
                        + New Demonstration
@@ -663,7 +661,7 @@ export default function AdminTrainingHubPage() {
                        href="/admin/training/new"
                        className={cn(
                          buttonVariants({ size: "default" }),
-                         "h-auto min-h-10 whitespace-normal text-left font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none sm:whitespace-nowrap",
+                         "h-auto min-h-10 whitespace-normal text-left font-mono uppercase tracking-wider text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none sm:whitespace-nowrap",
                        )}
                      >
                        + New Demonstration
@@ -693,7 +691,7 @@ export default function AdminTrainingHubPage() {
                   <Button
                     type="button"
                     disabled
-                    className="shrink-0 font-mono uppercase tracking-widest text-[10px] opacity-70"
+                    className="shrink-0 font-mono uppercase tracking-wider text-[10px] opacity-70"
                     title="Select a single facility in the header to log a completion."
                   >
                     + Log completion
@@ -703,7 +701,7 @@ export default function AdminTrainingHubPage() {
                     href="/admin/training/completions/new"
                     className={cn(
                       buttonVariants({ size: "default" }),
-                      "shrink-0 font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none",
+                      "shrink-0 font-mono uppercase tracking-wider text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none",
                     )}
                   >
                     + Log completion
@@ -713,7 +711,7 @@ export default function AdminTrainingHubPage() {
                   type="button"
                   variant="outline"
                   disabled={!facilityReady || exportingCompletionsCsv}
-                  className="shrink-0 font-mono uppercase tracking-widest text-[10px]"
+                  className="shrink-0 font-mono uppercase tracking-wider text-[10px]"
                   onClick={() => void exportCompletionsCsv()}
                 >
                   {exportingCompletionsCsv ? "Preparing…" : "Download completions CSV"}
@@ -736,7 +734,7 @@ export default function AdminTrainingHubPage() {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-white/20 bg-white/40 dark:border-white/5 dark:bg-slate-900/40">
+              <div className="overflow-x-auto rounded-xl border border-white/20 bg-card dark:border-white/5 dark:bg-slate-900/40">
                 <table className="w-full min-w-[820px] text-left text-xs">
                   <thead>
                     <tr className="border-b border-white/20 font-mono uppercase tracking-wider text-slate-500 dark:border-white/10">
@@ -915,7 +913,7 @@ export default function AdminTrainingHubPage() {
                   type="button"
                   onClick={() => void handleAttestationSave()}
                   disabled={!facilityReady || loadingAttestationStaff || attestationSubmitting}
-                  className="font-mono uppercase tracking-widest text-[10px]"
+                  className="font-mono uppercase tracking-wider text-[10px]"
                 >
                   {attestationSubmitting ? "Saving…" : "Save attestation"}
                 </Button>
@@ -936,7 +934,7 @@ export default function AdminTrainingHubPage() {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-white/20 bg-white/40 dark:border-white/5 dark:bg-slate-900/40">
+              <div className="overflow-x-auto rounded-xl border border-white/20 bg-card dark:border-white/5 dark:bg-slate-900/40">
                 <table className="w-full min-w-[900px] text-left text-xs">
                   <thead>
                     <tr className="border-b border-white/20 font-mono uppercase tracking-wider text-slate-500 dark:border-white/10">
@@ -1002,7 +1000,7 @@ export default function AdminTrainingHubPage() {
                   <Button
                     type="button"
                     disabled
-                    className="shrink-0 font-mono uppercase tracking-widest text-[10px] opacity-70"
+                    className="shrink-0 font-mono uppercase tracking-wider text-[10px] opacity-70"
                     title="Select a single facility in the header to record a new in-service session."
                   >
                     + New in-service session
@@ -1012,7 +1010,7 @@ export default function AdminTrainingHubPage() {
                     href="/admin/training/inservice/new"
                     className={cn(
                       buttonVariants({ size: "default" }),
-                      "shrink-0 font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none",
+                      "shrink-0 font-mono uppercase tracking-wider text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none",
                     )}
                   >
                     + New in-service session
@@ -1022,7 +1020,7 @@ export default function AdminTrainingHubPage() {
                   type="button"
                   variant="outline"
                   disabled={!facilityReady || exportingInserviceCsv}
-                  className="shrink-0 font-mono uppercase tracking-widest text-[10px]"
+                  className="shrink-0 font-mono uppercase tracking-wider text-[10px]"
                   onClick={() => void exportInserviceCsv()}
                 >
                   {exportingInserviceCsv ? "Preparing…" : "Download in-service CSV"}
@@ -1045,7 +1043,7 @@ export default function AdminTrainingHubPage() {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-white/20 bg-white/40 dark:border-white/5 dark:bg-slate-900/40">
+              <div className="overflow-x-auto rounded-xl border border-white/20 bg-card dark:border-white/5 dark:bg-slate-900/40">
                 <table className="w-full min-w-[760px] text-left text-xs">
                   <thead>
                     <tr className="border-b border-white/20 font-mono uppercase tracking-wider text-slate-500 dark:border-white/10">
@@ -1126,7 +1124,7 @@ export default function AdminTrainingHubPage() {
               ) : (
                 <>
                   {attentionRows.length === 0 ? (
-                    <div className="p-8 text-center text-slate-500 bg-white/30 dark:bg-black/20 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md">
+                    <div className="p-8 text-center text-slate-500 bg-white/30 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md">
                       <p className="font-medium">No open demonstrations</p>
                       <p className="text-sm opacity-80 mt-1">
                         Nothing in draft, submitted, or failed status in the loaded batch (last 50 records
@@ -1165,7 +1163,7 @@ export default function AdminTrainingHubPage() {
                       <MotionItem
                         key={row.id}
                         className={cn(
-                          "glass-panel p-5 rounded-2xl border bg-white/40 dark:bg-slate-900/40 relative overflow-hidden group transition-all duration-300 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer",
+                          "p-5 rounded-2xl border bg-card dark:bg-slate-900/40 relative overflow-hidden group transition-all duration-300 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer",
                           border,
                         )}
                       >
@@ -1173,7 +1171,7 @@ export default function AdminTrainingHubPage() {
                         <div className="flex justify-between items-start mb-4">
                           <span
                             className={cn(
-                              "text-[9px] font-mono font-bold shadow-sm px-2 py-1 rounded-md uppercase tracking-widest",
+                              "text-[9px] font-mono font-bold shadow-sm px-2 py-1 rounded-md uppercase tracking-wider",
                               badge,
                             )}
                           >
@@ -1181,11 +1179,11 @@ export default function AdminTrainingHubPage() {
                           </span>
                           <span className="flex flex-col items-end gap-1 text-right sm:flex-row sm:items-center sm:gap-2">
                             {orgWideMode && row.facilities?.name ? (
-                              <span className="text-[9px] uppercase tracking-widest text-indigo-600 dark:text-indigo-400 font-mono font-bold bg-indigo-500/10 px-2 py-0.5 rounded">
+                              <span className="text-[9px] uppercase tracking-wider text-indigo-600 dark:text-indigo-400 font-mono font-bold bg-indigo-500/10 px-2 py-0.5 rounded">
                                 {row.facilities.name}
                               </span>
                             ) : null}
-                            <span className="text-[10px] uppercase tracking-widest text-slate-500 font-mono font-bold bg-white/50 dark:bg-black/30 px-2 py-0.5 rounded shadow-sm">
+                            <span className="text-[10px] uppercase tracking-wider text-slate-500 font-mono font-bold bg-white/50 px-2 py-0.5 rounded shadow-sm">
                               Session {format(new Date(row.demonstrated_at), "MMM d, yyyy")}
                             </span>
                           </span>
@@ -1209,7 +1207,7 @@ export default function AdminTrainingHubPage() {
                                   key={a.storage_path}
                                   storagePath={a.storage_path}
                                   label={a.label}
-                                  className="h-8 text-[10px] font-mono uppercase tracking-widest"
+                                  className="h-8 text-[10px] font-mono uppercase tracking-wider"
                                 />
                               ))}
                             </div>
@@ -1220,7 +1218,7 @@ export default function AdminTrainingHubPage() {
                             href="/admin/training/new"
                             className={cn(
                               buttonVariants({ variant: "default", size: "sm" }),
-                              "text-white font-mono uppercase tracking-widest text-[10px]",
+                              "text-white font-mono uppercase tracking-wider text-[10px]",
                               btn,
                             )}
                           >
@@ -1242,7 +1240,7 @@ export default function AdminTrainingHubPage() {
                         return (
                         <MotionItem
                           key={row.id}
-                          className="glass-panel p-3 rounded-xl border border-white/20 dark:border-white/5 bg-white/30 dark:bg-slate-900/30 flex gap-4 items-center"
+                          className="p-3 rounded-xl border border-white/20 dark:border-white/5 bg-white/30 dark:bg-slate-900/30 flex gap-4 items-center"
                         >
                           <div className="flex-1 min-w-0">
                             {orgWideMode && row.facilities?.name ? (
@@ -1296,22 +1294,22 @@ export default function AdminTrainingHubPage() {
                 Counts below are from the last 50 competency demonstrations in this view (not scheduled{" "}
                 <span className="font-mono">training_compliance_snapshots</span>).
               </p>
-              <div className="glass-panel p-4 rounded-xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 flex flex-col gap-2">
+              <div className="p-4 rounded-xl border border-white/20 dark:border-white/5 bg-card flex flex-col gap-2">
                 <div className="flex justify-between items-center">
                   <p className="text-xs font-semibold uppercase tracking-wider font-mono text-slate-900 dark:text-slate-100">Passed</p>
-                  <span className="text-sm font-display font-medium text-emerald-600 dark:text-emerald-400">{statusCounts.passed}</span>
+                  <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">{statusCounts.passed}</span>
                 </div>
               </div>
-              <div className="glass-panel p-4 rounded-xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 flex flex-col gap-2">
+              <div className="p-4 rounded-xl border border-white/20 dark:border-white/5 bg-card flex flex-col gap-2">
                 <div className="flex justify-between items-center">
                   <p className="text-xs font-semibold uppercase tracking-wider font-mono text-slate-900 dark:text-slate-100">Draft / submitted</p>
-                  <span className="text-sm font-display font-medium text-amber-600 dark:text-amber-400">{statusCounts.pending}</span>
+                  <span className="text-sm font-medium text-amber-600 dark:text-amber-400">{statusCounts.pending}</span>
                 </div>
               </div>
-              <div className="glass-panel p-4 rounded-xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 flex flex-col gap-2">
+              <div className="p-4 rounded-xl border border-white/20 dark:border-white/5 bg-card flex flex-col gap-2">
                 <div className="flex justify-between items-center">
                   <p className="text-xs font-semibold uppercase tracking-wider font-mono text-slate-900 dark:text-slate-100">Failed</p>
-                  <span className="text-sm font-display font-medium text-rose-600 dark:text-rose-400">{statusCounts.failed}</span>
+                  <span className="text-sm font-medium text-rose-600 dark:text-rose-400">{statusCounts.failed}</span>
                 </div>
               </div>
             </div>

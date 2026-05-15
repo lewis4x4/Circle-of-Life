@@ -209,7 +209,7 @@ export default function LoginPage() {
           </div>
 
           <div className="max-w-xl mt-auto pb-8">
-            <h1 className="text-6xl md:text-7xl font-display font-bold leading-[1.05] tracking-tight text-white drop-shadow-sm">
+            <h1 className="text-2xl md:text-2xl font-bold leading-[1.05] tracking-tight text-white drop-shadow-sm">
               Elevating <br /><span className="text-emerald-400">Human Care.</span>
             </h1>
             <p className="mt-8 text-lg font-medium leading-relaxed text-slate-200">
@@ -223,7 +223,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md space-y-7">
           <div className="space-y-2 text-center lg:text-left">
             <p className="text-sm uppercase tracking-[0.18em] text-slate-400">Haven Access</p>
-            <h2 className="text-4xl font-display font-semibold tracking-tight text-white">
+            <h2 className="text-4xl font-semibold tracking-tight text-white">
               Sign in
             </h2>
             <p className="text-sm text-slate-400">

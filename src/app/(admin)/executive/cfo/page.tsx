@@ -126,7 +126,7 @@ export default function CfoDashboardPage() {
               <Link href="/admin/executive" className="mb-3 inline-flex items-center gap-1.5 text-xs text-slate-400 transition-colors hover:text-white">
                 <ArrowLeft className="h-3.5 w-3.5" /> Back to Executive Overview
               </Link>
-              <SysLabel>SYS: COMMAND CENTER</SysLabel>
+              
               <TitleH1>Chief Financial Officer</TitleH1>
               <Subtitle>Live finance command center. Empty tabs mean the real source is not connected yet.</Subtitle>
             </div>

@@ -114,7 +114,7 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
       <div className="space-y-6 pt-4 p-6 relative z-10 max-w-7xl mx-auto">
         <Link
           href="/admin/facilities"
-          className="inline-flex items-center gap-2 text-[10px] font-mono tracking-widest uppercase font-bold text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300 transition-colors"
+          className="inline-flex items-center gap-2 text-[10px] font-mono tracking-wider uppercase font-bold text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300 transition-colors"
         >
         <ArrowLeft className="h-4 w-4" />
         Back to Facilities

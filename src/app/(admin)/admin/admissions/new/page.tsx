@@ -303,7 +303,7 @@ export default function AdminAdmissionsNewPage() {
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
             New admission case
           </h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
@@ -314,7 +314,7 @@ export default function AdminAdmissionsNewPage() {
 
       <Card className="border-slate-200/80 shadow-soft dark:border-slate-800">
         <CardHeader>
-          <CardTitle className="font-display text-lg">Resident</CardTitle>
+          <CardTitle className="text-lg">Resident</CardTitle>
           <p className="text-sm text-slate-600 dark:text-slate-300">
             Select an existing resident in inquiry status, or create a new one.
           </p>

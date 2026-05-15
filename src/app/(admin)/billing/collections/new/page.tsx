@@ -265,7 +265,7 @@ export default function AdminNewCollectionActivityPage() {
       <div className="flex items-center gap-2">
         <Phone className="h-6 w-6 text-slate-500" />
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Log collection activity</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Log collection activity</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
             Record calls, letters, promises, and follow-ups for past-due accounts.
           </p>

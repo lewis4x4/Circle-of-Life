@@ -54,8 +54,8 @@ export default function CarePlanReviewsDuePage() {
   if (isLoading) {
     return (
       <div className="space-y-6 pt-2">
-        <Skeleton className="h-32 w-full rounded-[2.5rem] bg-slate-200 dark:bg-white/5" />
-        <Skeleton className="h-[480px] w-full rounded-[2rem] bg-slate-200 dark:bg-white/5" />
+        <Skeleton className="h-32 w-full rounded-lg bg-slate-200 dark:bg-white/5" />
+        <Skeleton className="h-[480px] w-full rounded-lg bg-slate-200 dark:bg-white/5" />
       </div>
     );
   }
@@ -63,7 +63,7 @@ export default function CarePlanReviewsDuePage() {
   if (error) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
-        <div className="max-w-lg rounded-[2rem] border border-rose-200 bg-rose-50/60 p-8 text-center shadow-sm dark:border-rose-900/40 dark:bg-rose-950/20">
+        <div className="max-w-lg rounded-lg border border-rose-200 bg-rose-50/60 p-8 text-center shadow-sm dark:border-rose-900/40 dark:bg-rose-950/20">
           <ShieldAlert className="mx-auto mb-4 h-8 w-8 text-rose-600 dark:text-rose-400" />
           <h2 className="text-xl font-semibold text-rose-800 dark:text-rose-300">Care plan queue unavailable</h2>
           <p className="mt-2 text-sm text-rose-700/80 dark:text-rose-400/80">{error}</p>
@@ -81,13 +81,13 @@ export default function CarePlanReviewsDuePage() {
 
   return (
     <div className="space-y-8 pb-12">
-      <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between rounded-[2.5rem] border border-slate-200/50 bg-white/40 p-8 shadow-sm backdrop-blur-3xl dark:border-white/5 dark:bg-black/20">
+      <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between rounded-lg border border-slate-200/50 bg-card p-8 shadow-sm dark:border-white/5">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-100/50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-indigo-800 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-300">
+          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-100/50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-indigo-800 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-300">
             <FileSignature className="h-3.5 w-3.5" />
             Care Plans
           </div>
-          <h1 className="text-4xl font-display font-light tracking-tight text-slate-900 dark:text-white md:text-5xl">
+          <h1 className="text-4xl font-semibold tracking-tight text-slate-900 dark:text-white md:text-2xl">
             Reviews Due
           </h1>
           <p className="text-slate-600 dark:text-zinc-400">
@@ -106,7 +106,7 @@ export default function CarePlanReviewsDuePage() {
       </div>
 
       {rows.length === 0 ? (
-        <div className="rounded-[2rem] border border-dashed border-slate-200 bg-slate-50/80 px-8 py-20 text-center dark:border-white/10 dark:bg-white/[0.02]">
+        <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-8 py-20 text-center dark:border-white/10 dark:bg-white/[0.02]">
           <ClipboardList className="mx-auto mb-4 h-14 w-14 text-slate-300 dark:text-slate-600" />
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">No reviews due</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-slate-600 dark:text-slate-400">
@@ -114,7 +114,7 @@ export default function CarePlanReviewsDuePage() {
           </p>
         </div>
       ) : (
-        <div className="rounded-[2rem] border border-slate-200/60 bg-white/60 p-6 shadow-sm backdrop-blur-3xl dark:border-white/5 dark:bg-white/[0.02]">
+        <div className="rounded-lg border border-slate-200/60 bg-card p-6 shadow-sm dark:border-white/5 dark:bg-white/[0.02]">
           <div className="mb-5 flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Review queue</h2>
@@ -128,7 +128,7 @@ export default function CarePlanReviewsDuePage() {
             {rows.map((row) => (
               <div
                 key={row.id}
-                className="flex flex-col gap-4 rounded-[1.5rem] border border-slate-200/70 bg-white p-5 shadow-sm transition-colors hover:border-indigo-200 dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-indigo-500/30 md:flex-row md:items-center md:justify-between"
+                className="flex flex-col gap-4 rounded-lg border border-slate-200/70 bg-white p-5 shadow-sm transition-colors hover:border-indigo-200 dark:border-white/10 dark:hover:border-indigo-500/30 md:flex-row md:items-center md:justify-between"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-3">
@@ -147,7 +147,7 @@ export default function CarePlanReviewsDuePage() {
                   href={`/admin/residents/${row.residentId}/care-plan`}
                   className={cn(
                     buttonVariants({ size: "default" }),
-                    "h-11 rounded-full px-6 font-bold uppercase tracking-widest text-[10px] bg-indigo-600 text-white shadow-sm hover:bg-indigo-700"
+                    "h-11 rounded-full px-6 font-bold uppercase tracking-wider text-[10px] bg-indigo-600 text-white shadow-sm hover:bg-indigo-700"
                   )}
                 >
                   Review & sign

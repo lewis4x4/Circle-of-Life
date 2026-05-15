@@ -435,7 +435,7 @@ export default function AdminIncidentFollowupsPage() {
         <div className="space-y-4">
           <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Backlog by owner</span>
+              <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Backlog by owner</span>
               {assigneePressure.map((item) => (
                 <Badge key={item.label} variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
                   {item.label}: {item.count}

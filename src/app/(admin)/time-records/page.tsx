@@ -306,8 +306,8 @@ export default function AdminTimeRecordsPage() {
       <div className="relative z-10 space-y-6">
         <header className="mb-8">
           <div>
-            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 18 / Time Records</p>
-            <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
               Time & Attendance {pendingApproval > 0 && <PulseDot colorClass="bg-amber-500" />}
             </h2>
           </div>
@@ -319,7 +319,7 @@ export default function AdminTimeRecordsPage() {
               <Sparkline colorClass="text-amber-500" variant={4} />
               <MonolithicWatermark value={pendingApproval} className="text-amber-600/5 dark:text-amber-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
                   <Clock className="h-3.5 w-3.5" /> Pending Approval
                 </h3>
                 <p className="text-4xl font-mono tracking-tighter text-amber-600 dark:text-amber-400 pb-1">{pendingApproval}</p>
@@ -330,7 +330,7 @@ export default function AdminTimeRecordsPage() {
             <V2Card hoverColor="blue" className="p-5 lg:p-6">
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
                  <p className="hidden max-w-md text-xs font-mono leading-relaxed text-slate-500 lg:block">Recent clock activity with approval state for payroll readiness.</p>
-                 <Link href="/admin/time-records/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none whitespace-nowrap")} >
+                 <Link href="/admin/time-records/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-wider text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none whitespace-nowrap")} >
                    + Log Manual Time
                  </Link>
               </div>
@@ -369,9 +369,9 @@ export default function AdminTimeRecordsPage() {
       ) : null}
       {!isLoading && filteredRows.length > 0 ? (
         <div className="relative overflow-visible z-10 w-full mt-4">
-          <div className="relative z-10 p-4 sm:p-6 mb-4 glass-panel rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="relative z-10 p-4 sm:p-6 mb-4 rounded-lg border border-white/20 dark:border-white/5 bg-card shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Recent punches</h3>
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-1">Recent punches</h3>
               <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
                 Newest first; open staff profile for employment context. Download includes up to 500 rows matching the
                 approval filter above (search is list-only).
@@ -382,7 +382,7 @@ export default function AdminTimeRecordsPage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="font-mono text-[10px] uppercase tracking-widest border-amber-300 text-amber-900 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-100 dark:hover:bg-amber-950/40"
+                className="font-mono text-[10px] uppercase tracking-wider border-amber-300 text-amber-900 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-100 dark:hover:bg-amber-950/40"
                 disabled={
                   approvingBulk ||
                   exportingCsv ||
@@ -398,7 +398,7 @@ export default function AdminTimeRecordsPage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="font-mono text-[10px] uppercase tracking-widest"
+                className="font-mono text-[10px] uppercase tracking-wider"
                 disabled={exportingCsv || approvingBulk}
                 aria-busy={exportingCsv}
                 onClick={() => void exportTimeRecordsCsv()}
@@ -412,7 +412,7 @@ export default function AdminTimeRecordsPage() {
             {filteredRows.map((row) => (
               <MotionItem key={row.id}>
                 <Link href={`/admin/staff/${row.staffId}`} className="block focus-visible:outline-none focus:ring-2 focus:ring-indigo-500 rounded-2xl">
-                  <div className="p-4 sm:p-5 rounded-2xl glass-panel group transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 w-full flex items-center justify-between">
+                  <div className="p-4 sm:p-5 rounded-2xl group transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/40 w-full flex items-center justify-between">
                      <div className="flex flex-col md:flex-row md:items-center gap-4 w-full">
                        <div className="min-w-[150px]">
                          <span className="font-bold text-slate-900 dark:text-slate-100">{row.staffName}</span>
@@ -420,24 +420,24 @@ export default function AdminTimeRecordsPage() {
                        
                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full items-center">
                           <div className="flex flex-col gap-1.5">
-                             <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Clock In</span>
+                             <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Clock In</span>
                              <span className="font-mono text-xs text-slate-700 dark:text-slate-300">{formatDateTime(row.clockIn)}</span>
                           </div>
                           <div className="flex flex-col gap-1.5">
-                             <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Clock Out</span>
+                             <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Clock Out</span>
                              <span className="font-mono text-xs text-slate-700 dark:text-slate-300">{row.clockOut ? formatDateTime(row.clockOut) : "—"}</span>
                           </div>
                           <div className="flex flex-col gap-1.5">
-                             <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Hours</span>
+                             <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Hours</span>
                              <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400">{row.actualHours != null ? Number(row.actualHours).toFixed(2) : "—"}</span>
                           </div>
                           <div className="flex flex-col gap-1.5">
-                             <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Approved</span>
+                             <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Approved</span>
                              <div>
                                {row.approved ? (
-                                  <Badge className="bg-emerald-500/20 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2">Yes</Badge>
+                                  <Badge className="bg-emerald-500/20 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm px-2">Yes</Badge>
                                ) : (
-                                  <Badge className="bg-amber-500/20 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2">No</Badge>
+                                  <Badge className="bg-amber-500/20 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm px-2">No</Badge>
                                )}
                              </div>
                           </div>

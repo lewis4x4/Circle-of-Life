@@ -221,8 +221,8 @@ export default function CaregiverPrnFollowupPage() {
         title="Close the loop after PRN administration before the shift turns over."
         description="Document effectiveness here, then move back to meds or into handoff if the resident still needs attention."
       />
-      <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-white/5 bg-gradient-to-br from-violet-950/40 via-slate-900/40 to-black/60 backdrop-blur-3xl shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
-        <h3 className="flex items-center gap-3 text-2xl font-display font-semibold text-white tracking-wide">
+      <div className="p-6 sm:p-8 rounded-lg border border-white/5 bg-gradient-to-br from-violet-950/40 via-slate-900/40 to-black/60 shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
+        <h3 className="flex items-center gap-3 text-2xl font-semibold text-white tracking-wide">
           <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center border border-violet-500/30">
             <Pill className="h-5 w-5 text-violet-400" />
           </div>
@@ -238,20 +238,20 @@ export default function CaregiverPrnFollowupPage() {
       ) : null}
 
       {rows.length === 0 ? (
-        <div className="glass-panel p-8 rounded-[2rem] border border-white/5 bg-slate-900/40 text-center backdrop-blur-xl">
+        <div className="p-8 rounded-lg border border-white/5 bg-slate-900/40 text-center">
           <p className="text-sm font-mono text-zinc-400">No pending PRN reassessments.</p>
         </div>
       ) : (
         <MotionList className="space-y-4">
           {rows.map((r) => (
             <MotionItem key={r.id}>
-              <div className="p-6 md:p-8 rounded-[2rem] glass-panel group transition-all duration-300 border border-white/5 bg-white/[0.02] backdrop-blur-xl relative overflow-hidden flex flex-col md:flex-row md:items-start gap-4">
+              <div className="p-6 md:p-8 rounded-lg group transition-all duration-300 border border-white/5 bg-white/[0.02] relative overflow-hidden flex flex-col md:flex-row md:items-start gap-4">
                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none" />
                  
                 <div className="flex flex-1 flex-col gap-2 relative z-10 w-full">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2">
                     <div className="flex items-center gap-3">
-                      <span className="text-xl font-display tracking-wide font-semibold text-white">{r.med}</span>
+                      <span className="text-xl tracking-wide font-semibold text-white">{r.med}</span>
                       <Badge
                         className={`rounded-full px-3 py-1 text-[9px] uppercase tracking-widest font-mono font-bold shadow-inner ${
                           r.status === "overdue"
@@ -264,7 +264,7 @@ export default function CaregiverPrnFollowupPage() {
                     </div>
                   </div>
                   
-                  <p className="text-[11px] uppercase tracking-widest font-mono font-bold text-zinc-400">
+                  <p className="text-[11px] uppercase tracking-wider font-mono font-bold text-zinc-400">
                     <span className="text-zinc-200">{r.name}</span> <span className="mx-2 opacity-50">·</span> Rm {r.room}
                   </p>
                   
@@ -284,7 +284,7 @@ export default function CaregiverPrnFollowupPage() {
                   {r.canDocument && openId === r.id ? (
                     <div className="mt-4 space-y-4 rounded-2xl border border-white/5 bg-black/40 p-5 shadow-inner">
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest font-mono text-zinc-500 pl-1">Effectiveness Result</Label>
+                        <Label className="text-[10px] font-bold uppercase tracking-wider font-mono text-zinc-500 pl-1">Effectiveness Result</Label>
                         <select
                           className="flex h-14 w-full appearance-none rounded-2xl border border-white/10 bg-black/60 px-5 text-sm text-zinc-200 font-medium font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/50 shadow-inner tap-responsive"
                           value={result}
@@ -307,13 +307,13 @@ export default function CaregiverPrnFollowupPage() {
                         <Button
                           type="button"
                           disabled={savingId === r.id}
-                          className="h-12 px-8 rounded-full font-mono uppercase tracking-widest text-[10px] shadow-[0_4px_20px_rgba(139,92,246,0.15)] transition-all hover:scale-[1.02] border border-violet-500 text-white font-bold bg-violet-600 hover:bg-violet-500 tap-responsive flex-1 sm:flex-none"
+                          className="h-12 px-8 rounded-full font-mono uppercase tracking-wider text-[10px] shadow-[0_4px_20px_rgba(139,92,246,0.15)] transition-all hover:scale-[1.02] border border-violet-500 text-white font-bold bg-violet-600 hover:bg-violet-500 tap-responsive flex-1 sm:flex-none"
                           onClick={() => void saveEffectiveness(r.id)}
                         >
                           {savingId === r.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                           Save Result
                         </Button>
-                        <Button type="button" className="h-12 px-6 rounded-full font-mono uppercase tracking-widest text-[10px] font-bold bg-black/40 hover:bg-white/10 text-zinc-300 border border-white/10 flex-1 sm:flex-none tap-responsive" onClick={() => setOpenId(null)}>
+                        <Button type="button" className="h-12 px-6 rounded-full font-mono uppercase tracking-wider text-[10px] font-bold bg-black/40 hover:bg-white/10 text-zinc-300 border border-white/10 flex-1 sm:flex-none tap-responsive" onClick={() => setOpenId(null)}>
                           Cancel
                         </Button>
                       </div>
@@ -323,7 +323,7 @@ export default function CaregiverPrnFollowupPage() {
                   {r.canDocument && openId !== r.id ? (
                     <Button
                       type="button"
-                      className="mt-3 w-fit h-12 px-6 rounded-full font-mono uppercase tracking-widest text-[10px] font-bold bg-black/40 hover:bg-white/10 text-zinc-300 border border-white/10 tap-responsive shadow-inner"
+                      className="mt-3 w-fit h-12 px-6 rounded-full font-mono uppercase tracking-wider text-[10px] font-bold bg-black/40 hover:bg-white/10 text-zinc-300 border border-white/10 tap-responsive shadow-inner"
                       onClick={() => {
                         setOpenId(r.id);
                         setResult("effective");

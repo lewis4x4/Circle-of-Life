@@ -32,7 +32,7 @@ export default function FacilitiesPage() {
       <AmbientMatrix hasCriticals={false} primaryClass="bg-teal-700/10" secondaryClass="bg-slate-900/10" />
 
       <div className="relative z-10 mx-auto max-w-7xl space-y-8 px-4 sm:px-6 xl:px-0">
-        <header className="mt-2 flex flex-col gap-6 rounded-[2rem] border border-slate-200/50 bg-white/50 p-6 shadow-sm backdrop-blur-xl dark:border-white/5 dark:bg-black/25 sm:p-8 md:flex-row md:items-end md:justify-between">
+        <header className="mt-2 flex flex-col gap-6 rounded-lg border border-slate-200/50 bg-white/50 p-6 shadow-sm dark:border-white/5 dark:bg-black/25 sm:p-8 md:flex-row md:items-end md:justify-between">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary" className="rounded-full border border-teal-500/25 bg-teal-500/10 text-teal-800 dark:text-teal-200">
@@ -44,7 +44,7 @@ export default function FacilitiesPage() {
             <div className="flex items-start gap-3">
               <Building2 className="mt-1 size-9 shrink-0 text-teal-600 dark:text-teal-400" strokeWidth={1.5} aria-hidden />
               <div>
-                <h1 className="font-display text-3xl font-light tracking-tight text-slate-900 dark:text-white md:text-4xl">
+                <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white md:text-4xl">
                   Facilities
                 </h1>
                 <p className="mt-1 max-w-2xl text-pretty text-base text-slate-600 dark:text-slate-400">
@@ -125,9 +125,9 @@ export default function FacilitiesPage() {
             <p className="text-sm text-slate-500 dark:text-slate-400">Loading facilities…</p>
           </div>
         ) : facilities.length === 0 ? (
-          <div className="rounded-[2rem] border border-dashed border-slate-200 bg-slate-50/80 px-8 py-20 text-center dark:border-white/10 dark:bg-white/[0.02]">
+          <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-8 py-20 text-center dark:border-white/10 dark:bg-white/[0.02]">
             <Building2 className="mx-auto mb-4 size-14 text-slate-300 dark:text-slate-600" aria-hidden />
-            <h3 className="font-display text-lg font-semibold text-slate-900 dark:text-white">No facilities match</h3>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">No facilities match</h3>
             <p className="mx-auto mt-2 max-w-md text-sm text-slate-600 dark:text-slate-400">
               Try another search, clear filters, or confirm onboarding has created sites for your organization.
             </p>

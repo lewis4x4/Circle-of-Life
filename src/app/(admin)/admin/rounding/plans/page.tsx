@@ -163,8 +163,8 @@ export default function AdminRoundingPlansPage() {
         <header className="mb-6 mt-2">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6 mb-4">
             <div>
-              <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Care Plans</p>
-              <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+              
+              <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
                 Observation Plans
               </h2>
               <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">
@@ -188,7 +188,7 @@ export default function AdminRoundingPlansPage() {
               filter === "active" && "ring-2 ring-indigo-500 ring-offset-2 ring-offset-background"
             )}>
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-indigo-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-indigo-400 flex items-center gap-2">
                   Active Plans
                   <Filter className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
                 </h3>
@@ -206,7 +206,7 @@ export default function AdminRoundingPlansPage() {
               filter === "all" && "ring-2 ring-cyan-500 ring-offset-2 ring-offset-background"
             )}>
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-cyan-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-cyan-400 flex items-center gap-2">
                   Total Rules
                   <Filter className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
                 </h3>
@@ -224,7 +224,7 @@ export default function AdminRoundingPlansPage() {
               filter === "all" && "ring-2 ring-emerald-500 ring-offset-2 ring-offset-background"
             )}>
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-emerald-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-400 flex items-center gap-2">
                   Total Plans
                   <Filter className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
                 </h3>
@@ -271,7 +271,7 @@ export default function AdminRoundingPlansPage() {
         {/* Plans section with filter */}
         <div id="plans-section">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-display font-medium text-slate-900 dark:text-slate-100">{filterLabel}</h3>
+            <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">{filterLabel}</h3>
             {filter !== "all" && (
               <button
                 onClick={() => setFilter("all")}

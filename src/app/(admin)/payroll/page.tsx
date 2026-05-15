@@ -170,8 +170,8 @@ export default function AdminPayrollHubPage() {
       <div className="relative z-10 space-y-6">
         <header className="mb-8">
           <div>
-            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 13 / Payroll</p>
-            <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
               Payroll Export
             </h2>
           </div>
@@ -183,7 +183,7 @@ export default function AdminPayrollHubPage() {
               <Sparkline colorClass="text-emerald-500" variant={3} />
               <MonolithicWatermark value={displayRows.length} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                   <Banknote className="h-3.5 w-3.5" /> Export Batches
                 </h3>
                 <p className="text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1">
@@ -197,7 +197,7 @@ export default function AdminPayrollHubPage() {
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
                  <p className="hidden max-w-md text-xs font-mono leading-relaxed text-slate-500 lg:block">Batches for external payroll systems. Idempotency enforced.</p>
                  <div className="flex w-full gap-2 justify-start lg:justify-end">
-                   <Link href="/admin/payroll/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-600 border-none whitespace-nowrap")} >
+                   <Link href="/admin/payroll/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-wider text-[10px] tap-responsive bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-600 border-none whitespace-nowrap")} >
                      + New Batch
                    </Link>
                  </div>
@@ -219,11 +219,11 @@ export default function AdminPayrollHubPage() {
       )}
 
       <div className="relative overflow-visible z-10 w-full mt-4">
-        <div className="relative z-10 p-4 sm:p-6 mb-4 glass-panel rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-2xl">
+        <div className="relative z-10 p-4 sm:p-6 mb-4 rounded-lg border border-white/20 dark:border-white/5 bg-card shadow-2xl">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Batches</h3>
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-1">Batches</h3>
                 <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
                   Pay period window and provider label. Open a batch for line items and line-level CSV; list batch metadata
                   export below.
@@ -233,7 +233,7 @@ export default function AdminPayrollHubPage() {
                 type="button"
                 variant="outline"
                 disabled={!facilityReady || exportingCsv}
-                className="h-11 shrink-0 gap-2 rounded-full font-mono text-[10px] font-bold uppercase tracking-widest"
+                className="h-11 shrink-0 gap-2 rounded-full font-mono text-[10px] font-bold uppercase tracking-wider"
                 title={
                   (statusFilter === "all"
                     ? "Export up to 500 batches (all statuses), most recent period first."
@@ -260,7 +260,7 @@ export default function AdminPayrollHubPage() {
                   />
                 </label>
                 <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400">Status</span>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Status</span>
                   <select
                     className={cn(
                       "h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-900 outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-100",
@@ -277,7 +277,7 @@ export default function AdminPayrollHubPage() {
                   </select>
                 </label>
                 {rows.length > 0 ? (
-                  <p className="text-[10px] font-mono tracking-widest text-slate-400 uppercase">
+                  <p className="text-[10px] font-mono tracking-wider text-slate-400 uppercase">
                     {searchQuery.trim() ? (
                       <>
                         Showing {displayRows.length} of {filteredRows.length} · Search
@@ -308,30 +308,30 @@ export default function AdminPayrollHubPage() {
                <MotionItem key={row.id}>
                  <Link
                    href={`/admin/payroll/${row.id}`}
-                   className="block p-4 sm:p-5 rounded-2xl glass-panel group transition-all duration-300 hover:scale-[1.01] hover:border-emerald-500/30 hover:bg-white/70 dark:hover:bg-emerald-900/10 border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 w-full flex flex-col md:flex-row md:items-center justify-between gap-4"
+                   className="block p-4 sm:p-5 rounded-2xl group transition-all duration-300 hover:scale-[1.01] hover:border-emerald-500/30 hover:bg-white/70 dark:hover:bg-emerald-900/10 border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/40 w-full flex flex-col md:flex-row md:items-center justify-between gap-4"
                  >
                     
                     <div className="flex flex-col min-w-[200px] gap-1">
-                       <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Period</span>
-                       <span className="font-bold font-mono text-slate-900 dark:text-slate-100 uppercase tracking-widest text-xs">
+                       <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Period</span>
+                       <span className="font-bold font-mono text-slate-900 dark:text-slate-100 uppercase tracking-wider text-xs">
                           {row.period_start} → {row.period_end}
                        </span>
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 w-full items-center">
                        <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Provider</span>
-                          <span className="font-mono text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest">{row.provider}</span>
+                          <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Provider</span>
+                          <span className="font-mono text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">{row.provider}</span>
                        </div>
                        <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Status</span>
-                          <span className={cn("font-mono text-xs font-bold uppercase tracking-widest", row.status === "exported" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-500")}>
+                          <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Status</span>
+                          <span className={cn("font-mono text-xs font-bold uppercase tracking-wider", row.status === "exported" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-500")}>
                              {formatStatus(row.status)}
                           </span>
                        </div>
                        <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Updated</span>
-                          <span className="font-mono text-xs text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                          <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Updated</span>
+                          <span className="font-mono text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                              {format(new Date(row.updated_at), "MMM d, yyyy")}
                           </span>
                        </div>

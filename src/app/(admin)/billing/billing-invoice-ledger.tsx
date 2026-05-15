@@ -173,8 +173,7 @@ export function BillingInvoiceLedger({
       <div className="relative z-10 space-y-6">
         <header className="mb-8">
           <div>
-            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 05 / Accounts Receivable</p>
-            <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
               {title} {overdueCount > 0 && <PulseDot />}
             </h2>
           </div>
@@ -186,10 +185,10 @@ export function BillingInvoiceLedger({
               <Sparkline colorClass="text-emerald-500" variant={1} />
               <MonolithicWatermark value={Math.round((outstandingCents / 100) / 1000) + 'k'} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                   <CreditCard className="h-3.5 w-3.5" /> Total Outstanding AR
                 </h3>
-                <p className="text-4xl lg:text-5xl font-mono tracking-tighter tabular-nums text-emerald-600 dark:text-emerald-400 pb-1 flex flex-col">
+                <p className="text-4xl lg:text-2xl font-mono tracking-tighter tabular-nums text-emerald-600 dark:text-emerald-400 pb-1 flex flex-col">
                   {billingCurrency.format(outstandingCents / 100)}
                 </p>
               </div>
@@ -200,7 +199,7 @@ export function BillingInvoiceLedger({
               <Sparkline colorClass="text-rose-500" variant={4} />
               <MonolithicWatermark value={overdueCount} className="text-rose-600/5 dark:text-rose-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2">
                    Overdue Invoices
                 </h3>
                 <p className="text-4xl font-mono tracking-tighter text-rose-600 dark:text-rose-400 pb-1">{overdueCount}</p>
@@ -210,8 +209,8 @@ export function BillingInvoiceLedger({
           <div className="h-[180px]">
             <V2Card hoverColor="indigo" className="p-5 lg:p-6">
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left">
-                 <p className="hidden text-[10px] font-mono uppercase tracking-widest text-slate-500 lg:block">Batch Actions</p>
-                 <Link href="/admin/billing/invoices/generate" className={cn(buttonVariants({ variant: "default", size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none w-full whitespace-nowrap")} >
+                 <p className="hidden text-[10px] font-mono uppercase tracking-wider text-slate-500 lg:block">Batch Actions</p>
+                 <Link href="/admin/billing/invoices/generate" className={cn(buttonVariants({ variant: "default", size: "default" }), "font-mono uppercase tracking-wider text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none w-full whitespace-nowrap")} >
                    Generate Cycle
                  </Link>
               </div>
@@ -268,43 +267,43 @@ export function BillingInvoiceLedger({
 
       {!isLoading && filteredRows.length > 0 ? (
         <div className="relative overflow-visible z-10 w-full mt-4">
-          <div className="relative z-10 p-4 sm:p-6 mb-4 glass-panel rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-2xl">
-            <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">{cardTitle}</h3>
+          <div className="relative z-10 p-4 sm:p-6 mb-4 rounded-lg border border-white/20 dark:border-white/5 bg-card shadow-2xl">
+            <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-1">{cardTitle}</h3>
             <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">{cardDescription}</p>
           </div>
           <MotionList className="space-y-3">
              {filteredRows.map((row) => (
                 <MotionItem key={row.id}>
                   <Link href={`/admin/billing/invoices/${row.id}`} className="block focus-visible:outline-none focus:ring-2 focus:ring-indigo-500 rounded-2xl">
-                     <div className="p-4 sm:p-5 rounded-2xl glass-panel group transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 w-full flex flex-col md:flex-row lg:items-center justify-between gap-4">
+                     <div className="p-4 sm:p-5 rounded-2xl group transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/40 w-full flex flex-col md:flex-row lg:items-center justify-between gap-4">
                         
                         <div className="flex flex-col min-w-[200px] gap-1 shrink-0">
-                           <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Invoice #</span>
-                           <span className="font-bold font-mono text-slate-900 dark:text-slate-100 uppercase tracking-widest text-xs">
+                           <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Invoice #</span>
+                           <span className="font-bold font-mono text-slate-900 dark:text-slate-100 uppercase tracking-wider text-xs">
                               {row.invoiceNumber}
                            </span>
                         </div>
 
                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 w-full items-center">
                            <div className="flex flex-col gap-1.5 lg:col-span-2">
-                              <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Resident</span>
+                              <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Resident</span>
                               <span className="font-mono text-xs font-bold text-slate-700 dark:text-slate-300">{row.residentName}</span>
                            </div>
                            <div className="flex flex-col gap-1.5">
-                              <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Payer Type</span>
+                              <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Payer Type</span>
                               <div className="flex"><PayerTypeBadge payerType={row.payerType} /></div>
                            </div>
                            <div className="flex flex-col gap-1.5">
-                              <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Status</span>
+                              <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Status</span>
                               <div className="flex"><InvoiceStatusBadge status={row.status} /></div>
                            </div>
                            <div className="flex flex-col gap-1.5 align-right text-left md:text-right">
-                              <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Amount Due</span>
+                              <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Amount Due</span>
                               <span className="font-mono text-xs font-bold text-slate-900 dark:text-slate-100">{billingCurrency.format(row.amountDueCents / 100)}</span>
                            </div>
                            <div className="flex flex-col gap-1.5 align-right text-left md:text-right">
-                              <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Due / Updated</span>
-                              <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest">{row.dueDate}</span>
+                              <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Due / Updated</span>
+                              <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">{row.dueDate}</span>
                            </div>
                         </div>
 

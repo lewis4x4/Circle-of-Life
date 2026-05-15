@@ -347,19 +347,19 @@ export default function KnowledgeDocumentReviewPage() {
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-lg border border-slate-200 dark:border-zinc-800 p-3">
-                    <div className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Status</div>
+                    <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Status</div>
                     <div className="mt-1 text-sm font-medium text-slate-900 dark:text-zinc-100">{STATUS_LABELS[document.status as DocumentStatus] ?? document.status}</div>
                   </div>
                   <div className="rounded-lg border border-slate-200 dark:border-zinc-800 p-3">
-                    <div className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Audience</div>
+                    <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Audience</div>
                     <div className="mt-1 text-sm font-medium text-slate-900 dark:text-zinc-100">{AUDIENCE_LABELS[document.audience as DocumentAudience] ?? document.audience}</div>
                   </div>
                   <div className="rounded-lg border border-slate-200 dark:border-zinc-800 p-3">
-                    <div className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Words</div>
+                    <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Words</div>
                     <div className="mt-1 text-sm font-medium text-slate-900 dark:text-zinc-100">{document.word_count?.toLocaleString() ?? "—"}</div>
                   </div>
                   <div className="rounded-lg border border-slate-200 dark:border-zinc-800 p-3">
-                    <div className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Mime Type</div>
+                    <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Mime Type</div>
                     <div className="mt-1 text-sm font-medium text-slate-900 dark:text-zinc-100">{document.mime_type ?? "unknown"}</div>
                   </div>
                 </div>
@@ -419,7 +419,7 @@ export default function KnowledgeDocumentReviewPage() {
 
                 <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
                   <div className="space-y-2">
-                    <label htmlFor="review-owner" className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">
+                    <label htmlFor="review-owner" className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">
                       Review Owner
                     </label>
                     <select
@@ -445,7 +445,7 @@ export default function KnowledgeDocumentReviewPage() {
 
                 <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
                   <div className="space-y-2">
-                    <label htmlFor="review-due" className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">
+                    <label htmlFor="review-due" className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">
                       Review Due Date
                     </label>
                     <input
@@ -465,17 +465,17 @@ export default function KnowledgeDocumentReviewPage() {
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-lg border border-slate-200 dark:border-zinc-800 p-3">
-                    <div className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Review Owner</div>
+                    <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Review Owner</div>
                     <div className="mt-1 text-sm font-medium text-slate-900 dark:text-zinc-100">{currentReviewerLabel}</div>
                   </div>
                   <div className="rounded-lg border border-slate-200 dark:border-zinc-800 p-3">
-                    <div className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Due</div>
+                    <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Due</div>
                     <div className="mt-1 text-sm font-medium text-slate-900 dark:text-zinc-100">
                       {document.review_due_at ? new Date(document.review_due_at).toLocaleDateString() : "Not set"}
                     </div>
                   </div>
                   <div className="rounded-lg border border-slate-200 dark:border-zinc-800 p-3">
-                    <div className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Review Completion</div>
+                    <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Review Completion</div>
                     <div className="mt-1 text-sm font-medium text-slate-900 dark:text-zinc-100">
                       {reviewCompletedCurrent
                         ? latestReviewCompletedEvent

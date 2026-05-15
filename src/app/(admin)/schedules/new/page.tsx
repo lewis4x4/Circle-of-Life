@@ -150,7 +150,7 @@ export default function AdminNewScheduleWeekPage() {
       <div className="flex items-center gap-2">
         <CalendarPlus className="h-6 w-6 text-slate-500" />
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">New schedule week</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">New schedule week</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
             Creates a weekly container (draft). Shift assignments are added from the scheduling tools after the week
             exists. Weeks are unique per facility and Monday start date.

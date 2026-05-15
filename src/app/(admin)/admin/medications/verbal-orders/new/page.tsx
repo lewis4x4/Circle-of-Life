@@ -187,11 +187,11 @@ export default function NewVerbalOrderPage() {
   if (success && submittedOrder) {
     return (
       <div className="max-w-lg mx-auto mt-12">
-        <div className="glass-panel rounded-[2.5rem] p-10 md:p-14 text-center border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-sm backdrop-blur-3xl">
+        <div className="rounded-lg p-10 md:p-14 text-center border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-sm">
           <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-emerald-400/50">
             <CheckCircle2 className="w-10 h-10 text-emerald-500" />
           </div>
-          <h2 className="text-3xl font-display font-light tracking-tight text-slate-900 dark:text-white mb-3">
+          <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-3">
             Verbal Order Captured
           </h2>
           <p className="text-slate-600 dark:text-zinc-400 mb-6 max-w-md leading-relaxed">
@@ -199,10 +199,10 @@ export default function NewVerbalOrderPage() {
           </p>
 
           <div className="bg-white dark:bg-black/40 rounded-2xl p-5 mb-8 border border-emerald-200 dark:border-emerald-500/20">
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 mb-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 mb-2">
               Co-signature Due
             </p>
-            <p className="text-lg font-display text-emerald-700 dark:text-emerald-400">
+            <p className="text-lg text-emerald-700 dark:text-emerald-400">
               {submittedOrder.dueDate}
             </p>
           </div>
@@ -236,7 +236,7 @@ export default function NewVerbalOrderPage() {
   return (
     <div className="max-w-2xl mx-auto pb-12 space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-6 md:p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end justify-between bg-card p-6 md:p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm">
         <div className="space-y-2">
           <Link
             href="/admin/medications/verbal-orders"
@@ -247,10 +247,10 @@ export default function NewVerbalOrderPage() {
           >
             ← Back to verbal orders
           </Link>
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-100 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-[10px] font-bold uppercase tracking-widest text-rose-800 dark:text-rose-300 mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-100 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-[10px] font-bold uppercase tracking-wider text-rose-800 dark:text-rose-300 mb-2">
             <Phone className="w-3 h-3" /> Verbal Order
           </div>
-          <h1 className="text-3xl md:text-4xl font-display font-light tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900 dark:text-white">
             New Verbal Order
           </h1>
           <p className="text-sm font-medium tracking-wide text-slate-600 dark:text-slate-400 mt-1">
@@ -268,8 +268,8 @@ export default function NewVerbalOrderPage() {
       )}
 
       {/* Context Section */}
-      <div className="glass-panel rounded-[2.5rem] border border-indigo-500/10 bg-white/60 dark:bg-white/[0.02] p-6 md:p-8 shadow-sm backdrop-blur-3xl">
-        <h3 className="text-sm font-bold uppercase tracking-widest text-indigo-500 mb-6 flex items-center gap-2">
+      <div className="rounded-lg border border-indigo-500/10 bg-card p-6 md:p-8 shadow-sm">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-indigo-500 mb-6 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
           Context
         </h3>
@@ -277,7 +277,7 @@ export default function NewVerbalOrderPage() {
         <div className="space-y-5">
           {/* Facility (read-only) */}
           <div className="space-y-2">
-            <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 pl-1">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
               Facility
             </label>
             <div className="h-14 rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/40 px-5 flex items-center text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -287,7 +287,7 @@ export default function NewVerbalOrderPage() {
 
           {/* Resident Selector */}
           <div className="space-y-2">
-            <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 pl-1">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
               Resident <span className="text-rose-500">*</span>
             </label>
             <ResidentSelector
@@ -301,7 +301,7 @@ export default function NewVerbalOrderPage() {
 
           {/* Order Type */}
           <div className="space-y-2">
-            <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 pl-1">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
               Order Type <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
@@ -324,8 +324,8 @@ export default function NewVerbalOrderPage() {
       </div>
 
       {/* Order Details Section */}
-      <div className="glass-panel rounded-[2.5rem] border border-violet-500/10 bg-white/60 dark:bg-white/[0.02] p-6 md:p-8 shadow-sm backdrop-blur-3xl">
-        <h3 className="text-sm font-bold uppercase tracking-widest text-violet-500 mb-6 flex items-center gap-2">
+      <div className="rounded-lg border border-violet-500/10 bg-card p-6 md:p-8 shadow-sm">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-violet-500 mb-6 flex items-center gap-2">
           <Stethoscope className="w-4 h-4" />
           Order Details
         </h3>
@@ -333,7 +333,7 @@ export default function NewVerbalOrderPage() {
         <div className="space-y-5">
           {/* Verbatim Order */}
           <div className="space-y-2">
-            <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 pl-1">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
               Verbatim Order <span className="text-rose-500">*</span>
             </label>
             <textarea
@@ -351,7 +351,7 @@ export default function NewVerbalOrderPage() {
 
           {/* Indication (optional) */}
           <div className="space-y-2">
-            <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 pl-1">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
               Indication <span className="font-normal opacity-60">(optional)</span>
             </label>
             <Input
@@ -366,7 +366,7 @@ export default function NewVerbalOrderPage() {
           {/* Prescriber Info Grid */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 pl-1">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
                 Prescriber Name <span className="text-rose-500">*</span>
               </label>
               <Input
@@ -378,7 +378,7 @@ export default function NewVerbalOrderPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 pl-1">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
                 Prescriber Phone <span className="font-normal opacity-60">(optional)</span>
               </label>
               <Input
@@ -394,8 +394,8 @@ export default function NewVerbalOrderPage() {
       </div>
 
       {/* Confirmation Section */}
-      <div className="glass-panel rounded-[2.5rem] border border-rose-500/10 bg-white/60 dark:bg-white/[0.02] p-6 md:p-8 shadow-sm backdrop-blur-3xl">
-        <h3 className="text-sm font-bold uppercase tracking-widest text-rose-500 mb-6 flex items-center gap-2">
+      <div className="rounded-lg border border-rose-500/10 bg-card p-6 md:p-8 shadow-sm">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-rose-500 mb-6 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-rose-500"></span>
           Confirmation
         </h3>
@@ -404,7 +404,7 @@ export default function NewVerbalOrderPage() {
           {/* Read-back confirmation */}
           <label className={cn(
             "flex items-start gap-4 cursor-pointer w-fit border border-slate-200 dark:border-white/5",
-            "bg-white dark:bg-white/[0.02] hover:bg-slate-50 dark:hover:bg-white/[0.05]",
+            "bg-white hover:bg-slate-50 dark:hover:bg-white/[0.05]",
             "transition-colors pr-6 pl-4 py-4 rounded-2xl",
             readBack ? "border-rose-300 dark:border-rose-500/30" : ""
           )}>
@@ -432,7 +432,7 @@ export default function NewVerbalOrderPage() {
             type="button"
             disabled={saving || !readBack || !residentId || !orderText || !prescriberName}
             onClick={() => void submit()}
-            className="w-full h-16 rounded-[1.5rem] flex items-center justify-center font-bold tracking-widest uppercase transition-all shadow-lg bg-gradient-to-r from-violet-600 to-violet-500 text-white hover:from-violet-500 hover:to-violet-400 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed text-lg"
+            className="w-full h-16 rounded-lg flex items-center justify-center font-bold tracking-wider uppercase transition-all shadow-lg bg-gradient-to-r from-violet-600 to-violet-500 text-white hover:from-violet-500 hover:to-violet-400 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed text-lg"
           >
             {saving ? (
               <>

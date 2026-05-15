@@ -434,8 +434,8 @@ export default function EditResidentTransportRequestPage() {
     <div className="mx-auto max-w-2xl space-y-6 p-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">SYS: Module 15</p>
-          <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+          
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
             Transport request
           </h1>
           <p className="text-sm text-slate-600 dark:text-slate-300">{residentName}</p>

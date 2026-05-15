@@ -64,7 +64,7 @@ export default function AdminReferralsHl7InboundNewPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
           Add Referral
         </h1>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">

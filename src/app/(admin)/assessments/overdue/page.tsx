@@ -150,10 +150,10 @@ export default function ClinicalDeskPage() {
   if (isLoading) {
     return (
       <div className="space-y-6 pt-2">
-        <Skeleton className="h-[120px] w-full mb-6 rounded-[2.5rem]" />
+        <Skeleton className="h-[120px] w-full mb-6 rounded-lg" />
         <div className="grid lg:grid-cols-12 gap-6">
-          <Skeleton className="h-[600px] lg:col-span-4 rounded-[2rem]" />
-          <Skeleton className="h-[600px] lg:col-span-8 rounded-[2rem]" />
+          <Skeleton className="h-[600px] lg:col-span-4 rounded-lg" />
+          <Skeleton className="h-[600px] lg:col-span-8 rounded-lg" />
         </div>
       </div>
     );
@@ -176,12 +176,10 @@ export default function ClinicalDeskPage() {
     <div className="h-[calc(100vh-6rem)] flex flex-col space-y-6 pb-6">
       
       {/* ─── MOONSHOT HEADER ─── */}
-      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4 shrink-0">
+      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4 shrink-0">
          <div className="space-y-2">
-           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
-               SYS: Assessments
-           </div>
-           <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+           
+           <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
               Clinical Desk
               {hasCriticals && <PulseDot colorClass="bg-rose-500" />}
            </h1>
@@ -210,13 +208,13 @@ export default function ClinicalDeskPage() {
       <div className="grid lg:grid-cols-12 gap-6 flex-1 min-h-[400px]">
         {/* Left Drawer: Overdue Assessments */}
         <div className="lg:col-span-4 flex flex-col h-full overflow-hidden">
-          <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-slate-100/40 dark:bg-black/20 shadow-sm backdrop-blur-3xl p-6 flex flex-col h-full">
-            <h3 className="text-[12px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-4 pl-2">
+          <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-slate-100/40 shadow-sm p-6 flex flex-col h-full">
+            <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-4 pl-2">
               Action Required: Assessments
             </h3>
             <ScrollArea className="flex-1 -mx-2 px-2">
               {assessments.length === 0 ? (
-                <div className="p-12 text-center text-slate-500 dark:text-zinc-500 bg-white/50 dark:bg-white/[0.02] rounded-[2rem] border border-dashed border-slate-200 dark:border-white/10 mx-2">
+                <div className="p-12 text-center text-slate-500 dark:text-zinc-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-2">
                   <ClipboardCheck className="w-12 h-12 text-slate-300 dark:text-zinc-600 mx-auto mb-3" />
                   <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">All Clear</p>
                   <p className="text-sm mt-1">No overdue assessments.</p>
@@ -225,7 +223,7 @@ export default function ClinicalDeskPage() {
                 <MotionList className="space-y-4">
                   {assessments.map((a) => (
                     <MotionItem key={a.id}>
-                      <div className="p-5 rounded-[2rem] border border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm tap-responsive group hover:border-rose-300 dark:hover:border-rose-500/30 hover:shadow-lg transition-all duration-300 cursor-pointer">
+                      <div className="p-5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm tap-responsive group hover:border-rose-300 dark:hover:border-rose-500/30 hover:shadow-lg transition-all duration-300 cursor-pointer">
                         <div className="flex justify-between items-start mb-3">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/50 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
@@ -234,7 +232,7 @@ export default function ClinicalDeskPage() {
                             <span className="font-semibold text-base text-slate-900 dark:text-slate-100 tracking-tight group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">{a.residentName}</span>
                           </div>
                           <Badge variant="destructive" className={cn(
-                            "h-5 px-2 text-[10px] font-bold uppercase tracking-widest rounded border-0",
+                            "h-5 px-2 text-[10px] font-bold uppercase tracking-wider rounded border-0",
                             a.daysOverdue === 0
                               ? "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300"
                               : a.daysOverdue > 7
@@ -273,14 +271,14 @@ export default function ClinicalDeskPage() {
 
         {/* Right Pane: Care Plan Drafts */}
         <div className="lg:col-span-8 flex flex-col h-full overflow-hidden">
-          <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-sm backdrop-blur-3xl p-6 flex flex-col h-full">
-            <h3 className="text-[12px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-4 pl-2 flex items-center gap-2">
+          <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] shadow-sm p-6 flex flex-col h-full">
+            <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-4 pl-2 flex items-center gap-2">
               <PulseDot colorClass="bg-indigo-500" />
               Generated Care Plan Drafts
             </h3>
             <ScrollArea className="flex-1 -mx-2 px-2">
               {carePlans.length === 0 ? (
-                <div className="p-20 text-center text-slate-500 dark:text-zinc-500 bg-white/50 dark:bg-white/[0.02] rounded-[2rem] border border-dashed border-slate-200 dark:border-white/10 mx-2">
+                <div className="p-20 text-center text-slate-500 dark:text-zinc-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-2">
                   <CalendarClock className="w-16 h-16 text-slate-300 dark:text-zinc-600 mx-auto mb-4" />
                   <p className="font-semibold text-xl text-slate-900 dark:text-slate-100">All Clear</p>
                   <p className="text-base mt-2">No drafts awaiting review.</p>
@@ -289,26 +287,26 @@ export default function ClinicalDeskPage() {
                 <MotionList className="grid gap-4">
                   {carePlans.map((p) => (
                     <MotionItem key={p.id}>
-                      <div className="relative flex flex-col md:flex-row md:items-center gap-4 p-6 rounded-[2rem] border border-slate-200/60 dark:border-white/5 hover:border-indigo-300 dark:hover:border-indigo-500/40 hover:shadow-lg transition-all duration-300 group bg-white dark:bg-white/[0.03] shadow-sm">
+                      <div className="relative flex flex-col md:flex-row md:items-center gap-4 p-6 rounded-lg border border-slate-200/60 dark:border-white/5 hover:border-indigo-300 dark:hover:border-indigo-500/40 hover:shadow-lg transition-all duration-300 group bg-white shadow-sm">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">
+                            <span className="text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">
                               {p.residentName}
                             </span>
-                            <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-zinc-500">Due: {p.reviewDueDate}</span>
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">Due: {p.reviewDueDate}</span>
                           </div>
                           <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-4">
                             Care Plan v{p.version} Update (Triggered by MDS)
                           </p>
                           <div className="flex items-center gap-3">
-                            <Link href={`/admin/residents/${p.residentId}/care-plan`} className={cn(buttonVariants({ variant: "default", size: "sm" }), "h-10 rounded-full px-6 font-bold uppercase tracking-widest text-[10px] bg-indigo-600 hover:bg-indigo-700 shadow-md tap-responsive text-white")}>
+                            <Link href={`/admin/residents/${p.residentId}/care-plan`} className={cn(buttonVariants({ variant: "default", size: "sm" }), "h-10 rounded-full px-6 font-bold uppercase tracking-wider text-[10px] bg-indigo-600 hover:bg-indigo-700 shadow-md tap-responsive text-white")}>
                               Review & Sign
                             </Link>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => setDiffCarePlanId(p.id)}
-                              className="h-10 rounded-full px-6 font-bold uppercase tracking-widest text-[10px] shadow-sm tap-responsive border-slate-200 dark:border-white/10 dark:text-zinc-300"
+                              className="h-10 rounded-full px-6 font-bold uppercase tracking-wider text-[10px] shadow-sm tap-responsive border-slate-200 dark:border-white/10 dark:text-zinc-300"
                             >
                               View Diff
                             </Button>

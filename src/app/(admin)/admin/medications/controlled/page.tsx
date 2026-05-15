@@ -164,7 +164,7 @@ export default function AdminControlledSubstancesPage() {
   return (
     <div className="space-y-6 pb-8">
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-6 md:p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end justify-between bg-card p-6 md:p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm">
         <div className="space-y-2">
           <Link
             href="/admin/medications"
@@ -176,10 +176,10 @@ export default function AdminControlledSubstancesPage() {
             <ArrowLeft className="h-4 w-4" />
             Back to Medications
           </Link>
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-[10px] font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400 mb-2 block w-fit">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-2 block w-fit">
             <Shield className="w-3 h-3" /> Narcotics Log
           </div>
-          <h1 className="font-display text-3xl md:text-4xl font-light tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900 dark:text-white">
             Controlled Substances
           </h1>
           <p className="text-sm font-medium tracking-wide text-slate-600 dark:text-slate-400 mt-1">
@@ -282,7 +282,7 @@ export default function AdminControlledSubstancesPage() {
       {loading ? (
         <AdminTableLoadingState />
       ) : filteredRows.length === 0 ? (
-        <div className="rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] p-16 text-center backdrop-blur-3xl shadow-sm">
+        <div className="rounded-lg border border-slate-200/50 dark:border-white/5 bg-slate-50/50 p-16 text-center shadow-sm">
           <Shield className="h-16 w-16 text-slate-300 dark:text-zinc-700 mx-auto mb-4" />
           <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
             {filter === "all" ? "No Count Records" : `No ${filter.replace(/_/g, " ")} counts`}
@@ -304,28 +304,28 @@ export default function AdminControlledSubstancesPage() {
         </div>
       ) : (
         <div
-          className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] p-6 md:p-8 shadow-sm backdrop-blur-3xl relative overflow-hidden"
+          className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] p-6 md:p-8 shadow-sm relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
 
           {/* Table Header */}
           <div className="hidden lg:grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
-            <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">
               Medication
             </div>
-            <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">
               Date & Shift
             </div>
-            <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-center">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-center">
               Expected
             </div>
-            <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-center">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-center">
               Actual
             </div>
-            <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-center">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-center">
               Delta
             </div>
-            <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">
               Status
             </div>
           </div>
@@ -343,13 +343,13 @@ export default function AdminControlledSubstancesPage() {
                     <button
                       onClick={() => hot && openResolutionModal(r)}
                       className={cn(
-                        "w-full grid grid-cols-1 lg:grid-cols-[2fr_1.5fr_1fr_1fr_1fr_1fr] gap-4 items-center p-6 rounded-[1.8rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-emerald-200 dark:hover:border-emerald-500/30 hover:shadow-lg dark:hover:bg-white/[0.05] transition-all duration-300 outline-none text-left",
+                        "w-full grid grid-cols-1 lg:grid-cols-[2fr_1.5fr_1fr_1fr_1fr_1fr] gap-4 items-center p-6 rounded-lg bg-white border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-emerald-200 dark:hover:border-emerald-500/30 hover:shadow-lg dark:hover:bg-white/[0.05] transition-all duration-300 outline-none text-left",
                         hot && "ring-1 ring-red-500/50 bg-red-50/50 dark:bg-red-500/5 hover:ring-red-500 dark:hover:ring-red-500 cursor-pointer",
                         !hot && resolved && "border-emerald-200 dark:border-emerald-500/20 bg-emerald-50/30 dark:bg-emerald-500/5"
                       )}
                     >
                       <div className="flex flex-col min-w-0 pr-4">
-                        <span className="lg:hidden text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-1">
+                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">
                           Medication
                         </span>
                         <span
@@ -367,42 +367,42 @@ export default function AdminControlledSubstancesPage() {
                       </div>
 
                       <div className="flex flex-col">
-                        <span className="lg:hidden text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-1">
+                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">
                           Date & Shift
                         </span>
-                        <span className="text-[11px] font-mono tracking-widest text-slate-500 dark:text-zinc-500 whitespace-nowrap">
+                        <span className="text-[11px] font-mono tracking-wider text-slate-500 dark:text-zinc-500 whitespace-nowrap">
                           {r.count_date}
                         </span>
-                        <span className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mt-1">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mt-1">
                           {r.shift} Shift
                         </span>
                       </div>
 
                       <div className="flex flex-col lg:items-center">
-                        <span className="lg:hidden text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-1">
+                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">
                           Expected
                         </span>
-                        <span className="text-lg font-display text-slate-600 dark:text-slate-400">
+                        <span className="text-lg text-slate-600 dark:text-slate-400">
                           {r.expected_count}
                         </span>
                       </div>
 
                       <div className="flex flex-col lg:items-center">
-                        <span className="lg:hidden text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-1">
+                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">
                           Actual
                         </span>
-                        <span className="text-lg font-display text-slate-900 dark:text-slate-200">
+                        <span className="text-lg text-slate-900 dark:text-slate-200">
                           {r.actual_count}
                         </span>
                       </div>
 
                       <div className="flex flex-col lg:items-center">
-                        <span className="lg:hidden text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-1">
+                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">
                           Delta
                         </span>
                         <span
                           className={cn(
-                            "text-lg font-display font-medium",
+                            "text-lg font-medium",
                             hot
                               ? "text-red-600 dark:text-red-400"
                               : r.discrepancy === 0
@@ -415,14 +415,14 @@ export default function AdminControlledSubstancesPage() {
                       </div>
 
                       <div className="flex flex-col lg:items-end lg:pr-2 justify-center">
-                        <span className="lg:hidden text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-1">
+                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">
                           Status
                         </span>
                         {hot ? (
                           <div className="flex items-center gap-2">
                             <Badge
                               variant="destructive"
-                              className="px-2 py-0.5 text-[9px] uppercase font-bold tracking-widest shadow-sm bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-500/20 dark:text-red-400"
+                              className="px-2 py-0.5 text-[9px] uppercase font-bold tracking-wider shadow-sm bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-500/20 dark:text-red-400"
                             >
                               Open
                             </Badge>
@@ -432,7 +432,7 @@ export default function AdminControlledSubstancesPage() {
                           <div className="flex items-center gap-2">
                             <Badge
                               variant="secondary"
-                              className="px-2 py-0.5 text-[9px] uppercase font-bold tracking-widest shadow-sm border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400"
+                              className="px-2 py-0.5 text-[9px] uppercase font-bold tracking-wider shadow-sm border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400"
                             >
                               Resolved
                             </Badge>
@@ -441,7 +441,7 @@ export default function AdminControlledSubstancesPage() {
                         ) : (
                           <Badge
                             variant="secondary"
-                            className="px-2 py-0.5 text-[9px] uppercase font-bold tracking-widest shadow-sm border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400"
+                            className="px-2 py-0.5 text-[9px] uppercase font-bold tracking-wider shadow-sm border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400"
                           >
                             OK
                           </Badge>

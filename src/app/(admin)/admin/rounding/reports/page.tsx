@@ -161,12 +161,10 @@ export default function AdminRoundingReportsPage() {
       <AmbientMatrix primaryClass="bg-emerald-700/10" secondaryClass="bg-cyan-900/10" />
 
       <div className="relative z-10 space-y-6">
-        <header className="mb-6 flex flex-col md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+        <header className="mb-6 flex flex-col md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
-               SYS: Analytics
-            </div>
-            <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+            
+            <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
               Completion Reports
             </h1>
             <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
@@ -185,30 +183,30 @@ export default function AdminRoundingReportsPage() {
           />
         ) : null}
 
-        <div className="flex flex-wrap items-end gap-6 glass-panel rounded-[2rem] border border-slate-200 dark:border-white/5 bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl p-6 shadow-sm">
+        <div className="flex flex-wrap items-end gap-6 rounded-lg border border-slate-200 dark:border-white/5 bg-card dark:bg-slate-900/40 p-6 shadow-sm">
           <label className="space-y-1 text-sm flex-1 min-w-[200px]">
-            <span className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500 dark:text-slate-400">From Window</span>
+            <span className="text-[10px] font-bold font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">From Window</span>
             <input
               type="datetime-local"
               value={from}
               onChange={(event) => setFrom(event.target.value)}
-              className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-black/30 px-4 text-sm font-mono tracking-widest text-slate-700 dark:text-slate-200 focus:border-indigo-500/50 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 transition-all shadow-inner uppercase font-semibold"
+              className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-white/50 px-4 text-sm font-mono tracking-wider text-slate-700 dark:text-slate-200 focus:border-indigo-500/50 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 transition-all shadow-inner uppercase font-semibold"
             />
           </label>
           <label className="space-y-1 text-sm flex-1 min-w-[200px]">
-             <span className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500 dark:text-slate-400">To Window</span>
+             <span className="text-[10px] font-bold font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">To Window</span>
             <input
               type="datetime-local"
               value={to}
               onChange={(event) => setTo(event.target.value)}
-               className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-black/30 px-4 text-sm font-mono tracking-widest text-slate-700 dark:text-slate-200 focus:border-indigo-500/50 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 transition-all shadow-inner uppercase font-semibold"
+               className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-white/50 px-4 text-sm font-mono tracking-wider text-slate-700 dark:text-slate-200 focus:border-indigo-500/50 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 transition-all shadow-inner uppercase font-semibold"
             />
           </label>
           <div className="flex items-center gap-3">
             <Button
               onClick={() => void load()}
               variant="outline"
-              className="h-12 rounded-full border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-6 font-bold uppercase tracking-widest text-[10px] shadow-sm hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors"
+              className="h-12 rounded-full border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-6 font-bold uppercase tracking-wider text-[10px] shadow-sm hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors"
             >
               <RefreshCw className="mr-2 h-4 w-4 text-slate-400" />
               Refresh
@@ -217,7 +215,7 @@ export default function AdminRoundingReportsPage() {
               variant="outline"
               onClick={exportCsv}
               disabled={csvRows.length <= 1}
-               className="h-12 rounded-full border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-6 font-bold uppercase tracking-widest text-[10px] shadow-sm hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 transition-colors"
+               className="h-12 rounded-full border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-6 font-bold uppercase tracking-wider text-[10px] shadow-sm hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 transition-colors"
             >
               <Download className="mr-2 h-4 w-4 opacity-70" />
               Export
@@ -287,7 +285,7 @@ function ReportMetric({
     <div className="h-[120px]">
       <V2Card hoverColor={color} className={colorMap.border}>
         <div className="relative z-10 flex flex-col h-full justify-between">
-          <h3 className={cn("text-[10px] font-mono tracking-widest uppercase", colorMap.text)}>{label}</h3>
+          <h3 className={cn("text-[10px] font-mono tracking-wider uppercase", colorMap.text)}>{label}</h3>
           <div>
             <p className={cn("text-3xl font-mono tracking-tighter", colorMap.text)}>{value}</p>
             <p className="text-[10px] font-mono text-slate-500 mt-0.5">{detail}</p>
@@ -322,19 +320,19 @@ function BreakdownSection({
   }[color] ?? "text-slate-500";
 
   return (
-    <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm overflow-hidden overflow-x-auto relative">
+    <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm overflow-hidden overflow-x-auto relative">
       <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center gap-3">
          <div className={cn("w-10 h-10 flex shrink-0 items-center justify-center rounded-full border", headerColor)}>
             <span className={iconColor}>{icon}</span>
          </div>
         <div>
-          <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white capitalize tracking-tight">{title}</h3>
-          <p className="text-[10px] mt-0.5 font-bold font-mono tracking-widest text-slate-500 dark:text-slate-400 uppercase">{rows.length} Records</p>
+          <h3 className="text-xl font-semibold text-slate-900 dark:text-white capitalize tracking-tight">{title}</h3>
+          <p className="text-[10px] mt-0.5 font-bold font-mono tracking-wider text-slate-500 dark:text-slate-400 uppercase">{rows.length} Records</p>
         </div>
       </div>
 
       {rows.length === 0 ? (
-        <div className="px-5 py-12 text-center bg-white/50 dark:bg-white/[0.015] rounded-[2rem] border border-dashed border-slate-200 dark:border-white/10">
+        <div className="px-5 py-12 text-center bg-white/50 dark:bg-white/[0.015] rounded-lg border border-dashed border-slate-200 dark:border-white/10">
           <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No live rows returned</p>
           <p className="text-sm opacity-80 mt-1 font-mono tracking-wide">This section stays empty until the live source returns rows.</p>
         </div>
@@ -346,35 +344,35 @@ function BreakdownSection({
               
               return (
                 <MotionItem key={row.label}>
-                    <div className="p-5 rounded-[1.5rem] glass-panel group transition-all duration-300 hover:scale-[1.01] cursor-default border border-slate-200 dark:border-white/5 bg-white/80 dark:bg-white/[0.03] w-full flex items-center justify-between gap-6 backdrop-blur-xl shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20">
+                    <div className="p-5 rounded-lg group transition-all duration-300 hover:scale-[1.01] cursor-default border border-slate-200 dark:border-white/5 bg-white/80 w-full flex items-center justify-between gap-6 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20">
                          <div className="flex flex-col min-w-[200px] gap-1 shrink-0">
-                           <span className="font-bold text-slate-900 dark:text-slate-100 uppercase text-[11px] tracking-widest truncate">
+                           <span className="font-bold text-slate-900 dark:text-slate-100 uppercase text-[11px] tracking-wider truncate">
                               {row.label}
                            </span>
                         </div>
                         <div className="grid grid-cols-6 gap-2 w-full text-center">
                              <div className="flex flex-col gap-1.5 justify-center">
-                                <span className="text-[8px] font-bold uppercase font-mono tracking-widest text-slate-400">Total</span>
+                                <span className="text-[8px] font-bold uppercase font-mono tracking-wider text-slate-400">Total</span>
                                 <span className="font-mono text-sm tracking-tighter font-semibold text-slate-600 dark:text-zinc-300">{row.expected}</span>
                              </div>
                              <div className="flex flex-col gap-1.5 justify-center">
-                                <span className="text-[8px] font-bold uppercase font-mono tracking-widest text-slate-400">Done</span>
+                                <span className="text-[8px] font-bold uppercase font-mono tracking-wider text-slate-400">Done</span>
                                 <span className="font-mono text-sm tracking-tighter font-semibold text-slate-600 dark:text-zinc-300">{row.completed}</span>
                              </div>
                              <div className="flex flex-col gap-1.5 justify-center">
-                                <span className="text-[8px] font-bold uppercase font-mono tracking-widest text-emerald-500">On Time</span>
+                                <span className="text-[8px] font-bold uppercase font-mono tracking-wider text-emerald-500">On Time</span>
                                 <span className="font-mono text-sm tracking-tighter font-semibold text-emerald-700 dark:text-emerald-400">{row.onTime}</span>
                              </div>
                             <div className="flex flex-col gap-1.5 justify-center">
-                                <span className="text-[8px] font-bold uppercase font-mono tracking-widest text-amber-500">Late</span>
+                                <span className="text-[8px] font-bold uppercase font-mono tracking-wider text-amber-500">Late</span>
                                 <span className="font-mono text-sm tracking-tighter font-semibold text-amber-700 dark:text-amber-400">{row.late}</span>
                              </div>
                              <div className="flex flex-col gap-1.5 justify-center">
-                                <span className="text-[8px] font-bold uppercase font-mono tracking-widest text-rose-500">Missed</span>
+                                <span className="text-[8px] font-bold uppercase font-mono tracking-wider text-rose-500">Missed</span>
                                 <span className="font-mono text-sm tracking-tighter font-semibold text-rose-700 dark:text-rose-400">{row.missed}</span>
                              </div>
                              <div className="flex flex-col items-end justify-center pr-2">
-                                <Badge className={cn("uppercase tracking-widest font-mono text-[10px] font-bold shadow-sm px-2.5 py-1 rounded-full border", rateColor)}>
+                                <Badge className={cn("uppercase tracking-wider font-mono text-[10px] font-bold shadow-sm px-2.5 py-1 rounded-full border", rateColor)}>
                                    {rate}% rate
                                 </Badge>
                              </div>

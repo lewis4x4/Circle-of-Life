@@ -58,7 +58,7 @@ export default function CaregiverPendingPoliciesPage() {
         <Link href="/caregiver/me" className="text-sm text-zinc-400 hover:text-zinc-200">
           ← Me
         </Link>
-        <h1 className="mt-2 font-display text-xl font-semibold text-zinc-100">Policies to acknowledge</h1>
+        <h1 className="mt-2 text-xl font-semibold text-zinc-100">Policies to acknowledge</h1>
         <p className="mt-1 text-sm text-zinc-400">Read and confirm each policy required for your facility.</p>
       </div>
 

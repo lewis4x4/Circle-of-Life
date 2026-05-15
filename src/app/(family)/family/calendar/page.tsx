@@ -55,7 +55,7 @@ export default function FamilyCalendarPage() {
 
   if (configError) {
     return (
-      <div className="rounded-xl border border-rose-200 bg-white/60 backdrop-blur-md px-6 py-4 text-sm text-rose-800 shadow-sm max-w-lg mx-auto mt-20">{configError}</div>
+      <div className="rounded-xl border border-rose-200 bg-card backdrop-blur-md px-6 py-4 text-sm text-rose-800 shadow-sm max-w-lg mx-auto mt-20">{configError}</div>
     );
   }
 
@@ -71,7 +71,7 @@ export default function FamilyCalendarPage() {
   if (loadError) {
     return (
       <div className="space-y-4 pb-16 md:pb-0 max-w-md mx-auto text-center mt-20">
-        <div className="rounded-2xl border border-rose-200 bg-white/70 backdrop-blur-xl px-4 py-6 text-sm text-rose-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+        <div className="rounded-2xl border border-rose-200 bg-white/70 px-4 py-6 text-sm text-rose-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
           <CalendarDays className="w-8 h-8 text-rose-400 mx-auto mb-3" />
           <p>{loadError}</p>
         </div>
@@ -97,7 +97,7 @@ export default function FamilyCalendarPage() {
 
       <div className="w-full space-y-6">
         {rows.length === 0 ? (
-          <div className="glass-card-light rounded-[2rem] p-10 text-center border-dashed border-2 border-stone-200/50">
+          <div className="rounded-lg p-10 text-center border-dashed border-2 border-stone-200/50">
             <p className="text-stone-600 font-serif text-xl italic mb-2">No scheduled activities.</p>
             <p className="text-sm text-stone-500 max-w-md mx-auto">
                We could not find any shared events in this window, or your current family access does not include calendar updates yet.

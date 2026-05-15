@@ -247,7 +247,7 @@ export default function ExecutiveNlqPage() {
         </div>
 
         {/* Input Bar */}
-        <div className="border-t border-white/5 bg-slate-900/80 backdrop-blur-xl px-6 sm:px-12 py-4">
+        <div className="border-t border-white/5 bg-slate-900/80 px-6 sm:px-12 py-4">
           {error && (
             <p className="text-xs text-rose-400 mb-2">{error}</p>
           )}

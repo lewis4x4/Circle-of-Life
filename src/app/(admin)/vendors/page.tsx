@@ -93,12 +93,10 @@ export default function AdminVendorsHubPage() {
       <div className="relative z-10 space-y-6">
         <VendorHubNav />
         
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4 relative z-10 transition-all hover:bg-white/50 dark:hover:bg-black/30">
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4 relative z-10 transition-all hover:bg-white/50 dark:hover:bg-black/30">
           <div className="space-y-3">
-             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
-                 <Truck className="h-3.5 w-3.5" aria-hidden /> SYS: Module 19
-             </div>
-             <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+             
+             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
               Vendors & Contracts
              </h1>
             <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
@@ -119,10 +117,10 @@ export default function AdminVendorsHubPage() {
               <Sparkline colorClass="text-slate-400" variant={1} />
               <MonolithicWatermark value={vendorCount ?? 0} className="text-slate-800/5 dark:text-white/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-slate-500 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-slate-500 flex items-center gap-2">
                   Active Vendors
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-500 dark:from-white dark:to-slate-500 pb-1">{loading ? "…" : vendorCount ?? "—"}</p>
+                <p className="text-4xl font-mono tracking-tighter pb-1">{loading ? "…" : vendorCount ?? "—"}</p>
               </div>
             </V2Card>
           </div>
@@ -132,7 +130,7 @@ export default function AdminVendorsHubPage() {
               <MonolithicWatermark value={openAlerts ?? 0} className="text-amber-600/5 dark:text-amber-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-[10px] font-mono tracking-widest uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                  <h3 className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
                      Open Contract Alerts
                   </h3>
                   {openAlerts != null && openAlerts > 0 && <PulseDot colorClass="bg-amber-500" />}
@@ -146,7 +144,7 @@ export default function AdminVendorsHubPage() {
               <Sparkline colorClass="text-emerald-500" variant={3} />
               <MonolithicWatermark value={mtdSpend ? "$" : ""} className="text-emerald-600/5 dark:text-emerald-400/5 text-4xl opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                    MTD Vendor Spend
                 </h3>
                 <p className="text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1">{loading ? "…" : mtdSpend != null ? formatUsdFromCents(mtdSpend) : "—"}</p>
@@ -155,9 +153,9 @@ export default function AdminVendorsHubPage() {
           </div>
         </KineticGrid>
 
-      <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-visible z-10 w-full transition-all mt-8">
+      <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-visible z-10 w-full transition-all mt-8">
         <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4">
-          <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white">Quick Links</h3>
+          <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Quick Links</h3>
           <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400 mt-1">Jump to procurement and AP workflows.</p>
         </div>
         
@@ -170,13 +168,13 @@ export default function AdminVendorsHubPage() {
              { title: "Spend analytics", href: "/admin/vendors/spend", desc: "Review MTD and historic expenditures" },
            ].map((link) => (
              <MotionItem key={link.href}>
-                 <Link href={link.href} className="p-6 rounded-[1.5rem] glass-panel group transition-all duration-300 hover:scale-[1.01] cursor-pointer border border-slate-200 dark:border-white/5 bg-white/80 dark:bg-white/[0.03] w-full flex flex-col justify-between gap-4 backdrop-blur-xl shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-500/30 h-[140px] relative overflow-hidden">
+                 <Link href={link.href} className="p-6 rounded-lg group transition-all duration-300 hover:scale-[1.01] cursor-pointer border border-slate-200 dark:border-white/5 bg-white/80 w-full flex flex-col justify-between gap-4 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-500/30 h-[140px] relative overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/0 via-transparent to-indigo-500/0 group-hover:from-indigo-50/50 group-hover:to-transparent dark:group-hover:from-indigo-500/5 transition-colors" />
                     <div className="relative z-10 flex flex-col gap-1">
-                       <span className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest text-xs group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                       <span className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-xs group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                           {link.title}
                        </span>
-                       <span className="text-[10px] font-mono tracking-widest uppercase text-slate-500 dark:text-slate-400 pr-4 mt-2 leading-relaxed">
+                       <span className="text-[10px] font-mono tracking-wider uppercase text-slate-500 dark:text-slate-400 pr-4 mt-2 leading-relaxed">
                           {link.desc}
                        </span>
                     </div>

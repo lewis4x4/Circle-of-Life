@@ -145,10 +145,10 @@ export default function ExecutiveStandupHistoryPage() {
       <div className="relative z-10 space-y-6">
         <ExecutiveHubNav />
 
-        <header className="rounded-[2rem] border border-slate-200/70 bg-white/70 p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+        <header className="rounded-lg border border-slate-200/70 bg-white/70 p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
                 <History className="h-3.5 w-3.5" />
                 Standup archive
               </div>
@@ -177,14 +177,14 @@ export default function ExecutiveStandupHistoryPage() {
         ) : null}
 
         {loading ? (
-          <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+          <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
             <CardContent className="flex items-center gap-3 p-6 text-sm text-slate-500 dark:text-zinc-400">
               <Loader2 className="h-4 w-4 animate-spin" />
               Loading standup history…
             </CardContent>
           </Card>
         ) : rows.length === 0 ? (
-          <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+          <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
             <CardHeader>
               <CardTitle>No standup weeks yet</CardTitle>
               <CardDescription>Generate the first weekly draft from the standup pack page.</CardDescription>
@@ -200,7 +200,7 @@ export default function ExecutiveStandupHistoryPage() {
           </Card>
         ) : (
           <div className="space-y-4">
-            <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
               <CardHeader>
                 <CardTitle className="text-lg">Compare published weeks</CardTitle>
                 <CardDescription>Replace spreadsheet side-by-side review with an in-app change comparison across any two weekly packets.</CardDescription>
@@ -209,7 +209,7 @@ export default function ExecutiveStandupHistoryPage() {
                 <div className="space-y-2">
                   <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">From week</div>
                   <select
-                    className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-black/20"
+                    className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10"
                     value={compareFromWeek}
                     onChange={(event) => setCompareFromWeek(event.target.value)}
                   >
@@ -221,7 +221,7 @@ export default function ExecutiveStandupHistoryPage() {
                 <div className="space-y-2">
                   <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">To week</div>
                   <select
-                    className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-black/20"
+                    className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10"
                     value={compareToWeek}
                     onChange={(event) => setCompareToWeek(event.target.value)}
                   >
@@ -250,7 +250,7 @@ export default function ExecutiveStandupHistoryPage() {
               {rows.map((row, index) => {
                 const compareTarget = rows[index + 1]?.weekOf ?? null;
                 return (
-                  <Card key={row.id} className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm transition-shadow hover:shadow-md dark:border-white/10 dark:bg-white/[0.03]">
+                  <Card key={row.id} className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm transition-shadow hover:shadow-md dark:border-white/10 dark:bg-white/[0.03]">
                     <CardHeader>
                       <div className="flex items-start justify-between gap-3">
                         <div>
@@ -279,20 +279,20 @@ export default function ExecutiveStandupHistoryPage() {
                       <div className="flex flex-wrap gap-2">
                         <Link
                           href={`/admin/executive/standup/${row.weekOf}`}
-                          className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-slate-700 transition-colors hover:bg-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10"
+                          className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-slate-700 transition-colors hover:bg-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10"
                         >
                           Open week
                         </Link>
                         <Link
                           href={`/admin/executive/standup/${row.weekOf}/board`}
-                          className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-indigo-700 transition-colors hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/15"
+                          className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-indigo-700 transition-colors hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/15"
                         >
                           Board packet
                         </Link>
                         <Button
                           type="button"
                           variant="outline"
-                          className="rounded-full text-xs font-semibold uppercase tracking-widest"
+                          className="rounded-full text-xs font-semibold uppercase tracking-wider"
                           disabled={downloadingPdfWeek === row.weekOf}
                           onClick={() => void onDownloadPdf(row.weekOf)}
                         >
@@ -302,7 +302,7 @@ export default function ExecutiveStandupHistoryPage() {
                         {compareTarget ? (
                           <Link
                             href={`/admin/executive/standup/compare?from=${encodeURIComponent(compareTarget)}&to=${encodeURIComponent(row.weekOf)}`}
-                            className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200 dark:hover:bg-emerald-500/15"
+                            className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200 dark:hover:bg-emerald-500/15"
                           >
                             Compare previous
                           </Link>
@@ -317,7 +317,7 @@ export default function ExecutiveStandupHistoryPage() {
         )}
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-          <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+          <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
             <CardHeader>
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -329,7 +329,7 @@ export default function ExecutiveStandupHistoryPage() {
                     Slice 3 imports the legacy workbook into the standup archive. Run the importer locally, then refresh this page to verify the imported weeks.
                   </CardDescription>
                 </div>
-                <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-widest">
+                <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-wider">
                   Historical continuity
                 </Badge>
               </div>
@@ -354,7 +354,7 @@ export default function ExecutiveStandupHistoryPage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+          <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
             <CardHeader>
               <CardTitle className="text-lg">Recent import jobs</CardTitle>
               <CardDescription>Use this to confirm the workbook has been backfilled and to spot failed import attempts quickly.</CardDescription>

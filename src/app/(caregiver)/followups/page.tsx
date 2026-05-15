@@ -144,8 +144,8 @@ export default function CaregiverFollowupsPage() {
         title="Review condition-change reports, then move the resident into the next clinical or shift-handoff action."
         description="Use this lane to keep change reports visible, then escalate through incident reporting or carry them into handoff when the next shift needs clarity."
       />
-      <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-white/5 bg-gradient-to-br from-teal-950/40 via-slate-900/40 to-black/60 backdrop-blur-3xl shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
-        <h3 className="flex items-center gap-3 text-2xl font-display font-semibold text-white tracking-wide">
+      <div className="p-6 sm:p-8 rounded-lg border border-white/5 bg-gradient-to-br from-teal-950/40 via-slate-900/40 to-black/60 shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
+        <h3 className="flex items-center gap-3 text-2xl font-semibold text-white tracking-wide">
           <div className="w-10 h-10 rounded-full bg-teal-500/20 flex items-center justify-center border border-teal-500/30">
             <BellRing className="h-5 w-5 text-teal-400" />
           </div>
@@ -157,20 +157,20 @@ export default function CaregiverFollowupsPage() {
       </div>
 
       {rows.length === 0 ? (
-        <div className="glass-panel p-8 rounded-[2rem] border border-white/5 bg-slate-900/40 text-center backdrop-blur-xl">
+        <div className="p-8 rounded-lg border border-white/5 bg-slate-900/40 text-center">
           <p className="text-sm font-mono text-zinc-400">No open follow-ups right now.</p>
         </div>
       ) : (
         <MotionList className="space-y-4">
           {rows.map((r) => (
             <MotionItem key={r.id}>
-              <div className="p-6 md:p-8 rounded-[2rem] glass-panel group transition-all duration-300 border border-white/5 bg-white/[0.02] backdrop-blur-xl relative overflow-hidden flex flex-col md:flex-row md:items-center gap-4">
+              <div className="p-6 md:p-8 rounded-lg group transition-all duration-300 border border-white/5 bg-white/[0.02] relative overflow-hidden flex flex-col md:flex-row md:items-center gap-4">
                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none" />
                  
                 <div className="flex flex-1 flex-col gap-2 relative z-10 w-full">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2">
                     <div className="flex items-start md:items-center gap-3">
-                      <span className="text-xl font-display tracking-wide font-semibold text-white leading-tight">{r.title}</span>
+                      <span className="text-xl tracking-wide font-semibold text-white leading-tight">{r.title}</span>
                       <Badge
                         className={`rounded-full px-3 py-1 text-[9px] uppercase tracking-widest font-mono font-bold shadow-inner shrink-0 ${
                           r.priority === "high"
@@ -183,7 +183,7 @@ export default function CaregiverFollowupsPage() {
                     </div>
                   </div>
                   
-                  <p className="text-[11px] uppercase tracking-widest font-mono font-bold text-zinc-400">
+                  <p className="text-[11px] uppercase tracking-wider font-mono font-bold text-zinc-400">
                     <span className="text-zinc-200">{r.name}</span> <span className="mx-2 opacity-50">·</span> Rm {r.roomLabel}
                   </p>
                   

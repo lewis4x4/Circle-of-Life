@@ -37,7 +37,7 @@ export default function InfectionSurveillanceDetailPage() {
       <Link href="/admin/infection-control" className={cn(buttonVariants({ variant: "link", size: "sm" }), "h-auto p-0 text-xs")}>
         ← Infection control
       </Link>
-      <h1 className="font-display text-2xl font-semibold tracking-tight">Surveillance record</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Surveillance record</h1>
       {error && <p className="text-sm text-red-600">{error}</p>}
       {row && (
         <Card>

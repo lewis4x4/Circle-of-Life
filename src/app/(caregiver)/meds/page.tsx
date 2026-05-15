@@ -261,7 +261,7 @@ export default function CaregiverMedsPage() {
   if (loadError && !ctx) {
     return (
       <div className="space-y-4 max-w-md mx-auto mt-12">
-        <div className="rounded-[1.5rem] border border-rose-800/60 bg-rose-950/30 px-6 py-5 text-sm text-rose-100 text-center">
+        <div className="rounded-lg border border-rose-800/60 bg-rose-950/30 px-6 py-5 text-sm text-rose-100 text-center">
           <ShieldAlert className="w-8 h-8 mx-auto mb-3 text-rose-400" />
           <p>{loadError}</p>
         </div>
@@ -286,20 +286,20 @@ export default function CaregiverMedsPage() {
       {/* ─── HIGHLIGHT BAR ─────────────────────────────────────────────────── */}
       <Link
         href="/caregiver/controlled-count"
-        className="flex items-center justify-between rounded-full border border-teal-500/30 bg-teal-900/30 backdrop-blur-xl px-5 py-3.5 text-sm text-teal-100 hover:bg-teal-900/50 transition-colors tap-responsive"
+        className="flex items-center justify-between rounded-full border border-teal-500/30 bg-teal-900/30 px-5 py-3.5 text-sm text-teal-100 hover:bg-teal-900/50 transition-colors tap-responsive"
       >
         <span className="flex items-center gap-3 font-semibold tracking-wide">
           <Shield className="h-4 w-4 text-teal-400" />
           Controlled substance count
         </span>
-        <span className="text-[10px] uppercase tracking-widest font-bold text-teal-300 bg-teal-950/40 px-2.5 py-1 rounded-full border border-teal-800/50">Shift reconciliation</span>
+        <span className="text-[10px] uppercase tracking-wider font-bold text-teal-300 bg-teal-950/40 px-2.5 py-1 rounded-full border border-teal-800/50">Shift reconciliation</span>
       </Link>
 
       {/* ─── HEADER ──────────────────────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-display font-light text-white tracking-tight">eMAR Queue</h1>
-          <p className="text-zinc-400 mt-1 uppercase tracking-widest text-xs font-semibold">
+          <h1 className="text-3xl md:text-4xl font-semibold text-white tracking-tight">eMAR Queue</h1>
+          <p className="text-zinc-400 mt-1 uppercase tracking-wider text-xs font-semibold">
             {ctx?.facilityName ? `${ctx.facilityName} · TZ: ${ctx.timeZone.split("/").pop()}` : "Document medication passes."}
           </p>
         </div>
@@ -318,7 +318,7 @@ export default function CaregiverMedsPage() {
       )}
 
       {/* ─── METRICS BLOCK ─────────────────────────────────────────────────── */}
-      <div className="glass-panel rounded-[2rem] p-4 flex flex-wrap gap-2 md:grid md:grid-cols-3 border border-white/5 bg-slate-900/40 backdrop-blur-xl">
+      <div className="rounded-lg p-4 flex flex-wrap gap-2 md:grid md:grid-cols-3 border border-white/5 bg-slate-900/40">
         <MetricPill label="Due now / overdue" value={String(counts.dueNow)} tone="danger" />
         <MetricPill label="Due < 90 min" value={String(counts.dueSoon)} tone="warning" />
         <MetricPill label="In window" value={String(counts.total)} tone="neutral" />
@@ -327,7 +327,7 @@ export default function CaregiverMedsPage() {
       {/* ─── QUEUE LIST ────────────────────────────────────────────────────── */}
       <div className="space-y-4 pt-4">
         {slots.length === 0 ? (
-           <div className="glass-panel rounded-[2rem] border-dashed border-2 border-white/10 p-12 text-center bg-transparent backdrop-blur-md">
+           <div className="rounded-lg border-dashed border-2 border-white/10 p-12 text-center bg-transparent backdrop-blur-md">
              <Pill className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
              <p className="text-lg text-white font-medium mb-1">Queue is clear.</p>
              <p className="text-sm text-zinc-500 font-medium tracking-wide">No medication passes left in the current window.</p>
@@ -370,10 +370,10 @@ function MetricPill({
           
   return (
     <div className={`flex-1 min-w-[120px] rounded-[1.2rem] border px-5 py-4 flex flex-col justify-between ${toneClass}`}>
-      <div className="mb-2 uppercase tracking-widest text-[10px] font-bold text-zinc-400">
+      <div className="mb-2 uppercase tracking-wider text-[10px] font-bold text-zinc-400">
         {label}
       </div>
-      <div className="text-3xl font-display font-medium tabular-nums tracking-tight">
+      <div className="text-3xl font-medium tabular-nums tracking-tight">
          {value}
       </div>
     </div>
@@ -406,7 +406,7 @@ function MedicationCard({
       <div className="flex flex-col gap-5 md:pl-2">
          <div className="flex items-start justify-between gap-4">
             <div>
-               <h3 className="text-xl md:text-2xl font-display text-white tracking-wide">{item.medicationLabel}</h3>
+               <h3 className="text-xl md:text-2xl text-white tracking-wide">{item.medicationLabel}</h3>
                <p className="text-zinc-400 text-sm font-medium mt-1">
                  {item.residentName} <span className="mx-2 opacity-50">&middot;</span> Rm {item.roomLabel}
                </p>

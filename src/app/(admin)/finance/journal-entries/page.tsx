@@ -69,12 +69,10 @@ export default function JournalEntriesListPage() {
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <FinanceHubNav />
         
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-violet-50/20 dark:bg-black/20 p-8 rounded-[2.5rem] border border-violet-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-violet-50/20 p-8 rounded-lg border border-violet-200/50 dark:border-white/5 shadow-sm mt-4">
           <div className="space-y-3">
-             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
-                 <BookOpenText className="h-3.5 w-3.5" aria-hidden /> SYS: Module 17
-             </div>
-             <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+             
+             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
               Journal Entries
              </h1>
             <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
@@ -82,29 +80,29 @@ export default function JournalEntriesListPage() {
             </p>
           </div>
           <div className="flex shrink-0">
-             <Link className={cn(buttonVariants({ size: "lg" }), "rounded-full font-bold uppercase tracking-widest text-[10px] shadow-lg bg-violet-600 hover:bg-violet-700 text-white border border-violet-500")} href="/admin/finance/journal-entries/new">
+             <Link className={cn(buttonVariants({ size: "lg" }), "rounded-full font-bold uppercase tracking-wider text-[10px] shadow-lg bg-violet-600 hover:bg-violet-700 text-white border border-violet-500")} href="/admin/finance/journal-entries/new">
                + New Journal
              </Link>
           </div>
         </header>
 
         {error ? (
-          <p className="rounded-[1.5rem] border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100 shadow-sm font-medium" role="alert">
+          <p className="rounded-lg border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100 shadow-sm font-medium" role="alert">
             {error}
           </p>
         ) : null}
 
-        <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all">
+        <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all">
           <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
-            <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1">Recent Entries</h3>
-            <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-1 uppercase">
+            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1">Recent Entries</h3>
+            <p className="text-[10px] font-mono tracking-wider text-slate-400 mt-1 uppercase">
               {loading ? "Loading…" : `${rows.length} rows`}
             </p>
           </div>
           
           <div className="relative z-10">
             {rows.length === 0 && !loading ? (
-              <div className="p-16 text-center text-slate-500 bg-white/50 dark:bg-white/[0.02] rounded-[2rem] border border-dashed border-slate-200 dark:border-white/10 mx-2">
+              <div className="p-16 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-2">
                 <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No journal logs found</p>
                 <p className="text-sm opacity-80 mt-1">Create a new manual journal entry to begin.</p>
               </div>
@@ -114,7 +112,7 @@ export default function JournalEntriesListPage() {
                   <MotionItem key={r.id}>
                     <Link
                       href={`/admin/finance/journal-entries/${r.id}`}
-                      className="group flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-5 rounded-[1.5rem] border border-slate-200/90 bg-white dark:border-white/5 dark:bg-white/[0.03] shadow-sm transform-gpu transition-all hover:border-violet-300 dark:hover:border-violet-500/40 hover:shadow-md"
+                      className="group flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-5 rounded-lg border border-slate-200/90 bg-white dark:border-white/5 shadow-sm transform-gpu transition-all hover:border-violet-300 dark:hover:border-violet-500/40 hover:shadow-md"
                     >
                       <div className="min-w-0 flex items-start gap-4">
                         <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0 group-hover:bg-violet-50 dark:group-hover:bg-violet-500/10 group-hover:border-violet-200 dark:group-hover:border-violet-500/20 transition-colors mt-0.5">
@@ -122,13 +120,13 @@ export default function JournalEntriesListPage() {
                         </div>
                         <div className="flex flex-col gap-2">
                            <div className="flex items-center gap-3">
-                             <Badge className={cn("uppercase tracking-widest font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full border", 
+                             <Badge className={cn("uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full border", 
                                r.status === 'posted' ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400" :
                                "bg-amber-50 text-amber-700 border-amber-200 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-400"
                              )}>
                                {r.status}
                              </Badge>
-                             <span className="text-xs font-mono tracking-widest text-slate-500 dark:text-slate-400 uppercase">
+                             <span className="text-xs font-mono tracking-wider text-slate-500 dark:text-slate-400 uppercase">
                                Entry: {r.entry_date}
                              </span>
                            </div>

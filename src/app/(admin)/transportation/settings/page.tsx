@@ -161,7 +161,7 @@ export default function TransportationOrgSettingsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-10 pb-16 w-full px-4 sm:px-6">
-      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-gradient-to-br from-slate-50/90 via-white/80 to-indigo-50/30 dark:from-black/40 dark:via-black/20 dark:to-indigo-950/20 p-8 md:p-10 rounded-[2.5rem] border border-slate-200/60 dark:border-white/10 backdrop-blur-xl shadow-sm mt-4">
+      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-gradient-to-br from-slate-50/90 via-white/80 to-indigo-50/30 dark:from-black/40 dark:via-black/20 dark:to-indigo-950/20 p-8 md:p-10 rounded-lg border border-slate-200/60 dark:border-white/10 shadow-sm mt-4">
         <div className="space-y-3">
           <Link
             href="/admin/transportation"
@@ -173,11 +173,11 @@ export default function TransportationOrgSettingsPage() {
             <ArrowLeft className="h-4 w-4" />
             Fleet operations
           </Link>
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-100/80 dark:bg-indigo-500/15 border border-indigo-200/60 dark:border-indigo-500/20 text-[10px] font-bold uppercase tracking-widest text-indigo-700 dark:text-indigo-300">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-100/80 dark:bg-indigo-500/15 border border-indigo-200/60 dark:border-indigo-500/20 text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
             <Gauge className="h-3.5 w-3.5" />
             Operations · Reimbursement
           </div>
-          <h1 className="font-display text-3xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-3xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
             Mileage reimbursement rate
           </h1>
           <p className="max-w-2xl text-base font-medium leading-relaxed text-slate-600 dark:text-zinc-400">
@@ -185,7 +185,7 @@ export default function TransportationOrgSettingsPage() {
             <span className="font-mono text-sm">mileage_logs</span> row at the time it is created — changing it does not rewrite history.
           </p>
         </div>
-        <div className="hidden md:flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl border border-indigo-200/50 bg-indigo-500/10 dark:border-indigo-500/20 dark:bg-indigo-500/5">
+        <div className="hidden md:flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border border-indigo-200/50 bg-indigo-500/10 dark:border-indigo-500/20 dark:bg-indigo-500/5">
           <Sparkles className="h-10 w-10 text-indigo-500 dark:text-indigo-400" aria-hidden />
         </div>
       </div>
@@ -210,7 +210,7 @@ export default function TransportationOrgSettingsPage() {
 
       <div className="grid gap-8 lg:grid-cols-5 lg:gap-10">
         <div className="lg:col-span-3 space-y-6">
-          <div className="rounded-[2rem] border border-slate-200/70 bg-white/70 p-6 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-white/[0.04] md:p-8">
+          <div className="rounded-lg border border-slate-200/70 bg-white/70 p-6 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-white/[0.04] md:p-8">
             {loading ? (
               <div className="space-y-4 animate-pulse">
                 <div className="h-4 w-1/3 rounded bg-slate-200 dark:bg-slate-700" />
@@ -219,7 +219,7 @@ export default function TransportationOrgSettingsPage() {
             ) : (
               <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
                 <div className="space-y-2">
-                  <Label htmlFor="dollarsPerMile" className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">
+                  <Label htmlFor="dollarsPerMile" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">
                     Rate (USD per mile)
                   </Label>
                   <div className="relative">
@@ -232,7 +232,7 @@ export default function TransportationOrgSettingsPage() {
                       autoComplete="off"
                       disabled={!canWrite}
                       className={cn(
-                        "h-14 rounded-2xl border-slate-200 pl-9 text-2xl font-semibold tracking-tight tabular-nums dark:border-white/10 dark:bg-black/30",
+                        "h-14 rounded-2xl border-slate-200 pl-9 text-2xl font-semibold tracking-tight tabular-nums dark:border-white/10",
                         form.formState.errors.dollarsPerMile && "border-rose-500 focus-visible:ring-rose-500/30",
                       )}
                       {...form.register("dollarsPerMile")}
@@ -251,7 +251,7 @@ export default function TransportationOrgSettingsPage() {
                   <Button
                     type="submit"
                     disabled={form.formState.isSubmitting}
-                    className="h-12 rounded-full px-8 text-xs font-bold uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700"
+                    className="h-12 rounded-full px-8 text-xs font-bold uppercase tracking-wider bg-indigo-600 hover:bg-indigo-700"
                   >
                     {form.formState.isSubmitting ? "Saving…" : "Save organization rate"}
                   </Button>
@@ -272,8 +272,8 @@ export default function TransportationOrgSettingsPage() {
         </div>
 
         <div className="lg:col-span-2 space-y-4">
-          <div className="rounded-[2rem] border border-indigo-200/40 bg-gradient-to-b from-indigo-50/90 to-white/80 p-6 shadow-inner dark:border-indigo-500/15 dark:from-indigo-950/40 dark:to-black/30 dark:shadow-none">
-            <h2 className="text-[11px] font-bold uppercase tracking-widest text-indigo-700 dark:text-indigo-300">Live preview</h2>
+          <div className="rounded-lg border border-indigo-200/40 bg-gradient-to-b from-indigo-50/90 to-white/80 p-6 shadow-inner dark:border-indigo-500/15 dark:from-indigo-950/40 dark:to-black/30 dark:shadow-none">
+            <h2 className="text-[11px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">Live preview</h2>
             <p className="mt-2 text-sm text-slate-600 dark:text-zinc-400">
               Estimated reimbursement at <span className="font-semibold text-slate-900 dark:text-white">{formatCentsPerMileUsd(previewCents)}</span> / mi
               {!hasRow && !loading && (
@@ -286,10 +286,10 @@ export default function TransportationOrgSettingsPage() {
               {PREVIEW_MILES.map((m) => (
                 <li
                   key={m}
-                  className="flex items-center justify-between rounded-xl bg-white/60 px-4 py-3 text-sm dark:bg-white/5"
+                  className="flex items-center justify-between rounded-xl bg-card px-4 py-3 text-sm dark:bg-white/5"
                 >
                   <span className="tabular-nums text-slate-600 dark:text-zinc-400">{m} mi</span>
-                  <span className="font-display text-lg font-medium tabular-nums text-indigo-700 dark:text-indigo-300">
+                  <span className="text-lg font-medium tabular-nums text-indigo-700 dark:text-indigo-300">
                     {formatCentsPerMileUsd(previewCents * m)}
                   </span>
                 </li>
@@ -297,7 +297,7 @@ export default function TransportationOrgSettingsPage() {
             </ul>
           </div>
 
-          <div className="rounded-2xl border border-slate-200/60 bg-slate-50/50 p-5 text-xs leading-relaxed text-slate-600 dark:border-white/10 dark:bg-white/[0.03] dark:text-zinc-500">
+          <div className="rounded-2xl border border-slate-200/60 bg-slate-50/50 p-5 text-xs leading-relaxed text-slate-600 dark:border-white/10 dark:text-zinc-500">
             <strong className="font-semibold text-slate-800 dark:text-zinc-300">Effective scope:</strong> applies when completing a transport request with a linked mileage log for{" "}
             <span className="font-mono">staff_personal_vehicle</span>. Existing mileage rows keep their original rate.
           </div>

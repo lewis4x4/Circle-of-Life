@@ -121,10 +121,10 @@ export default function CaregiverHandoffPage() {
         title="Use handoff as the final floor lane after meds, checks, and unresolved follow-up work are clear."
         description="This is where the next shift should understand what matters now. If something still needs action, link it back to meds, follow-ups, or incident reporting before turnover."
       />
-      <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-white/5 bg-gradient-to-br from-indigo-950/40 via-slate-900/40 to-black/60 backdrop-blur-3xl shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
+      <div className="p-6 sm:p-8 rounded-lg border border-white/5 bg-gradient-to-br from-indigo-950/40 via-slate-900/40 to-black/60 shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <h3 className="flex items-center gap-3 text-2xl font-display font-semibold text-white tracking-wide">
+            <h3 className="flex items-center gap-3 text-2xl font-semibold text-white tracking-wide">
               <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30">
                 <MessageSquare className="h-5 w-5 text-indigo-400" />
               </div>
@@ -134,14 +134,14 @@ export default function CaregiverHandoffPage() {
               Recent recorded handoffs for your facility (read-only). Create or edit handoffs from the nurse lead workflow when enabled.
             </p>
           </div>
-          <Badge className="border-indigo-500/40 bg-indigo-500/20 text-indigo-300 uppercase tracking-widest font-mono text-[10px] font-bold rounded-full px-4 py-1.5 shrink-0">
+          <Badge className="border-indigo-500/40 bg-indigo-500/20 text-indigo-300 uppercase tracking-wider font-mono text-[10px] font-bold rounded-full px-4 py-1.5 shrink-0">
             Latest {rows.length ? `${rows.length}` : "0"} record{rows.length === 1 ? "" : "s"}
           </Badge>
         </div>
       </div>
 
       {rows.length === 0 ? (
-        <div className="glass-panel p-8 rounded-2xl border border-white/5 bg-slate-900/40 text-center backdrop-blur-xl">
+        <div className="p-8 rounded-2xl border border-white/5 bg-slate-900/40 text-center">
           <p className="text-sm font-mono text-zinc-400">No shift handoffs on file yet.</p>
         </div>
       ) : (
@@ -152,28 +152,28 @@ export default function CaregiverHandoffPage() {
             const inName = h.incoming_staff_id ? (nameById.get(h.incoming_staff_id) ?? "Staff") : "Unassigned";
             return (
               <MotionItem key={h.id}>
-                <div className="p-6 rounded-2xl glass-panel group transition-all duration-300 border border-white/5 bg-white/[0.02] backdrop-blur-xl overflow-hidden relative break-inside-avoid">
+                <div className="p-6 rounded-2xl group transition-all duration-300 border border-white/5 bg-white/[0.02] overflow-hidden relative break-inside-avoid">
                   <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-white/5 pb-4 mb-4">
                     <div className="flex flex-col gap-1.5">
                       <div className="flex flex-wrap items-center gap-3">
                         <ClipboardList className="h-5 w-5 text-zinc-400" />
-                        <span className="font-display text-lg font-medium tracking-wide text-white">
+                        <span className="text-lg font-medium tracking-wide text-white">
                            {formatHandoffDate(h.handoff_date)}
                         </span>
-                        <span className="text-zinc-500 font-mono tracking-widest text-[10px] uppercase font-bold">
+                        <span className="text-zinc-500 font-mono tracking-wider text-[10px] uppercase font-bold">
                            {h.outgoing_shift} → {h.incoming_shift}
                         </span>
                       </div>
-                      <p className="text-[11px] font-mono uppercase tracking-widest text-zinc-500 font-medium pl-8">
+                      <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 font-medium pl-8">
                         Out: <span className="text-zinc-300">{outName}</span>
                         {h.incoming_staff_id ? <><span className="mx-2">·</span>In: <span className="text-zinc-300">{inName}</span></> : null}
                       </p>
                     </div>
                     <div className="shrink-0 flex items-center pr-2">
                        {h.incoming_acknowledged ? (
-                         <Badge className="border-emerald-500/40 bg-emerald-500/20 text-emerald-300 uppercase tracking-widest font-mono text-[9px] font-bold rounded-full px-3 py-1 shadow-[inset_0_1px_10px_rgba(16,185,129,0.1)]">Acknowledged</Badge>
+                         <Badge className="border-emerald-500/40 bg-emerald-500/20 text-emerald-300 uppercase tracking-wider font-mono text-[9px] font-bold rounded-full px-3 py-1 shadow-[inset_0_1px_10px_rgba(16,185,129,0.1)]">Acknowledged</Badge>
                        ) : (
-                         <Badge className="border-amber-500/40 bg-amber-500/20 text-amber-300 uppercase tracking-widest font-mono text-[9px] font-bold rounded-full px-3 py-1 shadow-[inset_0_1px_10px_rgba(217,119,6,0.1)]">
+                         <Badge className="border-amber-500/40 bg-amber-500/20 text-amber-300 uppercase tracking-wider font-mono text-[9px] font-bold rounded-full px-3 py-1 shadow-[inset_0_1px_10px_rgba(217,119,6,0.1)]">
                            Pending ack
                          </Badge>
                        )}
@@ -183,13 +183,13 @@ export default function CaregiverHandoffPage() {
                   <div className="space-y-4">
                     {h.outgoing_notes?.trim() ? (
                       <div className="rounded-xl border border-white/5 bg-black/40 p-4 shadow-inner">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 font-mono mb-2">Outgoing notes</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 font-mono mb-2">Outgoing notes</p>
                         <p className="whitespace-pre-wrap text-sm text-zinc-300 leading-relaxed font-mono">{h.outgoing_notes}</p>
                       </div>
                     ) : null}
                     {summaryLines.length > 0 ? (
                       <div className="space-y-2">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 font-mono pl-1">Summary Items</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 font-mono pl-1">Summary Items</p>
                         {summaryLines.map((line, idx) => (
                           <div
                             key={`${h.id}-s-${idx}`}
@@ -203,7 +203,7 @@ export default function CaregiverHandoffPage() {
                     ) : null}
                     {h.incoming_notes?.trim() ? (
                       <div className="rounded-xl border border-white/5 bg-black/40 p-4 shadow-inner">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 font-mono mb-2">Incoming notes</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 font-mono mb-2">Incoming notes</p>
                         <p className="whitespace-pre-wrap text-sm text-zinc-300 leading-relaxed font-mono">{h.incoming_notes}</p>
                       </div>
                     ) : null}

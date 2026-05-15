@@ -181,7 +181,7 @@ export default function AdminResidentDetailPage() {
         </Link>
         <Card className="border-slate-200/70 dark:border-slate-800">
           <CardHeader>
-            <CardTitle className="font-display text-xl">Resident not found</CardTitle>
+            <CardTitle className="text-xl">Resident not found</CardTitle>
             <CardDescription>This profile may be outside your current facility filter, removed from the census, or the link may be invalid.</CardDescription>
           </CardHeader>
         </Card>
@@ -216,7 +216,7 @@ export default function AdminResidentDetailPage() {
             <ArrowLeft className="h-4 w-4 mr-1" /> Census 
           </Link>
           <div className="flex items-center gap-3">
-             <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
+             <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
                {detail.fullName}
                {detail.status === "hospital" && <Badge variant="destructive" className="ml-2 font-mono text-[10px]">HOSPITAL HOLD</Badge>}
              </h1>

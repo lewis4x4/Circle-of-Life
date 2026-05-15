@@ -196,8 +196,8 @@ export function AdminSchedulesPageClient({
       <div className="relative z-10 space-y-6">
         <header className="mb-8">
           <div>
-            <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Module 18 / Workforce Schedules</p>
-            <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
               Schedule Engine {draftCount > 0 && <PulseDot colorClass="bg-indigo-500" />}
             </h2>
           </div>
@@ -209,7 +209,7 @@ export function AdminSchedulesPageClient({
               <Sparkline colorClass="text-indigo-500" variant={3} />
               <MonolithicWatermark value={draftCount} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-widest uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
                   <CalendarDays className="h-3.5 w-3.5" /> Draft Weeks
                 </h3>
                 <p className="text-4xl font-mono tracking-tighter text-indigo-600 dark:text-indigo-400 pb-1">{draftCount}</p>
@@ -220,7 +220,7 @@ export function AdminSchedulesPageClient({
             <V2Card hoverColor="blue" className="p-5 lg:p-6">
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
                  <p className="hidden max-w-md text-xs font-mono leading-relaxed text-slate-500 lg:block">Weekly schedule containers; shift assignments roll up under each published week.</p>
-                 <Link href="/admin/schedules/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-widest text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none whitespace-nowrap")} >
+                 <Link href="/admin/schedules/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-wider text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none whitespace-nowrap")} >
                    + Initialize Week
                  </Link>
               </div>
@@ -260,9 +260,9 @@ export function AdminSchedulesPageClient({
       ) : null}
       {!isLoading && filteredRows.length > 0 ? (
         <div className="relative overflow-visible z-10 w-full mt-4">
-          <div className="relative z-10 p-4 sm:p-6 mb-4 glass-panel rounded-3xl border border-white/20 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-2xl shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="relative z-10 p-4 sm:p-6 mb-4 rounded-lg border border-white/20 dark:border-white/5 bg-card shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 mb-1">Schedule weeks</h3>
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-1">Schedule weeks</h3>
               <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
                 Monday-start weeks; publish when ready for floor use.
               </p>
@@ -271,7 +271,7 @@ export function AdminSchedulesPageClient({
               type="button"
               variant="outline"
               size="sm"
-              className="shrink-0 font-mono text-[10px] uppercase tracking-widest"
+              className="shrink-0 font-mono text-[10px] uppercase tracking-wider"
               disabled={exportingCsv}
               aria-busy={exportingCsv}
               onClick={() => void exportSchedulesCsv()}
@@ -284,24 +284,24 @@ export function AdminSchedulesPageClient({
             {filteredRows.map((row) => (
               <MotionItem key={row.id}>
                  <Link href={`/admin/schedules/${row.id}`} className="block focus-visible:outline-none focus:ring-2 focus:ring-indigo-500 rounded-2xl">
-                  <div className="p-4 sm:p-5 rounded-2xl glass-panel group transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/20 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 w-full flex items-center justify-between">
+                  <div className="p-4 sm:p-5 rounded-2xl group transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/40 w-full flex items-center justify-between">
                      <div className="flex flex-col gap-2">
                         <span className="font-bold text-slate-900 dark:text-slate-100">{formatWeekLabel(row.weekStartDate)}</span>
                         
                         <div className="flex items-center gap-4">
                            <div className="flex flex-col gap-1">
-                             <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Status</span>
+                             <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Status</span>
                              <div><ScheduleStatusBadge status={row.status} /></div>
                            </div>
                            
                            <div className="flex flex-col gap-1">
-                             <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Published</span>
+                             <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Published</span>
                              <span className="text-xs text-slate-600 dark:text-slate-400">{row.publishedAt ? formatDateTime(row.publishedAt) : "—"}</span>
                            </div>
 
                            {row.notes && (
                            <div className="hidden md:flex flex-col gap-1 ml-4 border-l pl-4 border-slate-300 dark:border-slate-700">
-                             <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400">Notes</span>
+                             <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Notes</span>
                              <span className="text-xs text-slate-500 dark:text-slate-400 max-w-[200px] lg:max-w-md truncate">{row.notes.trim()}</span>
                            </div>
                            )}

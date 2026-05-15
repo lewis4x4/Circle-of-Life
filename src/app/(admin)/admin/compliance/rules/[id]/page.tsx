@@ -141,8 +141,8 @@ export default function ComplianceRuleDetailPage() {
           </Button>
         </Link>
         <div>
-          <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Compliance Rules</p>
-          <h1 className="text-2xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+          
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
             Tag {rule.tag_number}: {rule.tag_title}
           </h1>
         </div>

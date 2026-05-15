@@ -439,12 +439,10 @@ export default function AdminDietaryHubPage() {
       <div className="relative z-10 space-y-6">
         
         {/* ─── MOONSHOT HEADER ─── */}
-        <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+        <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
            <div className="space-y-2">
-             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
-                 SYS: Module 14
-             </div>
-             <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+             
+             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
                 Dietary & Nutrition
              </h1>
              <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
@@ -459,7 +457,7 @@ export default function AdminDietaryHubPage() {
            </div>
            <div className="flex flex-wrap items-center gap-3 justify-end">
               <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                <span className="whitespace-nowrap font-bold uppercase tracking-widest">Status</span>
+                <span className="whitespace-nowrap font-bold uppercase tracking-wider">Status</span>
                 <select
                   className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-white/15 dark:bg-white/5 dark:text-slate-100"
                   value={dietOrderStatusFilter}
@@ -479,7 +477,7 @@ export default function AdminDietaryHubPage() {
                 type="button"
                 variant="outline"
                 disabled={!facilityReady || exportingCsv}
-                className="h-12 rounded-full px-6 font-bold uppercase tracking-widest text-[10px] border-slate-200 dark:border-white/10"
+                className="h-12 rounded-full px-6 font-bold uppercase tracking-wider text-[10px] border-slate-200 dark:border-white/10"
                 onClick={() => void exportDietOrdersCsv()}
               >
                 {exportingCsv ? "Preparing…" : "Download diet orders CSV"}
@@ -488,12 +486,12 @@ export default function AdminDietaryHubPage() {
                 href="/admin/dietary/clinical-review"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "default" }),
-                  "h-12 px-6 rounded-full font-bold uppercase tracking-widest text-[10px] border-slate-200 dark:border-white/10",
+                  "h-12 px-6 rounded-full font-bold uppercase tracking-wider text-[10px] border-slate-200 dark:border-white/10",
                 )}
               >
                 Med / diet review
               </Link>
-              <Link href="/admin/dietary/new" className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-widest text-xs tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg")} >
+              <Link href="/admin/dietary/new" className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-wider text-xs tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg")} >
                 + New Diet Order
               </Link>
            </div>
@@ -505,23 +503,23 @@ export default function AdminDietaryHubPage() {
               <Sparkline colorClass="text-indigo-500" variant={3} />
               <MonolithicWatermark value={displayRows.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between p-2">
-                <h3 className="text-[11px] font-bold tracking-widest uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                <h3 className="text-[11px] font-bold tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
                   <Utensils className="h-4 w-4" /> Active Diet Orders
                 </h3>
-                <p className="text-6xl font-display tracking-tight font-medium text-indigo-600 dark:text-indigo-400 pb-1">{displayRows.length}</p>
+                <p className="text-2xl tracking-tight font-medium text-indigo-600 dark:text-indigo-400 pb-1">{displayRows.length}</p>
               </div>
             </V2Card>
           </div>
         </KineticGrid>
 
       {!facilityReady && (
-        <p className="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-6 py-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100 shadow-sm font-medium">
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-6 py-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100 shadow-sm font-medium">
           Select a facility to load diet orders.
         </p>
       )}
 
       {error && (
-        <p className="rounded-[1.5rem] border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100 shadow-sm font-medium">
+        <p className="rounded-lg border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100 shadow-sm font-medium">
           {error}
         </p>
       )}
@@ -532,7 +530,7 @@ export default function AdminDietaryHubPage() {
           {/* ACTION QUEUE: Dietary Risk Board */}
           <div className="col-span-1 lg:col-span-2 space-y-4">
             <div className="flex items-center justify-between pb-2">
-              <h3 className="text-[12px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 flex items-center gap-2">
+              <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 flex items-center gap-2">
                 <PulseDot colorClass="bg-indigo-500" /> Attention Queue
               </h3>
             </div>
@@ -541,17 +539,17 @@ export default function AdminDietaryHubPage() {
               {loading ? (
                 <p className="text-sm font-mono text-slate-500">Loading…</p>
               ) : rows.length === 0 ? (
-                <div className="p-12 text-center text-slate-500 bg-white/50 dark:bg-white/[0.02] rounded-[2.5rem] border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
+                <div className="p-12 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
                    <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No diet orders</p>
                   <p className="text-sm opacity-80 mt-1">No active diet orders for this facility yet.</p>
                 </div>
               ) : displayRows.length === 0 ? (
-                <div className="p-12 text-center text-slate-500 bg-white/50 dark:bg-white/[0.02] rounded-[2.5rem] border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
+                <div className="p-12 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
                   <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No orders match this status</p>
                   <p className="text-sm opacity-80 mt-1">Try &quot;All statuses&quot; or another filter.</p>
                 </div>
               ) : attentionRows.length === 0 ? (
-                <div className="p-12 text-center text-slate-500 bg-white/50 dark:bg-white/[0.02] rounded-[2.5rem] border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
+                <div className="p-12 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
                   <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">All Clear</p>
                   <p className="text-sm opacity-80 mt-1">
                     No draft orders, swallow-evaluation flags, med/texture review notes, or aspiration notes in this batch.
@@ -563,19 +561,19 @@ export default function AdminDietaryHubPage() {
                   return (
                     <MotionItem
                       key={row.id}
-                      className="p-6 rounded-[2rem] border border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm tap-responsive group hover:border-indigo-300 dark:hover:border-indigo-500/30 transition-colors relative overflow-hidden"
+                      className="p-6 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm tap-responsive group hover:border-indigo-300 dark:hover:border-indigo-500/30 transition-colors relative overflow-hidden"
                     >
                       <div className={cn("absolute top-0 left-0 w-1.5 h-full", badge.barClass)} />
                       <div className="flex justify-between items-start mb-4 gap-2 pl-2">
                         <span
                           className={cn(
-                            "text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border",
+                            "text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border",
                             badge.badgeClass,
                           )}
                         >
                           {badge.label}
                         </span>
-                        <span className="text-xs text-slate-400 font-bold uppercase tracking-widest">
+                        <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">
                           Updated: {formatRelativeShort(row.updated_at)}
                         </span>
                       </div>
@@ -590,7 +588,7 @@ export default function AdminDietaryHubPage() {
                           href={`/admin/dietary/clinical-review?resident=${row.resident_id}`}
                           className={cn(
                             buttonVariants({ variant: "default", size: "sm" }),
-                            "h-10 rounded-full px-6 bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-black dark:hover:bg-slate-200 font-bold uppercase tracking-widest text-[10px]",
+                            "h-10 rounded-full px-6 bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-black dark:hover:bg-slate-200 font-bold uppercase tracking-wider text-[10px]",
                           )}
                         >
                           Clinical review
@@ -603,13 +601,13 @@ export default function AdminDietaryHubPage() {
             </MotionList>
 
             {!loading && displayRows.length > 0 && rosterRows.length > 0 && (
-              <div className="glass-panel mt-10 p-6 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.015]">
-                <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 mb-4 ml-2">Other Active Diet Orders</h4>
+              <div className="mt-10 p-6 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.015]">
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 mb-4 ml-2">Other Active Diet Orders</h4>
                 <MotionList className="space-y-3">
                   {rosterRows.map((row) => (
                     <MotionItem
                       key={row.id}
-                      className="p-4 rounded-[1.5rem] border border-slate-200/60 dark:border-white/5 bg-white dark:bg-white/[0.03] flex flex-col md:flex-row gap-4 md:items-center justify-between group hover:border-indigo-200 dark:hover:border-indigo-500/20 transition-colors shadow-sm"
+                      className="p-4 rounded-lg border border-slate-200/60 dark:border-white/5 bg-white flex flex-col md:flex-row gap-4 md:items-center justify-between group hover:border-indigo-200 dark:hover:border-indigo-500/20 transition-colors shadow-sm"
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-slate-900 dark:text-slate-200 tracking-tight truncate flex items-center gap-2">
@@ -620,11 +618,11 @@ export default function AdminDietaryHubPage() {
                         </p>
                       </div>
                       {fluidIsThickened(row.iddsi_fluid_level) ? (
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600 bg-amber-50 border border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/20 dark:text-amber-400 px-3 py-1.5 rounded-full shrink-0 h-fit">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 border border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/20 dark:text-amber-400 px-3 py-1.5 rounded-full shrink-0 h-fit">
                           Thickened
                         </span>
                       ) : (
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 bg-slate-100 border border-slate-200 dark:bg-white/5 dark:border-white/10 px-3 py-1.5 rounded-full shrink-0 h-fit">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 border border-slate-200 dark:bg-white/5 dark:border-white/10 px-3 py-1.5 rounded-full shrink-0 h-fit">
                           Standard
                         </span>
                       )}
@@ -638,15 +636,15 @@ export default function AdminDietaryHubPage() {
 
           {/* WATCHLIST: Kitchen Operations Context */}
           <div className="col-span-1 border-l border-transparent dark:border-transparent lg:pl-6 pt-6 lg:pt-0">
-            <div className="glass-panel p-6 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
+            <div className="p-6 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
               <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-200 dark:border-white/5">
-                <h3 className="text-[12px] font-bold uppercase tracking-widest text-slate-800 dark:text-slate-200">
+                <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                   Therapeutic Context
                 </h3>
               </div>
               
               <div className="space-y-4">
-                <div className="p-5 rounded-[1.5rem] border border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/[0.03] flex flex-col gap-3 shadow-sm">
+                <div className="p-5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white flex flex-col gap-3 shadow-sm">
                   <div className="flex justify-between items-center">
                     <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Thickened Fluids</p>
                     <span className="text-xs font-bold text-amber-500 bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 rounded-md">{loading ? "—" : `${batchStats.thickenedPct}%`}</span>
@@ -659,7 +657,7 @@ export default function AdminDietaryHubPage() {
                   </div>
                 </div>
                 
-                <div className="p-5 rounded-[1.5rem] border border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/[0.03] flex flex-col gap-3 shadow-sm">
+                <div className="p-5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white flex flex-col gap-3 shadow-sm">
                   <div className="flex justify-between items-center">
                     <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Swallow Flags</p>
                     <span className="text-xs font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded-md">{loading ? "—" : `${batchStats.swallowPct}%`}</span>
@@ -672,7 +670,7 @@ export default function AdminDietaryHubPage() {
                   </div>
                 </div>
                 
-                <div className="p-5 rounded-[1.5rem] border border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/[0.03] flex flex-col gap-3 shadow-sm">
+                <div className="p-5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white flex flex-col gap-3 shadow-sm">
                   <div className="flex justify-between items-center">
                     <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Allergy Alert</p>
                     <span className="text-xs font-bold text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded-md">{loading ? "—" : `${batchStats.allergyPct}%`}</span>
@@ -685,7 +683,7 @@ export default function AdminDietaryHubPage() {
                   </div>
                 </div>
                 
-                <div className="p-5 rounded-[1.5rem] border border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/[0.03] flex flex-col gap-3 shadow-sm">
+                <div className="p-5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white flex flex-col gap-3 shadow-sm">
                   <div className="flex justify-between items-center">
                     <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Texture Reviews</p>
                     <span className="text-xs font-bold text-violet-500 bg-violet-50 dark:bg-violet-500/10 px-2 py-0.5 rounded-md">{loading ? "—" : `${batchStats.medTexturePct}%`}</span>
@@ -700,13 +698,13 @@ export default function AdminDietaryHubPage() {
               </div>
             </div>
 
-            <div className="glass-panel mt-6 p-6 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] space-y-5">
-              <h3 className="text-[12px] font-bold uppercase tracking-widest text-slate-800 dark:text-slate-200">Meal / snack log</h3>
+            <div className="mt-6 p-6 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 space-y-5">
+              <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">Meal / snack log</h3>
               <div className="space-y-3 text-xs">
                 <select
                   value={mealForm.resident_id}
                   onChange={(e) => setMealForm((prev) => ({ ...prev, resident_id: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-black/20"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
                 >
                   {residents.map((resident) => (
                     <option key={resident.id} value={resident.id}>
@@ -719,12 +717,12 @@ export default function AdminDietaryHubPage() {
                     type="date"
                     value={mealForm.meal_date}
                     onChange={(e) => setMealForm((prev) => ({ ...prev, meal_date: e.target.value }))}
-                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-black/20"
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
                   />
                   <select
                     value={mealForm.meal_type}
                     onChange={(e) => setMealForm((prev) => ({ ...prev, meal_type: e.target.value as MealLogType }))}
-                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 capitalize dark:border-white/10 dark:bg-black/20"
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 capitalize dark:border-white/10"
                   >
                     {MEAL_TYPES.map((option) => (
                       <option key={option} value={option}>{option}</option>
@@ -735,7 +733,7 @@ export default function AdminDietaryHubPage() {
                   <select
                     value={mealForm.status}
                     onChange={(e) => setMealForm((prev) => ({ ...prev, status: e.target.value as MealLogStatus }))}
-                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 capitalize dark:border-white/10 dark:bg-black/20"
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 capitalize dark:border-white/10"
                   >
                     {MEAL_STATUSES.map((option) => (
                       <option key={option} value={option}>{MEAL_STATUS_LABELS[option]}</option>
@@ -748,14 +746,14 @@ export default function AdminDietaryHubPage() {
                     value={mealForm.intake_percent}
                     onChange={(e) => setMealForm((prev) => ({ ...prev, intake_percent: e.target.value }))}
                     placeholder="Intake %"
-                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-black/20"
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
                   />
                 </div>
                 <textarea
                   value={mealForm.notes}
                   onChange={(e) => setMealForm((prev) => ({ ...prev, notes: e.target.value }))}
                   placeholder="Meal notes"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-black/20"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
                   rows={2}
                 />
                 <Button type="button" size="sm" disabled={!mealForm.resident_id || savingMeal} onClick={() => void saveMealLog()}>
@@ -768,14 +766,14 @@ export default function AdminDietaryHubPage() {
                   type="datetime-local"
                   value={snackForm.snack_at}
                   onChange={(e) => setSnackForm((prev) => ({ ...prev, snack_at: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-black/20"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
                 />
                 <input
                   type="text"
                   value={snackForm.snack_description}
                   onChange={(e) => setSnackForm((prev) => ({ ...prev, snack_description: e.target.value }))}
                   placeholder="Snack description"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-black/20"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
                 />
                 <div className="grid grid-cols-2 gap-2">
                   <input
@@ -784,7 +782,7 @@ export default function AdminDietaryHubPage() {
                     value={snackForm.residents_offered_count}
                     onChange={(e) => setSnackForm((prev) => ({ ...prev, residents_offered_count: e.target.value }))}
                     placeholder="Offered"
-                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-black/20"
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
                   />
                   <input
                     type="number"
@@ -792,14 +790,14 @@ export default function AdminDietaryHubPage() {
                     value={snackForm.residents_accepted_count}
                     onChange={(e) => setSnackForm((prev) => ({ ...prev, residents_accepted_count: e.target.value }))}
                     placeholder="Accepted"
-                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-black/20"
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
                   />
                 </div>
                 <textarea
                   value={snackForm.notes}
                   onChange={(e) => setSnackForm((prev) => ({ ...prev, notes: e.target.value }))}
                   placeholder="Snack notes"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-black/20"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
                   rows={2}
                 />
                 <Button type="button" size="sm" disabled={savingSnack} onClick={() => void saveSnackLog()}>
@@ -808,13 +806,13 @@ export default function AdminDietaryHubPage() {
               </div>
 
               <div className="space-y-2 border-t border-slate-200/70 dark:border-white/10 pt-4">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400">Recent meal entries</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Recent meal entries</p>
                 {mealLogs.slice(0, 3).map((log) => (
                   <p key={log.id} className="text-xs text-slate-600 dark:text-slate-300">
                     {log.meal_date} {log.meal_type}: {`${log.residents?.first_name ?? ""} ${log.residents?.last_name ?? ""}`.trim() || "Resident"} — {MEAL_STATUS_LABELS[log.status]}
                   </p>
                 ))}
-                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 pt-2">Recent snack passes</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pt-2">Recent snack passes</p>
                 {snackLogs.slice(0, 3).map((log) => (
                   <p key={log.id} className="text-xs text-slate-600 dark:text-slate-300">
                     {format(new Date(log.snack_at), "MMM d, h:mm a")} — {log.snack_description || "Snack pass"}

@@ -137,15 +137,15 @@ export default function ResidentAssessmentHistoryPage() {
       <AmbientMatrix />
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
           <div className="space-y-3">
              <Link
                href={`/admin/residents/${residentId}`}
-               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-2 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
              >
                  <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> BACK TO PROFILE
              </Link>
-             <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
                Assessments <span className="font-semibold text-brand-600 dark:text-brand-400 opacity-60 ml-2">/ {residentName}</span>
              </h1>
             <p className="mt-2 text-sm font-medium tracking-wide text-slate-600 dark:text-zinc-400">
@@ -155,7 +155,7 @@ export default function ResidentAssessmentHistoryPage() {
           <div>
             <Link
               href={`/admin/residents/${residentId}/assessments/new`}
-              className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-widest text-xs tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg flex items-center gap-2")}
+              className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-wider text-xs tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg flex items-center gap-2")}
             >
               <Plus className="h-4 w-4" /> New Assessment
             </Link>
@@ -180,35 +180,35 @@ export default function ResidentAssessmentHistoryPage() {
         )}
         
         {!isLoading && !error && filtered.length > 0 && (
-          <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-2xl backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative">
+          <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] shadow-2xl overflow-hidden p-6 md:p-8 relative">
              <div className="hidden lg:grid grid-cols-[auto_1fr_1fr_0.5fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10 text-right first:text-left [&>*:nth-child(2)]:text-left [&>*:nth-child(3)]:text-left">
-               <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-left min-w-[120px]">Date</div>
-               <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 flex items-center gap-2"><ClipboardCheck className="w-3.5 h-3.5 text-slate-400" /> Type</div>
-               <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Risk Level</div>
-               <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Score</div>
-               <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Assessed By</div>
+               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-left min-w-[120px]">Date</div>
+               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 flex items-center gap-2"><ClipboardCheck className="w-3.5 h-3.5 text-slate-400" /> Type</div>
+               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Risk Level</div>
+               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Score</div>
+               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">Assessed By</div>
              </div>
 
              <div className="space-y-4 mt-6 relative z-10">
                <MotionList className="space-y-4">
                {filtered.map((r) => (
                   <MotionItem key={r.id}>
-                    <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr_1fr_0.5fr_1fr] gap-4 lg:items-center p-6 rounded-[1.8rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg dark:hover:bg-white/[0.05] transition-all duration-300 w-full outline-none">
+                    <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr_1fr_0.5fr_1fr] gap-4 lg:items-center p-6 rounded-lg bg-white border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg dark:hover:bg-white/[0.05] transition-all duration-300 w-full outline-none">
                       
                       <div className="flex flex-col min-w-[120px]">
-                        <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold mb-1">Date</span>
+                        <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Date</span>
                         <span className="font-mono text-sm text-slate-900 dark:text-slate-100">{r.assessmentDate}</span>
                       </div>
 
                       <div className="flex flex-col">
-                        <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold mb-1">Type</span>
-                        <span className="font-semibold text-lg font-display text-slate-900 dark:text-white truncate tracking-tight">{formatType(r.assessmentType)}</span>
+                        <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Type</span>
+                        <span className="font-semibold text-lg text-slate-900 dark:text-white truncate tracking-tight">{formatType(r.assessmentType)}</span>
                       </div>
                       
                       <div className="flex flex-col items-start lg:items-start">
-                        <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold mb-1">Risk Level</span>
+                        <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Risk Level</span>
                         {r.riskLevel ? (
-                            <Badge className={cn("px-2 py-0.5 text-[10px] uppercase font-bold tracking-widest shadow-none", RISK_COLORS[r.riskLevel] ?? "bg-slate-100 text-slate-600 border-slate-200")}>
+                            <Badge className={cn("px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider shadow-none", RISK_COLORS[r.riskLevel] ?? "bg-slate-100 text-slate-600 border-slate-200")}>
                                {r.riskLevel.replace(/_/g, " ")}
                             </Badge>
                          ) : (
@@ -217,12 +217,12 @@ export default function ResidentAssessmentHistoryPage() {
                       </div>
 
                       <div className="flex flex-col lg:items-end">
-                        <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold mb-1">Score</span>
-                        <span className="font-display text-xl font-medium text-slate-900 dark:text-slate-100">{r.totalScore !== null ? r.totalScore : "—"}</span>
+                        <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Score</span>
+                        <span className="text-xl font-medium text-slate-900 dark:text-slate-100">{r.totalScore !== null ? r.totalScore : "—"}</span>
                       </div>
 
                       <div className="flex flex-row justify-between lg:justify-end items-center">
-                        <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Assessed By</span>
+                        <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Assessed By</span>
                         <span className="text-sm font-medium text-slate-500 dark:text-zinc-400">
                           {r.assessedBy}
                         </span>

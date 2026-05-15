@@ -144,8 +144,8 @@ export default function NewResidentTransportRequestPage() {
     <div className="mx-auto max-w-xl space-y-6 p-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">SYS: Module 15</p>
-          <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+          
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
             New transport request
           </h1>
         </div>

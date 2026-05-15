@@ -621,7 +621,7 @@ export default function AdminIncidentRcaPage() {
               <GitBranch className="h-5 w-5 text-violet-700 dark:text-violet-300" />
             </div>
             <div>
-              <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
                 Root cause workspace
               </h1>
               <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -737,7 +737,7 @@ export default function AdminIncidentRcaPage() {
       {!locked ? (
         <Card className="border-slate-200/70 dark:border-slate-800">
           <CardHeader className="pb-2">
-            <CardTitle className="font-display text-base">Completion checklist</CardTitle>
+            <CardTitle className="text-base">Completion checklist</CardTitle>
             <CardDescription>All items must pass to attest investigation complete (UAT / audit bar).</CardDescription>
           </CardHeader>
           <CardContent className="text-sm text-slate-700 dark:text-slate-300">
@@ -754,7 +754,7 @@ export default function AdminIncidentRcaPage() {
 
       <Card className="border-slate-200/70 shadow-soft dark:border-slate-800">
         <CardHeader>
-          <CardTitle className="font-display text-lg">Incident snapshot</CardTitle>
+          <CardTitle className="text-lg">Incident snapshot</CardTitle>
           <CardDescription>Read-only context from the master record</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-slate-700 dark:text-slate-300">
@@ -780,7 +780,7 @@ export default function AdminIncidentRcaPage() {
         {FACTOR_GROUPS.map((group) => (
           <Card key={group.title} className="border-slate-200/70 dark:border-slate-800">
             <CardHeader>
-              <CardTitle className="font-display text-base">{group.title}</CardTitle>
+              <CardTitle className="text-base">{group.title}</CardTitle>
               <CardDescription>{group.description}</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-2 sm:grid-cols-2">
@@ -806,7 +806,7 @@ export default function AdminIncidentRcaPage() {
 
       <Card className="border-slate-200/70 dark:border-slate-800 lg:col-span-2">
         <CardHeader>
-          <CardTitle className="font-display text-lg">Analysis &amp; actions</CardTitle>
+          <CardTitle className="text-lg">Analysis &amp; actions</CardTitle>
           <CardDescription>Stored with the incident; visible to authorized staff across devices.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

@@ -213,7 +213,7 @@ export default function AdminBlockedAdmissionsPage() {
           ) : null}
           <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">Top blockers</span>
+              <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Top blockers</span>
               {blockerCounts.map(([label, count]) => (
                 <Badge key={label} variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
                   {label}: {count}

@@ -159,12 +159,10 @@ export default function DietaryClinicalReviewPage() {
       <AmbientMatrix hasCriticals={false} primaryClass="bg-indigo-700/10" secondaryClass="bg-blue-900/10" />
 
       <div className="relative z-10 space-y-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
-              SYS: Module 14 — Clinical review
-            </div>
-            <h1 className="font-display text-3xl md:text-4xl font-light tracking-tight text-slate-900 dark:text-white">
+            
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900 dark:text-white">
               Diet order and medications
             </h1>
             <p className="mt-1 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl text-sm">
@@ -186,19 +184,19 @@ export default function DietaryClinicalReviewPage() {
         </div>
 
         {!facilityReady && (
-          <p className="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-6 py-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-6 py-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
             Select a facility to load data.
           </p>
         )}
 
         {error && (
-          <p className="rounded-[1.5rem] border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100">
+          <p className="rounded-lg border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100">
             {error}
           </p>
         )}
 
         {facilityReady && !loadingDiet && residentsOptions.length === 0 && (
-          <p className="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-6 py-4 text-sm text-slate-700 dark:border-white/10 dark:bg-slate-900/40 dark:text-slate-200">
+          <p className="rounded-lg border border-slate-200 bg-slate-50 px-6 py-4 text-sm text-slate-700 dark:border-white/10 dark:bg-slate-900/40 dark:text-slate-200">
             No diet orders in this facility batch. Add a diet order first, then return here.
           </p>
         )}
@@ -206,7 +204,7 @@ export default function DietaryClinicalReviewPage() {
         {facilityReady && (loadingDiet || residentsOptions.length > 0) && (
           <div className="space-y-4">
             <label className="block max-w-md">
-              <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 mb-2 block">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 mb-2 block">
                 Resident
               </span>
               <select
@@ -229,7 +227,7 @@ export default function DietaryClinicalReviewPage() {
 
             {selectedResidentId && thickenedFluidLiquidHint.show && (
               <div
-                className="rounded-[1.5rem] border border-amber-300/80 bg-amber-50/90 dark:border-amber-800/60 dark:bg-amber-950/35 px-5 py-4 text-sm text-amber-950 dark:text-amber-100"
+                className="rounded-lg border border-amber-300/80 bg-amber-50/90 dark:border-amber-800/60 dark:bg-amber-950/35 px-5 py-4 text-sm text-amber-950 dark:text-amber-100"
                 role="status"
               >
                 <p className="font-semibold text-amber-950 dark:text-amber-50">Review: liquid-form medications vs thickened fluids</p>
@@ -256,7 +254,7 @@ export default function DietaryClinicalReviewPage() {
 
             {selectedResidentId && solidOralTextureHint.show && (
               <div
-                className="rounded-[1.5rem] border border-violet-300/80 bg-violet-50/90 dark:border-violet-800/60 dark:bg-violet-950/35 px-5 py-4 text-sm text-violet-950 dark:text-violet-100"
+                className="rounded-lg border border-violet-300/80 bg-violet-50/90 dark:border-violet-800/60 dark:bg-violet-950/35 px-5 py-4 text-sm text-violet-950 dark:text-violet-100"
                 role="status"
               >
                 <p className="font-semibold text-violet-950 dark:text-violet-50">Review: solid oral forms vs texture-modified diet</p>
@@ -284,12 +282,12 @@ export default function DietaryClinicalReviewPage() {
             {selectedResidentId && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                 <section
-                  className="rounded-[2rem] border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-white/[0.04] p-6 shadow-sm"
+                  className="rounded-lg border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-white/[0.04] p-6 shadow-sm"
                   aria-labelledby="diet-panel-title"
                 >
                   <div className="flex items-center gap-2 mb-4">
                     <Utensils className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                    <h2 id="diet-panel-title" className="text-sm font-bold uppercase tracking-widest text-slate-800 dark:text-slate-200">
+                    <h2 id="diet-panel-title" className="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                       Diet order
                     </h2>
                   </div>
@@ -347,12 +345,12 @@ export default function DietaryClinicalReviewPage() {
                 </section>
 
                 <section
-                  className="rounded-[2rem] border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-white/[0.04] p-6 shadow-sm"
+                  className="rounded-lg border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-white/[0.04] p-6 shadow-sm"
                   aria-labelledby="meds-panel-title"
                 >
                   <div className="flex items-center gap-2 mb-4">
                     <Pill className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                    <h2 id="meds-panel-title" className="text-sm font-bold uppercase tracking-widest text-slate-800 dark:text-slate-200">
+                    <h2 id="meds-panel-title" className="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                       Resident medications
                     </h2>
                   </div>

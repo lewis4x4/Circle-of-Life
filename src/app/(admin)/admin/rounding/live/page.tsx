@@ -225,8 +225,8 @@ export default function AdminRoundingLivePage() {
         <header className="mb-6 mt-2">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6 mb-4">
             <div>
-              <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mb-2">SYS: Live Monitor</p>
-              <h2 className="text-3xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+              
+              <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
                 Live Rounding Board
                 {hasCriticals && <PulseDot colorClass="bg-rose-500" />}
               </h2>
@@ -367,8 +367,8 @@ export default function AdminRoundingLivePage() {
               <MotionItem key={task.id}>
                 <div
                   className={cn(
-                    "group relative overflow-hidden rounded-[2rem] border p-5 transition-all duration-300 shadow-sm hover:shadow-lg dark:hover:shadow-white/[0.01]",
-                    "bg-white/60 backdrop-blur-3xl dark:bg-black/20",
+                    "group relative overflow-hidden rounded-lg border p-5 transition-all duration-300 shadow-sm hover:shadow-lg dark:hover:shadow-white/[0.01]",
+                    "bg-card",
                     cfg.bg,
                     canCheck && "cursor-pointer tap-responsive hover:brightness-105",
                   )}
@@ -385,7 +385,7 @@ export default function AdminRoundingLivePage() {
 
                     <div className="flex-1 min-w-0 w-full">
                       <div className="flex items-center gap-3 flex-wrap">
-                        <span className="font-semibold text-lg md:text-xl font-display text-slate-900 dark:text-slate-100 truncate tracking-tight">
+                        <span className="font-semibold text-lg md:text-xl text-slate-900 dark:text-slate-100 truncate tracking-tight">
                           {displayName(task.residents) || "Resident"}
                         </span>
                         {(task.residents as LiveTaskRow["residents"] & { room_number?: string | null })?.room_number && (
@@ -394,7 +394,7 @@ export default function AdminRoundingLivePage() {
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-3 text-xs font-medium text-slate-500 dark:text-zinc-500 mt-1 uppercase tracking-widest">
+                      <div className="flex items-center gap-3 text-xs font-medium text-slate-500 dark:text-zinc-500 mt-1 uppercase tracking-wider">
                         <span>{displayName(task.staff) || "Unassigned"}</span>
                         <span className="text-slate-300 dark:text-slate-700">|</span>
                         <span>{task.shift_assignments?.shift_type ?? "—"} shift</span>
@@ -403,16 +403,16 @@ export default function AdminRoundingLivePage() {
 
                     <div className="text-left md:text-right shrink-0 flex items-center justify-between md:justify-end gap-4 w-full md:w-auto mt-4 md:mt-0 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-white/5">
                       <div>
-                        <span className={cn("text-xs font-mono font-bold tracking-widest", cfg.color)}>{formatDueLabel(task.due_at)}</span>
+                        <span className={cn("text-xs font-mono font-bold tracking-wider", cfg.color)}>{formatDueLabel(task.due_at)}</span>
                         <div className="mt-1.5 md:mt-1">
-                          <Badge variant={cfg.badgeVariant} className="text-[9px] font-bold tracking-widest uppercase px-2 py-0.5 shadow-sm">
+                          <Badge variant={cfg.badgeVariant} className="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 shadow-sm">
                             {cfg.label}
                           </Badge>
                         </div>
                       </div>
                       {canCheck && (
                         <div className={cn(
-                          "rounded-full border px-6 py-2.5 text-[10px] uppercase tracking-widest font-bold transition-all shadow-md",
+                          "rounded-full border px-6 py-2.5 text-[10px] uppercase tracking-wider font-bold transition-all shadow-md",
                           "border-emerald-500/50 bg-emerald-600 text-white",
                           "group-hover:bg-emerald-500 group-hover:border-emerald-400 group-hover:shadow-lg hover:-translate-y-0.5 scale-100",
                         )}>
@@ -427,7 +427,7 @@ export default function AdminRoundingLivePage() {
           })}
 
           {filteredTasks.length === 0 && (
-            <div className="rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] p-16 text-center backdrop-blur-3xl shadow-sm">
+            <div className="rounded-lg border border-slate-200/50 dark:border-white/5 bg-slate-50/50 p-16 text-center shadow-sm">
               <Eye aria-hidden className="mx-auto h-12 w-12 text-slate-300 dark:text-white/10 mb-4" />
               <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
                 {sourceNotice ? "No live tasks shown" : "All Clear"}
@@ -490,7 +490,7 @@ function StatCard({ label, value, color, pulse, active, onClick }: { label: stri
           active && `ring-2 ${colorClasses.ring} ring-offset-2 ring-offset-background`
         )}>
           <div className="relative z-10 flex flex-col h-full justify-between">
-            <h3 className={cn("text-[10px] font-mono tracking-widest uppercase flex items-center gap-2", colorClasses.text)}>
+            <h3 className={cn("text-[10px] font-mono tracking-wider uppercase flex items-center gap-2", colorClasses.text)}>
               {label}
               {pulse && <PulseDot colorClass={colorClasses.text.replace("text-", "bg-")} />}
               <Filter className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />

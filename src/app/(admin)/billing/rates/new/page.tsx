@@ -157,7 +157,7 @@ export default function AdminNewRateSchedulePage() {
       <div className="flex items-center gap-2">
         <Percent className="h-6 w-6 text-slate-500" />
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">New rate schedule</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">New rate schedule</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
             Amounts are in US dollars; stored as cents. New rows are open-ended (no end date) until you close them in a
             future edit flow.

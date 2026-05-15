@@ -53,7 +53,7 @@ export default function FamilyHomePage() {
 
   if (configError) {
     return (
-      <div className="rounded-xl border border-rose-200 bg-white/60 backdrop-blur-md px-6 py-4 text-sm text-rose-800 shadow-sm max-w-lg mx-auto">{configError}</div>
+      <div className="rounded-xl border border-rose-200 bg-card backdrop-blur-md px-6 py-4 text-sm text-rose-800 shadow-sm max-w-lg mx-auto">{configError}</div>
     );
   }
 
@@ -69,7 +69,7 @@ export default function FamilyHomePage() {
   if (loadError) {
     return (
       <div className="space-y-4 pb-16 md:pb-0 max-w-md mx-auto text-center mt-12">
-        <div className="rounded-xl border border-rose-200 bg-white/70 backdrop-blur-xl px-4 py-6 text-sm text-rose-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+        <div className="rounded-xl border border-rose-200 bg-white/70 px-4 py-6 text-sm text-rose-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
           <Shield className="w-8 h-8 text-rose-400 mx-auto mb-3" />
           <p>{loadError}</p>
         </div>
@@ -115,13 +115,13 @@ export default function FamilyHomePage() {
          <div className="text-center mb-10">
            <div className="w-24 h-24 md:w-32 md:h-32 mx-auto bg-white rounded-full flex items-center justify-center p-2 shadow-[0_20px_40px_rgba(251,146,60,0.15)] mb-6 ring-1 ring-stone-900/5">
               <div className="w-full h-full rounded-full bg-gradient-to-br from-stone-50 to-stone-200 border-2 border-stone-100 flex items-center justify-center">
-                 <span className="text-4xl md:text-5xl font-serif text-stone-600 font-light">{initial}</span>
+                 <span className="text-4xl md:text-2xl font-serif text-stone-600 font-semibold">{initial}</span>
               </div>
            </div>
            
            {snapshot.linkedResidents > 0 ? (
              <>
-               <h1 className="text-4xl md:text-6xl font-serif text-stone-800 tracking-tight mb-2">
+               <h1 className="text-4xl md:text-2xl font-serif text-stone-800 tracking-tight mb-2">
                  <span className="font-medium text-stone-900">{snapshot.residentSummary}</span>
                </h1>
                <p className="text-stone-500/80 max-w-lg mx-auto text-base md:text-lg mb-8 font-serif italic">
@@ -130,7 +130,7 @@ export default function FamilyHomePage() {
              </>
            ) : (
              <>
-               <h1 className="text-4xl md:text-5xl font-serif text-stone-800 tracking-tight mb-2">
+               <h1 className="text-4xl md:text-2xl font-serif text-stone-800 tracking-tight mb-2">
                  Welcome
                </h1>
                <p className="text-stone-500 max-w-lg mx-auto text-sm md:text-base">
@@ -200,11 +200,11 @@ function JournalEntryCard({ item }: { item: FamilyFeedItem }) {
   );
 
   const inner = (
-    <div className="glass-card-light rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgb(251,146,60,0.08)] transition-all duration-300 relative group bg-white/70">
+    <div className="rounded-lg p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgb(251,146,60,0.08)] transition-all duration-300 relative group bg-white/70">
       
       <div className="flex items-start justify-between gap-4 mb-4">
          <div className="flex flex-col">
-            <span className="text-[10px] uppercase tracking-widest text-stone-400 font-semibold mb-1">{item.timeLabel}</span>
+            <span className="text-[10px] uppercase tracking-wider text-stone-400 font-semibold mb-1">{item.timeLabel}</span>
             <h3 className="text-xl font-serif text-stone-800 leading-tight">{item.title}</h3>
          </div>
          {/* Subtle Floating Badge */}
@@ -213,13 +213,13 @@ function JournalEntryCard({ item }: { item: FamilyFeedItem }) {
          </div>
       </div>
       
-      <p className="text-base text-stone-600 leading-relaxed font-light">
+      <p className="text-base text-stone-600 leading-relaxed font-semibold">
          {item.detail} 
       </p>
 
       {isInvoice && (
          <div className="mt-6 pt-4 border-t border-stone-200/60 flex justify-between items-center relative z-10 group/btn tap-responsive">
-            <span className="text-xs font-semibold uppercase tracking-widest text-stone-500 group-hover/btn:text-stone-900 transition-colors">Review Documentation</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-stone-500 group-hover/btn:text-stone-900 transition-colors">Review Documentation</span>
             <div className="w-8 h-8 rounded-full bg-stone-100 group-hover/btn:bg-stone-200 flex items-center justify-center transition-colors">
                <ChevronRight className="w-4 h-4 text-stone-500" />
             </div>
@@ -231,7 +231,7 @@ function JournalEntryCard({ item }: { item: FamilyFeedItem }) {
   return (
     <div className="relative group w-full">
       {isInvoice ? (
-        <Link href={item.href} className="block outline-none focus-visible:ring-2 focus-visible:ring-stone-400 rounded-[2rem]">
+        <Link href={item.href} className="block outline-none focus-visible:ring-2 focus-visible:ring-stone-400 rounded-lg">
           {inner}
         </Link>
       ) : (
@@ -244,7 +244,7 @@ function JournalEntryCard({ item }: { item: FamilyFeedItem }) {
 function StatChip({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl py-1.5 px-4">
-      <span className="text-[10px] uppercase font-bold tracking-widest text-stone-400 mb-0.5">{label}</span>
+      <span className="text-[10px] uppercase font-bold tracking-wider text-stone-400 mb-0.5">{label}</span>
       <span className="text-lg font-serif text-stone-700">{value}</span>
     </div>
   );

@@ -175,7 +175,7 @@ export default function AdminInvoiceDetailPage() {
     return (
       <div className="space-y-6">
         <BillingHubNav />
-        <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm">
+        <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm">
           <div className="mb-4 border-b border-slate-200 dark:border-white/5 pb-4">
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Invoice not found</h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Check the link or your facility selection.</p>
@@ -235,15 +235,15 @@ export default function AdminInvoiceDetailPage() {
       
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <BillingHubNav />
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
           <div className="space-y-3">
              <Link
                href="/admin/billing/invoices"
-               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-2 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
              >
                  <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> BACK TO INVOICES
              </Link>
-             <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
                {invoice.invoice_number}
              </h1>
             <p className="mt-2 text-sm font-medium tracking-wide text-slate-600 dark:text-zinc-400">
@@ -257,7 +257,7 @@ export default function AdminInvoiceDetailPage() {
           <div>
             <Link
               href={`/admin/residents/${invoice.resident_id}/billing`}
-              className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-widest text-xs tap-responsive bg-slate-100 hover:bg-slate-200 text-slate-900 shadow-lg flex items-center gap-2 border border-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100 dark:border-white/10")}
+              className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-wider text-xs tap-responsive bg-slate-100 hover:bg-slate-200 text-slate-900 shadow-lg flex items-center gap-2 border border-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100 dark:border-white/10")}
             >
               Resident Billing Profile
             </Link>
@@ -266,31 +266,31 @@ export default function AdminInvoiceDetailPage() {
 
         <div className="grid gap-6 md:grid-cols-2">
           
-          <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all">
+          <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all">
             <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
-               <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1">Timeline & Parties</h3>
+               <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1">Timeline & Parties</h3>
             </div>
             <div className="space-y-4 text-sm text-slate-600 dark:text-slate-400">
               <div className="flex justify-between items-center bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                <span className="font-bold uppercase tracking-widest text-[9px] text-slate-400">Invoice date</span>
+                <span className="font-bold uppercase tracking-wider text-[9px] text-slate-400">Invoice date</span>
                 <span className="font-medium text-slate-800 dark:text-slate-200">{formatDate(invoice.invoice_date)}</span>
               </div>
               <div className="flex justify-between items-center bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                <span className="font-bold uppercase tracking-widest text-[9px] text-slate-400">Due</span>
+                <span className="font-bold uppercase tracking-wider text-[9px] text-slate-400">Due</span>
                 <span className="font-medium text-slate-800 dark:text-slate-200">{formatDate(invoice.due_date)}</span>
               </div>
               {invoice.payer_name && (
                 <div className="flex justify-between items-center bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                  <span className="font-bold uppercase tracking-widest text-[9px] text-slate-400">Payer on file</span>
+                  <span className="font-bold uppercase tracking-wider text-[9px] text-slate-400">Payer on file</span>
                   <span className="font-medium text-slate-800 dark:text-slate-200">{invoice.payer_name}</span>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-emerald-500/20 dark:border-emerald-500/10 bg-emerald-50/30 dark:bg-emerald-900/10 backdrop-blur-3xl shadow-[inset_0_0_15px_rgba(16,185,129,0.02)] relative overflow-hidden transition-all">
+          <div className="p-6 sm:p-8 rounded-lg border border-emerald-500/20 dark:border-emerald-500/10 bg-emerald-50/30 dark:bg-emerald-900/10 shadow-[inset_0_0_15px_rgba(16,185,129,0.02)] relative overflow-hidden transition-all">
             <div className="mb-6 border-b border-emerald-500/20 dark:border-white/5 pb-4 flex items-center justify-between">
-               <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1 flex items-center gap-2"><Calculator className="h-4 w-4 text-emerald-500" /> Totals</h3>
+               <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1 flex items-center gap-2"><Calculator className="h-4 w-4 text-emerald-500" /> Totals</h3>
             </div>
             <div className="space-y-2 text-sm">
               <p className="flex justify-between text-slate-600 dark:text-slate-400 px-2">
@@ -324,10 +324,10 @@ export default function AdminInvoiceDetailPage() {
         </div>
 
         {invoice.notes?.trim() && (
-          <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-amber-500/20 dark:border-amber-500/10 bg-amber-50/50 dark:bg-amber-900/10 backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all">
+          <div className="p-6 sm:p-8 rounded-lg border border-amber-500/20 dark:border-amber-500/10 bg-amber-50/50 dark:bg-amber-900/10 shadow-sm relative overflow-hidden transition-all">
              <div className="flex items-center gap-2 mb-2">
                 <StickyNote className="w-4 h-4 text-amber-500" />
-                <h3 className="text-sm font-bold uppercase tracking-widest text-amber-700 dark:text-amber-500">Notes</h3>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-amber-700 dark:text-amber-500">Notes</h3>
              </div>
              <p className="text-sm text-slate-700 dark:text-slate-300 left-leading relative z-10 font-medium">
                {invoice.notes.trim()}
@@ -335,12 +335,12 @@ export default function AdminInvoiceDetailPage() {
           </div>
         )}
 
-        <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-2xl backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative mt-4">
+        <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] shadow-2xl overflow-hidden p-6 md:p-8 relative mt-4">
           <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
-            <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1 flex items-center gap-2">
+            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1 flex items-center gap-2">
                <FileText className="h-5 w-5 text-brand-500" /> Line Items
             </h3>
-            <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-1 uppercase">Charges comprising this invoice</p>
+            <p className="text-[10px] font-mono tracking-wider text-slate-400 mt-1 uppercase">Charges comprising this invoice</p>
           </div>
           
           <div className="relative z-10 w-full overflow-hidden">
@@ -349,36 +349,36 @@ export default function AdminInvoiceDetailPage() {
              ) : (
                 <>
                   <div className="hidden sm:grid grid-cols-[2fr_1fr_0.5fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10 text-left">
-                     <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Description</div>
-                     <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Type</div>
-                     <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Qty</div>
-                     <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Unit</div>
-                     <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Total</div>
+                     <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Description</div>
+                     <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Type</div>
+                     <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">Qty</div>
+                     <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">Unit</div>
+                     <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">Total</div>
                   </div>
 
                   <div className="space-y-3 mt-6 relative z-10">
                      <MotionList className="space-y-3">
                         {lines.map((line) => (
                            <MotionItem key={line.id}>
-                              <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_0.5fr_1fr_1fr] gap-4 sm:items-center p-5 rounded-2xl bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg transition-all duration-300 w-full outline-none">
+                              <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_0.5fr_1fr_1fr] gap-4 sm:items-center p-5 rounded-2xl bg-white border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg transition-all duration-300 w-full outline-none">
                                 <div className="flex flex-col">
-                                   <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Description</span>
+                                   <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Description</span>
                                    <span className="font-semibold text-base text-slate-900 dark:text-slate-100 tracking-tight leading-tight">{line.description}</span>
                                 </div>
                                 <div className="flex flex-col">
-                                   <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Type</span>
-                                   <span className="text-xs font-mono tracking-widest text-slate-500 dark:text-slate-400 uppercase">{line.line_type}</span>
+                                   <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Type</span>
+                                   <span className="text-xs font-mono tracking-wider text-slate-500 dark:text-slate-400 uppercase">{line.line_type}</span>
                                 </div>
                                 <div className="flex flex-col sm:items-end">
-                                   <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Qty</span>
+                                   <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Qty</span>
                                    <span className="text-sm font-mono text-slate-700 dark:text-slate-300">{Number(line.quantity)}</span>
                                 </div>
                                 <div className="flex flex-col sm:items-end">
-                                   <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Unit</span>
+                                   <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Unit</span>
                                    <span className="text-sm font-mono text-slate-700 dark:text-slate-300">{billingCurrency.format(line.unit_price / 100)}</span>
                                 </div>
                                 <div className="flex flex-col sm:items-end p-3 sm:p-0 bg-slate-50 sm:bg-transparent rounded-lg dark:bg-white/5 dark:sm:bg-transparent mt-2 sm:mt-0">
-                                   <span className="sm:hidden text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Total</span>
+                                   <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Total</span>
                                    <span className="text-lg font-mono font-bold text-slate-900 dark:text-slate-100">{billingCurrency.format(line.total / 100)}</span>
                                 </div>
                               </div>
@@ -392,10 +392,10 @@ export default function AdminInvoiceDetailPage() {
         </div>
 
         {canPost && (
-          <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-indigo-500/20 dark:border-indigo-500/10 bg-indigo-50/50 dark:bg-indigo-900/10 backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all">
+          <div className="p-6 sm:p-8 rounded-lg border border-indigo-500/20 dark:border-indigo-500/10 bg-indigo-50/50 dark:bg-indigo-900/10 shadow-sm relative overflow-hidden transition-all">
              <div className="mb-6 border-b border-indigo-200 dark:border-white/5 pb-4 flex items-center justify-between">
-                <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1">General Ledger</h3>
-                <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-1 uppercase">Financial Posting Control</p>
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1">General Ledger</h3>
+                <p className="text-[10px] font-mono tracking-wider text-slate-400 mt-1 uppercase">Financial Posting Control</p>
              </div>
              
              <div className="space-y-4 relative z-10 w-full max-w-xl">
@@ -408,14 +408,14 @@ export default function AdminInvoiceDetailPage() {
                {glResult ? (
                  <div className="flex flex-wrap items-center gap-4 bg-emerald-50 dark:bg-emerald-500/10 p-4 rounded-xl border border-emerald-200 dark:border-emerald-500/20">
                    <div className="flex flex-col">
-                      <span className="font-bold text-[10px] uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-1">Status</span>
+                      <span className="font-bold text-[10px] uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-1">Status</span>
                       <span className="text-sm font-medium text-emerald-800 dark:text-emerald-200">
                         {glResult.alreadyPosted ? "Reconciliation confirmed. Previously posted to GL." : "Commit successful. Posted to GL."}
                       </span>
                    </div>
                    <Link
                      href={`/admin/finance/journal-entries/${glResult.journalEntryId}`}
-                     className={cn(buttonVariants({ size: "default" }), "h-10 px-5 rounded-xl font-bold uppercase tracking-widest text-[10px] tap-responsive bg-emerald-600 hover:bg-emerald-700 text-white border-none ml-auto")}
+                     className={cn(buttonVariants({ size: "default" }), "h-10 px-5 rounded-xl font-bold uppercase tracking-wider text-[10px] tap-responsive bg-emerald-600 hover:bg-emerald-700 text-white border-none ml-auto")}
                    >
                      View Journal Entry
                    </Link>
@@ -425,7 +425,7 @@ export default function AdminInvoiceDetailPage() {
                    type="button"
                    onClick={() => void postToGl()}
                    disabled={glPosting || invoice.total <= 0}
-                   className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-widest text-xs tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg flex items-center gap-2")}
+                   className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-wider text-xs tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg flex items-center gap-2")}
                  >
                    {glPosting ? "Posting…" : "Post to GL"}
                  </Button>

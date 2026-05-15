@@ -102,12 +102,12 @@ export default function AdminIncidentTrendsPage() {
       />
       
       <div className="relative z-10 space-y-6 max-w-5xl mx-auto">
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
           <div className="space-y-2">
-            <Link href="/admin/incidents" className={cn(buttonVariants({ variant: "link", size: "sm" }), "h-auto p-0 text-xs text-slate-500 mb-2 uppercase tracking-widest font-bold")}>
+            <Link href="/admin/incidents" className={cn(buttonVariants({ variant: "link", size: "sm" }), "h-auto p-0 text-xs text-slate-500 mb-2 uppercase tracking-wider font-bold")}>
               ← Incident queue
             </Link>
-            <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+            <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
               Incident Trends {stats.open > 0 && <PulseDot colorClass="bg-rose-500" />}
             </h1>
             <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
@@ -115,12 +115,12 @@ export default function AdminIncidentTrendsPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="glass-panel px-4 py-2 rounded-xl flex items-center gap-3">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Totals</span>
+            <div className="px-4 py-2 rounded-xl flex items-center gap-3">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Totals</span>
               <span className="font-mono text-lg font-bold text-slate-800 dark:text-slate-200 tabular-nums">{stats.total}</span>
             </div>
-            <div className="glass-panel px-4 py-2 rounded-xl border-amber-200/50 bg-amber-50/50 dark:border-amber-900/30 dark:bg-amber-950/20 flex items-center gap-3">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-amber-700 dark:text-amber-500">Open</span>
+            <div className="px-4 py-2 rounded-xl border-amber-200/50 bg-amber-50/50 dark:border-amber-900/30 dark:bg-amber-950/20 flex items-center gap-3">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-500">Open</span>
               <span className="font-mono text-lg font-bold text-amber-700 dark:text-amber-400 tabular-nums">{stats.open}</span>
             </div>
           </div>
@@ -129,20 +129,20 @@ export default function AdminIncidentTrendsPage() {
         {loading ? (
           <p className="text-sm font-mono text-slate-500 text-center py-12">Loading trends…</p>
         ) : error ? (
-          <div className="p-12 text-center text-rose-600 bg-rose-50 dark:bg-rose-950/20 rounded-[2.5rem] border border-rose-200 dark:border-rose-900/50">
+          <div className="p-12 text-center text-rose-600 bg-rose-50 dark:bg-rose-950/20 rounded-lg border border-rose-200 dark:border-rose-900/50">
             <p className="font-medium text-lg">{error}</p>
             <button onClick={() => void load()} className="mt-4 text-sm underline hover:no-underline">Retry</button>
           </div>
         ) : rows.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 bg-white/50 dark:bg-white/[0.02] rounded-[2.5rem] border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
+          <div className="p-12 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
             <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Incidents Found</p>
             <p className="text-sm opacity-80 mt-1">When reportable events land in Supabase, their category and severity distributions will appear here.</p>
           </div>
         ) : (
           <KineticGrid className="grid-cols-1 lg:grid-cols-2 gap-6" staggerMs={75}>
-            <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
+            <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
               <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4">
-                <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-3">
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-3">
                   <BarChart3 className="w-5 h-5 text-indigo-500" /> By Category
                 </h3>
               </div>
@@ -166,9 +166,9 @@ export default function AdminIncidentTrendsPage() {
               </div>
             </div>
 
-            <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
+            <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
               <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4">
-                <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-3">
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-3">
                   <TrendingUp className="w-5 h-5 text-rose-500" /> By Severity
                 </h3>
               </div>
@@ -176,7 +176,7 @@ export default function AdminIncidentTrendsPage() {
                 {stats.bySeverity.map(([sev, count]) => (
                   <div key={sev} className="space-y-1.5 focus-within:outline-none group">
                     <div className="flex justify-between text-sm items-center">
-                      <span className="uppercase tracking-widest text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-black/40 px-2 py-0.5 rounded shadow-sm">{sev.replace(/_/g, " ")}</span>
+                      <span className="uppercase tracking-wider text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-black/40 px-2 py-0.5 rounded shadow-sm">{sev.replace(/_/g, " ")}</span>
                       <span className="font-bold tabular-nums text-slate-900 dark:text-white text-lg">{count}</span>
                     </div>
                     <div className="h-3 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800 shadow-inner relative">

@@ -266,7 +266,7 @@ export default function CaregiverResidentConditionChangePage() {
 
       <Card className="border-rose-900/40 bg-rose-950/15 text-zinc-100">
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-lg font-display">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <Stethoscope className="h-5 w-5 text-rose-300" />
             Change of condition
           </CardTitle>

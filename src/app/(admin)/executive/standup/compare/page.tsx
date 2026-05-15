@@ -122,10 +122,10 @@ export default function ExecutiveStandupComparePage() {
       <div className="relative z-10 space-y-6">
         <ExecutiveHubNav />
 
-        <header className="rounded-[2rem] border border-slate-200/70 bg-white/70 p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+        <header className="rounded-lg border border-slate-200/70 bg-white/70 p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
                 <ArrowRightLeft className="h-3.5 w-3.5" />
                 Standup compare
               </div>
@@ -136,7 +136,7 @@ export default function ExecutiveStandupComparePage() {
             </div>
             <Link
               href="/admin/executive/standup/history"
-              className="inline-flex h-10 items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-4 text-xs font-semibold uppercase tracking-widest text-slate-700 transition-colors hover:bg-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10"
+              className="inline-flex h-10 items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-4 text-xs font-semibold uppercase tracking-wider text-slate-700 transition-colors hover:bg-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10"
             >
               Back to history
             </Link>
@@ -150,14 +150,14 @@ export default function ExecutiveStandupComparePage() {
         ) : null}
 
         {loading ? (
-          <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+          <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
             <CardContent className="flex items-center gap-3 p-6 text-sm text-slate-500 dark:text-zinc-400">
               <Loader2 className="h-4 w-4 animate-spin" />
               Loading comparison…
             </CardContent>
           </Card>
         ) : !comparison || !leftDetail || !rightDetail ? (
-          <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+          <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
             <CardHeader>
               <CardTitle>Select two different weeks to compare</CardTitle>
               <CardDescription>Use the compare controls on standup history to launch a week-over-week view.</CardDescription>
@@ -168,7 +168,7 @@ export default function ExecutiveStandupComparePage() {
           </Card>
         ) : (
           <>
-            <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
               <CardHeader>
                 <CardTitle className="text-lg">{comparison.headline}</CardTitle>
                 <CardDescription>
@@ -203,7 +203,7 @@ export default function ExecutiveStandupComparePage() {
               </CardContent>
             </Card>
 
-            <Card className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
               <CardHeader>
                 <CardTitle className="text-lg">Facility movement</CardTitle>
                 <CardDescription>Pressure shift, top-concern change, and the biggest metric movement by facility.</CardDescription>
@@ -237,7 +237,7 @@ export default function ExecutiveStandupComparePage() {
               const metricKeys = sectionMetricKeys.get(sectionKey) ?? [];
               if (metricKeys.length === 0) return null;
               return (
-                <Card key={sectionKey} className="rounded-[1.75rem] border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+                <Card key={sectionKey} className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                   <CardHeader>
                     <CardTitle className="text-lg">{sectionLabel}</CardTitle>
                     <CardDescription>Total-row comparison across the two selected weeks.</CardDescription>

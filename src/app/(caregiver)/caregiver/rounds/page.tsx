@@ -121,8 +121,8 @@ export default function CaregiverRoundsPage() {
       {/* ─── HEADER ──────────────────────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
         <div>
-          <h1 className="text-3xl md:text-4xl font-display font-light text-white tracking-tight">Smart Rounds</h1>
-          <p className="text-zinc-400 mt-1 uppercase tracking-widest text-xs font-semibold">
+          <h1 className="text-3xl md:text-4xl font-semibold text-white tracking-tight">Smart Rounds</h1>
+          <p className="text-zinc-400 mt-1 uppercase tracking-wider text-xs font-semibold">
             {facilityName ? `${facilityName} live queue` : "Live queue"}
           </p>
         </div>
@@ -133,7 +133,7 @@ export default function CaregiverRoundsPage() {
           >
              <RefreshCw className="w-4 h-4 text-zinc-300" />
           </button>
-          <div className="glass-panel px-4 py-2 rounded-full border border-white/10 text-xs font-semibold text-emerald-400 flex items-center gap-2">
+          <div className="px-4 py-2 rounded-full border border-white/10 text-xs font-semibold text-emerald-400 flex items-center gap-2">
             <span
               className={`w-1.5 h-1.5 rounded-full ${
                 roundingSync.isSyncing
@@ -170,7 +170,7 @@ export default function CaregiverRoundsPage() {
       )}
 
       {/* ─── METRICS BLOCK ─────────────────────────────────────────────────── */}
-      <div className="glass-card rounded-[1.5rem] p-4 flex flex-wrap gap-2 md:grid md:grid-cols-4">
+      <div className="rounded-lg p-4 flex flex-wrap gap-2 md:grid md:grid-cols-4">
         <MetricPill icon={<AlertTriangle className="h-3 w-3" />} label="Critical" value={String(grouped.urgent.length)} tone="danger" />
         <MetricPill icon={<Clock3 className="h-3 w-3" />} label="Due now" value={String(grouped.due.length)} tone="warning" />
         <MetricPill icon={<Clock3 className="h-3 w-3" />} label="Next up" value={String(grouped.next.length)} tone="neutral" />
@@ -225,7 +225,7 @@ function MetricPill({
 
   return (
     <div className={`flex-1 min-w-[120px] rounded-xl border px-4 py-3 flex flex-col justify-between ${toneClass}`}>
-      <div className="mb-2 flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest text-zinc-400">
+      <div className="mb-2 flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider text-zinc-400">
         <span className={iconColor}>{icon}</span>
         <span>{label}</span>
       </div>
@@ -256,13 +256,13 @@ function Section({
   return (
     <section className="space-y-4 pb-2">
       <div className="flex items-center gap-3 border-b border-white/5 pb-2">
-        <h2 className="text-sm font-semibold uppercase tracking-widest text-zinc-400">{title}</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-400">{title}</h2>
         <span className="px-2 py-0.5 rounded-full bg-white/10 text-white text-[10px] font-bold">
            {count}
         </span>
       </div>
       {items.length === 0 ? (
-         <div className="glass-card rounded-[1.5rem] border-dashed border-2 border-white/5 p-8 text-center bg-transparent">
+         <div className="rounded-lg border-dashed border-2 border-white/5 p-8 text-center bg-transparent">
              <p className="text-sm text-zinc-500 font-medium tracking-wide">{emptyMessage}</p>
          </div>
       ) : (

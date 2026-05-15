@@ -241,13 +241,11 @@ export default function AdminDischargeHubPage() {
     <div className="mx-auto max-w-5xl space-y-10 pb-12 w-full">
       
       {/* ─── MOONSHOT HEADER ─── */}
-      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
          <div className="space-y-2">
-           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2">
-               SYS: Pipeline
-           </div>
+           
            <div className="flex flex-wrap items-center gap-3">
-             <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
                 Discharge & Transition
              </h1>
              {phaseFilter !== "all" ? (
@@ -266,7 +264,7 @@ export default function AdminDischargeHubPage() {
       </div>
 
       {noFacility ? (
-        <div className="rounded-[1.5rem] border border-amber-500/20 bg-amber-500/5 p-6 text-sm text-amber-700 dark:text-amber-400 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm">
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-6 text-sm text-amber-700 dark:text-amber-400 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm">
            <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 border border-amber-500/30">
               <span className="font-bold">!</span>
            </div>
@@ -279,10 +277,10 @@ export default function AdminDischargeHubPage() {
         <div className="h-[180px]">
            <V2Card hoverColor="rose" className="border-rose-500/20 shadow-[0_8px_30px_rgba(244,63,94,0.05)]">
              <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-widest uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2">
+               <h3 className="text-xs font-bold tracking-wider uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2">
                  Draft
                </h3>
-               <p className="text-6xl font-display font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
+               <p className="text-2xl font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
                  {noFacility ? "—" : loading ? "—" : counts.draft}
                </p>
              </div>
@@ -291,10 +289,10 @@ export default function AdminDischargeHubPage() {
         <div className="h-[180px]">
            <V2Card hoverColor="amber" className="border-amber-500/20 shadow-[0_8px_30px_rgba(245,158,11,0.05)]">
              <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-widest uppercase text-amber-600 dark:text-amber-500 flex items-center gap-2">
+               <h3 className="text-xs font-bold tracking-wider uppercase text-amber-600 dark:text-amber-500 flex items-center gap-2">
                  Pharmacist Review
                </h3>
-               <p className="text-6xl font-display font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
+               <p className="text-2xl font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
                  {noFacility ? "—" : loading ? "—" : counts.review}
                </p>
              </div>
@@ -303,10 +301,10 @@ export default function AdminDischargeHubPage() {
         <div className="h-[180px]">
            <V2Card hoverColor="emerald" className="border-emerald-500/20 shadow-[0_8px_30px_rgba(16,185,129,0.05)]">
              <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+               <h3 className="text-xs font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                  Complete
                </h3>
-               <p className="text-6xl font-display font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
+               <p className="text-2xl font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
                  {noFacility ? "—" : loading ? "—" : counts.complete}
                </p>
              </div>
@@ -315,10 +313,10 @@ export default function AdminDischargeHubPage() {
         <div className="h-[180px]">
            <V2Card hoverColor="slate" className="border-slate-500/20 shadow-sm">
              <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-widest uppercase text-slate-500 dark:text-slate-400 flex items-center gap-2">
+               <h3 className="text-xs font-bold tracking-wider uppercase text-slate-500 dark:text-slate-400 flex items-center gap-2">
                  Cancelled
                </h3>
-               <p className="text-6xl font-display font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
+               <p className="text-2xl font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
                  {noFacility ? "—" : loading ? "—" : counts.cancelled}
                </p>
              </div>
@@ -333,7 +331,7 @@ export default function AdminDischargeHubPage() {
               <DoorOpen className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
-              <h3 className="font-display text-xl lg:text-2xl font-medium tracking-tight text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+              <h3 className="text-xl lg:text-2xl font-medium tracking-tight text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                 New Med Reconciliation
               </h3>
               <p className="text-sm text-slate-500 dark:text-zinc-400 tracking-wide mt-1">Opens a draft row for a resident in this facility.</p>
@@ -345,23 +343,23 @@ export default function AdminDischargeHubPage() {
 
       {!noFacility ? (
         <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-[1.5rem] border border-amber-200/70 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/20 p-4">
-            <p className="text-[10px] uppercase tracking-widest font-mono text-amber-700 dark:text-amber-300">Planning gaps</p>
-            <p className="mt-2 text-2xl font-display font-medium text-slate-900 dark:text-white">{loading ? "—" : planningCount}</p>
+          <div className="rounded-lg border border-amber-200/70 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/20 p-4">
+            <p className="text-[10px] uppercase tracking-wider font-mono text-amber-700 dark:text-amber-300">Planning gaps</p>
+            <p className="mt-2 text-2xl font-medium text-slate-900 dark:text-white">{loading ? "—" : planningCount}</p>
           </div>
-          <div className="rounded-[1.5rem] border border-indigo-200/70 bg-indigo-50/60 dark:border-indigo-900/40 dark:bg-indigo-950/20 p-4">
-            <p className="text-[10px] uppercase tracking-widest font-mono text-indigo-700 dark:text-indigo-300">Pharmacist action</p>
-            <p className="mt-2 text-2xl font-display font-medium text-slate-900 dark:text-white">{loading ? "—" : pharmacistActionCount}</p>
+          <div className="rounded-lg border border-indigo-200/70 bg-indigo-50/60 dark:border-indigo-900/40 dark:bg-indigo-950/20 p-4">
+            <p className="text-[10px] uppercase tracking-wider font-mono text-indigo-700 dark:text-indigo-300">Pharmacist action</p>
+            <p className="mt-2 text-2xl font-medium text-slate-900 dark:text-white">{loading ? "—" : pharmacistActionCount}</p>
           </div>
-          <div className="rounded-[1.5rem] border border-emerald-200/70 bg-emerald-50/60 dark:border-emerald-900/40 dark:bg-emerald-950/20 p-4">
-            <p className="text-[10px] uppercase tracking-widest font-mono text-emerald-700 dark:text-emerald-300">Ready to complete</p>
-            <p className="mt-2 text-2xl font-display font-medium text-slate-900 dark:text-white">{loading ? "—" : readyToCompleteCount}</p>
+          <div className="rounded-lg border border-emerald-200/70 bg-emerald-50/60 dark:border-emerald-900/40 dark:bg-emerald-950/20 p-4">
+            <p className="text-[10px] uppercase tracking-wider font-mono text-emerald-700 dark:text-emerald-300">Ready to complete</p>
+            <p className="mt-2 text-2xl font-medium text-slate-900 dark:text-white">{loading ? "—" : readyToCompleteCount}</p>
           </div>
         </div>
       ) : null}
 
       {actionError ? (
-        <div className="rounded-[1.5rem] border border-rose-500/20 bg-rose-500/5 p-6 text-sm text-rose-700 dark:text-rose-400 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm">
+        <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-6 text-sm text-rose-700 dark:text-rose-400 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm">
           <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/30">
             <span className="font-bold">!</span>
           </div>
@@ -369,7 +367,7 @@ export default function AdminDischargeHubPage() {
         </div>
       ) : null}
       {actionMessage ? (
-        <div className="rounded-[1.5rem] border border-emerald-500/20 bg-emerald-500/5 p-6 text-sm text-emerald-700 dark:text-emerald-300 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm">
+        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-6 text-sm text-emerald-700 dark:text-emerald-300 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm">
           <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 border border-emerald-500/30">
             <span className="font-bold">✓</span>
           </div>
@@ -381,7 +379,7 @@ export default function AdminDischargeHubPage() {
       <div className="space-y-6">
         <div className="flex items-center gap-3 border-b border-slate-200/50 dark:border-white/10 pb-4">
           <ClipboardList className="h-5 w-5 text-indigo-500" />
-          <h3 className="text-xl font-display font-medium text-slate-900 dark:text-white tracking-tight">
+          <h3 className="text-xl font-medium text-slate-900 dark:text-white tracking-tight">
             Reconciliations
           </h3>
         </div>
@@ -390,7 +388,7 @@ export default function AdminDischargeHubPage() {
            <p className="text-sm text-rose-600 dark:text-rose-400" role="alert">{loadError}</p>
         ) : null}
 
-        <div className="glass-panel border-slate-200/60 dark:border-white/5 rounded-[2.5rem] bg-white/60 dark:bg-white/[0.015] shadow-2xl backdrop-blur-3xl overflow-hidden p-6 md:p-8 relative">
+        <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] shadow-2xl overflow-hidden p-6 md:p-8 relative">
            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
            <div className="relative z-10 mb-6 flex flex-wrap items-center gap-2">
              {([
@@ -428,9 +426,9 @@ export default function AdminDischargeHubPage() {
            ) : null}
 
            <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
-             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Resident</div>
-             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500">Status</div>
-             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 text-right">Updated</div>
+             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Resident</div>
+             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Status</div>
+             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">Updated</div>
            </div>
 
            <div className="space-y-4 mt-6 relative z-10">
@@ -443,11 +441,11 @@ export default function AdminDischargeHubPage() {
                  Loading queue...
                </div>
              ) : rows.length === 0 ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
+               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10">
                  No rows yet. Start with <strong>New med reconciliation</strong>.
                </div>
              ) : featuredRows.length === 0 ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] border border-dashed border-slate-200 dark:border-white/10">
+               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10">
                  No reconciliations match this filter.
                </div>
              ) : (
@@ -460,27 +458,27 @@ export default function AdminDischargeHubPage() {
                       <MotionItem key={r.id}>
                         <Link
                           href={`/admin/discharge/${r.id}`}
-                          className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr] gap-4 items-center p-6 rounded-[1.8rem] bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 w-full cursor-pointer outline-none hover:shadow-lg dark:hover:bg-white/[0.05]"
+                          className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr] gap-4 items-center p-6 rounded-lg bg-white border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 w-full cursor-pointer outline-none hover:shadow-lg dark:hover:bg-white/[0.05]"
                         >
                           <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
                               {isDraft ? <PulseDot colorClass="bg-rose-500" /> : <div className="w-2 h-2 rounded-full bg-indigo-500" />}
                             </div>
-                            <span className="font-semibold text-xl text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors tracking-tight font-display">
+                            <span className="font-semibold text-xl text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors tracking-tight">
                                {r.residents ? `${r.residents.first_name} ${r.residents.last_name}` : "—"}
                             </span>
                           </div>
                           
                           <div className="flex flex-row justify-between lg:justify-start items-center">
-                            <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Status</span>
+                            <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Status</span>
                             <span className={cn(
-                              "text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded-full border shadow-inner",
+                              "text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full border shadow-inner",
                               isDraft ? "bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400"
                             )}>
                               {formatStatus(r.status)}
                             </span>
                             <span className={cn(
-                              "text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded-full border shadow-inner",
+                              "text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full border shadow-inner",
                               phase.phase === "planning"
                                 ? "bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300"
                                 : phase.phase === "pharmacist_review"
@@ -496,7 +494,7 @@ export default function AdminDischargeHubPage() {
                           </div>
 
                           <div className="flex flex-row justify-between lg:justify-end items-center">
-                            <span className="lg:hidden text-xs text-slate-500 uppercase tracking-widest font-bold">Updated</span>
+                            <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Updated</span>
                             <div className="flex flex-col items-end">
                               <span className="text-[11px] font-mono tracking-wide text-slate-500 dark:text-zinc-500">
                                 {new Date(r.updated_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}

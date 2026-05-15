@@ -168,7 +168,7 @@ export default function AdminDischargeDetailPage() {
             </Link>{" "}
             / Reconciliation
           </p>
-          <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
             Med reconciliation
           </h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
@@ -217,7 +217,7 @@ export default function AdminDischargeDetailPage() {
 
           <Card className="border-slate-200/80 shadow-soft dark:border-slate-800">
             <CardHeader>
-              <CardTitle className="font-display text-lg">
+              <CardTitle className="text-lg">
                 {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Resident"}
               </CardTitle>
               <p className="font-mono text-xs break-all text-slate-600 dark:text-slate-300">{row.id}</p>
@@ -379,7 +379,7 @@ export default function AdminDischargeDetailPage() {
 
           <Card className="border-slate-200/80 shadow-soft dark:border-slate-800">
             <CardHeader>
-              <CardTitle className="font-display text-lg">Med snapshot (JSON)</CardTitle>
+              <CardTitle className="text-lg">Med snapshot (JSON)</CardTitle>
             </CardHeader>
             <CardContent>
               {snapshotStr ? (
@@ -394,7 +394,7 @@ export default function AdminDischargeDetailPage() {
 
           <Card className="border-slate-200/80 shadow-soft dark:border-slate-800">
             <CardHeader>
-              <CardTitle className="font-display text-lg">Workflow actions</CardTitle>
+              <CardTitle className="text-lg">Workflow actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid gap-3 sm:grid-cols-3">

@@ -40,9 +40,9 @@ export default function ReportTemplatesPage() {
       
       <div className="relative z-10 space-y-6 max-w-7xl mx-auto">
         <ReportsHubNav />
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
           <div className="space-y-2">
-            <h1 className="font-display text-4xl md:text-5xl font-light tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+            <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
               Template Library
             </h1>
             <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
@@ -51,19 +51,19 @@ export default function ReportTemplatesPage() {
           </div>
         </header>
 
-        <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
+        <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
           <div className="flex flex-col md:flex-row gap-4 mb-8">
             <div className="flex-1">
               <Input
                 placeholder="Search templates (e.g. falls, AR, survey)"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-white/60 dark:bg-black/30 px-5 py-2 text-sm backdrop-blur-xl shadow-inner focus-visible:ring-indigo-500 font-mono tracking-wide"
+                className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-card px-5 py-2 text-sm shadow-inner focus-visible:ring-indigo-500 font-mono tracking-wide"
               />
             </div>
             <div className="md:w-72 shrink-0 relative">
               <select
-                className="flex h-12 w-full rounded-2xl border border-slate-200 bg-white/60 px-5 py-2 text-sm dark:border-white/10 dark:bg-black/30 backdrop-blur-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none font-mono uppercase tracking-widest text-[11px] font-bold text-slate-700 dark:text-slate-200"
+                className="flex h-12 w-full rounded-2xl border border-slate-200 bg-card px-5 py-2 text-sm dark:border-white/10 shadow-inner focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none font-mono uppercase tracking-wider text-[11px] font-bold text-slate-700 dark:text-slate-200"
                 value={category}
                 onChange={(event) => setCategory(event.target.value)}
               >
@@ -80,7 +80,7 @@ export default function ReportTemplatesPage() {
           </div>
 
           {templates.length === 0 ? (
-             <div className="p-16 text-center text-slate-500 bg-white/50 dark:bg-white/[0.02] rounded-[2.5rem] border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
+             <div className="p-16 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
                 <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Templates Found</p>
                <p className="text-sm opacity-80 mt-1 font-mono">Try adjusting your search query or clear filters.</p>
              </div>

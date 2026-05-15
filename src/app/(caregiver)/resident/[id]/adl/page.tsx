@@ -249,7 +249,7 @@ export default function CaregiverResidentAdlPage() {
 
       <Card className="border-zinc-800 bg-zinc-950/80 text-zinc-100">
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-lg font-display">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <Bath className="h-5 w-5 text-sky-400" />
             ADL
           </CardTitle>

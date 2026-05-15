@@ -109,7 +109,7 @@ export default function AdminReputationReplyNewPage() {
   return (
     <div className="mx-auto max-w-xl space-y-6 p-6">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
           New reply
         </h1>
         <Link href="/admin/reputation" className={cn(buttonVariants({ variant: "outline" }), "shrink-0")}>
