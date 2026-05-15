@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft, Brain } from "lucide-react";
 
-import { SysLabel, TitleH1, Subtitle } from "@/components/ui/moonshot/typography";
+import { TitleH1, Subtitle } from "@/components/ui/moonshot/typography";
 import { ExecutiveNavV2 } from "@/components/executive/executive-nav-v2";
 import { MetricCardMoonshot } from "@/components/executive/metric-card-moonshot";
 import { KineticGrid } from "@/components/ui/kinetic-grid";

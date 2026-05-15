@@ -1,7 +1,5 @@
 "use client";
 
-import React from "react";
-
 /**
  * Audit-defanged: was an absolutely-positioned decorative SVG sparkline
  * with a `bottom-0 left-0 w-full h-14 opacity-15` gradient fill. Rendered

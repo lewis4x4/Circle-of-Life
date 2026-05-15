@@ -41,7 +41,6 @@ import {
   MessageSquare,
   Monitor,
   Moon,
-  NotebookPen,
   Pill,
   Radar,
   Scale,

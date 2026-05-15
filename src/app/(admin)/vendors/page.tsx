@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Truck } from "lucide-react";
 
 import { VendorHubNav } from "./vendor-hub-nav";
 import { createClient } from "@/lib/supabase/client";
