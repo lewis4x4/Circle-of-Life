@@ -84,6 +84,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 import { SurveyVisitModeBar } from "@/components/compliance/SurveyVisitModeBar";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
@@ -565,7 +566,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         )}
       >
         <Building2 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-        <span className="flex-1 truncate text-left">{facilityTriggerLabel}</span>
+        {facilityControlLoading ? (
+          <Skeleton className="h-3.5 flex-1 rounded bg-muted" aria-label="Loading facilities" />
+        ) : (
+          <span className="flex-1 truncate text-left">{facilityTriggerLabel}</span>
+        )}
         <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-[244px] p-1">

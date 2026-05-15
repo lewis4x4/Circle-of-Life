@@ -202,8 +202,11 @@ export function AdminResidentsPageClient({
         </Link>
       </div>
 
-      {/* KPI strip — flat tiles, tabular-nums, no gradient text. */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      {/* KPI strip — flat tiles, tabular-nums, no gradient text.
+          Two tiles → cap at max-w-2xl so they don't stretch into a wide
+          band on >= 2xl viewports. (When this strip grows to 4+ tiles,
+          drop the cap and use the 2/3/5 responsive grid.) */}
+      <div className="grid max-w-2xl grid-cols-2 gap-3">
         <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-card p-4">
           <span className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
             <Users className="size-3.5" aria-hidden /> Residents in view
