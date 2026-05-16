@@ -63,7 +63,7 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
   return (
     <div className="space-y-6">
       {/* Upload Section */}
-      <div className="rounded-[2rem] border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
+      <div className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
         <h3 className="font-semibold flex items-center gap-2">
           <Upload className="h-5 w-5 text-teal-500" />
           Upload Document

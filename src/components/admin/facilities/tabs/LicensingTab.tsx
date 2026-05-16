@@ -51,7 +51,7 @@ export function LicensingTab({ facilityId }: LicensingTabProps) {
 
   return (
     <div className="space-y-8">
-      <section className="rounded-[2rem] border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
+      <section className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
         <h3 className="font-display text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
           <Shield className="h-5 w-5 text-teal-400" />
           AHCA licensing
@@ -78,7 +78,7 @@ export function LicensingTab({ facilityId }: LicensingTabProps) {
         </p>
       </section>
 
-      <section className="rounded-[2rem] border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
+      <section className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
         <h3 className="font-display text-xl font-semibold text-slate-900 dark:text-white">Care services offered</h3>
         <p className="text-sm text-slate-500 dark:text-slate-400">
           COL uses <strong>Enhanced ALF Services</strong> — avoid legacy unit marketing labels in compliance-facing
@@ -110,7 +110,7 @@ export function LicensingTab({ facilityId }: LicensingTabProps) {
         </button>
       </section>
 
-      <section className="rounded-[2rem] border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 shadow-sm backdrop-blur-2xl">
+      <section className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 shadow-sm backdrop-blur-2xl">
         <h3 className="font-display text-xl font-semibold text-slate-900 dark:text-white mb-4">Survey history</h3>
         {surveysLoading ? (
           <Loader2 className="h-6 w-6 animate-spin text-teal-500" />
@@ -135,7 +135,7 @@ export function LicensingTab({ facilityId }: LicensingTabProps) {
         )}
       </section>
 
-      <section className="rounded-[2rem] border border-dashed border-slate-300/50 dark:border-white/20 bg-slate-50/50 dark:bg-white/[0.02] p-4 text-sm text-slate-500 dark:text-slate-400">
+      <section className="rounded-xl border border-dashed border-slate-300/50 dark:border-white/20 bg-slate-50/50 dark:bg-white/[0.02] p-4 text-sm text-slate-500 dark:text-slate-400">
         Compliance calendar (fire drills, elopement drills) will tie to operational thresholds and scheduling in a
         follow-up pass.
       </section>

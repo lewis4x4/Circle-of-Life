@@ -16,7 +16,7 @@ export function VoiceModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6">
-      <div className="w-full max-w-md rounded-3xl bg-stone-900 ring-1 ring-stone-700 shadow-2xl overflow-hidden">
+      <div className="w-full max-w-md rounded-xl bg-stone-900 ring-1 ring-stone-700 shadow-2xl overflow-hidden">
         <div className="px-6 py-4 border-b border-stone-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ThermometerSun className="w-5 h-5 text-orange-400" />

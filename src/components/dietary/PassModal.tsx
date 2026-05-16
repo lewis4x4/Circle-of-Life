@@ -33,7 +33,7 @@ export function PassModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6">
-      <div className="w-full max-w-2xl rounded-3xl bg-stone-900 ring-1 ring-stone-700 shadow-2xl overflow-hidden">
+      <div className="w-full max-w-2xl rounded-xl bg-stone-900 ring-1 ring-stone-700 shadow-2xl overflow-hidden">
 
         {/* Header */}
         <div className="px-6 py-5 border-b border-stone-800 flex items-start justify-between">

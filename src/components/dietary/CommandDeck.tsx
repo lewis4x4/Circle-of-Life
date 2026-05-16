@@ -51,7 +51,7 @@ export function CommandDeck() {
       <ServiceBar data={service_bar} />
 
       <div className="px-4 pb-4 md:px-6">
-        <div className="rounded-[1.75rem] border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-xl">
+        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-xl">
           <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">
             <span>Kitchen priorities</span>
             <span className="text-stone-600">/</span>

@@ -116,7 +116,7 @@ export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6">
-      <div className="w-full max-w-lg rounded-3xl bg-slate-900 ring-1 ring-slate-700 shadow-2xl overflow-hidden">
+      <div className="w-full max-w-lg rounded-xl bg-slate-900 ring-1 ring-slate-700 shadow-2xl overflow-hidden">
 
         {/* Header */}
         <div className="px-6 py-5 border-b border-slate-800 flex items-center justify-between">

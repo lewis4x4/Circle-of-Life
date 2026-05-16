@@ -124,7 +124,7 @@ export default function CaregiverResidentQuickProfilePage() {
       )}
       
       {/* ─── RESIDENT HEADER & METRICS ──────────────────────────────────────────── */}
-      <div className="p-8 md:p-10 rounded-[3rem] border border-white/5 shadow-2xl relative overflow-hidden z-10 w-full transition-all text-zinc-100">
+      <div className="p-8 md:p-10 rounded-xl border border-white/5 shadow-2xl relative overflow-hidden z-10 w-full transition-all text-zinc-100">
          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
 
          <div className="flex flex-col md:flex-row gap-8 relative z-10">

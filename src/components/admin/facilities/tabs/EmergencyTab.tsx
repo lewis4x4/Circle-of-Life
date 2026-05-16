@@ -141,7 +141,7 @@ export function EmergencyTab({ facilityId }: EmergencyTabProps) {
 
       <div className="space-y-6">
         {Object.entries(grouped).map(([cat, list]) => (
-          <div key={cat} className="rounded-[2rem] border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 overflow-hidden shadow-sm backdrop-blur-2xl">
+          <div key={cat} className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 overflow-hidden shadow-sm backdrop-blur-2xl">
             <div className="bg-slate-50/50 dark:bg-white/5 px-4 py-2 text-sm font-semibold text-slate-800 dark:text-slate-200">
               {CONTACT_CATEGORY_LABELS[cat as keyof typeof CONTACT_CATEGORY_LABELS] ?? cat}
             </div>

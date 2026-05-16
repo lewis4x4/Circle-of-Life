@@ -278,8 +278,8 @@ export default function LandingHome() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.85, delay: 0.15, ease: easeOut }}
           >
-            <div className="absolute -inset-4 rounded-[2rem] opacity-60 blur-3xl" />
-            <div className="relative aspect-square overflow-hidden rounded-[1.75rem] border border-white/[0.08] shadow-2xl shadow-black/50 ring-1 ring-white/[0.06]">
+            <div className="absolute -inset-4 rounded-xl opacity-60 blur-3xl" />
+            <div className="relative aspect-square overflow-hidden rounded-xl border border-white/[0.08] shadow-2xl shadow-black/50 ring-1 ring-white/[0.06]">
               <Image
                 src="/luxury-alf-interior.png"
                 alt="Luxury Assisted Living Interior"

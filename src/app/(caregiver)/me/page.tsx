@@ -153,7 +153,7 @@ export default function CaregiverMePage() {
         title="Keep your shift identity, policies, and support links in one place."
         description="Use this area to verify who you are signed in as, report illness, review policy tasks, and move into clock or schedule support without leaving the caregiver shell."
       />
-      <div className="p-8 sm:p-10 rounded-[3rem] border border-white/5 shadow-2xl relative overflow-hidden z-10 w-full transition-all text-zinc-100">
+      <div className="p-8 sm:p-10 rounded-xl border border-white/5 shadow-2xl relative overflow-hidden z-10 w-full transition-all text-zinc-100">
          {/* Background accent light */}
          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
 
