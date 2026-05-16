@@ -215,7 +215,7 @@ export function BehaviorLogModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-violet-900/50 bg-gradient-to-br from-violet-950/95 via-zinc-950 to-zinc-950 text-zinc-100">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-violet-900/50 text-zinc-100">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg font-display text-violet-200">
             <Brain className="h-5 w-5 text-violet-400" />
@@ -377,7 +377,7 @@ export function BehaviorLogModal({
                 <Button
                   type="button"
                   disabled={submitting || !behavior.trim()}
-                  className="h-12 w-full bg-gradient-to-r from-violet-600 to-violet-500 text-white hover:from-violet-500 hover:to-violet-400 disabled:opacity-50 shadow-lg shadow-violet-500/20 font-medium"
+                  className="h-12 w-full text-white hover: hover: disabled:opacity-50 shadow-lg shadow-violet-500/20 font-medium"
                   onClick={() => void submitBehavior()}
                 >
                   {submitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Brain className="mr-2 h-5 w-5" />}
@@ -593,7 +593,7 @@ export function ConditionLogModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-rose-900/50 bg-gradient-to-br from-rose-950/95 via-zinc-950 to-zinc-950 text-zinc-100">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-rose-900/50 text-zinc-100">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg font-display text-rose-200">
             <Stethoscope className="h-5 w-5 text-rose-400" />
@@ -691,7 +691,7 @@ export function ConditionLogModal({
                 <Button
                   type="button"
                   disabled={submitting || !description.trim()}
-                  className="h-12 w-full bg-gradient-to-r from-rose-700 to-rose-600 text-white hover:from-rose-600 hover:to-rose-500 disabled:opacity-50 shadow-lg shadow-rose-500/20 font-medium"
+                  className="h-12 w-full text-white hover: hover: disabled:opacity-50 shadow-lg shadow-rose-500/20 font-medium"
                   onClick={() => void submitReport()}
                 >
                   {submitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Stethoscope className="mr-2 h-5 w-5" />}
@@ -984,7 +984,7 @@ export function GeneralNoteModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-teal-900/50 bg-gradient-to-br from-teal-950/95 via-zinc-950 to-zinc-950 text-zinc-100">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-teal-900/50 text-zinc-100">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg font-display text-teal-200">
             <FileText className="h-5 w-5 text-teal-400" />

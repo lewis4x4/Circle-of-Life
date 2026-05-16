@@ -221,7 +221,7 @@ export default function CaregiverPrnFollowupPage() {
         title="Close the loop after PRN administration before the shift turns over."
         description="Document effectiveness here, then move back to meds or into handoff if the resident still needs attention."
       />
-      <div className="p-6 sm:p-8 rounded-lg border border-white/5 bg-gradient-to-br from-violet-950/40 via-slate-900/40 to-black/60 shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
+      <div className="p-6 sm:p-8 rounded-lg border border-white/5 shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
         <h3 className="flex items-center gap-3 text-2xl font-semibold text-white tracking-wide">
           <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center border border-violet-500/30">
             <Pill className="h-5 w-5 text-violet-400" />

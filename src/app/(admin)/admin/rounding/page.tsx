@@ -192,7 +192,7 @@ export default function AdminRoundingHubPage() {
           href="/admin/rounding/live"
           className={cn(
             "group relative block overflow-hidden rounded-lg border p-8 transition-all duration-300",
-            "bg-gradient-to-r from-emerald-950/60 via-emerald-900/30 to-cyan-950/40",
+            "",
             "border-emerald-500/30 hover:border-emerald-400/50",
             "shadow-lg shadow-emerald-900/20 hover:shadow-emerald-800/30",
           )}

@@ -67,7 +67,7 @@ export function DiscrepancyResolutionModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-rose-900/50 bg-gradient-to-br from-rose-950/95 via-zinc-950 to-zinc-950 text-zinc-100">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-rose-900/50 text-zinc-100">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg font-display text-rose-200">
             <AlertTriangle className="h-5 w-5 text-rose-400" />

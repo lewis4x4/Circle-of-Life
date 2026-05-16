@@ -268,13 +268,13 @@ export default function AdminStaffDetailPage() {
               {staff.photo_url ? (
                 <Avatar className="h-20 w-20 ring-4 ring-white/50 dark:ring-white/10 shadow-lg rounded-[1.2rem]">
                   <AvatarImage src={staff.photo_url} alt={fullName} className="object-cover rounded-[1.2rem]"/>
-                  <AvatarFallback className="bg-gradient-to-br from-indigo-100 to-slate-200 text-xl font-medium text-indigo-900 dark:from-indigo-900 dark:to-slate-800 dark:text-indigo-100 rounded-[1.2rem]">
+                  <AvatarFallback className="text-xl font-medium text-indigo-900 dark: dark: dark:text-indigo-100 rounded-[1.2rem]">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
               ) : (
                 <div
-                  className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.2rem] bg-gradient-to-br from-slate-200 to-slate-300 text-xl font-medium text-slate-600 ring-4 ring-white/50 dark:from-slate-800 dark:to-slate-900 dark:text-slate-300 dark:ring-white/10 shadow-lg"
+                  className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.2rem] text-xl font-medium text-slate-600 ring-4 ring-white/50 dark: dark: dark:text-slate-300 dark:ring-white/10 shadow-lg"
                   aria-hidden
                 >
                   {fullName.charAt(0).toUpperCase()}

@@ -194,7 +194,7 @@ export default function LoginPage() {
         
         {/* Gradient overlays to ensure white text readability */}
         <div className="absolute inset-0 bg-slate-950/20 mix-blend-multiply" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#050914] via-[#050914]/80 to-transparent opacity-90" />
+        <div className="absolute inset-0 from-[#050914] via-[#050914]/80 opacity-90" />
         
         {/* Subtle grid pattern for texture */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:2.8rem_2.8rem]" />

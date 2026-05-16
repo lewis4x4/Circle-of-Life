@@ -126,7 +126,7 @@ export default function InsightsPage() {
         </Link>
 
         <header className="flex items-center gap-3 border-b border-white/10 pb-6">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-indigo-600/20 border border-violet-500/20 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl border border-violet-500/20 flex items-center justify-center">
             <Brain className="w-5 h-5 text-violet-400" />
           </div>
           <div>

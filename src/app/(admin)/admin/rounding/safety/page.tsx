@@ -79,7 +79,7 @@ export default function SafetyScoresPage() {
         </Link>
 
         <header className="flex items-center gap-3 border-b border-white/10 pb-6">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500/20 to-amber-500/20 border border-rose-500/20 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl border border-rose-500/20 flex items-center justify-center">
             <Shield className="w-5 h-5 text-rose-400" />
           </div>
           <div>

@@ -353,7 +353,7 @@ export default function ReportsOverviewPage() {
 
         {/* Workflow strip */}
         <section
-          className="rounded-lg border border-slate-200/60 bg-gradient-to-br from-slate-50/90 to-white/80 p-6 shadow-sm dark:border-white/5 dark:from-white/[0.04] dark:to-black/20 sm:p-8"
+          className="rounded-lg border border-slate-200/60 p-6 shadow-sm dark:border-white/5 dark:/[0.04] dark: sm:p-8"
           aria-labelledby="reports-workflow-heading"
         >
           <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">

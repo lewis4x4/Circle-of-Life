@@ -144,7 +144,7 @@ export default function CaregiverFollowupsPage() {
         title="Review condition-change reports, then move the resident into the next clinical or shift-handoff action."
         description="Use this lane to keep change reports visible, then escalate through incident reporting or carry them into handoff when the next shift needs clarity."
       />
-      <div className="p-6 sm:p-8 rounded-lg border border-white/5 bg-gradient-to-br from-teal-950/40 via-slate-900/40 to-black/60 shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
+      <div className="p-6 sm:p-8 rounded-lg border border-white/5 shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
         <h3 className="flex items-center gap-3 text-2xl font-semibold text-white tracking-wide">
           <div className="w-10 h-10 rounded-full bg-teal-500/20 flex items-center justify-center border border-teal-500/30">
             <BellRing className="h-5 w-5 text-teal-400" />

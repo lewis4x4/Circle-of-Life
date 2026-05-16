@@ -153,7 +153,7 @@ export default function AdminIncidentTrendsPage() {
                         className="h-full rounded-full bg-indigo-500 relative transition-all duration-1000 group-hover:brightness-110"
                         style={{ width: `${Math.max(2, Math.round((count / stats.maxCat) * 100))}%` }}
                       >
-                         <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/20" />
+                         <div className="absolute inset-0" />
                       </div>
                     </div>
                   </div>
@@ -188,7 +188,7 @@ export default function AdminIncidentTrendsPage() {
                         )}
                         style={{ width: `${Math.max(2, Math.round((count / stats.maxSev) * 100))}%` }}
                       >
-                         <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/20" />
+                         <div className="absolute inset-0" />
                       </div>
                     </div>
                   </div>

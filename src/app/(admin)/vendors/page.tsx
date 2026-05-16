@@ -162,7 +162,7 @@ export default function AdminVendorsHubPage() {
            ].map((link) => (
              <MotionItem key={link.href}>
                  <Link href={link.href} className="p-6 rounded-lg group transition-all duration-300 hover:scale-[1.01] cursor-pointer border border-slate-200 dark:border-white/5 bg-white/80 w-full flex flex-col justify-between gap-4 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-500/30 h-[140px] relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/0 via-transparent to-indigo-500/0 group-hover:from-indigo-50/50 group-hover:to-transparent dark:group-hover:from-indigo-500/5 transition-colors" />
+                    <div className="absolute inset-0 group-hover: group-hover: dark:group-hover: transition-colors" />
                     <div className="relative z-10 flex flex-col gap-1">
                        <span className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-xs group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                           {link.title}

@@ -106,7 +106,7 @@ export default function CaregiverResidentQuickProfilePage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-12">
       {vitalAlerts.length > 0 && (
-        <div className="rounded-[2xl] border border-rose-500/40 bg-gradient-to-r from-rose-500/20 to-rose-900/10 px-6 py-4 text-sm text-rose-100 shadow-[0_4px_30px_rgba(225,29,72,0.1)]">
+        <div className="rounded-[2xl] border border-rose-500/40 px-6 py-4 text-sm text-rose-100 shadow-[0_4px_30px_rgba(225,29,72,0.1)]">
           <div className="flex items-start gap-4">
             <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/40 mt-1">
                <AlertTriangle className="h-5 w-5 text-rose-400" />
@@ -124,7 +124,7 @@ export default function CaregiverResidentQuickProfilePage() {
       )}
       
       {/* ─── RESIDENT HEADER & METRICS ──────────────────────────────────────────── */}
-      <div className="p-8 md:p-10 rounded-[3rem] border border-white/5 bg-gradient-to-br from-indigo-950/40 via-slate-900/60 to-black/80 shadow-2xl relative overflow-hidden z-10 w-full transition-all text-zinc-100">
+      <div className="p-8 md:p-10 rounded-[3rem] border border-white/5 shadow-2xl relative overflow-hidden z-10 w-full transition-all text-zinc-100">
          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
 
          <div className="flex flex-col md:flex-row gap-8 relative z-10">
@@ -176,7 +176,7 @@ export default function CaregiverResidentQuickProfilePage() {
 
       {/* ─── RISK BANNERS ──────────────────────────────────────────────────────── */}
       {p.riskBanners.length > 0 && (
-         <div className="p-8 rounded-lg border border-amber-500/30 bg-gradient-to-br from-amber-950/20 to-black/40 shadow-[0_8px_32px_rgba(217,119,6,0.1)] relative w-full text-zinc-100">
+         <div className="p-8 rounded-lg border border-amber-500/30 shadow-[0_8px_32px_rgba(217,119,6,0.1)] relative w-full text-zinc-100">
            <h3 className="flex items-center gap-3 text-xl font-semibold text-amber-300 tracking-wide mb-6">
               <AlertTriangle className="h-5 w-5" />
               Risk Considerations
@@ -226,7 +226,7 @@ export default function CaregiverResidentQuickProfilePage() {
          {!noteOpen ? (
            <Button
              type="button"
-             className="w-full h-16 rounded-lg flex items-center justify-center font-bold tracking-wider uppercase transition-all shadow-[0_4px_30px_rgba(16,185,129,0.15)] bg-gradient-to-r from-emerald-600 to-emerald-500 text-black hover:from-emerald-500 hover:to-emerald-400 tap-responsive text-sm font-mono border-0"
+             className="w-full h-16 rounded-lg flex items-center justify-center font-bold tracking-wider uppercase transition-all shadow-[0_4px_30px_rgba(16,185,129,0.15)] text-black hover: hover: tap-responsive text-sm font-mono border-0"
              onClick={() => { setNoteOpen(true); setNoteSaved(false); }}
            >
              <Plus className="mr-3 h-5 w-5" />

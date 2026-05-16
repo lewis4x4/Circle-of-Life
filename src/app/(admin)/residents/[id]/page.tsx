@@ -236,7 +236,7 @@ export default function AdminResidentDetailPage() {
         <Button
           type="button"
           onClick={() => setBehaviorModalOpen(true)}
-          className="h-12 flex-1 bg-gradient-to-r from-violet-600 to-violet-500 text-white hover:from-violet-500 hover:to-violet-400 shadow-lg shadow-violet-500/20 font-medium text-sm sm:text-base"
+          className="h-12 flex-1 text-white hover: hover: shadow-lg shadow-violet-500/20 font-medium text-sm sm:text-base"
         >
           <Brain className="mr-2 h-5 w-5" />
           <span className="hidden sm:inline">Log Behavior</span>
@@ -245,7 +245,7 @@ export default function AdminResidentDetailPage() {
         <Button
           type="button"
           onClick={() => setConditionModalOpen(true)}
-          className="h-12 flex-1 bg-gradient-to-r from-rose-700 to-rose-600 text-white hover:from-rose-600 hover:to-rose-500 shadow-lg shadow-rose-500/20 font-medium text-sm sm:text-base"
+          className="h-12 flex-1 text-white hover: hover: shadow-lg shadow-rose-500/20 font-medium text-sm sm:text-base"
         >
           <Stethoscope className="mr-2 h-5 w-5" />
           <span className="hidden sm:inline">Log Condition</span>
@@ -254,7 +254,7 @@ export default function AdminResidentDetailPage() {
         <Button
           type="button"
           onClick={() => setGeneralNoteModalOpen(true)}
-          className="h-12 flex-1 bg-gradient-to-r from-teal-600 to-teal-500 text-white hover:from-teal-500 hover:to-teal-400 shadow-lg shadow-teal-500/20 font-medium text-sm sm:text-base"
+          className="h-12 flex-1 text-white hover: hover: shadow-lg shadow-teal-500/20 font-medium text-sm sm:text-base"
         >
           <FileText className="mr-2 h-5 w-5" />
           <span className="hidden sm:inline">General Note</span>

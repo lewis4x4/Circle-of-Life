@@ -183,7 +183,7 @@ export default function CaregiverClockPage() {
         title="Start or end the shift cleanly, then move back into care work."
         description="Use the clock here, then head back to the shift dashboard or check your schedule if something looks off."
       />
-      <div className="p-6 sm:p-10 rounded-[3rem] border border-white/5 bg-gradient-to-br from-indigo-950/40 via-slate-900/60 to-black/80 shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100 flex flex-col items-center text-center">
+      <div className="p-6 sm:p-10 rounded-[3rem] border border-white/5 shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100 flex flex-col items-center text-center">
         <div className="w-16 h-16 rounded-lg bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30 mb-6 shadow-inner">
           <Clock3 className="h-8 w-8 text-indigo-400" />
         </div>

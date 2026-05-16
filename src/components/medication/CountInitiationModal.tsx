@@ -269,7 +269,7 @@ export function CountInitiationModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto border-emerald-900/50 bg-gradient-to-br from-emerald-950/95 via-zinc-950 to-zinc-950 text-zinc-100">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto border-emerald-900/50 text-zinc-100">
         {!showCoSign ? (
           <>
             <DialogHeader>

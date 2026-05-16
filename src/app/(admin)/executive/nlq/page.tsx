@@ -162,7 +162,7 @@ export default function ExecutiveNlqPage() {
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Executive Overview
           </Link>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg">
               <Brain className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -176,7 +176,7 @@ export default function ExecutiveNlqPage() {
         <div className="flex-1 overflow-y-auto px-6 sm:px-12 py-6 space-y-4">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 space-y-8">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/20 to-indigo-600/20 border border-violet-500/20 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-2xl border border-violet-500/20 flex items-center justify-center">
                 <Sparkles className="w-8 h-8 text-violet-400" />
               </div>
               <div className="text-center space-y-2">
@@ -261,7 +261,7 @@ export default function ExecutiveNlqPage() {
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="px-5 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-semibold hover:from-violet-500 hover:to-indigo-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-violet-500/20"
+              className="px-5 py-3 rounded-xl text-white text-sm font-semibold hover: hover: transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-violet-500/20"
             >
               <Send className="w-4 h-4" />
               Ask

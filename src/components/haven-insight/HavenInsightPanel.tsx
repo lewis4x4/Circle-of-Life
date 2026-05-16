@@ -37,7 +37,7 @@ export function HavenInsightPanel() {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg">
               <Brain className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -126,7 +126,7 @@ export function HavenInsightPanel() {
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="px-3 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white disabled:opacity-40 transition-all"
+              className="px-3 py-2 rounded-lg text-white disabled:opacity-40 transition-all"
             >
               <Send className="w-3.5 h-3.5" />
             </button>

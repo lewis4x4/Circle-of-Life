@@ -209,7 +209,7 @@ export function QuickCheckDrawer({
         aria-labelledby={titleId}
         className={cn(
           "fixed bottom-0 left-0 right-0 z-[110] box-border max-h-[92vh] w-full min-w-0 overflow-y-auto overflow-x-hidden rounded-t-2xl border-t border-slate-700/50",
-          "bg-gradient-to-b from-slate-900 to-slate-950 shadow-2xl shadow-black/50",
+          "shadow-2xl shadow-black/50",
           "pb-[env(safe-area-inset-bottom,0px)] animate-in slide-in-from-bottom-8 duration-300",
         )}
       >
@@ -412,7 +412,7 @@ export function QuickCheckDrawer({
               disabled={submitting}
               className={cn(
                 "w-full rounded-xl py-4 text-base font-semibold transition-all duration-200",
-                "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white",
+                "text-white",
                 "hover:from-emerald-500 hover:to-emerald-400 active:scale-[0.98]",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
                 "shadow-lg shadow-emerald-900/30",

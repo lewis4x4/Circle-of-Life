@@ -204,7 +204,7 @@ export default function CaregiverTasksPage() {
         title="Document routine care while the resident context is in front of you."
         description="Use the ADL queue for routine support passes, then move to rounds for due checks or meds when a medication window is active."
       />
-      <div className="p-6 sm:p-8 rounded-lg border border-white/5 bg-gradient-to-br from-cyan-950/40 via-slate-900/40 to-black/60 shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
+      <div className="p-6 sm:p-8 rounded-lg border border-white/5 shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
         <div className="mb-6">
           <h3 className="text-2xl font-semibold text-white tracking-wide">Task &amp; ADL queue</h3>
           <p className="text-sm font-mono text-cyan-400/80 mt-1">

@@ -331,7 +331,7 @@ export default function AdminRoundingLivePage() {
               onClick={startSequentialRounds}
               className={cn(
                 "inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-200",
-                "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white",
+                "text-white",
                 "hover:from-emerald-500 hover:to-emerald-400 active:scale-[0.98]",
                 "shadow-lg shadow-emerald-900/30",
               )}

@@ -121,7 +121,7 @@ export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }
         {/* Header */}
         <div className="px-6 py-5 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-600 to-rose-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center">
               <Camera className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -146,7 +146,7 @@ export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }
               key={i}
               className={`flex-1 h-1.5 rounded-full transition ${
                 i <= step
-                  ? "bg-gradient-to-r from-orange-500 to-rose-500"
+                  ? ""
                   : "bg-slate-800"
               }`}
             />
@@ -316,7 +316,7 @@ export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }
                 else if (step === 1 && canProceed2) void submitIncident();
               }}
               disabled={step === 0 ? !canProceed1 : !canProceed2 || submitting}
-              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-rose-600 hover:from-orange-500 hover:to-rose-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition"
+              className="flex-1 py-2.5 rounded-xl hover: hover: disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition"
             >
               {step === 0 ? "Continue →" : submitting ? "Saving…" : "Submit Incident"}
             </button>

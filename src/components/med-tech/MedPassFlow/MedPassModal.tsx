@@ -37,7 +37,7 @@ export function MedPassModal({
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6">
       <div className="w-full max-w-3xl rounded-3xl bg-slate-900 ring-1 ring-slate-700 shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-800 bg-gradient-to-r from-slate-900 to-slate-800 flex items-start justify-between">
+        <div className="px-6 py-5 border-b border-slate-800 flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-mono text-slate-400">
@@ -71,7 +71,7 @@ export function MedPassModal({
               key={s}
               className={`flex-1 h-1.5 rounded-full transition ${
                 i <= step
-                  ? "bg-gradient-to-r from-violet-500 to-sky-500"
+                  ? ""
                   : "bg-slate-800"
               }`}
             />
@@ -249,7 +249,7 @@ export function MedPassModal({
               </div>
               <div className="rounded-xl bg-slate-800/60 ring-1 ring-slate-700 p-5 mb-5">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-rose-500 flex items-center justify-center text-white font-semibold text-sm">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm">
                     JR
                   </div>
                   <div>

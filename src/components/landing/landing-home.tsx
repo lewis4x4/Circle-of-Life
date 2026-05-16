@@ -97,7 +97,7 @@ export default function LandingHome() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, ease: easeOut }}
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-teal-400/90 to-teal-700/90 shadow-lg shadow-teal-500/20 ring-1 ring-white/20">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl shadow-lg shadow-teal-500/20 ring-1 ring-white/20">
               <Sparkles className="h-4 w-4 text-white" />
             </div>
             <span className="font-display text-lg font-semibold tracking-tight text-white">Haven</span>
@@ -179,7 +179,7 @@ export default function LandingHome() {
               className="font-display text-4xl font-semibold leading-[1.08] tracking-tight text-white sm:text-5xl md:text-6xl lg:text-[3.35rem] xl:text-[3.75rem]"
             >
               One calm layer for{" "}
-              <span className="bg-gradient-to-r from-teal-300 via-emerald-200 to-cyan-300 bg-clip-text text-transparent">
+              <span className="bg-clip-text text-transparent">
                 bedside to boardroom
               </span>{" "}
               operations.
@@ -278,7 +278,7 @@ export default function LandingHome() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.85, delay: 0.15, ease: easeOut }}
           >
-            <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-teal-500/25 via-transparent to-indigo-500/20 opacity-60 blur-3xl" />
+            <div className="absolute -inset-4 rounded-[2rem] opacity-60 blur-3xl" />
             <div className="relative aspect-square overflow-hidden rounded-[1.75rem] border border-white/[0.08] shadow-2xl shadow-black/50 ring-1 ring-white/[0.06]">
               <Image
                 src="/luxury-alf-interior.png"
@@ -287,7 +287,7 @@ export default function LandingHome() {
                 className="object-cover object-center"
                 priority
               />
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#030712] via-[#030712]/40 to-transparent opacity-90" />
+              <div className="pointer-events-none absolute inset-0 from-[#030712] via-[#030712]/40 opacity-90" />
               <div className="absolute bottom-5 left-5 right-5 rounded-xl border border-white/10 bg-black/60 p-4 backdrop-blur-md">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-teal-200/80">
                   Built for Care
@@ -352,7 +352,7 @@ export default function LandingHome() {
                         transition={{ type: "spring", stiffness: 400, damping: 22 }}
                       >
                         <div className="h-2 w-1/2 rounded bg-white/15" />
-                        <div className="h-5 w-3/4 rounded bg-gradient-to-r from-teal-400/40 to-white/20" />
+                        <div className="h-5 w-3/4 rounded" />
                       </motion.div>
                     ))}
                   </div>
@@ -372,7 +372,7 @@ export default function LandingHome() {
                           viewport={{ once: true }}
                           transition={{ delay: 0.05 * i }}
                         >
-                          <div className="h-7 w-7 shrink-0 rounded-full bg-gradient-to-br from-slate-600 to-slate-800" />
+                          <div className="h-7 w-7 shrink-0 rounded-full" />
                           <div className="min-w-0 flex-1 space-y-1.5">
                             <div className="h-2 w-32 max-w-[70%] rounded bg-white/20" />
                             <div className="h-1.5 w-24 rounded bg-white/10" />
@@ -450,7 +450,7 @@ export default function LandingHome() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-1 w-1/3 rounded-full bg-gradient-to-r from-teal-400 to-transparent" />
+                  <div className="h-1 w-1/3 rounded-full" />
                 </CardContent>
               </Card>
             </motion.div>
@@ -566,7 +566,7 @@ export default function LandingHome() {
       <footer className="relative z-10 border-t border-white/[0.08] bg-[#020617] py-12">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 text-sm text-slate-400 md:flex-row">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-teal-400/80 to-teal-700/90">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg">
               <Sparkles className="h-4 w-4 text-white" />
             </div>
             <span className="font-display text-slate-200">Haven OS</span>

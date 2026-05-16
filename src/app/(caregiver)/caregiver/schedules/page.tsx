@@ -106,7 +106,7 @@ export default function CaregiverSchedulesPage() {
         title="Check your published shifts before or after the floor workflow changes."
         description="Use this view to confirm where you are expected next, then return to the shift home or clock if your assignment timing needs attention."
       />
-      <Card className="border-zinc-800 bg-gradient-to-br from-zinc-950 to-zinc-900 text-zinc-100">
+      <Card className="border-zinc-800 text-zinc-100">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-xl">
             <CalendarDays className="h-5 w-5 text-teal-400" />
