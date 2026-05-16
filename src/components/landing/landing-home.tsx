@@ -100,10 +100,10 @@ export default function LandingHome() {
             <div className="flex h-9 w-9 items-center justify-center rounded-xl shadow-lg shadow-teal-500/20 ring-1 ring-white/20">
               <Sparkles className="h-4 w-4 text-white" />
             </div>
-            <span className="font-display text-lg font-semibold tracking-tight text-white">Haven</span>
+            <span className="text-lg font-semibold tracking-tight text-white">Haven</span>
             <Badge
               variant="outline"
-              className="hidden border-teal-500/35 bg-teal-500/10 text-[10px] font-semibold uppercase tracking-widest text-teal-200/90 sm:inline-flex"
+              className="hidden border-teal-500/35 bg-teal-500/10 text-[10px] font-semibold uppercase tracking-wider text-teal-200/90 sm:inline-flex"
             >
               Operations OS
             </Badge>
@@ -176,7 +176,7 @@ export default function LandingHome() {
               variants={fadeUp}
               initial="hidden"
               animate="show"
-              className="font-display text-4xl font-semibold leading-[1.08] tracking-tight text-white sm:text-5xl md:text-6xl lg:text-[3.35rem] xl:text-[3.75rem]"
+              className="text-4xl font-semibold leading-[1.08] tracking-tight text-white sm:text-5xl md:text-6xl lg:text-[3.35rem] xl:text-[3.75rem]"
             >
               One calm layer for{" "}
               <span className="bg-clip-text text-transparent">
@@ -319,7 +319,7 @@ export default function LandingHome() {
                   <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
                 </div>
                 <div className="mx-auto hidden h-6 flex-1 max-w-md items-center justify-center rounded-md border border-white/[0.06] bg-black/20 sm:flex">
-                  <span className="text-[10px] font-medium uppercase tracking-widest text-slate-500">
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
                     app.haven.ops — secure session
                   </span>
                 </div>
@@ -421,7 +421,7 @@ export default function LandingHome() {
             viewport={{ once: true }}
             variants={bentoReveal}
           >
-            <h2 className="font-display text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
               Built for operators who cannot afford drift.
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-400">
@@ -443,7 +443,7 @@ export default function LandingHome() {
                   <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-2xl border border-teal-500/25 bg-teal-500/10">
                     <Activity className="h-6 w-6 text-teal-300" />
                   </div>
-                  <CardTitle className="font-display text-2xl text-white">Clinical velocity</CardTitle>
+                  <CardTitle className="text-2xl text-white font-semibold">Clinical velocity</CardTitle>
                   <CardDescription className="text-base text-slate-400">
                     eMAR-aware flows, bedside-first UX, and incident discipline that stays tied to the resident
                     record.
@@ -467,7 +467,7 @@ export default function LandingHome() {
                   <div className="absolute right-6 top-6 flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-500/25 bg-amber-500/10">
                     <Banknote className="h-5 w-5 text-amber-200" />
                   </div>
-                  <CardTitle className="font-display max-w-md text-2xl text-white">
+                  <CardTitle className="max-w-md text-2xl text-white font-semibold">
                     Multi-entity financial clarity
                   </CardTitle>
                   <CardDescription className="max-w-lg text-base text-slate-400">
@@ -509,7 +509,7 @@ export default function LandingHome() {
                   <div className="mb-2 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/15 bg-slate-800/80">
                     <ShieldCheck className="h-5 w-5 text-slate-200" />
                   </div>
-                  <CardTitle className="font-display text-xl text-white">RLS-native</CardTitle>
+                  <CardTitle className="text-xl text-white font-semibold">RLS-native</CardTitle>
                   <CardDescription className="text-slate-400">
                     Policies at the database—roles see the slice they should, auditors see the trail.
                   </CardDescription>
@@ -528,7 +528,7 @@ export default function LandingHome() {
                   <div className="mb-2 flex h-11 w-11 items-center justify-center rounded-2xl border border-rose-500/25 bg-rose-500/10">
                     <Heart className="h-5 w-5 text-rose-300" />
                   </div>
-                  <CardTitle className="font-display text-xl text-white">Family-grade portal</CardTitle>
+                  <CardTitle className="text-xl text-white font-semibold">Family-grade portal</CardTitle>
                   <CardDescription className="text-slate-400">
                     Warm, read-forward experiences for POA and loved ones—care summaries and billing without
                     clinical clutter.
@@ -546,7 +546,7 @@ export default function LandingHome() {
             viewport={{ once: true }}
             variants={bentoReveal}
           >
-            <h3 className="font-display text-2xl font-semibold text-white sm:text-3xl">Start with a focused pilot.</h3>
+            <h3 className="text-2xl font-semibold text-white sm:text-3xl">Start with a focused pilot.</h3>
             <p className="mt-3 text-slate-400">
               We activate one facility pattern at a time so workflows, training, and governance stay sharp.
             </p>
@@ -569,7 +569,7 @@ export default function LandingHome() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg">
               <Sparkles className="h-4 w-4 text-white" />
             </div>
-            <span className="font-display text-slate-200">Haven OS</span>
+            <span className="text-slate-200 font-semibold">Haven OS</span>
           </div>
           <p className="text-center text-slate-300 md:text-left">
             &copy; {new Date().getFullYear()} Circle of Life. All rights reserved.

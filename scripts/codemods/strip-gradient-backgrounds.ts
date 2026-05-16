@@ -82,6 +82,20 @@ async function main() {
       //
       // Walk every StringLiteral / NoSubstitutionTemplateLiteral / TemplateHead-or-Span
       // descendant of the initializer and run the strip on its TEXT value.
+      // Direct StringLiteral initializer (className="...") — has no
+      // descendants, so forEachDescendant skips it. Handle directly.
+      const directStr = initializer.asKind(SyntaxKind.StringLiteral);
+      if (directStr) {
+        const text = directStr.getLiteralText();
+        const { changed, result } = stripGradient(text);
+        if (changed) {
+          directStr.replaceWithText(`"${result.replace(/"/g, '\\"')}"`);
+          strippedAttrs++;
+          fileTouched = true;
+        }
+        return;
+      }
+
       initializer.forEachDescendant((leaf) => {
         const stringLit = leaf.asKind(SyntaxKind.StringLiteral);
         if (stringLit) {

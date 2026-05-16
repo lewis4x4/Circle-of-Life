@@ -63,7 +63,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
     const data = payload[0].payload as GrowthFunnelDatum;
     return (
       <div className="bg-slate-900/90 backdrop-blur-md border border-slate-700/50 p-3 rounded-lg shadow-2xl">
-        <p className="text-xs font-mono text-slate-400 mb-2 uppercase tracking-widest">
+        <p className="text-xs font-mono text-slate-400 mb-2 uppercase tracking-wider">
           {data.stage}
         </p>
         <div className="flex items-center gap-2 mb-1">

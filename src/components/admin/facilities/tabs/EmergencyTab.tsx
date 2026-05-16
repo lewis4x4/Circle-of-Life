@@ -87,7 +87,7 @@ export function EmergencyTab({ facilityId }: EmergencyTabProps) {
         <form onSubmit={handleSubmit} className="rounded-lg border border-slate-200/50 dark:border-white/10 bg-white p-4 space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="text-sm">
-              <span className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">Category</span>
+              <span className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-500 dark:text-slate-400">Category</span>
               <select
                 className="mt-1 w-full rounded border px-2 py-2"
                 value={form.contact_category}
@@ -103,7 +103,7 @@ export function EmergencyTab({ facilityId }: EmergencyTabProps) {
               </select>
             </label>
             <label className="text-sm">
-              <span className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">Name / label</span>
+              <span className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-500 dark:text-slate-400">Name / label</span>
               <input
                 className="mt-1 w-full rounded border px-2 py-2"
                 value={form.contact_name}
@@ -112,7 +112,7 @@ export function EmergencyTab({ facilityId }: EmergencyTabProps) {
               />
             </label>
             <label className="text-sm">
-              <span className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">Primary phone</span>
+              <span className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-500 dark:text-slate-400">Primary phone</span>
               <input
                 className="mt-1 w-full rounded border px-2 py-2"
                 value={form.phone_primary}
@@ -121,7 +121,7 @@ export function EmergencyTab({ facilityId }: EmergencyTabProps) {
               />
             </label>
             <label className="text-sm">
-              <span className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">Secondary phone</span>
+              <span className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-500 dark:text-slate-400">Secondary phone</span>
               <input
                 className="mt-1 w-full rounded border px-2 py-2"
                 value={form.phone_secondary ?? ""}

@@ -25,7 +25,7 @@ export function CaregiverSupportStrip({
     <div className="rounded-[1.5rem] border border-white/5 bg-white/[0.03] px-4 py-4 backdrop-blur-xl shadow-inner">
       <div className="mb-3">
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Shift support</p>
-        <h2 className="mt-1 text-base font-display font-medium text-white">{title}</h2>
+        <h2 className="mt-1 text-base font-medium text-white">{title}</h2>
         <p className="mt-1 text-xs leading-relaxed text-zinc-400">{description}</p>
       </div>
       <div className="flex flex-wrap gap-2">

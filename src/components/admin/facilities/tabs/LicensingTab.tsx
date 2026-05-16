@@ -52,24 +52,24 @@ export function LicensingTab({ facilityId }: LicensingTabProps) {
   return (
     <div className="space-y-8">
       <section className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
-        <h3 className="font-display text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+        <h3 className="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
           <Shield className="h-5 w-5 text-teal-400" />
           AHCA licensing
         </h3>
         <div className="grid gap-4 sm:grid-cols-2 text-sm">
           <div>
-            <p className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">License number</p>
+            <p className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-500 dark:text-slate-400">License number</p>
             <p className="font-medium">
               {licenseNum ?? "—"}
               {licensePending && <PendingBadge />}
             </p>
           </div>
           <div>
-            <p className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">License authority</p>
+            <p className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-500 dark:text-slate-400">License authority</p>
             <p className="font-medium">{facility.license_authority ?? "—"}</p>
           </div>
           <div>
-            <p className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">Last survey result</p>
+            <p className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-500 dark:text-slate-400">Last survey result</p>
             <p className="font-medium">{facility.last_survey_result ?? "—"}</p>
           </div>
         </div>
@@ -79,7 +79,7 @@ export function LicensingTab({ facilityId }: LicensingTabProps) {
       </section>
 
       <section className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
-        <h3 className="font-display text-xl font-semibold text-slate-900 dark:text-white">Care services offered</h3>
+        <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Care services offered</h3>
         <p className="text-sm text-slate-500 dark:text-slate-400">
           COL uses <strong>Enhanced ALF Services</strong> — avoid legacy unit marketing labels in compliance-facing
           outputs (see Haven verification checklist).
@@ -111,7 +111,7 @@ export function LicensingTab({ facilityId }: LicensingTabProps) {
       </section>
 
       <section className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 shadow-sm backdrop-blur-2xl">
-        <h3 className="font-display text-xl font-semibold text-slate-900 dark:text-white mb-4">Survey history</h3>
+        <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">Survey history</h3>
         {surveysLoading ? (
           <Loader2 className="h-6 w-6 animate-spin text-teal-500" />
         ) : surveys.length === 0 ? (
@@ -122,7 +122,7 @@ export function LicensingTab({ facilityId }: LicensingTabProps) {
               <li key={s.id} className="py-3 flex justify-between gap-4 text-sm">
                 <div>
                   <p className="font-medium">{s.survey_date}</p>
-                  <p className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">
+                  <p className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-500 dark:text-slate-400">
                     {s.survey_type} — {s.result}
                   </p>
                 </div>

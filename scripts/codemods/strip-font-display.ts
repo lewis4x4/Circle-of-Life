@@ -72,6 +72,20 @@ async function main() {
       const initializer = attr.getInitializer();
       if (!initializer) return;
 
+      // Direct StringLiteral initializer (className="...") — has no
+      // descendants, so forEachDescendant skips it.
+      const directStr = initializer.asKind(SyntaxKind.StringLiteral);
+      if (directStr) {
+        const text = directStr.getLiteralText();
+        const { changed, result } = rewrite(text);
+        if (changed) {
+          directStr.replaceWithText(`"${result.replace(/"/g, '\\"')}"`);
+          strippedAttrs++;
+          fileTouched = true;
+        }
+        return;
+      }
+
       initializer.forEachDescendant((leaf) => {
         const stringLit = leaf.asKind(SyntaxKind.StringLiteral);
         if (stringLit) {

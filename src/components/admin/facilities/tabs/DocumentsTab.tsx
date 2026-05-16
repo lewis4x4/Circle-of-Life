@@ -154,7 +154,7 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
       {filteredDocuments.length === 0 ? (
         <div className="rounded-lg border border-slate-200/50 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 p-8 text-center">
           <FileText className="h-8 w-8 mx-auto mb-3 text-slate-500 dark:text-slate-400" />
-          <p className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">No documents uploaded</p>
+          <p className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-500 dark:text-slate-400">No documents uploaded</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

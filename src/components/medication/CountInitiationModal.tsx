@@ -273,7 +273,7 @@ export function CountInitiationModal({
         {!showCoSign ? (
           <>
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-lg font-display text-emerald-200">
+              <DialogTitle className="flex items-center gap-2 text-lg text-emerald-200 font-semibold">
                 <Shield className="h-5 w-5 text-emerald-400" />
                 Initiate Controlled Substance Count
               </DialogTitle>
@@ -348,7 +348,7 @@ export function CountInitiationModal({
                         <CardContent className="flex items-center gap-4">
                           <div className="flex-1">
                             <Label className="text-[10px] text-zinc-400">Expected</Label>
-                            <div className="text-lg font-display text-zinc-400">{line.expected}</div>
+                            <div className="text-lg text-zinc-400 font-semibold">{line.expected}</div>
                           </div>
                           <div className="flex-1">
                             <Label className="text-[10px] text-zinc-400">Actual</Label>
@@ -420,7 +420,7 @@ export function CountInitiationModal({
           /* Co-Sign Verification */
           <>
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-lg font-display text-emerald-200">
+              <DialogTitle className="flex items-center gap-2 text-lg text-emerald-200 font-semibold">
                 <Shield className="h-5 w-5 text-emerald-400" />
                 Incoming Staff Verification
               </DialogTitle>
