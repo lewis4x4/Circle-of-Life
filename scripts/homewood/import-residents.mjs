@@ -171,8 +171,8 @@ async function main() {
     process.exit(2);
   }
 
-  // 1) Parse + validate header.
-  const csv = readFileSync(csvPath, "utf8");
+  // 1) Parse + validate header. Strip UTF-8 BOM if Excel/Numbers added one.
+  const csv = readFileSync(csvPath, "utf8").replace(/^﻿/, "");
   const { header, records } = rowsToObjects(parseCsv(csv));
   const missingCols = REQUIRED_COLUMNS.filter((c) => !header.includes(c));
   if (missingCols.length > 0) {
