@@ -321,7 +321,6 @@ export function BillingInvoiceLedger({
   );
 }
 
-
 export function PayerTypeBadge({ payerType }: { payerType: PayerTypeUi }) {
   const map: Record<PayerTypeUi, { label: string; className: string }> = {
     private_pay: { label: "Private Pay", className: "bg-slate-500/20 text-slate-800 dark:bg-slate-800/50 dark:text-slate-300 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2" },

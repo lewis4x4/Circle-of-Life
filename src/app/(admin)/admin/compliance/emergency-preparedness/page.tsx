@@ -858,7 +858,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-
 async function fetchEmergencyChecklistItems(
   supabase: ReturnType<typeof createClient>,
   facilityId: string,
