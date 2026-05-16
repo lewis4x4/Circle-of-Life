@@ -21,6 +21,9 @@ test-results/design-review/screenshots/
 # updates back, so tracking it only pollutes git status. Historical blobs
 # remain in git history; new runs stay untracked.
 test-results/design-review/report.json
+test-results/homewood-launch-html/
+test-results/homewood-launch-output/
+test-results/homewood-launch.json
 
 # next.js
 /.next/
