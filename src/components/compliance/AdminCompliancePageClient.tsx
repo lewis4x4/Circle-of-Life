@@ -29,10 +29,8 @@ import {
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { StatuteCitation } from "@/components/ui/StatuteCitation";
@@ -224,22 +222,14 @@ export function AdminCompliancePageClient({
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full pb-12">
-      <AmbientMatrix
-        hasCriticals={
-          (snapshot?.openDeficiencies ?? 0) > 0 ||
-          (snapshot?.overdueAssessments ?? 0) > 0 ||
-          emergencyItems.some((e) => e.overdue)
-        }
-        primaryClass="bg-indigo-500/10"
-        secondaryClass="bg-red-500/5"
-      />
+      <></>
 
       <div className="relative z-10 space-y-8 max-w-6xl mx-auto">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between py-6">
           <div>
             
             <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
-              Compliance {(emergencyItems.some((e) => e.overdue) || (complianceScore?.percentage ?? 100) < 75) && <PulseDot colorClass="bg-rose-500" />}
+              Compliance {(emergencyItems.some((e) => e.overdue) || (complianceScore?.percentage ?? 100) < 75) && <></>}
             </h1>
             <p className="mt-2 max-w-xl text-sm text-slate-600 dark:text-slate-400">
               Incident reporting aligns with{" "}
@@ -326,7 +316,7 @@ export function AdminCompliancePageClient({
               hoverColor="red"
               badge={
                 !snapLoading && snapshot && snapshot.activeOutbreaks > 0 ? (
-                  <PulseDot colorClass="bg-rose-500" />
+                  <></>
                 ) : null
               }
             />

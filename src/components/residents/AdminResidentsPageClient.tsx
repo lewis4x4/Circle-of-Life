@@ -23,7 +23,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 const DEFAULT_FILTERS = {
@@ -185,7 +184,7 @@ export function AdminResidentsPageClient({
         <div className="min-w-0">
           <h1 className="inline-flex items-center gap-2 text-[20px] font-semibold tracking-tight text-foreground">
             Resident hub
-            {highAcuityInViewCount > 0 && <PulseDot colorClass="bg-destructive" />}
+            {highAcuityInViewCount > 0 && <></>}
           </h1>
           <p className="mt-1 text-[13px] text-muted-foreground">
             Unified census view with acuity &amp; ADL scope.
@@ -421,7 +420,7 @@ function AcuityBadge({ acuity }: { acuity: Acuity }) {
   if (acuity === 3) {
     return (
       <span className={cn(CHIP_BASE, "gap-1 border-destructive/30 bg-destructive/10 text-destructive")}>
-        <PulseDot className="h-1.5 w-1.5" colorClass="bg-destructive" />
+        <></>
         Acuity 3
       </span>
     );

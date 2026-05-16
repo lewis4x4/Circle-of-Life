@@ -27,7 +27,6 @@ import type { Database } from "@/types/database";
 import { triggerFileDownload } from "@/lib/csv-export";
 import { buildTransportRequestsIcs } from "@/lib/transportation/transport-requests-ics";
 import { cn } from "@/lib/utils";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MotionItem, MotionList } from "@/components/ui/motion-list";
 
 /** US-style week strip (Sunday start) — aligns with operator expectations in Florida. */
@@ -236,7 +235,7 @@ export default function TransportationWeekCalendarPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={false} primaryClass="bg-indigo-700/10" secondaryClass="bg-slate-900/10" />
+      <></>
 
       <div className="relative z-10 space-y-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">

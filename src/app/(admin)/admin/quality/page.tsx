@@ -14,11 +14,9 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 type MeasureRow = Database["public"]["Tables"]["quality_measures"]["Row"];
@@ -118,10 +116,7 @@ export default function AdminQualityHubPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full pb-12">
-      <AmbientMatrix hasCriticals={false} 
-        primaryClass="bg-blue-500/5" 
-        secondaryClass="bg-indigo-500/5"
-      />
+      <></>
       <div className="relative z-10 space-y-8 max-w-6xl mx-auto">
       <div>
         
@@ -150,7 +145,7 @@ export default function AdminQualityHubPage() {
       <KineticGrid className="grid-cols-1 sm:grid-cols-3 gap-5" staggerMs={60}>
         <div className="h-[140px]">
           <V2Card className="border-indigo-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]" hoverColor="indigo">
-            <Sparkline colorClass="text-indigo-500" variant={1} />
+            <></>
             <MonolithicWatermark value={loading ? 0 : measures.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
             <div className="relative z-10 flex flex-col h-full justify-between">
               <h3 className="text-[10px] font-mono tracking-wider uppercase text-indigo-600 dark:text-indigo-400">
@@ -162,7 +157,7 @@ export default function AdminQualityHubPage() {
         </div>
         <div className="h-[140px]">
           <V2Card className="border-emerald-500/20 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]" hoverColor="emerald">
-            <Sparkline colorClass="text-emerald-500" variant={3} />
+            <></>
             <MonolithicWatermark value={loading ? 0 : latest.length} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
             <div className="relative z-10 flex flex-col h-full justify-between">
               <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400">
@@ -174,7 +169,7 @@ export default function AdminQualityHubPage() {
         </div>
         <div className="h-[140px]">
           <V2Card className="border-slate-500/20 shadow-[inset_0_0_15px_rgba(100,116,139,0.05)]" hoverColor="slate">
-            <Sparkline colorClass="text-slate-500" variant={4} />
+            <></>
             <MonolithicWatermark value={loading ? 0 : pbjRows.length} className="text-slate-600/5 dark:text-slate-400/5 opacity-50" />
             <div className="relative z-10 flex flex-col h-full justify-between">
               <h3 className="text-[10px] font-mono tracking-wider uppercase text-slate-500 dark:text-slate-400">

@@ -33,9 +33,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 type ComplianceFilter = "all" | "non_compliant" | "compliant";
@@ -289,19 +286,14 @@ export function AdminStaffingConsolePageClient({
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-12">
-      <AmbientMatrix hasCriticals={shiftGaps.length > 0 || certWarnings.length > 0} 
-        primaryClass="bg-rose-700/10"
-        secondaryClass="bg-red-900/10"
-        criticalPrimaryClass="bg-red-700/20"
-        criticalSecondaryClass="bg-rose-900/10"
-      />
+      <></>
       
       <header className="relative z-10 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between shrink-0 pl-1 mb-8">
         <div>
           
           <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
             Workforce Command 
-            {(shiftGaps.length > 0 || certWarnings.length > 0) && <PulseDot colorClass="bg-rose-500" />}
+            {(shiftGaps.length > 0 || certWarnings.length > 0) && <></>}
           </h2>
           <p className="mt-1 text-sm font-mono text-slate-500 dark:text-slate-400">
             Real-time staffing ratio variance, schedule gaps, and compliance warnings.
@@ -361,7 +353,7 @@ export function AdminStaffingConsolePageClient({
         {/* Metric 1: Staffing ratio */}
         <div className="h-[160px]">
           <V2Card hoverColor="blue">
-            <Sparkline colorClass="text-blue-500" variant={3} />
+            <></>
              <div className="relative z-10 flex flex-col h-full justify-between">
                <span className="text-[10px] font-mono tracking-wider uppercase flex items-center gap-2 text-slate-500"><Activity className="w-3.5 h-3.5" /> Current Ratio</span>
                <div>

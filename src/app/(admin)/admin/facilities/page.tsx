@@ -7,7 +7,6 @@ import { FacilityCard } from "@/components/admin/facilities/FacilityCard";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 
 export default function FacilitiesPage() {
   const [search, setSearch] = useState("");
@@ -29,7 +28,7 @@ export default function FacilitiesPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full pb-16">
-      <AmbientMatrix hasCriticals={false} primaryClass="bg-teal-700/10" secondaryClass="bg-slate-900/10" />
+      <></>
 
       <div className="relative z-10 mx-auto max-w-7xl space-y-8 px-4 sm:px-6 xl:px-0">
         <header className="mt-2 flex flex-col gap-6 rounded-lg border border-slate-200/50 bg-white/50 p-6 shadow-sm dark:border-white/5 dark:bg-black/25 sm:p-8 md:flex-row md:items-end md:justify-between">

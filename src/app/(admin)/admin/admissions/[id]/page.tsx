@@ -10,7 +10,6 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { formatColLabel } from "@/lib/col-labels";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -506,7 +505,7 @@ export default function AdminAdmissionCaseDetailPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix />
+      <></>
       
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <AdmissionsHubNav />

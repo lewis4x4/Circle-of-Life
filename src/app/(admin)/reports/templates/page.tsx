@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import { ReportsHubNav } from "@/components/reports/reports-hub-nav";
 import { TemplateCard } from "@/components/reports/template-card";
 import { Input } from "@/components/ui/input";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { PHASE1_TEMPLATE_SEED } from "@/lib/reports/templates";
 
@@ -33,10 +32,7 @@ export default function ReportTemplatesPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={false} 
-        primaryClass="bg-indigo-700/5"
-        secondaryClass="bg-slate-900/5"
-      />
+      <></>
       
       <div className="relative z-10 space-y-6 max-w-7xl mx-auto">
         <ReportsHubNav />

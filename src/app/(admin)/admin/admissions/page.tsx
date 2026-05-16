@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { UserPlus, Home, DoorOpen, MessageCircle, Plus } from "lucide-react";
 
 import { V2Card } from "@/components/ui/moonshot/v2-card";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
@@ -743,7 +742,7 @@ export default function AdminAdmissionsHubPage() {
                     className="flex items-center gap-3 p-4 rounded-lg bg-white border border-slate-100 dark:border-white/5 hover:border-emerald-200 dark:hover:border-emerald-500/30 transition-all duration-300 w-full cursor-pointer group"
                   >
                     <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                      {isNew ? <PulseDot colorClass="bg-emerald-500" /> : <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+                      {isNew ? <></> : <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
@@ -882,7 +881,7 @@ export default function AdminAdmissionsHubPage() {
                     className="flex items-center gap-3 p-4 rounded-lg bg-white border border-slate-100 dark:border-white/5 hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 w-full cursor-pointer group"
                   >
                     <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                      {isPending ? <PulseDot colorClass="bg-rose-500" /> : <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />}
+                      {isPending ? <></> : <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
@@ -985,7 +984,7 @@ export default function AdminAdmissionsHubPage() {
                     className="flex items-center gap-3 p-4 rounded-lg bg-white border border-slate-100 dark:border-white/5 hover:border-rose-200 dark:hover:border-rose-500/30 transition-all duration-300 w-full cursor-pointer group"
                   >
                     <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                      {isDraft ? <PulseDot colorClass="bg-rose-500" /> : <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
+                      {isDraft ? <></> : <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
@@ -1079,7 +1078,7 @@ export default function AdminAdmissionsHubPage() {
                   className="flex items-center gap-3 p-4 rounded-lg bg-white border border-slate-100 dark:border-white/5 hover:border-rose-200 dark:hover:border-rose-500/30 transition-all duration-300 w-full cursor-pointer group"
                 >
                   <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 flex items-center justify-center shrink-0">
-                    <PulseDot colorClass="bg-rose-500" />
+                    <></>
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">

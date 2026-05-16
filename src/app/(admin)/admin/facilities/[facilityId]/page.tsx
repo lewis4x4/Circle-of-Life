@@ -24,8 +24,6 @@ import {
   FACILITY_TAB_LABELS,
   type FacilityTab,
 } from "@/lib/admin/facilities/facility-constants";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
-
 const TABS = FACILITY_TABS.map((id) => ({
   id,
   label: FACILITY_TAB_LABELS[id],
@@ -110,7 +108,7 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
 
   return (
     <>
-      <AmbientMatrix hasCriticals={false} primaryClass="bg-teal-700/5" secondaryClass="bg-slate-900/5" />
+      <></>
       <div className="space-y-6 pt-4 p-6 relative z-10 max-w-7xl mx-auto">
         <Link
           href="/admin/facilities"

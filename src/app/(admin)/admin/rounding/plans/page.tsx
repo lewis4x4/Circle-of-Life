@@ -17,8 +17,6 @@ import {
 import { RoundingHubNav } from "../rounding-hub-nav";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -157,7 +155,7 @@ export default function AdminRoundingPlansPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix primaryClass="bg-indigo-700/10" secondaryClass="bg-cyan-900/10" />
+      <></>
 
       <div className="relative z-10 space-y-6">
         <header className="mb-6 mt-2">
@@ -340,7 +338,7 @@ export default function AdminRoundingPlansPage() {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <Badge variant={plan.status === "active" ? "default" : "outline"} className="text-[10px]">
-                        {plan.status === "active" && <PulseDot colorClass="bg-emerald-400" className="mr-1" />}
+                        {plan.status === "active" && <></>}
                         {plan.status}
                       </Badge>
                     </div>

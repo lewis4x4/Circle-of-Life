@@ -16,7 +16,6 @@ import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { SignaturePad } from "@/components/ui/signature-pad";
 import {
@@ -264,7 +263,7 @@ export default function AdminResidentCarePlanPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix />
+      <></>
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         
         <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">

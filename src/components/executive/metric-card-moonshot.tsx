@@ -14,8 +14,6 @@ import { TrendingUp, TrendingDown, Minus, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type MoonshotColor, getMoonshotColor, getMoonshotDimColor, createGlowShadow } from "@/lib/moonshot-theme";
 import { MonoLabel, MetricValue } from "@/components/ui/moonshot/typography";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
-
 // ── TYPES ──
 
 export type TrendDirection = "up" | "down" | "flat";
@@ -90,11 +88,7 @@ export function MetricCardMoonshot({
       {/* Background Sparkline */}
       {showSparkline && (
         <div className="absolute bottom-0 left-0 right-0 h-20 opacity-15 pointer-events-none">
-          <Sparkline
-            colorClass={`text-[${colorHex}]`}
-            variant={sparklineVariant}
-            className="opacity-100"
-          />
+          <></>
         </div>
       )}
 

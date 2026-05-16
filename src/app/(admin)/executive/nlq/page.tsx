@@ -11,7 +11,6 @@ import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import { ArrowLeft, Send, Loader2, Brain, Sparkles, MessageSquare, RotateCcw } from "lucide-react";
 import { TitleH1, Subtitle } from "@/components/ui/moonshot/typography";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { cn } from "@/lib/utils";
@@ -135,7 +134,7 @@ export default function ExecutiveNlqPage() {
   if (initialLoading) {
     return (
       <div className="relative min-h-[calc(100vh-64px)] w-full flex items-center justify-center">
-        <AmbientMatrix />
+        <></>
         <Loader2 className="w-6 h-6 text-indigo-400 animate-spin" />
       </div>
     );
@@ -144,7 +143,7 @@ export default function ExecutiveNlqPage() {
   if (!canUse) {
     return (
       <div className="relative min-h-[calc(100vh-64px)] w-full flex items-center justify-center">
-        <AmbientMatrix />
+        <></>
         <div className="text-center p-12">
           <p className="text-amber-400 text-sm font-medium">Haven Insight is available to organization owners and org admins.</p>
         </div>
@@ -154,7 +153,7 @@ export default function ExecutiveNlqPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full flex flex-col">
-      <AmbientMatrix primaryClass="bg-violet-900/10" secondaryClass="bg-indigo-900/10" />
+      <></>
 
       <div className="relative z-10 flex flex-col flex-1">
         {/* Header */}

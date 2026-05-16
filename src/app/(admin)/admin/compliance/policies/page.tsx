@@ -9,7 +9,6 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { format, parseISO } from "date-fns";
 
 type Row = {
@@ -55,10 +54,7 @@ export default function PoliciesListPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={false} 
-        primaryClass="bg-indigo-700/10"
-        secondaryClass="bg-slate-500/10"
-      />
+      <></>
       
       <div className="relative z-10 space-y-6 max-w-5xl mx-auto">
         <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">

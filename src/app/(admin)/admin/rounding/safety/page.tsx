@@ -11,7 +11,6 @@ import { ArrowLeft, Shield, TrendingDown, TrendingUp, Minus, Loader2 } from "luc
 import { createClient } from "@/lib/supabase/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { SafetyScoreBadge } from "@/components/rounding/SafetyScoreBadge";
 import { cn } from "@/lib/utils";
 
@@ -72,7 +71,7 @@ export default function SafetyScoresPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full">
-      <AmbientMatrix primaryClass="bg-rose-900/5" secondaryClass="bg-teal-900/5" />
+      <></>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         <Link href="/admin/rounding" className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors">

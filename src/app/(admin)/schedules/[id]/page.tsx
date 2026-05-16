@@ -23,10 +23,6 @@ import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
-
 type ShiftAssignmentRow = Database["public"]["Tables"]["shift_assignments"]["Row"];
 type ScheduleRow = Database["public"]["Tables"]["schedules"]["Row"];
 
@@ -235,11 +231,7 @@ export default function AdminScheduleWeekDetailPage() {
 
   return (
     <div className="relative min-h-[70vh]">
-      <AmbientMatrix
-        hasCriticals={false}
-        primaryClass="bg-indigo-700/10"
-        secondaryClass="bg-blue-900/10"
-      />
+      <></>
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         <div>
           <Link
@@ -285,7 +277,7 @@ export default function AdminScheduleWeekDetailPage() {
               <MonolithicWatermark value={rows.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
               <div className="relative z-10 flex h-full flex-col justify-center">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
-                  <PulseDot className="text-indigo-500" /> Shift assignments
+                  <></> Shift assignments
                 </h3>
                 <p className="text-3xl font-mono tracking-tighter text-indigo-600 dark:text-indigo-400 pb-1">
                   {rows.length}
@@ -298,7 +290,7 @@ export default function AdminScheduleWeekDetailPage() {
             <V2Card hoverColor="blue" className="p-5 lg:p-6">
               <div className="relative z-10 flex h-full w-full flex-col justify-center">
                 <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-2">Export</p>
-                <Sparkline />
+                <></>
               </div>
             </V2Card>
           </div>

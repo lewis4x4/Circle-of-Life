@@ -9,12 +9,9 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
 
 export default function AdminInfectionControlHubPage() {
   const { selectedFacilityId } = useFacilityStore();
@@ -76,17 +73,14 @@ export default function AdminInfectionControlHubPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full pb-12">
-      <AmbientMatrix hasCriticals={activeOut > 0} 
-        primaryClass="bg-red-500/10" 
-        secondaryClass="bg-orange-500/10"
-      />
+      <></>
 
       <div className="relative z-10 space-y-6 max-w-6xl mx-auto">
         <header className="mb-8 flex items-start justify-between">
           <div>
             
             <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
-              Infection Control {activeOut > 0 && <PulseDot colorClass="bg-red-500" />}
+              Infection Control {activeOut > 0 && <></>}
             </h2>
           </div>
         </header>
@@ -94,7 +88,7 @@ export default function AdminInfectionControlHubPage() {
         <KineticGrid className="grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px]">
             <V2Card className="border-red-500/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]" hoverColor="red">
-              <Sparkline colorClass="text-red-500" variant={2} />
+              <></>
               <MonolithicWatermark value={loading ? 0 : activeInf} className="text-red-600/5 dark:text-red-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-red-600 dark:text-red-400 flex items-center gap-2">
@@ -107,14 +101,14 @@ export default function AdminInfectionControlHubPage() {
 
           <div className="h-[160px]">
             <V2Card className={activeOut > 0 ? "border-amber-500/30 shadow-[inset_0_0_20px_rgba(245,158,11,0.1)]" : "border-slate-500/20"} hoverColor="amber">
-              <Sparkline colorClass="text-amber-500" variant={3} />
+              <></>
               <MonolithicWatermark value={loading ? 0 : activeOut} className="text-amber-600/5 dark:text-amber-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <div className="flex items-center justify-between">
                   <h3 className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
                      Active Outbreaks
                   </h3>
-                  {activeOut > 0 && <PulseDot colorClass="bg-amber-500" />}
+                  {activeOut > 0 && <></>}
                 </div>
                 <p className="text-4xl font-mono tracking-tighter text-amber-600 dark:text-amber-400 pb-1">{loading ? "—" : activeOut}</p>
               </div>
@@ -123,7 +117,7 @@ export default function AdminInfectionControlHubPage() {
 
           <div className="h-[160px]">
             <V2Card hoverColor="blue" className="border-blue-500/20 shadow-[inset_0_0_15px_rgba(59,130,246,0.05)]">
-              <Sparkline colorClass="text-blue-500" variant={1} />
+              <></>
               <MonolithicWatermark value={loading ? 0 : openAlerts} className="text-blue-600/5 dark:text-blue-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-blue-600 dark:text-blue-400">
@@ -136,7 +130,7 @@ export default function AdminInfectionControlHubPage() {
 
           <div className="h-[160px]">
             <V2Card hoverColor="slate" className="border-slate-500/20 shadow-[inset_0_0_15px_rgba(100,116,139,0.05)]">
-              <Sparkline colorClass="text-slate-500" variant={4} />
+              <></>
               <MonolithicWatermark value={loading ? 0 : staffOut} className="text-slate-600/5 dark:text-slate-400/5 opacity-30" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-slate-500 dark:text-slate-400">

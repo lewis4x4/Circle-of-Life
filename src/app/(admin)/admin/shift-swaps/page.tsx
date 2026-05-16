@@ -20,10 +20,8 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 
 type SwapRowDb = Database["public"]["Tables"]["shift_swap_requests"]["Row"];
@@ -319,13 +317,13 @@ export default function AdminShiftSwapsPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={false} primaryClass="bg-indigo-700/10" secondaryClass="bg-blue-900/10" />
+      <></>
 
       <div className="relative z-10 space-y-6">
         <header className="mb-6">
           
           <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
-            Shift swaps {pendingCount > 0 ? <PulseDot colorClass="bg-amber-500" /> : null}
+            Shift swaps {pendingCount > 0 ? <></> : null}
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-2xl">
             Oversight queue for COL’s shift swap workflow. Pending requests can be approved or denied when your role

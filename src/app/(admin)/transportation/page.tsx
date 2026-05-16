@@ -22,11 +22,7 @@ import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
-
 type FleetRow = Database["public"]["Tables"]["fleet_vehicles"]["Row"];
 type InspectionRow = Database["public"]["Tables"]["vehicle_inspection_logs"]["Row"] & {
   fleet_vehicles: { name: string } | null;
@@ -379,10 +375,7 @@ export default function AdminTransportationHubPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={hasCriticalAlerts} 
-        primaryClass="bg-indigo-700/10"
-        secondaryClass="bg-slate-900/10"
-      />
+      <></>
       
       <div className="relative z-10 space-y-6">
         
@@ -392,7 +385,7 @@ export default function AdminTransportationHubPage() {
              
              <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
                 Fleet Operations
-                {hasCriticalAlerts && <PulseDot colorClass="bg-rose-500" />}
+                {hasCriticalAlerts && <></>}
              </h1>
              <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
                Manage facility transport requests, fleet inspections, and driver compliance all in one view.
@@ -441,7 +434,7 @@ export default function AdminTransportationHubPage() {
         <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px] lg:col-span-2">
             <V2Card hoverColor="indigo" className="border-indigo-500/20 dark:border-indigo-500/20 shadow-[0_8px_30px_rgba(99,102,241,0.05)]">
-              <Sparkline colorClass="text-indigo-500" variant={3} />
+              <></>
               <MonolithicWatermark value={fleet.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between p-2">
                 <h3 className="text-[11px] font-bold tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
@@ -453,7 +446,7 @@ export default function AdminTransportationHubPage() {
           </div>
           <div className="h-[160px] lg:col-span-2">
             <V2Card hoverColor="emerald" className="border-emerald-500/20 dark:border-emerald-500/20 shadow-[0_8px_30px_rgba(16,185,129,0.05)]">
-              <Sparkline colorClass="text-emerald-500" variant={1} />
+              <></>
               <MonolithicWatermark value={drivers.length} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between p-2">
                 <h3 className="text-[11px] font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
@@ -470,7 +463,7 @@ export default function AdminTransportationHubPage() {
           <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between px-2 text-slate-800 dark:text-slate-200">
             <div>
               <h3 className="text-[14px] font-bold uppercase tracking-wider flex items-center gap-2">
-                <PulseDot colorClass="bg-indigo-500" />
+                <></>
                 Upcoming Resident Transport
               </h3>
               <p className="mt-2 text-sm font-medium text-slate-500 dark:text-slate-400">

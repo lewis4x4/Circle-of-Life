@@ -18,8 +18,6 @@ import {
 import { RoundingHubNav } from "./rounding-hub-nav";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
@@ -161,11 +159,7 @@ export default function AdminRoundingHubPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix
-        hasCriticals={hasUrgent}
-        primaryClass="bg-cyan-700/10"
-        secondaryClass="bg-emerald-900/10"
-      />
+      <></>
 
       <div className="relative z-10 space-y-6">
         
@@ -175,7 +169,7 @@ export default function AdminRoundingHubPage() {
              
              <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
                 Resident Assurance
-                {hasUrgent && <PulseDot colorClass="bg-rose-500" />}
+                {hasUrgent && <></>}
              </h1>
              <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
                Live rounding visibility, observation plans, and compliance reporting.
@@ -221,7 +215,7 @@ export default function AdminRoundingHubPage() {
             <div className="flex items-center gap-4">
               {summary.urgentTasks > 0 && (
                 <span className="flex items-center gap-2 rounded-full bg-rose-500/20 px-4 py-1.5 text-xs font-mono font-bold uppercase tracking-wider text-rose-300 border border-rose-500/30">
-                  <PulseDot colorClass="bg-rose-400" />
+                  <></>
                   {summary.urgentTasks} urgent
                 </span>
               )}
@@ -391,7 +385,7 @@ function MetricV2({
         <div className="relative z-10 flex flex-col h-full justify-between">
           <h3 className={cn("text-[11px] font-bold tracking-wider uppercase flex items-center gap-2", labelColor)}>
             {label}
-            {pulse && <PulseDot colorClass="bg-rose-500" />}
+            {pulse && <></>}
           </h3>
           <p className={cn("text-2xl tracking-tight font-medium pb-2", labelColor)}>{value}</p>
         </div>

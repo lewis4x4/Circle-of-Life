@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 
 import { RoundingHubNav } from "../rounding-hub-nav";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -338,11 +337,7 @@ export default function ResidentAssuranceWatchCenterPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix
-        hasCriticals={summary.pendingApprovals > 0 || summary.overdueTasks > 0}
-        primaryClass="bg-amber-700/10"
-        secondaryClass="bg-cyan-900/10"
-      />
+      <></>
 
       <div className="relative z-10 space-y-6">
         <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">

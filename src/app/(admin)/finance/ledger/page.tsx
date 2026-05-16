@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { FinanceHubNav } from "../finance-hub-nav";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { ArrowRight, CircleDollarSign } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -55,7 +54,7 @@ export default function LedgerPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix />
+      <></>
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <FinanceHubNav />
         

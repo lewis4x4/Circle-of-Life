@@ -6,8 +6,6 @@ import { useCallback, useEffect, useState } from "react";
 import { InsuranceHubNav } from "../insurance-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
@@ -55,17 +53,14 @@ export default function InsuranceClaimsPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={rows.some(r => r.status !== "closed")} 
-        primaryClass="bg-red-700/10"
-        secondaryClass="bg-blue-500/10"
-      />
+      <></>
       
       <div className="relative z-10 space-y-6 max-w-5xl mx-auto">
         <InsuranceHubNav />
         <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
           <div className="space-y-2">
             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-              Insurance Claims {rows.some(r => r.status !== "closed") && <PulseDot colorClass="bg-red-500" />}
+              Insurance Claims {rows.some(r => r.status !== "closed") && <></>}
             </h1>
             <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
               Corporate GL claims; optional link to incidents when applicable.

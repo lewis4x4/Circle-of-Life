@@ -9,7 +9,6 @@ import { TitleH1, Subtitle } from "@/components/ui/moonshot/typography";
 import { ExecutiveNavV2 } from "@/components/executive/executive-nav-v2";
 import { MetricCardMoonshot } from "@/components/executive/metric-card-moonshot";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { CFO_PALETTE } from "@/lib/moonshot-theme";
 import { cn } from "@/lib/utils";
 import { useExecRoleKpis } from "@/hooks/useExecRoleKpis";
@@ -109,7 +108,7 @@ export default function CfoDashboardPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full">
-      <AmbientMatrix primaryClass="bg-indigo-900/10" secondaryClass="bg-amber-900/10" />
+      <></>
       <div className="relative z-10">
         <div className="border-b border-white/5">
           <ExecutiveNavV2

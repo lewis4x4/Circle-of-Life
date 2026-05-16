@@ -9,8 +9,6 @@ import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 
 const DAYS = 90;
@@ -96,10 +94,7 @@ export default function AdminIncidentTrendsPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={stats.open > 0} 
-        primaryClass="bg-indigo-700/10"
-        secondaryClass="bg-rose-500/10"
-      />
+      <></>
       
       <div className="relative z-10 space-y-6 max-w-5xl mx-auto">
         <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
@@ -108,7 +103,7 @@ export default function AdminIncidentTrendsPage() {
               ← Incident queue
             </Link>
             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-              Incident Trends {stats.open > 0 && <PulseDot colorClass="bg-rose-500" />}
+              Incident Trends {stats.open > 0 && <></>}
             </h1>
             <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
               Last {DAYS} days scoped to your facility selection.

@@ -10,9 +10,6 @@ import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { ArrowRight } from "lucide-react";
 
@@ -84,10 +81,7 @@ export default function AdminVendorsHubPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={openAlerts ? openAlerts > 0 : false} 
-        primaryClass="bg-indigo-700/10"
-        secondaryClass="bg-amber-900/10"
-      />
+      <></>
       
       <div className="relative z-10 space-y-6">
         <VendorHubNav />
@@ -113,7 +107,7 @@ export default function AdminVendorsHubPage() {
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4" staggerMs={75}>
           <div className="h-[160px]">
             <V2Card hoverColor="slate">
-              <Sparkline colorClass="text-slate-400" variant={1} />
+              <></>
               <MonolithicWatermark value={vendorCount ?? 0} className="text-slate-800/5 dark:text-white/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-slate-500 flex items-center gap-2">
@@ -125,14 +119,14 @@ export default function AdminVendorsHubPage() {
           </div>
           <div className="h-[160px]">
             <V2Card hoverColor="amber" className={openAlerts ? "border-amber-500/20 shadow-[inset_0_0_15px_rgba(245,158,11,0.05)]" : ""}>
-              <Sparkline colorClass="text-amber-500" variant={2} />
+              <></>
               <MonolithicWatermark value={openAlerts ?? 0} className="text-amber-600/5 dark:text-amber-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <div className="flex items-center justify-between">
                   <h3 className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
                      Open Contract Alerts
                   </h3>
-                  {openAlerts != null && openAlerts > 0 && <PulseDot colorClass="bg-amber-500" />}
+                  {openAlerts != null && openAlerts > 0 && <></>}
                 </div>
                 <p className="text-4xl font-mono tracking-tighter text-amber-600 dark:text-amber-400 pb-1">{loading ? "…" : openAlerts ?? "—"}</p>
               </div>
@@ -140,7 +134,7 @@ export default function AdminVendorsHubPage() {
           </div>
           <div className="h-[160px]">
             <V2Card hoverColor="emerald">
-              <Sparkline colorClass="text-emerald-500" variant={3} />
+              <></>
               <MonolithicWatermark value={mtdSpend ? "$" : ""} className="text-emerald-600/5 dark:text-emerald-400/5 text-4xl opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">

@@ -37,7 +37,6 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 const CHART_COLORS = {
   indigo: "#6366f1",
@@ -173,7 +172,7 @@ export default function DeficienciesAnalysisPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full pb-12">
-      <AmbientMatrix primaryClass="bg-indigo-500/10" />
+      <></>
 
       <div className="relative z-10 space-y-8 max-w-7xl mx-auto">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between py-6">

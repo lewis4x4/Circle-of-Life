@@ -15,7 +15,6 @@ import {
   ComposedChart, Line, Legend, BarChart, Bar,
 } from "recharts";
 import { TitleH1, Subtitle } from "@/components/ui/moonshot/typography";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MetricCardMoonshot } from "@/components/executive/metric-card-moonshot";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { cn } from "@/lib/utils";
@@ -157,7 +156,7 @@ export default function ExecutiveScenariosPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full">
-      <AmbientMatrix primaryClass="bg-amber-900/10" secondaryClass="bg-indigo-900/10" />
+      <></>
 
       <div className="relative z-10">
         <header className="px-6 sm:px-12 py-8">

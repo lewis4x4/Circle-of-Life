@@ -10,8 +10,6 @@ import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 type FinanceOverviewPageClientProps = {
@@ -29,10 +27,7 @@ export default function AdminFinanceHubPageClient({
 }: FinanceOverviewPageClientProps) {
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={unpostedInvoices ? unpostedInvoices > 0 : false} 
-        primaryClass="bg-emerald-700/10"
-        secondaryClass="bg-slate-900/10"
-      />
+      <></>
       
       <div className="relative z-10 space-y-6">
         <FinanceHubNav />
@@ -129,7 +124,7 @@ export default function AdminFinanceHubPageClient({
                   <h3 className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
                      Unposted Invoices
                   </h3>
-                  {unpostedInvoices != null && unpostedInvoices > 0 && <PulseDot colorClass="bg-amber-500" />}
+                  {unpostedInvoices != null && unpostedInvoices > 0 && <></>}
                 </div>
                 <div>
                   <p className="text-4xl font-mono tracking-tighter text-amber-600 dark:text-amber-400 pb-1">{unpostedInvoices ?? "—"}</p>

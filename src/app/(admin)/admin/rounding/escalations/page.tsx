@@ -6,7 +6,6 @@ import Link from "next/link";
 import { AlertTriangle, ArrowRight, CheckCircle2, Clock3, Loader2, ShieldAlert, XCircle } from "lucide-react";
 
 import { RoundingHubNav } from "../rounding-hub-nav";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
 import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -244,11 +243,7 @@ export default function RoundingEscalationsPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix
-        hasCriticals={counts.open > 0}
-        primaryClass="bg-rose-700/10"
-        secondaryClass="bg-amber-900/10"
-      />
+      <></>
 
       <div className="relative z-10 space-y-6">
         <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">

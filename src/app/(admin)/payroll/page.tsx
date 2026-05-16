@@ -17,9 +17,6 @@ import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
-
 type BatchRow = Database["public"]["Tables"]["payroll_export_batches"]["Row"];
 type PayrollBatchStatus = Database["public"]["Enums"]["payroll_export_batch_status"];
 
@@ -162,10 +159,7 @@ export default function AdminPayrollHubPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={false} 
-        primaryClass="bg-emerald-700/10"
-        secondaryClass="bg-slate-900/10"
-      />
+      <></>
       
       <div className="relative z-10 space-y-6">
         <header className="mb-8">
@@ -180,7 +174,7 @@ export default function AdminPayrollHubPage() {
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px]">
             <V2Card hoverColor="emerald" className="border-emerald-500/20 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]">
-              <Sparkline colorClass="text-emerald-500" variant={3} />
+              <></>
               <MonolithicWatermark value={displayRows.length} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">

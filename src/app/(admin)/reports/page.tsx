@@ -30,10 +30,7 @@ import { cn } from "@/lib/utils";
 
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { V2Card } from "@/components/ui/moonshot/v2-card";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
-
 const DISPLAY_TZ = "America/New_York";
 
 type CountCard = {
@@ -262,7 +259,7 @@ export default function ReportsOverviewPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-8 pb-16">
-      <AmbientMatrix hasCriticals={false} primaryClass="bg-indigo-700/10" secondaryClass="bg-slate-900/10" />
+      <></>
 
       <div className="relative z-10 mx-auto max-w-7xl space-y-8 px-4 sm:px-6 xl:px-0">
         <ReportsHubNav />
@@ -326,7 +323,7 @@ export default function ReportsOverviewPage() {
                   hoverColor={colorName}
                   className="flex flex-col h-full bg-card p-5 rounded-lg border border-white/20 dark:border-white/5 shadow-xl transition-all hover:-translate-y-1 overflow-hidden"
                 >
-                  <Sparkline colorClass={`text-${colorName}-500`} variant={card.variant} />
+                  <></>
                   <MonolithicWatermark value={loading ? 0 : card.value} className="opacity-40" />
 
                   <div className="relative z-10 flex flex-col h-full justify-between">
