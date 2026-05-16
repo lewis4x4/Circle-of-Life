@@ -1,31 +1,35 @@
 #!/usr/bin/env node
 /**
- * Homewood Lodge ALF — staff auth provisioning.
+ * Homewood Lodge ALF — staff auth invite.
  *
  * For each `staff` row at Homewood with `user_id IS NULL`:
- *   1. Create an `auth.users` row with the staff's email (or generate a
- *      `firstname.lastname@homewoodlodge.local` placeholder), the password
- *      from `HOMEWOOD_LAUNCH_PASSWORD`, `email_confirm = true`, and
- *      `app_metadata.app_role` mapped from `staff.staff_role`.
- *   2. Update `staff.user_id` to the new auth user's id.
- *   3. Create a `user_facility_access` grant for the Homewood facility
- *      (so the staff can actually see Homewood data after sign-in).
+ *   1. Send a Supabase invite email — the employee clicks the link in
+ *      their inbox and sets their own password on first sign-in.
+ *   2. Set `app_metadata.app_role` on the freshly-invited user, mapped
+ *      from `staff.staff_role`.
+ *   3. Update `staff.user_id` to the new auth user's id.
+ *   4. Grant `user_facility_access` for the Homewood facility (so the
+ *      employee actually sees Homewood data after they sign in).
+ *
+ * No shared launch password. Each employee owns their credentials.
  *
  * Idempotent — rows where `user_id` is already set are skipped. If
- * `createUser` reports "user already registered", the script looks up the
- * existing user by email and links it.
+ * Supabase reports the email is already invited/registered, the script
+ * links the existing user instead of failing.
  *
  * Usage:
- *   npm run homewood:provision-staff -- --dry-run
- *   npm run homewood:provision-staff
+ *   npm run homewood:provision-staff -- --dry-run    # preview, no emails sent
+ *   npm run homewood:provision-staff                 # send invite emails
  *
  * Required env (auto-loaded from .env.local):
  *   NEXT_PUBLIC_SUPABASE_URL
  *   SUPABASE_SERVICE_ROLE_KEY
- *   HOMEWOOD_LAUNCH_PASSWORD
  *
  * Optional env:
  *   HOMEWOOD_FACILITY_ID (default: 00000000-0000-0000-0002-000000000003)
+ *   INVITE_REDIRECT_TO   (URL the invite link points to — defaults to the
+ *                         Supabase project's site URL configured in the
+ *                         Supabase dashboard)
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -38,10 +42,8 @@ const DEFAULT_HOMEWOOD_FACILITY_ID = "00000000-0000-0000-0002-000000000003";
 const LOG_PATH = path.join(ROOT, "docs", "homewood", "STAFF_PROVISIONING_LOG.md");
 
 /**
- * staff.staff_role enum values seen at Homewood today and how they map to
- * the application's `app_role` enum. Update this map deliberately, never
- * silently — every value the staff table contains MUST appear here or the
- * script halts on first encounter rather than guessing.
+ * staff.staff_role → app_role. Update this map deliberately, never
+ * silently — the script halts if it encounters a value not in this table.
  */
 const STAFF_ROLE_TO_APP_ROLE = {
   administrator: "facility_admin",
@@ -84,12 +86,7 @@ function requireEnv(...names) {
   throw new Error(`Missing required env var: ${names.join(" or ")}`);
 }
 
-/**
- * Redact an email for the committed log so personal addresses
- * (gmail/icloud/yahoo of real employees) don't end up in git history.
- * Keeps the local-name's first 2 chars + the full domain so the row is
- * still identifiable in a review without exposing the full address.
- */
+/** Redact email for the committed log so personal addresses don't end up in git history. */
 function redactEmail(email) {
   if (!email || typeof email !== "string") return email;
   const at = email.indexOf("@");
@@ -100,12 +97,6 @@ function redactEmail(email) {
   return `${keep}${"*".repeat(Math.max(1, local.length - keep.length))}${domain}`;
 }
 
-function placeholderEmail(staff) {
-  const f = (staff.first_name ?? "").toLowerCase().replace(/[^a-z]/g, "");
-  const l = (staff.last_name ?? "").toLowerCase().replace(/[^a-z]/g, "");
-  return `${f}.${l}@homewoodlodge.local`;
-}
-
 function safeMessage(err) {
   if (!err) return "";
   if (typeof err === "string") return err;
@@ -113,7 +104,6 @@ function safeMessage(err) {
 }
 
 async function findUserByEmail(supa, email) {
-  // No direct admin "get by email" — paginate listUsers and filter.
   let page = 1;
   while (page < 50) {
     const { data, error } = await supa.auth.admin.listUsers({ page, perPage: 200 });
@@ -132,12 +122,13 @@ async function main() {
 
   const url = requireEnv("SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL");
   const serviceKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
-  const password = requireEnv("HOMEWOOD_LAUNCH_PASSWORD", "PHASE1_DEMO_PASSWORD");
   const facilityId = process.env.HOMEWOOD_FACILITY_ID?.trim() || DEFAULT_HOMEWOOD_FACILITY_ID;
+  const redirectTo = process.env.INVITE_REDIRECT_TO?.trim() || undefined;
 
   const supa = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
-  console.log(`[homewood:provision-staff] mode: ${dryRun ? "DRY-RUN" : "WRITE"}  facility: ${facilityId}`);
+  console.log(`[homewood:provision-staff] mode: ${dryRun ? "DRY-RUN" : "INVITE"}  facility: ${facilityId}`);
+  if (!dryRun) console.log(`[homewood:provision-staff] invites will be sent via Supabase Auth email${redirectTo ? ` (redirect: ${redirectTo})` : ""}.`);
 
   const { data: facility, error: ferr } = await supa
     .from("facilities")
@@ -174,10 +165,20 @@ async function main() {
     process.exit(1);
   }
 
+  // Pre-flight: every staff row must have a real email. No placeholder
+  // domain hack — without an email we can't send an invite.
+  const noEmail = staffRows.filter((s) => !s.email || s.email.trim() === "");
+  if (noEmail.length > 0) {
+    console.error(`[homewood:provision-staff] FAIL: ${noEmail.length} staff rows have no email; can't send an invite.`);
+    for (const s of noEmail) console.error(`  - ${s.id}  ${s.first_name} ${s.last_name}  (${s.staff_role})`);
+    console.error("  Populate staff.email for these rows before re-running.");
+    process.exit(1);
+  }
+
   const results = [];
   for (const staff of staffRows) {
     const fullName = `${staff.first_name} ${staff.last_name}`;
-    const email = (staff.email && staff.email.trim()) || placeholderEmail(staff);
+    const email = staff.email.trim();
     const appRole = STAFF_ROLE_TO_APP_ROLE[staff.staff_role];
     const result = {
       staff_id: staff.id,
@@ -190,73 +191,71 @@ async function main() {
     };
 
     if (dryRun) {
-      result.action = "DRY-WOULD-PROVISION";
-      result.reason = `app_role=${appRole}; password from HOMEWOOD_LAUNCH_PASSWORD; grant facility access`;
+      result.action = "DRY-WOULD-INVITE";
+      result.reason = `app_role=${appRole}; would email invite to ${redactEmail(email)}`;
       results.push(result);
       continue;
     }
 
-    // 1) Create or look up auth user
-    let userId;
-    const createResult = await supa.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      app_metadata: { app_role: appRole },
-      user_metadata: { full_name: fullName, source: "homewood-provision-staff" },
+    // 1) Send invite — Supabase creates the auth.users row and emails the link.
+    let userId = null;
+    const inviteResult = await supa.auth.admin.inviteUserByEmail(email, {
+      data: { full_name: fullName, source: "homewood-provision-staff" },
+      ...(redirectTo ? { redirectTo } : {}),
     });
-    if (createResult.error) {
-      const msg = safeMessage(createResult.error).toLowerCase();
-      if (msg.includes("already") && (msg.includes("registered") || msg.includes("exists"))) {
+    if (inviteResult.error) {
+      const msg = safeMessage(inviteResult.error).toLowerCase();
+      if (msg.includes("already") && (msg.includes("registered") || msg.includes("exists") || msg.includes("invited"))) {
         const existing = await findUserByEmail(supa, email).catch((e) => {
           throw new Error(`existing-user lookup failed: ${safeMessage(e)}`);
         });
         if (!existing) {
           result.action = "FAILED";
-          result.reason = `createUser said already-registered but lookup found nothing`;
+          result.reason = "Supabase said already-registered but lookup found nothing";
           results.push(result);
           continue;
         }
         userId = existing.id;
-        // Update app_role on existing user if it's wrong
-        if (existing.app_metadata?.app_role !== appRole) {
-          const upd = await supa.auth.admin.updateUserById(userId, { app_metadata: { ...existing.app_metadata, app_role: appRole } });
-          if (upd.error) {
-            result.action = "FAILED";
-            result.reason = `existing user found but updateUserById failed: ${safeMessage(upd.error)}`;
-            results.push(result);
-            continue;
-          }
-        }
         result.action = "LINKED-EXISTING";
       } else {
         result.action = "FAILED";
-        result.reason = `createUser error: ${safeMessage(createResult.error)}`;
+        result.reason = `invite error: ${safeMessage(inviteResult.error)}`;
         results.push(result);
         continue;
       }
     } else {
-      userId = createResult.data.user?.id;
-      result.action = "CREATED";
+      userId = inviteResult.data.user?.id;
+      result.action = "INVITED";
     }
 
     if (!userId) {
       result.action = "FAILED";
-      result.reason = "no user id after create/link";
+      result.reason = "no user id after invite/link";
       results.push(result);
       continue;
     }
 
-    // 2) Update staff.user_id
-    const upd = await supa.from("staff").update({ user_id: userId }).eq("id", staff.id);
-    if (upd.error) {
+    // 2) Set app_role
+    const roleUpd = await supa.auth.admin.updateUserById(userId, {
+      app_metadata: { app_role: appRole },
+    });
+    if (roleUpd.error) {
       result.action = "FAILED";
-      result.reason = `staff.user_id update error: ${safeMessage(upd.error)}`;
+      result.reason = `app_role set error: ${safeMessage(roleUpd.error)}`;
       results.push(result);
       continue;
     }
 
-    // 3) Grant facility access (idempotent — upsert)
+    // 3) Link staff row
+    const staffUpd = await supa.from("staff").update({ user_id: userId }).eq("id", staff.id);
+    if (staffUpd.error) {
+      result.action = "FAILED";
+      result.reason = `staff.user_id update error: ${safeMessage(staffUpd.error)}`;
+      results.push(result);
+      continue;
+    }
+
+    // 4) Grant facility access
     const { data: existingGrant } = await supa
       .from("user_facility_access")
       .select("id")
@@ -272,8 +271,8 @@ async function main() {
         is_primary: true,
       });
       if (grant.error) {
-        result.action = result.action === "CREATED" ? "PARTIAL-NO-ACCESS" : "PARTIAL-NO-ACCESS";
-        result.reason = `user created + linked but facility access insert failed: ${safeMessage(grant.error)}`;
+        result.action = "PARTIAL-NO-ACCESS";
+        result.reason = `invited + linked but facility access insert failed: ${safeMessage(grant.error)}`;
         results.push(result);
         continue;
       }
@@ -292,11 +291,12 @@ async function main() {
   const lines = [];
   lines.push(`# Homewood — Staff Auth Provisioning Log`);
   lines.push("");
-  lines.push(`_Generated: \`${new Date().toISOString()}\` — mode: **${dryRun ? "DRY-RUN" : "WRITE"}**_`);
+  lines.push(`_Generated: \`${new Date().toISOString()}\` — mode: **${dryRun ? "DRY-RUN" : "INVITE"}**_`);
   lines.push("");
   lines.push(`- Facility: \`${facility.name}\` (${facilityId})`);
   lines.push(`- Organization: \`${organizationId}\``);
   lines.push(`- Source: \`staff\` rows where \`user_id IS NULL\` AND \`deleted_at IS NULL\``);
+  lines.push(`- Flow: Supabase \`inviteUserByEmail\` — each employee clicks the link in their inbox and sets their own password on first sign-in. No shared launch password.`);
   lines.push("");
   lines.push(`## Tally`);
   lines.push("");
@@ -320,10 +320,10 @@ async function main() {
   lines.push("");
   lines.push(`## Notes`);
   lines.push("");
-  lines.push(`- Emails in the Per-staff detail table are redacted (first 2 chars + domain). The full address is in \`staff.email\` and \`auth.users.email\` — never in git.`);
-  lines.push(`- Passwords are never written to this log. Sign-ins use \`HOMEWOOD_LAUNCH_PASSWORD\` from the environment.`);
-  lines.push(`- Re-running this script is safe — staff with \`user_id\` already set are skipped (the lookup filter excludes them).`);
-  lines.push(`- Each new user is granted \`user_facility_access\` for the Homewood facility. Without this grant, sign-in works but the user sees an empty workspace.`);
+  lines.push(`- Emails in the Per-staff detail table are redacted (first 2 chars + domain). Full addresses live in \`staff.email\` and \`auth.users.email\`, never in git.`);
+  lines.push(`- Passwords are never stored or transmitted by this script. Each employee sets their own password when they click the invite link.`);
+  lines.push(`- Re-running the script is safe — staff rows with \`user_id\` already set are skipped. Re-invited emails are linked to their existing \`auth.users\` row instead of creating duplicates.`);
+  lines.push(`- Each user is granted \`user_facility_access\` for the Homewood facility. Without this grant, sign-in works but the user sees an empty workspace.`);
   lines.push("");
 
   mkdirSync(path.dirname(LOG_PATH), { recursive: true });
