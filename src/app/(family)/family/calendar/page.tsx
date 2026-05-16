@@ -119,7 +119,7 @@ function CalendarEventCard({ ev }: { ev: FamilyCalendarEventRow }) {
   const isCancelled = ev.cancelled;
   
   return (
-    <div className={`glass-card-light rounded-[2rem] p-6 shadow-sm transition-all relative ${isCancelled ? "opacity-60 bg-white/40" : "bg-white/70 hover:shadow-md"}`}>
+    <div className={`rounded-xl p-6 shadow-sm transition-all relative ${isCancelled ? "opacity-60 bg-white/40" : "bg-white/70 hover:shadow-md"}`}>
       <div className="flex items-start gap-5">
          
          {/* Date Callout Box */}
@@ -134,7 +134,7 @@ function CalendarEventCard({ ev }: { ev: FamilyCalendarEventRow }) {
                   {ev.title}
                </h3>
                {ev.tag && (
-                  <span className={`px-2.5 py-1 rounded-full text-[10px] uppercase tracking-widest font-bold ${isCancelled ? "bg-rose-100 text-rose-600" : "bg-violet-100 text-violet-700"}`}>
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold ${isCancelled ? "bg-rose-100 text-rose-600" : "bg-violet-100 text-violet-700"}`}>
                      {isCancelled ? "Cancelled" : ev.tag}
                   </span>
                )}

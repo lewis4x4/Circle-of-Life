@@ -221,7 +221,7 @@ function SummaryBlock({
       tone === "warning" ? "text-amber-900" : tone === "success" ? "text-emerald-900" : "text-stone-800";
 
   return (
-    <div className={`glass-card-light rounded-[2rem] p-6 shadow-sm border ${styleClass}`}>
+    <div className={`rounded-xl p-6 shadow-sm border ${styleClass}`}>
       <p className="text-xs uppercase font-bold tracking-wider text-stone-400 mb-1">{label}</p>
       <p className={`text-2xl md:text-3xl font-serif tracking-tight ${textTone}`}>{value}</p>
     </div>
