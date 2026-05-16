@@ -397,7 +397,7 @@ function MedicationCard({
     <div className={`rounded-[2rem] p-6 transition-all relative overflow-hidden backdrop-blur-xl border ${
        isDueNow 
          ? "bg-rose-950/10 border-rose-500/30 shadow-[inset_0_0_40px_rgba(225,29,72,0.1)]"
-         : "glass-panel bg-white/[0.02] border-white/5 hover:bg-white/[0.04]"
+         : "bg-white/[0.02] border-white/5 hover:bg-white/[0.04]"
     }`}>
       
       {/* Left side color accent bar for visual scanning */}

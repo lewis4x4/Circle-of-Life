@@ -16,7 +16,7 @@ type Props = {
 
 export function TemplateCard(props: Props) {
   return (
-    <div className="glass-panel p-6 rounded-xl border border-slate-200 dark:border-white/5 bg-white/40 dark:bg-black/20 flex flex-col gap-5 backdrop-blur-3xl shadow-sm hover:shadow-xl hover:border-slate-300 dark:hover:border-white/10 transition-all duration-300 group hover:-translate-y-1">
+    <div className="p-6 rounded-xl border border-slate-200 dark:border-white/5 bg-white/40 dark:bg-black/20 flex flex-col gap-5 backdrop-blur-3xl shadow-sm hover:shadow-xl hover:border-slate-300 dark:hover:border-white/10 transition-all duration-300 group hover:-translate-y-1">
       <div>
         <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mb-2">{props.name}</h3>
         <p className="text-sm font-mono text-slate-500 dark:text-slate-400 leading-relaxed">{props.description}</p>
