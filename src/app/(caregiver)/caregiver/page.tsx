@@ -369,7 +369,7 @@ function HeroStat({
         <div className="w-5 h-5 opacity-80">{icon}</div>
         <span className="text-[10px] font-bold uppercase tracking-wider">{label}</span>
       </div>
-      <div className={`text-4xl md:text-5xl font-display font-medium tabular-nums tracking-tight ${valueColor}`}>
+      <div className={`text-2xl md:text-3xl font-medium tabular-nums tracking-tight ${valueColor}`}>
         {value}
       </div>
     </div>
@@ -400,23 +400,23 @@ function HeroStat({
   );
 }
 
-function ActionTile({ 
-  href, 
-  icon, 
-  title, 
-  gradient,
-  border
-}: { 
-  href: string; 
-  icon: React.ReactNode; 
+function ActionTile({
+  href,
+  icon,
+  title,
+  border,
+}: {
+  href: string;
+  icon: React.ReactNode;
   title: string;
-  gradient: string;
+  /** Deprecated — kept for call-site compatibility; ignored. */
+  gradient?: string;
   border: string;
 }) {
   return (
     <Link
       href={href}
-      className={`flex flex-col justify-center rounded-2xl border bg-gradient-to-br ${gradient} ${border} p-5 tap-responsive transition-all duration-300 shadow-lg group relative overflow-hidden`}
+      className={`flex flex-col justify-center rounded-2xl border bg-card ${border} p-5 tap-responsive transition-colors duration-300 shadow-sm group relative overflow-hidden`}
     >
       <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 transition-colors duration-300 pointer-events-none" />
       <div className="bg-black/20 w-10 h-10 rounded-xl flex items-center justify-center mb-3 shadow-inner">

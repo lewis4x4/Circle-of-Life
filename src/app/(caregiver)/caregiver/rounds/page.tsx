@@ -229,7 +229,7 @@ function MetricPill({
         <span className={iconColor}>{icon}</span>
         <span>{label}</span>
       </div>
-      <div className={`text-2xl font-display font-medium tabular-nums tracking-tight ${tone === 'neutral' ? 'opacity-80' : ''}`}>
+      <div className={`text-2xl font-medium tabular-nums tracking-tight ${tone === 'neutral' ? 'opacity-80' : ''}`}>
          {value}
       </div>
     </div>

@@ -302,13 +302,13 @@ function ResidentAdlCard({
   const priority = passesToday === 0 ? "critical" : passesToday < 2 ? "high" : "normal";
   const priorityClasses =
     priority === "critical"
-      ? "border-rose-500/30 bg-gradient-to-br from-rose-950/40 to-black/60 shadow-[inset_0_1px_10px_rgba(225,29,72,0.1)] hover:border-rose-500/50"
+      ? "border-destructive/30 bg-card shadow-sm hover:border-destructive/50"
       : priority === "high"
-        ? "border-amber-500/30 bg-gradient-to-br from-amber-950/40 to-black/60 shadow-[inset_0_1px_10px_rgba(217,119,6,0.1)] hover:border-amber-500/50"
-        : "border-emerald-500/10 bg-slate-900/40 shadow-[inset_0_1px_10px_rgba(16,185,129,0.05)] hover:border-emerald-500/30";
+        ? "border-warning/30 bg-card shadow-sm hover:border-warning/50"
+        : "border-border bg-card shadow-sm hover:border-border";
 
   return (
-    <div className={`p-4 md:p-5 rounded-2xl glass-panel group transition-all duration-300 border backdrop-blur-xl overflow-hidden relative ${priorityClasses}`}>
+    <div className={`p-4 md:p-5 rounded-2xl group transition-all duration-300 border backdrop-blur-xl overflow-hidden relative ${priorityClasses}`}>
       <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none" />
       <div className="space-y-4 relative z-10 w-full">
         <div className="flex items-start justify-between gap-4">
@@ -323,7 +323,7 @@ function ResidentAdlCard({
           </div>
           <div className="flex flex-col items-end gap-1.5 shrink-0">
             <Badge
-              className={`rounded-full px-3 py-0.5 text-[9px] uppercase tracking-widest font-mono font-bold border ${
+              className={`rounded-full px-3 py-0.5 text-[9px] uppercase tracking-wider font-mono font-bold border ${
                 priority === "critical"
                   ? "border-rose-500/40 bg-rose-500/20 text-rose-300"
                   : priority === "high"
@@ -398,7 +398,7 @@ function ResidentAdlCard({
             <Button
               type="button"
               disabled={busy}
-              className={`h-12 rounded-full font-mono uppercase tracking-widest text-[10px] px-8 w-full sm:w-auto shadow-lg transition-all hover:scale-[1.02] border-0 text-zinc-950 font-bold ${refused ? 'bg-amber-400 hover:bg-amber-300 focus:ring-amber-500/50' : 'bg-cyan-400 hover:bg-cyan-300 focus:ring-cyan-500/50'}`}
+              className={`h-12 rounded-full font-mono uppercase tracking-wider text-[10px] px-8 w-full sm:w-auto shadow-lg transition-all hover:scale-[1.02] border-0 text-zinc-950 font-bold ${refused ? 'bg-amber-400 hover:bg-amber-300 focus:ring-amber-500/50' : 'bg-cyan-400 hover:bg-cyan-300 focus:ring-cyan-500/50'}`}
               onClick={() => {
                 onSubmit({ adlType, assistance, refused, notes });
                 setNotes("");
