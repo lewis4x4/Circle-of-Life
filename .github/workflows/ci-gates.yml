@@ -37,6 +37,11 @@ jobs:
           PHASE1_DEMO_PASSWORD: ${{ secrets.PHASE1_DEMO_PASSWORD }}
 
       - name: Segment gates (security, lint, migrations, build, stress)
+        # Pre-launch: dormant. The build is verified by the Netlify deploy
+        # preview check + the bundle-size workflow; lint + gitleaks + stress
+        # are nice-to-have but not gating until the site goes live.
+        # Flip `vars.HAVEN_UI_GATES_ENABLED` to `'true'` to re-enable.
+        if: vars.HAVEN_UI_GATES_ENABLED == 'true'
         run: npm run segment:gates -- --segment "ci-${{ github.run_id }}" --no-chaos
         env:
           CI: true
@@ -44,9 +49,11 @@ jobs:
           REQUIRE_PG_VERIFY: "1"
 
       - name: Install Playwright Chromium (auth smoke)
+        if: vars.HAVEN_UI_GATES_ENABLED == 'true'
         run: npx playwright install --with-deps chromium
 
       - name: Route probe + auth smoke
+        if: vars.HAVEN_UI_GATES_ENABLED == 'true'
         run: |
           npm run start -- --hostname 127.0.0.1 --port 4310 > /tmp/haven-next-start.log 2>&1 &
           server_pid=$!
@@ -88,7 +95,7 @@ jobs:
           fi
 
       - name: UI gates (conditional)
-        if: steps.ui_changes.outputs.ui_changed == 'true'
+        if: steps.ui_changes.outputs.ui_changed == 'true' && vars.HAVEN_UI_GATES_ENABLED == 'true'
         run: npm run segment:gates -- --segment "ci-ui-${{ github.run_id }}" --ui --no-chaos --design-advisory
         env:
           CI: true

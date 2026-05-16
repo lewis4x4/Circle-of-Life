@@ -12,7 +12,7 @@ import React from "react";
 import Link from "next/link";
 import { TrendingUp, TrendingDown, Minus, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { type MoonshotColor, getMoonshotColor, getMoonshotDimColor, createGlowShadow } from "@/lib/moonshot-theme";
+import { type MoonshotColor, getMoonshotDimColor, createGlowShadow } from "@/lib/moonshot-theme";
 import { MonoLabel, MetricValue } from "@/components/ui/typography";
 // ── TYPES ──
 
@@ -56,12 +56,13 @@ export function MetricCardMoonshot({
   onClick,
   href,
   showSparkline = true,
-  sparklineVariant = 1,
   compact = false,
   className,
   disabled = false,
 }: MetricCardMoonshotProps) {
-  const colorHex = getMoonshotColor(color);
+  // Sparkline JSX was stripped during the Phase D D1 codemod sweep (the
+  // `Sparkline` component was a null-return stub). `sparklineVariant` and
+  // `colorHex` are no longer referenced.
   const dimColorHex = getMoonshotDimColor(color);
   const glowShadow = createGlowShadow(color);
 
