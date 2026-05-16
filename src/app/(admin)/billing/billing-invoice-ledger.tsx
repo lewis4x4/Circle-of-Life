@@ -323,22 +323,22 @@ export function BillingInvoiceLedger({
 
 export function PayerTypeBadge({ payerType }: { payerType: PayerTypeUi }) {
   const map: Record<PayerTypeUi, { label: string; className: string }> = {
-    private_pay: { label: "Private Pay", className: "bg-slate-500/20 text-slate-800 dark:bg-slate-800/50 dark:text-slate-300 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
-    medicaid: { label: "Medicaid", className: "bg-blue-500/20 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
-    ltc_insurance: { label: "LTC Insurance", className: "bg-violet-500/20 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
+    private_pay: { label: "Private Pay", className: "bg-slate-500/20 text-slate-800 dark:bg-slate-800/50 dark:text-slate-300 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
+    medicaid: { label: "Medicaid", className: "bg-blue-500/20 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
+    ltc_insurance: { label: "LTC Insurance", className: "bg-violet-500/20 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
   };
   return <Badge className={map[payerType].className}>{map[payerType].label}</Badge>;
 }
 
 export function InvoiceStatusBadge({ status }: { status: InvoiceStatusUi }) {
   const map: Record<InvoiceStatusUi, { label: string; className: string }> = {
-    draft: { label: "Draft", className: "bg-slate-500/20 text-slate-800 dark:bg-slate-800/50 dark:text-slate-300 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
-    sent: { label: "Sent", className: "bg-blue-500/20 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
-    partial: { label: "Partial", className: "bg-amber-500/20 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
-    paid: { label: "Paid", className: "bg-emerald-500/20 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
-    overdue: { label: "Overdue", className: "bg-rose-500/20 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
-    void: { label: "Void", className: "bg-zinc-500/20 text-zinc-800 dark:bg-zinc-800/40 dark:text-zinc-200 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
-    written_off: { label: "Written Off", className: "bg-orange-500/20 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
+    draft: { label: "Draft", className: "bg-slate-500/20 text-slate-800 dark:bg-slate-800/50 dark:text-slate-300 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
+    sent: { label: "Sent", className: "bg-blue-500/20 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
+    partial: { label: "Partial", className: "bg-amber-500/20 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
+    paid: { label: "Paid", className: "bg-emerald-500/20 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
+    overdue: { label: "Overdue", className: "bg-rose-500/20 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
+    void: { label: "Void", className: "bg-zinc-500/20 text-zinc-800 dark:bg-zinc-800/40 dark:text-zinc-200 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
+    written_off: { label: "Written Off", className: "bg-orange-500/20 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
   };
   return <Badge className={map[status].className}>{map[status].label}</Badge>;
 }

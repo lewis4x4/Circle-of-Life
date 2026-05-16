@@ -337,7 +337,7 @@ export default function ReportsOverviewPage() {
                     </div>
                     
                     <div className="flex flex-col">
-                       <span className={cn("text-4xl lg:text-2xl font-mono tracking-tighter tabular-nums pb-1 leading-none text-slate-800 dark:text-slate-100 group-hover:text-transparent group-hover:bg-clip-text transition-all duration-300", `group-hover:bg-gradient-to-b group-hover:from-${colorName}-600 group-hover:to-${colorName}-400 dark:group-hover:from-${colorName}-300 dark:group-hover:to-${colorName}-500`)}>
+                       <span className="text-4xl lg:text-2xl font-mono tracking-tighter tabular-nums pb-1 leading-none text-foreground transition-colors duration-300">
                           {loading ? "-" : card.value.toLocaleString()}
                        </span>
                        <span className="text-[9px] uppercase tracking-wider font-mono text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-tight">

@@ -572,12 +572,12 @@ function formatCertTypeLabel(type: string): string {
 
 function TimelineBadge({ timeline }: { timeline: TimelineUi }) {
   const map: Record<TimelineUi, { label: string; className: string }> = {
-    current: { label: "Current", className: "bg-emerald-500/20 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm" },
+    current: { label: "Current", className: "bg-emerald-500/20 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm" },
     expiring_soon: {
       label: "Expiring soon",
-      className: "bg-amber-500/20 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm",
+      className: "bg-amber-500/20 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm",
     },
-    expired: { label: "Expired", className: "bg-red-500/20 text-red-800 dark:bg-red-950/60 dark:text-red-400 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm" },
+    expired: { label: "Expired", className: "bg-red-500/20 text-red-800 dark:bg-red-950/60 dark:text-red-400 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm" },
   };
   return <Badge className={map[timeline].className}>{map[timeline].label}</Badge>;
 }
@@ -595,11 +595,11 @@ function DbStatusBadge({ status }: { status: string }) {
             : status;
   const className =
     status === "active"
-      ? "bg-slate-200/50 text-slate-800 dark:bg-slate-800/50 dark:text-slate-300 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm"
+      ? "bg-slate-200/50 text-slate-800 dark:bg-slate-800/50 dark:text-slate-300 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm"
       : status === "pending_renewal"
-        ? "bg-amber-500/20 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm"
+        ? "bg-amber-500/20 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm"
         : status === "expired" || status === "revoked"
-          ? "bg-red-500/20 text-red-800 dark:bg-red-950/60 dark:text-red-400 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm"
-          : "bg-slate-200/50 text-slate-800 dark:bg-slate-800/50 dark:text-slate-300 uppercase tracking-widest font-mono text-[9px] font-bold border-0 shadow-sm";
+          ? "bg-red-500/20 text-red-800 dark:bg-red-950/60 dark:text-red-400 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm"
+          : "bg-slate-200/50 text-slate-800 dark:bg-slate-800/50 dark:text-slate-300 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm";
   return <Badge className={className}>{label}</Badge>;
 }
