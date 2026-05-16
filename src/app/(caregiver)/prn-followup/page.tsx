@@ -253,7 +253,7 @@ export default function CaregiverPrnFollowupPage() {
                     <div className="flex items-center gap-3">
                       <span className="text-xl tracking-wide font-semibold text-white">{r.med}</span>
                       <Badge
-                        className={`rounded-full px-3 py-1 text-[9px] uppercase tracking-widest font-mono font-bold shadow-inner ${
+                        className={`rounded-full px-3 py-1 text-[9px] uppercase tracking-wider font-mono font-bold shadow-inner ${
                           r.status === "overdue"
                             ? "border-rose-500/40 bg-rose-500/20 text-rose-300"
                             : "border-amber-500/40 bg-amber-500/20 text-amber-300"

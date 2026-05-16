@@ -394,7 +394,7 @@ function MedicationCard({
   const isDueNow = item.urgency === "due-now";
 
   return (
-    <div className={`rounded-[2rem] p-6 transition-all relative overflow-hidden backdrop-blur-xl border ${
+    <div className={`rounded-xl p-6 transition-all relative overflow-hidden backdrop-blur-xl border ${
        isDueNow 
          ? "bg-rose-950/10 border-rose-500/30 shadow-[inset_0_0_40px_rgba(225,29,72,0.1)]"
          : "bg-white/[0.02] border-white/5 hover:bg-white/[0.04]"
@@ -412,7 +412,7 @@ function MedicationCard({
                </p>
             </div>
             {/* Status indicator pill */}
-            <div className={`shrink-0 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${
+            <div className={`shrink-0 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                isDueNow ? "bg-rose-500/20 text-rose-300 border-rose-500/30" : "bg-amber-500/10 text-amber-300 border-amber-500/30"
             }`}>
                {isDueNow ? "Due Now" : "Due Soon"}

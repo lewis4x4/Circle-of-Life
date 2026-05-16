@@ -172,7 +172,7 @@ export default function CaregiverFollowupsPage() {
                     <div className="flex items-start md:items-center gap-3">
                       <span className="text-xl tracking-wide font-semibold text-white leading-tight">{r.title}</span>
                       <Badge
-                        className={`rounded-full px-3 py-1 text-[9px] uppercase tracking-widest font-mono font-bold shadow-inner shrink-0 ${
+                        className={`rounded-full px-3 py-1 text-[9px] uppercase tracking-wider font-mono font-bold shadow-inner shrink-0 ${
                           r.priority === "high"
                             ? "border-rose-500/40 bg-rose-500/20 text-rose-300"
                             : "border-teal-500/40 bg-teal-500/20 text-teal-300"
