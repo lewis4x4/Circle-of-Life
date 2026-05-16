@@ -127,9 +127,21 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
-  authToken: process.env.SENTRY_AUTH_TOKEN,
-  org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT,
-  silent: true,
+import bundleAnalyzer from "@next/bundle-analyzer";
+
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+  // Write the static HTML report to a stable location that the Homewood
+  // perf-baseline script can copy into docs/homewood/ after a build.
+  openAnalyzer: false,
+  analyzerMode: "static",
 });
+
+export default withBundleAnalyzer(
+  withSentryConfig(nextConfig, {
+    authToken: process.env.SENTRY_AUTH_TOKEN,
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT,
+    silent: true,
+  }),
+);
