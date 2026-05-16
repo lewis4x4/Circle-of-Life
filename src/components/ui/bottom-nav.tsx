@@ -21,11 +21,16 @@ import { cn } from "@/lib/utils";
  *     target, even though the parent is taller — the parent contains
  *     padding for the label.
  *
- * Theming:
- *   Backgrounds use semantic tokens (`bg-background/95` with a
- *   `backdrop-blur` fallback) so it inverts cleanly between light + dark.
- *   Active items use `bg-accent text-accent-foreground`; inactive items
- *   use `text-muted-foreground` with `active:` pressed-state feedback.
+ * Theming (Quiet Operator):
+ *   - Solid `bg-background` chrome. NO backdrop-blur, NO translucency —
+ *     glassmorphism is the top anti-pattern (anti-patterns.md).
+ *   - Inactive items use `text-muted-foreground`; hover/active touch
+ *     state flips to `text-foreground`.
+ *   - The ACTIVE item renders in `text-primary` AND draws a 2px brand
+ *     accent bar across the top edge (`::after`). This is the Linear /
+ *     Mercury pattern: calm neutral chrome, brand cue ONLY at the active
+ *     indicator. No `bg-accent` fill — `--accent` is the muted chip slot,
+ *     not a brand emphasis.
  *
  * Hover discipline:
  *   Every `hover:` utility ships with an equivalent `active:` for touch
@@ -52,7 +57,7 @@ export function BottomNav({ className, children, ...props }: BottomNavProps) {
   return (
     <nav
       className={cn(
-        "fixed inset-x-0 bottom-0 z-50 flex h-[calc(3.5rem+env(safe-area-inset-bottom))] items-center justify-around border-t border-border bg-background/95 px-2 pb-[env(safe-area-inset-bottom)] pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/80",
+        "fixed inset-x-0 bottom-0 z-50 flex h-[calc(3.5rem+env(safe-area-inset-bottom))] items-center justify-around border-t border-border bg-background px-2 pb-[env(safe-area-inset-bottom)] pt-1",
         className,
       )}
       {...props}
@@ -77,9 +82,10 @@ export function BottomNavItem({ href, label, icon, active = false }: BottomNavIt
       aria-label={label}
       data-state={active ? "active" : "inactive"}
       className={cn(
-        "inline-flex min-h-11 w-16 flex-col items-center justify-center gap-0.5 rounded-md text-[10px] font-medium transition-colors",
+        "relative inline-flex min-h-11 w-16 flex-col items-center justify-center gap-0.5 rounded-md text-[10px] font-medium transition-colors duration-[var(--motion-duration)] ease-[var(--motion-ease)]",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-        "data-[state=active]:bg-accent data-[state=active]:text-accent-foreground",
+        "data-[state=active]:text-primary",
+        "data-[state=active]:after:pointer-events-none data-[state=active]:after:absolute data-[state=active]:after:left-2 data-[state=active]:after:right-2 data-[state=active]:after:top-0 data-[state=active]:after:h-0.5 data-[state=active]:after:rounded-full data-[state=active]:after:bg-primary",
         "data-[state=inactive]:text-muted-foreground",
         "hover:text-foreground active:text-foreground",
       )}

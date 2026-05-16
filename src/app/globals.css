@@ -214,6 +214,10 @@
   --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 16px 36px -20px rgba(0, 0, 0, 0.5);
   --shadow-lift: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 28px 56px -24px rgba(0, 0, 0, 0.7);
   --shadow-glow: 0 0 0 1px rgba(103, 143, 171, 0.4), 0 0 24px rgba(103, 143, 171, 0.18);
+  /* Modal / sheet scrim — warm near-black per constitution rule 9 ("warm
+     near-black sets the floor"); never pure black, never blurred. Consumed
+     via `bg-[color:var(--overlay)]` in dialog / sheet primitives. */
+  --overlay: rgba(11, 11, 9, 0.78);
   --motion-duration: 240ms;
   --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -252,6 +256,9 @@
   --input: 36 12% 82%;
   --ring: 205 27% 54%;
   --radius: 0.625rem;
+  /* Family-light scrim — same warm-near-black overlay used by operator dark;
+     darkens cream into deep warmth without color shift. */
+  --overlay: rgba(11, 11, 9, 0.55);
 
   /* Charts — darker variants tuned for AA contrast on cream */
   --chart-1: 205 27% 44%;
