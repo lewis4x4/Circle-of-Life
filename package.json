@@ -43,6 +43,7 @@
     "homewood:audit": "node scripts/homewood/data-audit.mjs",
     "homewood:verify-auth": "node scripts/homewood/auth-verify.mjs",
     "homewood:test-launch": "playwright test --config=playwright.homewood.config.ts",
+    "homewood:verify-rbac": "node scripts/homewood/rbac-verify.mjs",
     "demo:seed:danger": "node scripts/demo/seed-demo-data.mjs",
     "demo:reset:danger": "node scripts/demo/reset-demo-data.mjs",
     "demo:reseed:danger": "npm run demo:reset:danger && npm run demo:seed:danger",
