@@ -6,7 +6,7 @@ import Link from "next/link";
 import { AlertTriangle, ArrowRight, CheckCircle2, Clock3, Loader2, ShieldAlert, XCircle } from "lucide-react";
 
 import { RoundingHubNav } from "../rounding-hub-nav";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { V2Card } from "@/components/ui/v2-card";
 import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";

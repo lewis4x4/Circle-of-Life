@@ -37,7 +37,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { V2Card } from "@/components/ui/v2-card";
 const CHART_COLORS = {
   indigo: "#6366f1",
   rose: "#f43f5e",

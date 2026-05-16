@@ -8,7 +8,7 @@ import { ClipboardList, DoorOpen, ArrowRight, Loader2 } from "lucide-react";
 import { DischargeHubNav } from "./discharge-hub-nav";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";

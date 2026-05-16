@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import { ArrowLeft, Send, Loader2, Brain, Sparkles, MessageSquare, RotateCcw } from "lucide-react";
-import { TitleH1, Subtitle } from "@/components/ui/moonshot/typography";
+import { TitleH1, Subtitle } from "@/components/ui/typography";
 import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { cn } from "@/lib/utils";

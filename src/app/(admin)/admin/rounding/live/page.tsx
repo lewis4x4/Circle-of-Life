@@ -16,7 +16,7 @@ import {
 
 import { RoundingHubNav } from "../rounding-hub-nav";
 import { QuickCheckDrawer, type QuickCheckTask } from "@/components/rounding/QuickCheckDrawer";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { V2Card } from "@/components/ui/v2-card";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { Badge } from "@/components/ui/badge";

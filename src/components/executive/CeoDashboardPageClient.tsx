@@ -9,7 +9,7 @@ import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patt
 import { ExecutiveNavV2 } from "@/components/executive/executive-nav-v2";
 import { MetricCardMoonshot } from "@/components/executive/metric-card-moonshot";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { Subtitle, TitleH1 } from "@/components/ui/moonshot/typography";
+import { Subtitle, TitleH1 } from "@/components/ui/typography";
 import type { CeoAlertDisplay } from "@/lib/executive/load-ceo-dashboard-data";
 import type { ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
 import { CEO_PALETTE } from "@/lib/moonshot-theme";

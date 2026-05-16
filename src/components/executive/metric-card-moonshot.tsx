@@ -13,7 +13,7 @@ import Link from "next/link";
 import { TrendingUp, TrendingDown, Minus, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type MoonshotColor, getMoonshotColor, getMoonshotDimColor, createGlowShadow } from "@/lib/moonshot-theme";
-import { MonoLabel, MetricValue } from "@/components/ui/moonshot/typography";
+import { MonoLabel, MetricValue } from "@/components/ui/typography";
 // ── TYPES ──
 
 export type TrendDirection = "up" | "down" | "flat";

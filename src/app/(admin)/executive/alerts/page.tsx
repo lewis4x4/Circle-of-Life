@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import { useAuth } from "@/hooks/useAuth";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { V2Card } from "@/components/ui/v2-card";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 
 interface AlertWithFacility extends ExecutiveAlertRow {

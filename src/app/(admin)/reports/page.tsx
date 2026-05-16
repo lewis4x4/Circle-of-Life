@@ -29,7 +29,7 @@ import { loadReportsRoleContext } from "@/lib/reports/auth";
 import { cn } from "@/lib/utils";
 
 import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { V2Card } from "@/components/ui/v2-card";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 const DISPLAY_TZ = "America/New_York";
 

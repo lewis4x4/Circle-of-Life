@@ -12,7 +12,7 @@ import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { V2Card } from "@/components/ui/v2-card";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import { useAuth } from "@/hooks/useAuth";

@@ -16,7 +16,7 @@ import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { V2Card } from "@/components/ui/v2-card";
 type BatchRow = Database["public"]["Tables"]["payroll_export_batches"]["Row"];
 type PayrollBatchStatus = Database["public"]["Enums"]["payroll_export_batch_status"];
 

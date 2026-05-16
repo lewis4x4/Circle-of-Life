@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 
-import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { V2Card } from "@/components/ui/v2-card";
 import { cn } from "@/lib/utils";
 
 export type PanelProps = {

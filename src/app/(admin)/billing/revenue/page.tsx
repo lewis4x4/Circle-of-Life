@@ -13,7 +13,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { V2Card } from "@/components/ui/v2-card";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 
 import { BillingHubNav } from "../billing-hub-nav";
