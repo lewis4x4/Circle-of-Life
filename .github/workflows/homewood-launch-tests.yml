@@ -1,0 +1,71 @@
+name: Homewood — launch workflow tests
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/homewood-launch/**"
+      - "playwright.homewood.config.ts"
+      - ".github/workflows/homewood-launch-tests.yml"
+  push:
+    branches: [main]
+
+jobs:
+  homewood-launch-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Dormant pre-launch — flip vars.HAVEN_UI_GATES_ENABLED to 'true' to enable.
+    if: vars.HAVEN_UI_GATES_ENABLED == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build app
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
+
+      - name: Start Next.js server
+        run: |
+          npm run start -- --hostname 127.0.0.1 --port 4310 > /tmp/haven-next.log 2>&1 &
+          for i in {1..60}; do
+            if curl -sSf -o /dev/null http://127.0.0.1:4310/login; then
+              echo "server ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/haven-next.log
+          exit 1
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
+
+      - name: Run Homewood launch workflow tests
+        run: npm run homewood:test-launch
+        env:
+          BASE_URL: http://127.0.0.1:4310
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_TEST }}
+          HOMEWOOD_LAUNCH_PASSWORD: ${{ secrets.HOMEWOOD_LAUNCH_PASSWORD }}
+          HOMEWOOD_FACILITY_ID: ${{ vars.HOMEWOOD_FACILITY_ID }}
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: homewood-launch-html
+          path: test-results/homewood-launch-html
+          retention-days: 14
