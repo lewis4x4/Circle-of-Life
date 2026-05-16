@@ -184,8 +184,8 @@ function ResidentCareBlocks({ view }: { view: FamilyResidentCarePlanView }) {
 
 function InfoPill({ label, value, colored = false }: { label: string; value: string; colored?: boolean }) {
   return (
-    <div className={`rounded-3xl border border-white px-4 py-3 flex flex-col items-center justify-center text-center shadow-sm ${colored ? "bg-rose-50/80" : "bg-stone-50/80"}`}>
-      <p className={`text-[10px] uppercase font-bold tracking-widest mb-1 ${colored ? "text-rose-400" : "text-stone-400"}`}>{label}</p>
+    <div className={`rounded-xl border border-white px-4 py-3 flex flex-col items-center justify-center text-center shadow-sm ${colored ? "bg-rose-50/80" : "bg-stone-50/80"}`}>
+      <p className={`text-[10px] uppercase font-bold tracking-wider mb-1 ${colored ? "text-rose-400" : "text-stone-400"}`}>{label}</p>
       <p className={`text-base font-semibold ${colored ? "text-rose-900" : "text-stone-800"}`}>{value}</p>
     </div>
   );
