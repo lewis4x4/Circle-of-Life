@@ -603,7 +603,7 @@ function SwapStatusBadge({ status }: { status: string }) {
   };
   const cls = map[s] ?? "bg-slate-200/50 text-slate-800";
   return (
-    <Badge className={`shrink-0 uppercase tracking-widest font-mono text-[9px] font-bold border-0 ${cls}`}>
+    <Badge className={`shrink-0 uppercase tracking-wider font-mono text-[9px] font-bold border-0 ${cls}`}>
       {status}
     </Badge>
   );

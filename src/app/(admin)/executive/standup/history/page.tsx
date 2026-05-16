@@ -234,7 +234,7 @@ export default function ExecutiveStandupHistoryPage() {
                   <Link
                     href={compareFromWeek && compareToWeek && compareFromWeek !== compareToWeek ? `/admin/executive/standup/compare?from=${encodeURIComponent(compareFromWeek)}&to=${encodeURIComponent(compareToWeek)}` : "#"}
                     aria-disabled={!compareFromWeek || !compareToWeek || compareFromWeek === compareToWeek}
-                    className={`inline-flex h-10 items-center justify-center rounded-full px-4 text-xs font-semibold uppercase tracking-widest ${
+                    className={`inline-flex h-10 items-center justify-center rounded-full px-4 text-xs font-semibold uppercase tracking-wider ${
                       !compareFromWeek || !compareToWeek || compareFromWeek === compareToWeek
                         ? "pointer-events-none border border-slate-200 bg-slate-100 text-slate-400 dark:border-white/10 dark:bg-white/5 dark:text-zinc-500"
                         : "border border-indigo-200 bg-indigo-50 text-indigo-700 transition-colors hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/15"

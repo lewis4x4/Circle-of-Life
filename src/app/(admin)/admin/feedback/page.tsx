@@ -217,7 +217,7 @@ export default function PilotFeedbackInboxPage() {
                 key={status}
                 type="button"
                 onClick={() => setActiveStatusFilter(status)}
-                className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-widest transition-colors ${
+                className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider transition-colors ${
                   activeStatusFilter === status
                     ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
                     : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:bg-white/[0.03] dark:text-zinc-300 dark:hover:bg-white/[0.06]"
@@ -231,7 +231,7 @@ export default function PilotFeedbackInboxPage() {
           {Object.entries(grouped).map(([status, items]) => (
             <section key={status} className="space-y-4">
               <div className="flex items-center gap-3">
-                <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-widest ${STATUS_STYLES[status] ?? STATUS_STYLES.new}`}>
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider ${STATUS_STYLES[status] ?? STATUS_STYLES.new}`}>
                   {status}
                 </span>
                 <span className="text-sm text-slate-500 dark:text-zinc-400">{items.length} item{items.length === 1 ? "" : "s"}</span>
@@ -263,7 +263,7 @@ export default function PilotFeedbackInboxPage() {
                               type="button"
                               disabled={updatingId === row.id || nextStatus === row.status}
                               onClick={() => void updateStatus(row.id, nextStatus)}
-                              className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-widest transition-colors ${
+                              className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors ${
                                 nextStatus === row.status
                                   ? STATUS_STYLES[nextStatus] ?? STATUS_STYLES.new
                                   : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:bg-black/20 dark:text-zinc-300 dark:hover:bg-white/[0.06]"

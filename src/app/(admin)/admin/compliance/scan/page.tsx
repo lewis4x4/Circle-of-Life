@@ -150,7 +150,7 @@ export default function ComplianceScanPage() {
                 Compliance Score
               </p>
               <p
-                className={`text-5xl font-bold ${getScoreColor(
+                className={`text-3xl font-semibold tabular-nums ${getScoreColor(
                   Math.round((result.scan.rules_passed / result.scan.total_rules_checked) * 100)
                 )}`}
               >

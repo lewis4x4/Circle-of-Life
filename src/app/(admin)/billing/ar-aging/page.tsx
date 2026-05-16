@@ -198,7 +198,7 @@ export default function AdminArAgingPage() {
                  <V2Card hoverColor={color} className={`border-${color}-500/20 dark:border-${color}-500/20`}>
                    <MonolithicWatermark value={Math.round((cents / 100) / 100)} className={`text-${color}-600/5 dark:text-${color}-400/5 opacity-50`} />
                    <div className="relative z-10 flex flex-col h-full justify-between p-2">
-                     <h3 className={`text-[10px] font-bold tracking-widest uppercase text-${color}-600 dark:text-${color}-400`}>
+                     <h3 className={`text-[10px] font-bold tracking-wider uppercase text-${color}-600 dark:text-${color}-400`}>
                        {label}
                      </h3>
                      <p className={`text-2xl font-mono font-medium tracking-tight tabular-nums text-${color}-600 dark:text-${color}-400 pb-1`}>
