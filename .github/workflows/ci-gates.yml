@@ -36,6 +36,20 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
           PHASE1_DEMO_PASSWORD: ${{ secrets.PHASE1_DEMO_PASSWORD }}
 
+      - name: Homewood launch auth verify
+        # Authenticates every user with active user_facility_access at the
+        # Homewood Lodge ALF facility. Same dormant pattern as the seed
+        # verify above — gated on `vars.HAVEN_UI_GATES_ENABLED`. Requires
+        # `HOMEWOOD_LAUNCH_PASSWORD` repo secret to run.
+        if: vars.HAVEN_UI_GATES_ENABLED == 'true'
+        run: npm run homewood:verify-auth
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_TEST }}
+          HOMEWOOD_LAUNCH_PASSWORD: ${{ secrets.HOMEWOOD_LAUNCH_PASSWORD }}
+          HOMEWOOD_FACILITY_ID: ${{ vars.HOMEWOOD_FACILITY_ID }}
+
       - name: Segment gates (security, lint, migrations, build, stress)
         # Pre-launch: dormant. The build is verified by the Netlify deploy
         # preview check + the bundle-size workflow; lint + gitleaks + stress
