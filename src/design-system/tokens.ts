@@ -1,31 +1,31 @@
 export const tokens = {
   color: {
     bg: {
-      app: "rgb(11 16 28)",
-      surface: "rgb(18 25 40)",
-      surfaceElevated: "rgb(25 33 50)",
-      surfaceSubtle: "rgb(15 21 34)",
-      border: "rgb(39 51 74)",
-      borderStrong: "rgb(56 72 101)",
+      app: "#0B0B09",
+      surface: "#161613",
+      surfaceElevated: "#1A1A17",
+      surfaceSubtle: "#0F0F0D",
+      border: "rgba(255,255,255,0.06)",
+      borderStrong: "rgba(255,255,255,0.12)",
     },
     text: {
-      primary: "rgb(237 242 251)",
-      secondary: "rgb(160 176 201)",
-      muted: "rgb(115 132 158)",
-      inverse: "rgb(11 16 28)",
+      primary: "#F5F2EA",
+      secondary: "#C5C0B5",
+      muted: "#928E85",
+      inverse: "#1A0F08",
     },
     semantic: {
-      success: "rgb(34 197 94)",
-      info: "rgb(59 130 246)",
-      warning: "rgb(245 158 11)",
-      danger: "rgb(239 68 68)",
+      success: "#7A9B5E",
+      info: "#6A8FA8",
+      warning: "#D49B5C",
+      danger: "#C26152",
       regulatory: "rgb(139 92 246)",
-      neutral: "rgb(100 116 139)",
+      neutral: "#928E85",
     },
     brand: {
-      primary: "rgb(59 130 246)",
-      primaryHover: "rgb(37 99 235)",
-      accent: "rgb(139 92 246)",
+      primary: "#678fab",
+      primaryHover: "#779fbb",
+      accent: "#436b87",
     },
   },
   radius: {
@@ -48,8 +48,8 @@ export const tokens = {
   },
   font: {
     family: {
-      sans: "'Inter', system-ui, sans-serif",
-      mono: "'JetBrains Mono', 'IBM Plex Mono', monospace",
+      sans: "'Geist Sans', system-ui, sans-serif",
+      mono: "'Geist Mono', ui-monospace, monospace",
     },
     size: {
       xs: "11px",
@@ -76,15 +76,15 @@ export const tokens = {
     },
   },
   shadow: {
-    card: "0 1px 2px rgba(0,0,0,0.2), 0 0 0 1px rgb(39 51 74)",
-    panel: "0 4px 16px rgba(0,0,0,0.3), 0 0 0 1px rgb(39 51 74)",
-    popover: "0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgb(56 72 101)",
+    card: "0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 16px 36px -20px rgba(0, 0, 0, 0.5)",
+    panel: "0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 28px 56px -24px rgba(0, 0, 0, 0.7)",
+    popover: "0 0 0 1px rgba(103, 143, 171, 0.4), 0 0 24px rgba(103, 143, 171, 0.18)",
   },
   motion: {
-    fast: "120ms",
-    base: "180ms",
-    slow: "260ms",
-    ease: "cubic-bezier(0.4, 0, 0.2, 1)",
+    fast: "160ms",
+    base: "240ms",
+    slow: "360ms",
+    ease: "cubic-bezier(0.16, 1, 0.3, 1)",
   },
 } as const;
 
