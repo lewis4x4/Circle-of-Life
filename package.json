@@ -46,6 +46,8 @@
     "homewood:verify-rbac": "node scripts/homewood/rbac-verify.mjs",
     "homewood:perf-baseline": "node scripts/homewood/perf-baseline.mjs",
     "homewood:a11y-baseline": "node scripts/homewood/a11y-baseline.mjs",
+    "homewood:preflight": "node scripts/homewood/preflight.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "demo:seed:danger": "node scripts/demo/seed-demo-data.mjs",
     "demo:reset:danger": "node scripts/demo/reset-demo-data.mjs",
     "demo:reseed:danger": "npm run demo:reset:danger && npm run demo:seed:danger",

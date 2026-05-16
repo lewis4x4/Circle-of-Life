@@ -34,9 +34,15 @@ if (sqlFiles.length === 0) {
 }
 
 const pattern = /^(\d{3})_[a-z0-9][a-z0-9_]*\.sql$/;
+// Supabase CLI's default migration filename format is a 14-digit timestamp
+// prefix. We don't enforce contiguous ordering on those — Supabase's own
+// migration runner handles that — but we accept them so they don't fail
+// the NNN-format gate.
+const supabaseCliPattern = /^\d{14}_[a-z0-9][a-z0-9_]*\.sql$/;
 const nums = [];
 
 for (const file of sqlFiles) {
+  if (supabaseCliPattern.test(file)) continue;
   const m = file.match(pattern);
   if (!m) {
     fail(
