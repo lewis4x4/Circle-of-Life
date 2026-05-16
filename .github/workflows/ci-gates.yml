@@ -102,6 +102,9 @@ jobs:
           REQUIRE_PG_VERIFY: "0"
 
       - name: Bundle size snapshot
+        # Depends on `.next/static/` produced by the gated Segment-gates
+        # build step. Pre-launch: dormant alongside Segment gates.
+        if: vars.HAVEN_UI_GATES_ENABLED == 'true'
         run: node scripts/bundle-size-check.mjs
         env:
           CI: true
