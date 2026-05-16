@@ -1,0 +1,4 @@
+first_name,last_name,preferred_name,date_of_birth,gender,room_number,admit_date,primary_diagnosis,payer_type,emergency_contact_name,emergency_contact_phone,emergency_contact_relationship
+Jane,Doe,Janie,1942-03-15,female,1,2026-04-01,"Alzheimer's disease, mild",private_pay,John Doe,555-0100,son
+Robert,Sample,Bob,1938-07-22,male,2,2026-04-10,"Vascular dementia",medicaid_oss,Mary Sample,555-0101,daughter
+Mary,Placeholder,,1945-11-03,female,3,2026-04-15,"Diabetes type 2, well-controlled",ltc_insurance,Susan Placeholder,555-0102,niece

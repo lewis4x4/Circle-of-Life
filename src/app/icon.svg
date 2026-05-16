@@ -1,4 +1,4 @@
 <svg viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" rx="108" fill="#6366f1"/>
-  <text x="256" y="380" font-family="Inter, -apple-system, sans-serif" font-size="360" font-weight="800" fill="white" text-anchor="middle">H</text>
+  <rect width="512" height="512" rx="108" fill="#678fab"/>
+  <text x="256" y="380" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="360" font-weight="800" fill="#F5F2EA" text-anchor="middle">H</text>
 </svg>

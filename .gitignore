@@ -25,6 +25,9 @@ test-results/homewood-launch-html/
 test-results/homewood-launch-output/
 test-results/homewood-launch.json
 
+# Real Homewood roster data — never commit. The .example file IS committed.
+scripts/homewood/data/homewood-residents.csv
+
 # next.js
 /.next/
 /out/
