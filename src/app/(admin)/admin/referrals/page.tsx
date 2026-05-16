@@ -8,8 +8,7 @@ import { ClipboardList, Download, Search, UserPlus, ArrowRight, Loader2 } from "
 import { ReferralsHubNav } from "./referrals-hub-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
+import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
@@ -902,7 +901,7 @@ export default function AdminReferralsHubPage() {
                         >
                           <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                              {isNew ? <PulseDot colorClass="bg-emerald-500" /> : <div className="w-2 h-2 rounded-full bg-indigo-500" />}
+                              {isNew ? <></> : <div className="w-2 h-2 rounded-full bg-indigo-500" />}
                             </div>
                             <span className="font-semibold text-xl text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors tracking-tight">
                                {r.first_name} {r.last_name}

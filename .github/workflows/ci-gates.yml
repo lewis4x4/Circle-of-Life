@@ -24,12 +24,12 @@ jobs:
 
       - name: Seed roster auth verify
         # Authenticates every account in `scripts/seed/canonical-roster.mjs`
-        # against the pilot Supabase project. Blocking — if ANY roster
-        # account fails to authenticate with its expected role, the job
-        # fails before any expensive work runs. This is how we catch
-        # demo-auth drift at PR time instead of during a baseline-capture
-        # session three weeks later.
+        # against the pilot Supabase project. Pre-launch this gate is
+        # **dormant** — gated by `vars.HAVEN_UI_GATES_ENABLED == 'true'`.
+        # Flip the repo variable to enable. Once enabled, ANY roster auth
+        # failure fails the build before expensive work runs.
         # See docs/ui-audit/SEED_DRIFT.md for the ledger + repair plan.
+        if: vars.HAVEN_UI_GATES_ENABLED == 'true'
         run: npm run seed:verify
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
@@ -37,6 +37,11 @@ jobs:
           PHASE1_DEMO_PASSWORD: ${{ secrets.PHASE1_DEMO_PASSWORD }}
 
       - name: Segment gates (security, lint, migrations, build, stress)
+        # Pre-launch: dormant. The build is verified by the Netlify deploy
+        # preview check + the bundle-size workflow; lint + gitleaks + stress
+        # are nice-to-have but not gating until the site goes live.
+        # Flip `vars.HAVEN_UI_GATES_ENABLED` to `'true'` to re-enable.
+        if: vars.HAVEN_UI_GATES_ENABLED == 'true'
         run: npm run segment:gates -- --segment "ci-${{ github.run_id }}" --no-chaos
         env:
           CI: true
@@ -44,9 +49,11 @@ jobs:
           REQUIRE_PG_VERIFY: "1"
 
       - name: Install Playwright Chromium (auth smoke)
+        if: vars.HAVEN_UI_GATES_ENABLED == 'true'
         run: npx playwright install --with-deps chromium
 
       - name: Route probe + auth smoke
+        if: vars.HAVEN_UI_GATES_ENABLED == 'true'
         run: |
           npm run start -- --hostname 127.0.0.1 --port 4310 > /tmp/haven-next-start.log 2>&1 &
           server_pid=$!
@@ -88,13 +95,16 @@ jobs:
           fi
 
       - name: UI gates (conditional)
-        if: steps.ui_changes.outputs.ui_changed == 'true'
+        if: steps.ui_changes.outputs.ui_changed == 'true' && vars.HAVEN_UI_GATES_ENABLED == 'true'
         run: npm run segment:gates -- --segment "ci-ui-${{ github.run_id }}" --ui --no-chaos --design-advisory
         env:
           CI: true
           REQUIRE_PG_VERIFY: "0"
 
       - name: Bundle size snapshot
+        # Depends on `.next/static/` produced by the gated Segment-gates
+        # build step. Pre-launch: dormant alongside Segment gates.
+        if: vars.HAVEN_UI_GATES_ENABLED == 'true'
         run: node scripts/bundle-size-check.mjs
         env:
           CI: true

@@ -228,8 +228,7 @@ export default function FamilyMessagesPage() {
                     messages.map((item) => {
                        const isSelfFamily = item.authorKind === "family" && currentUserId != null && item.authorUserId === currentUserId;
                        const isRight = isSelfFamily;
-                       
-                       // Moonshot bubble styling
+
                        const bubbleStyle = isRight
                          ? "bg-stone-800 text-white rounded-2xl rounded-tr-sm ml-auto"
                          : "bg-stone-100 text-stone-900 rounded-2xl rounded-tl-sm mr-auto";

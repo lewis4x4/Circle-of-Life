@@ -67,9 +67,9 @@ export function DiscrepancyResolutionModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-rose-900/50 bg-gradient-to-br from-rose-950/95 via-zinc-950 to-zinc-950 text-zinc-100">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-rose-900/50 text-zinc-100">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg font-display text-rose-200">
+          <DialogTitle className="flex items-center gap-2 text-lg text-rose-200 font-semibold">
             <AlertTriangle className="h-5 w-5 text-rose-400" />
             Resolve Controlled Substance Discrepancy
           </DialogTitle>
@@ -90,7 +90,7 @@ export function DiscrepancyResolutionModal({
         <div className="space-y-4 py-2">
           {/* Discrepancy Summary */}
           <div className="space-y-3 rounded-xl border border-rose-900/35 bg-black/25 p-4">
-            <p className="text-xs font-bold uppercase tracking-widest text-rose-200/50">
+            <p className="text-xs font-bold uppercase tracking-wider text-rose-200/50">
               Affected Medications
             </p>
             {discrepancies.map((d) => (

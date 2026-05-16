@@ -147,7 +147,7 @@ export function RatesTab({ facilityId }: RatesTabProps) {
       {/* Rates Table */}
       {Object.keys(ratesByType).length === 0 ? (
         <div className="rounded-lg border border-slate-200/50 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 p-8 text-center">
-          <p className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">No rates configured</p>
+          <p className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-500 dark:text-slate-400">No rates configured</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -171,7 +171,7 @@ export function RatesTab({ facilityId }: RatesTabProps) {
                   {typeRates.map((rate) => (
                     <div key={rate.id} className="px-6 py-3 flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
                       <div className="space-y-1">
-                        <span className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">
+                        <span className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-500 dark:text-slate-400">
                           Effective{" "}
                           {new Date(rate.effective_from).toLocaleDateString("en-US", {
                             month: "short",

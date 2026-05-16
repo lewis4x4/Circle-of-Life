@@ -121,7 +121,7 @@ export default function CaregiverHandoffPage() {
         title="Use handoff as the final floor lane after meds, checks, and unresolved follow-up work are clear."
         description="This is where the next shift should understand what matters now. If something still needs action, link it back to meds, follow-ups, or incident reporting before turnover."
       />
-      <div className="p-6 sm:p-8 rounded-lg border border-white/5 bg-gradient-to-br from-indigo-950/40 via-slate-900/40 to-black/60 shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
+      <div className="p-6 sm:p-8 rounded-lg border border-white/5 shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h3 className="flex items-center gap-3 text-2xl font-semibold text-white tracking-wide">

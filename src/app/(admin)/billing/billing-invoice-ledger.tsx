@@ -24,11 +24,7 @@ import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
-
+import { V2Card } from "@/components/ui/v2-card";
 export {
   mapDbInvoiceStatusToUi,
   mapDbPayerTypeToUi,
@@ -168,13 +164,13 @@ export function BillingInvoiceLedger({
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={overdueCount > 0} />
+      <></>
       
       <div className="relative z-10 space-y-6">
         <header className="mb-8">
           <div>
             <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
-              {title} {overdueCount > 0 && <PulseDot />}
+              {title} {overdueCount > 0 && <></>}
             </h2>
           </div>
         </header>
@@ -182,7 +178,7 @@ export function BillingInvoiceLedger({
         <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
           <div className="col-span-1 md:col-span-2 h-[160px]">
             <V2Card hoverColor="emerald" className="border-emerald-500/20 dark:border-emerald-500/20 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]">
-              <Sparkline colorClass="text-emerald-500" variant={1} />
+              <></>
               <MonolithicWatermark value={Math.round((outstandingCents / 100) / 1000) + 'k'} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
@@ -196,7 +192,7 @@ export function BillingInvoiceLedger({
           </div>
           <div className="h-[160px]">
             <V2Card hoverColor="rose" className="border-rose-500/20 dark:border-rose-500/20 shadow-[inset_0_0_15px_rgba(244,63,94,0.05)]">
-              <Sparkline colorClass="text-rose-500" variant={4} />
+              <></>
               <MonolithicWatermark value={overdueCount} className="text-rose-600/5 dark:text-rose-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2">
@@ -324,7 +320,6 @@ export function BillingInvoiceLedger({
     </div>
   );
 }
-
 
 export function PayerTypeBadge({ payerType }: { payerType: PayerTypeUi }) {
   const map: Record<PayerTypeUi, { label: string; className: string }> = {

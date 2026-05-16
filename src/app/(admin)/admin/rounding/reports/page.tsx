@@ -10,9 +10,8 @@ import {
 } from "lucide-react";
 
 import { RoundingHubNav } from "../rounding-hub-nav";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { V2Card } from "@/components/ui/v2-card";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -158,7 +157,7 @@ export default function AdminRoundingReportsPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix primaryClass="bg-emerald-700/10" secondaryClass="bg-cyan-900/10" />
+      <></>
 
       <div className="relative z-10 space-y-6">
         <header className="mb-6 flex flex-col md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">

@@ -14,12 +14,8 @@ import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
-
 type DietRow = Database["public"]["Tables"]["diet_orders"]["Row"] & {
   residents: { first_name: string; last_name: string } | null;
 };
@@ -431,10 +427,7 @@ export default function AdminDietaryHubPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={false} 
-        primaryClass="bg-indigo-700/10"
-        secondaryClass="bg-blue-900/10"
-      />
+      <></>
       
       <div className="relative z-10 space-y-6">
         
@@ -500,7 +493,7 @@ export default function AdminDietaryHubPage() {
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px] md:col-span-3">
             <V2Card hoverColor="indigo" className="border-indigo-500/20 dark:border-indigo-500/20 shadow-[0_8px_30px_rgba(99,102,241,0.05)]">
-              <Sparkline colorClass="text-indigo-500" variant={3} />
+              <></>
               <MonolithicWatermark value={displayRows.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between p-2">
                 <h3 className="text-[11px] font-bold tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
@@ -531,7 +524,7 @@ export default function AdminDietaryHubPage() {
           <div className="col-span-1 lg:col-span-2 space-y-4">
             <div className="flex items-center justify-between pb-2">
               <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 flex items-center gap-2">
-                <PulseDot colorClass="bg-indigo-500" /> Attention Queue
+                <></> Attention Queue
               </h3>
             </div>
             

@@ -12,7 +12,6 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { postInvoiceToGl } from "@/lib/finance/post-to-gl";
 import { canMutateFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 
@@ -231,7 +230,7 @@ export default function AdminInvoiceDetailPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix />
+      <></>
       
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <BillingHubNav />

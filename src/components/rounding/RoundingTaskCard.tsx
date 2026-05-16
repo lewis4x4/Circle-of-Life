@@ -96,7 +96,7 @@ export function RoundingTaskCard({
                  {tone.icon}
               </div>
               <div className="flex flex-col">
-                <h3 className="text-lg font-display text-white tracking-wide">{task.residentName}</h3>
+                <h3 className="text-lg text-white tracking-wide font-semibold">{task.residentName}</h3>
                 <p className="text-xs text-zinc-400/80 font-medium tracking-wide">
                   {task.roomLabel ? `${task.roomLabel} · ` : ""}
                   {task.assignedStaffName ? `Assigned to ${task.assignedStaffName}` : "Open assignment"}

@@ -5,11 +5,10 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft, Brain } from "lucide-react";
 
-import { TitleH1, Subtitle } from "@/components/ui/moonshot/typography";
+import { TitleH1, Subtitle } from "@/components/ui/typography";
 import { ExecutiveNavV2 } from "@/components/executive/executive-nav-v2";
 import { MetricCardMoonshot } from "@/components/executive/metric-card-moonshot";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { COO_PALETTE } from "@/lib/moonshot-theme";
 import { cn } from "@/lib/utils";
 import { useExecRoleKpis } from "@/hooks/useExecRoleKpis";
@@ -108,7 +107,7 @@ export default function CooDashboardPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full">
-      <AmbientMatrix primaryClass="bg-sky-900/10" secondaryClass="bg-emerald-900/10" />
+      <></>
       <div className="relative z-10">
         <div className="border-b border-white/5">
           <ExecutiveNavV2
@@ -165,7 +164,7 @@ export default function CooDashboardPage() {
           {tab === "Haven Insight" ? (
             <Panel className="flex min-h-[300px] items-center justify-center">
               <div className="space-y-4 text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/20 to-indigo-600/20">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-violet-500/20">
                   <Brain className="h-7 w-7 text-violet-400" />
                 </div>
                 <p className="text-lg font-semibold text-white">Haven Insight</p>
@@ -174,7 +173,7 @@ export default function CooDashboardPage() {
                 </p>
                 <Link
                   href="/admin/executive/nlq"
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 transition-all hover:from-violet-500 hover:to-indigo-500"
+                  className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 transition-all hover: hover:"
                 >
                   <Brain className="h-4 w-4" /> Open Haven Insight
                 </Link>

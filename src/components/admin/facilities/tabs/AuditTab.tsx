@@ -176,7 +176,7 @@ export function AuditTab({ facilityId }: AuditTabProps) {
       {/* Audit Table */}
       {entries.length === 0 ? (
         <div className="rounded-lg border border-slate-200/50 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 p-8 text-center">
-          <p className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">No audit log entries</p>
+          <p className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-500 dark:text-slate-400">No audit log entries</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -209,14 +209,14 @@ export function AuditTab({ facilityId }: AuditTabProps) {
                     {entry.old_value ? (
                       <code className="bg-gray-100 px-2 py-1 rounded text-slate-700 dark:text-slate-300">{entry.old_value}</code>
                     ) : (
-                      <span className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">—</span>
+                      <span className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-500 dark:text-slate-400">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs">
                     {entry.new_value ? (
                       <code className="bg-gray-100 px-2 py-1 rounded text-slate-700 dark:text-slate-300">{entry.new_value}</code>
                     ) : (
-                      <span className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">—</span>
+                      <span className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-500 dark:text-slate-400">—</span>
                     )}
                   </td>
                 </tr>

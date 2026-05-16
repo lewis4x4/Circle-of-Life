@@ -161,7 +161,7 @@ export default function TransportationOrgSettingsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-10 pb-16 w-full px-4 sm:px-6">
-      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-gradient-to-br from-slate-50/90 via-white/80 to-indigo-50/30 dark:from-black/40 dark:via-black/20 dark:to-indigo-950/20 p-8 md:p-10 rounded-lg border border-slate-200/60 dark:border-white/10 shadow-sm mt-4">
+      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between dark: dark: dark: p-8 md:p-10 rounded-lg border border-slate-200/60 dark:border-white/10 shadow-sm mt-4">
         <div className="space-y-3">
           <Link
             href="/admin/transportation"
@@ -272,7 +272,7 @@ export default function TransportationOrgSettingsPage() {
         </div>
 
         <div className="lg:col-span-2 space-y-4">
-          <div className="rounded-lg border border-indigo-200/40 bg-gradient-to-b from-indigo-50/90 to-white/80 p-6 shadow-inner dark:border-indigo-500/15 dark:from-indigo-950/40 dark:to-black/30 dark:shadow-none">
+          <div className="rounded-lg border border-indigo-200/40 p-6 shadow-inner dark:border-indigo-500/15 dark: dark: dark:shadow-none">
             <h2 className="text-[11px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">Live preview</h2>
             <p className="mt-2 text-sm text-slate-600 dark:text-zinc-400">
               Estimated reimbursement at <span className="font-semibold text-slate-900 dark:text-white">{formatCentsPerMileUsd(previewCents)}</span> / mi

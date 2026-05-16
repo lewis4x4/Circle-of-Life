@@ -160,7 +160,7 @@ export default function ExecutiveStandupBoardPage() {
           <div className="text-sm text-slate-500">No standup data found for this week.</div>
         ) : (
           <div className="space-y-8">
-            <section className="overflow-hidden rounded-lg border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 px-8 py-10 text-white shadow-none">
+            <section className="overflow-hidden rounded-lg border border-slate-200 px-8 py-10 text-white shadow-none">
               <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-300">Haven executive standup packet</p>

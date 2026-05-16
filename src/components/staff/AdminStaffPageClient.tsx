@@ -29,11 +29,7 @@ import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
-
+import { V2Card } from "@/components/ui/v2-card";
 const DEFAULT_FILTERS = {
   search: "",
   role: "all",
@@ -276,18 +272,13 @@ export function AdminStaffPageClient({
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={certRiskCount > 0} 
-        primaryClass="bg-blue-700/10"
-        secondaryClass="bg-indigo-900/10"
-        criticalPrimaryClass="bg-amber-700/20"
-        criticalSecondaryClass="bg-orange-900/10"
-      />
+      <></>
       <div className="relative z-10 space-y-6">
         <header className="mb-8">
           <div>
             
             <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
-              Staffing Roster {certRiskCount > 0 && <PulseDot colorClass="bg-amber-500" />}
+              Staffing Roster {certRiskCount > 0 && <></>}
             </h2>
           </div>
         </header>
@@ -295,7 +286,7 @@ export function AdminStaffPageClient({
         <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px]">
             <V2Card hoverColor="blue">
-              <Sparkline colorClass="text-blue-500" variant={3} />
+              <></>
               <MonolithicWatermark value={activeCount} className="text-blue-900/5 dark:text-blue-100/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-slate-500 flex items-center gap-2">
@@ -307,7 +298,7 @@ export function AdminStaffPageClient({
           </div>
           <div className="h-[160px]">
             <V2Card hoverColor="orange" className="border-amber-500/20 dark:border-amber-500/20 shadow-[inset_0_0_15px_rgba(245,158,11,0.05)]">
-              <Sparkline colorClass="text-amber-500" variant={4} />
+              <></>
               <MonolithicWatermark value={certRiskCount} className="text-amber-600/5 dark:text-amber-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">

@@ -161,7 +161,7 @@ export default function CeoDashboardTabs({
     return (
       <Panel className="flex min-h-[300px] items-center justify-center">
         <div className="space-y-4 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/20 to-indigo-600/20">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-violet-500/20">
             <Brain className="h-7 w-7 text-violet-400" />
           </div>
           <p className="text-lg font-semibold text-white">Haven Insight</p>
@@ -170,7 +170,7 @@ export default function CeoDashboardTabs({
           </p>
           <Link
             href="/admin/executive/nlq"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 transition-all hover:from-violet-500 hover:to-indigo-500"
+            className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 transition-all hover: hover:"
           >
             <Brain className="h-4 w-4" /> Open Haven Insight
           </Link>

@@ -66,7 +66,7 @@ function StatCard({
           <p className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white font-mono">
             {value}
           </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+          <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             {label}
           </p>
         </div>
@@ -80,7 +80,7 @@ function TierBadge({ tier }: { tier: SearchToolTier }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-lg px-2 py-0.5 text-[10px] font-mono uppercase tracking-widest",
+        "inline-flex items-center rounded-lg px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider",
         meta.bgClass,
         meta.textClass,
       )}
@@ -307,7 +307,7 @@ export function SearchToolDashboard() {
             <Button
               variant="outline"
               size="sm"
-              className="rounded-xl text-xs font-mono uppercase tracking-widest"
+              className="rounded-xl text-xs font-mono uppercase tracking-wider"
               onClick={seedDefaults}
               disabled={saving}
             >
@@ -322,7 +322,7 @@ export function SearchToolDashboard() {
           <Button
             variant="outline"
             size="sm"
-            className="rounded-xl text-xs font-mono uppercase tracking-widest"
+            className="rounded-xl text-xs font-mono uppercase tracking-wider"
             onClick={() => {
               reloadPolicies();
               reloadAudit();
@@ -373,11 +373,11 @@ export function SearchToolDashboard() {
       <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl dark:bg-[#0A0A0A]/50">
         <div className="mb-4 flex items-center gap-2">
           <Shield className="h-4 w-4 text-indigo-500" />
-          <h3 className="text-sm font-semibold uppercase tracking-widest text-slate-700 dark:text-slate-300">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
             Access Control Matrix
           </h3>
           {canEdit && (
-            <span className="ml-auto text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+            <span className="ml-auto text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">
               Click to toggle
             </span>
           )}
@@ -394,16 +394,16 @@ export function SearchToolDashboard() {
             <table className="w-full">
               <thead>
                 <tr>
-                  <th className="pb-3 text-left text-[10px] font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 w-[200px]">
+                  <th className="pb-3 text-left text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 w-[200px]">
                     Tool
                   </th>
-                  <th className="pb-3 text-left text-[10px] font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 w-[100px]">
+                  <th className="pb-3 text-left text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 w-[100px]">
                     Tier
                   </th>
                   {MATRIX_DISPLAY_ROLES.map((role) => (
                     <th
                       key={role}
-                      className="pb-3 text-center text-[10px] font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 min-w-[70px]"
+                      className="pb-3 text-center text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 min-w-[70px]"
                     >
                       {ROLE_LABELS[role]?.split(" ")[0] ?? role}
                     </th>
@@ -442,7 +442,7 @@ export function SearchToolDashboard() {
                               />
                             )}
                             <span
-                              className="text-xs font-semibold uppercase tracking-widest"
+                              className="text-xs font-semibold uppercase tracking-wider"
                               style={{ color: meta.color }}
                             >
                               {meta.label}
@@ -507,7 +507,7 @@ export function SearchToolDashboard() {
               <Activity className="h-4 w-4 text-emerald-500" />
               <div className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
-            <h3 className="text-sm font-semibold uppercase tracking-widest text-slate-700 dark:text-slate-300">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               Live Search Activity
             </h3>
           </div>

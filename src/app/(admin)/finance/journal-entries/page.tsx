@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { FinanceHubNav } from "../finance-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { ArrowRight, BookOpenText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -65,7 +64,7 @@ export default function JournalEntriesListPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix />
+      <></>
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <FinanceHubNav />
         

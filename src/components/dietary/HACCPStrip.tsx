@@ -33,7 +33,7 @@ export function HACCPStrip({
         </div>
         <button
           onClick={onVoice}
-          className="rounded-xl bg-gradient-to-br from-orange-500 to-rose-500 hover:from-orange-400 hover:to-rose-400 text-white py-3 font-semibold text-sm flex items-center justify-center gap-2 shadow-lg shadow-orange-500/30 transition"
+          className="rounded-xl hover: hover: text-white py-3 font-semibold text-sm flex items-center justify-center gap-2 shadow-lg shadow-orange-500/30 transition"
         >
           <Mic className="w-4 h-4" /> Hold to Log Temp
         </button>

@@ -16,10 +16,7 @@ import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 type AccountRow = Database["public"]["Tables"]["reputation_accounts"]["Row"];
@@ -303,10 +300,7 @@ export default function AdminReputationHubPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={draftReplies.length > 0}
-        primaryClass="bg-indigo-700/10"
-        secondaryClass="bg-red-900/10"
-      />
+      <></>
       
       <div className="relative z-10 space-y-6">
         <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -371,7 +365,7 @@ export default function AdminReputationHubPage() {
         <KineticGrid className="grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px]">
             <V2Card hoverColor="indigo" className="border-indigo-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
-              <Sparkline colorClass="text-indigo-500" variant={3} />
+              <></>
               <MonolithicWatermark value={accounts.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
@@ -383,14 +377,14 @@ export default function AdminReputationHubPage() {
           </div>
           <div className="h-[160px]">
             <V2Card hoverColor="red" className={draftReplies.length > 0 ? "border-red-500/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]" : ""}>
-              <Sparkline colorClass="text-red-500" variant={2} />
+              <></>
               <MonolithicWatermark value={draftReplies.length} className="text-red-600/5 dark:text-red-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <div className="flex items-center justify-between">
                   <h3 className="text-[10px] font-mono tracking-wider uppercase text-red-600 dark:text-red-400 flex items-center gap-2">
                      Draft Replies
                   </h3>
-                  {draftReplies.length > 0 && <PulseDot colorClass="bg-red-500" />}
+                  {draftReplies.length > 0 && <></>}
                 </div>
                 <p className="text-4xl font-mono tracking-tighter text-red-600 dark:text-red-400 pb-1">{draftReplies.length}</p>
               </div>
@@ -398,7 +392,7 @@ export default function AdminReputationHubPage() {
           </div>
           <div className="h-[160px]">
             <V2Card hoverColor="emerald" className="border-emerald-500/20 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]">
-              <Sparkline colorClass="text-emerald-500" variant={1} />
+              <></>
               <MonolithicWatermark value={postedReplies.length} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400">

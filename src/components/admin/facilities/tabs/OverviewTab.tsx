@@ -204,7 +204,7 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
               These settings drive the standup bed-by-category breakdown. Keep them current as rooms change or are blocked.
             </p>
           </div>
-          <div className="text-[10px] uppercase tracking-widest font-mono text-slate-500">
+          <div className="text-[10px] uppercase tracking-wider font-mono text-slate-500">
             {canEdit ? `${appRole.replace(/_/g, " ")} can edit` : "Read only"}
           </div>
         </div>
@@ -230,7 +230,7 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
                 ["Needs Assignment", bedSummary.unclassified],
               ].map(([label, value]) => (
                 <div key={label} className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
-                  <div className="text-[10px] uppercase tracking-widest text-slate-500">{label}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-slate-500">{label}</div>
                   <div className="mt-2 text-2xl font-semibold text-slate-100">{value}</div>
                 </div>
               ))}
@@ -261,7 +261,7 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b border-white/10 text-left text-[10px] uppercase tracking-widest text-slate-500">
+                <tr className="border-b border-white/10 text-left text-[10px] uppercase tracking-wider text-slate-500">
                   <th className="px-3 py-2">Room</th>
                   <th className="px-3 py-2">Bed</th>
                   <th className="px-3 py-2">Status</th>
@@ -331,7 +331,7 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
                     <td className="px-3 py-3">
                       <button
                         type="button"
-                        className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-widest text-slate-200 hover:bg-white/5 disabled:opacity-50"
+                        className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-200 hover:bg-white/5 disabled:opacity-50"
                         disabled={!canEdit || bedsSaving}
                         onClick={() =>
                           void updateBed(bed.id, {

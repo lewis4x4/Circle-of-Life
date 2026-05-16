@@ -12,10 +12,7 @@ import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { V2Card } from "@/components/ui/v2-card";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import { useAuth } from "@/hooks/useAuth";
@@ -130,10 +127,7 @@ export default function AdminInsuranceHubPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={openClaims ? openClaims > 0 : false} 
-        primaryClass="bg-blue-700/10"
-        secondaryClass="bg-red-900/10"
-      />
+      <></>
       
       <div className="relative z-10 space-y-6">
         <InsuranceHubNav />
@@ -176,7 +170,7 @@ export default function AdminInsuranceHubPage() {
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4" staggerMs={75}>
           <div className="h-[160px]">
             <V2Card hoverColor="slate">
-              <Sparkline colorClass="text-slate-400" variant={1} />
+              <></>
               <MonolithicWatermark value={activePolicies ?? 0} className="text-slate-800/5 dark:text-white/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-slate-500 flex items-center gap-2">
@@ -188,7 +182,7 @@ export default function AdminInsuranceHubPage() {
           </div>
           <div className="h-[160px]">
             <V2Card hoverColor="emerald">
-              <Sparkline colorClass="text-emerald-500" variant={3} />
+              <></>
               <MonolithicWatermark value={renewalsInFlight ?? 0} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
@@ -200,14 +194,14 @@ export default function AdminInsuranceHubPage() {
           </div>
           <div className="h-[160px]">
             <V2Card hoverColor="red" className={openClaims ? "border-red-500/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]" : ""}>
-              <Sparkline colorClass="text-red-500" variant={2} />
+              <></>
               <MonolithicWatermark value={openClaims ?? 0} className="text-red-600/5 dark:text-red-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <div className="flex items-center justify-between">
                   <h3 className="text-[10px] font-mono tracking-wider uppercase text-red-600 dark:text-red-400 flex items-center gap-2">
                      Open Claims
                   </h3>
-                  {openClaims != null && openClaims > 0 && <PulseDot colorClass="bg-red-500" />}
+                  {openClaims != null && openClaims > 0 && <></>}
                 </div>
                 <p className="text-4xl font-mono tracking-tighter text-red-600 dark:text-red-400 pb-1">{loading ? "…" : openClaims ?? "—"}</p>
               </div>

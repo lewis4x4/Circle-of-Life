@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 
 import { ReportsHubNav } from "@/components/reports/reports-hub-nav";
 import { Badge } from "@/components/ui/badge";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { canManageReports, loadReportsRoleContext } from "@/lib/reports/auth";
 import { createClient } from "@/lib/supabase/client";
@@ -55,10 +54,7 @@ export default function ReportsGovernancePage() {
 
   return (
     <>
-      <AmbientMatrix hasCriticals={false} 
-        primaryClass="bg-purple-700/5"
-        secondaryClass="bg-slate-900/5"
-      />
+      <></>
       
       <div className="relative z-10 space-y-6 max-w-7xl mx-auto">
         <ReportsHubNav />

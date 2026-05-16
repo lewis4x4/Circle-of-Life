@@ -215,9 +215,9 @@ export function BehaviorLogModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-violet-900/50 bg-gradient-to-br from-violet-950/95 via-zinc-950 to-zinc-950 text-zinc-100">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-violet-900/50 text-zinc-100">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg font-display text-violet-200">
+          <DialogTitle className="flex items-center gap-2 text-lg text-violet-200 font-semibold">
             <Brain className="h-5 w-5 text-violet-400" />
             Log Behavior Event
           </DialogTitle>
@@ -231,7 +231,7 @@ export function BehaviorLogModal({
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-500/40">
               <CheckCircle2 className="h-8 w-8 text-emerald-400" />
             </div>
-            <p className="text-lg font-display text-emerald-300">Behavior logged successfully</p>
+            <p className="text-lg text-emerald-300 font-semibold">Behavior logged successfully</p>
             <div className="flex gap-3 w-full">
               <Button
                 type="button"
@@ -377,7 +377,7 @@ export function BehaviorLogModal({
                 <Button
                   type="button"
                   disabled={submitting || !behavior.trim()}
-                  className="h-12 w-full bg-gradient-to-r from-violet-600 to-violet-500 text-white hover:from-violet-500 hover:to-violet-400 disabled:opacity-50 shadow-lg shadow-violet-500/20 font-medium"
+                  className="h-12 w-full text-white hover: hover: disabled:opacity-50 shadow-lg shadow-violet-500/20 font-medium"
                   onClick={() => void submitBehavior()}
                 >
                   {submitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Brain className="mr-2 h-5 w-5" />}
@@ -593,9 +593,9 @@ export function ConditionLogModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-rose-900/50 bg-gradient-to-br from-rose-950/95 via-zinc-950 to-zinc-950 text-zinc-100">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-rose-900/50 text-zinc-100">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg font-display text-rose-200">
+          <DialogTitle className="flex items-center gap-2 text-lg text-rose-200 font-semibold">
             <Stethoscope className="h-5 w-5 text-rose-400" />
             Log Condition Change
           </DialogTitle>
@@ -609,7 +609,7 @@ export function ConditionLogModal({
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-500/40">
               <CheckCircle2 className="h-8 w-8 text-emerald-400" />
             </div>
-            <p className="text-lg font-display text-emerald-300">Condition report submitted</p>
+            <p className="text-lg text-emerald-300 font-semibold">Condition report submitted</p>
             <div className="flex gap-3 w-full">
               <Button
                 type="button"
@@ -691,7 +691,7 @@ export function ConditionLogModal({
                 <Button
                   type="button"
                   disabled={submitting || !description.trim()}
-                  className="h-12 w-full bg-gradient-to-r from-rose-700 to-rose-600 text-white hover:from-rose-600 hover:to-rose-500 disabled:opacity-50 shadow-lg shadow-rose-500/20 font-medium"
+                  className="h-12 w-full text-white hover: hover: disabled:opacity-50 shadow-lg shadow-rose-500/20 font-medium"
                   onClick={() => void submitReport()}
                 >
                   {submitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Stethoscope className="mr-2 h-5 w-5" />}
@@ -984,9 +984,9 @@ export function GeneralNoteModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-teal-900/50 bg-gradient-to-br from-teal-950/95 via-zinc-950 to-zinc-950 text-zinc-100">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-teal-900/50 text-zinc-100">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg font-display text-teal-200">
+          <DialogTitle className="flex items-center gap-2 text-lg text-teal-200 font-semibold">
             <FileText className="h-5 w-5 text-teal-400" />
             Shift Log
           </DialogTitle>
@@ -1007,7 +1007,7 @@ export function GeneralNoteModal({
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-500/40">
               <CheckCircle2 className="h-8 w-8 text-emerald-400" />
             </div>
-            <p className="text-lg font-display text-emerald-300">Saved successfully</p>
+            <p className="text-lg text-emerald-300 font-semibold">Saved successfully</p>
             <div className="flex gap-3 w-full">
               <Button
                 type="button"

@@ -81,15 +81,15 @@ export function StaffingTab({ facilityId }: StaffingTabProps) {
         </h3>
         <div className="text-sm grid gap-2 sm:grid-cols-3">
           <div>
-            <p className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">Administrator (recorded)</p>
+            <p className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-500 dark:text-slate-400">Administrator (recorded)</p>
             <p className="font-medium">{facility.administrator_name ?? "—"}</p>
           </div>
           <div>
-            <p className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">Active staff rows</p>
+            <p className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-500 dark:text-slate-400">Active staff rows</p>
             <p className="font-medium">{staffLoading ? "Loading…" : activeStaffCount}</p>
           </div>
           <div>
-            <p className="text-[10px] font-mono tracking-widest uppercase font-semibold text-slate-500 dark:text-slate-400">Ratio rule set</p>
+            <p className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-500 dark:text-slate-400">Ratio rule set</p>
             <p className="font-medium font-mono text-xs break-all">
               {facility.facility_ratio_rule_set_id ?? "—"}
             </p>

@@ -13,7 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { CarePlanDiffModal } from "@/components/care-plans/care-plan-diff-modal";
 
@@ -181,7 +180,7 @@ export default function ClinicalDeskPage() {
            
            <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
               Clinical Desk
-              {hasCriticals && <PulseDot colorClass="bg-rose-500" />}
+              {hasCriticals && <></>}
            </h1>
            <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400">
              Unified exception queue for Assessments and Care Plan drafts.
@@ -273,7 +272,7 @@ export default function ClinicalDeskPage() {
         <div className="lg:col-span-8 flex flex-col h-full overflow-hidden">
           <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] shadow-sm p-6 flex flex-col h-full">
             <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-4 pl-2 flex items-center gap-2">
-              <PulseDot colorClass="bg-indigo-500" />
+              <></>
               Generated Care Plan Drafts
             </h3>
             <ScrollArea className="flex-1 -mx-2 px-2">

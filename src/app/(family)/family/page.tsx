@@ -107,14 +107,14 @@ export default function FamilyHomePage() {
           />
         </div>
          {/* Fade to background color seamlessly */}
-         <div className="absolute inset-0 bg-gradient-to-t from-[#fffafa] via-transparent to-white/10"></div>
+         <div className="absolute inset-0 from-[#fffafa]"></div>
       </div>
 
       <div className="w-full max-w-2xl px-4 relative z-10 mt-20 md:mt-32">
          {/* ─── OVERLAPPING AVATAR ─── */}
          <div className="text-center mb-10">
            <div className="w-24 h-24 md:w-32 md:h-32 mx-auto bg-white rounded-full flex items-center justify-center p-2 shadow-[0_20px_40px_rgba(251,146,60,0.15)] mb-6 ring-1 ring-stone-900/5">
-              <div className="w-full h-full rounded-full bg-gradient-to-br from-stone-50 to-stone-200 border-2 border-stone-100 flex items-center justify-center">
+              <div className="w-full h-full rounded-full border-2 border-stone-100 flex items-center justify-center">
                  <span className="text-4xl md:text-2xl font-serif text-stone-600 font-semibold">{initial}</span>
               </div>
            </div>

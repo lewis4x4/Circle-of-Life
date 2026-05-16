@@ -12,10 +12,8 @@ import React from "react";
 import Link from "next/link";
 import { TrendingUp, TrendingDown, Minus, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { type MoonshotColor, getMoonshotColor, getMoonshotDimColor, createGlowShadow } from "@/lib/moonshot-theme";
-import { MonoLabel, MetricValue } from "@/components/ui/moonshot/typography";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
-
+import { type MoonshotColor, getMoonshotDimColor, createGlowShadow } from "@/lib/moonshot-theme";
+import { MonoLabel, MetricValue } from "@/components/ui/typography";
 // ── TYPES ──
 
 export type TrendDirection = "up" | "down" | "flat";
@@ -58,12 +56,13 @@ export function MetricCardMoonshot({
   onClick,
   href,
   showSparkline = true,
-  sparklineVariant = 1,
   compact = false,
   className,
   disabled = false,
 }: MetricCardMoonshotProps) {
-  const colorHex = getMoonshotColor(color);
+  // Sparkline JSX was stripped during the Phase D D1 codemod sweep (the
+  // `Sparkline` component was a null-return stub). `sparklineVariant` and
+  // `colorHex` are no longer referenced.
   const dimColorHex = getMoonshotDimColor(color);
   const glowShadow = createGlowShadow(color);
 
@@ -90,11 +89,7 @@ export function MetricCardMoonshot({
       {/* Background Sparkline */}
       {showSparkline && (
         <div className="absolute bottom-0 left-0 right-0 h-20 opacity-15 pointer-events-none">
-          <Sparkline
-            colorClass={`text-[${colorHex}]`}
-            variant={sparklineVariant}
-            className="opacity-100"
-          />
+          <></>
         </div>
       )}
 

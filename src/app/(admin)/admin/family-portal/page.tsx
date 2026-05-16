@@ -11,7 +11,6 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -395,7 +394,7 @@ export default function AdminFamilyPortalPage() {
                       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_2fr_3fr_1fr] gap-4 items-center p-6 rounded-lg bg-white border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-rose-200 dark:hover:border-rose-500/30 transition-all duration-300 w-full cursor-pointer outline-none hover:shadow-lg dark:hover:bg-white/[0.05]">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                            <PulseDot colorClass="bg-rose-500" />
+                            <></>
                           </div>
                           <span className="font-semibold text-xl text-slate-900 dark:text-white truncate group-hover:text-rose-600 dark:group-hover:text-rose-300 transition-colors tracking-tight">
                              {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "—"}

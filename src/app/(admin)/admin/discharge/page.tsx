@@ -8,8 +8,7 @@ import { ClipboardList, DoorOpen, ArrowRight, Loader2 } from "lucide-react";
 import { DischargeHubNav } from "./discharge-hub-nav";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
+import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
@@ -462,7 +461,7 @@ export default function AdminDischargeHubPage() {
                         >
                           <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                              {isDraft ? <PulseDot colorClass="bg-rose-500" /> : <div className="w-2 h-2 rounded-full bg-indigo-500" />}
+                              {isDraft ? <></> : <div className="w-2 h-2 rounded-full bg-indigo-500" />}
                             </div>
                             <span className="font-semibold text-xl text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors tracking-tight">
                                {r.residents ? `${r.residents.first_name} ${r.residents.last_name}` : "—"}

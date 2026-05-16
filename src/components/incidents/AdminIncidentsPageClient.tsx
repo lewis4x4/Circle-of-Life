@@ -15,11 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
-
 type BoardScope = "all" | "active" | "open";
 
 type AdminIncidentsPageClientProps = {
@@ -205,15 +202,12 @@ export function AdminIncidentsPageClient({
 
   return (
     <div className="relative flex flex-col h-[calc(100vh-6rem)] space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-6">
-      <AmbientMatrix 
-        primaryClass="bg-rose-500/10" 
-        secondaryClass="bg-indigo-600/5" 
-      />
+      <></>
       <header className="relative z-10 shrink-0 flex items-end justify-between px-1">
         <div>
            
            <h2 className="text-4xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
-             Safety Operations Kanban {visibleRows.filter(r => r.status === "new").length > 0 && <PulseDot colorClass="bg-rose-500" />}
+             Safety Operations Kanban {visibleRows.filter(r => r.status === "new").length > 0 && <></>}
            </h2>
         </div>
         <div className="flex items-center gap-2">

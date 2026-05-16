@@ -209,7 +209,7 @@ export function QuickCheckDrawer({
         aria-labelledby={titleId}
         className={cn(
           "fixed bottom-0 left-0 right-0 z-[110] box-border max-h-[92vh] w-full min-w-0 overflow-y-auto overflow-x-hidden rounded-t-2xl border-t border-slate-700/50",
-          "bg-gradient-to-b from-slate-900 to-slate-950 shadow-2xl shadow-black/50",
+          "shadow-2xl shadow-black/50",
           "pb-[env(safe-area-inset-bottom,0px)] animate-in slide-in-from-bottom-8 duration-300",
         )}
       >
@@ -219,7 +219,7 @@ export function QuickCheckDrawer({
             {task && (
               <>
                 <div className="flex items-center gap-2">
-                  <h2 id={titleId} className="text-lg font-display font-semibold text-slate-100 truncate">{task.residentName}</h2>
+                  <h2 id={titleId} className="text-lg font-semibold text-slate-100 truncate">{task.residentName}</h2>
                   {task.roomLabel && (
                     <span className="text-[10px] font-mono tracking-wider text-slate-500 bg-slate-800/50 px-1.5 py-0.5 rounded shrink-0">
                       {task.roomLabel}
@@ -255,7 +255,7 @@ export function QuickCheckDrawer({
             <div className="rounded-full bg-emerald-500/20 p-4">
               <CheckCircle2 className="h-12 w-12 text-emerald-400" />
             </div>
-            <p className="text-lg font-display font-semibold text-emerald-300">Check complete</p>
+            <p className="text-lg font-semibold text-emerald-300">Check complete</p>
             {onNextTask && queuePosition && queuePosition.current < queuePosition.total && (
               <p className="text-sm text-slate-400">Advancing to next resident...</p>
             )}
@@ -281,7 +281,7 @@ export function QuickCheckDrawer({
 
             {/* Step 1: Quick Status — the most important tap */}
             <div className="min-w-0">
-              <label className="mb-2 block text-[10px] font-mono uppercase tracking-widest text-slate-500">Status</label>
+              <label className="mb-2 block text-[10px] font-mono uppercase tracking-wider text-slate-500">Status</label>
               <div
                 role="radiogroup"
                 aria-label="Quick status"
@@ -311,7 +311,7 @@ export function QuickCheckDrawer({
             {/* Step 2: Location + Position — two taps */}
             <div className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-3">
               <div className="min-w-0">
-                <label className="mb-2 block text-[10px] font-mono uppercase tracking-widest text-slate-500">Location</label>
+                <label className="mb-2 block text-[10px] font-mono uppercase tracking-wider text-slate-500">Location</label>
                 <div className="flex min-w-0 flex-wrap gap-1.5">
                   {LOCATIONS.map((loc) => (
                     <button
@@ -331,7 +331,7 @@ export function QuickCheckDrawer({
                 </div>
               </div>
               <div className="min-w-0">
-                <label className="mb-2 block text-[10px] font-mono uppercase tracking-widest text-slate-500">Position</label>
+                <label className="mb-2 block text-[10px] font-mono uppercase tracking-wider text-slate-500">Position</label>
                 <div className="flex min-w-0 flex-wrap gap-1.5">
                   {POSITIONS.map((pos) => (
                     <button
@@ -354,7 +354,7 @@ export function QuickCheckDrawer({
 
             {/* Quick intervention toggles — always visible */}
             <div className="min-w-0">
-              <label className="mb-2 block text-[10px] font-mono uppercase tracking-widest text-slate-500">Interventions</label>
+              <label className="mb-2 block text-[10px] font-mono uppercase tracking-wider text-slate-500">Interventions</label>
               <div className="grid min-w-0 grid-cols-1 gap-2 min-[400px]:grid-cols-2">
                 <InterventionToggle icon={<Droplets className="h-3.5 w-3.5" />} label="Hydration offered" checked={hydration} onChange={setHydration} />
                 <InterventionToggle icon={<Bath className="h-3.5 w-3.5" />} label="Toileting assisted" checked={toileting} onChange={setToileting} />
@@ -366,13 +366,13 @@ export function QuickCheckDrawer({
             {/* Expanded detail section — only when abnormal */}
             {showDetails && (
               <div className="min-w-0 space-y-3 rounded-xl border border-amber-700/30 bg-amber-950/10 p-3 sm:p-4">
-                <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-amber-400">
+                <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-wider text-amber-400">
                   <AlertTriangle className="h-3.5 w-3.5" />
                   Requires detail
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-1.5 block">Exception type</label>
+                  <label className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-1.5 block">Exception type</label>
                   <div className="flex min-w-0 flex-wrap gap-1.5">
                     {EXCEPTION_OPTIONS.map((opt) => (
                       <button
@@ -393,7 +393,7 @@ export function QuickCheckDrawer({
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-1.5 block">Note</label>
+                  <label className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-1.5 block">Note</label>
                   <textarea
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
@@ -412,7 +412,7 @@ export function QuickCheckDrawer({
               disabled={submitting}
               className={cn(
                 "w-full rounded-xl py-4 text-base font-semibold transition-all duration-200",
-                "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white",
+                "text-white",
                 "hover:from-emerald-500 hover:to-emerald-400 active:scale-[0.98]",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
                 "shadow-lg shadow-emerald-900/30",

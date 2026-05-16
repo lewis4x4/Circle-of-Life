@@ -89,7 +89,7 @@ export function ShiftBar({
             className="flex items-center gap-3 rounded-xl hover:bg-slate-800/60 px-1 py-0.5 transition"
             aria-label="Account menu"
           >
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-sky-500 flex items-center justify-center text-white font-semibold">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold">
               {techInitials}
             </div>
             <div className="text-left">

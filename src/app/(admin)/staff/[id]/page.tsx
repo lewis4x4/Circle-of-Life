@@ -14,7 +14,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -253,7 +252,7 @@ export default function AdminStaffDetailPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={certAgg === "expired"} />
+      <></>
 
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm overflow-hidden relative">
@@ -269,13 +268,13 @@ export default function AdminStaffDetailPage() {
               {staff.photo_url ? (
                 <Avatar className="h-20 w-20 ring-4 ring-white/50 dark:ring-white/10 shadow-lg rounded-[1.2rem]">
                   <AvatarImage src={staff.photo_url} alt={fullName} className="object-cover rounded-[1.2rem]"/>
-                  <AvatarFallback className="bg-gradient-to-br from-indigo-100 to-slate-200 text-xl font-medium text-indigo-900 dark:from-indigo-900 dark:to-slate-800 dark:text-indigo-100 rounded-[1.2rem]">
+                  <AvatarFallback className="text-xl font-medium text-indigo-900 dark: dark: dark:text-indigo-100 rounded-[1.2rem]">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
               ) : (
                 <div
-                  className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.2rem] bg-gradient-to-br from-slate-200 to-slate-300 text-xl font-medium text-slate-600 ring-4 ring-white/50 dark:from-slate-800 dark:to-slate-900 dark:text-slate-300 dark:ring-white/10 shadow-lg"
+                  className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.2rem] text-xl font-medium text-slate-600 ring-4 ring-white/50 dark: dark: dark:text-slate-300 dark:ring-white/10 shadow-lg"
                   aria-hidden
                 >
                   {fullName.charAt(0).toUpperCase()}

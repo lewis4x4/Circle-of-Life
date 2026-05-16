@@ -16,10 +16,8 @@ import { cn } from "@/lib/utils";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import { useAuth } from "@/hooks/useAuth";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
+import { V2Card } from "@/components/ui/v2-card";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
 
 interface AlertWithFacility extends ExecutiveAlertRow {
   facilities?: { name: string } | null;
@@ -102,7 +100,7 @@ export default function ExecutiveAlertsPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={criticals.length > 0} primaryClass="bg-amber-900/10" secondaryClass="bg-rose-900/10" />
+      <></>
 
       <div className="relative z-10 space-y-6">
         <header className="mb-6 mt-2">
@@ -215,7 +213,7 @@ export default function ExecutiveAlertsPage() {
                              isCrit ? "bg-rose-500/5 border-rose-500/20" : isWarn ? "bg-amber-500/5 border-amber-500/20" : "bg-slate-500/5 border-slate-500/20"
                           )}>
                              <div className="flex items-center gap-2 mb-3">
-                                <PulseDot colorClass={isCrit ? "bg-rose-500" : isWarn ? "bg-amber-500" : "bg-slate-500"} />
+                                <></>
                                 <span className={cn(
                                    "text-[10px] uppercase font-mono font-bold tracking-wider px-2 py-0.5 rounded",
                                    isCrit ? "bg-rose-500/20 text-rose-500" : isWarn ? "bg-amber-500/20 text-amber-500" : "bg-slate-500/20 text-slate-500"

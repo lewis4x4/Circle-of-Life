@@ -163,7 +163,7 @@ export default function AdminSearchPage() {
                 href="/admin/knowledge"
                 className="group flex shrink-0 items-center gap-3 rounded-2xl border border-zinc-700/80 bg-zinc-900/50 px-4 py-3 transition hover:border-indigo-500/40 hover:bg-indigo-950/30"
               >
-                <span className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg shadow-indigo-500/20">
+                <span className="flex size-10 items-center justify-center rounded-xl shadow-lg shadow-indigo-500/20">
                   <BookOpen className="size-5 text-white" aria-hidden />
                 </span>
                 <span className="text-left">
@@ -180,7 +180,7 @@ export default function AdminSearchPage() {
               <div className="mb-10 flex flex-col items-center gap-10">
                 <div className="flex flex-col items-center gap-4 text-center">
                   <div
-                    className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-[0_0_32px_rgba(99,102,241,0.35)]"
+                    className="flex h-16 w-16 items-center justify-center rounded-2xl shadow-[0_0_32px_rgba(99,102,241,0.35)]"
                     aria-hidden
                   >
                     <Search className="size-8 text-white" strokeWidth={2} />

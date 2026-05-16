@@ -16,9 +16,7 @@ import { parseCompetencyAttachments } from "@/lib/training/competency-storage";
 import { CompetencyCertificateOpenButton } from "@/components/training/competency-certificate-open-button";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
-import { Sparkline } from "@/components/ui/moonshot/sparkline";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
+import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 type DemoRow = Database["public"]["Tables"]["competency_demonstrations"]["Row"] & {
@@ -601,10 +599,7 @@ export default function AdminTrainingHubPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix hasCriticals={false} 
-        primaryClass="bg-indigo-700/10"
-        secondaryClass="bg-slate-900/10"
-      />
+      <></>
       
       <div className="relative z-10 space-y-6">
         <header className="mb-8">
@@ -619,7 +614,7 @@ export default function AdminTrainingHubPage() {
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px]">
             <V2Card hoverColor="indigo" className="border-indigo-500/20 dark:border-indigo-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
-              <Sparkline colorClass="text-indigo-500" variant={3} />
+              <></>
               <MonolithicWatermark value={rows.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">

@@ -276,7 +276,7 @@ export function ObservationPlanEditor({
 
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">Plan rules</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">Plan rules</h2>
           <Button variant="outline" size="sm" onClick={() => setRules((current) => [...current, { ...blankRule(), sortOrder: current.length }])}>
             <Plus className="mr-1 h-4 w-4" />
             Add rule

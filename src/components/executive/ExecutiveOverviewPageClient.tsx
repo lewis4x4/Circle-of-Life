@@ -13,8 +13,6 @@ import {
 
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
-
 import { ExecutiveHubNav } from "@/app/(admin)/executive/executive-hub-nav";
 
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
@@ -515,7 +513,7 @@ function ExecutiveDashboardBody({
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex min-w-0 items-center gap-1.5">
-                        {isCritical && <PulseDot colorClass="bg-destructive" />}
+                        {isCritical && <></>}
                         <span
                           className={cn(
                             "truncate text-[10px] font-medium uppercase tracking-wider",
@@ -628,9 +626,9 @@ function ExecutiveDashboardBody({
                           <td className="h-9 px-3">
                             <span className="inline-flex items-center gap-2">
                               {hasCritical ? (
-                                <PulseDot colorClass="bg-destructive" />
+                                <></>
                               ) : hasWarning ? (
-                                <PulseDot colorClass="bg-warning" />
+                                <></>
                               ) : (
                                 <span className="size-1.5 rounded-full bg-muted-foreground/40" />
                               )}

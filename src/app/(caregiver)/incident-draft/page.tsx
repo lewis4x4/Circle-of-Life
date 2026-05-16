@@ -537,7 +537,7 @@ function CaregiverIncidentDraftPageInner() {
           <button
             type="submit"
             disabled={submitting || !facilityId}
-            className="w-full h-16 rounded-lg flex items-center justify-center font-bold tracking-wider uppercase transition-all shadow-[0_4px_30px_rgba(245,158,11,0.2)] bg-gradient-to-r from-amber-600 to-amber-500 text-black hover:from-amber-500 hover:to-amber-400 disabled:opacity-50 disabled:grayscale tap-responsive text-lg"
+            className="w-full h-16 rounded-lg flex items-center justify-center font-bold tracking-wider uppercase transition-all shadow-[0_4px_30px_rgba(245,158,11,0.2)] text-black hover: hover: disabled:opacity-50 disabled:grayscale tap-responsive text-lg"
           >
             {submitting ? (
               <>

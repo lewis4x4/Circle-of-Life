@@ -28,7 +28,7 @@ export function ServiceBar({ data }: { data: ServiceBarData }) {
       {/* Left: cook identity + meal context */}
       <div className="flex items-center gap-5">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
             <ChefHat className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -65,7 +65,7 @@ export function ServiceBar({ data }: { data: ServiceBarData }) {
           </div>
           <div className="w-32 h-2 rounded-full bg-stone-800 overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 transition-all"
+              className="h-full transition-all"
               style={{ width: `${data.expected > 0 ? (data.plated / data.expected) * 100 : 0}%` }}
             />
           </div>

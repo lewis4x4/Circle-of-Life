@@ -36,7 +36,7 @@ export function FacilityCard({ facility, redAlertCount = 0, yellowAlertCount = 0
           "focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950"
         )}
       >
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal-400/30 to-transparent opacity-0 transition group-hover:opacity-100" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px opacity-0 transition group-hover:opacity-100" />
 
         <div className="mb-4 flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">

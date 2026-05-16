@@ -16,10 +16,8 @@ import {
 
 import { RoundingHubNav } from "../rounding-hub-nav";
 import { QuickCheckDrawer, type QuickCheckTask } from "@/components/rounding/QuickCheckDrawer";
-import { V2Card } from "@/components/ui/moonshot/v2-card";
+import { V2Card } from "@/components/ui/v2-card";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { AmbientMatrix } from "@/components/ui/moonshot/ambient-matrix";
-import { PulseDot } from "@/components/ui/moonshot/pulse-dot";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -215,11 +213,7 @@ export default function AdminRoundingLivePage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <AmbientMatrix
-        hasCriticals={hasCriticals}
-        primaryClass="bg-cyan-700/10"
-        secondaryClass="bg-indigo-900/10"
-      />
+      <></>
 
       <div className="relative z-10 space-y-6">
         <header className="mb-6 mt-2">
@@ -228,7 +222,7 @@ export default function AdminRoundingLivePage() {
               
               <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
                 Live Rounding Board
-                {hasCriticals && <PulseDot colorClass="bg-rose-500" />}
+                {hasCriticals && <></>}
               </h2>
               <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">
                 Tap any resident to record a check, or start sequential rounds
@@ -337,7 +331,7 @@ export default function AdminRoundingLivePage() {
               onClick={startSequentialRounds}
               className={cn(
                 "inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-200",
-                "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white",
+                "text-white",
                 "hover:from-emerald-500 hover:to-emerald-400 active:scale-[0.98]",
                 "shadow-lg shadow-emerald-900/30",
               )}
@@ -380,7 +374,7 @@ export default function AdminRoundingLivePage() {
                   <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
                     <div className={cn("flex items-center gap-2 shrink-0 md:mb-0 mb-2 w-full md:w-auto border-b md:border-b-0 border-white/10 pb-2 md:pb-0", cfg.color)}>
                       <Icon aria-hidden className="h-6 w-6" />
-                      {cfg.pulse && <PulseDot colorClass={cfg.color.replace("text-", "bg-")} />}
+                      {cfg.pulse && <></>}
                     </div>
 
                     <div className="flex-1 min-w-0 w-full">
@@ -492,7 +486,7 @@ function StatCard({ label, value, color, pulse, active, onClick }: { label: stri
           <div className="relative z-10 flex flex-col h-full justify-between">
             <h3 className={cn("text-[10px] font-mono tracking-wider uppercase flex items-center gap-2", colorClasses.text)}>
               {label}
-              {pulse && <PulseDot colorClass={colorClasses.text.replace("text-", "bg-")} />}
+              {pulse && <></>}
               <Filter className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
             </h3>
             <p className={cn("text-2xl font-mono tracking-tighter pb-1", colorClasses.text)}>{value}</p>

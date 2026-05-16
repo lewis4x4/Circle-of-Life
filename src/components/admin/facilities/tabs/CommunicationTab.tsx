@@ -88,7 +88,7 @@ export function CommunicationTab({ facilityId }: CommunicationTabProps) {
 
   return (
     <form onSubmit={onSave} className="space-y-8">
-      <section className="rounded-[2rem] border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
+      <section className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
         <h3 className="font-semibold">Visitation</h3>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-sm">
@@ -128,7 +128,7 @@ export function CommunicationTab({ facilityId }: CommunicationTabProps) {
         </label>
       </section>
 
-      <section className="rounded-[2rem] border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
+      <section className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
         <h3 className="font-semibold">Family notifications</h3>
         <label className="flex items-center gap-2 text-sm">
           <input
@@ -157,7 +157,7 @@ export function CommunicationTab({ facilityId }: CommunicationTabProps) {
       </section>
 
       {canMarketing && (
-        <section className="rounded-[2rem] border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
+        <section className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
           <h3 className="font-semibold">Online presence (owner / org_admin)</h3>
           <label className="text-sm block">
             Google Business Profile URL

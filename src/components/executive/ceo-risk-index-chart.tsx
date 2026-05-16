@@ -86,7 +86,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
 
     return (
       <div className="bg-slate-900/90 backdrop-blur-md border border-slate-700/50 p-3 rounded-lg shadow-2xl">
-        <p className="text-xs font-mono text-slate-400 mb-2 uppercase tracking-widest">
+        <p className="text-xs font-mono text-slate-400 mb-2 uppercase tracking-wider">
           {data.facility}
         </p>
         <div className="space-y-1.5">
@@ -111,7 +111,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
           <div className="pt-1 border-t border-slate-700 mt-2">
             <span
               className={cn(
-                "text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded",
+                "text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded",
                 riskLevel.color === "emerald" && "bg-emerald-500/20 text-emerald-300",
                 riskLevel.color === "amber" && "bg-amber-500/20 text-amber-300",
                 riskLevel.color === "rose" && "bg-rose-500/20 text-rose-300"
