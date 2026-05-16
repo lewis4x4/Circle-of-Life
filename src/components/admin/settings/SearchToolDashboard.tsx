@@ -80,7 +80,7 @@ function TierBadge({ tier }: { tier: SearchToolTier }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-lg px-2 py-0.5 text-[10px] font-mono uppercase tracking-widest",
+        "inline-flex items-center rounded-lg px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider",
         meta.bgClass,
         meta.textClass,
       )}
