@@ -157,7 +157,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
         {/* Tablet / desktop side rail (md+) */}
         <nav
           aria-label="Caregiver navigation (tablet)"
-          className="fixed inset-y-0 left-0 z-50 hidden w-20 flex-col border-r border-border bg-background/95 pt-4 pb-6 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:flex"
+          className="fixed inset-y-0 left-0 z-50 hidden w-20 flex-col border-r border-border bg-background pt-4 pb-6 md:flex"
         >
           <div className="mt-4 flex flex-1 flex-col items-center gap-6">
             {primaryItems.map((item) => (
@@ -170,7 +170,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="flex min-w-0 flex-1 flex-col md:ml-20">
-          <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:px-8 md:py-4">
+          <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-background px-4 py-3 md:px-8 md:py-4">
             <div>
               <h1 className="text-lg font-semibold tracking-tight text-foreground md:text-xl">
                 {facilityName}

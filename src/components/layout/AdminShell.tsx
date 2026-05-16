@@ -492,13 +492,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                       <li key={item.key}>
                         <Link
                           href={item.href}
+                          aria-current={active ? "page" : undefined}
                           className={cn(
-                            "group/item flex h-8 items-center gap-2.5 rounded-md px-2 text-[13px]",
-                            "transition-colors duration-100",
+                            // 2px left accent bar chosen over icon-tint: matches bottom-nav pattern from S2
+                            // and provides a clear brand-primary signal without relying on color alone (rule 4).
+                            "group/item relative flex h-8 items-center gap-2.5 rounded-md px-2 text-[13px]",
+                            "transition-colors duration-[var(--motion-duration-micro)]",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                             active
-                              ? "bg-secondary text-foreground font-medium"
-                              : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
+                              ? "bg-secondary text-foreground font-medium before:absolute before:inset-y-1 before:left-0 before:w-0.5 before:rounded-r-sm before:bg-primary"
+                              : "text-muted-foreground hover:bg-secondary hover:text-foreground",
                           )}
                         >
                           <ItemIcon
@@ -560,7 +563,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         className={cn(
           "mx-2 my-2 flex h-9 items-center gap-2 rounded-md border border-border/60 bg-card px-2.5",
           "text-[13px] font-medium text-foreground transition-colors",
-          "hover:bg-secondary/60",
+          "hover:bg-secondary",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         )}
       >
@@ -617,7 +620,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         <DropdownMenuTrigger
           className={cn(
             "flex h-10 w-full items-center gap-2 rounded-md px-2 text-left",
-            "transition-colors hover:bg-secondary/60",
+            "transition-colors hover:bg-secondary",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           )}
           aria-label="Account menu"
@@ -673,7 +676,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "hidden lg:flex w-[260px] shrink-0 flex-col border-r border-border/60 bg-card/40",
+          "hidden lg:flex w-[260px] shrink-0 flex-col border-r border-border/60 bg-card",
         )}
         aria-label="Sidebar"
       >
@@ -688,8 +691,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         {/* Topbar */}
         <header
           className={cn(
-            "flex h-14 shrink-0 items-center gap-2 border-b border-border/60 bg-background/95 px-3 lg:px-5",
-            "backdrop-blur supports-[backdrop-filter]:bg-background/80",
+            "flex h-14 shrink-0 items-center gap-2 border-b border-border/60 bg-background px-3 lg:px-5",
             "sticky top-0 z-30",
           )}
         >
@@ -728,14 +730,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             className={cn(
               "ml-1 hidden md:flex h-8 max-w-[440px] flex-1 items-center gap-2 rounded-md border border-border/60 bg-card",
               "px-2.5 text-[12px] text-muted-foreground transition-colors",
-              "hover:border-border hover:bg-secondary/60 hover:text-foreground",
+              "hover:border-border hover:bg-secondary hover:text-foreground",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             )}
             aria-label="Search"
           >
             <Search className="size-3.5 shrink-0" />
             <span className="truncate">Search residents, staff, incidents…</span>
-            <kbd className="ml-auto rounded border border-border/60 bg-secondary/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+            <kbd className="ml-auto rounded border border-border/60 bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
               ⌘K
             </kbd>
           </Link>

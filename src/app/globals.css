@@ -219,6 +219,13 @@
      via `bg-[color:var(--overlay)]` in dialog / sheet primitives. */
   --overlay: rgba(11, 11, 9, 0.78);
   --motion-duration: 240ms;
+  /* Micro-interaction tier — color/opacity transitions on dense surfaces
+     (nav hover, chip state). 100ms keeps operational density tight without
+     feeling abrupt. Consumed via `duration-[var(--motion-duration-micro)]`. */
+  --motion-duration-micro: 100ms;
+  /* Exit-only tier — popups/menus close faster than they open so dismissal
+     never lingers. Per Quiet Operator constitution rule on motion economy. */
+  --motion-duration-exit: 150ms;
   --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -259,6 +266,11 @@
   /* Family-light scrim — same warm-near-black overlay used by operator dark;
      darkens cream into deep warmth without color shift. */
   --overlay: rgba(11, 11, 9, 0.55);
+
+  /* Motion tiers mirror operator-dark so micro / exit timings are stable
+     across themes (family portal still feels Quiet Operator). */
+  --motion-duration-micro: 100ms;
+  --motion-duration-exit: 150ms;
 
   /* Charts — darker variants tuned for AA contrast on cream */
   --chart-1: 205 27% 44%;
