@@ -483,30 +483,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
 
   const renderReportIncidentButton = () => (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <Link
-            href={REPORT_INCIDENT_HREF}
-            className={cn(
-              // Semantic danger, but lower-temperature than `variant="destructive"`:
-              // a soft tint + ring so it reads as a global action, not an alert.
-              "flex h-9 items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/5 px-2.5",
-              "text-[12px] font-medium text-destructive transition-colors",
-              "hover:border-destructive/50 hover:bg-destructive/10",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive",
-            )}
-            aria-label="Report incident"
-          >
-            <ShieldAlert className="size-3.5" aria-hidden />
-            <span className="hidden sm:inline">Report incident</span>
-          </Link>
-        }
-      >
-        <ShieldAlert className="size-3.5" aria-hidden />
-      </TooltipTrigger>
-      <TooltipContent side="bottom">Report incident</TooltipContent>
-    </Tooltip>
+    // Self-labeled (visible "Report incident" text on sm+, accessible label on
+    // mobile). No Tooltip wrapper: base-ui's useRender cannot disambiguate
+    // when both the wrapping <TooltipTrigger> and the render-prop element
+    // carry children (see Base UI render-prop contract).
+    <Link
+      href={REPORT_INCIDENT_HREF}
+      className={cn(
+        // Semantic danger, but lower-temperature than `variant="destructive"`:
+        // a soft tint + ring so it reads as a global action, not an alert.
+        "flex h-9 items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/5 px-2.5",
+        "text-[12px] font-medium text-destructive transition-colors",
+        "hover:border-destructive/50 hover:bg-destructive/10",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive",
+      )}
+      aria-label="Report incident"
+    >
+      <ShieldAlert className="size-3.5" aria-hidden />
+      <span className="hidden sm:inline">Report incident</span>
+    </Link>
   );
 
   const renderNotificationsButton = () => (
