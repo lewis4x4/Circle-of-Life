@@ -91,7 +91,7 @@ export const PILLARS: Pillar[] = [
     icon: Zap,
     items: [
       { key: "owner-home", href: "/admin", label: "Owner home", icon: Home },
-      { key: "executive", href: "/admin/executive", label: "Executive summary", icon: LineChart },
+      { key: "executive", href: "/admin/executive", label: "Executive", icon: LineChart },
       { key: "reports", href: "/admin/reports", label: "Reports hub", icon: FileText },
       { key: "facilities", href: "/admin/facilities", label: "Facilities", icon: Hotel },
       { key: "billing", href: "/admin/billing", label: "Billing & AR", icon: CreditCard },

@@ -352,18 +352,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 }`
         }
         className={cn(
-          "hidden md:flex h-9 items-center gap-2 rounded-md border border-border/60 bg-card px-2.5",
+          // min-h-9 instead of h-9 so a long facility name can wrap to a
+          // second line (constitution rule 8: never ellipsize). Vertical
+          // padding keeps the wrapped state tidy without changing baseline
+          // height for short names.
+          "hidden md:flex min-h-9 items-center gap-2 rounded-md border border-border/60 bg-card px-2.5 py-1",
           "text-[12px] font-medium text-foreground transition-colors",
           "hover:bg-secondary",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          "max-w-[200px]",
+          "max-w-[220px]",
         )}
       >
         <Building2 className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
         {facilityControlLoading ? (
           <Skeleton className="h-3 w-24 rounded bg-muted" aria-label="Loading facilities" />
         ) : (
-          <span className="truncate text-left">{facilityTriggerLabel}</span>
+          <span className="text-left leading-tight break-words">{facilityTriggerLabel}</span>
         )}
         <ChevronDown className="size-3 shrink-0 text-muted-foreground" aria-hidden />
       </DropdownMenuTrigger>
@@ -394,11 +398,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <DropdownMenuItem
             key={facility.id}
             onClick={() => handleFacilityScopeChange(facility.id)}
-            className="flex h-8 cursor-pointer items-center justify-between rounded-md px-2 text-[13px]"
+            // min-h-8 so multi-line names breathe; no ellipsis.
+            className="flex min-h-8 cursor-pointer items-start justify-between gap-2 rounded-md px-2 py-1.5 text-[13px]"
           >
-            <span className="truncate pr-2">{facility.name}</span>
+            <span className="pr-1 leading-tight break-words">{facility.name}</span>
             {safeSelectedFacilityId === facility.id && (
-              <Check className="size-3.5 shrink-0 text-success" />
+              <Check className="size-3.5 shrink-0 text-success mt-0.5" />
             )}
           </DropdownMenuItem>
         ))}
@@ -417,6 +422,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         className={cn(
           // 36px hit target, generous horizontal padding so the 2px accent
           // underline reads as a strong active signal without crowding.
+          // Active state: text-foreground + font-medium + accent underline.
+          // Inactive: text-muted-foreground with hover lift to text-foreground.
           "relative flex h-9 shrink-0 items-center gap-1.5 rounded-md px-3 text-[13px]",
           "transition-colors duration-[var(--motion-duration-micro)]",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -425,7 +432,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             : "text-muted-foreground hover:text-foreground",
         )}
       >
-        <span className="truncate">{pillar.label}</span>
+        {/* No truncate — constitution rule 8 forbids ellipsis. Pillar labels
+            are intentionally short (≤ 9 chars) so they fit; if a future label
+            doesn't, rename it rather than ellipsize. */}
+        <span className="whitespace-nowrap">{pillar.label}</span>
         {active && (
           // 2px accent underline aligned to the tab's text baseline (rule 4:
           // never rely on color alone — paired with aria-current + font-medium).
@@ -631,7 +641,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           )}
           aria-hidden
         />
-        <span className="truncate">{item.label}</span>
+        {/* No truncate — rail is 224px wide and every label is intentionally
+            short. If a label ever overflows, rename the route, don't ellipsize. */}
+        <span className="leading-tight">{item.label}</span>
       </Link>
     );
   };
@@ -708,7 +720,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 "relative flex h-9 shrink-0 items-center gap-1.5 px-3 text-[12px]",
                 "transition-colors duration-[var(--motion-duration-micro)]",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                active ? "font-medium text-foreground" : "text-muted-foreground",
+                active
+                  ? "font-medium text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               <Icon className="size-3.5" aria-hidden />
@@ -734,12 +748,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             className="hidden lg:flex w-[224px] shrink-0 flex-col border-r border-border/60 bg-card"
             aria-label={`${activePillar.label} navigation`}
           >
-            <div className="px-[13px] py-3">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                {activePillar.label}
-              </p>
-            </div>
-            <nav className="flex-1 overflow-y-auto px-2 pb-3 [scrollbar-gutter:stable]">
+            {/* No section header — the active pillar tab in the top bar is
+                the heading. Repeating it here duplicates state and burns
+                ~32px of vertical real estate on every page. */}
+            <nav className="flex-1 overflow-y-auto px-2 pt-3 pb-3 [scrollbar-gutter:stable]">
               <div className="flex flex-col gap-px">
                 {activePillar.items.map(renderRailItem)}
               </div>
