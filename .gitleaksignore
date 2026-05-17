@@ -44,3 +44,8 @@ a8f62351936c752c9383622dff0a0e21bd71511f:src/lib/reports/executors/index.ts:gene
 0e426040e4532d551e06c033f6170d0f9666eddd:src/lib/reports/executors/index.ts:generic-api-key:145
 0e426040e4532d551e06c033f6170d0f9666eddd:src/lib/reports/executors/index.ts:generic-api-key:258
 0e426040e4532d551e06c033f6170d0f9666eddd:src/lib/reports/executors/index.ts:generic-api-key:580
+
+# Historical false positives: high-entropy UI token/comment strings and config keys.
+c81112dcac0b0de496789129d10eb17e9ad97013:src/components/executive/ceo-risk-index-chart.tsx:generic-api-key:16
+a32a0a4c7bd013f51e14f2ec181af788a32ae11e:scripts/homewood/data-audit.mjs:generic-api-key:797
+a32a0a4c7bd013f51e14f2ec181af788a32ae11e:scripts/homewood/data-audit.mjs:generic-api-key:808

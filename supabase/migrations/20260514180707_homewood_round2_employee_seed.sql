@@ -1,7 +1,7 @@
 -- Homewood Round-2 employee seed (M4: Employees / Users / Roles)
 -- Source: Jessica Murphy "Employees Information.xlsx" (Drive 1eWUKm5OcAbW1I9kFPuMmqlAdbYC2-xGq), 2026-05-14.
 -- Idempotent insert of 16 Homewood Lodge ALF staff (facility 00000000-0000-0000-0002-000000000003).
--- created_by = Jessica Murphy (399c531e-2237-4c55-9a09-c9f0a1bc4558) since she is the source-of-truth provider.
+-- Source provider = Jessica Murphy; created_by uses the replay-safe system actor.
 -- Role mapping (xlsx -> staff_role enum):
 --   Administrator            -> administrator
 --   Administrative Assistant -> assistant_administrator
@@ -17,7 +17,7 @@ SELECT
   v.role::staff_role,
   'active'::employment_status,
   CURRENT_DATE,
-  '399c531e-2237-4c55-9a09-c9f0a1bc4558'::uuid
+  '00000000-0000-0000-0000-000000000001'::uuid
 FROM (VALUES
   ('Charlene',  'Elmore',     'celmore.homewoodalf@gmail.com', 'administrator'),
   ('Malida',    'Gaskins',    'aa.homewoodlodge@gmail.com',    'assistant_administrator'),
@@ -39,19 +39,40 @@ FROM (VALUES
 WHERE NOT EXISTS (
   SELECT 1 FROM public.staff s
    WHERE s.facility_id = '00000000-0000-0000-0002-000000000003'::uuid
-     AND s.first_name  = v.first_name
-     AND s.last_name   = v.last_name
+     AND s.email       = v.email
      AND s.deleted_at  IS NULL
 );
 
 DO $$
-DECLARE v_total int; v_admin int; v_aa int; v_aide int;
+DECLARE
+  v_seed_emails text[] := ARRAY[
+    'celmore.homewoodalf@gmail.com',
+    'aa.homewoodlodge@gmail.com',
+    'hjberry1969@gmail.com',
+    'liltwin2018@gmail.com',
+    'kycoverson@gmail.com',
+    'nashiafreeman123@gmail.com',
+    'Abbigail@icloud.com',
+    'kimora1404@icloud.com',
+    'kristinhurley1585@gmail.com',
+    'jenny2025blue.amen22@gmail.com',
+    'ramirez5179.a@gmail.com',
+    'rebeccaross01@aim.com',
+    'ritatrejosal@gmail.com',
+    'kaylasmith1800@icloud.com',
+    'kacivicencio220@gmail.com',
+    'kawimb15@icloud.com'
+  ];
+  v_total int;
+  v_admin int;
+  v_aa int;
+  v_aide int;
 BEGIN
-  SELECT COUNT(*) INTO v_total FROM public.staff WHERE facility_id='00000000-0000-0000-0002-000000000003' AND deleted_at IS NULL;
-  SELECT COUNT(*) INTO v_admin FROM public.staff WHERE facility_id='00000000-0000-0000-0002-000000000003' AND staff_role='administrator' AND deleted_at IS NULL;
-  SELECT COUNT(*) INTO v_aa    FROM public.staff WHERE facility_id='00000000-0000-0000-0002-000000000003' AND staff_role='assistant_administrator' AND deleted_at IS NULL;
-  SELECT COUNT(*) INTO v_aide  FROM public.staff WHERE facility_id='00000000-0000-0000-0002-000000000003' AND staff_role='resident_aide' AND deleted_at IS NULL;
-  RAISE NOTICE 'Homewood staff: total=%, administrator=%, assistant_administrator=%, resident_aide=%', v_total, v_admin, v_aa, v_aide;
+  SELECT COUNT(*) INTO v_total FROM public.staff WHERE facility_id='00000000-0000-0000-0002-000000000003' AND email = ANY(v_seed_emails) AND deleted_at IS NULL;
+  SELECT COUNT(*) INTO v_admin FROM public.staff WHERE facility_id='00000000-0000-0000-0002-000000000003' AND email = ANY(v_seed_emails) AND staff_role='administrator' AND deleted_at IS NULL;
+  SELECT COUNT(*) INTO v_aa    FROM public.staff WHERE facility_id='00000000-0000-0000-0002-000000000003' AND email = ANY(v_seed_emails) AND staff_role='assistant_administrator' AND deleted_at IS NULL;
+  SELECT COUNT(*) INTO v_aide  FROM public.staff WHERE facility_id='00000000-0000-0000-0002-000000000003' AND email = ANY(v_seed_emails) AND staff_role='resident_aide' AND deleted_at IS NULL;
+  RAISE NOTICE 'Homewood round-2 staff: total=%, administrator=%, assistant_administrator=%, resident_aide=%', v_total, v_admin, v_aa, v_aide;
   IF v_admin <> 1 OR v_aa <> 1 OR v_aide <> 14 OR v_total <> 16 THEN
     RAISE EXCEPTION 'Homewood seed verification failed: total=%, admin=%, aa=%, aide=%', v_total, v_admin, v_aa, v_aide;
   END IF;
