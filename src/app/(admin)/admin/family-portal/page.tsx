@@ -572,7 +572,7 @@ export default function AdminFamilyPortalPage() {
                         
                         <div className="flex flex-row justify-between lg:justify-start items-center">
                           <span className="lg:hidden text-[12px] text-muted-foreground uppercase tracking-wider font-bold">Status</span>
-                          <StatusPill tone="neutral">
+                          <StatusPill tone="muted">
                             {formatStatus(row.status)}
                           </StatusPill>
                         </div>

@@ -23,7 +23,7 @@ import { ReportsHubNav } from "@/components/reports/reports-hub-nav";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
+import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient } from "@/lib/supabase/client";
 import { loadReportsRoleContext } from "@/lib/reports/auth";
@@ -480,11 +480,11 @@ export default function ReportsOverviewPage() {
               </div>
             ) : (
               <div>
-                <div className={TABLE_HEADER_CLASS}>
+                <TableRowHeader>
                   <span className="flex-1 min-w-0">Source</span>
                   <span className="w-[90px] shrink-0">Status</span>
                   <span className="w-[110px] shrink-0 text-right">Started</span>
-                </div>
+                </TableRowHeader>
                 <ul className="space-y-1 p-1">
                   {recentRuns.map((run) => {
                     const detailHref = `/admin/reports/run/${encodeURIComponent(run.source_type)}/${encodeURIComponent(run.source_id)}`;
@@ -493,15 +493,15 @@ export default function ReportsOverviewPage() {
 
                     return (
                       <li key={run.id}>
-                        <Link href={detailHref} className={cn(TABLE_ROW_CLASS, "group")}>
+                        <TableRow render={<Link href={detailHref} />}>
                           <span className="flex-1 min-w-0 truncate font-mono text-[12px] font-medium text-foreground">
                             {run.source_type}
                           </span>
                           <span className="w-[90px] shrink-0">
                             {statusOk ? (
-                              <StatusPill tone="neutral">Done</StatusPill>
+                              <StatusPill tone="muted">Done</StatusPill>
                             ) : statusFail ? (
-                              <StatusPill tone="destructive">Failed</StatusPill>
+                              <StatusPill tone="danger">Failed</StatusPill>
                             ) : (
                               <StatusPill tone="warning">{run.status}</StatusPill>
                             )}
@@ -509,7 +509,7 @@ export default function ReportsOverviewPage() {
                           <span className="w-[110px] shrink-0 text-right text-[11px] text-muted-foreground font-mono tabular-nums truncate">
                             {formatRunTime(run.started_at)}
                           </span>
-                        </Link>
+                        </TableRow>
                       </li>
                     );
                   })}

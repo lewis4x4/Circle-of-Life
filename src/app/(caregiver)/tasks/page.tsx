@@ -219,10 +219,10 @@ export default function CaregiverTasksPage() {
           </p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <MetricPill label="Residents in scope" value={String(metrics.residents)} tone="neutral" />
+          <MetricPill label="Residents in scope" value={String(metrics.residents)} tone="muted" />
           <MetricPill label="No ADL yet today" value={String(metrics.noPass)} tone="danger" />
           <MetricPill label="ADL passes today" value={String(metrics.totalAdl)} tone="success" />
-          <MetricPill label="Shift bucket" value={ctx ? currentShiftForTimezone(ctx.timeZone) : "—"} tone="neutral" />
+          <MetricPill label="Shift bucket" value={ctx ? currentShiftForTimezone(ctx.timeZone) : "—"} tone="muted" />
         </div>
       </div>
 
@@ -259,7 +259,7 @@ function MetricPill({
 }: {
   label: string;
   value: string;
-  tone: "neutral" | "warning" | "danger" | "success";
+  tone: "muted" | "warning" | "danger" | "success";
 }) {
   const toneClass =
     tone === "danger"

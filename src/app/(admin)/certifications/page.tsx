@@ -15,7 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
+import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
@@ -486,20 +486,17 @@ export default function AdminCertificationsPage() {
           </div>
           
           <div className="rounded-lg border border-border bg-card overflow-hidden">
-            <div className={TABLE_HEADER_CLASS}>
+            <TableRowHeader>
               <span className="flex-[2] min-w-0">Staff / Credential</span>
               <span className="w-[140px] shrink-0">Timeline</span>
               <span className="w-[140px] shrink-0">Record</span>
               <span className="w-[110px] shrink-0">Issued</span>
               <span className="w-[110px] shrink-0 text-right">Expires</span>
-            </div>
+            </TableRowHeader>
             <MotionList className="space-y-1 p-1">
               {filteredRows.map((row) => (
                 <MotionItem key={row.id}>
-                  <Link
-                    href={`/admin/staff/${row.staffId}`}
-                    className={cn(TABLE_ROW_CLASS, "group")}
-                  >
+                  <TableRow render={<Link href={`/admin/staff/${row.staffId}`} />}>
                     <span className="flex-[2] min-w-0 flex items-baseline gap-2">
                       <span className="text-[13px] font-medium text-foreground truncate">{row.staffName}</span>
                       <span className="hidden md:inline text-[11px] text-muted-foreground truncate">{row.certificationName}</span>
@@ -516,7 +513,7 @@ export default function AdminCertificationsPage() {
                     <span className="w-[110px] shrink-0 font-mono text-[11px] text-muted-foreground tabular-nums text-right truncate">
                       {row.expirationDate ? formatIsoDate(row.expirationDate) : "No expiry"}
                     </span>
-                  </Link>
+                  </TableRow>
                 </MotionItem>
               ))}
             </MotionList>
@@ -604,12 +601,12 @@ function formatIsoDate(isoDate: string): string {
 function TimelinePill({ timeline }: { timeline: TimelineUi }) {
   switch (timeline) {
     case "expired":
-      return <StatusPill tone="destructive">Expired</StatusPill>;
+      return <StatusPill tone="danger">Expired</StatusPill>;
     case "expiring_soon":
       return <StatusPill tone="warning">Expiring soon</StatusPill>;
     case "current":
     default:
-      return <StatusPill tone="neutral">Current</StatusPill>;
+      return <StatusPill tone="muted">Current</StatusPill>;
   }
 }
 
@@ -618,13 +615,13 @@ function TimelinePill({ timeline }: { timeline: TimelineUi }) {
  */
 function DbStatusPill({ status }: { status: string }) {
   if (status === "expired" || status === "revoked") {
-    return <StatusPill tone="destructive">{status === "revoked" ? "Revoked" : "Expired"}</StatusPill>;
+    return <StatusPill tone="danger">{status === "revoked" ? "Revoked" : "Expired"}</StatusPill>;
   }
   if (status === "pending_renewal") {
     return <StatusPill tone="warning">Pending renewal</StatusPill>;
   }
   if (status === "active") {
-    return <StatusPill tone="neutral">Active</StatusPill>;
+    return <StatusPill tone="muted">Active</StatusPill>;
   }
-  return <StatusPill tone="neutral">{status}</StatusPill>;
+  return <StatusPill tone="muted">{status}</StatusPill>;
 }

@@ -7,7 +7,7 @@ import { InsuranceHubNav } from "../insurance-hub-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
+import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { createClient } from "@/lib/supabase/client";
@@ -169,7 +169,7 @@ export default function InsurancePoliciesPage() {
             </div>
           ) : (
             <>
-              <div className={TABLE_HEADER_CLASS}>
+              <TableRowHeader>
                 <span className="w-[110px] shrink-0">Status</span>
                 <span className="flex-[2] min-w-0">Carrier</span>
                 <span className="flex-1 min-w-0">Type</span>
@@ -177,45 +177,47 @@ export default function InsurancePoliciesPage() {
                 <span className="w-[110px] shrink-0">Expires</span>
                 <span className="w-[120px] shrink-0 text-right">Premium</span>
                 <span className="w-[72px] shrink-0 text-right">Action</span>
-              </div>
+              </TableRowHeader>
               <MotionList className="space-y-1 mt-2">
                 {rows.map((r) => {
                   const isActive = r.status === "active";
                   const formattedDate = r.expiration_date ? format(parseISO(r.expiration_date.length <= 10 ? `${r.expiration_date}T12:00:00.000Z` : r.expiration_date), "MMM d, yyyy") : "—";
 
                   return (
-                    <MotionItem key={r.id} className={cn(TABLE_ROW_CLASS, "group")}>
-                      <div className="w-[110px] shrink-0">
-                        <StatusPill tone={isActive ? "neutral" : "warning"}>
-                          {r.status.replace(/_/g, " ")}
-                        </StatusPill>
-                      </div>
-                      <span className="flex-[2] min-w-0 truncate text-[13px] font-medium text-foreground">
-                        {r.carrier_name}
-                      </span>
-                      <span className="flex-1 min-w-0 truncate text-[12px] text-muted-foreground capitalize">
-                        {r.policy_type.replace(/_/g, " ")}
-                      </span>
-                      <span className="flex-1 min-w-0 truncate text-[12px] text-muted-foreground">
-                        {entityName(r.entity_id)}
-                      </span>
-                      <span className="w-[110px] shrink-0 font-mono text-[12px] tabular-nums text-muted-foreground">
-                        {formattedDate}
-                      </span>
-                      <span className="w-[120px] shrink-0 text-right font-mono text-[13px] font-medium tabular-nums text-foreground">
-                        {formatUsdFromCents(r.premium_cents)}
-                      </span>
-                      <div className="w-[72px] shrink-0 flex justify-end">
-                        <Link
-                          href={`/admin/insurance/policies/${r.id}`}
-                          className={cn(
-                            buttonVariants({ variant: "outline", size: "sm" }),
-                            "h-7 px-2.5 font-mono uppercase tracking-wider text-[10px]"
-                          )}
-                        >
-                          View
-                        </Link>
-                      </div>
+                    <MotionItem key={r.id}>
+                      <TableRow>
+                        <div className="w-[110px] shrink-0">
+                          <StatusPill tone={isActive ? "muted" : "warning"}>
+                            {r.status.replace(/_/g, " ")}
+                          </StatusPill>
+                        </div>
+                        <span className="flex-[2] min-w-0 truncate text-[13px] font-medium text-foreground">
+                          {r.carrier_name}
+                        </span>
+                        <span className="flex-1 min-w-0 truncate text-[12px] text-muted-foreground capitalize">
+                          {r.policy_type.replace(/_/g, " ")}
+                        </span>
+                        <span className="flex-1 min-w-0 truncate text-[12px] text-muted-foreground">
+                          {entityName(r.entity_id)}
+                        </span>
+                        <span className="w-[110px] shrink-0 font-mono text-[12px] tabular-nums text-muted-foreground">
+                          {formattedDate}
+                        </span>
+                        <span className="w-[120px] shrink-0 text-right font-mono text-[13px] font-medium tabular-nums text-foreground">
+                          {formatUsdFromCents(r.premium_cents)}
+                        </span>
+                        <div className="w-[72px] shrink-0 flex justify-end">
+                          <Link
+                            href={`/admin/insurance/policies/${r.id}`}
+                            className={cn(
+                              buttonVariants({ variant: "outline", size: "sm" }),
+                              "h-7 px-2.5 font-mono uppercase tracking-wider text-[10px]"
+                            )}
+                          >
+                            View
+                          </Link>
+                        </div>
+                      </TableRow>
                     </MotionItem>
                   );
                 })}

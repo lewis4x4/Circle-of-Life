@@ -12,7 +12,7 @@ import { Plus, Check, Link2, Globe, Building2, User, HelpCircle, Server } from "
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { Badge } from "@/components/ui/badge";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
+import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -256,12 +256,12 @@ export default function AdminReferralSourcesPage() {
                   </div>
                 ) : (
                   <>
-                    <div className={cn("hidden sm:flex", TABLE_HEADER_CLASS)}>
+                    <TableRowHeader className="hidden sm:flex">
                       <div className="flex-[1.5]">Name</div>
                       <div className="flex-1">Type</div>
                       <div className="flex-1">Scope</div>
                       <div className="flex-[0.5] text-right">Status</div>
-                    </div>
+                    </TableRowHeader>
 
                     <div className="space-y-1 p-1">
                       <MotionList className="space-y-1">
@@ -274,7 +274,7 @@ export default function AdminReferralSourcesPage() {
                                 const TypeIcon = r.source_type === "hospital" ? Building2 : r.source_type === "agency" ? Server : r.source_type === "web" ? Globe : r.source_type === "family" ? User : HelpCircle;
                                 return (
                                   <MotionItem key={r.id}>
-                                    <div className={cn(TABLE_ROW_CLASS, "w-full")}>
+                                    <TableRow className="w-full">
                                       <div className="flex-[1.5] min-w-0">
                                         <span className="font-medium text-[13px] text-foreground truncate block">{r.name}</span>
                                       </div>
@@ -291,12 +291,12 @@ export default function AdminReferralSourcesPage() {
                                       </div>
                                       <div className="flex-[0.5] flex justify-end">
                                         {r.is_active ? (
-                                          <StatusPill tone="neutral">Active</StatusPill>
+                                          <StatusPill tone="muted">Active</StatusPill>
                                         ) : (
                                           <StatusPill tone="warning">Inactive</StatusPill>
                                         )}
                                       </div>
-                                    </div>
+                                    </TableRow>
                                   </MotionItem>
                                 );
                              })

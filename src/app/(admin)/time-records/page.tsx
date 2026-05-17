@@ -13,7 +13,7 @@ import {
 } from "@/components/common/admin-list-patterns";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
+import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
@@ -426,20 +426,17 @@ export default function AdminTimeRecordsPage() {
             </div>
           </div>
           <div className="rounded-lg border border-border bg-card overflow-hidden">
-            <div className={TABLE_HEADER_CLASS}>
+            <TableRowHeader>
               <span className="flex-[2] min-w-0">Staff</span>
               <span className="w-[130px] shrink-0">Clock In</span>
               <span className="w-[130px] shrink-0">Clock Out</span>
               <span className="w-[70px] shrink-0 text-right">Hours</span>
               <span className="w-[100px] shrink-0">Approved</span>
-            </div>
+            </TableRowHeader>
             <MotionList className="space-y-1 p-1">
               {filteredRows.map((row) => (
                 <MotionItem key={row.id}>
-                  <Link
-                    href={`/admin/staff/${row.staffId}`}
-                    className={cn(TABLE_ROW_CLASS, "group")}
-                  >
+                  <TableRow render={<Link href={`/admin/staff/${row.staffId}`} />}>
                     <span className="flex-[2] min-w-0 text-[13px] font-medium text-foreground truncate">
                       {row.staffName}
                     </span>
@@ -454,12 +451,12 @@ export default function AdminTimeRecordsPage() {
                     </span>
                     <span className="w-[100px] shrink-0">
                       {row.approved ? (
-                        <StatusPill tone="neutral">Yes</StatusPill>
+                        <StatusPill tone="muted">Yes</StatusPill>
                       ) : (
                         <StatusPill tone="warning">No</StatusPill>
                       )}
                     </span>
-                  </Link>
+                  </TableRow>
                 </MotionItem>
               ))}
             </MotionList>

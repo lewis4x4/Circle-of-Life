@@ -14,18 +14,17 @@ import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
-import { cn } from "@/lib/utils";
+import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import type { Database } from "@/types/database";
 
 type InvRow = Database["public"]["Tables"]["vendor_invoices"]["Row"];
 
-type InvoiceTone = "neutral" | "warning" | "destructive";
+type InvoiceTone = "muted" | "warning" | "danger";
 
 function invoiceStatusTone(status: string): InvoiceTone {
-  if (status === "rejected") return "destructive";
+  if (status === "rejected") return "danger";
   if (status === "pending") return "warning";
-  return "neutral";
+  return "muted";
 }
 
 export default function VendorInvoicesPage() {
@@ -85,19 +84,16 @@ export default function VendorInvoicesPage() {
           <AdminEmptyState title="No vendor invoices" description="Vendor invoices will appear here once entered." />
         ) : (
           <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
-            <div className={TABLE_HEADER_CLASS}>
+            <TableRowHeader>
               <span className="w-[140px] shrink-0">Invoice #</span>
               <span className="w-[100px] shrink-0">Status</span>
               <span className="w-[110px] shrink-0">Date</span>
               <span className="flex-1">Total</span>
-            </div>
+            </TableRowHeader>
             <MotionList className="space-y-1 p-1">
               {rows.map((r) => (
                 <MotionItem key={r.id}>
-                  <Link
-                    href={`/admin/vendors/invoices/${r.id}`}
-                    className={cn(TABLE_ROW_CLASS, "group")}
-                  >
+                  <TableRow render={<Link href={`/admin/vendors/invoices/${r.id}`} />}>
                     <span className="w-[140px] shrink-0 font-mono text-[12px] text-foreground font-medium truncate">
                       {r.invoice_number}
                     </span>
@@ -110,7 +106,7 @@ export default function VendorInvoicesPage() {
                     <span className="flex-1 font-mono text-[13px] font-medium text-foreground tabular-nums">
                       {formatUsdFromCents(r.total_cents)}
                     </span>
-                  </Link>
+                  </TableRow>
                 </MotionItem>
               ))}
             </MotionList>

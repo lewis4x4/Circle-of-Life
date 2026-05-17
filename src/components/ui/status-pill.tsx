@@ -6,56 +6,81 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 /**
- * StatusPill — Quiet Operator status indicator.
+ * StatusPill — Quiet Operator status indicator (dot + label).
  *
- * Binding rule (component-rules.md §Tables rule 3):
- *   "Status uses dot + label, never label alone."
+ * Binding rules:
+ *   - component-rules.md §Tables rule 3 — "Status uses dot + label, never
+ *     label alone." The dot is always rendered (default `dot={true}`); the
+ *     escape hatch is `dot={false}` for transient cases.
+ *   - anti-patterns.md "Decorative use of color" + constitution rule 3 —
+ *     "One accent color. Semantic colors restrained." Healthy / default /
+ *     "nothing to do" values render with tone `"muted"` (gray dot, muted
+ *     label, neutral chrome). Color is reserved for genuine clinical /
+ *     operational meaning.
  *
- * The dot is rendered by default. `showDot={false}` is a deliberate escape
- * hatch — use only when the surrounding cell already carries a status
- * indicator (e.g. a row-level color stripe).
+ * Tone API (single source of truth — all consumers should use these):
+ *   - `tone="muted"`    (default) Healthy / default. Gray dot, muted label.
+ *                       Use for ACTIVE, CURRENT, LOW, On schedule, Acuity 1,
+ *                       In facility, On time, Posted, Approved (default
+ *                       state), Independent, anything that is "nothing to
+ *                       do here, just here for scan."
+ *   - `tone="success"`  Green. Reserved for "successfully resolved /
+ *                       acknowledged" outcomes — almost never appropriate
+ *                       for a roster default state. Use sparingly.
+ *   - `tone="warning"`  Amber. Operator attention soon — Expiring soon,
+ *                       Medium overtime, Pending review, LOA, Overdue
+ *                       (mild), Acuity 2.
+ *   - `tone="danger"`   Red. Stop / blocked / harm — Expired, High
+ *                       overtime, Severity 4, Acuity 3, Critical, Failed,
+ *                       Hospital, Blocked, Suspended.
+ *   - `tone="info"`     Steel-blue. Informational neutral state that
+ *                       benefits from a slightly distinct color from muted —
+ *                       Assisted ADL, FYI, Synced.
  *
- * Decorative-color rule (anti-patterns.md):
- *   "Decorative use of color — color carries clinical meaning (red/amber/
- *   green) and must not be applied for aesthetic variety."
- *
- *   - Healthy / default / "nothing to do" values use `tone="neutral"`:
- *     muted gray dot, muted-foreground label, neutral pill chrome.
- *     (e.g. ACTIVE staff, CURRENT certs, LOW overtime risk, Acuity 1,
- *     In facility, On schedule.)
- *   - Color is reserved for exceptions that warrant operator attention:
- *     `tone="warning"`   amber (expiring cert, medium overtime risk, LOA)
- *     `tone="destructive"` red   (expired cert, high overtime, severity 4)
- *     `tone="info"`      steel-blue (informational, e.g. assisted ADL)
- *     `tone="success"`   green — RESERVED for "successfully resolved /
- *                              acknowledged" outcomes only, NOT for healthy
- *                              default state. (Use `neutral` for default.)
- *
- * Typography: 10px uppercase tracking-wider. Sits comfortably inside a 36px
- * Table / List row without lifting it.
+ * Backward compatibility:
+ *   The previous API used `tone="neutral" | "destructive"` and `variant=`.
+ *   Both are mapped onto the new tone scale so consumers migrate via search
+ *   + replace without breakage:
+ *     tone="neutral"        → tone="muted"
+ *     tone="destructive"    → tone="danger"
+ *     variant="default"     → tone="muted"
+ *     variant="success"     → tone="success"
+ *     variant="warning"     → tone="warning"
+ *     variant="destructive" → tone="danger"
  *
  * Usage:
- *   <StatusPill tone="neutral">Active</StatusPill>           // healthy/default
- *   <StatusPill tone="warning">Expiring soon</StatusPill>    // exception
- *   <StatusPill tone="destructive">Expired</StatusPill>      // exception
- *   <StatusPill tone="warning" pulsing>Syncing</StatusPill>  // transient
+ *   <StatusPill>Active</StatusPill>                     // muted default
+ *   <StatusPill tone="warning">Expiring soon</StatusPill>
+ *   <StatusPill tone="danger">Expired</StatusPill>
+ *   <StatusPill tone="info" pulsing>Syncing</StatusPill>
  *
- * Backward-compat `variant` prop maps onto the new `tone` API:
- *   variant="default"     → tone="neutral"
- *   variant="success"     → tone="success"
- *   variant="warning"     → tone="warning"
- *   variant="destructive" → tone="destructive"
+ * Typography: 10px uppercase tracking-wider. Sits inside a 36px table row.
  */
 
-type Tone = "neutral" | "success" | "warning" | "destructive" | "info";
+type Tone = "muted" | "success" | "warning" | "danger" | "info";
+
+// Aliases accepted from older callers — map onto canonical Tone.
+type ToneLegacy = "neutral" | "destructive";
+type ToneInput = Tone | ToneLegacy;
+
+const legacyToneMap: Record<ToneLegacy, Tone> = {
+  neutral: "muted",
+  destructive: "danger",
+};
+
+const resolveTone = (input: ToneInput | undefined, fallback: Tone): Tone => {
+  if (!input) return fallback;
+  if (input in legacyToneMap) return legacyToneMap[input as ToneLegacy];
+  return input as Tone;
+};
 
 const dotVariants = cva("inline-block h-1.5 w-1.5 rounded-full shrink-0", {
   variants: {
     tone: {
-      neutral: "bg-muted-foreground/60",
+      muted: "bg-muted-foreground/60",
       success: "bg-success",
       warning: "bg-warning",
-      destructive: "bg-destructive",
+      danger: "bg-destructive",
       info: "bg-info",
     } satisfies Record<Tone, string>,
     pulsing: {
@@ -64,7 +89,7 @@ const dotVariants = cva("inline-block h-1.5 w-1.5 rounded-full shrink-0", {
     },
   },
   defaultVariants: {
-    tone: "neutral",
+    tone: "muted",
     pulsing: false,
   },
 });
@@ -74,40 +99,41 @@ const pillVariants = cva(
   {
     variants: {
       tone: {
-        // Healthy / default — no color, just neutral chrome + gray dot.
-        neutral: "border-border bg-transparent text-muted-foreground",
-        // Exceptions — soft tint chrome at /10 bg + /30 border (S8 policy).
+        // Default — no color, just neutral chrome + gray dot.
+        muted: "border-border bg-transparent text-muted-foreground",
+        // Colored — soft tint at /10 bg + /30 border (Quiet Operator policy).
         success: "border-success/30 bg-success/10 text-success",
         warning: "border-warning/30 bg-warning/10 text-warning",
-        destructive: "border-destructive/30 bg-destructive/10 text-destructive",
+        danger: "border-destructive/30 bg-destructive/10 text-destructive",
         info: "border-info/30 bg-info/10 text-info",
       } satisfies Record<Tone, string>,
     },
     defaultVariants: {
-      tone: "neutral",
+      tone: "muted",
     },
   },
 );
 
 type LegacyVariant = "default" | "success" | "warning" | "destructive";
-
 const legacyVariantToTone: Record<LegacyVariant, Tone> = {
-  default: "neutral",
+  default: "muted",
   success: "success",
   warning: "warning",
-  destructive: "destructive",
+  destructive: "danger",
 };
 
 type StatusPillProps = Omit<React.HTMLAttributes<HTMLSpanElement>, "children"> &
-  VariantProps<typeof pillVariants> & {
+  Omit<VariantProps<typeof pillVariants>, "tone"> & {
     /**
-     * Backward-compat alias for `tone`. New code should pass `tone` directly.
+     * Canonical tone API. Default `"muted"` per decorative-color rule.
+     * Legacy `"neutral"` / `"destructive"` are accepted and remapped.
      */
+    tone?: ToneInput;
+    /** @deprecated Use `tone` directly. Mapped automatically for back-compat. */
     variant?: LegacyVariant;
     /**
-     * Default `true` — the dot is the convention (component-rules.md §Tables
-     * rule 3). Pass `false` only when the surrounding cell already conveys
-     * status visually (e.g. row-level color stripe).
+     * Default `true` — the dot is the convention (component-rules.md
+     * §Tables rule 3). Pass `false` only as a deliberate escape hatch.
      */
     dot?: boolean;
     pulsing?: boolean;
@@ -123,7 +149,10 @@ export function StatusPill({
   children,
   ...props
 }: StatusPillProps) {
-  const resolvedTone: Tone = tone ?? (variant ? legacyVariantToTone[variant] : "neutral");
+  const resolvedTone: Tone = resolveTone(
+    tone,
+    variant ? legacyVariantToTone[variant] : "muted",
+  );
 
   return (
     <span className={cn(pillVariants({ tone: resolvedTone }), className)} {...props}>
@@ -132,3 +161,5 @@ export function StatusPill({
     </span>
   );
 }
+
+export type StatusPillTone = Tone;

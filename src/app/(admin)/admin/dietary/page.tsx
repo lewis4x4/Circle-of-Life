@@ -7,7 +7,7 @@ import { Utensils } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
+import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
@@ -596,31 +596,33 @@ export default function AdminDietaryHubPage() {
               <div className="mt-10 p-6 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.015]">
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 mb-4 ml-2">Other Active Diet Orders</h4>
                 <div className="rounded-lg border border-border bg-card overflow-hidden">
-                  <div className={TABLE_HEADER_CLASS}>
+                  <TableRowHeader>
                     <span className="flex-[2] min-w-0">Resident</span>
                     <span className="flex-1 min-w-0">Food</span>
                     <span className="flex-1 min-w-0">Fluids</span>
                     <span className="w-[110px] shrink-0 text-right">Fluid status</span>
-                  </div>
+                  </TableRowHeader>
                   <MotionList className="space-y-1 p-1">
                     {rosterRows.map((row) => (
-                      <MotionItem key={row.id} className={cn(TABLE_ROW_CLASS, "group")}>
-                        <span className="flex-[2] min-w-0 text-[13px] font-medium text-foreground truncate">
-                          {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Unknown"}
-                        </span>
-                        <span className="flex-1 min-w-0 text-[12px] text-muted-foreground capitalize truncate">
-                          {row.iddsi_food_level.replace(/_/g, " ")}
-                        </span>
-                        <span className="flex-1 min-w-0 text-[12px] text-muted-foreground capitalize truncate">
-                          {row.iddsi_fluid_level.replace(/_/g, " ")}
-                        </span>
-                        <span className="w-[110px] shrink-0 flex justify-end">
-                          {fluidIsThickened(row.iddsi_fluid_level) ? (
-                            <StatusPill tone="warning">Thickened</StatusPill>
-                          ) : (
-                            <StatusPill tone="neutral">Standard</StatusPill>
-                          )}
-                        </span>
+                      <MotionItem key={row.id}>
+                        <TableRow>
+                          <span className="flex-[2] min-w-0 text-[13px] font-medium text-foreground truncate">
+                            {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Unknown"}
+                          </span>
+                          <span className="flex-1 min-w-0 text-[12px] text-muted-foreground capitalize truncate">
+                            {row.iddsi_food_level.replace(/_/g, " ")}
+                          </span>
+                          <span className="flex-1 min-w-0 text-[12px] text-muted-foreground capitalize truncate">
+                            {row.iddsi_fluid_level.replace(/_/g, " ")}
+                          </span>
+                          <span className="w-[110px] shrink-0 flex justify-end">
+                            {fluidIsThickened(row.iddsi_fluid_level) ? (
+                              <StatusPill tone="warning">Thickened</StatusPill>
+                            ) : (
+                              <StatusPill tone="muted">Standard</StatusPill>
+                            )}
+                          </span>
+                        </TableRow>
                       </MotionItem>
                     ))}
                   </MotionList>

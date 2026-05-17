@@ -14,7 +14,6 @@ import {
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
-import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
 import {
   fetchStaffFromSupabase,
   type CertificationStatus,
@@ -25,7 +24,9 @@ import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { StatCard } from "@/components/ui/stat-card";
 import { StatusPill } from "@/components/ui/status-pill";
+import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
@@ -268,7 +269,6 @@ export function AdminStaffPageClient({
 
   const activeCount = rows.filter((row) => row.status === "active").length;
   const certRiskCount = rows.filter((row) => row.certifications !== "current").length;
-  const certNeedsAttention = certRiskCount > 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -293,39 +293,20 @@ export function AdminStaffPageClient({
         </Link>
       </div>
 
-      {/* KPI strip — flat tiles, tabular-nums, decorative-color guard. */}
+      {/* KPI strip — uses the shared StatCard primitive. Attention chrome
+          fires only when the count > 0 (StatCard's built-in 0-value guard). */}
       <div className="grid max-w-2xl grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-card p-4">
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            <UserRoundCheck className="size-3.5" aria-hidden /> Active roster
-          </span>
-          <span className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
-            {activeCount}
-          </span>
-        </div>
-        <div
-          className={cn(
-            "flex flex-col gap-1.5 rounded-lg border bg-card p-4",
-            certNeedsAttention ? "border-warning/30" : "border-border",
-          )}
-        >
-          <span
-            className={cn(
-              "inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider",
-              certNeedsAttention ? "text-warning" : "text-muted-foreground",
-            )}
-          >
-            <ShieldAlert className="size-3.5" aria-hidden /> Cert attention
-          </span>
-          <span
-            className={cn(
-              "text-2xl font-semibold tabular-nums tracking-tight",
-              certNeedsAttention ? "text-warning" : "text-foreground",
-            )}
-          >
-            {certRiskCount}
-          </span>
-        </div>
+        <StatCard
+          label="Active roster"
+          value={activeCount}
+          icon={<UserRoundCheck aria-hidden />}
+        />
+        <StatCard
+          label="Cert attention"
+          value={certRiskCount}
+          icon={<ShieldAlert aria-hidden />}
+          attentionTone="warning"
+        />
       </div>
 
       <AdminFilterBar
@@ -402,22 +383,19 @@ export function AdminStaffPageClient({
             </Button>
           </div>
 
-          <div className={cn("hidden lg:flex", TABLE_HEADER_CLASS)}>
+          <TableRowHeader className="hidden lg:flex">
             <div className="flex-[3]">Staff</div>
             <div className="flex-1">Status</div>
             <div className="flex-1">Certifications</div>
             <div className="flex-1">Next shift</div>
             <div className="flex-1">Overtime risk</div>
             <div className="w-6" aria-hidden />
-          </div>
+          </TableRowHeader>
 
           <MotionList className="space-y-1 p-1">
             {filteredRows.map((staff) => (
               <MotionItem key={staff.id}>
-                <Link
-                  href={`/admin/staff/${staff.id}`}
-                  className={cn(TABLE_ROW_CLASS, "group")}
-                >
+                <TableRow render={<Link href={`/admin/staff/${staff.id}`} />}>
                   {/* Staff (avatar + name) — single line, columns share the row height. */}
                   <div className="flex-[3] flex items-center gap-2.5 min-w-0">
                     {staff.photoUrl ? (
@@ -464,7 +442,7 @@ export function AdminStaffPageClient({
                       aria-hidden
                     />
                   </div>
-                </Link>
+                </TableRow>
               </MotionItem>
             ))}
           </MotionList>
@@ -487,10 +465,10 @@ function StaffStatusPill({ status }: { status: StaffStatus }) {
     case "on_leave":
       return <StatusPill tone="warning">On leave</StatusPill>;
     case "off_shift":
-      return <StatusPill tone="neutral">Off shift</StatusPill>;
+      return <StatusPill tone="muted">Off shift</StatusPill>;
     case "active":
     default:
-      return <StatusPill tone="neutral">Active</StatusPill>;
+      return <StatusPill tone="muted">Active</StatusPill>;
   }
 }
 
@@ -500,12 +478,12 @@ function StaffStatusPill({ status }: { status: StaffStatus }) {
 function CertificationStatusPill({ certifications }: { certifications: CertificationStatus }) {
   switch (certifications) {
     case "expired":
-      return <StatusPill tone="destructive">Expired</StatusPill>;
+      return <StatusPill tone="danger">Expired</StatusPill>;
     case "expiring_soon":
       return <StatusPill tone="warning">Expiring soon</StatusPill>;
     case "current":
     default:
-      return <StatusPill tone="neutral">Current</StatusPill>;
+      return <StatusPill tone="muted">Current</StatusPill>;
   }
 }
 
@@ -515,11 +493,11 @@ function CertificationStatusPill({ certifications }: { certifications: Certifica
 function OvertimeRiskPill({ risk }: { risk: "low" | "medium" | "high" }) {
   switch (risk) {
     case "high":
-      return <StatusPill tone="destructive">High</StatusPill>;
+      return <StatusPill tone="danger">High</StatusPill>;
     case "medium":
       return <StatusPill tone="warning">Medium</StatusPill>;
     case "low":
     default:
-      return <StatusPill tone="neutral">Low</StatusPill>;
+      return <StatusPill tone="muted">Low</StatusPill>;
   }
 }

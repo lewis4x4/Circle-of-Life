@@ -321,7 +321,7 @@ export default function CaregiverMedsPage() {
       <div className="rounded-lg p-4 flex flex-wrap gap-2 md:grid md:grid-cols-3 border border-white/5 bg-slate-900/40">
         <MetricPill label="Due now / overdue" value={String(counts.dueNow)} tone="danger" />
         <MetricPill label="Due < 90 min" value={String(counts.dueSoon)} tone="warning" />
-        <MetricPill label="In window" value={String(counts.total)} tone="neutral" />
+        <MetricPill label="In window" value={String(counts.total)} tone="muted" />
       </div>
 
       {/* ─── QUEUE LIST ────────────────────────────────────────────────────── */}
@@ -359,7 +359,7 @@ function MetricPill({
 }: {
   label: string;
   value: string;
-  tone: "neutral" | "warning" | "danger" | "success";
+  tone: "muted" | "warning" | "danger" | "success";
 }) {
   const toneClass =
     tone === "danger"

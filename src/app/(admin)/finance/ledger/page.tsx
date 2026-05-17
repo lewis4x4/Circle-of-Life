@@ -9,8 +9,7 @@ import { ArrowRight, CircleDollarSign } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
-import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
-import { cn } from "@/lib/utils";
+import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import type { Database } from "@/types/database";
 
 type JournalRow = Database["public"]["Tables"]["journal_entries"]["Row"];
@@ -77,13 +76,13 @@ export default function LedgerPage() {
         ) : null}
 
         <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
-          <div className={TABLE_HEADER_CLASS}>
+          <TableRowHeader>
             <span className="flex-1 min-w-0">Memo</span>
             <span className="w-[140px] shrink-0">Entry date</span>
             <span className="w-[160px] shrink-0 text-right">
               {loading ? "Loading…" : `${rows.length} rows`}
             </span>
-          </div>
+          </TableRowHeader>
           
           {rows.length === 0 && !loading ? (
             <div className="p-16 text-center rounded-lg border-0">
@@ -94,10 +93,7 @@ export default function LedgerPage() {
             <MotionList className="space-y-1 p-1">
               {rows.map((r) => (
                 <MotionItem key={r.id}>
-                  <Link
-                    href={`/admin/finance/journal-entries/${r.id}`}
-                    className={cn(TABLE_ROW_CLASS, "group")}
-                  >
+                  <TableRow render={<Link href={`/admin/finance/journal-entries/${r.id}`} />}>
                     <div className="flex-1 min-w-0 flex items-center gap-3">
                       <CircleDollarSign className="w-4 h-4 text-muted-foreground shrink-0 group-hover:text-success transition-colors" />
                       <span className="text-[13px] font-medium text-foreground truncate">
@@ -113,7 +109,7 @@ export default function LedgerPage() {
                       </span>
                       <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-success transition-colors shrink-0" />
                     </div>
-                  </Link>
+                  </TableRow>
                 </MotionItem>
               ))}
             </MotionList>

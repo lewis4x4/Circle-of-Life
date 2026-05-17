@@ -204,7 +204,7 @@ export default function CaregiverRoundsPage() {
       <div className="flex flex-wrap gap-2 rounded-lg p-4 md:grid md:grid-cols-4">
         <MetricPill icon={<AlertTriangle className="h-3 w-3" />} label="Critical" value={String(grouped.urgent.length)} tone="danger" />
         <MetricPill icon={<Clock3 className="h-3 w-3" />} label="Due now" value={String(grouped.due.length)} tone="warning" />
-        <MetricPill icon={<Clock3 className="h-3 w-3" />} label="Next up" value={String(grouped.next.length)} tone="neutral" />
+        <MetricPill icon={<Clock3 className="h-3 w-3" />} label="Next up" value={String(grouped.next.length)} tone="muted" />
         <MetricPill icon={<CheckCircle2 className="h-3 w-3" />} label="Completed" value={String(grouped.done.length)} tone="success" />
       </div>
 
@@ -226,7 +226,7 @@ export default function CaregiverRoundsPage() {
         ))}
       </Section>
 
-      <Section title="Coming Up" tone="neutral" emptyMessage="No upcoming rounds in window." count={grouped.next.length}>
+      <Section title="Coming Up" tone="muted" emptyMessage="No upcoming rounds in window." count={grouped.next.length}>
         {grouped.next.map((task) => (
           <RoundingTaskCard key={task.id} task={task} href={`/caregiver/rounds/${task.residentId}?taskId=${task.id}`} />
         ))}
@@ -244,7 +244,7 @@ function MetricPill({
   icon: ReactNode;
   label: string;
   value: string;
-  tone: "neutral" | "warning" | "danger" | "success";
+  tone: "muted" | "warning" | "danger" | "success";
 }) {
   const toneClass =
     tone === "danger"
@@ -283,14 +283,14 @@ function Section({
   children,
 }: {
   title: string;
-  tone: "neutral" | "warning" | "danger";
+  tone: "muted" | "warning" | "danger";
   emptyMessage: string;
   count: number;
   children: ReactNode;
 }) {
   const items = Array.isArray(children) ? children.filter(Boolean) : [children].filter(Boolean);
 
-  if (items.length === 0 && tone === "neutral") return null;
+  if (items.length === 0 && tone === "muted") return null;
 
   return (
     <section className="space-y-4 pb-2">

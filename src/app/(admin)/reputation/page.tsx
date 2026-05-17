@@ -7,7 +7,7 @@ import { Star } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
+import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { GOOGLE_IMPORTED_REPLY_PLACEHOLDER } from "@/lib/reputation/google-business-reviews";
@@ -561,15 +561,15 @@ export default function AdminReputationHubPage() {
             {postedReplies.length > 0 && (
               <div className="mt-8 space-y-2 opacity-60 hover:opacity-100 transition-opacity">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Recently Posted</h4>
-                <div className={TABLE_HEADER_CLASS}>
+                <TableRowHeader>
                   <span className="flex-1 min-w-0">Listing</span>
                   <span className="flex-[2] min-w-0">Reply</span>
                   <span className="w-[80px] shrink-0 text-right">Posted</span>
-                </div>
+                </TableRowHeader>
                 <MotionList className="space-y-1 p-1 rounded-lg border border-border bg-card">
                   {postedReplies.slice(0, 3).map((row) => (
                     <MotionItem key={row.id}>
-                      <div className={cn(TABLE_ROW_CLASS, "w-full")}>
+                      <TableRow className="w-full">
                         <span className="flex-1 min-w-0 text-[12px] font-medium text-foreground truncate">
                           {row.reputation_accounts?.label}
                         </span>
@@ -579,7 +579,7 @@ export default function AdminReputationHubPage() {
                         <span className="w-[80px] shrink-0 text-right font-mono text-[11px] text-muted-foreground tabular-nums">
                           {row.posted_to_platform_at ? format(new Date(row.posted_to_platform_at), "MMM d") : "Done"}
                         </span>
-                      </div>
+                      </TableRow>
                     </MotionItem>
                   ))}
                 </MotionList>
@@ -602,14 +602,14 @@ export default function AdminReputationHubPage() {
                <p className="text-sm text-muted-foreground">No connected accounts.</p>
             ) : (
               <div className="rounded-lg border border-border bg-card overflow-hidden">
-                <div className={TABLE_HEADER_CLASS}>
+                <TableRowHeader>
                   <span className="flex-1 min-w-0">Listing</span>
                   <span className="w-[110px] shrink-0">Platform</span>
                   <span className="w-[90px] shrink-0 text-right">Status</span>
-                </div>
+                </TableRowHeader>
                 <div className="space-y-1 p-1">
                   {accounts.map((row) => (
-                    <div key={row.id} className={cn(TABLE_ROW_CLASS, "w-full")}>
+                    <TableRow key={row.id} className="w-full">
                       <span className="flex-1 min-w-0 text-[12px] font-medium text-foreground truncate">
                         {row.label}
                       </span>
@@ -618,12 +618,12 @@ export default function AdminReputationHubPage() {
                       </span>
                       <span className="w-[90px] shrink-0 flex justify-end">
                         {row.is_active ? (
-                          <StatusPill tone="neutral">Active</StatusPill>
+                          <StatusPill tone="muted">Active</StatusPill>
                         ) : (
                           <StatusPill tone="warning">Inactive</StatusPill>
                         )}
                       </span>
-                    </div>
+                    </TableRow>
                   ))}
                 </div>
               </div>

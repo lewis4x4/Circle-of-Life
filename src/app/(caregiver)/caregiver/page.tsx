@@ -26,7 +26,7 @@ import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
-type StatTone = "neutral" | "danger" | "warning" | "accent";
+type StatTone = "muted" | "danger" | "warning" | "accent";
 
 export default function CaregiverHomePage() {
   const supabase = useMemo(() => createClient(), []);
@@ -162,28 +162,28 @@ export default function CaregiverHomePage() {
             label="My Residents"
             value={brief.census}
             icon={<UserRound />}
-            tone="neutral"
+            tone="muted"
             href="/caregiver/residents"
           />
           <HeroStat
             label="Urgent Alerts"
             value={brief.highSeverityConditionCount}
             icon={<ShieldAlert />}
-            tone={brief.highSeverityConditionCount > 0 ? "danger" : "neutral"}
+            tone={brief.highSeverityConditionCount > 0 ? "danger" : "muted"}
             href="/caregiver/followups"
           />
           <HeroStat
             label="Medications Due"
             value={emarWindow}
             icon={<Pill />}
-            tone={emarWindow > 0 ? "accent" : "neutral"}
+            tone={emarWindow > 0 ? "accent" : "muted"}
             href="/caregiver/meds"
           />
           <HeroStat
             label="Notes To Finish"
             value={docPending}
             icon={<ClipboardList />}
-            tone={docPending > 0 ? "warning" : "neutral"}
+            tone={docPending > 0 ? "warning" : "muted"}
             href="/caregiver/prn-followup"
           />
         </div>

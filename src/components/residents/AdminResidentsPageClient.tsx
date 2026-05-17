@@ -22,8 +22,9 @@ import {
 } from "@/lib/residents/load-residents";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { StatCard } from "@/components/ui/stat-card";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
+import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
@@ -203,33 +204,19 @@ export function AdminResidentsPageClient({
         </Link>
       </div>
 
-      {/* KPI strip — flat tiles, tabular-nums, no gradient text.
-          Two tiles → cap at max-w-2xl so they don't stretch into a wide
-          band on >= 2xl viewports. (When this strip grows to 4+ tiles,
-          drop the cap and use the 2/3/5 responsive grid.) */}
+      {/* KPI strip — shared StatCard primitive. Attention chrome fires
+          only when count > 0 (built-in 0-value guard). */}
       <div className="grid max-w-2xl grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-card p-4">
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            <Users className="size-3.5" aria-hidden /> Residents in view
-          </span>
-          <span className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
-            {residentsInViewCount}
-          </span>
-        </div>
-        <div className={cn(
-          "flex flex-col gap-1.5 rounded-lg border bg-card p-4",
-          highAcuityInViewCount > 0 ? "border-destructive/30" : "border-border",
-        )}>
-          <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            High acuity in view
-          </span>
-          <span className={cn(
-            "text-2xl font-semibold tabular-nums tracking-tight",
-            highAcuityInViewCount > 0 ? "text-destructive" : "text-foreground",
-          )}>
-            {highAcuityInViewCount}
-          </span>
-        </div>
+        <StatCard
+          label="Residents in view"
+          value={residentsInViewCount}
+          icon={<Users aria-hidden />}
+        />
+        <StatCard
+          label="High acuity in view"
+          value={highAcuityInViewCount}
+          attentionTone="danger"
+        />
       </div>
 
       <AdminFilterBar
@@ -342,21 +329,18 @@ export function AdminResidentsPageClient({
 
       {!isLoading && !error && filteredRows.length > 0 ? (
         <div className="overflow-hidden rounded-lg border border-border bg-card">
-          <div className={cn("hidden lg:flex", TABLE_HEADER_CLASS)}>
+          <TableRowHeader className="hidden lg:flex">
             <div className="flex-[3]">Resident</div>
             <div className="flex-1">Location</div>
             <div className="flex-1">Acuity</div>
             <div className="flex-1">ADL</div>
             <div className="flex-1">Status</div>
             <div className="flex-1 text-right">Updated</div>
-          </div>
+          </TableRowHeader>
           <MotionList className="space-y-1 p-1">
             {filteredRows.map((resident) => (
               <MotionItem key={resident.id}>
-                <Link
-                  href={`/admin/residents/${resident.id}`}
-                  className={cn(TABLE_ROW_CLASS, "group")}
-                >
+                <TableRow render={<Link href={`/admin/residents/${resident.id}`} />}>
                   <div className="flex-[3] flex items-center gap-2.5 min-w-0">
                     <span className="grid size-6 shrink-0 place-items-center rounded-full bg-secondary text-[10px] font-semibold text-foreground">
                       {resident.initials}
@@ -393,7 +377,7 @@ export function AdminResidentsPageClient({
                       {resident.updatedAt}
                     </span>
                   </div>
-                </Link>
+                </TableRow>
               </MotionItem>
             ))}
           </MotionList>
@@ -407,9 +391,9 @@ export function AdminResidentsPageClient({
  * Healthy default = Acuity 1 → neutral. Acuity 2 = warning, Acuity 3 = destructive.
  */
 function AcuityPill({ acuity }: { acuity: Acuity }) {
-  if (acuity === 3) return <StatusPill tone="destructive">Acuity 3</StatusPill>;
+  if (acuity === 3) return <StatusPill tone="danger">Acuity 3</StatusPill>;
   if (acuity === 2) return <StatusPill tone="warning">Acuity 2</StatusPill>;
-  return <StatusPill tone="neutral">Acuity 1</StatusPill>;
+  return <StatusPill tone="muted">Acuity 1</StatusPill>;
 }
 
 /**
@@ -423,7 +407,7 @@ function AdlPill({ status }: { status: AdlStatus }) {
       return <StatusPill tone="info">Assisted</StatusPill>;
     case "independent":
     default:
-      return <StatusPill tone="neutral">Independent</StatusPill>;
+      return <StatusPill tone="muted">Independent</StatusPill>;
   }
 }
 
@@ -433,11 +417,11 @@ function AdlPill({ status }: { status: AdlStatus }) {
 function ResidentStatusPill({ status }: { status: ResidencyStatus }) {
   switch (status) {
     case "hospital":
-      return <StatusPill tone="destructive">Hospital</StatusPill>;
+      return <StatusPill tone="danger">Hospital</StatusPill>;
     case "loa":
       return <StatusPill tone="warning">LOA</StatusPill>;
     case "active":
     default:
-      return <StatusPill tone="neutral">In facility</StatusPill>;
+      return <StatusPill tone="muted">In facility</StatusPill>;
   }
 }

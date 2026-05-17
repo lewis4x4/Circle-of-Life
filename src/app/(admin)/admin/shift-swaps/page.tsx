@@ -599,7 +599,7 @@ function formatDateTime(iso: string): string {
 function SwapStatusBadge({ status }: { status: string }) {
   const s = status.toLowerCase();
   if (s === "pending") return <StatusPill tone="warning">{status}</StatusPill>;
-  if (s === "denied") return <StatusPill tone="destructive">{status}</StatusPill>;
+  if (s === "denied") return <StatusPill tone="danger">{status}</StatusPill>;
   if (s === "claimed") return <StatusPill tone="info">{status}</StatusPill>;
-  return <StatusPill tone="neutral">{status}</StatusPill>;
+  return <StatusPill tone="muted">{status}</StatusPill>;
 }

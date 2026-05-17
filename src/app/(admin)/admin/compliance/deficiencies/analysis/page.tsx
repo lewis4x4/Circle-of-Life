@@ -38,8 +38,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
-import { cn } from "@/lib/utils";
+import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { V2Card } from "@/components/ui/v2-card";
 /* MAINTENANCE: CHART_COLORS uses hex literals required by Recharts SVG attrs
    (stroke, fill, tick.fill). These cannot be replaced with CSS variables because
@@ -353,20 +352,20 @@ export default function DeficienciesAnalysisPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className={TABLE_HEADER_CLASS}>
+                      <TableRowHeader render={<tr />}>
                         <th className="text-left w-24 font-semibold">Tag</th>
                         <th className="text-left flex-1 font-semibold">Title</th>
                         <th className="text-center w-28 font-semibold">Occurrences</th>
                         <th className="text-center w-32 font-semibold">Avg Gap (Days)</th>
                         <th className="text-center w-28 font-semibold">Last Status</th>
                         <th className="text-center w-24 font-semibold">Action</th>
-                      </tr>
+                      </TableRowHeader>
                     </thead>
                     <tbody>
                       {recurringTags.map((recurrence) => {
                         const lastStatus = recurrence.occurrences[recurrence.occurrences.length - 1]?.status ?? "unknown";
                         return (
-                        <tr key={recurrence.tag_number} tabIndex={0} className={cn(TABLE_ROW_CLASS, "mt-1")}>
+                        <TableRow key={recurrence.tag_number} render={<tr tabIndex={0} />} className="mt-1">
                           <td className="w-24">
                             <Badge variant="outline" className="font-mono">
                               Tag {recurrence.tag_number}
@@ -389,8 +388,8 @@ export default function DeficienciesAnalysisPage() {
                             <StatusPill
                               tone={
                                 lastStatus === "verified" || lastStatus === "corrected"
-                                  ? "neutral"
-                                  : "destructive"
+                                  ? "muted"
+                                  : "danger"
                               }
                             >
                               {lastStatus}
@@ -401,7 +400,7 @@ export default function DeficienciesAnalysisPage() {
                               View Details
                             </Button>
                           </td>
-                        </tr>
+                        </TableRow>
                         );
                       })}
                     </tbody>

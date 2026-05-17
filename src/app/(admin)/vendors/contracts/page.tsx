@@ -13,8 +13,7 @@ import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
-import { cn } from "@/lib/utils";
+import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import type { Database } from "@/types/database";
 
 type ContractRow = Database["public"]["Tables"]["contracts"]["Row"];
@@ -80,20 +79,17 @@ export default function VendorContractsListPage() {
           <AdminEmptyState title="No contracts" description="Vendor contracts will appear here once entered." />
         ) : (
           <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
-            <div className={TABLE_HEADER_CLASS}>
+            <TableRowHeader>
               <span className="flex-1 min-w-0">Title</span>
               <span className="w-[140px] shrink-0">Vendor</span>
               <span className="w-[110px] shrink-0">Effective</span>
               <span className="w-[110px] shrink-0">Expires</span>
               <span className="w-[110px] shrink-0 text-right">Value</span>
-            </div>
+            </TableRowHeader>
             <MotionList className="space-y-1 p-1">
               {rows.map((r) => (
                 <MotionItem key={r.id}>
-                  <Link
-                    href={`/admin/vendors/contracts/${r.id}`}
-                    className={cn(TABLE_ROW_CLASS, "group")}
-                  >
+                  <TableRow render={<Link href={`/admin/vendors/contracts/${r.id}`} />}>
                     <span className="flex-1 min-w-0 font-medium text-[13px] text-foreground truncate">
                       {r.title}
                     </span>
@@ -109,7 +105,7 @@ export default function VendorContractsListPage() {
                     <span className="w-[110px] shrink-0 text-right font-mono text-[13px] font-medium text-foreground tabular-nums">
                       {formatUsdFromCents(r.total_value_cents)}
                     </span>
-                  </Link>
+                  </TableRow>
                 </MotionItem>
               ))}
             </MotionList>

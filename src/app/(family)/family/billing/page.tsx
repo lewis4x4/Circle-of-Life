@@ -140,9 +140,9 @@ export default function FamilyBillingSummaryPage() {
           <SummaryBlock
             label="Last payment"
             value={data.lastPaymentAmount != null ? formatUsd(data.lastPaymentAmount) : "—"}
-            tone="neutral"
+            tone="muted"
           />
-          <SummaryBlock label="Payment date" value={data.lastPaymentDateLabel ?? "—"} tone="neutral" />
+          <SummaryBlock label="Payment date" value={data.lastPaymentDateLabel ?? "—"} tone="muted" />
         </div>
 
         {/* Invoices — warm split-theme uses bg-muted to soften the panel */}
@@ -246,7 +246,7 @@ function SummaryBlock({
 }: {
   label: string;
   value: string;
-  tone: "neutral" | "warning" | "success";
+  tone: "muted" | "warning" | "success";
 }) {
   const toneClass =
     tone === "warning"

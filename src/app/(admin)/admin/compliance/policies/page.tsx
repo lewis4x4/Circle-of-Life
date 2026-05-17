@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
+import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { format, parseISO } from "date-fns";
@@ -98,49 +98,51 @@ export default function PoliciesListPage() {
              </div>
            ) : (
              <>
-               <div className={TABLE_HEADER_CLASS}>
+               <TableRowHeader>
                  <span className="w-[112px] shrink-0">Status</span>
                  <span className="flex-[2] min-w-0">Title</span>
                  <span className="flex-1 min-w-0">Category</span>
                  <span className="w-[60px] shrink-0">Version</span>
                  <span className="w-[160px] shrink-0">Published</span>
                  <span className="w-[88px] shrink-0 text-right">Action</span>
-               </div>
+               </TableRowHeader>
                <MotionList className="space-y-1 mt-2">
                  {rows.map((r) => {
                    const isDraft = r.status === "draft";
                    return (
-                     <MotionItem key={r.id} className={cn(TABLE_ROW_CLASS, "group")}>
-                       <div className="w-[112px] shrink-0">
-                         <StatusPill tone={isDraft ? "warning" : "neutral"}>
-                           {r.status}
-                         </StatusPill>
-                       </div>
-                       <span className="flex-[2] min-w-0 truncate text-[13px] font-medium text-foreground">
-                         {r.title}
-                       </span>
-                       <span className="flex-1 min-w-0 truncate text-[12px] text-muted-foreground capitalize">
-                         {r.category}
-                       </span>
-                       <span className="w-[60px] shrink-0 font-mono text-[12px] tabular-nums text-muted-foreground">
-                         v{r.version}
-                       </span>
-                       <span className="w-[160px] shrink-0 font-mono text-[12px] tabular-nums text-muted-foreground">
-                         {r.published_at
-                           ? format(parseISO(r.published_at.length <= 10 ? `${r.published_at}T12:00:00.000Z` : r.published_at), "MMM d, yyyy")
-                           : "—"}
-                       </span>
-                       <div className="w-[88px] shrink-0 flex justify-end">
-                         <Link
-                           href={`/admin/compliance/policies/${r.id}/edit`}
-                           className={cn(
-                             buttonVariants({ variant: "outline", size: "sm" }),
-                             "h-7 px-2.5 text-[10px] font-semibold uppercase tracking-wider"
-                           )}
-                         >
-                           Manage
-                         </Link>
-                       </div>
+                     <MotionItem key={r.id}>
+                       <TableRow>
+                         <div className="w-[112px] shrink-0">
+                           <StatusPill tone={isDraft ? "warning" : "muted"}>
+                             {r.status}
+                           </StatusPill>
+                         </div>
+                         <span className="flex-[2] min-w-0 truncate text-[13px] font-medium text-foreground">
+                           {r.title}
+                         </span>
+                         <span className="flex-1 min-w-0 truncate text-[12px] text-muted-foreground capitalize">
+                           {r.category}
+                         </span>
+                         <span className="w-[60px] shrink-0 font-mono text-[12px] tabular-nums text-muted-foreground">
+                           v{r.version}
+                         </span>
+                         <span className="w-[160px] shrink-0 font-mono text-[12px] tabular-nums text-muted-foreground">
+                           {r.published_at
+                             ? format(parseISO(r.published_at.length <= 10 ? `${r.published_at}T12:00:00.000Z` : r.published_at), "MMM d, yyyy")
+                             : "—"}
+                         </span>
+                         <div className="w-[88px] shrink-0 flex justify-end">
+                           <Link
+                             href={`/admin/compliance/policies/${r.id}/edit`}
+                             className={cn(
+                               buttonVariants({ variant: "outline", size: "sm" }),
+                               "h-7 px-2.5 text-[10px] font-semibold uppercase tracking-wider"
+                             )}
+                           >
+                             Manage
+                           </Link>
+                         </div>
+                       </TableRow>
                      </MotionItem>
                    );
                  })}

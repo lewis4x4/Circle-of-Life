@@ -95,7 +95,7 @@ export default function CaregiverResidentQuickProfilePage() {
     ? "danger"
     : p.acuityLevel?.includes("2")
       ? "warning"
-      : "neutral";
+      : "muted";
 
   const medsTone = p.scheduledMedsDueNow > 0 ? "warning" : "success";
   const moodTone = p.recentDailyLogMood?.toLowerCase().includes("anxious") ||
@@ -164,7 +164,7 @@ export default function CaregiverResidentQuickProfilePage() {
                 value={p.scheduledMedsDueNow > 0 ? `${p.scheduledMedsDueNow} now` : "None"}
                 tone={medsTone}
               />
-              <MetricPill label="Active Meds" value={String(p.activeMedCount)} tone="neutral" />
+              <MetricPill label="Active Meds" value={String(p.activeMedCount)} tone="muted" />
               <MetricPill
                 label="Mood"
                 value={p.recentDailyLogMood ?? "—"}
@@ -347,7 +347,7 @@ function MetricPill({
 }: {
   label: string;
   value: string;
-  tone: "neutral" | "warning" | "danger" | "success";
+  tone: "muted" | "warning" | "danger" | "success";
 }) {
   const toneClass =
     tone === "danger"

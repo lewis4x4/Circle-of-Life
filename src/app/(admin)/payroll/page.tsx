@@ -9,7 +9,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
+import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
@@ -69,10 +69,10 @@ function formatStatus(s: string) {
   return s.replace(/_/g, " ");
 }
 
-function batchStatusTone(status: string): "neutral" | "warning" | "destructive" {
-  if (status === "failed") return "destructive";
+function batchStatusTone(status: string): "muted" | "warning" | "danger" {
+  if (status === "failed") return "danger";
   if (status === "voided") return "warning";
-  return "neutral";
+  return "muted";
 }
 
 export default function AdminPayrollHubPage() {
@@ -306,19 +306,16 @@ export default function AdminPayrollHubPage() {
            <p className="text-sm text-muted-foreground">No batches match this search.</p>
         ) : (
           <div className="rounded-lg border border-border bg-card overflow-hidden">
-            <div className={TABLE_HEADER_CLASS}>
+            <TableRowHeader>
               <span className="flex-[2] min-w-0">Period</span>
               <span className="flex-1 min-w-0">Provider</span>
               <span className="w-[120px] shrink-0">Status</span>
               <span className="w-[120px] shrink-0 text-right">Updated</span>
-            </div>
+            </TableRowHeader>
             <MotionList className="space-y-1 p-1">
               {displayRows.map((row) => (
                 <MotionItem key={row.id}>
-                  <Link
-                    href={`/admin/payroll/${row.id}`}
-                    className={cn(TABLE_ROW_CLASS, "group")}
-                  >
+                  <TableRow render={<Link href={`/admin/payroll/${row.id}`} />}>
                     <span className="flex-[2] min-w-0 font-mono text-[12px] text-foreground tabular-nums truncate">
                       {row.period_start} → {row.period_end}
                     </span>
@@ -331,7 +328,7 @@ export default function AdminPayrollHubPage() {
                     <span className="w-[120px] shrink-0 font-mono text-[11px] text-muted-foreground tabular-nums text-right">
                       {format(new Date(row.updated_at), "MMM d, yyyy")}
                     </span>
-                  </Link>
+                  </TableRow>
                 </MotionItem>
               ))}
             </MotionList>
