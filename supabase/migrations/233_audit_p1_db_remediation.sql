@@ -1,20 +1,33 @@
 -- Migration 233: Post-build audit P1 — RLS remediation
 --
--- 1. diet_orders: restore family + caregiver SELECT lost when migration 174
---    recreated the table (089 had both; 174 only staff policies).
--- 2. operation_audit_log: tighten INSERT so facility_id must be accessible and
---    belong to the caller's organization (parity with SELECT).
+-- Production schema note (2026-05-17):
+--   The live `diet_orders` table uses the 089 schema (status enum,
+--   allergy_constraints, deleted_at). Migration 174 was recorded as
+--   applied but its DROP+rebuild of `diet_orders` never took effect,
+--   so policies here align with 089's `deleted_at IS NULL` predicate,
+--   not 174's `active = true`. See follow-up Track A drift-audit task.
+--
+-- Changes:
+--   1. diet_orders: refresh family + caregiver SELECT policies with
+--      explicit DROP IF EXISTS guards (089's family policy is already
+--      live; this brings caregiver to parity and re-affirms family).
+--   2. operation_audit_log: tighten INSERT so facility_id must be in
+--      accessible facilities AND belong to caller's organization
+--      (parity with SELECT). Closes a cross-tenant write hole where
+--      the old WITH CHECK only required organization_id match.
 
 -- =============================================================================
 -- diet_orders — family read (Module 21 / spec 14)
 -- =============================================================================
+
+DROP POLICY IF EXISTS diet_orders_select_family ON public.diet_orders;
 
 CREATE POLICY diet_orders_select_family ON public.diet_orders
   FOR SELECT
   TO authenticated
   USING (
     organization_id = haven.organization_id()
-    AND active = true
+    AND deleted_at IS NULL
     AND haven.app_role() = 'family'
     AND EXISTS (
       SELECT 1
@@ -29,12 +42,14 @@ CREATE POLICY diet_orders_select_family ON public.diet_orders
 -- diet_orders — caregiver read (parity with 089 diet_orders_select_staff)
 -- =============================================================================
 
+DROP POLICY IF EXISTS diet_orders_select_caregiver ON public.diet_orders;
+
 CREATE POLICY diet_orders_select_caregiver ON public.diet_orders
   FOR SELECT
   TO authenticated
   USING (
     organization_id = haven.organization_id()
-    AND active = true
+    AND deleted_at IS NULL
     AND facility_id IN (SELECT haven.accessible_facility_ids())
     AND haven.app_role() = 'caregiver'
   );
@@ -66,7 +81,7 @@ CREATE POLICY oal_insert ON public.operation_audit_log
   );
 
 COMMENT ON POLICY diet_orders_select_family ON public.diet_orders IS
-  'Family portal: active diet order for linked resident (restored after 174).';
+  'Family portal: non-deleted diet order for linked resident.';
 
 COMMENT ON POLICY diet_orders_select_caregiver ON public.diet_orders IS
-  'Caregiver shell: active diet orders in accessible facilities (restored after 174).';
+  'Caregiver shell: non-deleted diet orders in accessible facilities.';
