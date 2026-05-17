@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchHousekeepingBrief, type HousekeeperDashboardBrief } from "@/lib/housekeeper/dashboard-brief";
-import { BedDouble, CheckCircle2, AlertTriangle, Clock, Sparkles } from "lucide-react";
+import { BedDouble, CheckCircle2, AlertTriangle, Clock, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function HousekeeperDashboardPage() {
@@ -52,7 +52,7 @@ export default function HousekeeperDashboardPage() {
       {/* Header */}
       <div className="rounded-lg border border-border bg-card p-6">
         <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-info/30 bg-info/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-foreground">
-          <Sparkles className="h-3.5 w-3.5 text-info" /> Housekeeping
+          <MessageSquare className="h-3.5 w-3.5 text-info" /> Housekeeping
         </div>
         <h1 className="text-3xl font-semibold tracking-tight text-foreground">My Dashboard</h1>
         <p className="mt-1 text-sm font-medium tracking-wide text-muted-foreground">

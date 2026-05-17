@@ -613,14 +613,14 @@ export default function AdminTrainingHubPage() {
 
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px]">
-            <V2Card hoverColor="indigo" className="border-indigo-500/20 dark:border-indigo-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
+            <V2Card hoverColor="indigo" className="border-primary-500/20 dark:border-primary-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
               <></>
               <MonolithicWatermark value={rows.length} className="text-primary/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-primary-600 dark:text-primary-400 flex items-center gap-2">
                   <GraduationCap className="h-3.5 w-3.5" /> Demos Completed
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-indigo-600 dark:text-indigo-400 pb-1">{rows.length}</p>
+                <p className="text-4xl font-mono tracking-tighter text-primary-600 dark:text-primary-400 pb-1">{rows.length}</p>
               </div>
             </V2Card>
           </div>
@@ -1174,7 +1174,7 @@ export default function AdminTrainingHubPage() {
                           </span>
                           <span className="flex flex-col items-end gap-1 text-right sm:flex-row sm:items-center sm:gap-2">
                             {orgWideMode && row.facilities?.name ? (
-                              <span className="text-[9px] uppercase tracking-wider text-indigo-600 dark:text-indigo-400 font-mono font-bold bg-indigo-500/10 px-2 py-0.5 rounded">
+                              <span className="text-[9px] uppercase tracking-wider text-primary-600 dark:text-primary-400 font-mono font-bold bg-primary-500/10 px-2 py-0.5 rounded">
                                 {row.facilities.name}
                               </span>
                             ) : null}
@@ -1239,7 +1239,7 @@ export default function AdminTrainingHubPage() {
                         >
                           <div className="flex-1 min-w-0">
                             {orgWideMode && row.facilities?.name ? (
-                              <p className="text-[9px] font-mono uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-0.5 truncate">
+                              <p className="text-[9px] font-mono uppercase tracking-wider text-primary-600 dark:text-primary-400 mb-0.5 truncate">
                                 {row.facilities.name}
                               </p>
                             ) : null}

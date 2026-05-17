@@ -21,7 +21,7 @@ function StatusBadge({ daysOverdue }: { daysOverdue: number }) {
   if (daysOverdue > 0) {
     return <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">Overdue</Badge>;
   }
-  return <Badge className="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">Due now</Badge>;
+  return <Badge className="bg-primary-100 text-primary-800 dark:bg-primary-900/40 dark:text-primary-300">Due now</Badge>;
 }
 
 export default function CarePlanReviewsDuePage() {
@@ -83,7 +83,7 @@ export default function CarePlanReviewsDuePage() {
     <div className="space-y-8 pb-12">
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between rounded-lg border border-slate-200/50 bg-card p-8 shadow-sm dark:border-white/5">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-100/50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-indigo-800 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-300">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary-200 bg-primary-100/50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-primary-800 dark:border-primary-500/20 dark:bg-primary-500/10 dark:text-primary-300">
             <FileSignature className="h-3.5 w-3.5" />
             Care Plans
           </div>
@@ -99,7 +99,7 @@ export default function CarePlanReviewsDuePage() {
           <div className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-bold tracking-wide text-rose-800 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300">
             {overdueCount} overdue
           </div>
-          <div className="rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-bold tracking-wide text-indigo-800 dark:border-indigo-900/40 dark:bg-indigo-950/20 dark:text-indigo-300">
+          <div className="rounded-full border border-primary-200 bg-primary-50 px-4 py-2 text-sm font-bold tracking-wide text-primary-800 dark:border-primary-900/40 dark:bg-primary-950/20 dark:text-primary-300">
             {dueTodayCount} due today
           </div>
         </div>
@@ -128,7 +128,7 @@ export default function CarePlanReviewsDuePage() {
             {rows.map((row) => (
               <div
                 key={row.id}
-                className="flex flex-col gap-4 rounded-lg border border-slate-200/70 bg-white p-5 shadow-sm transition-colors hover:border-indigo-200 dark:border-white/10 dark:hover:border-indigo-500/30 md:flex-row md:items-center md:justify-between"
+                className="flex flex-col gap-4 rounded-lg border border-slate-200/70 bg-white p-5 shadow-sm transition-colors hover:border-primary-200 dark:border-white/10 dark:hover:border-primary-500/30 md:flex-row md:items-center md:justify-between"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-3">
@@ -147,7 +147,7 @@ export default function CarePlanReviewsDuePage() {
                   href={`/admin/residents/${row.residentId}/care-plan`}
                   className={cn(
                     buttonVariants({ size: "default" }),
-                    "h-11 rounded-full px-6 font-bold uppercase tracking-wider text-[10px] bg-indigo-600 text-white shadow-sm hover:bg-indigo-700"
+                    "h-11 rounded-full px-6 font-bold uppercase tracking-wider text-[10px] bg-primary-600 text-white shadow-sm hover:bg-primary-700"
                   )}
                 >
                   Review & sign

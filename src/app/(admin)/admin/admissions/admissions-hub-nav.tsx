@@ -18,7 +18,7 @@ export function AdmissionsHubNav() {
 
   return (
     <nav
-      className="flex flex-wrap gap-1.5 w-fit rounded-full border border-slate-200/50 bg-slate-100/50 p-1.5 shadow-inner dark:border-white/5 dark:bg-black/40 backdrop-blur-3xl"
+      className="flex flex-wrap gap-1.5 w-fit rounded-full border border-slate-200/50 bg-slate-100/50 p-1.5 shadow-inner dark:border-white/5 dark:bg-black/40 "
       aria-label="Admissions sections"
     >
       {links.map((item) => {

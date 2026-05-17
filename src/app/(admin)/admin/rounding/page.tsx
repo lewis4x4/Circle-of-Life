@@ -360,14 +360,14 @@ function MetricV2({
 }) {
   const borderColor = {
     cyan: "border-cyan-500/20 shadow-[0_8px_30px_rgba(6,182,212,0.05)]",
-    indigo: "border-indigo-500/20 shadow-[0_8px_30px_rgba(99,102,241,0.05)]",
+    indigo: "border-primary-500/20 shadow-[0_8px_30px_rgba(99,102,241,0.05)]",
     emerald: "border-emerald-500/20 shadow-[0_8px_30px_rgba(16,185,129,0.05)]",
     rose: "border-rose-500/20 shadow-[0_8px_30px_rgba(244,63,94,0.05)]",
   }[hoverColor] || "";
 
   const labelColor = {
     cyan: "text-cyan-600 dark:text-cyan-400",
-    indigo: "text-indigo-600 dark:text-indigo-400",
+    indigo: "text-primary-600 dark:text-primary-400",
     emerald: "text-emerald-600 dark:text-emerald-400",
     rose: "text-rose-600 dark:text-rose-400",
   }[hoverColor] || "text-slate-400";
@@ -403,14 +403,14 @@ function ActionCard({
 }) {
   const accentColor = {
     cyan: "text-cyan-500",
-    indigo: "text-indigo-500",
+    indigo: "text-primary-500",
     emerald: "text-emerald-500",
     rose: "text-rose-500",
   }[hoverColor] || "text-slate-400";
 
   const borderAccent = {
     cyan: "border-cyan-500/20",
-    indigo: "border-indigo-500/20",
+    indigo: "border-primary-500/20",
     emerald: "border-emerald-500/20",
     rose: "border-rose-500/20",
   }[hoverColor] || "";
@@ -420,7 +420,7 @@ function ActionCard({
       <div className="flex flex-col h-full justify-between gap-6">
         <div>
           <div className={cn("flex items-center gap-3 mb-4", accentColor)}>
-            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20">
+            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center  border border-white/20">
               {icon}
             </div>
             <h3 className="text-[12px] font-bold tracking-wider uppercase">{title}</h3>

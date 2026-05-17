@@ -277,7 +277,7 @@ export default function ReportsOverviewPage() {
               <span className="text-[10px] font-mono tracking-wider uppercase text-slate-500 dark:text-slate-400">Template → schedule → audit trail</span>
             </div>
             <h1 className="flex items-center gap-4 text-4xl md:text-2xl font-semibold tracking-tight text-foreground">
-              <Layers className="size-10 shrink-0 text-indigo-500" strokeWidth={1.5} aria-hidden />
+              <Layers className="size-10 shrink-0 text-primary-500" strokeWidth={1.5} aria-hidden />
               Reporting Hub
             </h1>
             <p className="max-w-2xl text-balance text-base font-medium leading-relaxed text-muted-foreground">
@@ -292,7 +292,7 @@ export default function ReportsOverviewPage() {
             </Link>
             <Link
               href="/admin/reports/nlq"
-              className={cn(buttonVariants({ variant: "outline", size: "lg" }), "gap-2 border-indigo-500/30 dark:border-indigo-400/30 rounded-xl text-xs uppercase tracking-wider font-bold")}
+              className={cn(buttonVariants({ variant: "outline", size: "lg" }), "gap-2 border-primary-500/30 dark:border-primary-400/30 rounded-xl text-xs uppercase tracking-wider font-bold")}
             >
               <MessageSquareText className="size-4" aria-hidden />
               Ask Haven Insight
@@ -367,7 +367,7 @@ export default function ReportsOverviewPage() {
             </div>
             <Link
               href="/admin/reports/templates"
-              className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-400 sm:mt-0"
+              className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:underline dark:text-primary-400 sm:mt-0"
             >
               Open library
               <ChevronRight className="size-4" aria-hidden />
@@ -407,17 +407,17 @@ export default function ReportsOverviewPage() {
                 const AIcon = action.icon;
                 const ring =
                   action.accent === "indigo"
-                    ? "hover:border-indigo-400/50 hover:shadow-indigo-500/10"
+                    ? "hover:border-primary-400/50 hover:shadow-[var(--shadow-card)]"
                     : action.accent === "violet"
-                      ? "hover:border-violet-400/50 hover:shadow-violet-500/10"
+                      ? "hover:border-primary-400/50 hover:shadow-[var(--shadow-card)]"
                       : action.accent === "rose"
                         ? "hover:border-rose-400/50 hover:shadow-rose-500/10"
                         : "hover:border-emerald-400/50 hover:shadow-emerald-500/10";
                 const iconBg =
                   action.accent === "indigo"
-                    ? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300"
+                    ? "bg-primary-500/15 text-primary-700 dark:text-primary-300"
                     : action.accent === "violet"
-                      ? "bg-violet-500/15 text-violet-700 dark:text-violet-300"
+                      ? "bg-primary-500/15 text-primary-700 dark:text-primary-300"
                       : action.accent === "rose"
                         ? "bg-rose-500/15 text-rose-700 dark:text-rose-300"
                         : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
@@ -458,7 +458,7 @@ export default function ReportsOverviewPage() {
               </h2>
               <Link
                 href="/admin/reports/history"
-                className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-1 text-indigo-600 dark:text-indigo-400")}
+                className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-1 text-primary-600 dark:text-primary-400")}
               >
                 <History className="size-3.5" aria-hidden />
                 Full history

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Loader2, Mic, Send, Sparkles, Volume2, VolumeX, X } from "lucide-react";
+import { Loader2, Mic, Send, Volume2, VolumeX, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 import {
@@ -59,6 +59,11 @@ interface SendOptions {
   mode?: "text" | "voice";
   /** Structured flows only — runs grace-orchestrator first. Default: knowledge-agent directly (lower latency). */
   routeFlows?: boolean;
+}
+
+interface GraceBarProps {
+  open?: boolean;
+  onClose?: () => void;
 }
 
 function sourceKey(source: GraceKnowledgeSource): string {
@@ -126,134 +131,61 @@ function GraceThinkingPanel({
     Math.floor(elapsedMs / (mode === "flow" ? 1800 : 2600))
   );
   const seconds = Math.max(1, Math.floor(elapsedMs / 1000));
-  const laneStates =
-    mode === "flow"
-      ? [
-          {
-            label: "Intent lane",
-            value: stageIndex >= 0 ? "locked" : "warming",
-            tone:
-              stageIndex >= 1
-                ? "border-emerald-300/25 bg-emerald-400/10 text-emerald-50"
-                : "border-violet-300/20 bg-violet-400/10 text-violet-50",
-          },
-          {
-            label: "Risk lane",
-            value: stageIndex >= 1 ? "scored" : "waiting",
-            tone:
-              stageIndex >= 2
-                ? "border-emerald-300/25 bg-emerald-400/10 text-emerald-50"
-                : "border-white/10 bg-white/[0.04] text-white/70",
-          },
-          {
-            label: "Flow lane",
-            value: stageIndex >= 2 ? "primed" : "holding",
-            tone:
-              stageIndex >= 2
-                ? "border-violet-300/25 bg-violet-400/12 text-violet-50"
-                : "border-white/10 bg-white/[0.04] text-white/70",
-          },
-        ]
-      : [
-          {
-            label: "Auth lane",
-            value: stageIndex >= 0 ? "verified" : "warming",
-            tone:
-              stageIndex >= 1
-                ? "border-emerald-300/25 bg-emerald-400/10 text-emerald-50"
-                : "border-violet-300/20 bg-violet-400/10 text-violet-50",
-          },
-          {
-            label: "Live data",
-            value: stageIndex >= 1 ? "querying" : "waiting",
-            tone:
-              stageIndex >= 2
-                ? "border-cyan-300/25 bg-cyan-400/10 text-cyan-50"
-                : "border-white/10 bg-white/[0.04] text-white/70",
-          },
-          {
-            label: "Knowledge",
-            value:
-              sourceCount > 0
-                ? `${sourceCount} sources`
-                : stageIndex >= 2
-                  ? "scanning"
-                  : "cold",
-            tone:
-              sourceCount > 0
-                ? "border-fuchsia-300/25 bg-fuchsia-400/12 text-fuchsia-50"
-                : "border-white/10 bg-white/[0.04] text-white/70",
-          },
-        ];
   const longWait = seconds >= 10;
-  const pulseCount = 10;
 
   return (
-    <div className="overflow-hidden rounded-[1.15rem] border border-violet-400/20 bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.12),rgba(15,23,42,0.95)_42%,rgba(2,6,23,0.98))] shadow-[0_0_0_1px_rgba(139,92,246,0.08),0_14px_44px_rgba(76,29,149,0.24)]">
-      <div className="border-b border-violet-400/15 bg-white/[0.03] px-2.5 py-2">
+    <div className="overflow-hidden rounded-[9px] border border-border bg-card shadow-[var(--shadow-card)]">
+      <div className="border-b border-border px-[11px] py-2">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="relative flex size-7 items-center justify-center rounded-lg border border-violet-300/20 bg-violet-500/10">
-              <span className="absolute inset-0 rounded-xl bg-violet-400/10 animate-pulse" />
-              <Sparkles className="relative size-3 text-violet-300" />
-            </span>
-            <div>
-              <div className="text-[12px] font-semibold tracking-tight text-white">
-                {mode === "flow" ? "Grace is choosing a path" : "Grace is reading the system"}
-              </div>
-              <div className="text-[10px] text-violet-100/65">
-                {facilityName
-                  ? `Focused on ${facilityName}`
-                  : "Running org-wide until a header facility is selected"}
-              </div>
+          <div>
+            <div className="text-[12px] font-medium tracking-tight text-foreground">
+              {mode === "flow" ? "Choosing a path" : "Reading the system"}
+            </div>
+            <div className="mt-0.5 text-[11px] leading-tight text-muted-foreground">
+              {facilityName
+                ? `Focused on ${facilityName}`
+                : "Running org-wide until a header facility is selected"}
             </div>
           </div>
-          <div className="rounded-full border border-violet-300/15 bg-black/20 px-2 py-0.5 text-[9px] font-mono uppercase tracking-[0.14em] text-violet-100/70">
+          <div className="rounded-[8px] border border-border bg-background px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
             {seconds}s live
           </div>
         </div>
       </div>
 
-      <div className="grid gap-2.5 px-2.5 py-2.5 lg:grid-cols-[minmax(0,1.1fr)_200px]">
-        <div className="space-y-2">
+      <div className="space-y-2 px-[11px] py-[11px]">
+        <div className="grid gap-1.5">
           {steps.map((step, index) => {
             const complete = index < stageIndex;
             const active = index === stageIndex;
             return (
               <div
                 key={step.label}
-                className={`relative overflow-hidden rounded-xl border px-2.5 py-2 transition-all duration-500 ${
+                className={`min-h-[33px] rounded-[8px] border px-[11px] py-2 transition-colors ${
                   active
-                    ? "border-violet-300/35 bg-violet-500/10 shadow-[0_0_24px_rgba(139,92,246,0.18)]"
+                    ? "border-primary/35 bg-primary/5"
                     : complete
-                      ? "border-emerald-300/20 bg-emerald-500/10"
-                      : "border-white/8 bg-white/[0.02]"
+                      ? "border-success/25 bg-success/5"
+                      : "border-border bg-background"
                 }`}
               >
-                {active ? (
-                  <div className="pointer-events-none absolute inset-0 translate-x-[-100%] animate-[grace-scan_1.8s_linear_infinite] bg-gradient-to-r from-transparent via-violet-300/12 to-transparent" />
-                ) : null}
-                <div className="relative flex items-start gap-2">
+                <div className="flex items-start gap-2">
                   <span
-                    className={`mt-0.5 flex size-4.5 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold ${
+                    className={`mt-0.5 flex size-4.5 shrink-0 items-center justify-center rounded-[6px] border text-[9px] font-semibold ${
                       complete
-                        ? "bg-emerald-400/20 text-emerald-100"
+                        ? "border-success/30 bg-success/10 text-success"
                         : active
-                          ? "bg-violet-300/20 text-violet-50"
-                          : "bg-white/8 text-white/45"
+                          ? "border-primary/30 bg-primary/10 text-primary"
+                          : "border-border bg-card text-muted-foreground"
                     }`}
                   >
                     {complete ? "✓" : index + 1}
                   </span>
                   <div className="min-w-0">
-                    <div
-                      className={`text-[12px] font-medium ${
-                        active || complete ? "text-white" : "text-white/60"
-                      }`}
-                    >
+                    <div className="text-[12px] font-medium text-foreground">
                       {step.label}
                     </div>
-                    <div className="mt-0.5 text-[10px] leading-relaxed text-white/55">
+                    <div className="mt-0.5 text-[11px] leading-tight text-muted-foreground">
                       {step.hint}
                     </div>
                   </div>
@@ -262,97 +194,41 @@ function GraceThinkingPanel({
             );
           })}
         </div>
-
-        <div className="relative overflow-hidden rounded-[1.15rem] border border-white/8 bg-black/25 p-2.5">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(129,140,248,0.2),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(168,85,247,0.18),transparent_35%)]" />
-          <div className="relative space-y-2.5">
-            <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-violet-100/55">
-              Grace core
-            </div>
-            <div className="relative flex min-h-[92px] items-center justify-center overflow-hidden rounded-[1rem] border border-violet-300/10 bg-[radial-gradient(circle_at_center,rgba(76,29,149,0.28),transparent_55%)]">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.12),transparent_40%)]" />
-              <div className="relative flex size-16 items-center justify-center">
-                <div className="absolute size-16 rounded-full border border-violet-300/20 animate-[grace-orbit_12s_linear_infinite]" />
-                <div className="absolute size-11 rounded-full border border-cyan-300/20 animate-[grace-orbit_8s_linear_infinite_reverse]" />
-                <div className="absolute size-7 rounded-full bg-[radial-gradient(circle_at_top,rgba(192,132,252,0.95),rgba(91,33,182,0.72)_45%,rgba(14,116,144,0.58)_100%)] shadow-[0_0_22px_rgba(168,85,247,0.45)] animate-[grace-breathe_2.6s_ease-in-out_infinite]" />
-                {Array.from({ length: pulseCount }).map((_, index) => {
-                  const angle = (index / pulseCount) * Math.PI * 2;
-                  const x = Math.cos(angle) * 38;
-                  const y = Math.sin(angle) * 38;
-                  return (
-                    <span
-                      key={index}
-                      className="absolute size-1 rounded-full bg-violet-200/65"
-                      style={{
-                        transform: `translate(${x}px, ${y}px)`,
-                        animation: `grace-node 1.6s ${index * 110}ms ease-in-out infinite`,
-                      }}
-                    />
-                  );
-                })}
-              </div>
+        <div className="rounded-[8px] border border-border bg-background px-[11px] py-2 text-[11px] leading-relaxed text-muted-foreground">
+          {mode === "flow"
+            ? "Routing before Grace speaks keeps higher-risk actions auditable."
+            : "Grace is live against operational data and uploaded policies. Longer answers can take a few seconds while evidence is gathered."}
+        </div>
+        {sourceCount > 0 ? (
+          <div className="space-y-1">
+            <div className="border-t border-border pt-2 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              Evidence arriving
             </div>
             <div className="grid gap-1">
-              {laneStates.map((lane) => (
+              {sourceTitles.slice(0, 3).map((title, index) => (
                 <div
-                  key={lane.label}
-                  className={`flex items-center justify-between rounded-lg border px-2 py-1 text-[9px] font-mono uppercase tracking-[0.12em] ${lane.tone}`}
+                  key={`${title}-${index}`}
+                  className="min-h-[33px] rounded-[8px] border border-border bg-background px-[11px] py-2 text-[11px] text-muted-foreground"
                 >
-                  <span>{lane.label}</span>
-                  <span>{lane.value}</span>
+                  {title}
                 </div>
               ))}
             </div>
-            <div className="rounded-lg border border-violet-300/10 bg-white/[0.03] p-2 text-[11px] leading-relaxed text-white/75">
-              {mode === "flow"
-                ? "Routing the request before Grace speaks keeps higher-risk actions auditable."
-                : "Grace is live against operational data and uploaded policies. Long answers can take a few more seconds while evidence is gathered."}
-            </div>
-            {sourceCount > 0 ? (
-              <div className="space-y-1">
-                <div className="text-[9px] font-mono uppercase tracking-[0.18em] text-fuchsia-100/60">
-                  Evidence arriving
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {sourceTitles.slice(0, 3).map((title, index) => (
-                    <span
-                      key={`${title}-${index}`}
-                      className="rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-1.5 py-0.5 text-[9px] text-fuchsia-50/90"
-                    >
-                      {title}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-[9px] font-mono uppercase tracking-[0.14em] text-white/45">
-                <span>Signal build</span>
-                <span>{Math.min(96, 24 + stageIndex * 24)}%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-white/8">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-400 to-cyan-300 transition-all duration-700"
-                  style={{ width: `${Math.min(96, 24 + stageIndex * 24)}%` }}
-                />
-              </div>
-            </div>
-            {longWait ? (
-              <div className="rounded-lg border border-amber-300/15 bg-amber-300/8 px-2 py-1.5 text-[10px] leading-relaxed text-amber-50/85">
-                Deep queries can take longer when Grace is merging live operations with policy evidence. She is still working.
-              </div>
-            ) : null}
           </div>
-        </div>
+        ) : null}
+        {longWait ? (
+          <div className="rounded-[9px] border border-warning/30 bg-warning/10 px-[13px] py-2 text-[12px] leading-relaxed text-warning-foreground">
+            Deep queries can take longer when Grace is merging live operations with policy evidence. She is still working.
+          </div>
+        ) : null}
       </div>
     </div>
   );
 }
 
-export function GraceBar() {
+export function GraceBar({ open, onClose }: GraceBarProps = {}) {
   const {
     state,
-    openBar,
     closeBar,
     startFlow,
     setError,
@@ -382,6 +258,8 @@ export function GraceBar() {
 
   const knowledge = useGraceKnowledgeStream();
   const recorder = useGraceVoiceRecorder();
+  const panelOpen = open ?? state.barOpen;
+  const closePanel = onClose ?? closeBar;
 
   const templates = useMemo(() => filterGraceTemplates(appRole), [appRole]);
 
@@ -394,30 +272,14 @@ export function GraceBar() {
   const knowledgeCancel = knowledge.cancel;
 
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      const isMac = navigator.platform.toLowerCase().includes("mac");
-      const cmd = isMac ? event.metaKey : event.ctrlKey;
-      if (cmd && event.key.toLowerCase() === "g") {
-        event.preventDefault();
-        if (state.barOpen) closeBar();
-        else openBar();
-      } else if (event.key === "Escape" && state.barOpen) {
-        closeBar();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [closeBar, openBar, state.barOpen]);
-
-  useEffect(() => {
-    if (state.barOpen) {
+    if (panelOpen) {
       const timer = window.setTimeout(() => textareaRef.current?.focus(), 50);
       return () => window.clearTimeout(timer);
     }
     setInput("");
     setClassifying(false);
     return undefined;
-  }, [state.barOpen]);
+  }, [panelOpen]);
 
   useEffect(() => {
     if (!scrollRef.current) return;
@@ -734,28 +596,25 @@ export function GraceBar() {
   }, [recorder, send, setError]);
 
   return (
-    <Dialog open={state.barOpen} onOpenChange={(open) => !open && closeBar()}>
+    <Dialog open={panelOpen} onOpenChange={(nextOpen) => !nextOpen && closePanel()}>
       <DialogContent
         hideDefaultClose
-        className="flex h-[min(88vh,780px)] max-w-5xl flex-col overflow-hidden border border-violet-500/20 bg-gradient-to-b from-violet-950/25 via-background to-background p-0 shadow-2xl shadow-violet-950/40 backdrop-blur-xl dark:from-violet-950/40 dark:via-background dark:to-background"
+        className="flex h-[min(88vh,780px)] max-w-5xl flex-col overflow-hidden rounded-[9px] border border-border bg-card p-0 shadow-[var(--shadow-card)]"
       >
-        <DialogHeader className="border-b border-violet-500/10 bg-violet-500/[0.03] px-6 py-4">
+        <DialogHeader className="border-b border-border bg-card px-6 py-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <DialogTitle className="flex items-center gap-2 text-lg tracking-tight">
-                <span className="flex size-8 items-center justify-center rounded-lg bg-violet-500/15 ring-1 ring-violet-400/30">
-                  <Sparkles className="size-4 text-violet-400" />
-                </span>
+              <DialogTitle className="text-[15px] font-medium tracking-tight text-foreground">
                 Grace
               </DialogTitle>
-              <DialogDescription className="mt-1 max-w-xl text-pretty">
+              <DialogDescription className="mt-1 max-w-xl text-sm text-muted-foreground">
                 Answers from live operational data and uploaded policies. Pick a
                 quick question or type your own.
               </DialogDescription>
             </div>
             <div className="flex items-center gap-2">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="icon-sm"
                 className={state.narrationEnabled ? "animate-on-click" : ""}
                 onClick={() => {
@@ -780,12 +639,12 @@ export function GraceBar() {
                 )}
               </Button>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="icon-sm"
                 onClick={() => {
                   knowledgeCancel();
                   cancelGraceSpeech();
-                  closeBar();
+                  closePanel();
                 }}
                 title="Close Grace"
                 aria-label="Close Grace"
@@ -797,41 +656,36 @@ export function GraceBar() {
         </DialogHeader>
 
         <div className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[288px_minmax(0,1fr)]">
-          <aside className="border-r border-violet-500/10 bg-muted/15 p-4">
-            <div className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          <aside className="border-r border-border bg-card p-4">
+            <div className="mb-3 border-t border-border pt-3 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
               Quick questions
             </div>
             {selectedFacility ? (
-              <p className="mb-3 rounded-lg border border-violet-500/20 bg-violet-500/5 px-2.5 py-2 text-[11px] leading-snug text-muted-foreground">
+              <p className="mb-3 rounded-[9px] border border-border bg-background px-[13px] py-2 text-[12px] leading-snug text-muted-foreground">
                 Facility focus:{" "}
                 <span className="font-medium text-foreground">
                   {selectedFacility.name}
                 </span>
               </p>
             ) : (
-              <p className="mb-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-2.5 py-2 text-[11px] leading-snug text-amber-900 dark:text-amber-100/90">
+              <p className="mb-3 rounded-[9px] border border-warning/30 bg-warning/10 px-[13px] py-2 text-[12px] leading-snug text-warning-foreground">
                 No facility in header—answers default to org-wide. Select a site
                 for tighter context.
               </p>
             )}
-            <div className="grid max-h-[min(52vh,420px)] gap-2 overflow-y-auto pr-1">
+            <div className="grid max-h-[min(52vh,420px)] gap-1 overflow-y-auto pr-1">
               {templates.map((template) => (
                 <button
                   key={template.id}
                   type="button"
                   disabled={graceBusy}
                   onClick={() => void handleTemplateClick(template)}
-                  className="rounded-2xl border border-border/80 bg-background/80 px-3.5 py-3 text-left shadow-sm transition hover:border-violet-400/50 hover:bg-violet-500/[0.07] disabled:pointer-events-none disabled:opacity-45 dark:border-white/10 dark:bg-background/40 dark:hover:bg-violet-500/10"
+                  className="min-h-[33px] rounded-[8px] border border-border bg-background px-[11px] py-2 text-left transition-colors hover:bg-muted/40 disabled:pointer-events-none disabled:opacity-45"
                 >
-                  <div className="mb-1.5 flex items-center gap-2">
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-violet-500/12 ring-1 ring-violet-400/25">
-                      <template.icon className="size-4 text-violet-500 dark:text-violet-400" />
-                    </span>
-                    <div className="text-sm font-semibold leading-tight">
-                      {template.title}
-                    </div>
+                  <div className="text-[12px] font-medium leading-tight text-foreground">
+                    {template.title}
                   </div>
-                  <div className="pl-10 text-xs leading-snug text-muted-foreground">
+                  <div className="mt-0.5 line-clamp-1 text-xs leading-tight text-muted-foreground">
                     {template.subtitle}
                   </div>
                 </button>
@@ -845,7 +699,7 @@ export function GraceBar() {
               className="flex-1 space-y-4 overflow-y-auto px-6 py-5"
             >
               {!organizationId ? (
-                <div className="rounded-2xl border border-amber-400/40 bg-amber-50/90 p-4 text-sm text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-50">
+                <div className="rounded-[9px] border border-warning/30 bg-warning/10 px-[13px] py-3 text-sm text-warning-foreground">
                   Your profile must have an organization assigned before Grace
                   can query live data. Contact an administrator if this message
                   persists.
@@ -853,15 +707,14 @@ export function GraceBar() {
               ) : null}
 
               {state.errorBanner ? (
-                <div className="rounded-2xl border border-rose-300/50 bg-rose-50/80 p-4 text-sm text-rose-900 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100">
+                <div className="rounded-[9px] border border-destructive/30 bg-destructive/10 px-[13px] py-3 text-sm text-destructive">
                   {state.errorBanner}
                 </div>
               ) : null}
 
               {state.chatMessages.length === 0 ? (
-                <div className="rounded-3xl border border-dashed border-violet-500/25 bg-violet-500/[0.04] p-8 text-center">
-                  <Bot className="mx-auto mb-3 size-9 text-violet-500" />
-                  <div className="text-lg font-semibold tracking-tight">
+                <div className="rounded-[9px] border border-border bg-card p-6 text-center">
+                  <div className="text-[15px] font-medium tracking-tight text-foreground">
                     Start with left rail or type below
                   </div>
                   <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
@@ -875,10 +728,10 @@ export function GraceBar() {
               {state.chatMessages.map((message) => (
                 <div
                   key={message.id}
-                  className={`max-w-[min(92%,720px)] rounded-2xl px-4 py-3 text-[15px] leading-relaxed shadow-sm ${
+                  className={`max-w-[min(92%,720px)] rounded-[9px] border px-[13px] py-3 text-[13px] leading-relaxed ${
                     message.role === "user"
-                      ? "ml-auto bg-gradient-to-br from-violet-600 to-violet-700 text-white shadow-violet-900/20"
-                      : "border border-border/60 bg-card/80 text-foreground dark:border-white/10 dark:bg-muted/30"
+                      ? "ml-auto border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-card text-foreground"
                   }`}
                 >
                   {message.pending &&
@@ -903,22 +756,22 @@ export function GraceBar() {
                     message.resolvedTimeWindowLabel) ? (
                     <div className="mt-3 flex flex-wrap gap-2">
                       {message.answerMode ? (
-                        <span className="rounded-full border border-violet-300/20 bg-violet-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-200">
+                        <span className="rounded-[8px] border border-border bg-background px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                           {message.answerMode}
                         </span>
                       ) : null}
                       {message.resolvedDomain ? (
-                        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/70">
+                        <span className="rounded-[8px] border border-border bg-background px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                           {formatDomainLabel(message.resolvedDomain)}
                         </span>
                       ) : null}
                       {message.resolvedScopeLabel ? (
-                        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-medium tracking-wide text-white/70">
+                        <span className="rounded-[8px] border border-border bg-background px-2.5 py-1 text-[10px] font-medium tracking-wide text-muted-foreground">
                           {message.resolvedScopeLabel}
                         </span>
                       ) : null}
                       {message.resolvedTimeWindowLabel ? (
-                        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-medium tracking-wide text-white/70">
+                        <span className="rounded-[8px] border border-border bg-background px-2.5 py-1 text-[10px] font-medium tracking-wide text-muted-foreground">
                           {message.resolvedTimeWindowLabel}
                         </span>
                       ) : null}
@@ -928,7 +781,7 @@ export function GraceBar() {
                   message.role === "assistant" &&
                   message.content.trim() ? (
                     <span
-                      className="mt-2 inline-block h-3 w-px animate-pulse bg-violet-500/80"
+                      className="mt-2 inline-block h-3 w-px animate-pulse bg-primary"
                       aria-hidden
                     />
                   ) : null}
@@ -937,7 +790,7 @@ export function GraceBar() {
                       {message.citations.map((source) => (
                         <div
                           key={sourceKey(source)}
-                          className="rounded-2xl border border-border/70 bg-background/70 p-3 text-xs text-muted-foreground"
+                          className="rounded-[9px] border border-border bg-background p-3 text-xs text-muted-foreground"
                         >
                           <div className="font-medium text-foreground">
                             {source.title}
@@ -961,16 +814,16 @@ export function GraceBar() {
               ) : null}
 
               {!classifying && knowledge.status === "connecting" ? (
-                <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3 text-sm text-violet-50/80">
+                <div className="rounded-[9px] border border-border bg-card px-[13px] py-3 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
-                    <Loader2 className="size-4 animate-spin text-violet-300" />
+                    <Loader2 className="size-4 animate-spin text-primary" />
                     Grace handshake complete. Opening live search channels…
                   </div>
                 </div>
               ) : null}
 
               {knowledge.kbEmpty ? (
-                <div className="rounded-2xl border border-amber-300/40 bg-amber-50/60 p-4 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+                <div className="rounded-[9px] border border-warning/30 bg-warning/10 px-[13px] py-3 text-sm text-warning-foreground">
                   Grace could not find matching uploaded documents. Live
                   operational tools still work, but policy answers improve once
                   materials are uploaded under `/admin/knowledge/admin`.
@@ -978,7 +831,7 @@ export function GraceBar() {
               ) : null}
             </div>
 
-            <div className="border-t border-violet-500/10 bg-background/50 px-6 py-4">
+            <div className="border-t border-border bg-card px-6 py-4">
               <div className="flex items-end gap-3">
                 <Textarea
                   ref={textareaRef}
@@ -991,7 +844,7 @@ export function GraceBar() {
                     }
                   }}
                   placeholder="Ask Grace about a resident, meds, census, incident, or protocol..."
-                  className="min-h-[92px] flex-1 resize-none border-violet-500/15 bg-background/80 focus-visible:ring-violet-500/40"
+                  className="min-h-[92px] flex-1 resize-none border-input bg-background focus-visible:ring-2 focus-visible:ring-ring"
                 />
                 <div className="flex flex-col gap-2">
                   <Button
@@ -1013,7 +866,7 @@ export function GraceBar() {
                     {voicePending || recorder.recording ? (
                       <Loader2 className="size-4 animate-spin" />
                     ) : (
-                      <Mic className="size-4" />
+                      <Mic className="size-4 text-muted-foreground" />
                     )}
                   </Button>
                   <Button
@@ -1022,7 +875,7 @@ export function GraceBar() {
                       !input.trim() || graceBusy || !organizationId
                     }
                     size="icon"
-                    className="bg-violet-600 hover:bg-violet-500 dark:bg-violet-600 dark:hover:bg-violet-500"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
                     aria-label="Send message"
                   >
                     <Send className="size-4" />

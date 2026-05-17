@@ -306,7 +306,7 @@ export function CarePlanDiffModal({
                   {/* New Plan (Right) */}
                   <div className="p-6">
                     <div className="flex items-center gap-2 mb-4">
-                      <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-900/40 dark:text-indigo-300 font-mono text-xs">
+                      <Badge className="bg-primary-100 text-primary-800 border-primary-200 dark:bg-primary-900/40 dark:text-primary-300 font-mono text-xs">
                         v{newPlan?.version}
                       </Badge>
                       <span className="text-sm font-medium text-slate-600 dark:text-slate-400">

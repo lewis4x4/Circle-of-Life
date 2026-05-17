@@ -667,13 +667,13 @@ export default function AdminAdmissionsHubPage() {
           </div>
         </V2Card>
 
-        <V2Card href="/admin/admissions/new" hoverColor="indigo" className="border-indigo-500/20 pb-0">
+        <V2Card href="/admin/admissions/new" hoverColor="indigo" className="border-primary-500/20 pb-0">
           <div className="flex items-center gap-4 h-full absolute inset-0 px-6">
-            <div className="rounded-xl bg-indigo-50 dark:bg-indigo-500/10 p-3 border border-indigo-100 dark:border-indigo-500/20 shrink-0">
-              <Home className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+            <div className="rounded-xl bg-primary-50 dark:bg-primary-500/10 p-3 border border-primary-100 dark:border-primary-500/20 shrink-0">
+              <Home className="h-5 w-5 text-primary-600 dark:text-primary-400" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-semibold tracking-tight text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
+              <h3 className="text-base font-semibold tracking-tight text-slate-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors truncate">
                 Start Admission
               </h3>
               <p className="text-xs text-slate-500 dark:text-zinc-400 truncate">Begin the intake workflow</p>
@@ -754,7 +754,7 @@ export default function AdminAdmissionsHubPage() {
                             Ready
                           </span>
                         ) : handoffPhase === "onboarding" ? (
-                          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 border-indigo-500/20 dark:text-indigo-300">
+                          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-primary-500/10 text-primary-700 border-primary-500/20 dark:text-primary-300">
                             Onboarding
                           </span>
                         ) : null}
@@ -769,7 +769,7 @@ export default function AdminAdmissionsHubPage() {
                             ? "text-amber-700 dark:text-amber-300"
                             : handoffPhase === "ready"
                               ? "text-emerald-700 dark:text-emerald-300"
-                              : "text-indigo-700 dark:text-indigo-300",
+                              : "text-primary-700 dark:text-primary-300",
                         )}>
                           {handoffPhase === "blocked"
                             ? "Admissions handoff blocked."
@@ -810,12 +810,12 @@ export default function AdminAdmissionsHubPage() {
           </p>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center justify-between gap-3 rounded-lg border border-indigo-200/70 bg-indigo-50/60 dark:border-indigo-900/40 dark:bg-indigo-950/20 p-4">
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-primary-200/70 bg-primary-50/60 dark:border-primary-900/40 dark:bg-primary-950/20 p-4">
               <div>
-                <p className="text-[10px] uppercase tracking-wider font-mono text-indigo-700 dark:text-indigo-300">Onboarding queue</p>
-                <p className="text-sm text-indigo-900 dark:text-indigo-100">Cases already at move-in can continue through downstream onboarding from a single queue.</p>
+                <p className="text-[10px] uppercase tracking-wider font-mono text-primary-700 dark:text-primary-300">Onboarding queue</p>
+                <p className="text-sm text-primary-900 dark:text-primary-100">Cases already at move-in can continue through downstream onboarding from a single queue.</p>
               </div>
-              <Link href="/admin/admissions/onboarding" className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 hover:text-indigo-900 dark:text-indigo-300 dark:hover:text-indigo-100">
+              <Link href="/admin/admissions/onboarding" className="text-[10px] font-bold uppercase tracking-wider text-primary-700 hover:text-primary-900 dark:text-primary-300 dark:hover:text-primary-100">
                 Open onboarding →
               </Link>
             </div>
@@ -874,7 +874,7 @@ export default function AdminAdmissionsHubPage() {
                     className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 w-full cursor-pointer group"
                   >
                     <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                      {isPending ? <></> : <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />}
+                      {isPending ? <></> : <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
@@ -898,7 +898,7 @@ export default function AdminAdmissionsHubPage() {
                             Ready
                           </span>
                         ) : phase.phase === "onboarding" ? (
-                          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border bg-indigo-500/10 text-indigo-700 border-indigo-500/20 dark:text-indigo-300">
+                          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border bg-primary-500/10 text-primary-700 border-primary-500/20 dark:text-primary-300">
                             Onboarding
                           </span>
                         ) : null}
@@ -916,7 +916,7 @@ export default function AdminAdmissionsHubPage() {
                           : phase.phase === "ready"
                             ? "text-emerald-700 dark:text-emerald-300"
                             : phase.phase === "onboarding"
-                              ? "text-indigo-700 dark:text-indigo-300"
+                              ? "text-primary-700 dark:text-primary-300"
                               : "text-slate-600 dark:text-zinc-400",
                       )}>
                         {phase.helperText}
@@ -930,7 +930,7 @@ export default function AdminAdmissionsHubPage() {
                           : phase.phase === "ready"
                             ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300"
                             : phase.phase === "onboarding"
-                              ? "bg-indigo-500/10 text-indigo-700 border-indigo-500/20 dark:text-indigo-300"
+                              ? "bg-primary-500/10 text-primary-700 border-primary-500/20 dark:text-primary-300"
                               : "bg-slate-500/10 text-slate-700 border-slate-500/20 dark:text-slate-300",
                       )}>
                         {phase.nextActionLabel}
@@ -999,7 +999,7 @@ export default function AdminAdmissionsHubPage() {
                           phase.phase === "planning"
                             ? "bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300"
                             : phase.phase === "pharmacist_review"
-                              ? "bg-indigo-500/10 text-indigo-700 border-indigo-500/20 dark:text-indigo-300"
+                              ? "bg-primary-500/10 text-primary-700 border-primary-500/20 dark:text-primary-300"
                               : phase.phase === "ready_to_complete"
                                 ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300"
                                 : "bg-slate-500/10 text-slate-700 border-slate-500/20 dark:text-slate-300",
@@ -1015,7 +1015,7 @@ export default function AdminAdmissionsHubPage() {
                         phase.phase === "planning"
                           ? "text-amber-700 dark:text-amber-300"
                           : phase.phase === "pharmacist_review"
-                            ? "text-indigo-700 dark:text-indigo-300"
+                            ? "text-primary-700 dark:text-primary-300"
                             : phase.phase === "ready_to_complete"
                               ? "text-emerald-700 dark:text-emerald-300"
                               : "text-slate-600 dark:text-zinc-400",
@@ -1134,15 +1134,15 @@ export default function AdminAdmissionsHubPage() {
                     href="/admin/family-portal"
                     className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 w-full cursor-pointer group"
                   >
-                  <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 flex items-center justify-center shrink-0">
-                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                  <div className="w-8 h-8 rounded-full bg-primary-50 dark:bg-primary-500/10 border border-primary-100 dark:border-primary-500/20 flex items-center justify-center shrink-0">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                         <span className="font-medium text-[13px] text-foreground truncate">
                             {c.residents ? `${c.residents.first_name} ${c.residents.last_name}` : "Unknown resident"}
                           </span>
-                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 border-indigo-500/20">
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-primary-500/10 text-primary-600 border-primary-500/20">
                         Conference
                       </span>
                     </div>

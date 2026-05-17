@@ -120,7 +120,7 @@ export default function SafetyScoresPage() {
 
         {/* Table */}
         {!loading && rows.length > 0 && (
-          <div className="rounded-2xl border border-white/5 bg-slate-900/50 backdrop-blur p-6 shadow-lg">
+          <div className="rounded-2xl border border-white/5 bg-slate-900/50  p-6 shadow-lg">
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>

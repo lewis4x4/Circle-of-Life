@@ -31,7 +31,7 @@ export function RoundingHubNav() {
 
   return (
     <nav
-      className="flex flex-wrap gap-1.5 rounded-xl border border-slate-800/60 bg-slate-900/40 backdrop-blur-md p-1.5"
+      className="flex flex-wrap gap-1.5 rounded-xl border border-slate-800/60 bg-slate-900/40  p-1.5"
       aria-label="Rounding sections"
     >
       {NAV_ITEMS.map((item) => {

@@ -206,7 +206,7 @@ export function BillingInvoiceLedger({
             <V2Card hoverColor="indigo" className="p-5 lg:p-6">
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left">
                  <p className="hidden text-[10px] font-mono uppercase tracking-wider text-slate-500 lg:block">Batch Actions</p>
-                 <Link href="/admin/billing/invoices/generate" className={cn(buttonVariants({ variant: "default", size: "default" }), "font-mono uppercase tracking-wider text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none w-full whitespace-nowrap")} >
+                 <Link href="/admin/billing/invoices/generate" className={cn(buttonVariants({ variant: "default", size: "default" }), "font-mono uppercase tracking-wider text-[10px] tap-responsive bg-primary-600 hover:bg-primary-700 text-white dark:bg-primary-500 dark:hover:bg-primary-600 border-none w-full whitespace-nowrap")} >
                    Generate Cycle
                  </Link>
               </div>
@@ -270,8 +270,8 @@ export function BillingInvoiceLedger({
           <MotionList className="space-y-3">
              {filteredRows.map((row) => (
                 <MotionItem key={row.id}>
-                  <Link href={`/admin/billing/invoices/${row.id}`} className="block focus-visible:outline-none focus:ring-2 focus:ring-indigo-500 rounded-2xl">
-                     <div className="p-4 sm:p-5 rounded-2xl group transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/40 w-full flex flex-col md:flex-row lg:items-center justify-between gap-4">
+                  <Link href={`/admin/billing/invoices/${row.id}`} className="block focus-visible:outline-none focus:ring-2 focus:ring-ring rounded-2xl">
+                     <div className="p-4 sm:p-5 rounded-2xl group transition-all duration-300 hover:scale-[1.01] hover:border-primary-500/30 hover:bg-white/70 dark:hover:bg-primary-900/10 cursor-pointer border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/40 w-full flex flex-col md:flex-row lg:items-center justify-between gap-4">
                         
                         <div className="flex flex-col min-w-[200px] gap-1 shrink-0">
                            <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Invoice #</span>
@@ -304,8 +304,8 @@ export function BillingInvoiceLedger({
                         </div>
 
                         <div className="hidden sm:flex shrink-0 ml-4">
-                            <div className="w-8 h-8 rounded-full bg-white/50 dark:bg-white/5 flex items-center justify-center group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 transition-colors">
-                            <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" />
+                            <div className="w-8 h-8 rounded-full bg-white/50 dark:bg-white/5 flex items-center justify-center group-hover:bg-primary-100 dark:group-hover:bg-primary-900/50 transition-colors">
+                            <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-primary-600 dark:group-hover:text-primary-400" />
                             </div>
                         </div>
 
@@ -325,7 +325,7 @@ export function PayerTypeBadge({ payerType }: { payerType: PayerTypeUi }) {
   const map: Record<PayerTypeUi, { label: string; className: string }> = {
     private_pay: { label: "Private Pay", className: "bg-slate-500/20 text-slate-800 dark:bg-slate-800/50 dark:text-slate-300 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
     medicaid: { label: "Medicaid", className: "bg-blue-500/20 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
-    ltc_insurance: { label: "LTC Insurance", className: "bg-violet-500/20 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
+    ltc_insurance: { label: "LTC Insurance", className: "bg-primary-500/20 text-primary-800 dark:bg-primary-900/40 dark:text-primary-300 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm px-2" },
   };
   return <Badge className={map[payerType].className}>{map[payerType].label}</Badge>;
 }

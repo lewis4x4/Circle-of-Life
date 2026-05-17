@@ -244,10 +244,10 @@ export default function RoundingIntegrityPage() {
           <MetricCard label="In Progress" value={String(counts.in_progress)} accent="text-amber-500" icon={<Eye className="h-5 w-5" />} />
           <MetricCard label="Resolved" value={String(counts.resolved)} accent="text-emerald-500" icon={<CheckCircle2 className="h-5 w-5" />} />
           <MetricCard label="Dismissed" value={String(counts.dismissed)} accent="text-slate-400" icon={<XCircle className="h-5 w-5" />} />
-          <MetricCard label="Critical" value={String(counts.critical)} accent="text-indigo-500" icon={<UserSearch className="h-5 w-5" />} pulse={counts.critical > 0} />
+          <MetricCard label="Critical" value={String(counts.critical)} accent="text-primary-500" icon={<UserSearch className="h-5 w-5" />} pulse={counts.critical > 0} />
         </div>
 
-        <V2Card hoverColor="indigo" className="p-6 border-indigo-500/10">
+        <V2Card hoverColor="indigo" className="p-6 border-primary-500/10">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Integrity flag queue</h2>
@@ -265,7 +265,7 @@ export default function RoundingIntegrityPage() {
                   className={cn(
                     "rounded-full border px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition",
                     filter === value
-                      ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-200"
+                      ? "border-primary-500/30 bg-primary-500/10 text-primary-200"
                       : "border-slate-200 bg-white/70 text-slate-600 hover:border-slate-300 dark:border-white/10 dark:bg-black/20 dark:text-zinc-400 dark:hover:border-white/20",
                   )}
                 >
@@ -277,7 +277,7 @@ export default function RoundingIntegrityPage() {
 
           {loading ? (
             <div className="flex items-center justify-center py-16">
-              <Loader2 className="h-6 w-6 animate-spin text-indigo-400" />
+              <Loader2 className="h-6 w-6 animate-spin text-primary-400" />
             </div>
           ) : rows.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-200 dark:border-white/10 px-4 py-10 text-center text-sm text-slate-500 dark:text-zinc-500">
@@ -361,7 +361,7 @@ export default function RoundingIntegrityPage() {
                           onChange={(event) => setNotes((current) => ({ ...current, [row.id]: event.target.value }))}
                           rows={3}
                           placeholder="Review note or disposition..."
-                          className="w-full rounded-2xl border border-slate-200 bg-white/80 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-100 dark:focus:border-indigo-500 dark:focus:ring-indigo-500/10"
+                          className="w-full rounded-2xl border border-slate-200 bg-white/80 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-ring/20 dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-100 dark:focus:border-primary-500 dark:focus:ring-ring"
                         />
 
                         {assigneeOptions.length > 0 ? (

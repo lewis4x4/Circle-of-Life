@@ -32,7 +32,7 @@ export function PassModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6">
+    <div className="fixed inset-0 z-50 bg-black/70  flex items-center justify-center p-6">
       <div className="w-full max-w-2xl rounded-xl bg-stone-900 ring-1 ring-stone-700 shadow-2xl overflow-hidden">
 
         {/* Header */}
@@ -45,7 +45,7 @@ export function PassModal({
               <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold ring-1 ${dietClass}`}>
                 {ticket.diet_label}
               </span>
-              <span className="px-2 py-0.5 rounded-md bg-violet-500/20 text-violet-200 text-[10px] font-bold ring-1 ring-violet-500/40 font-mono">
+              <span className="px-2 py-0.5 rounded-md bg-primary-500/20 text-primary-200 text-[10px] font-bold ring-1 ring-ring font-mono">
                 IDDSI L{ticket.iddsi_level}
               </span>
             </div>
@@ -109,8 +109,8 @@ export function PassModal({
           {step === 1 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <ShieldAlert className="w-5 h-5 text-violet-400" />
-                <h3 className="text-sm font-semibold text-violet-300 uppercase tracking-wider">
+                <ShieldAlert className="w-5 h-5 text-primary-400" />
+                <h3 className="text-sm font-semibold text-primary-300 uppercase tracking-wider">
                   IDDSI Gate · Required Level {ticket.iddsi_level}
                 </h3>
               </div>

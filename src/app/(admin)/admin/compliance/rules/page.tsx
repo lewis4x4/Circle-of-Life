@@ -198,7 +198,7 @@ export default function ComplianceRulesPage() {
           <ul className="space-y-3">
             {rules.map((rule) => (
               <li key={rule.id}>
-                <Card className="group transition-all hover:border-indigo-300">
+                <Card className="group transition-all hover:border-primary-300">
                   <CardContent className="p-4">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                       <div className="flex-1 space-y-2">
@@ -230,7 +230,7 @@ export default function ComplianceRulesPage() {
                       </div>
                       <Link
                         href={`/admin/compliance/rules/${rule.id}`}
-                        className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline whitespace-nowrap"
+                        className="text-sm text-primary-600 dark:text-primary-400 hover:underline whitespace-nowrap"
                       >
                         View Details →
                       </Link>

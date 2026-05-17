@@ -8,13 +8,12 @@
  */
 
 import { useCallback, useEffect, useState, useRef, useMemo } from "react";
-import Link from "next/link";
-import { ArrowLeft, Send, Loader2, Brain, Sparkles, MessageSquare, RotateCcw } from "lucide-react";
-import { TitleH1, Subtitle } from "@/components/ui/typography";
+import { Send, Loader2, MessageSquare, RotateCcw } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { cn } from "@/lib/utils";
 import { authorizedEdgeFetch } from "@/lib/supabase/edge-auth";
+import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 
 // ── Types ──
 
@@ -135,7 +134,7 @@ export default function ExecutiveNlqPage() {
     return (
       <div className="relative min-h-[calc(100vh-64px)] w-full flex items-center justify-center">
         <></>
-        <Loader2 className="w-6 h-6 text-indigo-400 animate-spin" />
+        <Loader2 className="w-6 h-6 text-primary animate-spin" />
       </div>
     );
   }
@@ -145,55 +144,41 @@ export default function ExecutiveNlqPage() {
       <div className="relative min-h-[calc(100vh-64px)] w-full flex items-center justify-center">
         <></>
         <div className="text-center p-12">
-          <p className="text-amber-400 text-sm font-medium">Haven Insight is available to organization owners and org admins.</p>
+          <p className="text-warning text-sm font-medium">Haven Insight is available to organization owners and org admins.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full flex flex-col">
-      <></>
+    <div className="flex min-h-[calc(100vh-64px)] w-full flex-col">
+      <RecordDetailHeader
+        title="Haven Insight"
+        subtitle="Ask questions about your portfolio in plain English"
+        backLink={{ href: "/admin/executive", label: "Back to Executive Overview" }}
+        className="[&_h1]:text-lg [&_h1]:font-medium"
+      />
 
-      <div className="relative z-10 flex flex-col flex-1">
-        {/* Header */}
-        <header className="px-6 sm:px-12 py-6 border-b border-white/5">
-          <Link href="/admin/executive" className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors mb-3">
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to Executive Overview
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg">
-              <Brain className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <TitleH1>Haven Insight</TitleH1>
-              <Subtitle>Ask questions about your portfolio in plain English</Subtitle>
-            </div>
-          </div>
-        </header>
-
-        {/* Chat Area */}
-        <div className="flex-1 overflow-y-auto px-6 sm:px-12 py-6 space-y-4">
+      <RecordDetailSection title="Portfolio Q&A" className="flex min-h-[620px] flex-1 flex-col p-0">
+        <div className="flex-1 overflow-y-auto px-[14px] py-[14px] space-y-4">
           {messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 space-y-8">
-              <div className="w-16 h-16 rounded-2xl border border-violet-500/20 flex items-center justify-center">
-                <Sparkles className="w-8 h-8 text-violet-400" />
-              </div>
-              <div className="text-center space-y-2">
-                <h2 className="text-xl font-semibold text-white">What would you like to know?</h2>
-                <p className="text-sm text-slate-400 max-w-md">Ask about occupancy, revenue, incidents, compliance, staffing, or any portfolio metric.</p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl w-full">
-                {SUGGESTED_QUESTIONS.map((q) => (
-                  <button
-                    key={q}
-                    onClick={() => void sendQuestion(q)}
-                    className="text-left px-4 py-3 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-violet-500/20 transition-all text-sm text-slate-300 hover:text-white"
-                  >
-                    <MessageSquare className="w-3.5 h-3.5 text-violet-400 inline mr-2" />
-                    {q}
-                  </button>
-                ))}
+            <div className="mx-auto flex w-full max-w-2xl flex-col justify-center py-16">
+              <div className="rounded-[8px] border border-border bg-card p-[14px] shadow-[var(--shadow-card)]">
+                <h2 className="text-sm font-medium text-foreground">What would you like to know?</h2>
+                <p className="text-sm text-muted-foreground max-w-md">Ask about occupancy, revenue, incidents, compliance, staffing, or any portfolio metric.</p>
+                <ul className="mt-4 grid gap-1.5">
+                  {SUGGESTED_QUESTIONS.map((q) => (
+                    <li key={q}>
+                      <button
+                        type="button"
+                        onClick={() => void sendQuestion(q)}
+                        className="min-h-[33px] w-full rounded-[8px] border border-border bg-background px-[11px] py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+                      >
+                        {q}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           )}
@@ -207,22 +192,22 @@ export default function ExecutiveNlqPage() {
               )}
             >
               <div className={cn(
-                "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                "w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 border",
                 msg.role === "user"
-                  ? "bg-indigo-500/20 text-indigo-400"
-                  : "bg-violet-500/20 text-violet-400"
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-card text-muted-foreground"
               )}>
-                {msg.role === "user" ? "You" : <Brain className="w-4 h-4" />}
+                {msg.role === "user" ? "You" : <MessageSquare className="w-4 h-4" />}
               </div>
               <div className={cn(
-                "rounded-2xl px-5 py-3 max-w-[600px]",
+                "rounded-[9px] border px-[13px] py-3 max-w-[600px]",
                 msg.role === "user"
-                  ? "bg-indigo-500/10 border border-indigo-500/20 text-slate-200"
-                  : "bg-white/[0.03] border border-white/5 text-slate-200"
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-card text-foreground"
               )}>
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                 {msg.tokensUsed && (
-                  <p className="text-[10px] text-slate-500 mt-2 font-mono">{msg.tokensUsed} tokens</p>
+                  <p className="text-[10px] text-muted-foreground mt-2 font-mono">{msg.tokensUsed} tokens</p>
                 )}
               </div>
             </div>
@@ -230,11 +215,11 @@ export default function ExecutiveNlqPage() {
 
           {loading && (
             <div className="flex gap-3 max-w-3xl">
-              <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center shrink-0">
-                <Brain className="w-4 h-4 text-violet-400 animate-pulse" />
+              <div className="w-8 h-8 rounded-[8px] border border-border bg-card flex items-center justify-center shrink-0 text-muted-foreground">
+                <MessageSquare className="w-4 h-4" />
               </div>
-              <div className="rounded-2xl px-5 py-3 bg-white/[0.03] border border-white/5">
-                <div className="flex items-center gap-2 text-sm text-slate-400">
+              <div className="rounded-[9px] px-[13px] py-3 bg-card border border-border">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Analyzing your portfolio data...
                 </div>
@@ -245,10 +230,9 @@ export default function ExecutiveNlqPage() {
           <div ref={chatEndRef} />
         </div>
 
-        {/* Input Bar */}
-        <div className="border-t border-white/5 bg-slate-900/80 px-6 sm:px-12 py-4">
+        <div className="border-t border-border bg-card px-[14px] py-[14px]">
           {error && (
-            <p className="text-xs text-rose-400 mb-2">{error}</p>
+            <p className="text-xs text-destructive mb-2">{error}</p>
           )}
           <form onSubmit={handleSubmit} className="flex gap-3 max-w-3xl mx-auto">
             <input
@@ -256,12 +240,12 @@ export default function ExecutiveNlqPage() {
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about your portfolio..."
               disabled={loading}
-              className="flex-1 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-violet-500/40 focus:ring-1 focus:ring-violet-500/20 transition-colors disabled:opacity-50"
+              className="flex-1 rounded-[8px] border border-input bg-background px-[13px] py-3 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
             />
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="px-5 py-3 rounded-xl text-white text-sm font-semibold hover: hover: transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-violet-500/20"
+              className="rounded-[8px] bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 flex items-center gap-2"
             >
               <Send className="w-4 h-4" />
               Ask
@@ -270,13 +254,13 @@ export default function ExecutiveNlqPage() {
           <div className="flex items-center justify-center gap-4 mt-3">
             <button
               onClick={() => setMessages([])}
-              className="text-[10px] text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1"
+              className="text-[10px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
             >
               <RotateCcw className="w-3 h-3" /> Clear conversation
             </button>
           </div>
         </div>
-      </div>
+      </RecordDetailSection>
     </div>
   );
 }

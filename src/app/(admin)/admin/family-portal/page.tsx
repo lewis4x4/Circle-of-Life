@@ -483,14 +483,14 @@ export default function AdminFamilyPortalPage() {
             Care Conferences
           </h3>
           {conferenceFilter !== "all" ? (
-            <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+            <Badge variant="outline" className="border-primary-200 bg-primary-50 text-primary-700">
               {featuredConferences.length} visible
             </Badge>
           ) : null}
         </div>
 
         <div className="border-border rounded-lg bg-card shadow-sm overflow-hidden p-6 md:p-8 relative">
-           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
+           <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
            <div className="relative z-10 mb-6 flex flex-wrap items-center gap-2">
              {([
                { value: "all", label: `All (${conferenceCounts.all})` },
@@ -506,7 +506,7 @@ export default function AdminFamilyPortalPage() {
                  className={cn(
                    "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
                    conferenceFilter === option.value
-                     ? "bg-indigo-600 text-white"
+                     ? "bg-primary-600 text-white"
                      : "bg-muted/40 text-muted-foreground hover:bg-muted",
                  )}
                >
@@ -516,7 +516,7 @@ export default function AdminFamilyPortalPage() {
           </div>
           {conferenceFilter !== "all" ? (
             <div className="relative z-10 mb-4 flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+              <Badge variant="outline" className="border-primary-200 bg-primary-50 text-primary-700">
                 Conference filter: {conferenceFilter === "upcoming" ? "upcoming" : formatStatus(conferenceFilter)}
               </Badge>
               <Link href="/admin/family-portal#care-conferences" className={cn("rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-muted transition-colors duration-[var(--motion-duration-micro)]")}>

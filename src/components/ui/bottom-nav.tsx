@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
  *     padding for the label.
  *
  * Theming (Quiet Operator):
- *   - Solid `bg-background` chrome. NO backdrop-blur, NO translucency —
+ *   - Solid `bg-background` chrome. NO , NO translucency —
  *     glassmorphism is the top anti-pattern (anti-patterns.md).
  *   - Inactive items use `text-muted-foreground`; hover/active touch
  *     state flips to `text-foreground`.

@@ -132,7 +132,7 @@ export default function ScheduledReportsPage() {
           <div className="grid gap-4 flex-col lg:flex-row lg:grid-cols-4 items-center">
             <div className="w-full relative">
               <select
-                className="flex h-12 w-full rounded-2xl border border-slate-200 bg-card px-5 py-2 text-sm dark:border-white/10 shadow-inner focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none font-mono uppercase tracking-wider text-[11px] font-bold text-slate-700 dark:text-slate-200"
+                className="flex h-12 w-full rounded-2xl border border-slate-200 bg-card px-5 py-2 text-sm dark:border-white/10 shadow-inner focus:outline-none focus:ring-2 focus:ring-ring appearance-none font-mono uppercase tracking-wider text-[11px] font-bold text-slate-700 dark:text-slate-200"
                 value={sourceId}
                 onChange={(event) => setSourceId(event.target.value)}
               >
@@ -146,11 +146,11 @@ export default function ScheduledReportsPage() {
                  ↓
               </div>
             </div>
-            <input className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-card px-5 py-2 text-sm shadow-inner focus-visible:ring-indigo-500 font-mono tracking-wide" value={recurrence} onChange={(event) => setRecurrence(event.target.value)} placeholder="daily | weekly | monthly" />
-            <input className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-card px-5 py-2 text-sm shadow-inner focus-visible:ring-indigo-500 font-mono tracking-wide" value={timezone} onChange={(event) => setTimezone(event.target.value)} placeholder="America/New_York" />
+            <input className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-card px-5 py-2 text-sm shadow-inner focus-visible:ring-ring font-mono tracking-wide" value={recurrence} onChange={(event) => setRecurrence(event.target.value)} placeholder="daily | weekly | monthly" />
+            <input className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-card px-5 py-2 text-sm shadow-inner focus-visible:ring-ring font-mono tracking-wide" value={timezone} onChange={(event) => setTimezone(event.target.value)} placeholder="America/New_York" />
             <div className="w-full relative">
               <select
-                className="flex h-12 w-full rounded-2xl border border-slate-200 bg-card px-5 py-2 text-sm dark:border-white/10 shadow-inner focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none font-mono uppercase tracking-wider text-[11px] font-bold text-slate-700 dark:text-slate-200"
+                className="flex h-12 w-full rounded-2xl border border-slate-200 bg-card px-5 py-2 text-sm dark:border-white/10 shadow-inner focus:outline-none focus:ring-2 focus:ring-ring appearance-none font-mono uppercase tracking-wider text-[11px] font-bold text-slate-700 dark:text-slate-200"
                 value={outputFormat}
                 onChange={(event) => setOutputFormat(event.target.value)}
               >
@@ -178,7 +178,7 @@ export default function ScheduledReportsPage() {
                <p className="text-sm font-mono tracking-wider uppercase">Loading Schedules…</p>
             </div>
           ) : schedules.length === 0 ? (
-            <div className="p-16 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
+            <div className="p-16 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
                 <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Schedules Configured</p>
                <p className="text-sm opacity-80 mt-1 font-mono tracking-wide">Set up recurring dispatches for critical reports.</p>
              </div>

@@ -70,7 +70,7 @@ export default function ReportsBenchmarksPage() {
             <p className="text-sm font-mono tracking-wide mt-1 text-slate-500 dark:text-slate-400">Central benchmark definitions used by report templates.</p>
           </div>
           {rows.length === 0 ? (
-            <div className="p-16 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
+            <div className="p-16 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
                 <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Definitions Found</p>
                <p className="text-sm opacity-80 mt-1 font-mono tracking-wide">Configure central benchmarks in reports admin.</p>
              </div>
@@ -89,7 +89,7 @@ export default function ReportsBenchmarksPage() {
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-6 w-full items-center">
                            <div className="flex flex-col gap-2 align-left md:text-left">
                               <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Type</span>
-                              <Badge className="bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full w-fit">{row.benchmark_type}</Badge>
+                              <Badge className="bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300 border border-primary-200 dark:border-primary-800 uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full w-fit">{row.benchmark_type}</Badge>
                            </div>
                            <div className="flex flex-col gap-2 align-left md:text-left">
                               <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Scope</span>

@@ -9,7 +9,7 @@
  * Quiet Operator treatment:
  * - Inactive: bg-warning/10 border-warning/30 — prompts activation during surveyor on site.
  * - Active: bg-success/10 border-success/30 — confirms live session.
- * No backdrop-blur. Semantic tokens throughout.
+ * No . Semantic tokens throughout.
  */
 
 import React from "react";

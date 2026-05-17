@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { FileSpreadsheet, Sparkles } from "lucide-react";
+import { FileSpreadsheet, MessageSquare } from "lucide-react";
 import { authorizedEdgeFetch } from "@/lib/supabase/edge-auth";
 
 import { ExecutiveHubNav } from "../executive-hub-nav";
@@ -747,9 +747,9 @@ export default function ExecutiveSavedReportsPage() {
                               variant="outline"
                               disabled={busyId !== null}
                               onClick={() => void onEnhancedReport(r)}
-                              className="border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10"
+                              className="border-primary-500/30 text-primary-400 hover:bg-primary-500/10"
                             >
-                              <Sparkles className="mr-1 h-3 w-3" />
+                              <MessageSquare className="mr-1 h-3 w-3" />
                               {busyId === r.id ? "Working…" : "Enhanced"}
                             </Button>
                             <Button

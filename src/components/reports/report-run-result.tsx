@@ -35,16 +35,16 @@ const GROUP_ICONS: Record<string, ReactNode> = {
   Financial: <Landmark className="h-4 w-4 text-emerald-400" aria-hidden />,
   "Clinical & safety": <Stethoscope className="h-4 w-4 text-rose-400" aria-hidden />,
   "Incident trends": <Activity className="h-4 w-4 text-orange-400" aria-hidden />,
-  Compliance: <Shield className="h-4 w-4 text-violet-400" aria-hidden />,
-  "Survey readiness": <ClipboardList className="h-4 w-4 text-violet-400" aria-hidden />,
+  Compliance: <Shield className="h-4 w-4 text-primary-400" aria-hidden />,
+  "Survey readiness": <ClipboardList className="h-4 w-4 text-primary-400" aria-hidden />,
   Workforce: <Users className="h-4 w-4 text-cyan-400" aria-hidden />,
   "Training & credentials": <Users className="h-4 w-4 text-cyan-400" aria-hidden />,
   "Infection control": <HeartPulse className="h-4 w-4 text-lime-400" aria-hidden />,
-  "Staffing coverage": <Users className="h-4 w-4 text-indigo-400" aria-hidden />,
-  "Labor & overtime": <Activity className="h-4 w-4 text-fuchsia-400" aria-hidden />,
+  "Staffing coverage": <Users className="h-4 w-4 text-primary-400" aria-hidden />,
+  "Labor & overtime": <Activity className="h-4 w-4 text-primary-400" aria-hidden />,
   Medication: <Stethoscope className="h-4 w-4 text-pink-400" aria-hidden />,
   "Resident assurance": <Shield className="h-4 w-4 text-teal-400" aria-hidden />,
-  "Executive pack": <Landmark className="h-4 w-4 text-indigo-400" aria-hidden />,
+  "Executive pack": <Landmark className="h-4 w-4 text-primary-400" aria-hidden />,
   Other: <ClipboardList className="h-4 w-4 text-slate-400" aria-hidden />,
 };
 
@@ -91,7 +91,7 @@ export function ReportRunResult({ summary, detailRows }: ReportRunResultProps) {
               const display = formatMetricValue(row.value, pres.format);
               return (
                 <MotionItem key={row.metricKey}>
-                  <div className="flex h-full flex-col justify-between rounded-2xl border border-slate-200/80 bg-white/70 p-4 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-slate-900/50">
+                  <div className="flex h-full flex-col justify-between rounded-2xl border border-slate-200/80 bg-white/70 p-4 shadow-sm  dark:border-white/10 dark:bg-slate-900/50">
                     <p className="text-xs font-medium leading-snug text-slate-600 dark:text-slate-300">
                       {pres.label}
                     </p>

@@ -156,10 +156,10 @@ export default function SavedReportsPage() {
             <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400 mt-1">Create from template and pin to current version.</p>
           </div>
           <div className="grid gap-4 flex-col lg:flex-row lg:grid-cols-[2fr_1fr_auto] items-center">
-            <input className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-card px-5 py-2 text-sm shadow-inner focus-visible:ring-indigo-500 font-mono tracking-wide" placeholder="Variant name" value={name} onChange={(event) => setName(event.target.value)} />
+            <input className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-card px-5 py-2 text-sm shadow-inner focus-visible:ring-ring font-mono tracking-wide" placeholder="Variant name" value={name} onChange={(event) => setName(event.target.value)} />
             <div className="w-full relative">
               <select
-                className="flex h-12 w-full rounded-2xl border border-slate-200 bg-card px-5 py-2 text-sm dark:border-white/10 shadow-inner focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none font-mono uppercase tracking-wider text-[11px] font-bold text-slate-700 dark:text-slate-200"
+                className="flex h-12 w-full rounded-2xl border border-slate-200 bg-card px-5 py-2 text-sm dark:border-white/10 shadow-inner focus:outline-none focus:ring-2 focus:ring-ring appearance-none font-mono uppercase tracking-wider text-[11px] font-bold text-slate-700 dark:text-slate-200"
                 value={selectedTemplate}
                 onChange={(event) => setSelectedTemplate(event.target.value)}
               >
@@ -189,7 +189,7 @@ export default function SavedReportsPage() {
                <p className="text-sm font-mono tracking-wider uppercase">Loading Variants…</p>
             </div>
           ) : views.length === 0 ? (
-            <div className="p-16 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
+            <div className="p-16 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
                 <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Saved Variants</p>
                <p className="text-sm opacity-80 mt-1 font-mono tracking-wide">You haven&apos;t pinned any custom report configurations yet.</p>
              </div>
@@ -203,7 +203,7 @@ export default function SavedReportsPage() {
                               {view.name}
                            </span>
                            <span className="text-[10px] font-mono tracking-wider uppercase text-slate-500 dark:text-slate-400">
-                              Template: <span className="font-semibold text-indigo-600 dark:text-indigo-400">{templateNameById.get(view.template_id) ?? "Mapped template"}</span>
+                              Template: <span className="font-semibold text-primary-600 dark:text-primary-400">{templateNameById.get(view.template_id) ?? "Mapped template"}</span>
                            </span>
                         </div>
 
@@ -217,7 +217,7 @@ export default function SavedReportsPage() {
                            <div className="flex flex-col gap-2 align-left md:text-left">
                               <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Version Config</span>
                               {view.pinned_template_version ? (
-                                <Badge className="bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20 uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full w-fit">
+                                <Badge className="bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400 border-primary-200 dark:border-primary-500/20 uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full w-fit">
                                   Pinned
                                 </Badge>
                               ) : (

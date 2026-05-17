@@ -13,7 +13,7 @@ export function HACCPStrip({
   const allInRange = entries.every((e) => e.in_safe_range);
 
   return (
-    <div className="h-32 border-t border-stone-800 bg-stone-950/70 backdrop-blur flex">
+    <div className="h-32 border-t border-stone-800 bg-stone-950/70  flex">
       {/* Left: HACCP header + voice button */}
       <div className="w-72 shrink-0 border-r border-stone-800 p-3 flex flex-col justify-between">
         <div className="flex items-center justify-between">

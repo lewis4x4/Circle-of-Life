@@ -325,7 +325,7 @@ export default function AdminAdmissionsNewPage() {
           ) : (
             <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
               {existingAdmissionCaseId ? (
-                <div className="rounded-lg border border-indigo-200/80 bg-indigo-50/50 px-4 py-3 text-sm text-indigo-950 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-indigo-100">
+                <div className="rounded-lg border border-primary-200/80 bg-primary-50/50 px-4 py-3 text-sm text-primary-950 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-100">
                   This referral lead already has an active admission case. Open that case instead of creating a duplicate.
                   <div className="mt-3">
                     <Link href={`/admin/admissions/${existingAdmissionCaseId}`} className={cn(buttonVariants({ size: "sm" }))}>
@@ -335,7 +335,7 @@ export default function AdminAdmissionsNewPage() {
                 </div>
               ) : null}
               {existingResidentAdmissionCaseId ? (
-                <div className="rounded-lg border border-indigo-200/80 bg-indigo-50/50 px-4 py-3 text-sm text-indigo-950 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-indigo-100">
+                <div className="rounded-lg border border-primary-200/80 bg-primary-50/50 px-4 py-3 text-sm text-primary-950 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-100">
                   This resident already has an active admission case. Open that case instead of creating a duplicate.
                   <div className="mt-3">
                     <Link href={`/admin/admissions/${existingResidentAdmissionCaseId}`} className={cn(buttonVariants({ size: "sm" }))}>
@@ -345,7 +345,7 @@ export default function AdminAdmissionsNewPage() {
                 </div>
               ) : null}
               {referralLeadId ? (
-                <div className="rounded-lg border border-indigo-200/80 bg-indigo-50/50 px-4 py-3 text-sm text-indigo-900 dark:border-indigo-900/40 dark:bg-indigo-950/30 dark:text-indigo-100">
+                <div className="rounded-lg border border-primary-200/80 bg-primary-50/50 px-4 py-3 text-sm text-primary-900 dark:border-primary-900/40 dark:bg-primary-950/30 dark:text-primary-100">
                   Admission will be linked to the selected referral lead and the new resident form has been prefilled where data exists.
                 </div>
               ) : null}
@@ -358,7 +358,7 @@ export default function AdminAdmissionsNewPage() {
                     className={cn(
                       "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
                       !isCreatingResident
-                        ? "bg-indigo-600 text-white"
+                        ? "bg-primary-600 text-white"
                         : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                     )}
                   >
@@ -370,7 +370,7 @@ export default function AdminAdmissionsNewPage() {
                     className={cn(
                       "px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2",
                       isCreatingResident
-                        ? "bg-indigo-600 text-white"
+                        ? "bg-primary-600 text-white"
                         : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                     )}
                   >

@@ -128,7 +128,7 @@ export default function AdminQualityHubPage() {
       <QualityHubNav />
 
       {noFacility ? (
-        <div className="rounded-lg bg-amber-50/40 dark:bg-amber-950/20 p-8 border border-amber-200/50 dark:border-amber-900/50 backdrop-blur-md">
+        <div className="rounded-lg bg-amber-50/40 dark:bg-amber-950/20 p-8 border border-amber-200/50 dark:border-amber-900/50 ">
           <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-300 mb-2">Facility Required</h3>
           <p className="text-sm font-medium text-amber-700 dark:text-amber-500">
             Select a facility in the header to load results and PBJ batches. Measures are listed for the facility&apos;s organization.
@@ -144,13 +144,13 @@ export default function AdminQualityHubPage() {
 
       <KineticGrid className="grid-cols-1 sm:grid-cols-3 gap-5" staggerMs={60}>
         <div className="h-[140px]">
-          <V2Card className="border-indigo-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]" hoverColor="indigo">
+          <V2Card className="border-primary-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]" hoverColor="indigo">
             <MonolithicWatermark value={loading ? 0 : measures.length} className="text-info/10 opacity-50" />
             <div className="relative z-10 flex flex-col h-full justify-between">
-              <h3 className="text-[10px] font-mono tracking-wider uppercase text-indigo-600 dark:text-indigo-400">
+              <h3 className="text-[10px] font-mono tracking-wider uppercase text-primary-600 dark:text-primary-400">
                  Active Measures
               </h3>
-              <p className="text-4xl font-mono tracking-tighter text-indigo-600 dark:text-indigo-400 pb-1">{noFacility ? "—" : loading ? "—" : measures.length}</p>
+              <p className="text-4xl font-mono tracking-tighter text-primary-600 dark:text-primary-400 pb-1">{noFacility ? "—" : loading ? "—" : measures.length}</p>
             </div>
           </V2Card>
         </div>
@@ -181,10 +181,10 @@ export default function AdminQualityHubPage() {
       <Link href="/admin/quality/measures/new" className="group block focus-visible:outline-none mt-2">
         <div className="p-5 flex items-center gap-4 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:border-primary/40 hover:bg-muted/40 cursor-pointer">
           <div className="rounded-lg bg-primary/10 p-3 shadow-sm border border-primary/20 group-hover:bg-primary/20 transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
-            <LineChart className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+            <LineChart className="h-6 w-6 text-primary-600 dark:text-primary-400" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-indigo-700 dark:group-hover:text-indigo-400">
+            <h3 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-primary-700 dark:group-hover:text-primary-400">
               Define a measure
             </h3>
             <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Org admins add catalog rows (<code className="text-[10px] bg-slate-100 px-1 py-0.5 rounded text-slate-500">measure_key</code>, CMS tag optional).</p>
@@ -194,7 +194,7 @@ export default function AdminQualityHubPage() {
 
       <div className="space-y-4">
         <div className="flex items-center gap-3">
-          <ClipboardList className="h-6 w-6 text-indigo-500 drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
+          <ClipboardList className="h-6 w-6 text-primary-500 drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
           <h2 className="text-xl font-semibold tracking-tight text-slate-800 dark:text-slate-100">Measure Catalog</h2>
         </div>
         
@@ -311,7 +311,7 @@ export default function AdminQualityHubPage() {
 
       <div className="flex flex-wrap gap-2 text-sm text-slate-500 font-mono tracking-wider uppercase mt-4">
         <span>Dashboard:</span>
-        <Link href={homeHref} className={cn(buttonVariants({ variant: "link", size: "sm" }), "h-auto p-0 text-[10px] text-indigo-600 dark:text-indigo-400 leading-none pb-0.5")}>
+        <Link href={homeHref} className={cn(buttonVariants({ variant: "link", size: "sm" }), "h-auto p-0 text-[10px] text-primary-600 dark:text-primary-400 leading-none pb-0.5")}>
           Back to dashboard
         </Link>
       </div>

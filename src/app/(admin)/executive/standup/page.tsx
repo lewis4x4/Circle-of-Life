@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, FileSpreadsheet, RefreshCw, Sparkles, TriangleAlert } from "lucide-react";
+import { CalendarDays, FileSpreadsheet, RefreshCw, MessageSquare, TriangleAlert } from "lucide-react";
 
 import { ExecutiveHubNav } from "../executive-hub-nav";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +41,7 @@ function formatMetricValue(metric: StandupMetricRow): string {
 
 function sourceBadgeClass(metric: StandupMetricRow): string {
   if (metric.sourceMode === "auto") return "border-emerald-200 bg-emerald-50 text-emerald-700";
-  if (metric.sourceMode === "forecast") return "border-indigo-200 bg-indigo-50 text-indigo-700";
+  if (metric.sourceMode === "forecast") return "border-primary-200 bg-primary-50 text-primary-700";
   if (metric.sourceMode === "hybrid") return "border-amber-200 bg-amber-50 text-amber-700";
   return "border-slate-200 bg-slate-50 text-slate-700";
 }
@@ -200,13 +200,13 @@ export default function ExecutiveStandupPage() {
               {draftStatus ? (
                 <Link
                   href={`/admin/executive/standup/${weekOf}`}
-                  className="inline-flex h-10 items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-4 text-xs font-semibold uppercase tracking-wider text-indigo-700 transition-colors hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/15"
+                  className="inline-flex h-10 items-center justify-center rounded-full border border-primary-200 bg-primary-50 px-4 text-xs font-semibold uppercase tracking-wider text-primary-700 transition-colors hover:bg-primary-100 dark:border-primary-500/30 dark:bg-primary-500/10 dark:text-primary-200 dark:hover:bg-primary-500/15"
                 >
                   Open draft
                 </Link>
               ) : null}
               <Button type="button" onClick={() => void onGenerateDraft()} disabled={!canCreateDraft || creatingDraft || Boolean(draftStatus)}>
-                <Sparkles className={`mr-2 h-4 w-4 ${creatingDraft ? "animate-spin" : ""}`} />
+                <MessageSquare className={`mr-2 h-4 w-4 ${creatingDraft ? "animate-spin" : ""}`} />
                 {draftStatus ? "Draft exists" : "Generate draft"}
               </Button>
             </div>
@@ -259,7 +259,7 @@ export default function ExecutiveStandupPage() {
               <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Facility pressure board</h2>
               <p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">Ranked by live operating pressure. Total row is shown in the workbook tables below.</p>
             </div>
-            <Link href="/admin/facilities" className="text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-300">
+            <Link href="/admin/facilities" className="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-300">
               Open facilities →
             </Link>
           </div>

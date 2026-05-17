@@ -3,7 +3,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 /**
- * Audit-defanged: was a `rounded-[2rem] backdrop-blur-3xl glass-card` with
+ * Audit-defanged: was a `rounded-[2rem]  glass-card` with
  * a radial-hover bloom and top-glare shine. Per DESIGN_PRINCIPLES.md cards
  * are flat `rounded-lg border bg-card`. The `hoverColor` prop is accepted
  * for signature compatibility and ignored — every consumer renders the

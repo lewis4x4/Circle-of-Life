@@ -245,7 +245,7 @@ export default function CaregiverMedsPage() {
 
   if (configError) {
     return (
-      <div className="rounded-xl border border-rose-800/60 bg-rose-950/40 px-6 py-4 text-sm text-rose-100 backdrop-blur-md">{configError}</div>
+      <div className="rounded-xl border border-rose-800/60 bg-rose-950/40 px-6 py-4 text-sm text-rose-100 ">{configError}</div>
     );
   }
 
@@ -327,7 +327,7 @@ export default function CaregiverMedsPage() {
       {/* ─── QUEUE LIST ────────────────────────────────────────────────────── */}
       <div className="space-y-4 pt-4">
         {slots.length === 0 ? (
-           <div className="rounded-lg border-dashed border-2 border-white/10 p-12 text-center bg-transparent backdrop-blur-md">
+           <div className="rounded-lg border-dashed border-2 border-white/10 p-12 text-center bg-transparent ">
              <Pill className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
              <p className="text-lg text-white font-medium mb-1">Queue is clear.</p>
              <p className="text-sm text-zinc-500 font-medium tracking-wide">No medication passes left in the current window.</p>
@@ -394,7 +394,7 @@ function MedicationCard({
   const isDueNow = item.urgency === "due-now";
 
   return (
-    <div className={`rounded-xl p-6 transition-all relative overflow-hidden backdrop-blur-xl border ${
+    <div className={`rounded-xl p-6 transition-all relative overflow-hidden  border ${
        isDueNow 
          ? "bg-rose-950/10 border-rose-500/30 shadow-[inset_0_0_40px_rgba(225,29,72,0.1)]"
          : "bg-white/[0.02] border-white/5 hover:bg-white/[0.04]"
@@ -422,7 +422,7 @@ function MedicationCard({
          {/* Instructions block */}
          <div className="flex flex-wrap items-center gap-3 py-3 border-y border-white/5">
            <span className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-300 bg-black/40 px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">
-             <Pill className="h-3.5 w-3.5 text-indigo-400" />
+             <Pill className="h-3.5 w-3.5 text-primary-400" />
              {item.routeLabel}
            </span>
            <span className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-300 bg-black/40 px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">

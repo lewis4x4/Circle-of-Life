@@ -87,7 +87,7 @@ export function RoundingTaskCard({
 
   return (
     <Link href={href} className="block group tap-responsive">
-      <div className={`rounded-[1.5rem] p-5 border backdrop-blur-xl transition-all duration-300 group-hover:brightness-110 ${tone.card}`}>
+      <div className={`rounded-[1.5rem] p-5 border  transition-all duration-300 group-hover:brightness-110 ${tone.card}`}>
         <div className="flex flex-col gap-4">
           
           <div className="flex items-start justify-between gap-3">

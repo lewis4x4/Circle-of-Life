@@ -40,7 +40,7 @@ import { cn } from "@/lib/utils";
  * Constraints:
  *   - 100% semantic tokens — zero hardcoded slate/zinc/red/amber.
  *   - Soft-tint policy: `/10` for backgrounds, `/30` for borders.
- *   - No `backdrop-blur`, no decorative gradients, no `rounded-2xl`.
+ *   - No ``, no decorative gradients, no `rounded-2xl`.
  *   - Framework-agnostic: no next/link, no "use client".
  */
 export type CriticalAlertSeverity = "critical" | "info";

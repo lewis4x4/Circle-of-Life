@@ -9,7 +9,7 @@ import {
   Layers3,
   RefreshCcw,
   Save,
-  Sparkles,
+  MessageSquare,
 } from "lucide-react";
 
 import { OperationsViewNav } from "@/components/operations/OperationsViewNav";
@@ -724,7 +724,7 @@ export default function OperationsTemplatesPage() {
 
                   <div className="flex flex-wrap gap-2">
                     <Button variant="outline" size="sm" onClick={() => beginEdit(template)}>
-                      <Sparkles className="mr-2 h-4 w-4" />
+                      <MessageSquare className="mr-2 h-4 w-4" />
                       Edit
                     </Button>
                     <Button

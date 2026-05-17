@@ -107,12 +107,12 @@ export function UserCreateDialog({ open, onClose, onCreated }: UserCreateDialogP
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
+      <div className="absolute inset-0 bg-black/50 " onClick={handleClose} />
 
       {/* Dialog */}
       <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[1.5rem] bg-background border shadow-2xl">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b bg-background/95 backdrop-blur">
+        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b bg-background/95 ">
           <div className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-teal-500" />
             <h2 className="text-lg font-semibold">Add New User</h2>

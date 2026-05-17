@@ -34,7 +34,7 @@ export function MedPassModal({
     : ["Scan", "Safety Sweep", "Voice Chart", "Confirm"];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6">
+    <div className="fixed inset-0 z-50 bg-black/70  flex items-center justify-center p-6">
       <div className="w-full max-w-3xl rounded-xl bg-slate-900 ring-1 ring-slate-700 shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="px-6 py-5 border-b border-slate-800 flex items-start justify-between">
@@ -44,7 +44,7 @@ export function MedPassModal({
                 Room {pass.room}
               </span>
               {pass.controlled && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-violet-500/20 text-violet-300 text-[10px] font-bold ring-1 ring-violet-500/40">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary-500/20 text-primary-300 text-[10px] font-bold ring-1 ring-ring">
                   <ShieldCheck className="w-3 h-3" /> SCHEDULE II
                 </span>
               )}
@@ -198,7 +198,7 @@ export function MedPassModal({
                 className={`relative w-36 h-36 rounded-full flex items-center justify-center transition-all ${
                   recording
                     ? "bg-rose-500 scale-110 shadow-2xl shadow-rose-500/50"
-                    : "bg-violet-500 hover:bg-violet-400 shadow-xl shadow-violet-500/40"
+                    : "bg-primary-500 hover:bg-primary-400 shadow-xl shadow-[var(--shadow-card)]"
                 }`}
               >
                 {recording && (
@@ -231,7 +231,7 @@ export function MedPassModal({
 
               <button
                 onClick={() => setStep(pass.controlled ? 3 : steps.length - 1)}
-                className="mt-8 px-6 py-2.5 rounded-xl bg-violet-500 hover:bg-violet-400 text-white text-sm font-semibold transition"
+                className="mt-8 px-6 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-400 text-white text-sm font-semibold transition"
               >
                 Transcript looks good
               </button>
@@ -242,8 +242,8 @@ export function MedPassModal({
           {step === 3 && pass.controlled && (
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Fingerprint className="w-5 h-5 text-violet-400" />
-                <h3 className="text-sm font-semibold text-violet-300 uppercase tracking-wider">
+                <Fingerprint className="w-5 h-5 text-primary-400" />
+                <h3 className="text-sm font-semibold text-primary-300 uppercase tracking-wider">
                   Witness Required · Schedule II
                 </h3>
               </div>
@@ -265,7 +265,7 @@ export function MedPassModal({
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, "", 0, "<-"].map((n, i) => (
                     <button
                       key={i}
-                      className="aspect-square rounded-xl bg-slate-900 ring-1 ring-slate-700 hover:ring-violet-500 text-white text-xl font-semibold transition disabled:opacity-30"
+                      className="aspect-square rounded-xl bg-slate-900 ring-1 ring-slate-700 hover:ring-ring text-white text-xl font-semibold transition disabled:opacity-30"
                       disabled={n === ""}
                     >
                       {n}
@@ -277,7 +277,7 @@ export function MedPassModal({
                     <div
                       key={i}
                       className={`w-3 h-3 rounded-full ${
-                        i <= 3 ? "bg-violet-400" : "bg-slate-700"
+                        i <= 3 ? "bg-primary-400" : "bg-slate-700"
                       }`}
                     />
                   ))}
@@ -286,7 +286,7 @@ export function MedPassModal({
               <div className="flex justify-end">
                 <button
                   onClick={() => setStep(steps.length - 1)}
-                  className="px-6 py-2.5 rounded-xl bg-violet-500 hover:bg-violet-400 text-white text-sm font-semibold transition"
+                  className="px-6 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-400 text-white text-sm font-semibold transition"
                 >
                   Witness confirmed
                 </button>

@@ -131,7 +131,7 @@ export function PilotFeedbackLauncher({
           setSuccess(null);
         }
       }}>
-        <DialogContent className="max-w-xl rounded-[1.5rem] border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl">
+        <DialogContent className="max-w-xl rounded-[1.5rem] border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-zinc-950/95 ">
           <DialogHeader>
             <DialogTitle>Pilot Feedback</DialogTitle>
             <DialogDescription>

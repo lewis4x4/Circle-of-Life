@@ -184,12 +184,12 @@ export default function CaregiverClockPage() {
         description="Use the clock here, then head back to the shift dashboard or check your schedule if something looks off."
       />
       <div className="p-6 sm:p-10 rounded-xl border border-white/5 shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100 flex flex-col items-center text-center">
-        <div className="w-16 h-16 rounded-lg bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30 mb-6 shadow-inner">
-          <Clock3 className="h-8 w-8 text-indigo-400" />
+        <div className="w-16 h-16 rounded-lg bg-primary-500/20 flex items-center justify-center border border-primary-500/30 mb-6 shadow-inner">
+          <Clock3 className="h-8 w-8 text-primary-400" />
         </div>
         
             <h3 className="text-3xl font-semibold text-white tracking-wide mb-2">Time clock</h3>
-            <p className="text-sm font-mono text-indigo-200/60 max-w-xs mb-8">
+            <p className="text-sm font-mono text-primary-200/60 max-w-xs mb-8">
           {facilityName ? `Punch in and out for ${facilityName}.` : "Mobile punch tied to your staff profile."}
             </p>
 

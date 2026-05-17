@@ -48,7 +48,7 @@ export function PassCard({
   return (
     <button
       onClick={() => onOpen(p)}
-      className={`w-full text-left rounded-2xl ring-1 ${ring} p-4 hover:ring-2 transition group backdrop-blur`}
+      className={`w-full text-left rounded-2xl ring-1 ${ring} p-4 hover:ring-2 transition group `}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
@@ -57,7 +57,7 @@ export function PassCard({
               Room {p.room}
             </span>
             {p.controlled && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-violet-500/20 text-violet-300 text-[10px] font-semibold ring-1 ring-violet-500/40">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary-500/20 text-primary-300 text-[10px] font-semibold ring-1 ring-ring">
                 <ShieldCheck className="w-3 h-3" /> C-II · WITNESS
               </span>
             )}

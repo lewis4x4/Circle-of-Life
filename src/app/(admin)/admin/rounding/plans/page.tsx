@@ -181,7 +181,7 @@ export default function AdminRoundingPlansPage() {
           >
             <V2Card hoverColor="indigo" className={cn(
               "border-primary/20 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]",
-              filter === "active" && "ring-2 ring-indigo-500 ring-offset-2 ring-offset-background"
+              filter === "active" && "ring-2 ring-ring ring-offset-2 ring-offset-background"
             )}>
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-info flex items-center gap-2">
@@ -251,7 +251,7 @@ export default function AdminRoundingPlansPage() {
           </Button>
           <Link
             href="/admin/rounding/plans/new"
-            className={cn(buttonVariants({ variant: "outline" }), "border-indigo-700/50 bg-indigo-950/30 text-indigo-200 hover:bg-indigo-900/40")}
+            className={cn(buttonVariants({ variant: "outline" }), "border-primary-700/50 bg-primary-950/30 text-primary-200 hover:bg-primary-900/40")}
           >
             <Plus className="mr-2 h-4 w-4" />
             New plan
@@ -320,11 +320,11 @@ export default function AdminRoundingPlansPage() {
                   "relative overflow-hidden rounded-lg border border-border bg-card p-[13px] transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] h-full",
                   "bg-card",
                   "border-border hover:bg-muted/40 hover:-translate-y-0.5",
-                  plan.status === "active" ? "border-indigo-500/20" : "opacity-70",
+                  plan.status === "active" ? "border-primary-500/20" : "opacity-70",
                 )}>
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex items-center gap-2 min-w-0">
-                      <ClipboardList aria-hidden className="h-4 w-4 text-indigo-400 shrink-0" />
+                      <ClipboardList aria-hidden className="h-4 w-4 text-primary-400 shrink-0" />
                       <span className="font-medium text-foreground truncate">
                         {displayName(plan.residents) || "Resident"}
                       </span>
@@ -393,7 +393,7 @@ function FilterChip({ label, count, active, onClick }: { label: string; count: n
       className={cn(
         "px-3 py-1.5 rounded-lg text-xs font-medium transition-all border",
         active
-          ? "bg-indigo-600 text-white border-indigo-600"
+          ? "bg-primary-600 text-white border-primary-600"
           : "bg-slate-800/50 text-slate-400 border-slate-700 hover:bg-slate-700/50 hover:text-slate-300"
       )}
     >

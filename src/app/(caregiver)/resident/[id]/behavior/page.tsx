@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Brain, Loader2, PlusCircle } from "lucide-react";
+import { ArrowLeft, Loader2, PlusCircle } from "lucide-react";
 
 import { fetchShiftDailyLogId } from "@/lib/caregiver/daily-log-link";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
@@ -288,7 +288,6 @@ export default function CaregiverResidentBehaviorPage() {
       <Card className="border-zinc-800 bg-zinc-950/80 text-zinc-100">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <Brain className="h-5 w-5 text-violet-400" />
             Behavior support
           </CardTitle>
           <CardDescription className="text-zinc-400">
@@ -420,7 +419,7 @@ export default function CaregiverResidentBehaviorPage() {
               <Button
                 type="button"
                 disabled={submitting || !behavior.trim()}
-                className="h-10 w-full bg-violet-600 text-white hover:bg-violet-500 disabled:opacity-50"
+                className="h-10 w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                 onClick={() => void submitBehavior()}
               >
                 {submitting ? (

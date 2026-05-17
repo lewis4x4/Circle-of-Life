@@ -189,7 +189,7 @@ export default function AdminRoundingReportsPage() {
               type="datetime-local"
               value={from}
               onChange={(event) => setFrom(event.target.value)}
-              className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-white/50 px-4 text-sm font-mono tracking-wider text-slate-700 dark:text-slate-200 focus:border-indigo-500/50 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 transition-all shadow-inner uppercase font-semibold"
+              className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-white/50 px-4 text-sm font-mono tracking-wider text-slate-700 dark:text-slate-200 focus:border-primary-500/50 focus:outline-none focus:ring-1 focus:ring-ring transition-all shadow-inner uppercase font-semibold"
             />
           </label>
           <label className="space-y-1 text-sm flex-1 min-w-[200px]">
@@ -198,7 +198,7 @@ export default function AdminRoundingReportsPage() {
               type="datetime-local"
               value={to}
               onChange={(event) => setTo(event.target.value)}
-               className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-white/50 px-4 text-sm font-mono tracking-wider text-slate-700 dark:text-slate-200 focus:border-indigo-500/50 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 transition-all shadow-inner uppercase font-semibold"
+               className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-white/50 px-4 text-sm font-mono tracking-wider text-slate-700 dark:text-slate-200 focus:border-primary-500/50 focus:outline-none focus:ring-1 focus:ring-ring transition-all shadow-inner uppercase font-semibold"
             />
           </label>
           <div className="flex items-center gap-3">
@@ -214,7 +214,7 @@ export default function AdminRoundingReportsPage() {
               variant="outline"
               onClick={exportCsv}
               disabled={csvRows.length <= 1}
-               className="h-12 rounded-full border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-6 font-bold uppercase tracking-wider text-[10px] shadow-sm hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 transition-colors"
+               className="h-12 rounded-full border-primary-200 dark:border-primary-500/30 bg-primary-50 dark:bg-primary-500/10 px-6 font-bold uppercase tracking-wider text-[10px] shadow-sm hover:bg-primary-100 dark:hover:bg-primary-500/20 text-primary-700 dark:text-primary-400 transition-colors"
             >
               <Download className="mr-2 h-4 w-4 opacity-70" />
               Export
@@ -277,7 +277,7 @@ function ReportMetric({
     cyan: { border: "border-cyan-500/20", text: "text-cyan-400" },
     amber: { border: "border-amber-500/20", text: "text-amber-400" },
     rose: { border: "border-rose-500/20", text: "text-rose-400" },
-    indigo: { border: "border-indigo-500/20", text: "text-indigo-400" },
+    indigo: { border: "border-primary-500/20", text: "text-primary-400" },
   }[color] ?? { border: "", text: "text-slate-400" };
 
   return (
@@ -308,13 +308,13 @@ function BreakdownSection({
 }) {
   const headerColor = {
     cyan: "text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 border-cyan-200 dark:border-cyan-500/20",
-    indigo: "text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/20",
+    indigo: "text-primary-700 dark:text-primary-400 bg-primary-50 dark:bg-primary-500/10 border-primary-200 dark:border-primary-500/20",
     emerald: "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20",
   }[color] ?? "text-slate-700 dark:text-slate-400 bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10";
   
   const iconColor = {
     cyan: "text-cyan-500",
-    indigo: "text-indigo-500",
+    indigo: "text-primary-500",
     emerald: "text-emerald-500",
   }[color] ?? "text-slate-500";
 

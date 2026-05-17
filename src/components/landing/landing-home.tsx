@@ -18,7 +18,7 @@ import {
   CheckCircle2,
   Heart,
   ShieldCheck,
-  Sparkles,
+  MessageSquare,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -89,7 +89,7 @@ export default function LandingHome() {
         aria-hidden
       />
 
-      <nav className="fixed top-0 z-50 w-full border-b border-white/[0.06] bg-[#030712]/70 backdrop-blur-2xl backdrop-saturate-150">
+      <nav className="fixed top-0 z-50 w-full border-b border-white/[0.06] bg-[#030712]/70  backdrop-saturate-150">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-6">
           <motion.div
             className="flex items-center gap-3"
@@ -98,7 +98,7 @@ export default function LandingHome() {
             transition={{ duration: 0.5, ease: easeOut }}
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-xl shadow-lg shadow-teal-500/20 ring-1 ring-white/20">
-              <Sparkles className="h-4 w-4 text-white" />
+              <MessageSquare className="h-4 w-4 text-white" />
             </div>
             <span className="text-lg font-semibold tracking-tight text-white">Haven</span>
             <Badge
@@ -161,7 +161,7 @@ export default function LandingHome() {
               variants={fadeUp}
               initial="hidden"
               animate="show"
-              className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-teal-500/25 bg-teal-500/[0.08] px-4 py-1.5 text-sm text-teal-100/95 backdrop-blur-sm"
+              className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-teal-500/25 bg-teal-500/[0.08] px-4 py-1.5 text-sm text-teal-100/95 "
             >
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-40 motion-safe:animate-ping" />
@@ -236,7 +236,7 @@ export default function LandingHome() {
                 Facility-scoped by design
               </span>
               <span className="flex items-center gap-2">
-                <span className="h-1 w-1 rounded-full bg-indigo-400" />
+                <span className="h-1 w-1 rounded-full bg-primary-400" />
                 Audit-friendly trails
               </span>
             </motion.div>
@@ -246,7 +246,7 @@ export default function LandingHome() {
               variants={fadeUp}
               initial="hidden"
               animate="show"
-              className="mt-6 max-w-xl rounded-2xl border border-teal-400/25 bg-teal-500/[0.08] p-4 backdrop-blur-sm"
+              className="mt-6 max-w-xl rounded-2xl border border-teal-400/25 bg-teal-500/[0.08] p-4 "
             >
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-500/20 text-teal-200">
@@ -288,7 +288,7 @@ export default function LandingHome() {
                 priority
               />
               <div className="pointer-events-none absolute inset-0 from-[#030712] via-[#030712]/40 opacity-90" />
-              <div className="absolute bottom-5 left-5 right-5 rounded-xl border border-white/10 bg-black/60 p-4 backdrop-blur-md">
+              <div className="absolute bottom-5 left-5 right-5 rounded-xl border border-white/10 bg-black/60 p-4 ">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-teal-200/80">
                   Built for Care
                 </p>
@@ -311,7 +311,7 @@ export default function LandingHome() {
             variants={bentoReveal}
           >
             <div className="absolute -inset-x-8 -top-8 h-64 rounded-full bg-teal-500/5 blur-3xl" aria-hidden />
-            <Card className="relative overflow-hidden border-white/[0.08] bg-white/[0.03] py-0 text-slate-50 shadow-2xl ring-1 ring-white/[0.05] backdrop-blur-sm">
+            <Card className="relative overflow-hidden border-white/[0.08] bg-white/[0.03] py-0 text-slate-50 shadow-2xl ring-1 ring-white/[0.05] ">
               <div className="flex items-center gap-2 border-b border-white/[0.06] bg-white/[0.04] px-4 py-3">
                 <div className="flex gap-1.5">
                   <span className="h-2.5 w-2.5 rounded-full bg-red-400/80" />
@@ -567,7 +567,7 @@ export default function LandingHome() {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 text-sm text-slate-400 md:flex-row">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg">
-              <Sparkles className="h-4 w-4 text-white" />
+              <MessageSquare className="h-4 w-4 text-white" />
             </div>
             <span className="text-slate-200 font-semibold">Haven OS</span>
           </div>

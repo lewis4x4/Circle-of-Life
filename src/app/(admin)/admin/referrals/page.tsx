@@ -489,9 +489,9 @@ export default function AdminReferralsHubPage() {
            </V2Card>
         </div>
         <div className="h-[180px]">
-           <V2Card hoverColor="indigo" className="border-indigo-500/20 shadow-[0_8px_30px_rgba(99,102,241,0.05)]">
+           <V2Card hoverColor="indigo" className="border-primary-500/20 shadow-[0_8px_30px_rgba(99,102,241,0.05)]">
              <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+               <h3 className="text-xs font-bold tracking-wider uppercase text-primary-600 dark:text-primary-400 flex items-center gap-2">
                  Active Pipeline
                </h3>
                <p className="text-2xl font-medium tracking-tight tabular-nums text-foreground mt-auto">
@@ -541,10 +541,10 @@ export default function AdminReferralsHubPage() {
       </div>
 
       <div className="h-[120px]">
-        <V2Card href="/admin/referrals/new" hoverColor="indigo" className="border-indigo-500/20 pb-0">
+        <V2Card href="/admin/referrals/new" hoverColor="indigo" className="border-primary-500/20 pb-0">
           <div className="flex items-center gap-6 h-full absolute inset-0 px-8">
-            <div className="rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 p-4 border border-indigo-100 dark:border-indigo-500/20">
-              <UserPlus className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+            <div className="rounded-2xl bg-primary-50 dark:bg-primary-500/10 p-4 border border-primary-100 dark:border-primary-500/20">
+              <UserPlus className="h-6 w-6 text-primary-600 dark:text-primary-400" />
             </div>
             <div>
               <h3 className="text-xl lg:text-2xl font-medium tracking-tight text-foreground group-hover:text-primary transition-colors">
@@ -929,7 +929,7 @@ export default function AdminReferralsHubPage() {
                                   Ready
                                 </span>
                               ) : handoffPhase === "onboarding" ? (
-                                <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full border shadow-inner bg-indigo-500/10 text-indigo-700 border-indigo-500/20 dark:text-indigo-300">
+                                <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full border shadow-inner bg-primary-500/10 text-primary-700 border-primary-500/20 dark:text-primary-300">
                                   Onboarding
                                 </span>
                               ) : null}

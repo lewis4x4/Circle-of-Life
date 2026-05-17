@@ -271,7 +271,7 @@ function MetricPill({
           : "bg-slate-900/40 border-white/5 shadow-[inset_0_1px_10px_rgba(255,255,255,0.02)]";
 
   return (
-    <div className={`rounded-xl border p-4 backdrop-blur-xl ${toneClass}`}>
+    <div className={`rounded-xl border p-4  ${toneClass}`}>
       <p className="text-[9px] uppercase tracking-wider font-mono text-zinc-400">{label}</p>
       <p className="mt-1.5 text-2xl font-semibold text-white">{value}</p>
     </div>
@@ -308,7 +308,7 @@ function ResidentAdlCard({
         : "border-border bg-card shadow-sm hover:border-border";
 
   return (
-    <div className={`p-4 md:p-5 rounded-2xl group transition-all duration-300 border backdrop-blur-xl overflow-hidden relative ${priorityClasses}`}>
+    <div className={`p-4 md:p-5 rounded-2xl group transition-all duration-300 border  overflow-hidden relative ${priorityClasses}`}>
       <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none" />
       <div className="space-y-4 relative z-10 w-full">
         <div className="flex items-start justify-between gap-4">

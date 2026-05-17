@@ -198,14 +198,14 @@ export function AdminSchedulesPageClient({
 
         <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px]">
-            <V2Card hoverColor="indigo" className="border-indigo-500/20 dark:border-indigo-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
+            <V2Card hoverColor="indigo" className="border-primary-500/20 dark:border-primary-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
               <></>
-              <MonolithicWatermark value={draftCount} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
+              <MonolithicWatermark value={draftCount} className="text-primary-600/5 dark:text-primary-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-primary-600 dark:text-primary-400 flex items-center gap-2">
                   <CalendarDays className="h-3.5 w-3.5" /> Draft Weeks
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-indigo-600 dark:text-indigo-400 pb-1">{draftCount}</p>
+                <p className="text-4xl font-mono tracking-tighter text-primary-600 dark:text-primary-400 pb-1">{draftCount}</p>
               </div>
             </V2Card>
           </div>
@@ -213,7 +213,7 @@ export function AdminSchedulesPageClient({
             <V2Card hoverColor="blue" className="p-5 lg:p-6">
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
                  <p className="hidden max-w-md text-xs font-mono leading-relaxed text-slate-500 lg:block">Weekly schedule containers; shift assignments roll up under each published week.</p>
-                 <Link href="/admin/schedules/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-wider text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none whitespace-nowrap")} >
+                 <Link href="/admin/schedules/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-wider text-[10px] tap-responsive bg-primary-600 hover:bg-primary-700 text-white dark:bg-primary-500 dark:hover:bg-primary-600 border-none whitespace-nowrap")} >
                    + Initialize Week
                  </Link>
               </div>
@@ -276,8 +276,8 @@ export function AdminSchedulesPageClient({
           <MotionList className="space-y-3">
             {filteredRows.map((row) => (
               <MotionItem key={row.id}>
-                 <Link href={`/admin/schedules/${row.id}`} className="block focus-visible:outline-none focus:ring-2 focus:ring-indigo-500 rounded-2xl">
-                  <div className="p-4 sm:p-5 rounded-2xl group transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/40 w-full flex items-center justify-between">
+                 <Link href={`/admin/schedules/${row.id}`} className="block focus-visible:outline-none focus:ring-2 focus:ring-ring rounded-2xl">
+                  <div className="p-4 sm:p-5 rounded-2xl group transition-all duration-300 hover:scale-[1.01] hover:border-primary-500/30 hover:bg-white/70 dark:hover:bg-primary-900/10 cursor-pointer border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/40 w-full flex items-center justify-between">
                      <div className="flex flex-col gap-2">
                         <span className="font-bold text-slate-900 dark:text-slate-100">{formatWeekLabel(row.weekStartDate)}</span>
                         

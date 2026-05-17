@@ -71,7 +71,7 @@ export function AdminFacilityScopeDropdown({
           className={cn(
             "flex w-full min-w-0 items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-left text-sm font-medium text-slate-900 shadow-sm cursor-pointer",
             "hover:bg-slate-50 dark:border-white/10 dark:bg-black/40 dark:text-slate-200 dark:hover:bg-white/5",
-            "tap-responsive transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40",
+            "tap-responsive transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             "disabled:cursor-not-allowed disabled:opacity-60",
             triggerClassName,
           )}
@@ -88,7 +88,7 @@ export function AdminFacilityScopeDropdown({
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align={align}
-          className="w-[min(100vw-2rem,260px)] rounded-[1.2rem] p-2 dark:border-white/10 dark:bg-zinc-950/95 dark:backdrop-blur-xl"
+          className="w-[min(100vw-2rem,260px)] rounded-[1.2rem] p-2 dark:border-white/10 dark:bg-zinc-950/95 dark:"
         >
           <DropdownMenuItem
             onClick={() => onChange(null)}
@@ -114,7 +114,7 @@ export function AdminFacilityScopeDropdown({
                 <button
                   type="button"
                   onClick={() => onRetry()}
-                  className="mt-2 block text-indigo-600 underline dark:text-indigo-400"
+                  className="mt-2 block text-primary-600 underline dark:text-primary-400"
                 >
                   Retry
                 </button>

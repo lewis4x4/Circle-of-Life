@@ -241,7 +241,7 @@ export default function LoginPage() {
             </div>
           ) : null}
 
-          <Card className="border border-white/10 bg-slate-900/65 shadow-2xl backdrop-blur">
+          <Card className="border border-white/10 bg-slate-900/65 shadow-2xl ">
             <CardContent className="p-6 sm:p-8">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">

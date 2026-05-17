@@ -24,7 +24,7 @@ export function ServiceBar({ data }: { data: ServiceBarData }) {
   const deltaItems = Object.entries(data.census_delta).filter(([, v]) => v !== 0);
 
   return (
-    <div className="flex items-center justify-between px-6 py-3 border-b border-stone-800 bg-stone-950/80 backdrop-blur">
+    <div className="flex items-center justify-between px-6 py-3 border-b border-stone-800 bg-stone-950/80 ">
       {/* Left: cook identity + meal context */}
       <div className="flex items-center gap-5">
         <div className="flex items-center gap-3">

@@ -1,6 +1,6 @@
 "use client";
 
-import { ShieldAlert, Sparkles } from "lucide-react";
+import { ShieldAlert, MessageSquare } from "lucide-react";
 import type { TrayTicket } from "./types";
 
 export const DIET_COLOR: Record<string, string> = {
@@ -10,7 +10,7 @@ export const DIET_COLOR: Record<string, string> = {
   Renal:             "bg-rose-500/15 text-rose-300 ring-rose-500/40",
   "Mech Soft":       "bg-amber-500/15 text-amber-300 ring-amber-500/40",
   "Mech Soft · NCS": "bg-amber-500/15 text-amber-300 ring-amber-500/40",
-  Puree:             "bg-violet-500/15 text-violet-300 ring-violet-500/40",
+  Puree:             "bg-primary-500/15 text-primary-300 ring-ring",
   Vegetarian:        "bg-lime-500/15 text-lime-300 ring-lime-500/40",
   Vegan:             "bg-lime-500/15 text-lime-300 ring-lime-500/40",
   "Low Sodium":      "bg-sky-500/15 text-sky-300 ring-sky-500/40",
@@ -47,11 +47,11 @@ export function TrayCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5">
             <span className="text-[10px] font-mono text-stone-400">{ticket.room}</span>
-            {ticket.fortify && <Sparkles className="w-3 h-3 text-amber-400" />}
+            {ticket.fortify && <MessageSquare className="w-3 h-3 text-amber-400" />}
           </div>
           <div className="text-sm font-semibold text-white truncate">{ticket.resident_name}</div>
         </div>
-        <span className="px-1.5 py-0.5 rounded-md bg-violet-500/20 text-violet-200 text-[10px] font-bold ring-1 ring-violet-500/40 font-mono shrink-0">
+        <span className="px-1.5 py-0.5 rounded-md bg-primary-500/20 text-primary-200 text-[10px] font-bold ring-1 ring-ring font-mono shrink-0">
           L{ticket.iddsi_level}
         </span>
       </div>

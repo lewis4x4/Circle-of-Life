@@ -195,7 +195,7 @@ export default function CaregiverResidentQuickProfilePage() {
          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
             <ActionLink
               href="/caregiver/meds"
-              icon={<Pill className="h-5 w-5 text-violet-400" />}
+              icon={<Pill className="h-5 w-5 text-primary-400" />}
               label="Open eMAR"
             />
             <ActionLink

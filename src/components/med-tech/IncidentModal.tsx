@@ -115,7 +115,7 @@ export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6">
+    <div className="fixed inset-0 z-50 bg-black/70  flex items-center justify-center p-6">
       <div className="w-full max-w-lg rounded-xl bg-slate-900 ring-1 ring-slate-700 shadow-2xl overflow-hidden">
 
         {/* Header */}
@@ -170,7 +170,7 @@ export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }
                       onClick={() => setResidentId(r.id)}
                       className={`rounded-xl p-3 text-left ring-1 transition ${
                         residentId === r.id
-                          ? "bg-violet-500/20 ring-violet-500/60 text-white"
+                          ? "bg-primary-500/20 ring-ring text-white"
                           : "bg-slate-800/60 ring-slate-700 text-slate-300 hover:ring-slate-500"
                       }`}
                     >
@@ -246,7 +246,7 @@ export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }
                   value={locationDescription}
                   onChange={(e) => setLocationDescription(e.target.value)}
                   placeholder="Medication cart, resident room, hall, med room…"
-                  className="w-full rounded-xl bg-slate-800/80 ring-1 ring-slate-700 focus:ring-violet-500 text-white text-sm placeholder-slate-500 px-4 py-3 outline-none transition"
+                  className="w-full rounded-xl bg-slate-800/80 ring-1 ring-slate-700 focus:ring-ring text-white text-sm placeholder-slate-500 px-4 py-3 outline-none transition"
                 />
               </div>
 
@@ -259,7 +259,7 @@ export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }
                   onChange={(e) => setNarrative(e.target.value)}
                   rows={5}
                   placeholder="Describe what happened, when, and any immediate actions taken…"
-                  className="w-full rounded-xl bg-slate-800/80 ring-1 ring-slate-700 focus:ring-violet-500 text-white text-sm placeholder-slate-500 px-4 py-3 resize-none outline-none transition"
+                  className="w-full rounded-xl bg-slate-800/80 ring-1 ring-slate-700 focus:ring-ring text-white text-sm placeholder-slate-500 px-4 py-3 resize-none outline-none transition"
                 />
               </div>
 

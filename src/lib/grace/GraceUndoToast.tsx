@@ -36,7 +36,7 @@ export function GraceUndoToast() {
   if (!toast) return null;
 
   return (
-    <div className="fixed bottom-6 left-1/2 z-[9996] w-[min(92vw,560px)] -translate-x-1/2 rounded-2xl border border-border bg-background/95 p-4 shadow-2xl backdrop-blur">
+    <div className="fixed bottom-6 left-1/2 z-[9996] w-[min(92vw,560px)] -translate-x-1/2 rounded-[9px] border border-border bg-card p-4 shadow-[var(--shadow-card)]">
       <div className="flex items-center justify-between gap-4">
         <div>
           <div className="text-sm font-semibold">{toast.flow_label} completed</div>

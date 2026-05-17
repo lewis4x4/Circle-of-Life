@@ -94,7 +94,7 @@ export default function ComplianceScanPage() {
         <Button
           onClick={() => void runScan()}
           disabled={!facilityReady || running}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white"
+          className="bg-primary-600 hover:bg-primary-700 text-white"
         >
           <Play className="mr-2 h-4 w-4" />
           {running ? "Scanning…" : "Run Compliance Scan"}

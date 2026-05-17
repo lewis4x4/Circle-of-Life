@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Check, Copy, History, Loader2, Sparkles, Upload } from "lucide-react";
+import { Check, Copy, History, Loader2, MessageSquare, Upload } from "lucide-react";
 
 import { ExecutiveHubNav } from "../../executive-hub-nav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -163,7 +163,7 @@ export default function ExecutiveStandupHistoryPage() {
             </Button>
             {rows.length === 0 && canCreateDraft ? (
               <Button type="button" onClick={() => void onGenerateDraft()} disabled={creatingDraft}>
-                {creatingDraft ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                {creatingDraft ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
                 Generate first draft
               </Button>
             ) : null}
@@ -192,7 +192,7 @@ export default function ExecutiveStandupHistoryPage() {
             {canCreateDraft ? (
               <CardContent>
                 <Button type="button" onClick={() => void onGenerateDraft()} disabled={creatingDraft}>
-                  {creatingDraft ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                  {creatingDraft ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
                   Generate first draft for {currentStandupWeekOf()}
                 </Button>
               </CardContent>
@@ -237,7 +237,7 @@ export default function ExecutiveStandupHistoryPage() {
                     className={`inline-flex h-10 items-center justify-center rounded-full px-4 text-xs font-semibold uppercase tracking-wider ${
                       !compareFromWeek || !compareToWeek || compareFromWeek === compareToWeek
                         ? "pointer-events-none border border-slate-200 bg-slate-100 text-slate-400 dark:border-white/10 dark:bg-white/5 dark:text-zinc-500"
-                        : "border border-indigo-200 bg-indigo-50 text-indigo-700 transition-colors hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/15"
+                        : "border border-primary-200 bg-primary-50 text-primary-700 transition-colors hover:bg-primary-100 dark:border-primary-500/30 dark:bg-primary-500/10 dark:text-primary-200 dark:hover:bg-primary-500/15"
                     }`}
                   >
                     Compare weeks
@@ -285,7 +285,7 @@ export default function ExecutiveStandupHistoryPage() {
                         </Link>
                         <Link
                           href={`/admin/executive/standup/${row.weekOf}/board`}
-                          className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-indigo-700 transition-colors hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/15"
+                          className="inline-flex items-center rounded-full border border-primary-200 bg-primary-50 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-primary-700 transition-colors hover:bg-primary-100 dark:border-primary-500/30 dark:bg-primary-500/10 dark:text-primary-200 dark:hover:bg-primary-500/15"
                         >
                           Board packet
                         </Link>

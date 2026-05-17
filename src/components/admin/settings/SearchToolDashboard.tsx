@@ -48,7 +48,7 @@ function StatCard({
   accent: string;
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl transition-all hover:border-white/20 dark:bg-[#0A0A0A]/50">
+    <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4  transition-all hover:border-white/20 dark:bg-[#0A0A0A]/50">
       <div
         className="absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 pointer-events-none"
         style={{
@@ -370,9 +370,9 @@ export function SearchToolDashboard() {
       )}
 
       {/* ── RBAC Matrix ─────────────────────────────────── */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl dark:bg-[#0A0A0A]/50">
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-5  dark:bg-[#0A0A0A]/50">
         <div className="mb-4 flex items-center gap-2">
-          <Shield className="h-4 w-4 text-indigo-500" />
+          <Shield className="h-4 w-4 text-primary-500" />
           <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
             Access Control Matrix
           </h3>
@@ -500,7 +500,7 @@ export function SearchToolDashboard() {
       </div>
 
       {/* ── Live Activity Feed ──────────────────────────── */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl dark:bg-[#0A0A0A]/50">
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-5  dark:bg-[#0A0A0A]/50">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <div className="relative">
@@ -514,7 +514,7 @@ export function SearchToolDashboard() {
 
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1.5 rounded-xl border border-slate-200/50 bg-white/50 px-2.5 dark:border-slate-800/50 dark:bg-black/40 backdrop-blur-sm">
+            <div className="flex items-center gap-1.5 rounded-xl border border-slate-200/50 bg-white/50 px-2.5 dark:border-slate-800/50 dark:bg-black/40 ">
               <Search className="h-3.5 w-3.5 text-slate-400" />
               <Input
                 value={searchQuery}

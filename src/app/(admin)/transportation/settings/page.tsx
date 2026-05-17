@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { ArrowLeft, Gauge, Info, Sparkles } from "lucide-react";
+import { ArrowLeft, Gauge, Info, MessageSquare } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -173,7 +173,7 @@ export default function TransportationOrgSettingsPage() {
             <ArrowLeft className="h-4 w-4" />
             Fleet operations
           </Link>
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-100/80 dark:bg-indigo-500/15 border border-indigo-200/60 dark:border-indigo-500/20 text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-100/80 dark:bg-primary-500/15 border border-primary-200/60 dark:border-primary-500/20 text-[10px] font-bold uppercase tracking-wider text-primary-700 dark:text-primary-300">
             <Gauge className="h-3.5 w-3.5" />
             Operations · Reimbursement
           </div>
@@ -185,8 +185,8 @@ export default function TransportationOrgSettingsPage() {
             <span className="font-mono text-sm">mileage_logs</span> row at the time it is created — changing it does not rewrite history.
           </p>
         </div>
-        <div className="hidden md:flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border border-indigo-200/50 bg-indigo-500/10 dark:border-indigo-500/20 dark:bg-indigo-500/5">
-          <Sparkles className="h-10 w-10 text-indigo-500 dark:text-indigo-400" aria-hidden />
+        <div className="hidden md:flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border border-primary-200/50 bg-primary-500/10 dark:border-primary-500/20 dark:bg-primary-500/5">
+          <MessageSquare className="h-10 w-10 text-primary-500 dark:text-primary-400" aria-hidden />
         </div>
       </div>
 
@@ -210,7 +210,7 @@ export default function TransportationOrgSettingsPage() {
 
       <div className="grid gap-8 lg:grid-cols-5 lg:gap-10">
         <div className="lg:col-span-3 space-y-6">
-          <div className="rounded-lg border border-slate-200/70 bg-white/70 p-6 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-white/[0.04] md:p-8">
+          <div className="rounded-lg border border-slate-200/70 bg-white/70 p-6 shadow-sm  dark:border-white/10 dark:bg-white/[0.04] md:p-8">
             {loading ? (
               <div className="space-y-4 animate-pulse">
                 <div className="h-4 w-1/3 rounded bg-slate-200 dark:bg-slate-700" />
@@ -242,7 +242,7 @@ export default function TransportationOrgSettingsPage() {
                     <p className="text-sm text-rose-600 dark:text-rose-400">{form.formState.errors.dollarsPerMile.message}</p>
                   )}
                   <p className="flex items-start gap-2 text-xs leading-relaxed text-slate-500 dark:text-zinc-500">
-                    <Info className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" aria-hidden />
+                    <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary-500" aria-hidden />
                     Many operators align with the IRS optional standard mileage rate for business use; confirm with your CPA. Haven does not provide tax advice.
                   </p>
                 </div>
@@ -251,7 +251,7 @@ export default function TransportationOrgSettingsPage() {
                   <Button
                     type="submit"
                     disabled={form.formState.isSubmitting}
-                    className="h-12 rounded-full px-8 text-xs font-bold uppercase tracking-wider bg-indigo-600 hover:bg-indigo-700"
+                    className="h-12 rounded-full px-8 text-xs font-bold uppercase tracking-wider bg-primary-600 hover:bg-primary-700"
                   >
                     {form.formState.isSubmitting ? "Saving…" : "Save organization rate"}
                   </Button>
@@ -272,8 +272,8 @@ export default function TransportationOrgSettingsPage() {
         </div>
 
         <div className="lg:col-span-2 space-y-4">
-          <div className="rounded-lg border border-indigo-200/40 p-6 shadow-inner dark:border-indigo-500/15 dark: dark: dark:shadow-none">
-            <h2 className="text-[11px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">Live preview</h2>
+          <div className="rounded-lg border border-primary-200/40 p-6 shadow-inner dark:border-primary-500/15 dark: dark: dark:shadow-none">
+            <h2 className="text-[11px] font-bold uppercase tracking-wider text-primary-700 dark:text-primary-300">Live preview</h2>
             <p className="mt-2 text-sm text-slate-600 dark:text-zinc-400">
               Estimated reimbursement at <span className="font-semibold text-slate-900 dark:text-white">{formatCentsPerMileUsd(previewCents)}</span> / mi
               {!hasRow && !loading && (
@@ -282,14 +282,14 @@ export default function TransportationOrgSettingsPage() {
                 </span>
               )}
             </p>
-            <ul className="mt-6 space-y-3 border-t border-indigo-200/30 pt-4 dark:border-white/10">
+            <ul className="mt-6 space-y-3 border-t border-primary-200/30 pt-4 dark:border-white/10">
               {PREVIEW_MILES.map((m) => (
                 <li
                   key={m}
                   className="flex items-center justify-between rounded-xl bg-card px-4 py-3 text-sm dark:bg-white/5"
                 >
                   <span className="tabular-nums text-slate-600 dark:text-zinc-400">{m} mi</span>
-                  <span className="text-lg font-medium tabular-nums text-indigo-700 dark:text-indigo-300">
+                  <span className="text-lg font-medium tabular-nums text-primary-700 dark:text-primary-300">
                     {formatCentsPerMileUsd(previewCents * m)}
                   </span>
                 </li>

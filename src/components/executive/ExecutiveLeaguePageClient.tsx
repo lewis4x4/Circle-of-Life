@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Download, ShieldCheck, ShieldAlert, Sparkles, Table2 } from "lucide-react";
+import { Download, ShieldCheck, ShieldAlert, MessageSquare, Table2 } from "lucide-react";
 
 import { ExecutiveHubNav } from "@/app/(admin)/executive/executive-hub-nav";
 import {
@@ -166,7 +166,7 @@ export default function ExecutiveLeaguePageClient({
         <>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <LeagueMetricCard
-              icon={Sparkles}
+              icon={MessageSquare}
               label="Portfolio average"
               value={summary.averageLeagueScore != null ? `${summary.averageLeagueScore}/100` : "—"}
               detail={summary.leadingFacility ? `Leader: ${summary.leadingFacility.facilityName}` : "No facility rows"}
@@ -332,7 +332,7 @@ function LeagueMetricCard({
   detail,
   tone = "indigo",
 }: {
-  icon: typeof Sparkles;
+  icon: typeof MessageSquare;
   label: string;
   value: string;
   detail: string;

@@ -156,7 +156,7 @@ export default function OperationsPagerPage() {
       )}
 
       {missPredictions.length > 0 && (
-        <Card className="border-indigo-200 bg-indigo-50/70">
+        <Card className="border-primary-200 bg-primary-50/70">
           <CardHeader>
             <CardTitle className="text-base">Predicted next miss</CardTitle>
             <CardDescription>
@@ -165,7 +165,7 @@ export default function OperationsPagerPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {missPredictions.map((prediction) => (
-              <div key={prediction.taskId} className="rounded-lg border border-indigo-100 bg-white/70 p-3">
+              <div key={prediction.taskId} className="rounded-lg border border-primary-100 bg-white/70 p-3">
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-medium">{prediction.templateName}</p>
                   <Badge variant="outline">{prediction.predictedBand}</Badge>

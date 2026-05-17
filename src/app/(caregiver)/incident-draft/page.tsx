@@ -291,7 +291,7 @@ function CaregiverIncidentDraftPageInner() {
 
   if (configError) {
     return (
-      <div className="rounded-xl border border-rose-800/60 bg-rose-950/40 px-6 py-4 text-sm text-rose-100 backdrop-blur-md">{configError}</div>
+      <div className="rounded-xl border border-rose-800/60 bg-rose-950/40 px-6 py-4 text-sm text-rose-100 ">{configError}</div>
     );
   }
 

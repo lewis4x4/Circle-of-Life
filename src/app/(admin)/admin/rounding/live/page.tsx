@@ -431,7 +431,7 @@ export default function AdminRoundingLivePage() {
               {statusFilter !== "all" && (
                 <button
                   onClick={() => setStatusFilter("all")}
-                  className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline mt-2"
+                  className="text-sm text-primary-600 dark:text-primary-400 hover:underline mt-2"
                 >
                   Clear filter
                 </button>

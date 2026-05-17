@@ -127,7 +127,7 @@ export default function AdminIncidentTrendsPage() {
             <button onClick={() => void load()} className="mt-4 text-sm underline hover:no-underline">Retry</button>
           </div>
         ) : rows.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
+          <div className="p-12 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
             <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Incidents Found</p>
             <p className="text-sm opacity-80 mt-1">When reportable events land in Supabase, their category and severity distributions will appear here.</p>
           </div>
@@ -136,7 +136,7 @@ export default function AdminIncidentTrendsPage() {
             <div className="p-6 sm:p-8 rounded-lg border border-border bg-card hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
               <div className="mb-6 border-b border-border pb-4">
                 <h3 className="text-[13px] font-semibold text-foreground flex items-center gap-3">
-                  <BarChart3 className="w-5 h-5 text-indigo-500" /> By Category
+                  <BarChart3 className="w-5 h-5 text-primary-500" /> By Category
                 </h3>
               </div>
               <div className="space-y-5">
@@ -148,7 +148,7 @@ export default function AdminIncidentTrendsPage() {
                     </div>
                     <div className="h-3 overflow-hidden rounded-full bg-muted shadow-inner relative">
                       <div
-                        className="h-full rounded-full bg-indigo-500 relative transition-all duration-1000 group-hover:brightness-110"
+                        className="h-full rounded-full bg-primary-500 relative transition-all duration-1000 group-hover:brightness-110"
                         style={{ width: `${Math.max(2, Math.round((count / stats.maxCat) * 100))}%` }}
                       >
                          <div className="absolute inset-0" />

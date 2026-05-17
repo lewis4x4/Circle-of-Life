@@ -130,10 +130,10 @@ export default function ReportPacksPage() {
             <p className="text-sm font-mono tracking-wide mt-1 text-slate-500 dark:text-slate-400">Start with role-based or event-based bundles.</p>
           </div>
           <div className="grid gap-4 flex-col lg:flex-row lg:grid-cols-[2fr_1fr_auto] items-center">
-            <input className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-card px-5 py-2 text-sm shadow-inner focus-visible:ring-indigo-500 font-mono tracking-wide" placeholder="Pack name (e.g. CEO Weekly Pack)" value={name} onChange={(event) => setName(event.target.value)} />
+            <input className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-card px-5 py-2 text-sm shadow-inner focus-visible:ring-ring font-mono tracking-wide" placeholder="Pack name (e.g. CEO Weekly Pack)" value={name} onChange={(event) => setName(event.target.value)} />
             <div className="w-full relative">
               <select
-                className="flex h-12 w-full rounded-2xl border border-slate-200 bg-card px-5 py-2 text-sm dark:border-white/10 shadow-inner focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none font-mono uppercase tracking-wider text-[11px] font-bold text-slate-700 dark:text-slate-200"
+                className="flex h-12 w-full rounded-2xl border border-slate-200 bg-card px-5 py-2 text-sm dark:border-white/10 shadow-inner focus:outline-none focus:ring-2 focus:ring-ring appearance-none font-mono uppercase tracking-wider text-[11px] font-bold text-slate-700 dark:text-slate-200"
                 value={category}
                 onChange={(event) => setCategory(event.target.value)}
               >
@@ -167,7 +167,7 @@ export default function ReportPacksPage() {
                <p className="text-sm font-mono tracking-wider uppercase">Loading Packs…</p>
             </div>
           ) : packs.length === 0 ? (
-            <div className="p-16 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
+            <div className="p-16 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
                 <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Packs Configured</p>
                <p className="text-sm opacity-80 mt-1 font-mono tracking-wide">Bundle reports together into curated packs.</p>
              </div>
@@ -181,7 +181,7 @@ export default function ReportPacksPage() {
                               {pack.name}
                            </span>
                            <span className="text-[10px] font-mono tracking-wider text-slate-500 dark:text-slate-400 uppercase">
-                              Category: <span className="font-semibold text-indigo-600 dark:text-indigo-400">{pack.category}</span>
+                              Category: <span className="font-semibold text-primary-600 dark:text-primary-400">{pack.category}</span>
                            </span>
                         </div>
 
@@ -189,7 +189,7 @@ export default function ReportPacksPage() {
                            <div className="flex flex-col gap-2">
                               <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Properties</span>
                               <div className="flex flex-wrap gap-2">
-                                {pack.official_pack && <Badge className="bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full">Official</Badge>}
+                                {pack.official_pack && <Badge className="bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400 border border-primary-200 dark:border-primary-500/20 uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full">Official</Badge>}
                                 {pack.locked_definition && <Badge className="bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20 uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full">Locked</Badge>}
                                 {!pack.active ? (
                                   <Badge className="bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20 uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full">Inactive</Badge>

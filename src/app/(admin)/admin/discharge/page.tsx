@@ -248,7 +248,7 @@ export default function AdminDischargeHubPage() {
                 Discharge & Transition
              </h1>
              {phaseFilter !== "all" ? (
-               <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+               <Badge variant="outline" className="border-primary-200 bg-primary-50 text-primary-700">
                  {featuredRows.length} visible
                </Badge>
              ) : null}
@@ -324,18 +324,18 @@ export default function AdminDischargeHubPage() {
       </div>
 
       <div className="h-[120px]">
-        <V2Card href="/admin/discharge/new" hoverColor="indigo" className="border-indigo-500/20 pb-0">
+        <V2Card href="/admin/discharge/new" hoverColor="indigo" className="border-primary-500/20 pb-0">
           <div className="flex items-center gap-6 h-full absolute inset-0 px-8">
-            <div className="rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 p-4 border border-indigo-100 dark:border-indigo-500/20">
-              <DoorOpen className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+            <div className="rounded-2xl bg-primary-50 dark:bg-primary-500/10 p-4 border border-primary-100 dark:border-primary-500/20">
+              <DoorOpen className="h-6 w-6 text-primary-600 dark:text-primary-400" />
             </div>
             <div>
-              <h3 className="text-xl lg:text-2xl font-medium tracking-tight text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+              <h3 className="text-xl lg:text-2xl font-medium tracking-tight text-slate-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                 New Med Reconciliation
               </h3>
               <p className="text-sm text-slate-500 dark:text-zinc-400 tracking-wide mt-1">Opens a draft row for a resident in this facility.</p>
             </div>
-            <ArrowRight className="h-6 w-6 text-slate-300 dark:text-slate-700 ml-auto group-hover:text-indigo-500 transition-colors group-hover:translate-x-2 duration-300" />
+            <ArrowRight className="h-6 w-6 text-slate-300 dark:text-slate-700 ml-auto group-hover:text-primary-500 transition-colors group-hover:translate-x-2 duration-300" />
           </div>
         </V2Card>
       </div>
@@ -346,8 +346,8 @@ export default function AdminDischargeHubPage() {
             <p className="text-[10px] uppercase tracking-wider font-mono text-amber-700 dark:text-amber-300">Planning gaps</p>
             <p className="mt-2 text-2xl font-medium text-slate-900 dark:text-white">{loading ? "—" : planningCount}</p>
           </div>
-          <div className="rounded-lg border border-indigo-200/70 bg-indigo-50/60 dark:border-indigo-900/40 dark:bg-indigo-950/20 p-4">
-            <p className="text-[10px] uppercase tracking-wider font-mono text-indigo-700 dark:text-indigo-300">Pharmacist action</p>
+          <div className="rounded-lg border border-primary-200/70 bg-primary-50/60 dark:border-primary-900/40 dark:bg-primary-950/20 p-4">
+            <p className="text-[10px] uppercase tracking-wider font-mono text-primary-700 dark:text-primary-300">Pharmacist action</p>
             <p className="mt-2 text-2xl font-medium text-slate-900 dark:text-white">{loading ? "—" : pharmacistActionCount}</p>
           </div>
           <div className="rounded-lg border border-emerald-200/70 bg-emerald-50/60 dark:border-emerald-900/40 dark:bg-emerald-950/20 p-4">
@@ -377,7 +377,7 @@ export default function AdminDischargeHubPage() {
       {/* ─── CASE ROSTER (GLASS ROWS) ─── */}
       <div className="space-y-6">
         <div className="flex items-center gap-3 border-b border-slate-200/50 dark:border-white/10 pb-4">
-          <ClipboardList className="h-5 w-5 text-indigo-500" />
+          <ClipboardList className="h-5 w-5 text-primary-500" />
           <h3 className="text-xl font-medium text-slate-900 dark:text-white tracking-tight">
             Reconciliations
           </h3>
@@ -404,7 +404,7 @@ export default function AdminDischargeHubPage() {
                  className={cn(
                    "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
                    phaseFilter === option.value
-                     ? "bg-indigo-600 text-white"
+                     ? "bg-primary-600 text-white"
                      : "bg-white/80 text-slate-600 hover:bg-white dark:bg-black/20 dark:text-zinc-300 dark:hover:bg-black/30",
                  )}
                >
@@ -414,7 +414,7 @@ export default function AdminDischargeHubPage() {
            </div>
            {phaseFilter !== "all" ? (
              <div className="relative z-10 mb-4 flex flex-wrap items-center gap-2">
-               <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+               <Badge variant="outline" className="border-primary-200 bg-primary-50 text-primary-700">
                  Phase filter: {phaseFilter === "ready_to_complete" ? "ready to complete" : phaseFilter.replace(/_/g, " ")}
                </Badge>
                <Link href="/admin/discharge" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
@@ -460,9 +460,9 @@ export default function AdminDischargeHubPage() {
                         >
                           <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                              {isDraft ? <></> : <div className="w-2 h-2 rounded-full bg-indigo-500" />}
+                              {isDraft ? <></> : <div className="w-2 h-2 rounded-full bg-primary-500" />}
                             </div>
-                            <span className="font-semibold text-[13px] text-foreground truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors tracking-tight">
+                            <span className="font-semibold text-[13px] text-foreground truncate group-hover:text-primary-600 dark:group-hover:text-primary-300 transition-colors tracking-tight">
                                {r.residents ? `${r.residents.first_name} ${r.residents.last_name}` : "—"}
                             </span>
                           </div>
@@ -480,7 +480,7 @@ export default function AdminDischargeHubPage() {
                               phase.phase === "planning"
                                 ? "bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300"
                                 : phase.phase === "pharmacist_review"
-                                  ? "bg-indigo-500/10 text-indigo-700 border-indigo-500/20 dark:text-indigo-300"
+                                  ? "bg-primary-500/10 text-primary-700 border-primary-500/20 dark:text-primary-300"
                                   : phase.phase === "ready_to_complete"
                                     ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300"
                                     : phase.phase === "cancelled"
@@ -502,7 +502,7 @@ export default function AdminDischargeHubPage() {
                                 phase.phase === "planning"
                                   ? "text-amber-700 dark:text-amber-300"
                                   : phase.phase === "pharmacist_review"
-                                    ? "text-indigo-700 dark:text-indigo-300"
+                                    ? "text-primary-700 dark:text-primary-300"
                                     : phase.phase === "ready_to_complete"
                                       ? "text-emerald-700 dark:text-emerald-300"
                                       : "text-slate-600 dark:text-zinc-400",

@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles, X, Bell, Droplet, TrendingDown, Truck, FileText } from "lucide-react";
+import { MessageSquare, X, Bell, Droplet, TrendingDown, Truck, FileText } from "lucide-react";
 import type { FortificationRec, NPOResident, RefusalEntry } from "./types";
 
 export function ResidentWatch({
@@ -33,7 +33,7 @@ export function ResidentWatch({
         {fortification.length > 0 && (
           <section>
             <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-4 h-4 text-amber-400" />
+              <MessageSquare className="w-4 h-4 text-amber-400" />
               <h3 className="text-xs font-semibold text-amber-300 uppercase tracking-wider">Fortify Today</h3>
               <span className="text-[10px] text-stone-500">{fortification.length}</span>
             </div>
@@ -117,7 +117,7 @@ export function ResidentWatch({
                     Refused: <span className="text-stone-200">{r.item}</span>
                   </div>
                   <div className="text-[11px] text-emerald-300 mt-0.5 flex items-center gap-1">
-                    <Sparkles className="w-2.5 h-2.5" /> Try: {r.suggest}
+                    <MessageSquare className="w-2.5 h-2.5" /> Try: {r.suggest}
                   </div>
                 </div>
               ))}

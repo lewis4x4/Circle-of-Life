@@ -196,7 +196,7 @@ export function QuickCheckDrawer({
   const portal = (
     <>
       <div
-        className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 z-[100] bg-black/60  transition-opacity"
         onClick={onClose}
         aria-hidden
       />
@@ -214,7 +214,7 @@ export function QuickCheckDrawer({
         )}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex min-w-0 items-center justify-between gap-3 border-b border-white/5 bg-slate-900/95 backdrop-blur-md px-3 py-4 sm:px-5">
+        <div className="sticky top-0 z-10 flex min-w-0 items-center justify-between gap-3 border-b border-white/5 bg-slate-900/95  px-3 py-4 sm:px-5">
           <div className="min-w-0 flex-1">
             {task && (
               <>

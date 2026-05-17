@@ -44,7 +44,7 @@ function levelTone(level: RiskSnapshotRow["risk_level"]) {
     case "high":
       return "text-amber-600 dark:text-amber-400";
     case "moderate":
-      return "text-indigo-600 dark:text-indigo-400";
+      return "text-primary-600 dark:text-primary-400";
     default:
       return "text-emerald-600 dark:text-emerald-400";
   }
@@ -365,7 +365,7 @@ function MetricCard({
         ? "border-amber-200/80 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/20"
         : tone === "emerald"
           ? "border-emerald-200/80 bg-emerald-50/60 dark:border-emerald-900/40 dark:bg-emerald-950/20"
-          : "border-indigo-200/80 bg-indigo-50/60 dark:border-indigo-900/40 dark:bg-indigo-950/20";
+          : "border-primary-200/80 bg-primary-50/60 dark:border-primary-900/40 dark:bg-primary-950/20";
 
   return (
     <Card className={toneClass}>

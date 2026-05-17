@@ -412,7 +412,7 @@ export default function AdminTransportationHubPage() {
                <CalendarDays className="h-4 w-4" aria-hidden />
                Week view
              </Link>
-             <Link href="/admin/transportation/requests/new" className={cn(buttonVariants({ size: "default" }), "h-12 px-6 rounded-full font-bold uppercase tracking-wider text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg")} >
+             <Link href="/admin/transportation/requests/new" className={cn(buttonVariants({ size: "default" }), "h-12 px-6 rounded-full font-bold uppercase tracking-wider text-[10px] tap-responsive bg-primary-600 hover:bg-primary-700 text-white shadow-lg")} >
                + Transport request
              </Link>
              <Link href="/admin/transportation/vehicles/new" className={cn(buttonVariants({ size: "default" }), "h-12 px-6 rounded-full font-bold uppercase tracking-wider text-[10px] tap-responsive bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg")} >
@@ -433,14 +433,14 @@ export default function AdminTransportationHubPage() {
 
         <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px] lg:col-span-2">
-            <V2Card hoverColor="indigo" className="border-indigo-500/20 dark:border-indigo-500/20 shadow-[0_8px_30px_rgba(99,102,241,0.05)]">
+            <V2Card hoverColor="indigo" className="border-primary-500/20 dark:border-primary-500/20 shadow-[0_8px_30px_rgba(99,102,241,0.05)]">
               <></>
-              <MonolithicWatermark value={fleet.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
+              <MonolithicWatermark value={fleet.length} className="text-primary-600/5 dark:text-primary-400/5 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between p-2">
-                <h3 className="text-[11px] font-bold tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                <h3 className="text-[11px] font-bold tracking-wider uppercase text-primary-600 dark:text-primary-400 flex items-center gap-2">
                   <Bus className="h-4 w-4" /> Active Fleet Size
                 </h3>
-                <p className="text-2xl font-medium tracking-tight text-indigo-600 dark:text-indigo-400 pb-1">{fleet.length}</p>
+                <p className="text-2xl font-medium tracking-tight text-primary-600 dark:text-primary-400 pb-1">{fleet.length}</p>
               </div>
             </V2Card>
           </div>
@@ -554,7 +554,7 @@ export default function AdminTransportationHubPage() {
                       return (
                         <MotionItem
                           key={row.id}
-                          className="rounded-lg border border-slate-200/90 bg-white dark:border-white/5 shadow-sm transform-gpu transition-colors hover:border-indigo-300 dark:hover:border-indigo-500/40 group overflow-hidden"
+                          className="rounded-lg border border-slate-200/90 bg-white dark:border-white/5 shadow-sm transform-gpu transition-colors hover:border-primary-300 dark:hover:border-primary-500/40 group overflow-hidden"
                         >
                           <Link
                             href={`/admin/transportation/requests/${row.id}`}
@@ -562,7 +562,7 @@ export default function AdminTransportationHubPage() {
                           >
                             <div className="min-w-0 flex items-center gap-4">
                               <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                                 <Bus className="w-5 h-5 text-indigo-500" />
+                                 <Bus className="w-5 h-5 text-primary-500" />
                               </div>
                               <div>
                                 <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{name}</p>
@@ -576,7 +576,7 @@ export default function AdminTransportationHubPage() {
                             <div className="flex shrink-0 flex-wrap items-center gap-4">
                               <div className="flex flex-col items-end">
                                 <span className="font-bold uppercase tracking-wider text-[10px] text-slate-400 mb-1">Time</span>
-                                <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 flex items-center gap-1.5 border border-indigo-100 dark:border-indigo-500/20">
+                                <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-bold text-primary-700 dark:bg-primary-500/10 dark:text-primary-400 flex items-center gap-1.5 border border-primary-100 dark:border-primary-500/20">
                                   <Clock className="w-3 h-3" />
                                   {format(apptDate, "EEE MMM d")} · {formatAppointmentTime(row.appointment_time)}
                                 </span>
@@ -632,7 +632,7 @@ export default function AdminTransportationHubPage() {
               {loading ? (
                 <p className="text-sm font-mono text-slate-500 pl-2">Loading…</p>
               ) : driverAlerts.length === 0 ? (
-                <div className="p-12 text-center text-slate-500 bg-white/30 rounded-lg border border-dashed border-white/20 dark:border-white/5 backdrop-blur-md">
+                <div className="p-12 text-center text-slate-500 bg-white/30 rounded-lg border border-dashed border-white/20 dark:border-white/5 ">
                   <p className="font-semibold text-lg">
                     {drivers.length === 0 && fleet.length === 0 ? "Inbox Zero" : "No Driver Alerts"}
                   </p>
@@ -716,7 +716,7 @@ export default function AdminTransportationHubPage() {
               {loading ? (
                 <p className="text-sm font-mono text-slate-500 pl-2">Loading…</p>
               ) : vehicleAlerts.length === 0 ? (
-                <div className="p-12 text-center text-slate-500 bg-white/30 rounded-lg border border-dashed border-white/20 dark:border-white/5 backdrop-blur-md">
+                <div className="p-12 text-center text-slate-500 bg-white/30 rounded-lg border border-dashed border-white/20 dark:border-white/5 ">
                   <p className="font-semibold text-lg">
                     {fleet.length === 0 ? "No Fleet Units" : "No Vehicle Alerts"}
                   </p>
@@ -799,7 +799,7 @@ export default function AdminTransportationHubPage() {
                            Result: {formatEnum(row.result)}
                          </p>
                        </div>
-                       <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 text-right bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 px-3 py-1.5 rounded-full shrink-0">
+                       <span className="text-[10px] font-bold uppercase tracking-wider text-primary-600 dark:text-primary-400 text-right bg-primary-50 dark:bg-primary-500/10 border border-primary-100 dark:border-primary-500/20 px-3 py-1.5 rounded-full shrink-0">
                          {format(new Date(row.inspected_at), "MMM d")}
                        </span>
                      </MotionItem>

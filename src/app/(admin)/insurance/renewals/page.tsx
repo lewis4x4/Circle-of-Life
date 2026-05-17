@@ -86,7 +86,7 @@ export default function InsuranceRenewalsPage() {
              {loading ? (
                <p className="text-sm font-mono text-slate-500 pl-2">Loading renewals…</p>
              ) : rows.length === 0 ? (
-               <div className="p-12 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
+               <div className="p-12 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
                   <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Renewals Found</p>
                  <p className="text-sm opacity-80 mt-1">There are currently no insurance renewals in the pipeline.</p>
                </div>

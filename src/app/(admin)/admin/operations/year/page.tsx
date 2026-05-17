@@ -7,8 +7,8 @@ export default function YearlyTasksPage() {
       title="Yearly Tasks"
       category="yearly_rounds"
       iconName="building"
-      iconWrapClassName="bg-indigo-100"
-      iconClassName="text-indigo-700"
+      iconWrapClassName="bg-primary-100"
+      iconClassName="text-primary-700"
     />
   );
 }

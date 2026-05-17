@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
  * Card — Quiet Operator surface primitive.
  *
  * Renders a solid, bordered container. NO glassmorphism, NO translucency,
- * NO backdrop-blur (constitution + anti-patterns.md). Separation is earned
+ * NO  (constitution + anti-patterns.md). Separation is earned
  * through padding and a 1px subtle border, not through floating shadows.
  *
  * Hover: a 2px lift (`-translate-y-0.5`) using `--motion-duration` /

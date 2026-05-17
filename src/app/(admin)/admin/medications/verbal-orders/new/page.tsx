@@ -179,7 +179,7 @@ export default function NewVerbalOrderPage() {
   if (loadingContext) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
       </div>
     );
   }
@@ -268,9 +268,9 @@ export default function NewVerbalOrderPage() {
       )}
 
       {/* Context Section */}
-      <div className="rounded-lg border border-indigo-500/10 bg-card p-6 md:p-8 shadow-sm">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-indigo-500 mb-6 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+      <div className="rounded-lg border border-primary-500/10 bg-card p-6 md:p-8 shadow-sm">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-primary-500 mb-6 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-primary-500"></span>
           Context
         </h3>
 
@@ -309,7 +309,7 @@ export default function NewVerbalOrderPage() {
                 id="order_type"
                 value={orderType}
                 onChange={(e) => setOrderType(e.target.value as OrderType)}
-                className="w-full h-14 appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-5 text-[15px] font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                className="w-full h-14 appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-5 text-[15px] font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 {ORDER_TYPES.map((t) => (
                   <option key={t.value} value={t.value}>
@@ -324,8 +324,8 @@ export default function NewVerbalOrderPage() {
       </div>
 
       {/* Order Details Section */}
-      <div className="rounded-lg border border-violet-500/10 bg-card p-6 md:p-8 shadow-sm">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-violet-500 mb-6 flex items-center gap-2">
+      <div className="rounded-lg border border-primary-500/10 bg-card p-6 md:p-8 shadow-sm">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-primary-500 mb-6 flex items-center gap-2">
           <Stethoscope className="w-4 h-4" />
           Order Details
         </h3>
@@ -342,7 +342,7 @@ export default function NewVerbalOrderPage() {
               onChange={(e) => setOrderText(e.target.value)}
               rows={5}
               placeholder="Enter the exact order as received from the prescriber..."
-              className="w-full resize-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 p-5 text-[15px] leading-relaxed text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 placeholder:text-slate-400 dark:placeholder:text-zinc-600"
+              className="w-full resize-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 p-5 text-[15px] leading-relaxed text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-slate-400 dark:placeholder:text-zinc-600"
             />
             <p className="text-xs text-slate-500 dark:text-zinc-500">
               This must match exactly what the physician said.

@@ -297,22 +297,22 @@ export default function AdminInsuranceHubPage() {
             <p className="text-sm font-mono tracking-wide text-muted-foreground">Navigate insurance workflows.</p>
           </div>
           <div className="p-6 rounded-lg border border-border bg-card flex flex-col gap-3 text-sm shadow-sm">
-          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/insurance/policies">
+          <Link className="text-primary-600 dark:text-primary-400 font-mono text-xs uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/insurance/policies">
             Policy inventory
           </Link>
-          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/insurance/renewals">
+          <Link className="text-primary-600 dark:text-primary-400 font-mono text-xs uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/insurance/renewals">
             Renewals
           </Link>
-          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/insurance/renewal-packages">
+          <Link className="text-primary-600 dark:text-primary-400 font-mono text-xs uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/insurance/renewal-packages">
             Renewal data packages
           </Link>
-          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/insurance/claims">
+          <Link className="text-primary-600 dark:text-primary-400 font-mono text-xs uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/insurance/claims">
             Claims
           </Link>
-          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/insurance/coi">
+          <Link className="text-primary-600 dark:text-primary-400 font-mono text-xs uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/insurance/coi">
             Certificates of insurance
           </Link>
-          <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/insurance/workers-comp">
+          <Link className="text-primary-600 dark:text-primary-400 font-mono text-xs uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/insurance/workers-comp">
             Workers&apos; comp
           </Link>
         </div>

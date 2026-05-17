@@ -363,13 +363,13 @@ export default function AdminReputationHubPage() {
 
         <KineticGrid className="grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px]">
-            <V2Card hoverColor="indigo" className="border-indigo-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
+            <V2Card hoverColor="indigo" className="border-primary-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
               <MonolithicWatermark value={accounts.length} className="text-info/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-primary-600 dark:text-primary-400 flex items-center gap-2">
                   <Star className="h-3.5 w-3.5" /> Tracked Listings
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-indigo-600 dark:text-indigo-400 pb-1">{accounts.length}</p>
+                <p className="text-4xl font-mono tracking-tighter text-primary-600 dark:text-primary-400 pb-1">{accounts.length}</p>
               </div>
             </V2Card>
           </div>
@@ -420,7 +420,7 @@ export default function AdminReputationHubPage() {
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left sm:items-end sm:text-right">
                  <p className="hidden max-w-md text-xs font-mono leading-relaxed text-muted-foreground sm:block">Connected listings and reply workflow for the selected facility.</p>
                  <div className="flex w-full gap-2 justify-start sm:justify-end">
-                   <Link href="/admin/reputation/accounts/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-wider text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none whitespace-nowrap")} >
+                   <Link href="/admin/reputation/accounts/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-wider text-[10px] tap-responsive bg-primary-600 hover:bg-primary-700 text-white dark:bg-primary-500 dark:hover:bg-primary-600 border-none whitespace-nowrap")} >
                      + Connect Listing
                    </Link>
                  </div>
@@ -500,7 +500,7 @@ export default function AdminReputationHubPage() {
                             type="button"
                             className={cn(
                               buttonVariants({ variant: "default", size: "sm" }),
-                              "bg-indigo-600 hover:bg-indigo-700 text-white font-mono uppercase tracking-wider text-[10px]",
+                              "bg-primary-600 hover:bg-primary-700 text-white font-mono uppercase tracking-wider text-[10px]",
                             )}
                             disabled={
                               postingGoogleId === row.id ||

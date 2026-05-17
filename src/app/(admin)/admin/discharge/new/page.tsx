@@ -158,7 +158,7 @@ export default function AdminDischargeNewPage() {
           ) : (
             <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
               {existingReconciliationId ? (
-                <div className="rounded-lg border border-indigo-200/80 bg-indigo-50/50 px-4 py-3 text-sm text-indigo-950 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-indigo-100">
+                <div className="rounded-lg border border-primary-200/80 bg-primary-50/50 px-4 py-3 text-sm text-primary-950 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-100">
                   This resident already has an active discharge reconciliation. Open that record instead of creating a duplicate.
                   <div className="mt-3">
                     <Link href={`/admin/discharge/${existingReconciliationId}`} className={cn(buttonVariants({ size: "sm" }))}>

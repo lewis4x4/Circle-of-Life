@@ -38,7 +38,7 @@ const DEPARTMENT_WORKSPACES = [
     description: "Portal and messaging surfaces that shape resident-family communication quality.",
     href: "/admin/family-portal",
     icon: ShieldCheck,
-    accent: "bg-violet-100 text-violet-700",
+    accent: "bg-primary-100 text-primary-700",
   },
 ] as const;
 

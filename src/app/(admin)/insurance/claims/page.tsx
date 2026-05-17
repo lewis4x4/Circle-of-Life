@@ -86,7 +86,7 @@ export default function InsuranceClaimsPage() {
              {loading ? (
                <p className="text-sm font-mono text-slate-500 pl-2">Loading claims…</p>
              ) : rows.length === 0 ? (
-               <div className="p-12 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
+               <div className="p-12 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
                   <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Claims</p>
                  <p className="text-sm opacity-80 mt-1">No insurance claims have been tracked yet.</p>
                </div>
@@ -121,7 +121,7 @@ export default function InsuranceClaimsPage() {
                            Loss: {formattedDate}
                          </span>
                          {r.incident_id && (
-                           <Link href={`/admin/incidents/${r.incident_id}`} className="text-[10px] font-bold uppercase tracking-wider text-indigo-500 hover:text-indigo-600 flex items-center gap-1">
+                           <Link href={`/admin/incidents/${r.incident_id}`} className="text-[10px] font-bold uppercase tracking-wider text-primary-500 hover:text-primary-600 flex items-center gap-1">
                              Incident linked ↗
                            </Link>
                          )}

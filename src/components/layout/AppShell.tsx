@@ -36,6 +36,7 @@ import {
   ChevronDown,
   Loader2,
   LogOut,
+  MessageSquare,
   Moon,
   Search,
   Settings,
@@ -77,6 +78,8 @@ import {
 } from "@/components/ui/command";
 import { SurveyVisitModeBar } from "@/components/compliance/SurveyVisitModeBar";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
+import { HavenInsightShell } from "@/components/haven-insight/HavenInsightShell";
+import { GraceShell } from "@/lib/grace/GraceShell";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import {
   AUXILIARY_ROUTES,
@@ -491,6 +494,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     </>
   );
 
+  const renderGraceTrigger = () => (
+    <button
+      type="button"
+      onClick={() => window.dispatchEvent(new CustomEvent("grace:open"))}
+      className={cn(
+        "inline-flex size-8 items-center justify-center rounded-[8px] text-muted-foreground transition-colors",
+        "hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+      )}
+      aria-label="Ask Grace"
+      title="Ask Grace"
+    >
+      <MessageSquare className="size-4" aria-hidden />
+    </button>
+  );
+
   const renderReportIncidentButton = () => (
     // Self-labeled (visible "Report incident" text on sm+, accessible label on
     // mobile). No Tooltip wrapper: base-ui's useRender cannot disambiguate
@@ -687,6 +705,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <div className="ml-auto flex items-center gap-1">
           {renderSearchTrigger()}
+          {renderGraceTrigger()}
           {renderReportIncidentButton()}
           <PilotFeedbackLauncher shellKind="admin" facilityId={safeSelectedFacilityId} compact />
           {renderNotificationsButton()}
@@ -794,6 +813,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         onOpenChange={setPaletteOpen}
         onSelect={handlePaletteSelect}
       />
+      <GraceShell />
+      <HavenInsightShell />
     </div>
   );
 }

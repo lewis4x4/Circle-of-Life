@@ -113,7 +113,7 @@ export function ResidentSelector({
           bg-white dark:bg-black/40
           px-5 text-[15px] font-medium
           text-slate-900 dark:text-white
-          focus:outline-none focus:ring-2 focus:ring-indigo-500/50
+          focus:outline-none focus:ring-2 focus:ring-ring
           disabled:opacity-50 disabled:cursor-not-allowed
           ${className}
         `}
@@ -226,7 +226,7 @@ export function ResidentSelectorCompact({
           bg-white dark:bg-black/40
           px-3 text-sm
           text-slate-900 dark:text-white
-          focus:outline-none focus:ring-2 focus:ring-indigo-500/50
+          focus:outline-none focus:ring-2 focus:ring-ring
           disabled:opacity-50
           ${className}
         `}

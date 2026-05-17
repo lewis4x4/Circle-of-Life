@@ -444,7 +444,7 @@ function BundleMetricCard({
         ? "border-amber-200/80 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/20"
         : tone === "emerald"
           ? "border-emerald-200/80 bg-emerald-50/60 dark:border-emerald-900/40 dark:bg-emerald-950/20"
-          : "border-indigo-200/80 bg-indigo-50/60 dark:border-indigo-900/40 dark:bg-indigo-950/20";
+          : "border-primary-200/80 bg-primary-50/60 dark:border-primary-900/40 dark:bg-primary-950/20";
 
   return (
     <Card className={toneClass}>

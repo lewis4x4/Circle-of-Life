@@ -34,7 +34,7 @@ export function KBHealthPanel({ health, loading }: KBHealthPanelProps) {
       value: `${health.embeddingCoverage.toFixed(1)}%`,
       sub: "vectors indexed",
       icon: Zap,
-      color: "text-indigo-500",
+      color: "text-primary",
     },
     {
       label: "Failed Ingestions",

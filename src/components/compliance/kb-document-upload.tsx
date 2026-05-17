@@ -124,28 +124,28 @@ export function UploadDocumentModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
-      <div className="w-full max-w-2xl rounded-xl border border-slate-200 bg-white p-6 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[color:var(--overlay)] p-4">
+      <div className="w-full max-w-2xl rounded-[9px] border border-border bg-card p-6 shadow-[var(--shadow-card)]">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-xl font-semibold text-slate-900">Upload Compliance Document</h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <h2 className="text-xl font-medium text-foreground">Upload Compliance Document</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
               Send a compliance document to the knowledge base using the secured ingest pipeline.
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
+            className="grid size-8 place-items-center rounded-[8px] text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
             aria-label="Close upload dialog"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
         <form className="space-y-5" onSubmit={handleUpload}>
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="kb-doc-title">
+            <label className="mb-2 block text-sm font-medium text-foreground" htmlFor="kb-doc-title">
               Document Title
             </label>
             <input
@@ -154,20 +154,20 @@ export function UploadDocumentModal({
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Leave blank to use the filename"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-[8px] border border-input bg-background px-[13px] py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               disabled={uploading}
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="kb-doc-category">
+            <label className="mb-2 block text-sm font-medium text-foreground" htmlFor="kb-doc-category">
               Category
             </label>
             <select
               id="kb-doc-category"
               value={category}
               onChange={(event) => setCategory(event.target.value as ComplianceCategory)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-[8px] border border-input bg-background px-[13px] py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               disabled={uploading}
             >
               {COMPLIANCE_CATEGORIES.map((item) => (
@@ -179,28 +179,28 @@ export function UploadDocumentModal({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="kb-doc-file">
+            <label className="mb-2 block text-sm font-medium text-foreground" htmlFor="kb-doc-file">
               File
             </label>
             <input
               id="kb-doc-file"
               type="file"
               onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
-              className="block w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border file:border-slate-300 file:bg-slate-50 file:px-3 file:py-2 file:font-medium hover:file:bg-slate-100"
+              className="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-[8px] file:border file:border-border file:bg-background file:px-[11px] file:py-2 file:font-medium file:text-foreground hover:file:bg-muted/40"
               disabled={uploading}
             />
-            {selectedFile && <p className="mt-2 text-sm text-slate-500">{selectedFile.name}</p>}
+            {selectedFile && <p className="mt-2 text-sm text-muted-foreground">{selectedFile.name}</p>}
           </div>
 
           {error && (
-            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <div className="flex items-start gap-2 rounded-[9px] border border-destructive/30 bg-destructive/10 px-[13px] py-2 text-sm text-destructive">
               <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {successMessage && (
-            <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+            <div className="flex items-start gap-2 rounded-[9px] border border-success/30 bg-success/10 px-[13px] py-2 text-sm text-success">
               <Check className="mt-0.5 h-4 w-4 flex-shrink-0" />
               <span>{successMessage}</span>
             </div>
@@ -210,7 +210,7 @@ export function UploadDocumentModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+              className="rounded-[8px] border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/40"
               disabled={uploading}
             >
               Cancel
@@ -218,7 +218,7 @@ export function UploadDocumentModal({
             <button
               type="submit"
               disabled={uploading || !selectedFile}
-              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-[8px] bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               {uploading ? "Uploading..." : "Upload Document"}

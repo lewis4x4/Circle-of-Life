@@ -54,12 +54,12 @@ export default function ReportTemplatesPage() {
                 placeholder="Search templates (e.g. falls, AR, survey)"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-card px-5 py-2 text-sm shadow-inner focus-visible:ring-indigo-500 font-mono tracking-wide"
+                className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-card px-5 py-2 text-sm shadow-inner focus-visible:ring-ring font-mono tracking-wide"
               />
             </div>
             <div className="md:w-72 shrink-0 relative">
               <select
-                className="flex h-12 w-full rounded-2xl border border-slate-200 bg-card px-5 py-2 text-sm dark:border-white/10 shadow-inner focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none font-mono uppercase tracking-wider text-[11px] font-bold text-slate-700 dark:text-slate-200"
+                className="flex h-12 w-full rounded-2xl border border-slate-200 bg-card px-5 py-2 text-sm dark:border-white/10 shadow-inner focus:outline-none focus:ring-2 focus:ring-ring appearance-none font-mono uppercase tracking-wider text-[11px] font-bold text-slate-700 dark:text-slate-200"
                 value={category}
                 onChange={(event) => setCategory(event.target.value)}
               >
@@ -76,7 +76,7 @@ export default function ReportTemplatesPage() {
           </div>
 
           {templates.length === 0 ? (
-             <div className="p-16 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
+             <div className="p-16 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
                 <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Templates Found</p>
                <p className="text-sm opacity-80 mt-1 font-mono">Try adjusting your search query or clear filters.</p>
              </div>

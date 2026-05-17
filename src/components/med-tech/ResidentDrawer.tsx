@@ -37,7 +37,7 @@ export function ResidentDrawer({ resident, passes, onClose }: ResidentDrawerProp
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 z-40 bg-black/50 "
         onClick={onClose}
       />
 
@@ -112,7 +112,7 @@ export function ResidentDrawer({ resident, passes, onClose }: ResidentDrawerProp
                     <div className="flex items-center justify-between mb-0.5">
                       <span className="text-xs font-mono text-white font-semibold">{p.time}</span>
                       {p.controlled && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-violet-500/20 text-violet-300 text-[10px] font-semibold ring-1 ring-violet-500/40">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary-500/20 text-primary-300 text-[10px] font-semibold ring-1 ring-ring">
                           <ShieldCheck className="w-3 h-3" /> C-II
                         </span>
                       )}
@@ -150,7 +150,7 @@ export function ResidentDrawer({ resident, passes, onClose }: ResidentDrawerProp
           >
             Close
           </button>
-          <button className="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold transition flex items-center justify-center gap-2">
+          <button className="flex-1 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-500 text-white text-sm font-semibold transition flex items-center justify-center gap-2">
             <FileText className="w-4 h-4" /> Full Chart
           </button>
         </div>

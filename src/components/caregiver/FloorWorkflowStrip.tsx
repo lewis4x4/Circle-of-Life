@@ -32,7 +32,7 @@ export function FloorWorkflowStrip({
   const homeHref = effectiveRole ? getDashboardRouteForRole(effectiveRole) : null;
 
   return (
-    <div className="rounded-[1.5rem] border border-white/5 bg-white/[0.03] px-4 py-4 backdrop-blur-xl shadow-inner">
+    <div className="rounded-[1.5rem] border border-white/5 bg-white/[0.03] px-4 py-4  shadow-inner">
       <div className="mb-3">
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Floor workflow</p>
         <h2 className="mt-1 text-base font-medium text-white">{title}</h2>

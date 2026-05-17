@@ -338,7 +338,7 @@ export function AdminStaffingConsolePageClient({
             </Badge>
           ) : null}
           {windowFilter !== "all" ? (
-            <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+            <Badge variant="outline" className="border-primary-200 bg-primary-50 text-primary-700">
               Window filter: last 24h
             </Badge>
           ) : null}
@@ -425,7 +425,7 @@ export function AdminStaffingConsolePageClient({
         <div className="p-5 rounded-2xl border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/40">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Log callout / attendance event</h3>
-            <Badge className="border-none bg-indigo-500/10 text-indigo-600 dark:text-indigo-300">Drives standup</Badge>
+            <Badge className="border-none bg-primary-500/10 text-primary-600 dark:text-primary-300">Drives standup</Badge>
           </div>
           <div className="grid gap-3">
             <select
@@ -660,7 +660,7 @@ export function AdminStaffingConsolePageClient({
          <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between pb-2 border-b border-white/10">
                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">Credential Warnings (Blockers)</h3>
-               <Link href="/admin/certifications?timeline=expired" className="text-[10px] font-mono tracking-wider uppercase font-bold text-indigo-500 hover:text-indigo-400">Expired certs</Link>
+               <Link href="/admin/certifications?timeline=expired" className="text-[10px] font-mono tracking-wider uppercase font-bold text-primary-500 hover:text-primary-400">Expired certs</Link>
             </div>
             
             <MotionList className="space-y-3">
@@ -700,7 +700,7 @@ export function AdminStaffingConsolePageClient({
                      className={cn(
                        "rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors",
                        complianceFilter === option.value
-                         ? "bg-indigo-600 text-white"
+                         ? "bg-primary-600 text-white"
                          : "bg-white/80 text-slate-600 hover:bg-white dark:bg-black/20 dark:text-zinc-300 dark:hover:bg-black/30",
                      )}
                    >

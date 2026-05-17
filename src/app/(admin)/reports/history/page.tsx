@@ -79,7 +79,7 @@ export default function ReportHistoryPage() {
                <p className="text-sm font-mono tracking-wider uppercase">Loading Run Logs…</p>
             </div>
           ) : rows.length === 0 ? (
-            <div className="p-16 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
+            <div className="p-16 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
                 <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Run History</p>
                <p className="text-sm opacity-80 mt-1 font-mono tracking-wide">Report execution logs will populate here once dispatched.</p>
              </div>
@@ -89,7 +89,7 @@ export default function ReportHistoryPage() {
                   <MotionItem key={row.id}>
                     <div className={cn("p-6 rounded-lg group transition-all duration-300 hover:scale-[1.01] cursor-default border w-full flex flex-col xl:flex-row xl:items-center justify-between gap-6 shadow-sm hover:shadow-md", row.status === "failed" ? "border-rose-500/20 bg-rose-50 dark:bg-rose-900/10 hover:border-rose-500/40" : "border-slate-200 dark:border-white/5 bg-white/80 dark:bg-white/[0.03] hover:border-slate-300 dark:hover:border-white/20")}>
                         <div className="flex flex-col min-w-[250px] gap-1 shrink-0">
-                           <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Source: <span className="font-semibold text-indigo-600 dark:text-indigo-400">{row.source_type}</span></span>
+                           <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Source: <span className="font-semibold text-primary-600 dark:text-primary-400">{row.source_type}</span></span>
                            <span className="font-bold text-slate-900 dark:text-slate-100 uppercase text-sm tracking-wide">
                               {row.source_id.replace(/-/g, ' ')}
                            </span>

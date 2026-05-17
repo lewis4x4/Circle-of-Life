@@ -376,7 +376,7 @@ function ForecastMetricCard({
         ? "border-amber-200/80 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/20"
         : accent === "red"
           ? "border-red-200/80 bg-red-50/60 dark:border-red-900/40 dark:bg-red-950/20"
-          : "border-indigo-200/80 bg-indigo-50/60 dark:border-indigo-900/40 dark:bg-indigo-950/20";
+          : "border-primary-200/80 bg-primary-50/60 dark:border-primary-900/40 dark:bg-primary-950/20";
 
   return (
     <Card className={accentClass}>

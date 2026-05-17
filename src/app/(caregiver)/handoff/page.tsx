@@ -125,16 +125,16 @@ export default function CaregiverHandoffPage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h3 className="flex items-center gap-3 text-2xl font-semibold text-white tracking-wide">
-              <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30">
-                <MessageSquare className="h-5 w-5 text-indigo-400" />
+              <div className="w-10 h-10 rounded-full bg-primary-500/20 flex items-center justify-center border border-primary-500/30">
+                <MessageSquare className="h-5 w-5 text-primary-400" />
               </div>
               Shift handoff
             </h3>
-            <p className="text-sm font-mono text-indigo-200/60 mt-2 max-w-xl">
+            <p className="text-sm font-mono text-primary-200/60 mt-2 max-w-xl">
               Recent recorded handoffs for your facility (read-only). Create or edit handoffs from the nurse lead workflow when enabled.
             </p>
           </div>
-          <Badge className="border-indigo-500/40 bg-indigo-500/20 text-indigo-300 uppercase tracking-wider font-mono text-[10px] font-bold rounded-full px-4 py-1.5 shrink-0">
+          <Badge className="border-primary-500/40 bg-primary-500/20 text-primary-300 uppercase tracking-wider font-mono text-[10px] font-bold rounded-full px-4 py-1.5 shrink-0">
             Latest {rows.length ? `${rows.length}` : "0"} record{rows.length === 1 ? "" : "s"}
           </Badge>
         </div>

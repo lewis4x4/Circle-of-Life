@@ -223,12 +223,12 @@ export default function CaregiverPrnFollowupPage() {
       />
       <div className="p-6 sm:p-8 rounded-lg border border-white/5 shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
         <h3 className="flex items-center gap-3 text-2xl font-semibold text-white tracking-wide">
-          <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center border border-violet-500/30">
-            <Pill className="h-5 w-5 text-violet-400" />
+          <div className="w-10 h-10 rounded-full bg-primary-500/20 flex items-center justify-center border border-primary-500/30">
+            <Pill className="h-5 w-5 text-primary-400" />
           </div>
           PRN follow-up
         </h3>
-        <p className="text-sm font-mono text-violet-200/60 mt-4 max-w-xl">
+        <p className="text-sm font-mono text-primary-200/60 mt-4 max-w-xl">
           PRN administrations that still need an effectiveness check (per order window, default <span className="font-bold text-white">{DEFAULT_PRN_REASSESS_MINUTES}</span> min).
         </p>
       </div>
@@ -270,7 +270,7 @@ export default function CaregiverPrnFollowupPage() {
                   
                   <div className="flex flex-col gap-2 mt-2 pt-3 border-t border-white/5">
                     <p className="flex items-center gap-2 text-[11px] font-mono leading-relaxed text-zinc-300 bg-black/40 w-fit px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">
-                      <Activity className="h-3.5 w-3.5 text-violet-400" />
+                      <Activity className="h-3.5 w-3.5 text-primary-400" />
                       Given {r.givenLabel} <span className="text-zinc-500 mx-1">/</span> Target by {r.reassessLabel} ({r.minutes} min)
                     </p>
                   </div>
@@ -286,7 +286,7 @@ export default function CaregiverPrnFollowupPage() {
                       <div className="space-y-2">
                         <Label className="text-[10px] font-bold uppercase tracking-wider font-mono text-zinc-500 pl-1">Effectiveness Result</Label>
                         <select
-                          className="flex h-14 w-full appearance-none rounded-2xl border border-white/10 bg-black/60 px-5 text-sm text-zinc-200 font-medium font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/50 shadow-inner tap-responsive"
+                          className="flex h-14 w-full appearance-none rounded-2xl border border-white/10 bg-black/60 px-5 text-sm text-zinc-200 font-medium font-mono focus:outline-none focus:ring-2 focus:ring-ring shadow-inner tap-responsive"
                           value={result}
                           onChange={(e) => setResult(e.target.value)}
                         >
@@ -299,7 +299,7 @@ export default function CaregiverPrnFollowupPage() {
                       <textarea
                         rows={2}
                         placeholder="Optional narrative notes..."
-                        className="w-full resize-none rounded-2xl border border-white/10 bg-black/60 px-5 py-4 text-sm text-zinc-200 font-medium font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/50 shadow-inner placeholder:text-zinc-600 tap-responsive"
+                        className="w-full resize-none rounded-2xl border border-white/10 bg-black/60 px-5 py-4 text-sm text-zinc-200 font-medium font-mono focus:outline-none focus:ring-2 focus:ring-ring shadow-inner placeholder:text-zinc-600 tap-responsive"
                         value={effNotes}
                         onChange={(e) => setEffNotes(e.target.value)}
                       />
@@ -307,7 +307,7 @@ export default function CaregiverPrnFollowupPage() {
                         <Button
                           type="button"
                           disabled={savingId === r.id}
-                          className="h-12 px-8 rounded-full font-mono uppercase tracking-wider text-[10px] shadow-[0_4px_20px_rgba(139,92,246,0.15)] transition-all hover:scale-[1.02] border border-violet-500 text-white font-bold bg-violet-600 hover:bg-violet-500 tap-responsive flex-1 sm:flex-none"
+                          className="h-12 px-8 rounded-full font-mono uppercase tracking-wider text-[10px] shadow-[0_4px_20px_rgba(139,92,246,0.15)] transition-all hover:scale-[1.02] border border-primary-500 text-white font-bold bg-primary-600 hover:bg-primary-500 tap-responsive flex-1 sm:flex-none"
                           onClick={() => void saveEffectiveness(r.id)}
                         >
                           {savingId === r.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

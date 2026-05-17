@@ -194,11 +194,11 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/30 " onClick={onClose} />
 
       <div className="relative w-full max-w-2xl h-full overflow-y-auto bg-background border-l shadow-2xl">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b bg-background/95 backdrop-blur">
+        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b bg-background/95 ">
           <div className="flex items-center gap-3">
             <div>
               <h2 className="text-lg font-semibold">{user?.full_name ?? "Loading..."}</h2>

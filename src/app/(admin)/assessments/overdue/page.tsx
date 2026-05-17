@@ -191,8 +191,8 @@ export default function ClinicalDeskPage() {
              <ClipboardCheck className="mr-2 h-4 w-4 text-rose-500" />
              {overdueCount} Overdue
            </div>
-           <div className="inline-flex items-center px-4 py-2 rounded-full border border-indigo-200 dark:border-indigo-900/40 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-800 dark:text-indigo-300 shadow-sm text-sm font-bold tracking-wide">
-             <CalendarClock className="mr-2 h-4 w-4 text-indigo-500" />
+           <div className="inline-flex items-center px-4 py-2 rounded-full border border-primary-200 dark:border-primary-900/40 bg-primary-50 dark:bg-primary-950/20 text-primary-800 dark:text-primary-300 shadow-sm text-sm font-bold tracking-wide">
+             <CalendarClock className="mr-2 h-4 w-4 text-primary-500" />
              {plansDueCount} Needed
            </div>
          </div>
@@ -233,7 +233,7 @@ export default function ClinicalDeskPage() {
                           <Badge variant="destructive" className={cn(
                             "h-5 px-2 text-[10px] font-bold uppercase tracking-wider rounded border-0",
                             a.daysOverdue === 0
-                              ? "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300"
+                              ? "bg-primary-100 text-primary-800 dark:bg-primary-900/40 dark:text-primary-300"
                               : a.daysOverdue > 7
                                 ? "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-400 ring-1 ring-rose-500/50 shadow-[0_4px_15px_rgba(244,63,94,0.2)]"
                                 : "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400 ring-1 ring-amber-500/50"
@@ -286,10 +286,10 @@ export default function ClinicalDeskPage() {
                 <MotionList className="grid gap-4">
                   {carePlans.map((p) => (
                     <MotionItem key={p.id}>
-                      <div className="relative flex flex-col md:flex-row md:items-center gap-4 p-6 rounded-lg border border-slate-200/60 dark:border-white/5 hover:border-indigo-300 dark:hover:border-indigo-500/40 hover:shadow-lg transition-all duration-300 group bg-white shadow-sm">
+                      <div className="relative flex flex-col md:flex-row md:items-center gap-4 p-6 rounded-lg border border-slate-200/60 dark:border-white/5 hover:border-primary-300 dark:hover:border-primary-500/40 hover:shadow-lg transition-all duration-300 group bg-white shadow-sm">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">
+                            <span className="text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-primary-600 dark:group-hover:text-primary-300 transition-colors">
                               {p.residentName}
                             </span>
                             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">Due: {p.reviewDueDate}</span>
@@ -298,7 +298,7 @@ export default function ClinicalDeskPage() {
                             Care Plan v{p.version} Update (Triggered by MDS)
                           </p>
                           <div className="flex items-center gap-3">
-                            <Link href={`/admin/residents/${p.residentId}/care-plan`} className={cn(buttonVariants({ variant: "default", size: "sm" }), "h-10 rounded-full px-6 font-bold uppercase tracking-wider text-[10px] bg-indigo-600 hover:bg-indigo-700 shadow-md tap-responsive text-white")}>
+                            <Link href={`/admin/residents/${p.residentId}/care-plan`} className={cn(buttonVariants({ variant: "default", size: "sm" }), "h-10 rounded-full px-6 font-bold uppercase tracking-wider text-[10px] bg-primary-600 hover:bg-primary-700 shadow-md tap-responsive text-white")}>
                               Review & Sign
                             </Link>
                             <Button

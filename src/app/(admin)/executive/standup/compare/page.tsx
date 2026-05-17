@@ -195,7 +195,7 @@ export default function ExecutiveStandupComparePage() {
                         <div className="font-semibold text-slate-900 dark:text-white">{formatMetricValue(leftMetric)}</div>
                         <div className="mt-2 text-sm text-slate-500 dark:text-zinc-400">{comparison.toWeek}</div>
                         <div className="font-semibold text-slate-900 dark:text-white">{formatMetricValue(rightMetric)}</div>
-                        <div className="mt-3 text-sm font-medium text-indigo-600 dark:text-indigo-300">{formatDelta(leftMetric, rightMetric)}</div>
+                        <div className="mt-3 text-sm font-medium text-primary-600 dark:text-primary-300">{formatDelta(leftMetric, rightMetric)}</div>
                       </div>
                     );
                   })}
@@ -266,7 +266,7 @@ export default function ExecutiveStandupComparePage() {
                               </td>
                               <td className="px-3 py-3 font-semibold text-slate-900 dark:text-white">{formatMetricValue(leftMetric)}</td>
                               <td className="px-3 py-3 font-semibold text-slate-900 dark:text-white">{formatMetricValue(rightMetric)}</td>
-                              <td className="px-3 py-3 text-indigo-600 dark:text-indigo-300">{formatDelta(leftMetric, rightMetric)}</td>
+                              <td className="px-3 py-3 text-primary-600 dark:text-primary-300">{formatDelta(leftMetric, rightMetric)}</td>
                             </tr>
                           );
                         })}

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Brain } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { useHavenInsight } from "@/lib/haven-insight/HavenInsightContext";
 
 export function HavenInsightTrigger() {
@@ -11,13 +11,13 @@ export function HavenInsightTrigger() {
     <button
       onClick={toggle}
       aria-label="Toggle Haven Insight"
-      className={`fixed bottom-6 right-6 z-[59] w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-slate-950 ${
+      className={`fixed bottom-6 right-6 z-[59] flex size-11 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-[var(--shadow-card)] transition-colors hover:bg-muted/40 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background ${
         isOpen
-          ? "bg-slate-800 shadow-none scale-90 opacity-60"
-          : "shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:shadow-[0_0_30px_rgba(139,92,246,0.5)] hover:scale-105"
+          ? "opacity-60"
+          : ""
       }`}
     >
-      <Brain className="w-5 h-5 text-white" />
+      <MessageSquare className="size-4" />
     </button>
   );
 }

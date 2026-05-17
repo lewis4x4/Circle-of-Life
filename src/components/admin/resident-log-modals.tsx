@@ -215,14 +215,14 @@ export function BehaviorLogModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-violet-900/50 text-zinc-100">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-primary-900/50 text-zinc-100">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg text-violet-200 font-semibold">
-            <Brain className="h-5 w-5 text-violet-400" />
+          <DialogTitle className="flex items-center gap-2 text-lg text-primary-200 font-semibold">
+            <Brain className="h-5 w-5 text-primary-400" />
             Log Behavior Event
           </DialogTitle>
-          <DialogDescription className="text-violet-200/70">
-            Document observable behaviors for <span className="text-violet-100 font-medium">{residentName}</span>
+          <DialogDescription className="text-primary-200/70">
+            Document observable behaviors for <span className="text-primary-100 font-medium">{residentName}</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -236,7 +236,7 @@ export function BehaviorLogModal({
               <Button
                 type="button"
                 onClick={resetForm}
-                className="flex-1 bg-violet-600 text-white hover:bg-violet-500"
+                className="flex-1 bg-primary-600 text-white hover:bg-primary-500"
               >
                 Log Another
               </Button>
@@ -259,12 +259,12 @@ export function BehaviorLogModal({
             )}
 
             {ctx ? (
-              <div className="space-y-4 rounded-xl border border-violet-900/35 bg-black/25 p-4">
+              <div className="space-y-4 rounded-xl border border-primary-900/35 bg-black/25 p-4">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-xs text-violet-200/80">Behavior type</Label>
+                    <Label className="text-xs text-primary-200/80">Behavior type</Label>
                     <select
-                      className="flex h-11 w-full rounded-lg border border-violet-900/50 bg-zinc-950 px-3 text-sm text-zinc-100 focus:ring-2 focus:ring-violet-500/50"
+                      className="flex h-11 w-full rounded-lg border border-primary-900/50 bg-zinc-950 px-3 text-sm text-zinc-100 focus:ring-2 focus:ring-ring"
                       value={behaviorType}
                       onChange={(e) => setBehaviorType(e.target.value)}
                     >
@@ -276,65 +276,65 @@ export function BehaviorLogModal({
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs text-violet-200/80">Duration (minutes)</Label>
+                    <Label className="text-xs text-primary-200/80">Duration (minutes)</Label>
                     <input
                       type="number"
                       min={0}
                       placeholder="Optional"
-                      className="flex h-11 w-full rounded-lg border border-violet-900/50 bg-zinc-950 px-3 text-sm text-zinc-100 focus:ring-2 focus:ring-violet-500/50"
+                      className="flex h-11 w-full rounded-lg border border-primary-900/50 bg-zinc-950 px-3 text-sm text-zinc-100 focus:ring-2 focus:ring-ring"
                       value={durationMinutes}
                       onChange={(e) => setDurationMinutes(e.target.value)}
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs text-violet-200/80">What was observed <span className="text-rose-400">*</span></Label>
+                  <Label className="text-xs text-primary-200/80">What was observed <span className="text-rose-400">*</span></Label>
                   <textarea
                     rows={3}
                     required
                     placeholder="Objective description of the behavior..."
-                    className="w-full rounded-lg border border-violet-900/50 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:ring-2 focus:ring-violet-500/50"
+                    className="w-full rounded-lg border border-primary-900/50 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:ring-2 focus:ring-ring"
                     value={behavior}
                     onChange={(e) => setBehavior(e.target.value)}
                   />
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-xs text-violet-200/80">Antecedent (optional)</Label>
+                    <Label className="text-xs text-primary-200/80">Antecedent (optional)</Label>
                     <textarea
                       rows={2}
                       placeholder="What happened before..."
-                      className="w-full rounded-lg border border-violet-900/50 bg-zinc-950 px-2 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:ring-2 focus:ring-violet-500/50"
+                      className="w-full rounded-lg border border-primary-900/50 bg-zinc-950 px-2 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:ring-2 focus:ring-ring"
                       value={antecedent}
                       onChange={(e) => setAntecedent(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs text-violet-200/80">Consequence / outcome (optional)</Label>
+                    <Label className="text-xs text-primary-200/80">Consequence / outcome (optional)</Label>
                     <textarea
                       rows={2}
                       placeholder="What happened after..."
-                      className="w-full rounded-lg border border-violet-900/50 bg-zinc-950 px-2 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:ring-2 focus:ring-violet-500/50"
+                      className="w-full rounded-lg border border-primary-900/50 bg-zinc-950 px-2 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:ring-2 focus:ring-ring"
                       value={consequence}
                       onChange={(e) => setConsequence(e.target.value)}
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs text-violet-200/80">Interventions used (comma-separated)</Label>
+                  <Label className="text-xs text-primary-200/80">Interventions used (comma-separated)</Label>
                   <input
                     type="text"
                     placeholder="e.g. redirection, music, 1:1 sitter"
-                    className="flex h-11 w-full rounded-lg border border-violet-900/50 bg-zinc-950 px-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:ring-2 focus:ring-violet-500/50"
+                    className="flex h-11 w-full rounded-lg border border-primary-900/50 bg-zinc-950 px-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:ring-2 focus:ring-ring"
                     value={interventionsText}
                     onChange={(e) => setInterventionsText(e.target.value)}
                   />
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-xs text-violet-200/80">Intervention effective?</Label>
+                    <Label className="text-xs text-primary-200/80">Intervention effective?</Label>
                     <select
-                      className="flex h-11 w-full rounded-lg border border-violet-900/50 bg-zinc-950 px-3 text-sm text-zinc-100 focus:ring-2 focus:ring-violet-500/50"
+                      className="flex h-11 w-full rounded-lg border border-primary-900/50 bg-zinc-950 px-3 text-sm text-zinc-100 focus:ring-2 focus:ring-ring"
                       value={interventionEffective}
                       onChange={(e) => setInterventionEffective(e.target.value as "" | "yes" | "no")}
                     >
@@ -344,19 +344,19 @@ export function BehaviorLogModal({
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs text-violet-200/80">Additional notes</Label>
+                    <Label className="text-xs text-primary-200/80">Additional notes</Label>
                     <textarea
                       rows={1}
-                      className="w-full rounded-lg border border-violet-900/50 bg-zinc-950 px-2 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:ring-2 focus:ring-violet-500/50"
+                      className="w-full rounded-lg border border-primary-900/50 bg-zinc-950 px-2 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:ring-2 focus:ring-ring"
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                     />
                   </div>
                 </div>
-                <label className="flex items-center gap-2 text-xs text-violet-100/90 cursor-pointer">
+                <label className="flex items-center gap-2 text-xs text-primary-100/90 cursor-pointer">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 rounded border-violet-800 bg-zinc-950"
+                    className="h-4 w-4 rounded border-primary-800 bg-zinc-950"
                     checked={injuryOccurred}
                     onChange={(e) => setInjuryOccurred(e.target.checked)}
                   />
@@ -377,7 +377,7 @@ export function BehaviorLogModal({
                 <Button
                   type="button"
                   disabled={submitting || !behavior.trim()}
-                  className="h-12 w-full text-white hover: hover: disabled:opacity-50 shadow-lg shadow-violet-500/20 font-medium"
+                  className="h-12 w-full text-white hover: hover: disabled:opacity-50 shadow-lg shadow-[var(--shadow-card)] font-medium"
                   onClick={() => void submitBehavior()}
                 >
                   {submitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Brain className="mr-2 h-5 w-5" />}
@@ -386,17 +386,17 @@ export function BehaviorLogModal({
               </div>
             ) : (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-violet-400" />
+                <Loader2 className="h-6 w-6 animate-spin text-primary-400" />
               </div>
             )}
 
             {rows.length > 0 && !success && (
-              <div className="space-y-3 border-t border-violet-900/30 pt-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-violet-200/50">Recent entries</p>
+              <div className="space-y-3 border-t border-primary-900/30 pt-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-primary-200/50">Recent entries</p>
                 <ul className="space-y-2">
                   {rows.map((row) => (
-                    <li key={row.id} className="rounded-lg border border-violet-900/30 bg-black/20 p-3 text-sm">
-                      <p className="font-medium capitalize text-violet-100">
+                    <li key={row.id} className="rounded-lg border border-primary-900/30 bg-black/20 p-3 text-sm">
+                      <p className="font-medium capitalize text-primary-100">
                         {BEHAVIOR_TYPES.find((b) => b.value === row.behavior_type)?.label ?? row.behavior_type}
                       </p>
                       <p className="mt-1 text-zinc-300">{row.behavior}</p>

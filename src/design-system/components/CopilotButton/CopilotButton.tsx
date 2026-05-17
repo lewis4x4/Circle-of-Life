@@ -34,7 +34,7 @@ export function CopilotButton({
           className,
         )}
       >
-        <SparkleIcon />
+        <SignalIcon />
         {label}
         <span className="text-xs font-medium uppercase tracking-caps text-text-muted">
           cite-backed
@@ -50,7 +50,7 @@ export function CopilotButton({
   );
 }
 
-function SparkleIcon() {
+function SignalIcon() {
   return (
     <span aria-hidden="true" className="text-sm leading-none">
       ✦

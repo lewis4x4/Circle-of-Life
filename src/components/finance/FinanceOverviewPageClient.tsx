@@ -69,31 +69,31 @@ export default function AdminFinanceHubPageClient({
                 <p className="text-[10px] text-muted-foreground">Leadership drill-ins for GL truth, period status, and posting confidence.</p>
               </div>
               <div className="flex flex-col gap-1 text-[11px] overflow-y-auto flex-1">
-                <Link className="text-indigo-600 dark:text-indigo-400 font-mono uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/finance/chart-of-accounts">
+                <Link className="text-primary-600 dark:text-primary-400 font-mono uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/finance/chart-of-accounts">
                   Chart of accounts
                 </Link>
-                <Link className="text-indigo-600 dark:text-indigo-400 font-mono uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/finance/journal-entries">
+                <Link className="text-primary-600 dark:text-primary-400 font-mono uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/finance/journal-entries">
                   Journal entries
                 </Link>
-                <Link className="text-indigo-600 dark:text-indigo-400 font-mono uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/finance/ledger">
+                <Link className="text-primary-600 dark:text-primary-400 font-mono uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/finance/ledger">
                   Posted ledger (read-only)
                 </Link>
-                <Link className="text-indigo-600 dark:text-indigo-400 font-mono uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/finance/trial-balance">
+                <Link className="text-primary-600 dark:text-primary-400 font-mono uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/finance/trial-balance">
                   Trial balance
                 </Link>
-                <Link className="text-indigo-600 dark:text-indigo-400 font-mono uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/finance/posting-rules">
+                <Link className="text-primary-600 dark:text-primary-400 font-mono uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/finance/posting-rules">
                   GL posting rules
                 </Link>
-                <Link className="text-indigo-600 dark:text-indigo-400 font-mono uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/finance/period-close">
+                <Link className="text-primary-600 dark:text-primary-400 font-mono uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/finance/period-close">
                   Period close
                 </Link>
-                <Link className="text-indigo-600 dark:text-indigo-400 font-mono uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/finance/forecast">
+                <Link className="text-primary-600 dark:text-primary-400 font-mono uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/finance/forecast">
                   Forecast
                 </Link>
-                <Link className="text-indigo-600 dark:text-indigo-400 font-mono uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/finance/budget">
+                <Link className="text-primary-600 dark:text-primary-400 font-mono uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/finance/budget">
                   Budget vs actual
                 </Link>
-                <Link className="text-indigo-600 dark:text-indigo-400 font-mono uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/finance/gl-settings">
+                <Link className="text-primary-600 dark:text-primary-400 font-mono uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/finance/gl-settings">
                   GL settings
                 </Link>
               </div>
@@ -186,7 +186,7 @@ export default function AdminFinanceHubPageClient({
                 <p className="text-sm text-muted-foreground">Period close status is managed under Period close from live finance records.</p>
                 <Link
                   href="/admin/finance/period-close"
-                  className="mt-3 inline-block text-[11px] font-mono uppercase tracking-wider text-indigo-600 dark:text-indigo-400 hover:underline"
+                  className="mt-3 inline-block text-[11px] font-mono uppercase tracking-wider text-primary-600 dark:text-primary-400 hover:underline"
                 >
                   Open period close →
                 </Link>

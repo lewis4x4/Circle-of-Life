@@ -441,7 +441,7 @@ export function buildStandupBoardPrintHtml(
         --card: #FFFFFF;
         --teal: #0F766E;
         --indigo: #4F46E5;
-        --indigo-soft: #EEF0FF;
+        --primary-soft: #EEF0FF;
         --amber: #B45309;
         --amber-soft: #FEF3C7;
         --crimson: #B91C1C;

@@ -157,7 +157,7 @@ export default function ReputationIntegrationsPage() {
       </div>
 
       <div className="flex items-center gap-2">
-        <PlugZap className="h-6 w-6 text-indigo-500" />
+        <PlugZap className="h-6 w-6 text-primary-500" />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Integrations</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">

@@ -168,7 +168,7 @@ export default function StaffFamilyMessagesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-40">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
       </div>
     );
   }
@@ -203,7 +203,7 @@ export default function StaffFamilyMessagesPage() {
                <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
              </button>
              <div>
-               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-2">
+               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 dark:bg-primary-500/10 border border-primary-100 dark:border-primary-500/20 text-[10px] font-bold uppercase tracking-wider text-primary-600 dark:text-primary-400 mb-2">
                    Active Thread
                </div>
                <h2 className="text-2xl md:text-3xl font-medium tracking-tight text-slate-900 dark:text-white">
@@ -238,7 +238,7 @@ export default function StaffFamilyMessagesPage() {
         </div>
 
         {threadActionError ? (
-          <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-6 text-sm text-rose-700 dark:text-rose-400 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm">
+          <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-6 text-sm text-rose-700 dark:text-rose-400 font-medium tracking-wide flex items-center gap-4 ">
             <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/30">
               <span className="font-bold">!</span>
             </div>
@@ -246,7 +246,7 @@ export default function StaffFamilyMessagesPage() {
           </div>
         ) : null}
         {threadActionMessage ? (
-          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-6 text-sm text-emerald-700 dark:text-emerald-300 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm">
+          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-6 text-sm text-emerald-700 dark:text-emerald-300 font-medium tracking-wide flex items-center gap-4 ">
             <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 border border-emerald-500/30">
               <span className="font-bold">✓</span>
             </div>
@@ -289,7 +289,7 @@ export default function StaffFamilyMessagesPage() {
         {/* Messages Body */}
         {msgLoading ? (
           <div className="flex items-center justify-center py-40">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
           </div>
         ) : msgError ? (
           <div className="mx-auto rounded-lg border border-rose-500/20 bg-rose-500/5 p-6 text-sm text-rose-700 dark:text-rose-400 font-medium tracking-wide flex flex-col items-center gap-4">
@@ -319,18 +319,18 @@ export default function StaffFamilyMessagesPage() {
                           className={cn(
                              "max-w-[85%] md:max-w-[70%] rounded-lg px-6 py-4 text-sm shadow-sm",
                              isStaff 
-                               ? "bg-indigo-600 text-white rounded-br-sm" 
+                               ? "bg-primary-600 text-white rounded-br-sm" 
                                : "bg-white text-slate-900 border border-slate-200/60 dark:bg-white/5 dark:border-white/10 dark:text-white rounded-bl-sm"
                           )}
                         >
                           <div className="flex items-center gap-2 mb-2">
-                             <p className={cn("text-[10px] font-bold uppercase tracking-wider", isStaff ? "text-indigo-200" : "text-slate-500 dark:text-zinc-400")}>
+                             <p className={cn("text-[10px] font-bold uppercase tracking-wider", isStaff ? "text-primary-200" : "text-slate-500 dark:text-zinc-400")}>
                                {m.authorName} <span className="opacity-50 mx-1">•</span> {m.createdAt}
                              </p>
                           </div>
                           <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{m.body}</p>
                           {m.authorKind === "staff" ? (
-                            <p className={cn("mt-2 text-[10px] font-bold uppercase tracking-wider", isStaff ? "text-indigo-200" : "text-slate-500") }>
+                            <p className={cn("mt-2 text-[10px] font-bold uppercase tracking-wider", isStaff ? "text-primary-200" : "text-slate-500") }>
                               {m.deliveryMethod.replace(/_/g, " ")}
                             </p>
                           ) : null}
@@ -369,7 +369,7 @@ export default function StaffFamilyMessagesPage() {
                   maxLength={8000}
                   rows={1}
                   style={{ minHeight: "56px" }}
-                  className="flex-1 resize-none rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-6 py-4 text-[15px] shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 dark:text-zinc-100 placeholder:text-slate-400"
+                  className="flex-1 resize-none rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-6 py-4 text-[15px] shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-ring dark:text-zinc-100 placeholder:text-slate-400"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && (e.metaKey || e.ctrlKey || e.shiftKey)) {
                       e.preventDefault();
@@ -380,7 +380,7 @@ export default function StaffFamilyMessagesPage() {
                 <button
                   onClick={() => { void handleSend(); }}
                   disabled={!draft.trim() || sending}
-                  className="h-14 w-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center shrink-0 shadow-md transition-all tap-responsive disabled:opacity-50 disabled:cursor-not-allowed outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                  className="h-14 w-14 rounded-full bg-primary-600 hover:bg-primary-700 text-white flex items-center justify-center shrink-0 shadow-md transition-all tap-responsive disabled:opacity-50 disabled:cursor-not-allowed outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5 ml-0.5" />}
                 </button>
@@ -420,12 +420,12 @@ export default function StaffFamilyMessagesPage() {
       ) : (
         <div className="space-y-4">
           <div className="flex items-center gap-3 border-b border-slate-200/50 dark:border-white/10 pb-4 px-2">
-            <MessageCircle className="h-5 w-5 text-indigo-500" />
+            <MessageCircle className="h-5 w-5 text-primary-500" />
             <h3 className="text-xl font-medium text-slate-900 dark:text-white tracking-tight">
               Active Threads
             </h3>
             {threadFilter !== "all" ? (
-              <span className="inline-flex items-center px-3 py-1 rounded-full border shadow-inner bg-indigo-500/10 text-indigo-600 border-indigo-500/20 dark:text-indigo-400 text-[10px] font-bold uppercase tracking-wider">
+              <span className="inline-flex items-center px-3 py-1 rounded-full border shadow-inner bg-primary-500/10 text-primary-600 border-primary-500/20 dark:text-primary-400 text-[10px] font-bold uppercase tracking-wider">
                 {visibleThreads.length} visible
               </span>
             ) : null}
@@ -444,7 +444,7 @@ export default function StaffFamilyMessagesPage() {
                 className={cn(
                   "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
                   threadFilter === option.key
-                    ? "bg-indigo-600 text-white"
+                    ? "bg-primary-600 text-white"
                     : "bg-white/80 text-slate-600 hover:bg-white dark:bg-black/20 dark:text-zinc-300 dark:hover:bg-black/30",
                 )}
               >
@@ -454,7 +454,7 @@ export default function StaffFamilyMessagesPage() {
           </div>
           {threadFilter !== "all" ? (
             <div className="flex flex-wrap items-center gap-2 px-2">
-              <span className="inline-flex items-center px-3 py-1 rounded-full border shadow-inner bg-indigo-500/10 text-indigo-600 border-indigo-500/20 dark:text-indigo-400 text-[10px] font-bold uppercase tracking-wider">
+              <span className="inline-flex items-center px-3 py-1 rounded-full border shadow-inner bg-primary-500/10 text-primary-600 border-primary-500/20 dark:text-primary-400 text-[10px] font-bold uppercase tracking-wider">
                 Thread filter: {threadFilter === "family_replied" ? "family replied" : threadFilter}
               </span>
               <Link href="/admin/family-messages" className={cn("rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors")}>
@@ -476,7 +476,7 @@ export default function StaffFamilyMessagesPage() {
                 >
                   <div className="flex items-start justify-between gap-4 mb-4">
                     <div className="space-y-1">
-                      <h3 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors tracking-tight">
+                      <h3 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-300 transition-colors tracking-tight">
                         {t.residentName}
                       </h3>
                       <p className="text-sm font-mono text-slate-500 dark:text-zinc-500">{t.roomLabel}</p>

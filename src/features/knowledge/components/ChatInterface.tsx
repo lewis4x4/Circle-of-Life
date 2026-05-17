@@ -98,16 +98,16 @@ export function ChatInterface({
   const showThreadLoader = !!conversationId && messagesLoading && existingMessages.length === 0;
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(99,102,241,0.12),transparent)] dark:bg-[#050505]">
+    <div className="relative flex min-h-0 flex-1 flex-col bg-background">
       {workspaceError && (
-        <div className="shrink-0 border-b border-amber-900/50 bg-amber-950/40 px-4 py-3 text-sm text-amber-100 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex shrink-0 flex-col gap-3 border-b border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning-foreground sm:flex-row sm:items-center sm:justify-between">
           <div>{workspaceError}</div>
           {onRetryWorkspace ? (
             <Button
               type="button"
               variant="outline"
               onClick={onRetryWorkspace}
-              className="border-amber-800/60 text-amber-100 hover:bg-amber-950/60 dark:border-amber-800/60 dark:text-amber-100 dark:hover:bg-amber-950/60"
+              className="border-warning/30 text-warning-foreground hover:bg-warning/15"
             >
               Retry workspace
             </Button>
@@ -122,15 +122,15 @@ export function ChatInterface({
           </div>
         ) : conversationId == null && workspaceLoading ? (
           <div className="flex min-h-[min(100%,280px)] flex-col items-center justify-center gap-3 py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-400" aria-hidden />
-            <p className="text-sm text-zinc-500">Loading organization…</p>
+            <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
+            <p className="text-sm text-muted-foreground">Loading organization…</p>
           </div>
         ) : (
           <div className="mx-auto flex min-h-full min-h-[min(100%,240px)] max-w-3xl flex-col space-y-4 px-4 py-6">
             {showThreadLoader && (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 py-20">
-                <Loader2 className="h-8 w-8 animate-spin text-indigo-400" aria-hidden />
-                <p className="text-sm text-zinc-500">Loading conversation…</p>
+                <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
+                <p className="text-sm text-muted-foreground">Loading conversation…</p>
               </div>
             )}
 
@@ -161,10 +161,10 @@ export function ChatInterface({
                   />
                 ) : (
                   <div className="flex gap-3">
-                    <div className="rounded-2xl bg-zinc-800/90 px-4 py-3 ring-1 ring-zinc-700/80">
-                      <Loader2 className="h-5 w-5 animate-spin text-indigo-400" aria-hidden />
+                    <div className="rounded-[9px] border border-border bg-card px-[13px] py-3">
+                      <Loader2 className="h-5 w-5 animate-spin text-primary" aria-hidden />
                     </div>
-                    <span className="self-center text-sm text-zinc-500">Generating answer…</span>
+                    <span className="self-center text-sm text-muted-foreground">Generating answer…</span>
                   </div>
                 )}
               </>
@@ -172,23 +172,23 @@ export function ChatInterface({
 
             {!showThreadLoader && state === "connecting" && !showOptimisticUser && (
               <div className="flex gap-3">
-                <div className="rounded-2xl bg-zinc-800/90 px-4 py-3 ring-1 ring-zinc-700/80">
-                  <Loader2 className="h-5 w-5 animate-spin text-indigo-400" />
+                <div className="rounded-[9px] border border-border bg-card px-[13px] py-3">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
                 </div>
               </div>
             )}
 
             {!showThreadLoader && showKbUploadHint && (
-              <div className="flex gap-3 rounded-xl border border-amber-800/50 bg-amber-950/35 px-4 py-3 text-sm text-amber-100">
-                <BookOpen className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" aria-hidden />
+              <div className="flex gap-3 rounded-[9px] border border-warning/30 bg-warning/10 px-[13px] py-3 text-sm text-warning-foreground">
+                <BookOpen className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
                 <div>
-                  <p className="font-medium text-amber-50">No matching documents in the knowledge base yet</p>
-                  <p className="mt-1 text-amber-100/90">
+                  <p className="font-medium">No matching documents in the knowledge base yet</p>
+                  <p className="mt-1">
                     Live resident and operations questions can still work, but document-based answers need uploaded materials.
                     Add policies and handbooks in{" "}
                     <Link
                       href="/admin/knowledge/admin"
-                      className="font-medium text-amber-300 underline underline-offset-2 hover:text-amber-200"
+                      className="font-medium underline underline-offset-2 hover:text-foreground"
                     >
                       Knowledge admin
                     </Link>{" "}
@@ -199,7 +199,7 @@ export function ChatInterface({
             )}
 
             {!showThreadLoader && error && (
-              <div className="rounded-xl border border-red-800/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+              <div className="rounded-[9px] border border-destructive/30 bg-destructive/10 px-[13px] py-3 text-sm text-destructive">
                 {error}
               </div>
             )}
@@ -213,7 +213,7 @@ export function ChatInterface({
               !!conversationId &&
               !messagesLoading && (
                 <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-                  <p className="text-sm text-zinc-400">
+                  <p className="text-sm text-muted-foreground">
                     No messages in this conversation yet. Ask about residents, meds, census, incidents, compliance, or uploaded policies.
                   </p>
                 </div>
@@ -224,13 +224,13 @@ export function ChatInterface({
         )}
       </div>
 
-      <div className="shrink-0 border-t border-zinc-800/90 bg-zinc-950/95 px-4 py-4 backdrop-blur-md pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div className="shrink-0 border-t border-border bg-card px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="mx-auto w-full max-w-4xl">
-          <div className="flex items-end gap-1 rounded-2xl border border-zinc-700/90 bg-zinc-900/90 p-2 pl-3 shadow-[0_-4px_24px_rgba(0,0,0,0.35)] ring-1 ring-white/5">
+          <div className="flex items-end gap-1 rounded-[9px] border border-border bg-background p-2 pl-3">
             <button
               type="button"
               disabled
-              className="mb-1 shrink-0 rounded-lg p-2.5 text-zinc-600"
+              className="mb-1 shrink-0 rounded-[8px] p-2.5 text-muted-foreground opacity-50"
               title="Attachments are not available yet"
               aria-disabled="true"
             >
@@ -246,7 +246,7 @@ export function ChatInterface({
               }
               rows={1}
               disabled={inputDisabled}
-              className="max-h-36 min-h-[52px] flex-1 resize-none border-0 bg-transparent py-3.5 text-[15px] leading-relaxed text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-0 disabled:opacity-50"
+              className="max-h-36 min-h-[52px] flex-1 resize-none border-0 bg-transparent py-3.5 text-[15px] leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0 disabled:opacity-50"
               onInput={(e) => {
                 const target = e.target as HTMLTextAreaElement;
                 target.style.height = "52px";
@@ -257,22 +257,22 @@ export function ChatInterface({
               type="button"
               onClick={() => (isActive ? reset() : void handleSend())}
               disabled={(!isActive && !input.trim()) || inputDisabled}
-              className={`mb-1 shrink-0 rounded-xl p-3 transition-colors ${
+              className={`mb-1 shrink-0 rounded-[8px] p-3 transition-colors ${
                 isActive
-                  ? "bg-red-600 text-white hover:bg-red-500"
+                  ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   : input.trim()
-                    ? "bg-indigo-600 text-white hover:bg-indigo-500"
-                    : "cursor-not-allowed bg-zinc-800 text-zinc-600"
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                    : "cursor-not-allowed bg-muted text-muted-foreground"
               }`}
               aria-label={isActive ? "Stop generating" : "Send message"}
             >
               {isActive ? <StopCircle className="h-5 w-5" /> : <Send className="h-5 w-5" />}
             </button>
           </div>
-          <p className="mt-2.5 text-center text-xs text-zinc-500">
-            Press <kbd className="rounded border border-zinc-700 bg-zinc-800 px-1.5 py-0.5 font-mono text-[10px] text-zinc-400">Enter</kbd>{" "}
+          <p className="mt-2.5 text-center text-xs text-muted-foreground">
+            Press <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">Enter</kbd>{" "}
             to send ·{" "}
-            <kbd className="rounded border border-zinc-700 bg-zinc-800 px-1.5 py-0.5 font-mono text-[10px] text-zinc-400">
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
               Shift+Enter
             </kbd>{" "}
             for a new line

@@ -68,7 +68,7 @@ export default function JournalEntriesListPage() {
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <FinanceHubNav />
         
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-violet-50/20 p-8 rounded-lg border border-violet-200/50 dark:border-white/5 shadow-sm mt-4">
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-primary-50/20 p-8 rounded-lg border border-primary-200/50 dark:border-white/5 shadow-sm mt-4">
           <div className="space-y-3">
              
              <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
@@ -79,7 +79,7 @@ export default function JournalEntriesListPage() {
             </p>
           </div>
           <div className="flex shrink-0">
-             <Link className={cn(buttonVariants({ size: "lg" }), "rounded-full font-bold uppercase tracking-wider text-[10px] shadow-lg bg-violet-600 hover:bg-violet-700 text-white border border-violet-500")} href="/admin/finance/journal-entries/new">
+             <Link className={cn(buttonVariants({ size: "lg" }), "rounded-full font-bold uppercase tracking-wider text-[10px] shadow-lg bg-primary-600 hover:bg-primary-700 text-white border border-primary-500")} href="/admin/finance/journal-entries/new">
                + New Journal
              </Link>
           </div>
@@ -111,11 +111,11 @@ export default function JournalEntriesListPage() {
                   <MotionItem key={r.id}>
                     <Link
                       href={`/admin/finance/journal-entries/${r.id}`}
-                      className="group flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-5 rounded-lg border border-slate-200/90 bg-white dark:border-white/5 shadow-sm transform-gpu transition-all hover:border-violet-300 dark:hover:border-violet-500/40 hover:shadow-md"
+                      className="group flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-5 rounded-lg border border-slate-200/90 bg-white dark:border-white/5 shadow-sm transform-gpu transition-all hover:border-primary-300 dark:hover:border-primary-500/40 hover:shadow-md"
                     >
                       <div className="min-w-0 flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0 group-hover:bg-violet-50 dark:group-hover:bg-violet-500/10 group-hover:border-violet-200 dark:group-hover:border-violet-500/20 transition-colors mt-0.5">
-                           <BookOpenText className="w-5 h-5 text-slate-400 group-hover:text-violet-500 transition-colors" />
+                        <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0 group-hover:bg-primary-50 dark:group-hover:bg-primary-500/10 group-hover:border-primary-200 dark:group-hover:border-primary-500/20 transition-colors mt-0.5">
+                           <BookOpenText className="w-5 h-5 text-slate-400 group-hover:text-primary-500 transition-colors" />
                         </div>
                         <div className="flex flex-col gap-2">
                            <div className="flex items-center gap-3">
@@ -140,8 +140,8 @@ export default function JournalEntriesListPage() {
                       </div>
                       
                       <div className="flex shrink-0 items-center justify-end">
-                        <div className="h-8 w-8 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center group-hover:border-violet-200 dark:group-hover:border-violet-500/20 group-hover:bg-violet-50 dark:group-hover:bg-violet-500/10 transition-colors shrink-0">
-                             <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors" />
+                        <div className="h-8 w-8 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center group-hover:border-primary-200 dark:group-hover:border-primary-500/20 group-hover:bg-primary-50 dark:group-hover:bg-primary-500/10 transition-colors shrink-0">
+                             <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors" />
                         </div>
                       </div>
                     </Link>

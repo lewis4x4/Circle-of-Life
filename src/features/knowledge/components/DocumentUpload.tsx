@@ -132,10 +132,10 @@ export function DocumentUpload({ workspaceId, workspaceLoading, onSuccess }: Doc
         }}
         onDragLeave={() => setDragActive(false)}
         onDrop={handleDrop}
-        className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${
+        className={`rounded-[9px] border-2 border-dashed p-6 text-center transition-colors ${
           dragActive
-            ? "border-indigo-400 bg-indigo-50/50 dark:bg-indigo-950/20"
-            : "border-slate-200 dark:border-zinc-700 hover:border-slate-300 dark:hover:border-zinc-600"
+            ? "border-primary/40 bg-primary/5"
+            : "border-border hover:bg-muted/40"
         }`}
       >
         {file ? (
@@ -161,14 +161,14 @@ export function DocumentUpload({ workspaceId, workspaceLoading, onSuccess }: Doc
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Document title"
         disabled={disabled}
-        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
+        className="w-full rounded-[8px] border border-input bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
       />
 
       <select
         value={audience}
         onChange={(e) => setAudience(e.target.value as DocumentAudience)}
         disabled={disabled}
-        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
+        className="w-full rounded-[8px] border border-input bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
       >
         {AUDIENCE_OPTIONS.map((opt) => (
           <option key={opt.value} value={opt.value}>
@@ -194,7 +194,7 @@ export function DocumentUpload({ workspaceId, workspaceLoading, onSuccess }: Doc
         type="button"
         onClick={() => void handleUpload()}
         disabled={!file || !title.trim() || uploading || disabled}
-        className="w-full rounded-xl bg-indigo-600 text-white px-4 py-2.5 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+        className="flex w-full items-center justify-center gap-2 rounded-[8px] bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
         {uploading ? "Uploading…" : "Upload Document"}
