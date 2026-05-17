@@ -14,6 +14,7 @@ import XLSX from "npm:xlsx@0.18.5";
 import TurndownService from "npm:turndown@7.2.0";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
+import { redactStringWithCounts } from "../_shared/redact-pii.ts";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -702,7 +703,16 @@ async function ingestDocument(
   workspaceId: string,
 ): Promise<number> {
   // Chunk the MARKDOWN, not raw text
-  const chunks = semanticChunk(markdownText);
+  const rawChunks = semanticChunk(markdownText);
+
+  // KB-NEXT-08: redact PII/PHI per-chunk BEFORE embedding so vectors and
+  // stored content are both scrubbed. Patterns hit are persisted alongside
+  // the chunk for ops diagnostics — never the raw matched text.
+  const chunks = rawChunks.map((c) => {
+    const r = redactStringWithCounts(c.content);
+    return { ...c, content: r.text, redaction_patterns_hit: r.patterns_hit };
+  });
+
   const embeddings = await generateEmbeddings(chunks.map((c) => c.content));
   const sectionChunks = chunks.filter((c) => c.type === "section");
   const paraChunks = chunks.filter((c) => c.type === "paragraph");
@@ -710,6 +720,7 @@ async function ingestDocument(
   // Clear existing chunks for re-index
   await admin.from("chunks").delete().eq("document_id", documentId);
 
+  const nowIso = new Date().toISOString();
   const sectionRows = sectionChunks.map((chunk, i) => ({
     document_id: documentId,
     workspace_id: workspaceId,
@@ -720,6 +731,9 @@ async function ingestDocument(
     chunk_type: "section",
     section_title: chunk.sectionTitle,
     embedding: `[${embeddings[i]!.join(",")}]`,
+    redacted_at: nowIso,
+    redaction_patterns_hit:
+      Object.keys(chunk.redaction_patterns_hit).length > 0 ? chunk.redaction_patterns_hit : null,
   }));
 
   const batchSize = 10;
@@ -747,6 +761,9 @@ async function ingestDocument(
     parent_chunk_id:
       chunk.parentIndex !== null ? sectionIdMap.get(chunk.parentIndex) ?? null : null,
     embedding: `[${embeddings[embeddingOffset + i]!.join(",")}]`,
+    redacted_at: nowIso,
+    redaction_patterns_hit:
+      Object.keys(chunk.redaction_patterns_hit).length > 0 ? chunk.redaction_patterns_hit : null,
   }));
 
   for (let i = 0; i < paraRows.length; i += batchSize) {
@@ -790,15 +807,54 @@ async function finalizeUploadedDocument(
     chunkCount = await ingestDocument(admin, documentId, markdown, rawText, title, workspaceId);
   } catch (ingestErr: unknown) {
     const msg = ingestErr instanceof Error ? ingestErr.message : String(ingestErr);
-    await admin.from("documents").update({ status: "ingest_failed" }).eq("id", documentId);
+    // KB-NEXT-08: bump retry counter and schedule next attempt via the
+    // exponential backoff in _kb_ingest_request_retry. If that RPC reports
+    // max_attempts_exceeded we leave the doc in ingest_failed without
+    // ingest_retry_at so the owner has to take action manually.
+    const { data: failBumpRow } = await admin
+      .from("documents")
+      .select("ingest_attempt_count, ingest_max_attempts")
+      .eq("id", documentId)
+      .single();
+    const attempts = (failBumpRow?.ingest_attempt_count ?? 0) + 1;
+    const maxAttempts = failBumpRow?.ingest_max_attempts ?? 3;
+    await admin
+      .from("documents")
+      .update({
+        status: "ingest_failed",
+        ingest_attempt_count: attempts,
+        ingest_last_error: msg.slice(0, 1000),
+      })
+      .eq("id", documentId);
+    if (attempts < maxAttempts) {
+      const { error: retryErr } = await admin.rpc("_kb_ingest_request_retry", {
+        p_document_id: documentId,
+        p_caller_organization_id: workspaceId,
+      });
+      if (retryErr) {
+        t.log({
+          event: "ingest_retry_schedule_failed",
+          outcome: "error",
+          document_id: documentId,
+          error_message: retryErr.message,
+        });
+      }
+    }
     await admin.from("document_audit_events").insert({
       actor_user_id: userId,
       document_id: documentId,
       document_title_snapshot: title,
       event_type: "ingest_failed",
-      metadata: { error: msg },
+      metadata: { error: msg, attempt: attempts, max_attempts: maxAttempts },
     });
-    t.log({ event: "ingest_failed", outcome: "error", document_id: documentId, error_message: msg });
+    t.log({
+      event: "ingest_failed",
+      outcome: "error",
+      document_id: documentId,
+      error_message: msg,
+      attempt: attempts,
+      max_attempts: maxAttempts,
+    });
     return;
   }
 
