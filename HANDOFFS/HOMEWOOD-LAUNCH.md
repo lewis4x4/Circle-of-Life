@@ -8,9 +8,20 @@
 
 Real customer launch. The UI audit (Phases A→D) is complete and DRIFT = 0. Homewood facility data is already loaded into Supabase via the onboarding flow. User accounts with roles are provisioned. The launch deadline is 4 weeks from today.
 
-**Out of scope:** visual design work, additional UI cleanup, importing new data, training materials.
+**Out of scope for this launch brief:** visual design work, additional UI cleanup, importing new data, training materials.
 
 **In scope:** everything code-side that protects the launch.
+
+## Design sequencing update (2026-05-16)
+
+User decision: **design phase is unblocked now**. The prior prerequisite that Homewood be live for 14+ days before design could begin is removed.
+
+Implementation constraints for design work running in parallel with this launch plan:
+
+- Visual screenshot-regression baselines may be captured on empty-state/placeholder data.
+- A second design pass is expected after 30 days of live Homewood usage for data-density tuning (roster, incident queue, family portal).
+- Do not modify Homewood data, RBAC policies, auth flows, or Supabase schemas as part of design implementation. Those belong to launch sprints.
+- If design-batch changes conflict with launch sprint changes, launch work has merge priority and design work yields.
 
 Execute the six sprints below in order. Each sprint ships as a single PR, merged via `gh pr merge <N> --merge --admin` before the next sprint begins. Each sprint ends with a `[SPRINT N COMPLETE]` block in the transcript stating: PR number, merge SHA, files changed count, what was verified, and any anomalies surfaced for the user. Do not auto-proceed between sprints — pause for the user's "go" between each.
 

@@ -1,0 +1,58 @@
+-- Homewood Round-2 employee seed (M4: Employees / Users / Roles)
+-- Source: Jessica Murphy "Employees Information.xlsx" (Drive 1eWUKm5OcAbW1I9kFPuMmqlAdbYC2-xGq), 2026-05-14.
+-- Idempotent insert of 16 Homewood Lodge ALF staff (facility 00000000-0000-0000-0002-000000000003).
+-- created_by = Jessica Murphy (399c531e-2237-4c55-9a09-c9f0a1bc4558) since she is the source-of-truth provider.
+-- Role mapping (xlsx -> staff_role enum):
+--   Administrator            -> administrator
+--   Administrative Assistant -> assistant_administrator
+--   Universal                -> resident_aide
+-- Applied to remote 2026-05-14 via Supabase MCP apply_migration.
+
+INSERT INTO public.staff
+  (facility_id, organization_id, first_name, last_name, email, staff_role, employment_status, hire_date, created_by)
+SELECT
+  '00000000-0000-0000-0002-000000000003'::uuid,
+  '00000000-0000-0000-0000-000000000001'::uuid,
+  v.first_name, v.last_name, v.email,
+  v.role::staff_role,
+  'active'::employment_status,
+  CURRENT_DATE,
+  '399c531e-2237-4c55-9a09-c9f0a1bc4558'::uuid
+FROM (VALUES
+  ('Charlene',  'Elmore',     'celmore.homewoodalf@gmail.com', 'administrator'),
+  ('Malida',    'Gaskins',    'aa.homewoodlodge@gmail.com',    'assistant_administrator'),
+  ('Holly',     'Berry',      'hjberry1969@gmail.com',         'resident_aide'),
+  ('Kymeisha',  'Coverson',   'liltwin2018@gmail.com',         'resident_aide'),
+  ('Kyneisha',  'Coverson',   'kycoverson@gmail.com',          'resident_aide'),
+  ('Na-shia',   'Freeman',    'nashiafreeman123@gmail.com',    'resident_aide'),
+  ('Abbigail',  'Hall',       'Abbigail@icloud.com',           'resident_aide'),
+  ('Kimora',    'Hall',       'kimora1404@icloud.com',         'resident_aide'),
+  ('Kristin',   'Hurley',     'kristinhurley1585@gmail.com',   'resident_aide'),
+  ('Jennifer',  'Martinez',   'jenny2025blue.amen22@gmail.com','resident_aide'),
+  ('Cecilia',   'Ramirez',    'ramirez5179.a@gmail.com',       'resident_aide'),
+  ('Rebecca',   'Ross',       'rebeccaross01@aim.com',         'resident_aide'),
+  ('Rita',      'Salas',      'ritatrejosal@gmail.com',        'resident_aide'),
+  ('Kayla',     'Smith',      'kaylasmith1800@icloud.com',     'resident_aide'),
+  ('Kaci',      'Vicencio',   'kacivicencio220@gmail.com',     'resident_aide'),
+  ('Kayla',     'Winberley',  'kawimb15@icloud.com',           'resident_aide')
+) AS v(first_name, last_name, email, role)
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.staff s
+   WHERE s.facility_id = '00000000-0000-0000-0002-000000000003'::uuid
+     AND s.first_name  = v.first_name
+     AND s.last_name   = v.last_name
+     AND s.deleted_at  IS NULL
+);
+
+DO $$
+DECLARE v_total int; v_admin int; v_aa int; v_aide int;
+BEGIN
+  SELECT COUNT(*) INTO v_total FROM public.staff WHERE facility_id='00000000-0000-0000-0002-000000000003' AND deleted_at IS NULL;
+  SELECT COUNT(*) INTO v_admin FROM public.staff WHERE facility_id='00000000-0000-0000-0002-000000000003' AND staff_role='administrator' AND deleted_at IS NULL;
+  SELECT COUNT(*) INTO v_aa    FROM public.staff WHERE facility_id='00000000-0000-0000-0002-000000000003' AND staff_role='assistant_administrator' AND deleted_at IS NULL;
+  SELECT COUNT(*) INTO v_aide  FROM public.staff WHERE facility_id='00000000-0000-0000-0002-000000000003' AND staff_role='resident_aide' AND deleted_at IS NULL;
+  RAISE NOTICE 'Homewood staff: total=%, administrator=%, assistant_administrator=%, resident_aide=%', v_total, v_admin, v_aa, v_aide;
+  IF v_admin <> 1 OR v_aa <> 1 OR v_aide <> 14 OR v_total <> 16 THEN
+    RAISE EXCEPTION 'Homewood seed verification failed: total=%, admin=%, aa=%, aide=%', v_total, v_admin, v_aa, v_aide;
+  END IF;
+END $$;

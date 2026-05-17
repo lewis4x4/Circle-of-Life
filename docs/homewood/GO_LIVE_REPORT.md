@@ -1,6 +1,6 @@
 # Homewood Lodge ALF — Go-Live Report
 
-_Generated: `2026-05-16T15:07:57.467Z`_
+_Generated: `2026-05-16T15:10:46.054Z`_
 
 ## Top line: **NO-GO**
 
@@ -10,10 +10,10 @@ One or more pre-flight gates failed. The detail below shows which gate, the exit
 
 | Gate | Status | Detail | Last run |
 |---|---|---|---:|
-| typecheck | ✅ pass |  | 1.6s |
-| lint | ✅ pass |  | 14.3s |
-| build | ✅ pass |  | 29.7s |
-| homewood:audit | ❌ fail | DATA_AUDIT.md surfaces 1 CRITICAL anomaly category | 8.1s |
+| typecheck | ✅ pass |  | 1.7s |
+| lint | ✅ pass |  | 14.2s |
+| build | ✅ pass |  | 30.5s |
+| homewood:audit | ❌ fail | DATA_AUDIT.md surfaces 1 CRITICAL anomaly category | 5.5s |
 
 ## Per-gate detail
 
