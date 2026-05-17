@@ -415,6 +415,9 @@ verify_jwt = true
 [functions."knowledge-agent"]
 verify_jwt = true
 
+[functions."haven-ai-router"]
+verify_jwt = true
+
 [functions."document-admin"]
 verify_jwt = true
 

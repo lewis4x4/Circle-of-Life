@@ -30,6 +30,12 @@ interface HavenInsightState {
 
 const MAX_MESSAGES = 50;
 
+// KB-NEXT-01: router cutover is reversible by setting NEXT_PUBLIC_AI_ROUTER_ENABLED=false.
+// Router returns a superset of the legacy exec-nlq-executor shape (adds `intent`,
+// `intent_confidence`, `tools_used`, `citations`, `fallback_used`, etc.). The UI
+// reads the same fields and ignores the extras.
+const ROUTER_ENABLED = process.env.NEXT_PUBLIC_AI_ROUTER_ENABLED !== "false";
+
 const HavenInsightCtx = createContext<HavenInsightState | null>(null);
 
 export function useHavenInsight(): HavenInsightState {
@@ -81,15 +87,41 @@ export function HavenInsightProvider({ children }: { children: React.ReactNode }
     setLoading(true);
 
     try {
-      const res = await authorizedEdgeFetch("exec-nlq-executor", {
-        method: "POST",
-        body: JSON.stringify({
-          question: q,
-          route: pathname,
-          module: currentModule.module,
-        }),
-      }, "haven-insight");
+      const payload = JSON.stringify({
+        question: q,
+        route: pathname,
+        module: currentModule.module,
+      });
 
+      let res: Response | null = null;
+      let routerFailed = false;
+
+      if (ROUTER_ENABLED) {
+        try {
+          res = await authorizedEdgeFetch(
+            "haven-ai-router",
+            { method: "POST", body: payload },
+            "haven-insight",
+          );
+          // Treat 5xx OR an explicit X-Router-Failure header as a router-tier failure
+          // and fall back to exec-nlq-executor so the user still gets an answer.
+          if (res.status >= 500 || res.headers.get("X-Router-Failure") === "true") {
+            routerFailed = true;
+          }
+        } catch {
+          routerFailed = true;
+        }
+      }
+
+      if (!ROUTER_ENABLED || routerFailed) {
+        res = await authorizedEdgeFetch(
+          "exec-nlq-executor",
+          { method: "POST", body: payload },
+          "haven-insight",
+        );
+      }
+
+      if (!res) throw new Error("No response from Haven AI");
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || "Failed to get response");
 

@@ -69,6 +69,10 @@ export async function graceKnowledgeStream(input: {
   organization_id: string;
   route?: string;
 }): Promise<Response> {
+  // KB-NEXT-01 follow-up: Grace currently calls knowledge-agent directly via SSE.
+  // The router swap requires preserving the tool-use loop and streaming contract
+  // — deferred to KB-NEXT-04 retrieval segment where the hybrid retrieval RPC
+  // ships alongside the streaming-compatible router path.
   return authorizedEdgeFetch(
     "knowledge-agent",
     {
