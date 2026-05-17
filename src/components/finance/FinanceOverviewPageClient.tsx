@@ -27,18 +27,16 @@ export default function AdminFinanceHubPageClient({
 }: FinanceOverviewPageClientProps) {
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <></>
-      
       <div className="relative z-10 space-y-6">
         <FinanceHubNav />
         <div className="flex items-center gap-3">
-          <Landmark className="h-8 w-8 text-slate-600 dark:text-slate-300" aria-hidden />
+          <Landmark className="h-8 w-8 text-muted-foreground" aria-hidden />
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Finance</h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <h1 className="text-2xl font-semibold text-foreground">Finance</h1>
+            <p className="text-sm text-muted-foreground">
               Entity and facility general ledger (Module 17) — chart of accounts, journal entries, ledger.
             </p>
-            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-zinc-400">
+            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
               {roleLabel} drill-in: use finance to confirm whether portfolio pressure is operational, billing-timing, or period-close related.
             </p>
           </div>
@@ -55,10 +53,10 @@ export default function AdminFinanceHubPageClient({
             <Link
               key={item.title}
               href={item.href}
-              className="rounded-lg border border-slate-200/70 bg-white/70 p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg dark:border-white/5 dark:hover:border-indigo-500/30"
+              className="rounded-lg border border-border bg-card p-5 shadow-sm transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
             >
-              <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">{item.title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-slate-700 dark:text-zinc-300">{item.description}</p>
+              <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">{item.title}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-foreground">{item.description}</p>
             </Link>
           ))}
         </div>
@@ -67,8 +65,8 @@ export default function AdminFinanceHubPageClient({
           <div className="col-span-1 h-[160px]">
             <V2Card hoverColor="slate" className="flex flex-col">
               <div className="mb-2">
-                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Finance controls</h3>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400">Leadership drill-ins for GL truth, period status, and posting confidence.</p>
+                <h3 className="text-base font-semibold text-foreground">Finance controls</h3>
+                <p className="text-[10px] text-muted-foreground">Leadership drill-ins for GL truth, period status, and posting confidence.</p>
               </div>
               <div className="flex flex-col gap-1 text-[11px] overflow-y-auto flex-1">
                 <Link className="text-indigo-600 dark:text-indigo-400 font-mono uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/finance/chart-of-accounts">
@@ -104,10 +102,10 @@ export default function AdminFinanceHubPageClient({
           <div className="h-[160px]">
             <V2Card hoverColor="slate">
               {postedCount != null ? (
-                <MonolithicWatermark value={postedCount} className="text-slate-800/5 dark:text-white/5 opacity-50" />
+                <MonolithicWatermark value={postedCount} className="text-muted-foreground/10 opacity-50" />
               ) : null}
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-wider uppercase text-slate-500 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground flex items-center gap-2">
                   Posted Entries (30d)
                 </h3>
                 <p className="text-4xl font-mono tracking-tighter pb-1">{postedCount ?? "—"}</p>
@@ -115,17 +113,14 @@ export default function AdminFinanceHubPageClient({
             </V2Card>
           </div>
           <div className="h-[160px]">
-            <V2Card hoverColor="amber" className={unpostedInvoices ? "border-amber-500/20 shadow-[inset_0_0_15px_rgba(245,158,11,0.05)]" : ""}>
+            <V2Card hoverColor="amber" className={unpostedInvoices ? "border-warning/20 shadow-[inset_0_0_15px_rgba(245,158,11,0.05)]" : ""}>
               {unpostedInvoices != null ? (
-                <MonolithicWatermark value={unpostedInvoices} className="text-amber-600/5 dark:text-amber-400/5 opacity-50" />
+                <MonolithicWatermark value={unpostedInvoices} className="text-warning/10 opacity-50" />
               ) : null}
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
-                     Unposted Invoices
-                  </h3>
-                  {unpostedInvoices != null && unpostedInvoices > 0 && <></>}
-                </div>
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                   Unposted Invoices
+                </h3>
                 <div>
                   <p className="text-4xl font-mono tracking-tighter text-amber-600 dark:text-amber-400 pb-1">{unpostedInvoices ?? "—"}</p>
                   {unpostedInvoices != null && unpostedInvoices > 0 && (
@@ -140,35 +135,35 @@ export default function AdminFinanceHubPageClient({
         </KineticGrid>
 
         {/* ACTION QUEUE: Financial Triage */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-6 border-t border-white/20 dark:border-white/5">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-6 border-t border-border">
           
           <div className="col-span-1 lg:col-span-2 space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-white/20 dark:border-white/5">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+            <div className="flex items-center justify-between pb-2 border-b border-border">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
                 Action Ledger
               </h3>
             </div>
             
             <MotionList className="space-y-3">
               {unpostedInvoices === 0 ? (
-                <div className="p-8 text-center text-slate-500 bg-card rounded-lg border border-white/20 dark:border-white/5 shadow-xl">
-                   <p className="font-medium text-slate-900 dark:text-slate-100">Ledger Reconciled</p>
+                <div className="p-8 text-center text-muted-foreground bg-card rounded-lg border border-border shadow-sm">
+                   <p className="font-medium text-foreground">Ledger Reconciled</p>
                    <p className="text-sm opacity-80 font-mono tracking-wide mt-1">All invoices and journal entries are currently posted.</p>
                 </div>
               ) : (
                 unpostedInvoices != null && unpostedInvoices > 0 ? (
-                  <MotionItem className="p-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 dark:bg-amber-900/10">
-                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                  <MotionItem className="p-5 rounded-lg border border-warning/20 bg-warning/10">
+                    <p className="text-sm font-medium text-foreground">
                       {unpostedInvoices} unposted invoice{unpostedInvoices === 1 ? "" : "s"} pending GL posting.
                     </p>
-                    <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
+                    <p className="mt-2 text-xs text-muted-foreground">
                       Review invoices in Billing to post journal entries from live billing records.
                     </p>
                     <Link
                       href="/admin/billing/invoices"
                       className={cn(
                         buttonVariants({ variant: "default", size: "sm" }),
-                        "mt-4 bg-amber-600 hover:bg-amber-700 text-black font-mono uppercase tracking-wider text-[9px] shadow-lg",
+                        "mt-4 bg-amber-600 hover:bg-amber-700 text-black font-mono uppercase tracking-wider text-[9px] shadow-sm",
                       )}
                     >
                       Open invoices
@@ -179,16 +174,16 @@ export default function AdminFinanceHubPageClient({
             </MotionList>
           </div>
 
-          <div className="col-span-1 border-l border-white/20 dark:border-white/5 pl-0 lg:pl-6 pt-6 lg:pt-0">
-            <div className="flex items-center justify-between pb-2 border-b border-white/20 dark:border-white/5 mb-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+          <div className="col-span-1 border-l border-border pl-0 lg:pl-6 pt-6 lg:pt-0">
+            <div className="flex items-center justify-between pb-2 border-b border-border mb-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
                 Period Status
               </h3>
             </div>
             
             <div className="space-y-4">
-              <div className="p-4 rounded-2xl border border-white/20 dark:border-white/5 bg-card shadow-xl">
-                <p className="text-sm text-slate-600 dark:text-slate-400">Period close status is managed under Period close from live finance records.</p>
+              <div className="p-4 rounded-lg border border-border bg-card shadow-sm">
+                <p className="text-sm text-muted-foreground">Period close status is managed under Period close from live finance records.</p>
                 <Link
                   href="/admin/finance/period-close"
                   className="mt-3 inline-block text-[11px] font-mono uppercase tracking-wider text-indigo-600 dark:text-indigo-400 hover:underline"

@@ -240,7 +240,7 @@ export default function AdminDischargeHubPage() {
     <div className="mx-auto max-w-5xl space-y-10 pb-12 w-full">
       
       {/* ─── MOONSHOT HEADER ─── */}
-      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
+      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-border shadow-sm mt-4">
          <div className="space-y-2">
            
            <div className="flex flex-wrap items-center gap-3">
@@ -263,7 +263,7 @@ export default function AdminDischargeHubPage() {
       </div>
 
       {noFacility ? (
-        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-6 text-sm text-amber-700 dark:text-amber-400 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm">
+        <div className="rounded-lg border border-warning/20 bg-warning/10 p-6 text-sm text-warning font-medium tracking-wide flex items-center gap-4">
            <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 border border-amber-500/30">
               <span className="font-bold">!</span>
            </div>
@@ -358,7 +358,7 @@ export default function AdminDischargeHubPage() {
       ) : null}
 
       {actionError ? (
-        <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-6 text-sm text-rose-700 dark:text-rose-400 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm">
+        <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-6 text-sm text-destructive font-medium tracking-wide flex items-center gap-4">
           <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/30">
             <span className="font-bold">!</span>
           </div>
@@ -366,7 +366,7 @@ export default function AdminDischargeHubPage() {
         </div>
       ) : null}
       {actionMessage ? (
-        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-6 text-sm text-emerald-700 dark:text-emerald-300 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm">
+        <div className="rounded-lg border border-success/20 bg-success/10 p-6 text-sm text-success font-medium tracking-wide flex items-center gap-4">
           <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 border border-emerald-500/30">
             <span className="font-bold">✓</span>
           </div>
@@ -387,8 +387,7 @@ export default function AdminDischargeHubPage() {
            <p className="text-sm text-rose-600 dark:text-rose-400" role="alert">{loadError}</p>
         ) : null}
 
-        <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] shadow-2xl overflow-hidden p-6 md:p-8 relative">
-           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
+        <div className="border border-border rounded-lg bg-card overflow-hidden p-6 md:p-8 relative">
            <div className="relative z-10 mb-6 flex flex-wrap items-center gap-2">
              {([
                { value: "all", label: `All (${rows.length})` },
@@ -424,10 +423,10 @@ export default function AdminDischargeHubPage() {
              </div>
            ) : null}
 
-           <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
-             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Resident</div>
-             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Status</div>
-             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">Updated</div>
+           <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr] gap-4 flex items-center px-[13px] py-2 border-b border-border bg-card/60 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground relative z-10">
+             <div>Resident</div>
+             <div>Status</div>
+             <div className="text-right">Updated</div>
            </div>
 
            <div className="space-y-4 mt-6 relative z-10">
@@ -457,13 +456,13 @@ export default function AdminDischargeHubPage() {
                       <MotionItem key={r.id}>
                         <Link
                           href={`/admin/discharge/${r.id}`}
-                          className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr] gap-4 items-center p-6 rounded-lg bg-white border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 w-full cursor-pointer outline-none hover:shadow-lg dark:hover:bg-white/[0.05]"
+                          className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr] gap-4 items-center min-h-[36px] px-[13px] py-3 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 w-full cursor-pointer"
                         >
                           <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
                               {isDraft ? <></> : <div className="w-2 h-2 rounded-full bg-indigo-500" />}
                             </div>
-                            <span className="font-semibold text-xl text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors tracking-tight">
+                            <span className="font-semibold text-[13px] text-foreground truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors tracking-tight">
                                {r.residents ? `${r.residents.first_name} ${r.residents.last_name}` : "—"}
                             </span>
                           </div>

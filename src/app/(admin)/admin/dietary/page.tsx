@@ -427,8 +427,6 @@ export default function AdminDietaryHubPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <></>
-      
       <div className="relative z-10 space-y-6">
         
         {/* ─── MOONSHOT HEADER ─── */}
@@ -452,7 +450,7 @@ export default function AdminDietaryHubPage() {
               <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                 <span className="whitespace-nowrap font-bold uppercase tracking-wider">Status</span>
                 <select
-                  className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-white/15 dark:bg-white/5 dark:text-slate-100"
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-white/15 dark:bg-white/5 dark:text-slate-100"
                   value={dietOrderStatusFilter}
                   onChange={(e) =>
                     setDietOrderStatusFilter(e.target.value as "all" | DietOrderStatus)
@@ -470,7 +468,7 @@ export default function AdminDietaryHubPage() {
                 type="button"
                 variant="outline"
                 disabled={!facilityReady || exportingCsv}
-                className="h-12 rounded-full px-6 font-bold uppercase tracking-wider text-[10px] border-slate-200 dark:border-white/10"
+                className="h-9 rounded-lg px-4 font-bold uppercase tracking-wider text-[10px] border-slate-200 dark:border-white/10"
                 onClick={() => void exportDietOrdersCsv()}
               >
                 {exportingCsv ? "Preparing…" : "Download diet orders CSV"}
@@ -479,12 +477,12 @@ export default function AdminDietaryHubPage() {
                 href="/admin/dietary/clinical-review"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "default" }),
-                  "h-12 px-6 rounded-full font-bold uppercase tracking-wider text-[10px] border-slate-200 dark:border-white/10",
+                  "h-9 px-4 rounded-lg font-bold uppercase tracking-wider text-[10px] border-slate-200 dark:border-white/10",
                 )}
               >
                 Med / diet review
               </Link>
-              <Link href="/admin/dietary/new" className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-wider text-xs tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg")} >
+              <Link href="/admin/dietary/new" className={cn(buttonVariants({ size: "default" }), "h-9 px-6 rounded-lg font-bold uppercase tracking-wider text-xs tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white")} >
                 + New Diet Order
               </Link>
            </div>
@@ -493,8 +491,7 @@ export default function AdminDietaryHubPage() {
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px] md:col-span-3">
             <V2Card hoverColor="indigo" className="border-indigo-500/20 dark:border-indigo-500/20 shadow-[0_8px_30px_rgba(99,102,241,0.05)]">
-              <></>
-              <MonolithicWatermark value={displayRows.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
+              <MonolithicWatermark value={displayRows.length} className="text-info/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between p-2">
                 <h3 className="text-[11px] font-bold tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
                   <Utensils className="h-4 w-4" /> Active Diet Orders
@@ -532,18 +529,18 @@ export default function AdminDietaryHubPage() {
               {loading ? (
                 <p className="text-sm font-mono text-slate-500">Loading…</p>
               ) : rows.length === 0 ? (
-                <div className="p-12 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
-                   <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No diet orders</p>
+                <div className="p-12 text-center text-muted-foreground bg-muted rounded-lg border border-dashed border-border">
+                   <p className="font-semibold text-lg text-foreground">No diet orders</p>
                   <p className="text-sm opacity-80 mt-1">No active diet orders for this facility yet.</p>
                 </div>
               ) : displayRows.length === 0 ? (
-                <div className="p-12 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
-                  <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No orders match this status</p>
+                <div className="p-12 text-center text-muted-foreground bg-muted rounded-lg border border-dashed border-border">
+                  <p className="font-semibold text-lg text-foreground">No orders match this status</p>
                   <p className="text-sm opacity-80 mt-1">Try &quot;All statuses&quot; or another filter.</p>
                 </div>
               ) : attentionRows.length === 0 ? (
-                <div className="p-12 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
-                  <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">All Clear</p>
+                <div className="p-12 text-center text-muted-foreground bg-muted rounded-lg border border-dashed border-border">
+                  <p className="font-semibold text-lg text-foreground">All Clear</p>
                   <p className="text-sm opacity-80 mt-1">
                     No draft orders, swallow-evaluation flags, med/texture review notes, or aspiration notes in this batch.
                   </p>
@@ -554,7 +551,7 @@ export default function AdminDietaryHubPage() {
                   return (
                     <MotionItem
                       key={row.id}
-                      className="p-6 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm tap-responsive group hover:border-indigo-300 dark:hover:border-indigo-500/30 transition-colors relative overflow-hidden"
+                      className="relative overflow-hidden flex items-center gap-3 min-h-[36px] rounded-lg border border-border bg-card px-[13px] py-2 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:-translate-y-0.5 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 group tap-responsive"
                     >
                       <div className={cn("absolute top-0 left-0 w-1.5 h-full", badge.barClass)} />
                       <div className="flex justify-between items-start mb-4 gap-2 pl-2">
@@ -581,7 +578,7 @@ export default function AdminDietaryHubPage() {
                           href={`/admin/dietary/clinical-review?resident=${row.resident_id}`}
                           className={cn(
                             buttonVariants({ variant: "default", size: "sm" }),
-                            "h-10 rounded-full px-6 bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-black dark:hover:bg-slate-200 font-bold uppercase tracking-wider text-[10px]",
+                            "h-9 rounded-lg px-4 bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-black dark:hover:bg-slate-200 font-bold uppercase tracking-wider text-[10px]",
                           )}
                         >
                           Clinical review
@@ -600,13 +597,13 @@ export default function AdminDietaryHubPage() {
                   {rosterRows.map((row) => (
                     <MotionItem
                       key={row.id}
-                      className="p-4 rounded-lg border border-slate-200/60 dark:border-white/5 bg-white flex flex-col md:flex-row gap-4 md:items-center justify-between group hover:border-indigo-200 dark:hover:border-indigo-500/20 transition-colors shadow-sm"
+                      className="flex items-center justify-between gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] group"
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-200 tracking-tight truncate flex items-center gap-2">
+                        <p className="text-[13px] font-semibold text-foreground tracking-tight truncate flex items-center gap-2">
                           {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Unknown"}
                         </p>
-                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate capitalize mt-1">
+                        <p className="text-[12px] font-medium text-muted-foreground truncate capitalize mt-1">
                           Food: {row.iddsi_food_level.replace(/_/g, " ")} &middot; Fluids: {row.iddsi_fluid_level.replace(/_/g, " ")}
                         </p>
                       </div>
@@ -697,7 +694,7 @@ export default function AdminDietaryHubPage() {
                 <select
                   value={mealForm.resident_id}
                   onChange={(e) => setMealForm((prev) => ({ ...prev, resident_id: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
                 >
                   {residents.map((resident) => (
                     <option key={resident.id} value={resident.id}>
@@ -710,7 +707,7 @@ export default function AdminDietaryHubPage() {
                     type="date"
                     value={mealForm.meal_date}
                     onChange={(e) => setMealForm((prev) => ({ ...prev, meal_date: e.target.value }))}
-                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
                   />
                   <select
                     value={mealForm.meal_type}
@@ -739,14 +736,14 @@ export default function AdminDietaryHubPage() {
                     value={mealForm.intake_percent}
                     onChange={(e) => setMealForm((prev) => ({ ...prev, intake_percent: e.target.value }))}
                     placeholder="Intake %"
-                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
                   />
                 </div>
                 <textarea
                   value={mealForm.notes}
                   onChange={(e) => setMealForm((prev) => ({ ...prev, notes: e.target.value }))}
                   placeholder="Meal notes"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
                   rows={2}
                 />
                 <Button type="button" size="sm" disabled={!mealForm.resident_id || savingMeal} onClick={() => void saveMealLog()}>
@@ -759,14 +756,14 @@ export default function AdminDietaryHubPage() {
                   type="datetime-local"
                   value={snackForm.snack_at}
                   onChange={(e) => setSnackForm((prev) => ({ ...prev, snack_at: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
                 />
                 <input
                   type="text"
                   value={snackForm.snack_description}
                   onChange={(e) => setSnackForm((prev) => ({ ...prev, snack_description: e.target.value }))}
                   placeholder="Snack description"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
                 />
                 <div className="grid grid-cols-2 gap-2">
                   <input
@@ -775,7 +772,7 @@ export default function AdminDietaryHubPage() {
                     value={snackForm.residents_offered_count}
                     onChange={(e) => setSnackForm((prev) => ({ ...prev, residents_offered_count: e.target.value }))}
                     placeholder="Offered"
-                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
                   />
                   <input
                     type="number"
@@ -783,14 +780,14 @@ export default function AdminDietaryHubPage() {
                     value={snackForm.residents_accepted_count}
                     onChange={(e) => setSnackForm((prev) => ({ ...prev, residents_accepted_count: e.target.value }))}
                     placeholder="Accepted"
-                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
                   />
                 </div>
                 <textarea
                   value={snackForm.notes}
                   onChange={(e) => setSnackForm((prev) => ({ ...prev, notes: e.target.value }))}
                   placeholder="Snack notes"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
                   rows={2}
                 />
                 <Button type="button" size="sm" disabled={savingSnack} onClick={() => void saveSnackLog()}>

@@ -38,6 +38,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { V2Card } from "@/components/ui/v2-card";
+/* MAINTENANCE: CHART_COLORS uses hex literals required by Recharts SVG attrs
+   (stroke, fill, tick.fill). These cannot be replaced with CSS variables because
+   Recharts resolves SVG attributes at render time, not via CSS. Do NOT replace
+   these hex values with `hsl(var(--…))` tokens — they will not resolve in SVG.
+   Update colors here only; keep the MAINTENANCE comment. */
 const CHART_COLORS = {
   indigo: "#6366f1",
   rose: "#f43f5e",
@@ -64,7 +69,7 @@ function CustomTooltip({
 }) {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-slate-900/90 backdrop-blur-md border border-slate-700/50 p-3 rounded-lg shadow-2xl">
+      <div className="bg-popover border border-border p-3 rounded-lg shadow-lg">
         <p className="text-xs font-mono text-slate-400 mb-2 uppercase tracking-wider">{label}</p>
         {payload.map((p, idx) => (
           <div key={idx} className="flex items-center gap-2 mb-1 last:mb-0">
@@ -172,8 +177,6 @@ export default function DeficienciesAnalysisPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full pb-12">
-      <></>
-
       <div className="relative z-10 space-y-8 max-w-7xl mx-auto">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between py-6">
           <div>
@@ -194,7 +197,7 @@ export default function DeficienciesAnalysisPage() {
         </div>
 
         {!facilityReady ? (
-          <div className="rounded-lg bg-amber-50/40 dark:bg-amber-950/20 p-8 border border-amber-200/50 dark:border-amber-900/50 backdrop-blur-md">
+          <div className="rounded-lg bg-warning/10 p-8 border border-warning/20">
             <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-300 mb-2">Select a facility</h3>
             <p className="text-sm font-medium text-amber-700 dark:text-amber-500">
               Choose a facility in header to load deficiency analysis.
@@ -203,7 +206,7 @@ export default function DeficienciesAnalysisPage() {
         ) : null}
 
         {error ? (
-          <div className="rounded-lg bg-red-50/40 dark:bg-red-950/20 p-8 border border-red-200/50 dark:border-red-900/50 backdrop-blur-md">
+          <div className="rounded-lg bg-destructive/10 p-8 border border-destructive/20">
             <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error}</p>
           </div>
         ) : null}
@@ -227,10 +230,10 @@ export default function DeficienciesAnalysisPage() {
                   <button
                     key={months}
                     onClick={() => setSelectedMonths(months)}
-                    className={`px-4 py-2 rounded-lg text-sm font-mono transition-all ${
+                    className={`px-4 py-2 rounded-lg text-[12px] font-mono transition-all ${
                       selectedMonths === months
                         ? "bg-indigo-600 text-white"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                        : "bg-muted text-foreground hover:bg-muted/80"
                     }`}
                   >
                     {months} months
@@ -243,26 +246,26 @@ export default function DeficienciesAnalysisPage() {
             {summary && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <V2Card className="p-4 text-center">
-                  <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">{summary.total}</p>
-                  <p className="text-xs text-slate-500 uppercase mt-1">Total Deficiencies</p>
+                  <p className="text-3xl font-bold text-foreground tabular-nums">{summary.total}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase mt-1">Total Deficiencies</p>
                 </V2Card>
                 <V2Card className="p-4 text-center">
-                  <p className="text-3xl font-bold text-rose-600 dark:text-rose-400">
+                  <p className="text-3xl font-bold text-rose-600 dark:text-rose-400 tabular-nums">
                     {(summary.bySeverity['serious'] || 0) + (summary.bySeverity['immediate_jeopardy'] || 0)}
                   </p>
-                  <p className="text-xs text-slate-500 uppercase mt-1">Serious/Critical</p>
+                  <p className="text-[10px] text-muted-foreground uppercase mt-1">Serious/Critical</p>
                 </V2Card>
                 <V2Card className="p-4 text-center">
-                  <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+                  <p className="text-3xl font-bold text-foreground tabular-nums">
                     {summary.averageResolutionDays ?? "—"}
                   </p>
-                  <p className="text-xs text-slate-500 uppercase mt-1">Avg Resolution Days</p>
+                  <p className="text-[10px] text-muted-foreground uppercase mt-1">Avg Resolution Days</p>
                 </V2Card>
                 <V2Card className="p-4 text-center">
-                  <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">
+                  <p className="text-3xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">
                     {recurringTags.length}
                   </p>
-                  <p className="text-xs text-slate-500 uppercase mt-1">Recurring Tags</p>
+                  <p className="text-[10px] text-muted-foreground uppercase mt-1">Recurring Tags</p>
                 </V2Card>
               </div>
             )}
@@ -347,37 +350,37 @@ export default function DeficienciesAnalysisPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-slate-200 dark:border-slate-700">
-                        <th className="text-left py-3 px-4 font-mono text-xs uppercase tracking-wider text-slate-500">Tag</th>
-                        <th className="text-left py-3 px-4 font-mono text-xs uppercase tracking-wider text-slate-500">Title</th>
-                        <th className="text-center py-3 px-4 font-mono text-xs uppercase tracking-wider text-slate-500">Occurrences</th>
-                        <th className="text-center py-3 px-4 font-mono text-xs uppercase tracking-wider text-slate-500">Avg Gap (Days)</th>
-                        <th className="text-center py-3 px-4 font-mono text-xs uppercase tracking-wider text-slate-500">Last Status</th>
-                        <th className="text-center py-3 px-4 font-mono text-xs uppercase tracking-wider text-slate-500">Action</th>
+                      <tr className="flex items-center gap-3 px-[13px] py-2 border-b border-border bg-card/60 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        <th className="text-left w-24 font-semibold">Tag</th>
+                        <th className="text-left flex-1 font-semibold">Title</th>
+                        <th className="text-center w-28 font-semibold">Occurrences</th>
+                        <th className="text-center w-32 font-semibold">Avg Gap (Days)</th>
+                        <th className="text-center w-28 font-semibold">Last Status</th>
+                        <th className="text-center w-24 font-semibold">Action</th>
                       </tr>
                     </thead>
                     <tbody>
                       {recurringTags.map((recurrence) => (
-                        <tr key={recurrence.tag_number} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                          <td className="py-3 px-4">
+                        <tr key={recurrence.tag_number} tabIndex={0} className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 mt-1">
+                          <td className="w-24">
                             <Badge variant="outline" className="font-mono">
                               Tag {recurrence.tag_number}
                             </Badge>
                           </td>
-                          <td className="py-3 px-4 text-slate-700 dark:text-slate-300">{recurrence.tag_title}</td>
-                          <td className="py-3 px-4 text-center font-mono font-bold text-slate-900 dark:text-slate-100">
+                          <td className="flex-1 text-[13px] text-foreground">{recurrence.tag_title}</td>
+                          <td className="w-28 text-center font-mono font-bold text-[13px] text-foreground tabular-nums">
                             {recurrence.total_occurrences}
                           </td>
-                          <td className="py-3 px-4 text-center">
+                          <td className="w-32 text-center">
                             {recurrence.days_between_average > 0 ? (
-                              <span className="font-mono text-amber-600 dark:text-amber-400">
+                              <span className="font-mono text-[12px] text-amber-600 dark:text-amber-400">
                                 ~{recurrence.days_between_average} days
                               </span>
                             ) : (
-                              <span className="text-slate-400">—</span>
+                              <span className="text-[12px] text-muted-foreground">—</span>
                             )}
                           </td>
-                          <td className="py-3 px-4 text-center">
+                          <td className="w-28 text-center">
                             <Badge variant={
                               recurrence.occurrences[recurrence.occurrences.length - 1]?.status === 'verified'
                                 ? 'default'
@@ -388,7 +391,7 @@ export default function DeficienciesAnalysisPage() {
                               {recurrence.occurrences[recurrence.occurrences.length - 1]?.status ?? 'unknown'}
                             </Badge>
                           </td>
-                          <td className="py-3 px-4 text-center">
+                          <td className="w-24 text-center">
                             <Button variant="outline" size="sm" className="text-[10px] uppercase tracking-wider">
                               View Details
                             </Button>
@@ -400,10 +403,10 @@ export default function DeficienciesAnalysisPage() {
                 </div>
               </V2Card>
             ) : (
-              <div className="rounded-2xl bg-slate-50/40 dark:bg-slate-900/20 p-8 border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-md text-center">
-                <p className="font-medium text-slate-700 dark:text-slate-300">No recurring deficiencies</p>
-                <p className="text-sm text-slate-500 mt-1">
-                  Great job! No tags have been cited multiple times in the selected period.
+              <div className="rounded-lg bg-muted p-8 border border-border text-center">
+                <p className="font-medium text-foreground">No recurring deficiencies</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  No tags have been cited multiple times in the selected period.
                 </p>
               </div>
             )}

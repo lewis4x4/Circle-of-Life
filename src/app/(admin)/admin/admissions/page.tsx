@@ -226,7 +226,6 @@ function describeAdmissionPhase(
 // Section component for lifecycle stages
 function LifecycleSection({
   title,
-  color,
   icon: Icon,
   metrics,
   allHref,
@@ -241,16 +240,16 @@ function LifecycleSection({
 }) {
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between border-b border-slate-200/50 dark:border-white/10 pb-3">
+      <div className="flex items-center justify-between border-b border-border pb-3">
         <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-          <h3 className="text-lg font-medium text-slate-900 dark:text-white tracking-tight">
+          <Icon className="h-4 w-4 text-muted-foreground" />
+          <h3 className="text-lg font-medium text-foreground tracking-tight">
             {title}
           </h3>
         </div>
         <Link
           href={allHref}
-          className="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+          className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]"
         >
           View all →
         </Link>
@@ -261,23 +260,17 @@ function LifecycleSection({
         {metrics.map((m) => (
           <div
             key={m.label}
-            className="px-4 py-2 rounded-full bg-card dark:bg-white/5 border border-slate-200 dark:border-white/10 backdrop-blur-sm"
+            className="px-4 py-2 rounded-full bg-card border border-border"
           >
-            <span className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-zinc-500 mr-2">{m.label}</span>
-            <span className="text-sm font-semibold text-slate-900 dark:text-white">{m.value}</span>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground mr-2">{m.label}</span>
+            <span className="text-sm font-semibold tabular-nums text-foreground">{m.value}</span>
           </div>
         ))}
       </div>
 
       {/* Content */}
-      <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] shadow-sm overflow-hidden p-4 md:p-6 relative">
-        <div className={cn(
-          "absolute top-0 right-0 w-48 h-48 rounded-full blur-[60px] -mr-12 -mt-12 pointer-events-none opacity-50",
-          `bg-${color}-500/10`
-        )} />
-        <div className="relative z-10">
-          {children}
-        </div>
+      <div className="border-border rounded-lg bg-card shadow-sm overflow-hidden p-4 md:p-6">
+        {children}
       </div>
     </div>
   );
@@ -637,20 +630,20 @@ export default function AdminAdmissionsHubPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-10 pb-12 w-full">
       {/* ─── HEADER ─── */}
-      <div className="bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
+      <div className="bg-card p-8 rounded-lg border border-border shadow-sm mt-4">
         <div className="space-y-2">
           
-          <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-foreground">
             Admissions
           </h1>
-          <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400">
+          <p className="mt-2 font-medium tracking-wide text-muted-foreground">
             Manage the complete resident journey — referrals, admissions, discharges, and family connections.
           </p>
         </div>
       </div>
 
       {noFacility ? (
-        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-6 text-sm text-amber-700 dark:text-amber-400 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm">
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-sm text-amber-700 dark:text-amber-400 font-medium tracking-wide flex items-center gap-4">
           <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 border border-amber-500/30">
             <span className="font-bold">!</span>
           </div>
@@ -704,7 +697,7 @@ export default function AdminAdmissionsHubPage() {
       </div>
 
       {loadError ? (
-        <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-6 text-sm text-rose-700 dark:text-rose-400">
+        <div className="rounded-lg border border-rose-500/20 bg-rose-500/10 p-6 text-sm text-rose-700 dark:text-rose-400">
           {loadError}
         </div>
       ) : null}
@@ -722,11 +715,11 @@ export default function AdminAdmissionsHubPage() {
         ]}
       >
         {noFacility ? (
-          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500">Select a facility to view referrals.</p>
+          <p className="p-8 text-center text-sm text-muted-foreground">Select a facility to view referrals.</p>
         ) : loading ? (
-          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500">Loading...</p>
+          <p className="p-8 text-center text-sm text-muted-foreground">Loading...</p>
         ) : referrals.length === 0 ? (
-          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10">
+          <p className="p-8 text-center text-sm text-muted-foreground bg-muted/40 rounded-lg border border-dashed border-border">
             No active leads. <Link href="/admin/referrals/new" className="underline text-emerald-600 dark:text-emerald-400">Create a referral</Link> to get started.
           </p>
         ) : (
@@ -739,14 +732,14 @@ export default function AdminAdmissionsHubPage() {
                 <MotionItem key={r.id}>
                   <Link
                     href={`/admin/referrals/${r.id}`}
-                    className="flex items-center gap-3 p-4 rounded-lg bg-white border border-slate-100 dark:border-white/5 hover:border-emerald-200 dark:hover:border-emerald-500/30 transition-all duration-300 w-full cursor-pointer group"
+                    className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 w-full cursor-pointer group"
                   >
                     <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
                       {isNew ? <></> : <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-slate-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                        <span className="font-medium text-[13px] text-foreground truncate transition-colors duration-[var(--motion-duration-micro)]">
                           {r.first_name} {r.last_name}
                         </span>
                         <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
@@ -766,7 +759,7 @@ export default function AdminAdmissionsHubPage() {
                           </span>
                         ) : null}
                       </div>
-                      <p className="text-xs text-slate-500 dark:text-zinc-500 mt-0.5">
+                      <p className="text-[12px] text-muted-foreground mt-0.5">
                         {r.referral_sources?.name ?? "No source"} · {formatRelative(r.updated_at)}
                       </p>
                       {handoffPhase ? (
@@ -808,12 +801,12 @@ export default function AdminAdmissionsHubPage() {
         ]}
       >
         {noFacility ? (
-          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500">Select a facility to view admissions.</p>
+          <p className="p-8 text-center text-sm text-muted-foreground">Select a facility to view admissions.</p>
         ) : loading ? (
-          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500">Loading...</p>
+          <p className="p-8 text-center text-sm text-muted-foreground">Loading...</p>
         ) : admissions.length === 0 ? (
-          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10">
-            No active cases. <Link href="/admin/admissions/new" className="underline text-indigo-600 dark:text-indigo-400">Start an admission</Link>.
+          <p className="p-8 text-center text-sm text-muted-foreground bg-muted/40 rounded-lg border border-dashed border-border">
+            No active cases. <Link href="/admin/admissions/new" className="underline text-primary">Start an admission</Link>.
           </p>
         ) : (
           <div className="space-y-4">
@@ -846,9 +839,9 @@ export default function AdminAdmissionsHubPage() {
                     <Link
                       key={row.id}
                       href={`/admin/admissions/${row.id}`}
-                      className="rounded-xl border border-amber-200/70 bg-white/80 dark:border-amber-900/40 p-4 transition-colors hover:bg-white dark:hover:bg-black/30"
+                      className="rounded-lg border border-warning/30 bg-card p-4 transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-muted/40"
                     >
-                      <div className="font-medium text-slate-900 dark:text-white">
+                      <div className="font-medium text-foreground">
                         {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Unlinked case"}
                       </div>
                       <div className="mt-1 text-xs text-amber-800 dark:text-amber-200">
@@ -878,14 +871,14 @@ export default function AdminAdmissionsHubPage() {
                 <MotionItem key={r.id}>
                   <Link
                     href={`/admin/admissions/${r.id}`}
-                    className="flex items-center gap-3 p-4 rounded-lg bg-white border border-slate-100 dark:border-white/5 hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 w-full cursor-pointer group"
+                    className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 w-full cursor-pointer group"
                   >
                     <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
                       {isPending ? <></> : <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                        <span className="font-medium text-[13px] text-foreground truncate">
                           {r.residents ? `${r.residents.first_name} ${r.residents.last_name}` : "Unlinked case"}
                         </span>
                         <span className={cn(
@@ -910,10 +903,10 @@ export default function AdminAdmissionsHubPage() {
                           </span>
                         ) : null}
                       </div>
-                      <p className="text-xs text-slate-500 dark:text-zinc-500 mt-0.5">
+                      <p className="text-[12px] text-muted-foreground mt-0.5">
                         {r.target_move_in_date ? `Target: ${r.target_move_in_date}` : "No date set"} · {formatRelative(r.updated_at)}
                       </p>
-                      <p className="mt-1 text-[11px] text-slate-600 dark:text-zinc-400">
+                      <p className="mt-1 text-[11px] text-muted-foreground">
                         Medicaid stage: {formatMedicaidStage(r.medicaid_pipeline_stage)}
                       </p>
                       <p className={cn(
@@ -965,11 +958,11 @@ export default function AdminAdmissionsHubPage() {
         ]}
       >
         {noFacility ? (
-          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500">Select a facility to view discharges.</p>
+          <p className="p-8 text-center text-sm text-muted-foreground">Select a facility to view discharges.</p>
         ) : loading ? (
-          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500">Loading...</p>
+          <p className="p-8 text-center text-sm text-muted-foreground">Loading...</p>
         ) : discharges.length === 0 ? (
-          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10">
+          <p className="p-8 text-center text-sm text-muted-foreground bg-muted/40 rounded-lg border border-dashed border-border">
             No active reconciliations. <Link href="/admin/discharge/new" className="underline text-rose-600 dark:text-rose-400">Start a discharge</Link>.
           </p>
         ) : (
@@ -981,14 +974,14 @@ export default function AdminAdmissionsHubPage() {
                 <MotionItem key={r.id}>
                   <Link
                     href={`/admin/discharge/${r.id}`}
-                    className="flex items-center gap-3 p-4 rounded-lg bg-white border border-slate-100 dark:border-white/5 hover:border-rose-200 dark:hover:border-rose-500/30 transition-all duration-300 w-full cursor-pointer group"
+                    className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 w-full cursor-pointer group"
                   >
                     <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
                       {isDraft ? <></> : <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-slate-900 dark:text-white truncate group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
+                        <span className="font-medium text-[13px] text-foreground truncate">
                           {r.residents ? `${r.residents.first_name} ${r.residents.last_name}` : "Unlinked reconciliation"}
                         </span>
                         <span className={cn(
@@ -1014,7 +1007,7 @@ export default function AdminAdmissionsHubPage() {
                           {phase.nextActionLabel}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-500 dark:text-zinc-500 mt-0.5">
+                      <p className="text-[12px] text-muted-foreground mt-0.5">
                         Updated {formatRelative(r.updated_at)}
                       </p>
                       <p className={cn(
@@ -1051,21 +1044,21 @@ export default function AdminAdmissionsHubPage() {
         ]}
       >
         {familyActionError ? (
-          <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-4 text-sm text-rose-700 dark:text-rose-400">
+          <div className="rounded-lg border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-700 dark:text-rose-400">
             {familyActionError}
           </div>
         ) : null}
         {familyActionMessage ? (
-          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-emerald-700 dark:text-emerald-300">
+          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-700 dark:text-emerald-300">
             {familyActionMessage}
           </div>
         ) : null}
         {noFacility ? (
-          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500">Select a facility to view family connections.</p>
+          <p className="p-8 text-center text-sm text-muted-foreground">Select a facility to view family connections.</p>
         ) : loading ? (
-          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500">Loading...</p>
+          <p className="p-8 text-center text-sm text-muted-foreground">Loading...</p>
         ) : triage.length === 0 && conferences.length === 0 ? (
-          <p className="p-8 text-center text-sm text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10">
+          <p className="p-8 text-center text-sm text-muted-foreground bg-muted/40 rounded-lg border border-dashed border-border">
             No items needing attention. View <Link href="/admin/family-messages" className="underline text-amber-600 dark:text-amber-400">direct messages</Link> for all conversations.
           </p>
         ) : (
@@ -1073,23 +1066,23 @@ export default function AdminAdmissionsHubPage() {
             {/* Triage alerts first */}
             {featuredTriage.map((t) => (
               <MotionItem key={`triage-${t.id}`}>
-                <Link
-                  href="/admin/family-portal"
-                  className="flex items-center gap-3 p-4 rounded-lg bg-white border border-slate-100 dark:border-white/5 hover:border-rose-200 dark:hover:border-rose-500/30 transition-all duration-300 w-full cursor-pointer group"
-                >
+                  <Link
+                    href="/admin/family-portal"
+                    className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 w-full cursor-pointer group"
+                  >
                   <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 flex items-center justify-center shrink-0">
                     <></>
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-slate-900 dark:text-white truncate group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
-                        {t.residents ? `${t.residents.first_name} ${t.residents.last_name}` : "Unknown resident"}
-                      </span>
+                        <span className="font-medium text-[13px] text-foreground truncate">
+                            {t.residents ? `${t.residents.first_name} ${t.residents.last_name}` : "Unknown resident"}
+                          </span>
                       <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 border-rose-500/20">
                         Triage Alert
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-zinc-500 mt-0.5 truncate">
+                    <p className="text-[12px] text-muted-foreground mt-0.5 truncate">
                       {t.matched_keywords?.join(", ") ?? "Keywords detected"} · {formatRelative(t.updated_at)}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
@@ -1137,23 +1130,23 @@ export default function AdminAdmissionsHubPage() {
             {/* Upcoming conferences */}
             {featuredConferences.map((c) => (
               <MotionItem key={`conf-${c.id}`}>
-                <Link
-                  href="/admin/family-portal"
-                  className="flex items-center gap-3 p-4 rounded-lg bg-white border border-slate-100 dark:border-white/5 hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 w-full cursor-pointer group"
-                >
+                  <Link
+                    href="/admin/family-portal"
+                    className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 w-full cursor-pointer group"
+                  >
                   <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 flex items-center justify-center shrink-0">
                     <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                        {c.residents ? `${c.residents.first_name} ${c.residents.last_name}` : "Unknown resident"}
-                      </span>
+                        <span className="font-medium text-[13px] text-foreground truncate">
+                            {c.residents ? `${c.residents.first_name} ${c.residents.last_name}` : "Unknown resident"}
+                          </span>
                       <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 border-indigo-500/20">
                         Conference
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-zinc-500 mt-0.5">
+                    <p className="text-[12px] text-muted-foreground mt-0.5">
                       {c.scheduled_start ? new Date(c.scheduled_start).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "No date"} · {formatRelative(c.updated_at)}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">

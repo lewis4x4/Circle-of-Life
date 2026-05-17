@@ -85,7 +85,7 @@ export default function UserManagementPage() {
       <div className="flex justify-end">
         <Link
           href={homeHref}
-          className="inline-flex items-center gap-2 text-[10px] uppercase tracking-wider font-mono text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+          className="inline-flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors duration-[var(--motion-duration-micro)]"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to Dashboard
@@ -95,7 +95,7 @@ export default function UserManagementPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Users className="h-6 w-6 text-teal-500" />
+            <Users className="h-6 w-6 text-primary" />
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">User Management</h1>
               <p className="text-sm text-muted-foreground">
@@ -106,7 +106,7 @@ export default function UserManagementPage() {
           <PermissionGuard feature="user_management" level="edit">
             <button
               onClick={() => setShowCreateDialog(true)}
-              className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-teal-700 transition-colors"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors duration-[var(--motion-duration-micro)]"
             >
               <UserPlus className="h-4 w-4" />
               Add User

@@ -94,8 +94,6 @@ export default function AdminIncidentTrendsPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <></>
-      
       <div className="relative z-10 space-y-6 max-w-5xl mx-auto">
         <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
           <div className="space-y-2">
@@ -135,9 +133,9 @@ export default function AdminIncidentTrendsPage() {
           </div>
         ) : (
           <KineticGrid className="grid-cols-1 lg:grid-cols-2 gap-6" staggerMs={75}>
-            <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
-              <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4">
-                <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            <div className="p-6 sm:p-8 rounded-lg border border-border bg-card hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
+              <div className="mb-6 border-b border-border pb-4">
+                <h3 className="text-[13px] font-semibold text-foreground flex items-center gap-3">
                   <BarChart3 className="w-5 h-5 text-indigo-500" /> By Category
                 </h3>
               </div>
@@ -145,10 +143,10 @@ export default function AdminIncidentTrendsPage() {
                 {stats.byCategory.slice(0, 12).map(([cat, count]) => (
                   <div key={cat} className="space-y-1.5 focus-within:outline-none group">
                     <div className="flex justify-between text-sm">
-                      <span className="truncate pr-2 font-medium text-slate-800 dark:text-slate-200 font-mono tracking-tight capitalize">{humanCategory(cat)}</span>
-                      <span className="shrink-0 font-bold tabular-nums text-slate-900 dark:text-white">{count}</span>
+                      <span className="truncate pr-2 text-[13px] font-medium text-foreground font-mono tracking-tight capitalize">{humanCategory(cat)}</span>
+                      <span className="shrink-0 font-bold tabular-nums text-[13px] text-foreground">{count}</span>
                     </div>
-                    <div className="h-3 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800 shadow-inner relative">
+                    <div className="h-3 overflow-hidden rounded-full bg-muted shadow-inner relative">
                       <div
                         className="h-full rounded-full bg-indigo-500 relative transition-all duration-1000 group-hover:brightness-110"
                         style={{ width: `${Math.max(2, Math.round((count / stats.maxCat) * 100))}%` }}
@@ -161,9 +159,9 @@ export default function AdminIncidentTrendsPage() {
               </div>
             </div>
 
-            <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
-              <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4">
-                <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            <div className="p-6 sm:p-8 rounded-lg border border-border bg-card hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
+              <div className="mb-6 border-b border-border pb-4">
+                <h3 className="text-[13px] font-semibold text-foreground flex items-center gap-3">
                   <TrendingUp className="w-5 h-5 text-rose-500" /> By Severity
                 </h3>
               </div>
@@ -171,10 +169,10 @@ export default function AdminIncidentTrendsPage() {
                 {stats.bySeverity.map(([sev, count]) => (
                   <div key={sev} className="space-y-1.5 focus-within:outline-none group">
                     <div className="flex justify-between text-sm items-center">
-                      <span className="uppercase tracking-wider text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-black/40 px-2 py-0.5 rounded shadow-sm">{sev.replace(/_/g, " ")}</span>
+                      <span className="uppercase tracking-wider text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded">{sev.replace(/_/g, " ")}</span>
                       <span className="font-bold tabular-nums text-slate-900 dark:text-white text-lg">{count}</span>
                     </div>
-                    <div className="h-3 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800 shadow-inner relative">
+                    <div className="h-3 overflow-hidden rounded-full bg-muted shadow-inner relative">
                       <div
                         className={cn(
                           "h-full rounded-full relative transition-all duration-1000 group-hover:brightness-110",

@@ -605,7 +605,7 @@ export default function AdminTrainingHubPage() {
         <header className="mb-8">
           <div>
             
-            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
               Training & Competency
             </h2>
           </div>
@@ -615,7 +615,7 @@ export default function AdminTrainingHubPage() {
           <div className="h-[160px]">
             <V2Card hoverColor="indigo" className="border-indigo-500/20 dark:border-indigo-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
               <></>
-              <MonolithicWatermark value={rows.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
+              <MonolithicWatermark value={rows.length} className="text-primary/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
                   <GraduationCap className="h-3.5 w-3.5" /> Demos Completed
@@ -627,7 +627,7 @@ export default function AdminTrainingHubPage() {
           <div className="col-span-1 md:col-span-2 h-[190px]">
             <V2Card hoverColor="blue" className="p-5 lg:p-6">
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
-                 <p className="hidden max-w-lg text-xs font-mono leading-relaxed text-slate-500 lg:block">
+                     <p className="hidden max-w-lg text-xs leading-relaxed text-muted-foreground lg:block">
                    {orgWideMode
                      ? "Last 50 competency demonstrations across your accessible facilities (ordered by date). RLS enforces scope."
                      : "Documented skills demonstrations for the selected facility."}
@@ -654,10 +654,10 @@ export default function AdminTrainingHubPage() {
                    ) : (
                      <Link
                        href="/admin/training/new"
-                       className={cn(
-                         buttonVariants({ size: "default" }),
-                         "h-auto min-h-10 whitespace-normal text-left font-mono uppercase tracking-wider text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none sm:whitespace-nowrap",
-                       )}
+                     className={cn(
+                        buttonVariants({ size: "default" }),
+                        "h-auto min-h-10 whitespace-normal text-left font-mono uppercase tracking-wider text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none sm:whitespace-nowrap",
+                      )}
                      >
                        + New Demonstration
                      </Link>
@@ -670,13 +670,13 @@ export default function AdminTrainingHubPage() {
 
         {facilityReady && (
           <>
-          <div className="space-y-4 border-t border-white/10 pt-8 dark:border-white/5">
+          <div className="space-y-4 border-t border-border pt-8">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
                   Staff training completions
                 </h3>
-                <p className="mt-1 text-[10px] text-slate-500">
+                <p className="mt-1 text-[10px] text-muted-foreground">
                   Last 50 completion records per facility scope (RLS). Log new completions for a single
                   facility; export supports audits.
                 </p>
@@ -696,7 +696,7 @@ export default function AdminTrainingHubPage() {
                     href="/admin/training/completions/new"
                     className={cn(
                       buttonVariants({ size: "default" }),
-                      "shrink-0 font-mono uppercase tracking-wider text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none",
+                      "shrink-0 font-mono uppercase tracking-wider text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none",
                     )}
                   >
                     + Log completion
@@ -719,67 +719,67 @@ export default function AdminTrainingHubPage() {
               </p>
             )}
             {loadingCompletions ? (
-              <p className="text-sm font-mono text-slate-500">Loading completions…</p>
+              <p className="text-sm text-muted-foreground">Loading completions…</p>
             ) : completionRows.length === 0 ? (
-              <div className="rounded-2xl border border-white/20 bg-white/30 p-8 text-center text-slate-500 dark:border-white/5 dark:bg-slate-900/30">
-                <p className="font-medium text-slate-700 dark:text-slate-300">No completion rows yet</p>
+              <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
+                <p className="font-medium text-foreground">No completion rows yet</p>
                 <p className="mt-1 text-sm opacity-80">
                   Florida catalog programs are ready to assign. Select a facility and use{" "}
                   <span className="font-mono">+ Log completion</span> to add a live completion row.
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-white/20 bg-card dark:border-white/5 dark:bg-slate-900/40">
+              <div className="overflow-x-auto rounded-lg border border-border bg-card">
                 <table className="w-full min-w-[820px] text-left text-xs">
                   <thead>
-                    <tr className="border-b border-white/20 font-mono uppercase tracking-wider text-slate-500 dark:border-white/10">
-                      <th className="px-3 py-2">Facility</th>
-                      <th className="px-3 py-2">Staff</th>
-                      <th className="px-3 py-2">Program</th>
-                      <th className="px-3 py-2">Completed</th>
-                      <th className="px-3 py-2">Expires</th>
-                      <th className="px-3 py-2">Hours</th>
-                      <th className="px-3 py-2">Delivery</th>
-                      <th className="px-3 py-2">PDF</th>
+                    <tr className="border-b border-border uppercase tracking-wider text-muted-foreground">
+                      <th className="px-[13px] py-2 text-[10px] font-semibold">Facility</th>
+                      <th className="px-[13px] py-2 text-[10px] font-semibold">Staff</th>
+                      <th className="px-[13px] py-2 text-[10px] font-semibold">Program</th>
+                      <th className="px-[13px] py-2 text-[10px] font-semibold">Completed</th>
+                      <th className="px-[13px] py-2 text-[10px] font-semibold">Expires</th>
+                      <th className="px-[13px] py-2 text-[10px] font-semibold">Hours</th>
+                      <th className="px-[13px] py-2 text-[10px] font-semibold">Delivery</th>
+                      <th className="px-[13px] py-2 text-[10px] font-semibold">PDF</th>
                     </tr>
                   </thead>
                   <tbody>
                     {completionRows.map((row) => (
                       <tr
                         key={row.id}
-                        className="border-b border-white/10 text-slate-800 last:border-0 dark:border-white/5 dark:text-slate-200"
+                        className="border-b border-border text-foreground last:border-0 hover:bg-muted/40 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]"
                       >
-                        <td className="px-3 py-2 font-mono text-[10px] text-indigo-600 dark:text-indigo-400">
+                        <td className="px-[13px] py-2 font-mono text-[10px] text-primary">
                           {row.facilities?.name ?? "—"}
                         </td>
-                        <td className="px-3 py-2">
+                        <td className="px-[13px] py-2 text-[13px]">
                           {row.staff
                             ? `${row.staff.first_name} ${row.staff.last_name}`
                             : "—"}
                         </td>
-                        <td className="px-3 py-2">
+                        <td className="px-[13px] py-2 text-[13px]">
                           <span className="font-medium">{row.training_programs?.name ?? "—"}</span>
                           {row.training_programs?.code ? (
-                            <span className="ml-1 text-[10px] text-slate-500">
+                            <span className="ml-1 text-[12px] text-muted-foreground">
                               ({row.training_programs.code})
                             </span>
                           ) : null}
                         </td>
-                        <td className="px-3 py-2 font-mono text-[10px]">
+                        <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
                           {row.completed_at
                             ? format(new Date(`${row.completed_at}T12:00:00`), "MMM d, yyyy")
                             : "—"}
                         </td>
-                        <td className="px-3 py-2 font-mono text-[10px]">
+                        <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
                           {row.expires_at
                             ? format(new Date(`${row.expires_at}T12:00:00`), "MMM d, yyyy")
                             : "—"}
                         </td>
-                        <td className="px-3 py-2 font-mono">{formatHours(row.hours_completed)}</td>
-                        <td className="px-3 py-2 capitalize text-slate-600 dark:text-slate-400">
+                        <td className="px-[13px] py-2 font-mono tabular-nums">{formatHours(row.hours_completed)}</td>
+                        <td className="px-[13px] py-2 capitalize text-muted-foreground">
                           {formatStatus(row.delivery_method)}
                         </td>
-                        <td className="px-3 py-2">
+                        <td className="px-[13px] py-2">
                           {row.attachment_path ? (
                             <CompetencyCertificateOpenButton
                               storagePath={row.attachment_path}
@@ -798,34 +798,34 @@ export default function AdminTrainingHubPage() {
             )}
           </div>
 
-          <div className="space-y-4 border-t border-white/10 pt-8 dark:border-white/5">
+          <div className="space-y-4 border-t border-border pt-8">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
                   Staff attestations (compliance)
                 </h3>
-                <p className="mt-1 text-[10px] text-slate-500">
+                <p className="mt-1 text-[10px] text-muted-foreground">
                   Last 50 attestation records from <span className="font-mono">staff_attestations</span>.
                   Includes annual med-tech attestation visibility for COL-HR-008 review.
                 </p>
               </div>
             </div>
-            <div className="rounded-2xl border border-white/20 bg-white/35 p-4 dark:border-white/5 dark:bg-slate-900/30">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+            <div className="rounded-xl border border-border bg-card p-4">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground">
                 Record attestation
               </h4>
-              <p className="mt-1 text-[10px] text-slate-500">
+              <p className="mt-1 text-[10px] text-muted-foreground">
                 Add a signed attestation for active staff. In All facilities mode, choose staff from any
                 accessible facility.
               </p>
               <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-                <label className="space-y-1 text-xs text-slate-700 dark:text-slate-200">
+                <label className="space-y-1 text-xs text-foreground">
                   <span className="font-medium">Staff member *</span>
                   <select
                     value={attestationStaffId}
                     onChange={(e) => setAttestationStaffId(e.target.value)}
                     disabled={!facilityReady || loadingAttestationStaff || attestationSubmitting}
-                    className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    className="w-full rounded-md border border-input bg-background px-2 py-2 text-xs text-foreground"
                   >
                     <option value="">Select staff…</option>
                     {attestationStaffOptions.map((s) => (
@@ -836,59 +836,59 @@ export default function AdminTrainingHubPage() {
                     ))}
                   </select>
                 </label>
-                <label className="space-y-1 text-xs text-slate-700 dark:text-slate-200">
+                <label className="space-y-1 text-xs text-foreground">
                   <span className="font-medium">Attestation type *</span>
                   <select
                     value={attestationType}
                     onChange={(e) => setAttestationType(e.target.value)}
                     disabled={attestationSubmitting}
-                    className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    className="w-full rounded-md border border-input bg-background px-2 py-2 text-xs text-foreground"
                   >
                     <option value="med_tech_self">Medication Tech self-attestation</option>
                     <option value="general_staff">General staff attestation</option>
                   </select>
                 </label>
-                <label className="space-y-1 text-xs text-slate-700 dark:text-slate-200">
+                <label className="space-y-1 text-xs text-foreground">
                   <span className="font-medium">Effective date *</span>
                   <input
                     type="date"
                     value={attestationEffectiveDate}
                     onChange={(e) => setAttestationEffectiveDate(e.target.value)}
                     disabled={attestationSubmitting}
-                    className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    className="w-full rounded-md border border-input bg-background px-2 py-2 text-xs text-foreground"
                   />
                 </label>
-                <label className="space-y-1 text-xs text-slate-700 dark:text-slate-200">
+                <label className="space-y-1 text-xs text-foreground">
                   <span className="font-medium">Expires date</span>
                   <input
                     type="date"
                     value={attestationExpiresAt}
                     onChange={(e) => setAttestationExpiresAt(e.target.value)}
                     disabled={attestationSubmitting}
-                    className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    className="w-full rounded-md border border-input bg-background px-2 py-2 text-xs text-foreground"
                   />
                 </label>
               </div>
               <div className="mt-3 grid grid-cols-1 gap-3">
-                <label className="space-y-1 text-xs text-slate-700 dark:text-slate-200">
+                <label className="space-y-1 text-xs text-foreground">
                   <span className="font-medium">Attestation statement *</span>
                   <textarea
                     value={attestationText}
                     onChange={(e) => setAttestationText(e.target.value)}
                     rows={3}
                     disabled={attestationSubmitting}
-                    className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    className="w-full rounded-md border border-input bg-background px-2 py-2 text-xs text-foreground"
                     placeholder="Staff confirms scope, training, and escalation expectations are understood."
                   />
                 </label>
-                <label className="space-y-1 text-xs text-slate-700 dark:text-slate-200">
+                <label className="space-y-1 text-xs text-foreground">
                   <span className="font-medium">Signer name</span>
                   <input
                     type="text"
                     value={attestationSignerName}
                     onChange={(e) => setAttestationSignerName(e.target.value)}
                     disabled={attestationSubmitting}
-                    className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    className="w-full rounded-md border border-input bg-background px-2 py-2 text-xs text-foreground"
                     placeholder="Jane Supervisor"
                   />
                 </label>
@@ -920,57 +920,57 @@ export default function AdminTrainingHubPage() {
               </p>
             )}
             {loadingAttestations ? (
-              <p className="text-sm font-mono text-slate-500">Loading attestations…</p>
+              <p className="text-sm text-muted-foreground">Loading attestations…</p>
             ) : attestationRows.length === 0 ? (
-              <div className="rounded-2xl border border-white/20 bg-white/30 p-8 text-center text-slate-500 dark:border-white/5 dark:bg-slate-900/30">
-                <p className="font-medium text-slate-700 dark:text-slate-300">No attestations yet</p>
+              <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
+                <p className="font-medium text-foreground">No attestations yet</p>
                 <p className="mt-1 text-sm opacity-80">
                   Staff attestation records will appear here once signed.
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-white/20 bg-card dark:border-white/5 dark:bg-slate-900/40">
+              <div className="overflow-x-auto rounded-xl border border-border bg-card">
                 <table className="w-full min-w-[900px] text-left text-xs">
                   <thead>
-                    <tr className="border-b border-white/20 font-mono uppercase tracking-wider text-slate-500 dark:border-white/10">
-                      <th className="px-3 py-2">Facility</th>
-                      <th className="px-3 py-2">Staff</th>
-                      <th className="px-3 py-2">Type</th>
-                      <th className="px-3 py-2">Signed</th>
-                      <th className="px-3 py-2">Effective</th>
-                      <th className="px-3 py-2">Expires</th>
-                      <th className="px-3 py-2">Signer</th>
+                    <tr className="border-b border-border uppercase tracking-wider text-muted-foreground">
+                      <th className="px-[13px] py-2 text-[10px] font-semibold">Facility</th>
+                      <th className="px-[13px] py-2 text-[10px] font-semibold">Staff</th>
+                      <th className="px-[13px] py-2 text-[10px] font-semibold">Type</th>
+                      <th className="px-[13px] py-2 text-[10px] font-semibold">Signed</th>
+                      <th className="px-[13px] py-2 text-[10px] font-semibold">Effective</th>
+                      <th className="px-[13px] py-2 text-[10px] font-semibold">Expires</th>
+                      <th className="px-[13px] py-2 text-[10px] font-semibold">Signer</th>
                     </tr>
                   </thead>
                   <tbody>
                     {attestationRows.map((row) => (
                       <tr
                         key={row.id}
-                        className="border-b border-white/10 text-slate-800 last:border-0 dark:border-white/5 dark:text-slate-200"
+                        className="border-b border-border text-foreground last:border-0 hover:bg-muted/40 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]"
                       >
-                        <td className="px-3 py-2 font-mono text-[10px] text-indigo-600 dark:text-indigo-400">
+                        <td className="px-[13px] py-2 font-mono text-[10px] text-primary">
                           {row.facilities?.name ?? "—"}
                         </td>
-                        <td className="px-3 py-2">
+                        <td className="px-[13px] py-2 text-[13px]">
                           {row.staff ? `${row.staff.first_name} ${row.staff.last_name}` : "—"}
                         </td>
-                        <td className="px-3 py-2 font-mono text-[10px] uppercase tracking-wider">
+                        <td className="px-[13px] py-2 font-mono text-[10px] uppercase tracking-wider">
                           {row.attestation_type.replace(/_/g, " ")}
                         </td>
-                        <td className="px-3 py-2 font-mono text-[10px]">
+                        <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
                           {row.signed_at ? format(new Date(row.signed_at), "MMM d, yyyy") : "—"}
                         </td>
-                        <td className="px-3 py-2 font-mono text-[10px]">
+                        <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
                           {row.effective_date
                             ? format(new Date(`${row.effective_date}T12:00:00`), "MMM d, yyyy")
                             : "—"}
                         </td>
-                        <td className="px-3 py-2 font-mono text-[10px]">
+                        <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
                           {row.expires_at
                             ? format(new Date(`${row.expires_at}T12:00:00`), "MMM d, yyyy")
                             : "—"}
                         </td>
-                        <td className="px-3 py-2">{row.signer_name ?? "—"}</td>
+                        <td className="px-[13px] py-2 text-[13px]">{row.signer_name ?? "—"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -979,13 +979,13 @@ export default function AdminTrainingHubPage() {
             )}
           </div>
 
-          <div className="space-y-4 border-t border-white/10 pt-8 dark:border-white/5">
+          <div className="space-y-4 border-t border-border pt-8">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
                   In-service sessions
                 </h3>
-                <p className="mt-1 text-[10px] text-slate-500">
+                <p className="mt-1 text-[10px] text-muted-foreground">
                   Last 50 in-service events (RLS). Create a session for one facility at a time; export for
                   audits.
                 </p>
@@ -1005,7 +1005,7 @@ export default function AdminTrainingHubPage() {
                     href="/admin/training/inservice/new"
                     className={cn(
                       buttonVariants({ size: "default" }),
-                      "shrink-0 font-mono uppercase tracking-wider text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none",
+                      "shrink-0 font-mono uppercase tracking-wider text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none",
                     )}
                   >
                     + New in-service session
@@ -1028,56 +1028,56 @@ export default function AdminTrainingHubPage() {
               </p>
             )}
             {loadingInservice ? (
-              <p className="text-sm font-mono text-slate-500">Loading in-service sessions…</p>
+              <p className="text-sm text-muted-foreground">Loading in-service sessions…</p>
             ) : inserviceRows.length === 0 ? (
-              <div className="rounded-2xl border border-white/20 bg-white/30 p-8 text-center text-slate-500 dark:border-white/5 dark:bg-slate-900/30">
-                <p className="font-medium text-slate-700 dark:text-slate-300">No in-service sessions yet</p>
+              <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
+                <p className="font-medium text-foreground">No in-service sessions yet</p>
                 <p className="mt-1 text-sm opacity-80">
                   Select a facility and use <span className="font-mono">+ New in-service session</span> to log
                   attendance.
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-white/20 bg-card dark:border-white/5 dark:bg-slate-900/40">
+              <div className="overflow-x-auto rounded-xl border border-border bg-card">
                 <table className="w-full min-w-[760px] text-left text-xs">
                   <thead>
-                    <tr className="border-b border-white/20 font-mono uppercase tracking-wider text-slate-500 dark:border-white/10">
-                      <th className="px-3 py-2">Facility</th>
-                      <th className="px-3 py-2">Date</th>
-                      <th className="px-3 py-2">Topic</th>
-                      <th className="px-3 py-2">Trainer</th>
-                      <th className="px-3 py-2">Hours</th>
-                      <th className="px-3 py-2">Program</th>
-                      <th className="px-3 py-2">Attendees</th>
+                    <tr className="border-b border-border uppercase tracking-wider text-muted-foreground">
+                      <th className="px-[13px] py-2 text-[10px] font-semibold">Facility</th>
+                      <th className="px-[13px] py-2 text-[10px] font-semibold">Date</th>
+                      <th className="px-[13px] py-2 text-[10px] font-semibold">Topic</th>
+                      <th className="px-[13px] py-2 text-[10px] font-semibold">Trainer</th>
+                      <th className="px-[13px] py-2 text-[10px] font-semibold">Hours</th>
+                      <th className="px-[13px] py-2 text-[10px] font-semibold">Program</th>
+                      <th className="px-[13px] py-2 text-[10px] font-semibold">Attendees</th>
                     </tr>
                   </thead>
                   <tbody>
                     {inserviceRows.map((row) => (
                       <tr
                         key={row.id}
-                        className="border-b border-white/10 text-slate-800 last:border-0 dark:border-white/5 dark:text-slate-200"
+                        className="border-b border-border text-foreground last:border-0 hover:bg-muted/40 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]"
                       >
-                        <td className="px-3 py-2 font-mono text-[10px] text-indigo-600 dark:text-indigo-400">
+                        <td className="px-[13px] py-2 font-mono text-[10px] text-primary">
                           {row.facilities?.name ?? "—"}
                         </td>
-                        <td className="px-3 py-2 font-mono text-[10px]">
+                        <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
                           {row.session_date
                             ? format(new Date(`${row.session_date}T12:00:00`), "MMM d, yyyy")
                             : "—"}
                         </td>
-                        <td className="px-3 py-2 max-w-[200px] truncate" title={row.topic}>
+                        <td className="px-[13px] py-2 max-w-[200px] truncate text-[13px]" title={row.topic}>
                           {row.topic}
                         </td>
-                        <td className="px-3 py-2">{row.trainer_name}</td>
-                        <td className="px-3 py-2 font-mono">{formatHours(Number(row.hours))}</td>
-                        <td className="px-3 py-2">
+                        <td className="px-[13px] py-2 text-[13px]">{row.trainer_name}</td>
+                        <td className="px-[13px] py-2 font-mono tabular-nums">{formatHours(Number(row.hours))}</td>
+                        <td className="px-[13px] py-2 text-[13px]">
                           {row.training_programs?.name ? (
                             <span className="font-medium">{row.training_programs.name}</span>
                           ) : (
-                            <span className="text-slate-400">—</span>
+                            <span className="text-muted-foreground">—</span>
                           )}
                         </td>
-                        <td className="px-3 py-2 font-mono">
+                        <td className="px-[13px] py-2 font-mono tabular-nums">
                           {(row.inservice_log_attendees ?? []).length}
                         </td>
                       </tr>
@@ -1091,7 +1091,7 @@ export default function AdminTrainingHubPage() {
         )}
 
       {!facilityReady && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+        <p className="rounded-lg border border-amber-200/70 bg-amber-50/60 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-100">
           Facility selection is invalid. Choose a facility or &quot;All facilities&quot; in the header.
         </p>
       )}
@@ -1107,20 +1107,20 @@ export default function AdminTrainingHubPage() {
           
           {/* ACTION QUEUE: Pending Evaluations / Overdue Skills */}
           <div className="col-span-1 lg:col-span-2 space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-white/10 dark:border-white/5">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+            <div className="flex items-center justify-between pb-2 border-b border-border">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
                 Pending Evaluations & Overdue Skills
               </h3>
             </div>
             
             <MotionList className="space-y-3">
               {loading ? (
-                <p className="text-sm font-mono text-slate-500">Loading…</p>
+                <p className="text-sm text-muted-foreground">Loading…</p>
               ) : (
                 <>
                   {attentionRows.length === 0 ? (
-                    <div className="p-8 text-center text-slate-500 bg-white/30 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md">
-                      <p className="font-medium">No open demonstrations</p>
+                    <div className="p-8 text-center text-muted-foreground bg-card rounded-xl border border-border">
+                      <p className="font-medium text-foreground">No open demonstrations</p>
                       <p className="text-sm opacity-80 mt-1">
                         Nothing in draft, submitted, or failed status in the loaded batch (last 50 records
                         {orgWideMode ? " across accessible facilities" : " for this facility"}).
@@ -1158,7 +1158,7 @@ export default function AdminTrainingHubPage() {
                       <MotionItem
                         key={row.id}
                         className={cn(
-                          "p-5 rounded-2xl border bg-card dark:bg-slate-900/40 relative overflow-hidden group transition-all duration-300 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer",
+                          "p-5 rounded-xl border bg-card relative overflow-hidden group transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-muted/40 cursor-pointer",
                           border,
                         )}
                       >
@@ -1178,20 +1178,20 @@ export default function AdminTrainingHubPage() {
                                 {row.facilities.name}
                               </span>
                             ) : null}
-                            <span className="text-[10px] uppercase tracking-wider text-slate-500 font-mono font-bold bg-white/50 px-2 py-0.5 rounded shadow-sm">
+                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono font-bold bg-muted/40 px-2 py-0.5 rounded">
                               Session {format(new Date(row.demonstrated_at), "MMM d, yyyy")}
                             </span>
                           </span>
                         </div>
                         <div className="mb-4">
-                          <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
+                          <p className="text-sm font-medium text-foreground mb-1">
                             {row.staff ? `${row.staff.first_name} ${row.staff.last_name}` : "Staff"} —{" "}
                             {formatStatus(row.status)}
                           </p>
                           {row.notes ? (
-                            <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3">{row.notes}</p>
+                            <p className="text-xs text-muted-foreground line-clamp-3">{row.notes}</p>
                           ) : (
-                            <p className="text-xs text-slate-600 dark:text-slate-400">
+                            <p className="text-xs text-muted-foreground">
                               Demonstration record — open or complete evaluation.
                             </p>
                           )}
@@ -1235,7 +1235,7 @@ export default function AdminTrainingHubPage() {
                         return (
                         <MotionItem
                           key={row.id}
-                          className="p-3 rounded-xl border border-white/20 dark:border-white/5 bg-white/30 dark:bg-slate-900/30 flex gap-4 items-center"
+                          className="p-3 rounded-xl border border-border bg-card flex gap-4 items-center"
                         >
                           <div className="flex-1 min-w-0">
                             {orgWideMode && row.facilities?.name ? (
@@ -1243,10 +1243,10 @@ export default function AdminTrainingHubPage() {
                                 {row.facilities.name}
                               </p>
                             ) : null}
-                            <p className="text-xs font-medium text-slate-900 dark:text-slate-300 truncate">
+                            <p className="text-xs font-medium text-foreground truncate">
                               {row.staff ? `${row.staff.first_name} ${row.staff.last_name}` : "Unknown"}
                             </p>
-                            <p className="text-[10px] text-slate-500 truncate capitalize">
+                            <p className="text-[12px] text-muted-foreground truncate capitalize">
                               Status: {formatStatus(row.status)}
                             </p>
                             {passedAttachments.length > 0 ? (
@@ -1262,7 +1262,7 @@ export default function AdminTrainingHubPage() {
                               </div>
                             ) : null}
                           </div>
-                          <span className="text-[10px] font-mono text-indigo-600 dark:text-indigo-400 text-right">
+                          <span className="text-[10px] font-mono tabular-nums text-primary text-right">
                             {format(new Date(row.demonstrated_at), "MMM d")}
                           </span>
                         </MotionItem>
@@ -1277,34 +1277,34 @@ export default function AdminTrainingHubPage() {
           </div>
 
           {/* WATCHLIST: Compliance Tracking */}
-          <div className="col-span-1 border-l border-white/10 dark:border-white/5 pl-0 lg:pl-6 pt-6 lg:pt-0">
-            <div className="flex items-center justify-between pb-2 border-b border-white/10 dark:border-white/5 mb-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+          <div className="col-span-1 border-l border-border pl-0 lg:pl-6 pt-6 lg:pt-0">
+            <div className="flex items-center justify-between pb-2 border-b border-border mb-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
                 Skills Compliance
               </h3>
             </div>
             
             <div className="space-y-4">
-              <p className="text-[10px] text-slate-500 leading-relaxed">
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
                 Counts below are from the last 50 competency demonstrations in this view (not scheduled{" "}
                 <span className="font-mono">training_compliance_snapshots</span>).
               </p>
-              <div className="p-4 rounded-xl border border-white/20 dark:border-white/5 bg-card flex flex-col gap-2">
+              <div className="p-4 rounded-xl border border-border bg-card flex flex-col gap-2">
                 <div className="flex justify-between items-center">
-                  <p className="text-xs font-semibold uppercase tracking-wider font-mono text-slate-900 dark:text-slate-100">Passed</p>
-                  <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">{statusCounts.passed}</span>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-foreground">Passed</p>
+                  <span className="text-sm font-medium tabular-nums text-emerald-600 dark:text-emerald-400">{statusCounts.passed}</span>
                 </div>
               </div>
-              <div className="p-4 rounded-xl border border-white/20 dark:border-white/5 bg-card flex flex-col gap-2">
+              <div className="p-4 rounded-xl border border-border bg-card flex flex-col gap-2">
                 <div className="flex justify-between items-center">
-                  <p className="text-xs font-semibold uppercase tracking-wider font-mono text-slate-900 dark:text-slate-100">Draft / submitted</p>
-                  <span className="text-sm font-medium text-amber-600 dark:text-amber-400">{statusCounts.pending}</span>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-foreground">Draft / submitted</p>
+                  <span className="text-sm font-medium tabular-nums text-amber-600 dark:text-amber-400">{statusCounts.pending}</span>
                 </div>
               </div>
-              <div className="p-4 rounded-xl border border-white/20 dark:border-white/5 bg-card flex flex-col gap-2">
+              <div className="p-4 rounded-xl border border-border bg-card flex flex-col gap-2">
                 <div className="flex justify-between items-center">
-                  <p className="text-xs font-semibold uppercase tracking-wider font-mono text-slate-900 dark:text-slate-100">Failed</p>
-                  <span className="text-sm font-medium text-rose-600 dark:text-rose-400">{statusCounts.failed}</span>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-foreground">Failed</p>
+                  <span className="text-sm font-medium tabular-nums text-rose-600 dark:text-rose-400">{statusCounts.failed}</span>
                 </div>
               </div>
             </div>

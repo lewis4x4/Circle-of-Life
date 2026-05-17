@@ -116,7 +116,6 @@ export default function AdminQualityHubPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full pb-12">
-      <></>
       <div className="relative z-10 space-y-8 max-w-6xl mx-auto">
       <div>
         
@@ -145,8 +144,7 @@ export default function AdminQualityHubPage() {
       <KineticGrid className="grid-cols-1 sm:grid-cols-3 gap-5" staggerMs={60}>
         <div className="h-[140px]">
           <V2Card className="border-indigo-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]" hoverColor="indigo">
-            <></>
-            <MonolithicWatermark value={loading ? 0 : measures.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
+            <MonolithicWatermark value={loading ? 0 : measures.length} className="text-info/10 opacity-50" />
             <div className="relative z-10 flex flex-col h-full justify-between">
               <h3 className="text-[10px] font-mono tracking-wider uppercase text-indigo-600 dark:text-indigo-400">
                  Active Measures
@@ -157,8 +155,7 @@ export default function AdminQualityHubPage() {
         </div>
         <div className="h-[140px]">
           <V2Card className="border-emerald-500/20 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]" hoverColor="emerald">
-            <></>
-            <MonolithicWatermark value={loading ? 0 : latest.length} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
+            <MonolithicWatermark value={loading ? 0 : latest.length} className="text-success/10 opacity-50" />
             <div className="relative z-10 flex flex-col h-full justify-between">
               <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400">
                  Latest Snapshot Rows
@@ -169,8 +166,7 @@ export default function AdminQualityHubPage() {
         </div>
         <div className="h-[140px]">
           <V2Card className="border-slate-500/20 shadow-[inset_0_0_15px_rgba(100,116,139,0.05)]" hoverColor="slate">
-            <></>
-            <MonolithicWatermark value={loading ? 0 : pbjRows.length} className="text-slate-600/5 dark:text-slate-400/5 opacity-50" />
+            <MonolithicWatermark value={loading ? 0 : pbjRows.length} className="text-muted-foreground/10 opacity-50" />
             <div className="relative z-10 flex flex-col h-full justify-between">
               <h3 className="text-[10px] font-mono tracking-wider uppercase text-slate-500 dark:text-slate-400">
                  PBJ Batches
@@ -182,8 +178,8 @@ export default function AdminQualityHubPage() {
       </KineticGrid>
 
       <Link href="/admin/quality/measures/new" className="group block focus-visible:outline-none mt-2">
-        <div className="p-5 flex items-center gap-4 transition-all duration-300 hover:border-indigo-500/40 hover:bg-card dark:hover:bg-indigo-900/10 cursor-pointer">
-          <div className="rounded-xl bg-indigo-100 dark:bg-indigo-900/30 p-3 shadow-sm border border-indigo-200/50 dark:border-indigo-500/20 group-hover:scale-110 transition-transform">
+        <div className="p-5 flex items-center gap-4 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:border-primary/40 hover:bg-muted/40 cursor-pointer">
+          <div className="rounded-lg bg-primary/10 p-3 shadow-sm border border-primary/20 group-hover:bg-primary/20 transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
             <LineChart className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
           </div>
           <div>
@@ -204,16 +200,16 @@ export default function AdminQualityHubPage() {
         {noFacility || loading ? (
           <p className="text-sm font-mono text-slate-500">Loading…</p>
         ) : measures.length === 0 ? (
-          <div className="p-8 text-center text-slate-500 bg-white/30 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md max-w-xl mx-auto mt-8">
+          <div className="p-8 text-center text-muted-foreground bg-muted rounded-lg border border-border max-w-xl mx-auto mt-8">
              <p className="font-medium">No Baseline Quality Measures.</p>
              <p className="text-sm opacity-80 mt-1">Use &apos;Define a measure&apos; to populate standard telemetry data.</p>
           </div>
         ) : (
           <MotionList className="space-y-2">
             {measures.map((m) => (
-              <MotionItem key={m.id} className="p-4 rounded-xl group border border-white/40 dark:border-white/5 bg-white/50 dark:bg-slate-900/40 hover:bg-white dark:hover:bg-slate-800/60 transition-colors flex items-center justify-between">
+              <MotionItem key={m.id} className="flex items-center justify-between gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] group">
                 <div className="flex flex-col gap-1">
-                  <span className="font-medium text-slate-900 dark:text-slate-100">{m.name}</span>
+                  <span className="text-[13px] font-medium text-foreground">{m.name}</span>
                   <div className="flex items-center gap-2">
                      <span className="text-[10px] font-mono tracking-wider uppercase text-slate-400 bg-white dark:bg-black/40 px-2 py-0.5 rounded shadow-sm">{m.measure_key}</span>
                      {m.domain && <span className="text-xs text-slate-500">{m.domain}</span>}
@@ -238,16 +234,16 @@ export default function AdminQualityHubPage() {
         {noFacility || loading ? (
            <p className="text-sm font-mono text-slate-500">Loading…</p>
         ) : latest.length === 0 ? (
-          <div className="p-8 text-center text-slate-500 bg-white/30 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md max-w-xl mx-auto mt-8">
+          <div className="p-8 text-center text-muted-foreground bg-muted rounded-lg border border-border max-w-xl mx-auto mt-8">
              <p className="font-medium">No Results.</p>
              <p className="text-sm opacity-80 mt-1">Import or enter results in a facility follow-up.</p>
           </div>
         ) : (
           <MotionList className="space-y-2">
             {latest.map((r) => (
-              <MotionItem key={r.id ?? `${r.quality_measure_id}-${r.period_end}`} className="p-4 rounded-xl group border border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/20 hover:border-emerald-500/40 transition-colors flex items-center justify-between">
+              <MotionItem key={r.id ?? `${r.quality_measure_id}-${r.period_end}`} className="flex items-center justify-between gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] group">
                 <div className="flex flex-col gap-1">
-                  <span className="font-medium text-slate-900 dark:text-slate-100">{r.quality_measures?.name ?? r.quality_measure_id ?? "—"}</span>
+                  <span className="text-[13px] font-medium text-foreground">{r.quality_measures?.name ?? r.quality_measure_id ?? "—"}</span>
                   <span className="text-xs text-slate-500 font-mono">
                     {r.period_start ?? "—"} <span className="opacity-50">→</span> {r.period_end ?? "—"}
                   </span>
@@ -271,14 +267,14 @@ export default function AdminQualityHubPage() {
         {noFacility || loading ? (
           <p className="text-sm font-mono text-slate-500">Loading…</p>
         ) : pbjRows.length === 0 ? (
-          <div className="p-4 text-center text-slate-500 bg-white/30 rounded-xl border border-white/20 dark:border-white/5 backdrop-blur-md max-w-xl mx-auto mt-4 px-8 py-6">
+          <div className="text-center text-muted-foreground bg-muted rounded-lg border border-border max-w-xl mx-auto mt-4 px-8 py-6">
              <p className="font-medium text-sm">No PBJ batches recorded.</p>
              <p className="text-xs opacity-80 mt-1">Generation ships in Enhanced.</p>
           </div>
         ) : (
           <MotionList className="space-y-2">
             {pbjRows.map((p) => (
-              <MotionItem key={p.id} className="p-4 rounded-xl group border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/60 flex items-center justify-between">
+              <MotionItem key={p.id} className="flex items-center justify-between gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] group">
                 <div className="flex flex-col gap-1 w-1/3">
                   <span className="text-xs text-slate-500 font-mono uppercase tracking-wider">Period</span>
                   <span className="text-sm font-medium text-slate-800 dark:text-slate-200 font-mono tracking-tight">{p.period_start} → {p.period_end}</span>

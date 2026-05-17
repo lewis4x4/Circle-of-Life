@@ -450,13 +450,13 @@ export default function AdminReferralsHubPage() {
     <div className="mx-auto max-w-5xl space-y-10 pb-12 w-full">
       
       {/* ─── MOONSHOT HEADER ─── */}
-      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
+      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-border shadow-sm mt-4">
          <div className="space-y-2">
            
-           <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+           <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-foreground flex items-center gap-4">
               Referral CRM
            </h1>
-           <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400">
+           <p className="mt-2 font-medium tracking-wide text-muted-foreground">
              Inquiries and pipeline before admission — source attribution and conversion.
            </p>
          </div>
@@ -466,7 +466,7 @@ export default function AdminReferralsHubPage() {
       </div>
 
       {noFacility ? (
-        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-6 text-sm text-amber-700 dark:text-amber-400 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm">
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-sm text-amber-700 dark:text-amber-400 font-medium tracking-wide flex items-center gap-4">
            <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 border border-amber-500/30">
               <span className="font-bold">!</span>
            </div>
@@ -482,7 +482,7 @@ export default function AdminReferralsHubPage() {
                <h3 className="text-xs font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                  New Leads
                </h3>
-               <p className="text-2xl font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
+               <p className="text-2xl font-medium tracking-tight tabular-nums text-foreground mt-auto">
                  {noFacility ? "—" : loading ? "—" : counts.new}
                </p>
              </div>
@@ -494,7 +494,7 @@ export default function AdminReferralsHubPage() {
                <h3 className="text-xs font-bold tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
                  Active Pipeline
                </h3>
-               <p className="text-2xl font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
+               <p className="text-2xl font-medium tracking-tight tabular-nums text-foreground mt-auto">
                  {noFacility ? "—" : loading ? "—" : counts.pipeline}
                </p>
              </div>
@@ -506,7 +506,7 @@ export default function AdminReferralsHubPage() {
                <h3 className="text-xs font-bold tracking-wider uppercase text-blue-600 dark:text-blue-400 flex items-center gap-2">
                  Converted
                </h3>
-               <p className="text-2xl font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
+               <p className="text-2xl font-medium tracking-tight tabular-nums text-foreground mt-auto">
                  {noFacility ? "—" : loading ? "—" : counts.converted}
                </p>
              </div>
@@ -519,7 +519,7 @@ export default function AdminReferralsHubPage() {
                  Needs Attention
                </h3>
                <div className="flex items-center gap-3">
-                 <p className="text-2xl font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
+                 <p className="text-2xl font-medium tracking-tight tabular-nums text-foreground mt-auto">
                    {noFacility ? "—" : loading ? "—" : counts.attention}
                  </p>
                </div>
@@ -532,7 +532,7 @@ export default function AdminReferralsHubPage() {
                <h3 className="text-xs font-bold tracking-wider uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
                  In Admissions
                </h3>
-               <p className="text-2xl font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
+               <p className="text-2xl font-medium tracking-tight tabular-nums text-foreground mt-auto">
                  {noFacility ? "—" : loading ? "—" : counts.inAdmissions}
                </p>
              </div>
@@ -547,44 +547,44 @@ export default function AdminReferralsHubPage() {
               <UserPlus className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
-              <h3 className="text-xl lg:text-2xl font-medium tracking-tight text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+              <h3 className="text-xl lg:text-2xl font-medium tracking-tight text-foreground group-hover:text-primary transition-colors">
                 New Prospect Lead
               </h3>
-              <p className="text-sm text-slate-500 dark:text-zinc-400 tracking-wide mt-1">Add an inquiry directly to the chosen facility pipeline.</p>
+              <p className="text-sm text-muted-foreground tracking-wide mt-1">Add an inquiry directly to the chosen facility pipeline.</p>
             </div>
-            <ArrowRight className="h-6 w-6 text-slate-300 dark:text-slate-700 ml-auto group-hover:text-indigo-500 transition-colors group-hover:translate-x-2 duration-300" />
+            <ArrowRight className="h-6 w-6 text-muted-foreground ml-auto group-hover:text-primary transition-colors duration-[var(--motion-duration-micro)]" />
           </div>
         </V2Card>
       </div>
 
       {!noFacility ? (
-        <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-white/50 shadow-sm overflow-hidden p-6">
+        <div className="border-border rounded-lg bg-card shadow-sm overflow-hidden p-6">
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
-              <p className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Upcoming tours</p>
-              <p className="mt-1 text-sm text-slate-600 dark:text-zinc-400 tracking-wide">
+              <p className="text-base font-bold text-foreground tracking-tight">Upcoming tours</p>
+              <p className="mt-1 text-sm text-muted-foreground tracking-wide">
                 Tour scheduling now lives on the lead record, so this queue becomes the operational source for the standup tour forecast.
               </p>
             </div>
-            <Badge className="border-none bg-indigo-500/10 text-indigo-600 dark:text-indigo-300">Standup source</Badge>
+            <Badge className="border-none bg-primary/10 text-primary">Standup source</Badge>
           </div>
 
           {upcomingTours.length === 0 ? (
-            <p className="text-sm text-slate-500 dark:text-zinc-400">No tours are currently scheduled in this facility pipeline.</p>
+            <p className="text-sm text-muted-foreground">No tours are currently scheduled in this facility pipeline.</p>
           ) : (
             <div className="grid gap-3 lg:grid-cols-2">
               {upcomingTours.map((row) => (
                 <Link
                   key={row.id}
                   href={`/admin/referrals/${row.id}`}
-                  className="rounded-xl border border-slate-200/70 dark:border-white/10 px-4 py-3 transition hover:border-indigo-300 dark:hover:border-indigo-400/40"
+                  className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
                 >
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center justify-between gap-3 w-full">
                     <div>
-                      <div className="font-medium text-slate-900 dark:text-white">{row.first_name} {row.last_name}</div>
-                      <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-400">{formatStatus(row.status)}</div>
+                      <div className="text-[13px] text-foreground font-medium">{row.first_name} {row.last_name}</div>
+                      <div className="text-[12px] uppercase tracking-wider text-muted-foreground">{formatStatus(row.status)}</div>
                     </div>
-                    <div className="text-xs text-slate-500 dark:text-zinc-400">
+                    <div className="text-[12px] text-muted-foreground tabular-nums">
                       {row.tour_scheduled_for ? new Date(row.tour_scheduled_for).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "—"}
                     </div>
                   </div>
@@ -596,11 +596,11 @@ export default function AdminReferralsHubPage() {
       ) : null}
 
       {!noFacility ? (
-        <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-white/50 shadow-sm overflow-hidden p-6">
+        <div className="border-border rounded-lg bg-card shadow-sm overflow-hidden p-6">
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
-              <p className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Outreach & provider activity</p>
-              <p className="mt-1 text-sm text-slate-600 dark:text-zinc-400 tracking-wide">
+              <p className="text-base font-bold text-foreground tracking-tight">Outreach & provider activity</p>
+              <p className="mt-1 text-sm text-muted-foreground tracking-wide">
                 Log the provider, facility, and event activity that should feed the weekly standup instead of typing those rows manually.
               </p>
             </div>
@@ -611,7 +611,7 @@ export default function AdminReferralsHubPage() {
             <div className="grid gap-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <select
-                  className="rounded-xl border border-slate-200 dark:border-white/10 bg-white px-3 py-2 text-sm"
+                  className="rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground"
                   value={activityType}
                   onChange={(e) => setActivityType(e.target.value)}
                 >
@@ -622,7 +622,7 @@ export default function AdminReferralsHubPage() {
                   <option value="digital_outreach">Digital outreach</option>
                 </select>
                 <select
-                  className="rounded-xl border border-slate-200 dark:border-white/10 bg-white px-3 py-2 text-sm"
+                  className="rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground"
                   value={activityStatus}
                   onChange={(e) => setActivityStatus(e.target.value)}
                 >
@@ -633,18 +633,18 @@ export default function AdminReferralsHubPage() {
               </div>
               <input
                 type="datetime-local"
-                className="rounded-xl border border-slate-200 dark:border-white/10 bg-white px-3 py-2 text-sm"
+                className="rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground"
                 value={scheduledFor}
                 onChange={(e) => setScheduledFor(e.target.value)}
               />
               <input
-                className="rounded-xl border border-slate-200 dark:border-white/10 bg-white px-3 py-2 text-sm"
+                className="rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground"
                 placeholder="Partner / facility / event name"
                 value={partnerName}
                 onChange={(e) => setPartnerName(e.target.value)}
               />
               <textarea
-                className="rounded-xl border border-slate-200 dark:border-white/10 bg-white px-3 py-2 text-sm"
+                className="rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground"
                 rows={3}
                 placeholder="Notes"
                 value={activityNotes}
@@ -677,27 +677,27 @@ export default function AdminReferralsHubPage() {
 
             <div className="space-y-2">
               {outreachRows.length === 0 ? (
-                <p className="text-sm text-slate-500 dark:text-zinc-400">No outreach/provider activity logged yet for this facility.</p>
+                <p className="text-sm text-muted-foreground">No outreach/provider activity logged yet for this facility.</p>
               ) : (
                 outreachRows.map((row) => (
-                  <div key={row.id} className="rounded-xl border border-slate-200/70 dark:border-white/10 px-4 py-3">
-                    <div className="flex items-center justify-between gap-3">
+                  <div key={row.id} className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
+                    <div className="flex items-center justify-between gap-3 w-full">
                       <div>
-                        <div className="font-medium text-slate-900 dark:text-white">
+                        <div className="text-[13px] font-medium text-foreground">
                           {row.external_partner_name ?? row.activity_type.replace(/_/g, " ")}
                         </div>
-                        <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+                        <div className="text-[12px] uppercase tracking-wider text-muted-foreground">
                           {row.activity_type.replace(/_/g, " ")} · {row.status}
                         </div>
                       </div>
-                      <div className="text-xs text-slate-500 dark:text-zinc-400">
+                      <div className="text-[12px] text-muted-foreground tabular-nums">
                         {row.scheduled_for ? new Date(row.scheduled_for).toLocaleString() : row.performed_for_week ?? "—"}
                       </div>
                     </div>
-                    {row.notes ? <p className="mt-2 text-sm text-slate-600 dark:text-zinc-300">{row.notes}</p> : null}
+                    {row.notes ? <p className="mt-2 text-sm text-muted-foreground">{row.notes}</p> : null}
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       <select
-                        className="rounded-lg border border-slate-200 dark:border-white/10 bg-white px-3 py-2 text-xs uppercase tracking-wider"
+                        className="rounded-lg border border-input bg-background px-3 py-2 text-xs uppercase tracking-wider text-foreground"
                         value={outreachStatusDrafts[row.id] ?? row.status}
                         onChange={(e) => setOutreachStatusDrafts((current) => ({ ...current, [row.id]: e.target.value }))}
                       >
@@ -733,23 +733,23 @@ export default function AdminReferralsHubPage() {
       ) : null}
 
       {!noFacility ? (
-        <div className="border-amber-200/60 dark:border-amber-500/20 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 shadow-sm overflow-hidden p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="border-amber-200/70 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 shadow-sm overflow-hidden p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
-            <p className="text-base font-bold text-slate-900 dark:text-white mb-1 tracking-tight">Admissions Handoff</p>
-            <p className="text-sm text-slate-600 dark:text-zinc-400 tracking-wide">
+            <p className="text-base font-bold text-foreground mb-1 tracking-tight">Admissions Handoff</p>
+            <p className="text-sm text-muted-foreground tracking-wide">
               {loading
                 ? "Loading handoff counts…"
                 : `${counts.inAdmissions} referral lead${counts.inAdmissions === 1 ? "" : "s"} already have an active admission case in this facility.`}
             </p>
             {!loading && counts.inAdmissions > 0 ? (
-              <p className="text-xs text-slate-600 dark:text-zinc-400 tracking-wide mt-1">
+              <p className="text-xs text-muted-foreground tracking-wide mt-1 tabular-nums">
                 {counts.handoffBlocked} blocked · {counts.handoffReady} ready · {counts.handoffOnboarding} onboarding
               </p>
             ) : null}
           </div>
           <Link
             href="/admin/referrals/in-admissions"
-            className={cn(buttonVariants({ variant: "outline" }), "shrink-0 shadow-sm rounded-full bg-white dark:bg-black/50 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/5 w-full sm:w-auto px-6 tap-responsive font-bold uppercase tracking-wider text-xs")}
+            className={cn(buttonVariants({ variant: "outline" }), "shrink-0 shadow-sm rounded-full w-full sm:w-auto px-6 tap-responsive font-bold uppercase tracking-wider text-xs")}
           >
             Open Handoff Queue
           </Link>
@@ -757,10 +757,10 @@ export default function AdminReferralsHubPage() {
       ) : null}
 
       {!noFacility ? (
-        <div className="border-amber-200/60 dark:border-amber-500/20 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 shadow-sm overflow-hidden p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="border-amber-200/70 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 shadow-sm overflow-hidden p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
-            <p className="text-base font-bold text-slate-900 dark:text-white mb-1 tracking-tight">HL7 ADT Inbound Queue</p>
-            <p className="text-sm text-slate-600 dark:text-zinc-400 tracking-wide">
+            <p className="text-base font-bold text-foreground mb-1 tracking-tight">HL7 ADT Inbound Queue</p>
+            <p className="text-sm text-muted-foreground tracking-wide">
               {loading
                 ? "Loading queue counts…"
                 : `Pending ${hl7Counts.pending} · Failed ${hl7Counts.failed} for this facility. Open the queue for processed and ignored messages.`}
@@ -768,7 +768,7 @@ export default function AdminReferralsHubPage() {
           </div>
           <Link
             href="/admin/referrals/hl7-inbound"
-            className={cn(buttonVariants({ variant: "outline" }), "shrink-0 shadow-sm rounded-full bg-white dark:bg-black/50 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/5 w-full sm:w-auto px-6 tap-responsive font-bold uppercase tracking-wider text-xs")}
+            className={cn(buttonVariants({ variant: "outline" }), "shrink-0 shadow-sm rounded-full w-full sm:w-auto px-6 tap-responsive font-bold uppercase tracking-wider text-xs")}
           >
             Review Pipeline
           </Link>
@@ -777,11 +777,11 @@ export default function AdminReferralsHubPage() {
 
       {/* ─── CASE ROSTER (GLASS ROWS) ─── */}
       <div className="space-y-6">
-        <div className="flex flex-col gap-3 border-b border-slate-200/50 dark:border-white/10 pb-4">
+        <div className="flex flex-col gap-3 border-b border-border pb-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <ClipboardList className="h-5 w-5 text-indigo-500" />
-              <h3 className="text-xl font-medium text-slate-900 dark:text-white tracking-tight">
+              <ClipboardList className="h-5 w-5 text-primary" />
+              <h3 className="text-xl font-medium text-foreground tracking-tight">
                 Pipeline Leads
               </h3>
             </div>
@@ -806,21 +806,21 @@ export default function AdminReferralsHubPage() {
           {!noFacility ? (
             <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <label className="flex min-w-0 max-w-full flex-1 items-center gap-2 sm:max-w-md">
-                <Search className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+                <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
                 <Input
                   type="search"
                   placeholder="Search name, phone, email, source, external ref…"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-9 rounded-lg border-slate-200 bg-white text-sm dark:border-white/10 dark:bg-white/5"
+                  className="h-9 rounded-lg border-input bg-background text-sm text-foreground"
                   aria-label="Filter pipeline by text"
                 />
               </label>
-              <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Status</span>
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Status</span>
                 <select
                   className={cn(
-                    "h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-900 outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-100",
+                    "h-9 rounded-lg border border-input bg-background px-2.5 text-sm text-foreground outline-none",
                     "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50",
                   )}
                   value={statusFilter}
@@ -834,7 +834,7 @@ export default function AdminReferralsHubPage() {
                 </select>
               </label>
               {rows.length > 0 ? (
-                <p className="text-[10px] font-mono tracking-wider text-slate-400 uppercase">
+                <p className="text-[10px] font-mono tracking-wider text-muted-foreground uppercase">
                   {searchQuery.trim() ? (
                     <>
                       Showing {featuredRows.length} of {displayRows.length} · Search
@@ -854,35 +854,33 @@ export default function AdminReferralsHubPage() {
            <p className="text-sm text-rose-600 dark:text-rose-400" role="alert">{loadError}</p>
         ) : null}
 
-        <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] shadow-2xl overflow-hidden p-6 md:p-8 relative">
-           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
-
-           <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
-             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Lead Name</div>
-             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Status</div>
-             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">Source</div>
-             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">Updated</div>
+        <div className="border-border rounded-lg bg-card shadow-sm overflow-hidden p-6 md:p-8 relative">
+           <div className="hidden lg:flex items-center gap-3 px-[13px] py-2 border-b border-border bg-card/60 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+             <div className="flex-[2]">Lead Name</div>
+             <div className="flex-1">Status</div>
+             <div className="flex-1 text-right">Source</div>
+             <div className="flex-1 text-right">Updated</div>
            </div>
 
-           <div className="space-y-4 mt-6 relative z-10">
+           <div className="space-y-4 mt-4">
              {noFacility ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500">
+               <div className="p-8 text-center text-sm font-medium text-muted-foreground">
                  Select a facility to view leads.
                </div>
              ) : loading ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500">
+               <div className="p-8 text-center text-sm font-medium text-muted-foreground">
                  Loading pipeline...
                </div>
              ) : rows.length === 0 ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10">
+               <div className="p-8 text-center text-sm font-medium text-muted-foreground bg-muted rounded-lg border border-dashed border-border">
                  No leads yet. Starts with <strong>New lead</strong>.
                </div>
              ) : filteredRows.length === 0 ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10">
+               <div className="p-8 text-center text-sm font-medium text-muted-foreground bg-muted rounded-lg border border-dashed border-border">
                  No leads match this status filter.
                </div>
              ) : displayRows.length === 0 ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10">
+               <div className="p-8 text-center text-sm font-medium text-muted-foreground bg-muted rounded-lg border border-dashed border-border">
                  No leads match this search.
                </div>
              ) : (
@@ -897,19 +895,19 @@ export default function AdminReferralsHubPage() {
                       <MotionItem key={r.id}>
                         <Link
                           href={`/admin/referrals/${r.id}`}
-                          className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-4 items-center p-6 rounded-lg bg-white border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 w-full cursor-pointer outline-none hover:shadow-lg dark:hover:bg-white/[0.05]"
+                          className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-4 items-center min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card tap-responsive group hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] w-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
                         >
                           <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                              {isNew ? <></> : <div className="w-2 h-2 rounded-full bg-indigo-500" />}
+                            <div className="w-8 h-8 rounded-full bg-muted border border-border flex items-center justify-center shrink-0">
+                              {isNew ? <></> : <div className="w-2 h-2 rounded-full bg-primary" />}
                             </div>
-                            <span className="font-semibold text-xl text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors tracking-tight">
+                            <span className="text-[13px] font-semibold text-foreground truncate tracking-tight">
                                {r.first_name} {r.last_name}
                             </span>
                           </div>
                           
                           <div className="flex flex-row justify-between lg:justify-start items-center">
-                            <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Status</span>
+                            <span className="lg:hidden text-[12px] text-muted-foreground uppercase tracking-wider font-bold">Status</span>
                             <div className="flex items-center gap-2">
                               <span className={cn(
                                 "text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full border shadow-inner",
@@ -939,25 +937,25 @@ export default function AdminReferralsHubPage() {
                           </div>
                           
                           <div className="flex flex-row justify-between lg:justify-end items-center">
-                            <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Source</span>
-                            <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 truncate">
+                            <span className="lg:hidden text-[12px] text-muted-foreground uppercase tracking-wider font-bold">Source</span>
+                            <span className="text-[13px] text-foreground truncate">
                               {r.referral_sources?.name ?? "—"}
                             </span>
                           </div>
 
                           <div className="flex flex-row justify-between lg:justify-end items-center">
-                            <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Updated</span>
+                            <span className="lg:hidden text-[12px] text-muted-foreground uppercase tracking-wider font-bold">Updated</span>
                           <div className="flex flex-col items-end">
-                            <span className="text-[11px] font-mono tracking-wide text-slate-500 dark:text-zinc-500">
+                            <span className="text-[12px] font-mono tracking-wide tabular-nums text-muted-foreground">
                               {new Date(r.updated_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
                             </span>
                             {r.tour_scheduled_for ? (
-                              <span className="text-[11px] text-indigo-700 dark:text-indigo-300">
+                              <span className="text-[12px] text-primary tabular-nums">
                                 Tour {new Date(r.tour_scheduled_for).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
                               </span>
                             ) : null}
                             {linkedAdmissionCaseId ? (
-                              <span className="text-[11px] text-amber-700 dark:text-amber-300">
+                              <span className="text-[12px] text-amber-700 dark:text-amber-300">
                                 {handoffPhase === "blocked"
                                     ? "Admissions handoff blocked"
                                     : handoffPhase === "ready"

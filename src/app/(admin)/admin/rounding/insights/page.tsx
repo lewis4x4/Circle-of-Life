@@ -7,7 +7,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Brain, AlertTriangle, TrendingUp, TrendingDown, Eye, CheckCircle, XCircle, Loader2, Sparkles, Mic } from "lucide-react";
+import { ArrowLeft, Brain, AlertTriangle, TrendingUp, TrendingDown, Eye, CheckCircle, XCircle, Loader2, Mic, BarChart3 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
@@ -118,8 +118,6 @@ export default function InsightsPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full">
-      <></>
-
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         <Link href="/admin/rounding" className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Rounding Hub
@@ -136,23 +134,23 @@ export default function InsightsPage() {
         </header>
 
         <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4">
-            <p className="text-[10px] uppercase font-mono tracking-wider text-violet-300">Insight backlog</p>
-            <p className="mt-2 text-3xl font-semibold text-white">{rows.length}</p>
-            <p className="mt-1 text-xs text-slate-400">Current resident safety insights in scope</p>
+          <div className="rounded-lg border border-border bg-card p-4 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
+            <p className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground">Insight backlog</p>
+            <p className="mt-2 text-3xl font-semibold text-foreground">{rows.length}</p>
+            <p className="mt-1 text-[12px] text-muted-foreground">Current resident safety insights in scope</p>
           </div>
-          <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4">
-            <p className="text-[10px] uppercase font-mono tracking-wider text-amber-300">New patterns</p>
-            <p className="mt-2 text-3xl font-semibold text-white">{rows.filter((row) => row.status === "new").length}</p>
-            <p className="mt-1 text-xs text-slate-400">Unacknowledged findings from the latest runs</p>
+          <div className="rounded-lg border border-border bg-card p-4 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
+            <p className="text-[10px] uppercase font-mono tracking-wider text-amber-500">New patterns</p>
+            <p className="mt-2 text-3xl font-semibold text-foreground">{rows.filter((row) => row.status === "new").length}</p>
+            <p className="mt-1 text-[12px] text-muted-foreground">Unacknowledged findings from the latest runs</p>
           </div>
-          <div className="rounded-2xl border border-sky-500/20 bg-sky-500/5 p-4">
-            <p className="text-[10px] uppercase font-mono tracking-wider text-sky-300">Voice & AI lane</p>
-            <p className="mt-2 flex items-center gap-2 text-sm text-white">
-              <Mic className="h-4 w-4 text-sky-300" />
+          <div className="rounded-lg border border-border bg-card p-4 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
+            <p className="text-[10px] uppercase font-mono tracking-wider text-sky-500">Voice & AI lane</p>
+            <p className="mt-2 flex items-center gap-2 text-[13px] text-foreground">
+              <Mic className="h-4 w-4 text-sky-400" />
               Voice check-off now feeds this safety model.
             </p>
-            <p className="mt-1 text-xs text-slate-400">Run a manual analysis after a shift surge or incident cluster.</p>
+            <p className="mt-1 text-[12px] text-muted-foreground">Run a manual analysis after a shift surge or incident cluster.</p>
           </div>
         </div>
 
@@ -163,7 +161,7 @@ export default function InsightsPage() {
             disabled={running}
             className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-violet-200 transition hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <BarChart3 className="h-4 w-4" />}
             {running ? "Running analysis" : "Run analysis"}
           </button>
           {runMessage ? <p className="text-sm text-emerald-300">{runMessage}</p> : null}
@@ -173,7 +171,7 @@ export default function InsightsPage() {
         <div className="flex gap-2">
           {(["all", "new", "acknowledged"] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)} className={cn(
-              "px-4 py-1.5 rounded-full text-xs font-semibold transition-all",
+              "px-4 py-1.5 rounded-lg text-xs font-semibold transition-all",
               filter === f ? "bg-white/10 text-white" : "text-slate-400 hover:text-white"
             )}>{f === "all" ? "All" : f.charAt(0).toUpperCase() + f.slice(1)}</button>
           ))}
@@ -199,15 +197,16 @@ export default function InsightsPage() {
               const name = r.residents ? `${r.residents.first_name} ${r.residents.last_name}` : r.resident_id.slice(0, 8);
 
               return (
-                <div key={r.id} className={cn("rounded-2xl border p-5 space-y-3", sev.bg, sev.border)}>
-                  <div className="flex items-start justify-between gap-3">
+                <div key={r.id} className="relative flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0">
+                  <span className={cn("absolute left-0 top-0 h-full w-1 rounded-l-lg", sev.bg)} aria-hidden />
+                  <div className="flex items-start justify-between gap-3 flex-1">
                     <div className="flex items-center gap-3">
                       <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", sev.bg)}>
                         <Icon className={cn("w-4 h-4", sev.text)} />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-white">{r.title}</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">
+                        <p className="text-[13px] font-semibold text-foreground">{r.title}</p>
+                        <p className="text-[12px] text-muted-foreground mt-0.5">
                           {name} · {r.facilities?.name ?? ""} · {new Date(r.created_at).toLocaleDateString()}
                         </p>
                       </div>
@@ -220,12 +219,12 @@ export default function InsightsPage() {
                     </div>
                   </div>
 
-                  {r.body && <p className="text-xs text-slate-300 leading-relaxed">{r.body}</p>}
+                  {r.body && <p className="text-[12px] text-muted-foreground leading-relaxed">{r.body}</p>}
 
                   {r.clinical_domains.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {r.clinical_domains.map(d => (
-                        <span key={d} className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-white/5 text-slate-400 border border-white/5">
+                        <span key={d} className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-muted text-muted-foreground border border-border">
                           {d.replace(/_/g, " ")}
                         </span>
                       ))}

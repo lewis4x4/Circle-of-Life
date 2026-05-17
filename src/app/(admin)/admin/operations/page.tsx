@@ -55,10 +55,10 @@ type StatsBar = {
 
 // Priority colors
 const priorityColors = {
-  critical: "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800",
-  high: "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800",
-  normal: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800",
-  low: "bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-900/20 dark:text-slate-300 dark:border-slate-800",
+  critical: "bg-destructive/10 text-destructive border-destructive/30",
+  high: "bg-warning/10 text-warning border-warning/30",
+  normal: "bg-info/10 text-info border-info/30",
+  low: "bg-muted text-muted-foreground border-border",
 } as const;
 
 // Status icons
@@ -248,17 +248,17 @@ export default function OperationsTodayPage() {
     if (!adequacy) return null;
 
     const { adequacy_score, adequacy_rating } = adequacy;
-    let bgColor = "bg-green-100 text-green-800 border-green-200";
+    let bgColor = "bg-success/10 text-success border-success/30";
     let Icon = CheckCircle2;
 
     if (adequacy_score < 70) {
-      bgColor = "bg-red-100 text-red-800 border-red-200";
+      bgColor = "bg-destructive/10 text-destructive border-destructive/30";
       Icon = AlertTriangle;
     } else if (adequacy_score < 85) {
-      bgColor = "bg-yellow-100 text-yellow-800 border-yellow-200";
+      bgColor = "bg-warning/10 text-warning border-warning/30";
       Icon = Clock;
     } else if (adequacy_score < 95) {
-      bgColor = "bg-blue-100 text-blue-800 border-blue-200";
+      bgColor = "bg-info/10 text-info border-info/30";
       Icon = BarChart3;
     }
 
@@ -274,11 +274,11 @@ export default function OperationsTodayPage() {
   // Get status badge color
   const getStatusBadge = (status: TaskStatus) => {
     const colors: Record<TaskStatus, string> = {
-      pending: "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200",
-      in_progress: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-      completed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-      missed: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-      deferred: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
+      pending: "bg-muted text-muted-foreground",
+      in_progress: "bg-info/10 text-info",
+      completed: "bg-success/10 text-success",
+      missed: "bg-destructive/10 text-destructive",
+      deferred: "bg-warning/10 text-warning",
     };
     return colors[status];
   };
@@ -298,7 +298,7 @@ export default function OperationsTodayPage() {
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-32 rounded-xl" />
+            <Skeleton key={i} className="h-32 rounded-lg" />
           ))}
         </div>
       </div>
@@ -310,7 +310,7 @@ export default function OperationsTodayPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Operations</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Operations</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Today {shiftLabels[(adequacy?.current_shift ?? "day")].split("·")[0].trim()}
           </p>
@@ -387,7 +387,7 @@ export default function OperationsTodayPage() {
       {/* Overdue tasks - show first if any */}
       {overdueTasks.length > 0 && (
         <div className="mb-6">
-          <h2 className="text-lg font-semibold flex items-center gap-2 mb-3 text-red-700 dark:text-red-400">
+          <h2 className="text-lg font-semibold flex items-center gap-2 mb-3 text-destructive">
             <AlertTriangle className="h-5 w-5" />
             Overdue ({overdueTasks.length})
           </h2>
@@ -407,7 +407,7 @@ export default function OperationsTodayPage() {
                         {task.status.replace("_", " ")}
                       </Badge>
                       {task.license_threatening && (
-                        <Badge className="bg-red-600 text-white text-xs">⚠️ License Threat</Badge>
+                        <Badge className="bg-destructive text-destructive-foreground text-xs uppercase tracking-wider">License Threat</Badge>
                       )}
                     </div>
                     <Badge variant="outline" className="text-xs">
@@ -483,7 +483,7 @@ export default function OperationsTodayPage() {
                         {task.status}
                       </Badge>
                       {task.license_threatening && (
-                        <Badge className="bg-red-600 text-white text-xs">⚠️ License Threat</Badge>
+                        <Badge className="bg-destructive text-destructive-foreground text-xs uppercase tracking-wider">License Threat</Badge>
                       )}
                     </div>
                     <Badge variant="outline" className="text-xs">
@@ -644,9 +644,9 @@ export default function OperationsTodayPage() {
       {tasks.length === 0 && !isLoading && !error && (
         <div className="text-center py-16">
           <CheckCircle2 className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-xl font-semibold mb-2">All caught up!</h3>
+          <h3 className="text-xl font-semibold mb-2">No tasks in view</h3>
           <p className="text-muted-foreground max-w-md mx-auto">
-            No tasks for your selected filters. Great work keeping things organized.
+            No tasks match the selected filters. Adjust shift or status filters to review the full queue.
           </p>
           <Button
             variant="outline"

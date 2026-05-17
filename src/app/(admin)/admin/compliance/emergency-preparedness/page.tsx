@@ -468,14 +468,14 @@ export default function EmergencyPreparednessPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-sm text-slate-500">Loading emergency preparedness checklist…</p>
+        <p className="text-[12px] text-muted-foreground">Loading emergency preparedness checklist…</p>
       </div>
     );
   }
 
   if (!facilityReady) {
     return (
-      <Card className="border-amber-200 bg-amber-50">
+      <Card className="border-warning/20 bg-warning/10">
         <CardHeader>
           <CardTitle>Select a Facility</CardTitle>
           <CardDescription>Choose a facility to view emergency preparedness checklist.</CardDescription>
@@ -493,7 +493,7 @@ export default function EmergencyPreparednessPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
             Emergency Preparedness
           </h1>
         </div>
@@ -583,15 +583,15 @@ export default function EmergencyPreparednessPage() {
 
       {/* Overdue Alert */}
       {overdueCount > 0 && (
-        <Card className="border-rose-500 bg-rose-50">
+        <Card className="border-destructive/20 bg-destructive/10">
           <CardContent className="py-4">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="h-5 w-5 text-rose-600" />
+              <AlertTriangle className="h-5 w-5 text-destructive" />
               <div>
-                <p className="font-semibold text-rose-900">
+                <p className="font-semibold text-destructive">
                   {overdueCount} overdue item{overdueCount !== 1 ? "s" : ""}
                 </p>
-                <p className="text-sm text-rose-700">
+                <p className="text-[13px] text-destructive/80">
                   Please complete these items to maintain compliance.
                 </p>
               </div>
@@ -601,9 +601,9 @@ export default function EmergencyPreparednessPage() {
       )}
 
       {error && (
-        <Card className="border-rose-500 bg-rose-50">
+        <Card className="border-destructive/20 bg-destructive/10">
           <CardContent className="py-4">
-            <p className="font-medium text-rose-900">{error}</p>
+            <p className="font-medium text-destructive">{error}</p>
           </CardContent>
         </Card>
       )}
@@ -612,11 +612,11 @@ export default function EmergencyPreparednessPage() {
       {items.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <FileText className="mx-auto h-12 w-12 text-slate-400 mb-4" />
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+            <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               No Emergency Items Configured
             </h3>
-            <p className="text-sm text-slate-500 mb-4">
+            <p className="text-[13px] text-muted-foreground mb-4">
               Add generator tests, fire drills, and evacuation drills to track emergency preparedness.
             </p>
             <Button onClick={() => setNewItemDialog({ ...newItemDialog, open: true })}>
@@ -636,12 +636,12 @@ export default function EmergencyPreparednessPage() {
             return (
               <li key={item.id}>
                 <Card
-                  className={`transition-all ${
+                  className={`transition-all duration-[var(--motion-duration-micro)] ${
                     isOverdue
-                      ? "border-rose-500 bg-rose-50"
+                      ? "border-destructive/20 bg-destructive/10"
                       : isDueSoon
-                        ? "border-amber-500 bg-amber-50"
-                        : "border-slate-200 bg-white"
+                        ? "border-warning/20 bg-warning/10"
+                        : "border-border bg-card"
                   }`}
                 >
                   <CardContent className="p-4">
@@ -650,22 +650,22 @@ export default function EmergencyPreparednessPage() {
                         <div
                           className={`p-3 rounded-lg ${
                             isOverdue
-                              ? "bg-rose-100"
+                              ? "bg-destructive/10"
                               : isDueSoon
-                                ? "bg-amber-100"
-                                : "bg-slate-100"
+                                ? "bg-warning/10"
+                                : "bg-muted"
                           }`}
                         >
                           <TypeIcon className={`h-5 w-5 ${
                             isOverdue
-                              ? "text-rose-600"
+                              ? "text-destructive"
                               : isDueSoon
-                                ? "text-amber-600"
-                                : "text-slate-600"
+                                ? "text-warning"
+                                : "text-muted-foreground"
                           }`} />
                         </div>
                         <div className="flex-1 space-y-1">
-                          <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+                          <h3 className="font-semibold text-foreground">
                             {item.title}
                           </h3>
                           <div className="flex items-center gap-2">
@@ -673,17 +673,17 @@ export default function EmergencyPreparednessPage() {
                               {getTypeLabel(item.checklist_type)}
                             </Badge>
                             {isOverdue && (
-                              <Badge className="bg-rose-500 text-white text-xs">Overdue</Badge>
+                              <Badge className="bg-destructive text-destructive-foreground text-[11px]">Overdue</Badge>
                             )}
                           </div>
                           {item.description && (
-                            <p className="text-sm text-slate-600 dark:text-slate-400">
+                            <p className="text-[13px] text-muted-foreground">
                               {item.description}
                             </p>
                           )}
                           <div className="flex items-center gap-3 text-sm">
-                            <Calendar className="h-4 w-4 text-slate-500" />
-                            <span className={isOverdue ? "text-rose-600 font-medium" : isDueSoon ? "text-amber-600" : "text-slate-500"}>
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className={isOverdue ? "text-destructive font-medium" : isDueSoon ? "text-warning" : "text-muted-foreground"}>
                               {isOverdue
                                 ? `Overdue by ${Math.abs(daysUntil)} days`
                                 : isDueSoon
@@ -692,7 +692,7 @@ export default function EmergencyPreparednessPage() {
                             </span>
                           </div>
                           {item.last_completed_at && (
-                            <div className="text-xs text-slate-500">
+                            <div className="text-[12px] text-muted-foreground tabular-nums">
                               Last completed: {new Date(item.last_completed_at).toLocaleDateString()}
                             </div>
                           )}
@@ -724,7 +724,7 @@ export default function EmergencyPreparednessPage() {
                           </DialogHeader>
                           <div className="space-y-4 py-4">
                             {item.description && (
-                              <p className="text-sm text-slate-600">{item.description}</p>
+                              <p className="text-[13px] text-muted-foreground">{item.description}</p>
                             )}
                             <div className="space-y-2">
                               <Label htmlFor="participants">Participants (comma-separated)</Label>
@@ -758,7 +758,7 @@ export default function EmergencyPreparednessPage() {
                               <Button
                                 onClick={() => void submitCompletion()}
                                 disabled={savingCompletion}
-                                className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground"
                               >
                                 {savingCompletion ? "Saving…" : "Save Completion"}
                               </Button>

@@ -297,7 +297,7 @@ export default function AdminCertificationsPage() {
         <header className="mb-8">
           <div>
             
-            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
               Credential Tracking {expiredCount > 0 && <></>}
             </h2>
           </div>
@@ -305,34 +305,34 @@ export default function AdminCertificationsPage() {
 
         <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px]">
-            <V2Card hoverColor="orange" className="border-amber-500/20 dark:border-amber-500/20 shadow-[inset_0_0_15px_rgba(245,158,11,0.05)]">
+            <V2Card hoverColor="orange" className="border-warning/20">
               <></>
-              <MonolithicWatermark value={expiringCount} className="text-amber-600/5 dark:text-amber-400/5 opacity-50" />
+              <MonolithicWatermark value={expiringCount} className="text-warning/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                <h3 className="text-[10px] tracking-wider uppercase text-warning flex items-center gap-2">
                   <Award className="h-3.5 w-3.5" /> {windowFilter === "30d" ? "Expiring (30D)" : "Expiring (60D)"}
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-amber-600 dark:text-amber-400 pb-1">{expiringCount}</p>
+                <p className="text-4xl font-mono tracking-tighter text-warning pb-1">{expiringCount}</p>
               </div>
             </V2Card>
           </div>
           <div className="h-[160px]">
-            <V2Card hoverColor="rose" className="border-rose-500/20 dark:border-rose-500/20 shadow-[inset_0_0_15px_rgba(244,63,94,0.05)]">
+            <V2Card hoverColor="rose" className="border-destructive/20">
               <></>
-              <MonolithicWatermark value={expiredCount} className="text-rose-600/5 dark:text-rose-400/5 opacity-50" />
+              <MonolithicWatermark value={expiredCount} className="text-destructive/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-wider uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2">
+                <h3 className="text-[10px] tracking-wider uppercase text-destructive flex items-center gap-2">
                    Expired / Revoked
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-rose-600 dark:text-rose-400 pb-1">{expiredCount}</p>
+                <p className="text-4xl font-mono tracking-tighter text-destructive pb-1">{expiredCount}</p>
               </div>
             </V2Card>
           </div>
           <div className="col-span-1 md:col-span-2 h-[180px]">
             <V2Card hoverColor="indigo" className="p-5 lg:p-6">
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
-                 <p className="hidden max-w-md text-xs font-mono leading-relaxed text-slate-500 lg:block">Facility-scoped license and training records.</p>
-                 <Link href="/admin/certifications/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-wider text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none whitespace-nowrap")} >
+                 <p className="hidden max-w-md text-xs leading-relaxed text-muted-foreground lg:block">Facility-scoped license and training records.</p>
+                 <Link href="/admin/certifications/new" className={cn(buttonVariants({ size: "default" }), "uppercase tracking-wider text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none whitespace-nowrap")} >
                    + Log Certification
                  </Link>
               </div>
@@ -387,21 +387,21 @@ export default function AdminCertificationsPage() {
       />
       {(timeline !== DEFAULT_FILTERS.timeline || dbStatus !== DEFAULT_FILTERS.dbStatus || windowFilter !== DEFAULT_FILTERS.window) ? (
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
+          <Badge variant="outline" className="border-border bg-muted/40 text-muted-foreground">
             {filteredRows.length} visible
           </Badge>
           {timeline !== DEFAULT_FILTERS.timeline ? (
-            <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+            <Badge variant="outline" className="border-warning/20 bg-warning/10 text-warning">
               Timeline: {timeline.replace(/_/g, " ")}
             </Badge>
           ) : null}
           {dbStatus !== DEFAULT_FILTERS.dbStatus ? (
-            <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+            <Badge variant="outline" className="border-info/20 bg-info/10 text-info">
               Status: {dbStatus.replace(/_/g, " ")}
             </Badge>
           ) : null}
           {windowFilter !== DEFAULT_FILTERS.window ? (
-            <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
+            <Badge variant="outline" className="border-destructive/20 bg-destructive/10 text-destructive">
               Window: next 30 days
             </Badge>
           ) : null}
@@ -419,11 +419,11 @@ export default function AdminCertificationsPage() {
         <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />
       ) : null}
       {!isLoading && filteredRows.length > 0 ? (
-        <div className="relative overflow-visible z-10 w-full mt-4">
-          <div className="relative z-10 p-4 sm:p-6 mb-4 rounded-lg border border-white/20 dark:border-white/5 bg-card shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="w-full mt-4">
+          <div className="p-4 sm:p-6 mb-4 rounded-lg border border-border bg-card flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-1">Certifications Matrix</h3>
-              <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
+              <h3 className="text-xl font-semibold text-foreground mb-1">Certifications Matrix</h3>
+              <p className="text-[13px] text-muted-foreground">
                 Track state-mandated training, background checks, and clinical licenses.
               </p>
             </div>
@@ -444,43 +444,44 @@ export default function AdminCertificationsPage() {
           <MotionList className="space-y-3">
             {filteredRows.map((row) => (
               <MotionItem key={row.id}>
-                <Link href={`/admin/staff/${row.staffId}`} className="block focus-visible:outline-none focus:ring-2 focus:ring-indigo-500 rounded-2xl">
-                  <div className="p-4 sm:p-5 rounded-2xl group transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/40 w-full">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <Link
+                  href={`/admin/staff/${row.staffId}`}
+                  className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 group w-full"
+                >
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
                       
                       <div className="flex flex-col min-w-[200px]">
-                         <span className="font-bold text-slate-900 dark:text-slate-100">{row.staffName}</span>
-                         <span className="text-[10px] uppercase font-mono tracking-wider text-slate-500 my-1 font-bold bg-white/50 dark:bg-slate-900/50 w-fit px-2 py-0.5 rounded shadow-sm">{row.certificationName}</span>
-                         <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">{formatCertTypeLabel(row.certificationType)}</span>
+                         <span className="font-semibold text-[13px] text-foreground">{row.staffName}</span>
+                         <span className="text-[10px] uppercase tracking-wider text-muted-foreground my-1 w-fit px-2 py-0.5 rounded-[4px] bg-muted">{row.certificationName}</span>
+                         <span className="text-[12px] text-muted-foreground">{formatCertTypeLabel(row.certificationType)}</span>
                       </div>
 
                       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full md:w-3/4 items-center">
                         <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Timeline</span>
+                          <span className="text-[9px] uppercase tracking-wider text-muted-foreground">Timeline</span>
                           <div><TimelineBadge timeline={row.timeline} /></div>
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Record Status</span>
+                          <span className="text-[9px] uppercase tracking-wider text-muted-foreground">Record Status</span>
                           <div><DbStatusBadge status={row.dbStatus} /></div>
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Issued</span>
-                          <span className="font-mono text-xs text-slate-700 dark:text-slate-300">{formatIsoDate(row.issueDate)}</span>
+                          <span className="text-[9px] uppercase tracking-wider text-muted-foreground">Issued</span>
+                          <span className="tabular-nums text-[12px] text-foreground">{formatIsoDate(row.issueDate)}</span>
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Expires</span>
-                          <span className="font-mono text-xs text-slate-700 dark:text-slate-300 uppercase">{row.expirationDate ? formatIsoDate(row.expirationDate) : "No expiry"}</span>
+                          <span className="text-[9px] uppercase tracking-wider text-muted-foreground">Expires</span>
+                          <span className="tabular-nums text-[12px] text-foreground uppercase">{row.expirationDate ? formatIsoDate(row.expirationDate) : "No expiry"}</span>
                         </div>
                       </div>
                       
                       <div className="hidden sm:flex shrink-0">
-                         <div className="w-8 h-8 rounded-full bg-white/50 dark:bg-white/5 flex items-center justify-center group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 transition-colors">
-                           <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" />
+                         <div className="w-8 h-8 rounded-full bg-muted/40 flex items-center justify-center group-hover:bg-primary/10 transition-colors duration-[var(--motion-duration-micro)]">
+                           <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
                          </div>
                       </div>
 
                     </div>
-                  </div>
                 </Link>
               </MotionItem>
             ))}
@@ -572,12 +573,12 @@ function formatCertTypeLabel(type: string): string {
 
 function TimelineBadge({ timeline }: { timeline: TimelineUi }) {
   const map: Record<TimelineUi, { label: string; className: string }> = {
-    current: { label: "Current", className: "bg-emerald-500/20 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm" },
+    current: { label: "Current", className: "bg-success/10 text-success uppercase tracking-wider text-[9px] font-semibold border-0" },
     expiring_soon: {
       label: "Expiring soon",
-      className: "bg-amber-500/20 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm",
+      className: "bg-warning/10 text-warning uppercase tracking-wider text-[9px] font-semibold border-0",
     },
-    expired: { label: "Expired", className: "bg-red-500/20 text-red-800 dark:bg-red-950/60 dark:text-red-400 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm" },
+    expired: { label: "Expired", className: "bg-destructive/10 text-destructive uppercase tracking-wider text-[9px] font-semibold border-0" },
   };
   return <Badge className={map[timeline].className}>{map[timeline].label}</Badge>;
 }
@@ -595,11 +596,11 @@ function DbStatusBadge({ status }: { status: string }) {
             : status;
   const className =
     status === "active"
-      ? "bg-slate-200/50 text-slate-800 dark:bg-slate-800/50 dark:text-slate-300 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm"
+      ? "bg-muted/40 text-muted-foreground uppercase tracking-wider text-[9px] font-semibold border-0"
       : status === "pending_renewal"
-        ? "bg-amber-500/20 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm"
+        ? "bg-warning/10 text-warning uppercase tracking-wider text-[9px] font-semibold border-0"
         : status === "expired" || status === "revoked"
-          ? "bg-red-500/20 text-red-800 dark:bg-red-950/60 dark:text-red-400 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm"
-          : "bg-slate-200/50 text-slate-800 dark:bg-slate-800/50 dark:text-slate-300 uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm";
+          ? "bg-destructive/10 text-destructive uppercase tracking-wider text-[9px] font-semibold border-0"
+          : "bg-muted/40 text-muted-foreground uppercase tracking-wider text-[9px] font-semibold border-0";
   return <Badge className={className}>{label}</Badge>;
 }

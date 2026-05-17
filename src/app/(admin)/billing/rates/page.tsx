@@ -95,24 +95,23 @@ export default function AdminBillingRatesPage() {
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <></>
-      <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2">
         <BillingHubNav />
         
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-emerald-50/20 p-8 rounded-lg border border-emerald-200/50 dark:border-white/5 shadow-sm mt-4">
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-border shadow-sm mt-4">
           <div className="space-y-3">
-             
-             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground flex items-center gap-4">
               Rate Schedules
-             </h1>
-            <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
+            </h1>
+            <p className="mt-2 font-medium tracking-wide text-muted-foreground max-w-2xl">
               Private base rates and surcharges mapped by effective dates. Edit individual lines from the core form.
             </p>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-3">
-             <Link className={cn(buttonVariants({ size: "lg" }), "rounded-full font-bold uppercase tracking-wider text-[10px] shadow-lg bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500")} href="/admin/billing/rates/new">
+             <Link className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-wider text-[10px]")} href="/admin/billing/rates/new">
                + Add Schedule
              </Link>
-             <Badge className="bg-slate-100 text-slate-700 border border-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 uppercase tracking-wider font-mono text-[9px] font-bold px-3 shadow-none">
+             <Badge className="bg-muted text-muted-foreground border border-border uppercase tracking-wider font-mono text-[9px] font-bold px-3 shadow-none">
                 <Percent className="mr-1.5 h-3 w-3" />
                 {rows.filter((r) => r.current).length} active
              </Badge>
@@ -130,10 +129,10 @@ export default function AdminBillingRatesPage() {
         ) : null}
         
         {!isLoading && rows.length > 0 ? (
-          <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all">
-            <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1">Version History</h3>
-              <p className="text-[10px] font-mono tracking-wider text-slate-400 mt-1 uppercase">
+          <div className="p-6 sm:p-8 rounded-lg border border-border bg-card shadow-sm relative overflow-hidden transition-all">
+            <div className="mb-6 border-b border-border pb-4 flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-foreground mt-1">Version History</h3>
+              <p className="text-[10px] font-mono tracking-wider text-muted-foreground mt-1 uppercase">
                 Effective dating controls
               </p>
             </div>
@@ -142,29 +141,29 @@ export default function AdminBillingRatesPage() {
                <MotionList className="space-y-3">
                   {rows.map((row) => (
                     <MotionItem key={row.id}>
-                      <div className="group flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-5 rounded-lg border border-slate-200/90 bg-white dark:border-white/5 shadow-sm transition-all hover:shadow-md">
+                      <div className="group flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-5 rounded-lg border border-border bg-card shadow-sm transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:-translate-y-0.5 hover:shadow-md">
                          <div className="min-w-0 flex flex-col gap-2">
                            <div className="flex items-center gap-3">
                               {row.current ? (
-                                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400 uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full border">
+                                <Badge className="bg-success/10 text-success border-success/20 uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full border">
                                   Current
                                 </Badge>
                               ) : (
-                                <Badge className="bg-slate-100 text-slate-500 border-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-400 uppercase tracking-wider font-mono text-[9px] font-bold shadow-none px-2.5 py-1 rounded-full border">
+                                <Badge className="bg-muted text-muted-foreground border-border uppercase tracking-wider font-mono text-[9px] font-bold shadow-none px-2.5 py-1 rounded-full border">
                                   Historical
                                 </Badge>
                               )}
-                              <span className="font-semibold text-slate-900 dark:text-slate-100 tracking-tight text-lg">
+                              <span className="font-semibold text-foreground tracking-tight text-lg">
                                  {row.name}
                               </span>
                            </div>
-                           <p className="text-xs font-mono tracking-wider text-slate-500 dark:text-slate-400 uppercase mt-1">
+                           <p className="text-xs font-mono tracking-wider text-muted-foreground uppercase mt-1">
                               Duration: {formatDate(row.effectiveDate)} — {row.endDate ? formatDate(row.endDate) : "Ongoing"}
                            </p>
                          </div>
                          <div className="flex flex-col items-start sm:items-end w-full sm:w-1/3">
-                            <span className="font-bold uppercase tracking-wider text-[10px] text-slate-400 mb-1">Base Private Rate</span>
-                            <span className="text-xl font-medium text-emerald-600 dark:text-emerald-400 tabular-nums">
+                            <span className="font-bold uppercase tracking-wider text-[10px] text-muted-foreground mb-1">Base Private Rate</span>
+                            <span className="text-xl font-medium text-success tabular-nums">
                                {billingCurrency.format(row.basePrivateCents / 100)}
                             </span>
                          </div>

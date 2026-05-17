@@ -14,7 +14,6 @@ import {
   MessageSquareText,
   Save,
   ShieldCheck,
-  Sparkles,
   Clock,
   type LucideIcon,
 } from "lucide-react";
@@ -264,29 +263,28 @@ export default function ReportsOverviewPage() {
       <div className="relative z-10 mx-auto max-w-7xl space-y-8 px-4 sm:px-6 xl:px-0">
         <ReportsHubNav />
 
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-border shadow-sm mt-4">
           <div className="space-y-3">
-            <Link href={homeHref} className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+            <Link href={homeHref} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="w-3.5 h-3.5" /> Back to Dashboard
             </Link>
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary" className="rounded-full border border-indigo-500/20 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 uppercase tracking-wider text-[9px] font-bold px-2 py-0.5">
-                <Sparkles className="mr-1 size-3" aria-hidden />
+              <Badge variant="secondary" className="rounded-full border border-info/20 bg-info/10 text-info uppercase tracking-wider text-[9px] font-bold px-2 py-0.5">
                 Governed exports
               </Badge>
               <span className="text-[10px] font-mono tracking-wider uppercase text-slate-500 dark:text-slate-400">Template → schedule → audit trail</span>
             </div>
-            <h1 className="flex items-center gap-4 text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+            <h1 className="flex items-center gap-4 text-4xl md:text-2xl font-semibold tracking-tight text-foreground">
               <Layers className="size-10 shrink-0 text-indigo-500" strokeWidth={1.5} aria-hidden />
               Reporting Hub
             </h1>
-            <p className="max-w-2xl text-balance text-base font-medium leading-relaxed text-slate-600 dark:text-zinc-400">
+            <p className="max-w-2xl text-balance text-base font-medium leading-relaxed text-muted-foreground">
               One place to run portfolio analytics, package leadership briefings, and prove what was generated—without
               spreadsheets on shared drives.
             </p>
           </div>
           <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
-            <Link href="/admin/reports/templates" className={cn(buttonVariants({ variant: "default", size: "lg" }), "gap-2 rounded-xl text-xs uppercase tracking-wider font-bold")}>
+            <Link href="/admin/reports/templates" className={cn(buttonVariants({ variant: "default", size: "lg" }), "gap-2 rounded-lg text-xs uppercase tracking-wider font-bold")}>
               Browse templates
               <ArrowRight className="size-4" aria-hidden />
             </Link>
@@ -353,15 +351,15 @@ export default function ReportsOverviewPage() {
 
         {/* Workflow strip */}
         <section
-          className="rounded-lg border border-slate-200/60 p-6 shadow-sm dark:border-white/5 dark:/[0.04] dark: sm:p-8"
+          className="rounded-lg border border-border bg-card p-6 shadow-sm sm:p-8"
           aria-labelledby="reports-workflow-heading"
         >
           <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 id="reports-workflow-heading" className="text-xl font-semibold text-slate-900 dark:text-white">
+              <h2 id="reports-workflow-heading" className="text-xl font-semibold text-foreground">
                 How reporting works here
               </h2>
-              <p className="mt-1 max-w-2xl text-sm text-slate-600 dark:text-slate-400">
+              <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
                 Structured steps so clinical and finance leaders get the same numbers—and compliance can trace every file.
               </p>
             </div>
@@ -378,18 +376,18 @@ export default function ReportsOverviewPage() {
               <li key={step.n}>
                 <Link
                   href={step.href}
-                  className="flex h-full flex-col rounded-2xl border border-slate-200/80 bg-white/70 p-5 transition hover:border-indigo-400/40 hover:shadow-md dark:border-white/10 dark:hover:border-indigo-400/30"
+                  className="flex h-full flex-col rounded-lg border border-border bg-card p-5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:-translate-y-0.5 hover:shadow-md"
                 >
-                  <span className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                    <span className="flex size-7 items-center justify-center rounded-full bg-indigo-500/15 text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                  <span className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <span className="flex size-7 items-center justify-center rounded-full bg-info/15 text-xs font-bold text-info">
                       {step.n}
                     </span>
                     {i < WORKFLOW_STEPS.length - 1 && (
                       <ArrowRight className="ml-auto hidden size-4 text-slate-300 xl:block" aria-hidden />
                     )}
                   </span>
-                  <span className="font-semibold text-slate-900 dark:text-white">{step.title}</span>
-                  <span className="mt-1 flex-1 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{step.body}</span>
+                  <span className="font-semibold text-foreground">{step.title}</span>
+                  <span className="mt-1 flex-1 text-sm leading-relaxed text-muted-foreground">{step.body}</span>
                 </Link>
               </li>
             ))}
@@ -399,7 +397,7 @@ export default function ReportsOverviewPage() {
         <div className="grid gap-8 lg:grid-cols-12">
           {/* Quick actions */}
           <section className="lg:col-span-7" aria-labelledby="quick-actions-heading">
-            <h2 id="quick-actions-heading" className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
+            <h2 id="quick-actions-heading" className="mb-4 text-lg font-semibold text-foreground">
               Jump in
             </h2>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -427,7 +425,7 @@ export default function ReportsOverviewPage() {
                     key={action.href}
                     href={action.href}
                     className={cn(
-                      "group flex gap-4 rounded-2xl border border-slate-200/80 bg-card p-4 shadow-sm backdrop-blur transition hover:-translate-y-0.5 dark:border-white/10 dark:bg-white/[0.03]",
+                      "group flex gap-4 rounded-lg border border-border bg-card p-4 shadow-sm transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
                       ring
                     )}
                   >
@@ -436,10 +434,10 @@ export default function ReportsOverviewPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
-                        <span className="font-semibold text-slate-900 dark:text-white">{action.title}</span>
-                        <ArrowRight className="size-4 shrink-0 text-slate-400 opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100" aria-hidden />
+                        <span className="font-semibold text-foreground">{action.title}</span>
+                        <ArrowRight className="size-4 shrink-0 text-muted-foreground opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100" aria-hidden />
                       </div>
-                      <p className="mt-0.5 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{action.description}</p>
+                      <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{action.description}</p>
                     </div>
                   </Link>
                 );
@@ -449,11 +447,11 @@ export default function ReportsOverviewPage() {
 
           {/* Recent activity */}
           <section
-            className="flex flex-col rounded-lg border border-slate-200/60 bg-white/50 p-6 shadow-sm dark:border-white/5 lg:col-span-5"
+            className="flex flex-col rounded-lg border border-border bg-card p-6 shadow-sm lg:col-span-5"
             aria-labelledby="recent-activity-heading"
           >
             <div className="mb-4 flex items-center justify-between gap-2">
-              <h2 id="recent-activity-heading" className="text-lg font-semibold text-slate-900 dark:text-white">
+              <h2 id="recent-activity-heading" className="text-lg font-semibold text-foreground">
                 Recent activity
               </h2>
               <Link
@@ -466,12 +464,12 @@ export default function ReportsOverviewPage() {
             </div>
 
             {loading ? (
-              <div className="flex flex-1 flex-col justify-center py-12 text-center text-sm text-slate-500">Loading runs…</div>
+              <div className="flex flex-1 flex-col justify-center py-12 text-center text-sm text-muted-foreground">Loading runs…</div>
             ) : recentRuns.length === 0 ? (
-              <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 px-6 py-12 text-center dark:border-white/10 dark:bg-white/[0.02]">
-                <CalendarClock className="mb-3 size-10 text-slate-300 dark:text-slate-600" aria-hidden />
-                <p className="font-medium text-slate-900 dark:text-slate-100">No runs yet</p>
-                <p className="mt-1 max-w-xs text-sm text-slate-600 dark:text-slate-400">
+              <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
+                <CalendarClock className="mb-3 size-10 text-muted-foreground/50" aria-hidden />
+                <p className="font-medium text-foreground">No runs yet</p>
+                <p className="mt-1 max-w-xs text-sm text-muted-foreground">
                   Execute a template or schedule a job—each run will appear here with status and timestamps.
                 </p>
                 <Link href="/admin/reports/templates" className={cn(buttonVariants({ variant: "outline", size: "default" }), "mt-4")}>
@@ -489,28 +487,28 @@ export default function ReportsOverviewPage() {
                     <li key={run.id}>
                       <Link
                         href={detailHref}
-                        className="flex items-center gap-3 rounded-xl border border-transparent bg-slate-50/80 px-3 py-2.5 transition hover:border-slate-200 hover:bg-white dark:bg-white/[0.04] dark:hover:border-white/10 dark:hover:bg-white/[0.07]"
+                        className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="truncate font-mono text-xs font-medium text-slate-800 dark:text-slate-100">{run.source_type}</span>
+                            <span className="truncate font-mono text-xs font-medium text-foreground">{run.source_type}</span>
                             {statusOk ? (
-                              <Badge className="rounded-full border border-emerald-200 bg-emerald-50 text-[10px] text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
+                              <Badge className="rounded-full border border-success/30 bg-success/10 text-[10px] text-success">
                                 Done
                               </Badge>
                             ) : statusFail ? (
-                              <Badge className="rounded-full border border-rose-200 bg-rose-50 text-[10px] text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
+                              <Badge className="rounded-full border border-destructive/30 bg-destructive/10 text-[10px] text-destructive">
                                 Failed
                               </Badge>
                             ) : (
-                              <Badge className="rounded-full border border-amber-200 bg-amber-50 text-[10px] text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+                              <Badge className="rounded-full border border-warning/30 bg-warning/10 text-[10px] text-warning">
                                 {run.status}
                               </Badge>
                             )}
                           </div>
-                          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{formatRunTime(run.started_at)} · NY</p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">{formatRunTime(run.started_at)} · NY</p>
                         </div>
-                        <ChevronRight className="size-4 shrink-0 text-slate-400" aria-hidden />
+                        <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                       </Link>
                     </li>
                   );

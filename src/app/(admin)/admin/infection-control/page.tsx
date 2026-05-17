@@ -72,14 +72,12 @@ export default function AdminInfectionControlHubPage() {
   }, [load]);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full pb-12">
-      <></>
-
-      <div className="relative z-10 space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-6 pb-12">
+      <div className="space-y-6 max-w-6xl mx-auto">
         <header className="mb-8 flex items-start justify-between">
           <div>
             
-            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
               Infection Control {activeOut > 0 && <></>}
             </h2>
           </div>
@@ -87,56 +85,56 @@ export default function AdminInfectionControlHubPage() {
 
         <KineticGrid className="grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px]">
-            <V2Card className="border-red-500/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]" hoverColor="red">
+            <V2Card className="border-destructive/20" hoverColor="red">
               <></>
-              <MonolithicWatermark value={loading ? 0 : activeInf} className="text-red-600/5 dark:text-red-400/5 opacity-50" />
+              <MonolithicWatermark value={loading ? 0 : activeInf} className="text-destructive/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-wider uppercase text-red-600 dark:text-red-400 flex items-center gap-2">
+                <h3 className="text-[10px] tracking-wider uppercase text-destructive flex items-center gap-2">
                    Active Infections
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-red-600 dark:text-red-400 pb-1">{loading ? "—" : activeInf}</p>
+                <p className="text-4xl font-mono tracking-tighter text-destructive pb-1">{loading ? "—" : activeInf}</p>
               </div>
             </V2Card>
           </div>
 
           <div className="h-[160px]">
-            <V2Card className={activeOut > 0 ? "border-amber-500/30 shadow-[inset_0_0_20px_rgba(245,158,11,0.1)]" : "border-slate-500/20"} hoverColor="amber">
+            <V2Card className={activeOut > 0 ? "border-warning/30" : "border-border"} hoverColor="amber">
               <></>
-              <MonolithicWatermark value={loading ? 0 : activeOut} className="text-amber-600/5 dark:text-amber-400/5 opacity-50" />
+              <MonolithicWatermark value={loading ? 0 : activeOut} className="text-warning/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                  <h3 className="text-[10px] tracking-wider uppercase text-warning flex items-center gap-2">
                      Active Outbreaks
                   </h3>
                   {activeOut > 0 && <></>}
                 </div>
-                <p className="text-4xl font-mono tracking-tighter text-amber-600 dark:text-amber-400 pb-1">{loading ? "—" : activeOut}</p>
+                <p className="text-4xl font-mono tracking-tighter text-warning pb-1">{loading ? "—" : activeOut}</p>
               </div>
             </V2Card>
           </div>
 
           <div className="h-[160px]">
-            <V2Card hoverColor="blue" className="border-blue-500/20 shadow-[inset_0_0_15px_rgba(59,130,246,0.05)]">
+            <V2Card hoverColor="blue" className="border-info/20">
               <></>
-              <MonolithicWatermark value={loading ? 0 : openAlerts} className="text-blue-600/5 dark:text-blue-400/5 opacity-50" />
+              <MonolithicWatermark value={loading ? 0 : openAlerts} className="text-info/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-wider uppercase text-blue-600 dark:text-blue-400">
+                <h3 className="text-[10px] tracking-wider uppercase text-info">
                   Open Vital Alerts
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-blue-600 dark:text-blue-400 pb-1">{loading ? "—" : openAlerts}</p>
+                <p className="text-4xl font-mono tracking-tighter text-info pb-1">{loading ? "—" : openAlerts}</p>
               </div>
             </V2Card>
           </div>
 
           <div className="h-[160px]">
-            <V2Card hoverColor="slate" className="border-slate-500/20 shadow-[inset_0_0_15px_rgba(100,116,139,0.05)]">
+            <V2Card hoverColor="slate" className="border-border">
               <></>
-              <MonolithicWatermark value={loading ? 0 : staffOut} className="text-slate-600/5 dark:text-slate-400/5 opacity-30" />
+              <MonolithicWatermark value={loading ? 0 : staffOut} className="text-muted-foreground/10 opacity-30" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-wider uppercase text-slate-500 dark:text-slate-400">
+                <h3 className="text-[10px] tracking-wider uppercase text-muted-foreground">
                   Staff Out Sick
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-slate-600 dark:text-slate-300 pb-1">{loading ? "—" : staffOut}</p>
+                <p className="text-4xl font-mono tracking-tighter text-foreground pb-1">{loading ? "—" : staffOut}</p>
               </div>
             </V2Card>
           </div>
@@ -144,34 +142,34 @@ export default function AdminInfectionControlHubPage() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Link href="/admin/infection-control/new" className="group block focus-visible:outline-none">
-          <div className="h-full flex p-6 items-center gap-5 transition-all duration-300 hover:border-red-500/40 hover:bg-white/50 dark:hover:bg-red-900/10 cursor-pointer">
-            <div className="rounded-2xl bg-red-100 dark:bg-red-900/30 p-4 shadow-sm border border-red-200/50 dark:border-red-500/20 group-hover:scale-110 transition-transform">
-              <ClipboardList className="h-6 w-6 text-red-600 dark:text-red-400" />
+          <div className="h-full flex p-6 items-center gap-5 rounded-lg border border-border bg-card transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:border-destructive/20 hover:bg-destructive/10 cursor-pointer">
+            <div className="rounded-lg bg-destructive/10 p-4 border border-destructive/20">
+              <ClipboardList className="h-6 w-6 text-destructive" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-red-700 dark:group-hover:text-red-400">
+              <h3 className="text-[13px] font-semibold tracking-tight text-foreground group-hover:text-destructive">
                 New Surveillance
               </h3>
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Record a suspected or confirmed infection</p>
+              <p className="text-[12px] text-muted-foreground">Record a suspected or confirmed infection</p>
             </div>
           </div>
         </Link>
         <Link href="/admin/infection-control/staff-illness" className="group block focus-visible:outline-none">
-          <div className="h-full flex p-6 items-center gap-5 transition-all duration-300 hover:border-blue-500/40 hover:bg-white/50 dark:hover:bg-blue-900/10 cursor-pointer">
-            <div className="rounded-2xl bg-blue-100 dark:bg-blue-900/30 p-4 shadow-sm border border-blue-200/50 dark:border-blue-500/20 group-hover:scale-110 transition-transform">
-              <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+          <div className="h-full flex p-6 items-center gap-5 rounded-lg border border-border bg-card transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:border-info/20 hover:bg-info/10 cursor-pointer">
+            <div className="rounded-lg bg-info/10 p-4 border border-info/20">
+              <Users className="h-6 w-6 text-info" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-blue-700 dark:group-hover:text-blue-400">
+              <h3 className="text-[13px] font-semibold tracking-tight text-foreground group-hover:text-info">
                 Staff Illness
               </h3>
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Absences and return-to-work clearance</p>
+              <p className="text-[12px] text-muted-foreground">Absences and return-to-work clearance</p>
             </div>
           </div>
         </Link>
       </div>
 
-      <div className="flex flex-wrap gap-2 text-sm text-slate-600 dark:text-slate-400">
+      <div className="flex flex-wrap gap-2 text-[13px] text-muted-foreground">
         <Activity className="h-4 w-4 shrink-0" />
         <span>
           Configure per-resident thresholds from a resident →{" "}
@@ -183,7 +181,7 @@ export default function AdminInfectionControlHubPage() {
       </div>
 
       {activeOut > 0 && !loading && (
-        <div className="flex items-start gap-2 rounded-lg border border-amber-200/80 bg-amber-50/50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
+        <div className="flex items-start gap-2 rounded-lg border border-warning/20 bg-warning/10 px-4 py-3 text-[13px] text-warning">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>There is an active outbreak in this facility scope. Open the related surveillance record to jump into the outbreak detail workflow.</span>
         </div>

@@ -155,8 +155,6 @@ export default function AdminRoundingPlansPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <></>
-
       <div className="relative z-10 space-y-6">
         <header className="mb-6 mt-2">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6 mb-4">
@@ -182,15 +180,15 @@ export default function AdminRoundingPlansPage() {
             className="h-[90px] text-left group"
           >
             <V2Card hoverColor="indigo" className={cn(
-              "border-indigo-500/20 transition-all duration-300",
+              "border-primary/20 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]",
               filter === "active" && "ring-2 ring-indigo-500 ring-offset-2 ring-offset-background"
             )}>
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-wider uppercase text-indigo-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-info flex items-center gap-2">
                   Active Plans
                   <Filter className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
                 </h3>
-                <p className="text-2xl font-mono tracking-tighter text-indigo-400 pb-1 group-hover:text-indigo-300 transition-colors">{activeCount}</p>
+                <p className="text-2xl font-mono tracking-tighter text-info pb-1 transition-colors">{activeCount}</p>
               </div>
             </V2Card>
           </button>
@@ -200,15 +198,15 @@ export default function AdminRoundingPlansPage() {
             className="h-[90px] text-left group"
           >
             <V2Card hoverColor="cyan" className={cn(
-              "border-cyan-500/20 transition-all duration-300",
+              "border-info/20 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]",
               filter === "all" && "ring-2 ring-cyan-500 ring-offset-2 ring-offset-background"
             )}>
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-wider uppercase text-cyan-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-primary flex items-center gap-2">
                   Total Rules
                   <Filter className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
                 </h3>
-                <p className="text-2xl font-mono tracking-tighter text-cyan-400 pb-1 group-hover:text-cyan-300 transition-colors">{totalRules}</p>
+                <p className="text-2xl font-mono tracking-tighter text-primary pb-1 transition-colors">{totalRules}</p>
               </div>
             </V2Card>
           </button>
@@ -218,15 +216,15 @@ export default function AdminRoundingPlansPage() {
             className="h-[90px] text-left group"
           >
             <V2Card hoverColor="emerald" className={cn(
-              "border-emerald-500/20 transition-all duration-300",
+              "border-success/20 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]",
               filter === "all" && "ring-2 ring-emerald-500 ring-offset-2 ring-offset-background"
             )}>
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-success flex items-center gap-2">
                   Total Plans
                   <Filter className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
                 </h3>
-                <p className="text-2xl font-mono tracking-tighter text-emerald-400 pb-1 group-hover:text-emerald-300 transition-colors">{plans.length}</p>
+                <p className="text-2xl font-mono tracking-tighter text-success pb-1 transition-colors">{plans.length}</p>
               </div>
             </V2Card>
           </button>
@@ -319,15 +317,15 @@ export default function AdminRoundingPlansPage() {
             {filteredPlans.map((plan) => (
               <Link key={plan.id} href={`/admin/rounding/plans/${plan.id}`} className="block group">
                 <div className={cn(
-                  "relative overflow-hidden rounded-[14px] border p-5 transition-all duration-300 h-full",
-                  "bg-white/5 backdrop-blur-md dark:bg-[#0A0A0A]/50",
-                  "dark:border-slate-800/80 dark:hover:border-slate-600/80",
-                  plan.status === "active" ? "border-indigo-500/20" : "border-slate-700/30 opacity-70",
+                  "relative overflow-hidden rounded-lg border border-border bg-card p-[13px] transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] h-full",
+                  "bg-card",
+                  "border-border hover:bg-muted/40 hover:-translate-y-0.5",
+                  plan.status === "active" ? "border-indigo-500/20" : "opacity-70",
                 )}>
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex items-center gap-2 min-w-0">
                       <ClipboardList aria-hidden className="h-4 w-4 text-indigo-400 shrink-0" />
-                      <span className="font-medium text-slate-100 truncate">
+                      <span className="font-medium text-foreground truncate">
                         {displayName(plan.residents) || "Resident"}
                       </span>
                       {(plan.residents as PlanRow["residents"] & { room_number?: string | null })?.room_number && (
@@ -345,7 +343,7 @@ export default function AdminRoundingPlansPage() {
                   </div>
 
                   {plan.rationale && (
-                    <p className="text-xs text-slate-400 leading-relaxed mb-3 line-clamp-2">{plan.rationale}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed mb-3 line-clamp-2">{plan.rationale}</p>
                   )}
 
                   <div className="flex items-center gap-4 text-[10px] font-mono uppercase tracking-wider text-slate-500">
@@ -364,9 +362,9 @@ export default function AdminRoundingPlansPage() {
             ))}
 
             {filteredPlans.length === 0 && (
-              <div className="col-span-full rounded-[14px] border border-slate-800/50 bg-slate-900/30 p-12 text-center">
+              <div className="col-span-full rounded-lg border border-border bg-card p-12 text-center">
                 <ClipboardList aria-hidden className="mx-auto h-8 w-8 text-slate-600 mb-3" />
-                <p className="text-sm text-slate-400">No plans match the current filter.</p>
+                <p className="text-sm text-muted-foreground">No plans match the current filter.</p>
                 {filter !== "all" && (
                   <button
                     onClick={() => setFilter("all")}
@@ -393,7 +391,7 @@ function FilterChip({ label, count, active, onClick }: { label: string; count: n
     <button
       onClick={onClick}
       className={cn(
-        "px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
+        "px-3 py-1.5 rounded-lg text-xs font-medium transition-all border",
         active
           ? "bg-indigo-600 text-white border-indigo-600"
           : "bg-slate-800/50 text-slate-400 border-slate-700 hover:bg-slate-700/50 hover:text-slate-300"

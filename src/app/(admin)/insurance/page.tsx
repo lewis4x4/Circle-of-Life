@@ -127,25 +127,23 @@ export default function AdminInsuranceHubPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <></>
-      
       <div className="relative z-10 space-y-6">
         <InsuranceHubNav />
         <div className="flex items-center gap-3">
-          <Umbrella className="h-8 w-8 text-slate-600 dark:text-slate-300" aria-hidden />
+          <Umbrella className="h-8 w-8 text-muted-foreground" aria-hidden />
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Insurance & risk</h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              Corporate policies, renewals, claims, COIs, and workers’ compensation (Module 18).
+            <h1 className="text-2xl font-semibold text-foreground">Insurance & risk</h1>
+            <p className="text-sm text-muted-foreground">
+              Corporate policies, renewals, claims, COIs, and workers&apos; compensation (Module 18).
             </p>
-            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-zinc-400">
+            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
               {roleConfig.roleLabel} drill-in: keep policy posture, claims movement, and renewal exposure close to the executive exception flow.
             </p>
           </div>
         </div>
 
         {loadError && (
-          <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+          <p className="text-sm text-destructive" role="alert">
             {loadError}
           </p>
         )}
@@ -159,10 +157,10 @@ export default function AdminInsuranceHubPage() {
             <Link
               key={item.title}
               href={item.href}
-              className="rounded-lg border border-slate-200/70 bg-white/70 p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg dark:border-white/5 dark:hover:border-indigo-500/30"
+              className="rounded-lg border border-border bg-card p-5 shadow-sm transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:-translate-y-0.5 hover:border-border hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
             >
-              <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">{item.title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-slate-700 dark:text-zinc-300">{item.description}</p>
+              <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">{item.title}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-foreground">{item.description}</p>
             </Link>
           ))}
         </div>
@@ -170,10 +168,9 @@ export default function AdminInsuranceHubPage() {
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4" staggerMs={75}>
           <div className="h-[160px]">
             <V2Card hoverColor="slate">
-              <></>
-              <MonolithicWatermark value={activePolicies ?? 0} className="text-slate-800/5 dark:text-white/5 opacity-50" />
+              <MonolithicWatermark value={activePolicies ?? 0} className="text-muted-foreground/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-wider uppercase text-slate-500 flex items-center gap-2">
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground flex items-center gap-2">
                   Active Policies
                 </h3>
                 <p className="text-4xl font-mono tracking-tighter pb-1">{loading ? "…" : activePolicies ?? "—"}</p>
@@ -182,8 +179,7 @@ export default function AdminInsuranceHubPage() {
           </div>
           <div className="h-[160px]">
             <V2Card hoverColor="emerald">
-              <></>
-              <MonolithicWatermark value={renewalsInFlight ?? 0} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
+              <MonolithicWatermark value={renewalsInFlight ?? 0} className="text-success/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                    Renewals in Flight
@@ -193,16 +189,12 @@ export default function AdminInsuranceHubPage() {
             </V2Card>
           </div>
           <div className="h-[160px]">
-            <V2Card hoverColor="red" className={openClaims ? "border-red-500/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]" : ""}>
-              <></>
-              <MonolithicWatermark value={openClaims ?? 0} className="text-red-600/5 dark:text-red-400/5 opacity-50" />
+            <V2Card hoverColor="red" className={openClaims ? "border-destructive/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]" : ""}>
+              <MonolithicWatermark value={openClaims ?? 0} className="text-destructive/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-[10px] font-mono tracking-wider uppercase text-red-600 dark:text-red-400 flex items-center gap-2">
-                     Open Claims
-                  </h3>
-                  {openClaims != null && openClaims > 0 && <></>}
-                </div>
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-red-600 dark:text-red-400 flex items-center gap-2">
+                   Open Claims
+                </h3>
                 <p className="text-4xl font-mono tracking-tighter text-red-600 dark:text-red-400 pb-1">{loading ? "…" : openClaims ?? "—"}</p>
               </div>
             </V2Card>
@@ -211,15 +203,15 @@ export default function AdminInsuranceHubPage() {
 
       <div className="relative overflow-visible z-10 w-full mt-4 space-y-8">
         <div className="relative overflow-visible z-10 w-full">
-          <div className="p-4 sm:p-6 mb-4 rounded-lg border border-white/20 dark:border-white/5 bg-card shadow-xl">
-            <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-1">Total cost of risk (TCoR)</h3>
-            <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
+          <div className="p-4 sm:p-6 mb-4 rounded-lg border border-border bg-card shadow-sm">
+            <h3 className="text-xl font-semibold text-foreground mb-1">Total cost of risk (TCoR)</h3>
+            <p className="text-sm font-mono tracking-wide text-muted-foreground">
               Module 18 Enhanced — rolling ~12 months. Premiums sum stated policy premiums for in-force policies
               overlapping the window; losses sum paid + reserve on claims whose loss date (or reported date) falls in the
               window. Operational estimate, not GAAP.
             </p>
           </div>
-          <div className="p-6 rounded-2xl border border-white/20 dark:border-white/5 bg-card text-sm shadow-sm space-y-4">
+          <div className="p-6 rounded-lg border border-border bg-card text-sm shadow-sm space-y-4">
           <div className="flex flex-wrap items-end gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="tcor-entity">Entity</Label>
@@ -240,51 +232,51 @@ export default function AdminInsuranceHubPage() {
             </div>
           </div>
           {tcorError ? (
-            <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+            <p className="text-sm text-destructive" role="alert">
               {tcorError}
             </p>
           ) : null}
           {tcorLoading ? (
-            <p className="text-sm text-slate-500">Loading TCoR…</p>
+            <p className="text-sm text-muted-foreground">Loading TCoR…</p>
           ) : tcor ? (
             <div className="grid gap-3 text-sm md:grid-cols-2">
-              <p className="text-slate-600 dark:text-slate-400">
-                <span className="font-medium text-slate-800 dark:text-slate-200">Window:</span>{" "}
+              <p className="text-muted-foreground">
+                <span className="font-medium text-foreground">Window:</span>{" "}
                 <span className="font-mono text-xs">
                   {tcor.periodStart} → {tcor.periodEnd}
                 </span>
               </p>
-              <p className="text-slate-600 dark:text-slate-400">
-                <span className="font-medium text-slate-800 dark:text-slate-200">Policies in window:</span>{" "}
+              <p className="text-muted-foreground">
+                <span className="font-medium text-foreground">Policies in window:</span>{" "}
                 {tcor.policyRows}
               </p>
               <p>
-                <span className="text-slate-500">Premiums (stated):</span>{" "}
+                <span className="text-muted-foreground">Premiums (stated):</span>{" "}
                 <span className="font-semibold tabular-nums">{formatUsdFromCents(tcor.premiumsCents)}</span>
               </p>
               <p>
-                <span className="text-slate-500">Incurred losses (paid + reserve, {tcor.claimRows} claims):</span>{" "}
+                <span className="text-muted-foreground">Incurred losses (paid + reserve, {tcor.claimRows} claims):</span>{" "}
                 <span className="font-semibold tabular-nums">{formatUsdFromCents(tcor.incurredLossesCents)}</span>
               </p>
-              <p className="md:col-span-2 border-t border-slate-200 pt-3 dark:border-slate-800">
-                <span className="text-slate-500">TCoR (simple sum):</span>{" "}
-                <span className="text-lg font-semibold tabular-nums text-slate-900 dark:text-white">
+              <p className="md:col-span-2 border-t border-border pt-3">
+                <span className="text-muted-foreground">TCoR (simple sum):</span>{" "}
+                <span className="text-lg font-semibold tabular-nums text-foreground">
                   {formatUsdFromCents(tcor.tcorCents)}
                 </span>
               </p>
             </div>
           ) : (
-            <p className="text-sm text-slate-500">No TCoR data.</p>
+            <p className="text-sm text-muted-foreground">No TCoR data.</p>
           )}
         </div>
         </div>
 
         <div className="relative overflow-visible z-10 w-full mt-4">
-          <div className="p-4 sm:p-6 mb-4 rounded-lg border border-white/20 dark:border-white/5 bg-card shadow-xl">
-            <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-1">Quick links</h3>
-            <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">Navigate insurance workflows.</p>
+          <div className="p-4 sm:p-6 mb-4 rounded-lg border border-border bg-card shadow-sm">
+            <h3 className="text-xl font-semibold text-foreground mb-1">Quick links</h3>
+            <p className="text-sm font-mono tracking-wide text-muted-foreground">Navigate insurance workflows.</p>
           </div>
-          <div className="p-6 rounded-2xl border border-white/20 dark:border-white/5 bg-card flex flex-col gap-3 text-sm shadow-sm">
+          <div className="p-6 rounded-lg border border-border bg-card flex flex-col gap-3 text-sm shadow-sm">
           <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/insurance/policies">
             Policy inventory
           </Link>
@@ -301,7 +293,7 @@ export default function AdminInsuranceHubPage() {
             Certificates of insurance
           </Link>
           <Link className="text-indigo-600 dark:text-indigo-400 font-mono text-xs uppercase tracking-wider hover:text-indigo-500 transition-colors" href="/admin/insurance/workers-comp">
-            Workers’ comp
+            Workers&apos; comp
           </Link>
         </div>
           </div>

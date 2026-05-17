@@ -213,8 +213,6 @@ export default function AdminRoundingLivePage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <></>
-
       <div className="relative z-10 space-y-6">
         <header className="mb-6 mt-2">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6 mb-4">
@@ -222,7 +220,6 @@ export default function AdminRoundingLivePage() {
               
               <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
                 Live Rounding Board
-                {hasCriticals && <></>}
               </h2>
               <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">
                 Tap any resident to record a check, or start sequential rounds
@@ -247,7 +244,6 @@ export default function AdminRoundingLivePage() {
             label="Critical"
             value={String(criticalCount)}
             color={hasCriticals ? "rose" : "emerald"}
-            pulse={hasCriticals}
             active={statusFilter === "critical"}
             onClick={() => setStatusFilter(statusFilter === "critical" ? "all" : "critical")}
           />
@@ -255,7 +251,6 @@ export default function AdminRoundingLivePage() {
             label="Overdue"
             value={String(overdueCount)}
             color={overdueCount > 0 ? "amber" : "emerald"}
-            pulse={overdueCount > 0}
             active={statusFilter === "overdue"}
             onClick={() => setStatusFilter(statusFilter === "overdue" ? "all" : "overdue")}
           />
@@ -330,9 +325,9 @@ export default function AdminRoundingLivePage() {
             <button
               onClick={startSequentialRounds}
               className={cn(
-                "inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-200",
+                "inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]",
                 "text-white",
-                "hover:from-emerald-500 hover:to-emerald-400 active:scale-[0.98]",
+                "hover:bg-success",
                 "shadow-lg shadow-emerald-900/30",
               )}
             >
@@ -359,23 +354,23 @@ export default function AdminRoundingLivePage() {
 
             return (
               <MotionItem key={task.id}>
-                <div
-                  className={cn(
-                    "group relative overflow-hidden rounded-lg border p-5 transition-all duration-300 shadow-sm hover:shadow-lg dark:hover:shadow-white/[0.01]",
-                    "bg-card",
-                    cfg.bg,
-                    canCheck && "cursor-pointer tap-responsive hover:brightness-105",
-                  )}
+                  <div
+                    className={cn(
+                      "group relative overflow-hidden flex items-center gap-3 rounded-lg border border-border min-h-[36px] px-[13px] py-2 bg-card hover:bg-muted/40 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
+                      "bg-card",
+                      cfg.bg,
+                      canCheck && "cursor-pointer hover:-translate-y-0.5 hover:bg-muted/40",
+                    )}
                   onClick={canCheck ? () => openSingleCheck(task) : undefined}
                   role={canCheck ? "button" : undefined}
                   tabIndex={canCheck ? 0 : undefined}
                   onKeyDown={canCheck ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openSingleCheck(task); } } : undefined}
+                  aria-label={canCheck ? `Check in ${displayName(task.residents) || "Resident"}` : undefined}
                 >
                   <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-                    <div className={cn("flex items-center gap-2 shrink-0 md:mb-0 mb-2 w-full md:w-auto border-b md:border-b-0 border-white/10 pb-2 md:pb-0", cfg.color)}>
-                      <Icon aria-hidden className="h-6 w-6" />
-                      {cfg.pulse && <></>}
-                    </div>
+                      <div className={cn("flex items-center gap-2 shrink-0 md:mb-0 mb-2 w-full md:w-auto border-b md:border-b-0 border-white/10 pb-2 md:pb-0", cfg.color)}>
+                        <Icon aria-hidden className="h-6 w-6" />
+                      </div>
 
                     <div className="flex-1 min-w-0 w-full">
                       <div className="flex items-center gap-3 flex-wrap">
@@ -406,9 +401,9 @@ export default function AdminRoundingLivePage() {
                       </div>
                       {canCheck && (
                         <div className={cn(
-                          "rounded-full border px-6 py-2.5 text-[10px] uppercase tracking-wider font-bold transition-all shadow-md",
+                          "rounded-lg border px-4 py-2 text-[10px] uppercase tracking-wider font-bold transition-all",
                           "border-emerald-500/50 bg-emerald-600 text-white",
-                          "group-hover:bg-emerald-500 group-hover:border-emerald-400 group-hover:shadow-lg hover:-translate-y-0.5 scale-100",
+                          "group-hover:bg-emerald-500 group-hover:border-emerald-400 hover:-translate-y-0.5",
                         )}>
                           Check In
                         </div>
@@ -463,7 +458,7 @@ export default function AdminRoundingLivePage() {
   );
 }
 
-function StatCard({ label, value, color, pulse, active, onClick }: { label: string; value: string; color: string; pulse?: boolean; active?: boolean; onClick: () => void }) {
+function StatCard({ label, value, color, active, onClick }: { label: string; value: string; color: string; active?: boolean; onClick: () => void }) {
   const colorClasses = {
     rose: { border: "border-rose-500/20", text: "text-rose-400", ring: "ring-rose-500" },
     amber: { border: "border-amber-500/20", text: "text-amber-400", ring: "ring-amber-500" },
@@ -480,13 +475,12 @@ function StatCard({ label, value, color, pulse, active, onClick }: { label: stri
       >
         <V2Card hoverColor={color} className={cn(
           colorClasses.border,
-          "transition-all duration-300",
+          "transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]",
           active && `ring-2 ${colorClasses.ring} ring-offset-2 ring-offset-background`
         )}>
           <div className="relative z-10 flex flex-col h-full justify-between">
             <h3 className={cn("text-[10px] font-mono tracking-wider uppercase flex items-center gap-2", colorClasses.text)}>
               {label}
-              {pulse && <></>}
               <Filter className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
             </h3>
             <p className={cn("text-2xl font-mono tracking-tighter pb-1", colorClasses.text)}>{value}</p>
@@ -510,7 +504,7 @@ function StatusFilterChip({ label, count, active, onClick, color }: { label: str
     <button
       onClick={onClick}
       className={cn(
-        "px-3 py-1.5 rounded-full text-xs font-medium transition-all border flex items-center gap-2",
+        "px-3 py-1.5 rounded-lg text-xs font-medium transition-all border flex items-center gap-2",
         active
           ? "bg-slate-800 text-white border-slate-600"
           : `bg-slate-800/30 text-slate-400 hover:text-slate-200 ${colorClasses[color]}`

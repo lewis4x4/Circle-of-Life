@@ -255,20 +255,20 @@ export default function AdminFamilyPortalPage() {
     <div className="mx-auto max-w-6xl space-y-10 pb-12 w-full">
       
       {/* ─── MOONSHOT HEADER ─── */}
-      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
+      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-border shadow-sm mt-4">
          <div className="space-y-2">
            
-           <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+           <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-foreground flex items-center gap-4">
               Family Connections
            </h1>
-           <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400">
+           <p className="mt-2 font-medium tracking-wide text-muted-foreground">
              Triage, conferences, and consent records for the selected facility.
            </p>
          </div>
          <div>
            <Link
              href="/admin/family-messages"
-             className="px-6 py-3 rounded-full text-sm font-bold uppercase tracking-wider bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm border border-slate-200/50 dark:border-white/10 hover:shadow-md transition-all tap-responsive inline-flex items-center gap-3 outline-none"
+             className="px-6 py-3 rounded-full text-sm font-bold uppercase tracking-wider bg-card text-foreground shadow-sm border border-border hover:bg-muted/40 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] tap-responsive inline-flex items-center gap-3 outline-none"
            >
              <MessageCircle className="h-4 w-4" aria-hidden />
              Go to Direct Messages
@@ -277,7 +277,7 @@ export default function AdminFamilyPortalPage() {
       </div>
 
       {!facilityReady && (
-        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-6 text-sm text-amber-700 dark:text-amber-400 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm mx-6">
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-sm text-amber-700 dark:text-amber-400 font-medium tracking-wide flex items-center gap-4 mx-6">
            <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 border border-amber-500/30">
               <span className="font-bold">!</span>
            </div>
@@ -286,7 +286,7 @@ export default function AdminFamilyPortalPage() {
       )}
 
       {loadError && (
-        <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-6 text-sm text-rose-700 dark:text-rose-400 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm mx-6">
+        <div className="rounded-lg border border-rose-500/20 bg-rose-500/10 p-6 text-sm text-rose-700 dark:text-rose-400 font-medium tracking-wide flex items-center gap-4 mx-6">
            <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/30">
               <span className="font-bold">!</span>
            </div>
@@ -294,7 +294,7 @@ export default function AdminFamilyPortalPage() {
         </div>
       )}
       {actionError && (
-        <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-6 text-sm text-rose-700 dark:text-rose-400 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm mx-6">
+        <div className="rounded-lg border border-rose-500/20 bg-rose-500/10 p-6 text-sm text-rose-700 dark:text-rose-400 font-medium tracking-wide flex items-center gap-4 mx-6">
            <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/30">
               <span className="font-bold">!</span>
            </div>
@@ -302,7 +302,7 @@ export default function AdminFamilyPortalPage() {
         </div>
       )}
       {actionMessage && (
-        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-6 text-sm text-emerald-700 dark:text-emerald-300 font-medium tracking-wide flex items-center gap-4 backdrop-blur-sm mx-6">
+        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-6 text-sm text-emerald-700 dark:text-emerald-300 font-medium tracking-wide flex items-center gap-4 mx-6">
            <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 border border-emerald-500/30">
               <span className="font-bold">✓</span>
            </div>
@@ -312,9 +312,9 @@ export default function AdminFamilyPortalPage() {
 
       {/* ─── MESSAGE TRIAGE ─── */}
       <div id="message-triage" className="space-y-6">
-        <div className="flex items-center gap-3 border-b border-slate-200/50 dark:border-white/10 pb-4 px-2">
+        <div className="flex items-center gap-3 border-b border-border pb-4 px-2">
           <Heart className="h-5 w-5 text-rose-500" />
-          <h3 className="text-xl font-medium text-slate-900 dark:text-white tracking-tight">
+          <h3 className="text-xl font-medium text-foreground tracking-tight">
             Message Triage
           </h3>
           {triageFilter !== "all" ? (
@@ -324,7 +324,7 @@ export default function AdminFamilyPortalPage() {
           ) : null}
         </div>
 
-        <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] shadow-2xl overflow-hidden p-6 md:p-8 relative">
+        <div className="border-border rounded-lg bg-card shadow-sm overflow-hidden p-6 md:p-8 relative">
            <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
            <div className="relative z-10 mb-6 flex flex-wrap items-center gap-2">
              {([
@@ -342,7 +342,7 @@ export default function AdminFamilyPortalPage() {
                    "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
                    triageFilter === option.value
                      ? "bg-rose-600 text-white"
-                     : "bg-white/80 text-slate-600 hover:bg-white dark:bg-black/20 dark:text-zinc-300 dark:hover:bg-black/30",
+                     : "bg-muted/40 text-muted-foreground hover:bg-muted",
                  )}
                >
                 {option.label}
@@ -354,78 +354,78 @@ export default function AdminFamilyPortalPage() {
               <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
                 Triage filter: {formatStatus(triageFilter)}
               </Badge>
-              <Link href="/admin/family-portal#message-triage" className={cn("rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors")}>
+              <Link href="/admin/family-portal#message-triage" className={cn("rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-muted transition-colors duration-[var(--motion-duration-micro)]")}>
                 Clear triage filter
               </Link>
             </div>
           ) : null}
-           <div className="hidden lg:grid grid-cols-[2fr_1fr_2fr_3fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
-             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Resident</div>
-             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Status</div>
-             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Keywords</div>
-             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Message Snippet</div>
-             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">Updated</div>
+           <div className="hidden lg:flex items-center gap-3 px-[13px] py-2 border-b border-border bg-card/60 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+             <div className="flex-[2]">Resident</div>
+             <div className="flex-1">Status</div>
+             <div className="flex-[2]">Keywords</div>
+             <div className="flex-[3]">Message Snippet</div>
+             <div className="flex-1 text-right">Updated</div>
            </div>
 
-           <div className="space-y-4 mt-6 relative z-10">
+           <div className="space-y-4 mt-4">
              {!facilityReady ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500">
+               <div className="p-8 text-center text-sm font-medium text-muted-foreground">
                  Awaiting facility selection...
                </div>
              ) : loading ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500">
+               <div className="p-8 text-center text-sm font-medium text-muted-foreground">
                  Loading queue...
                </div>
              ) : triage.length === 0 ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center gap-3">
-                 <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center">
-                   <Info className="h-6 w-6 text-slate-400 dark:text-zinc-500"/>
+               <div className="p-8 text-center text-sm font-medium text-muted-foreground bg-muted rounded-lg border border-dashed border-border flex flex-col items-center justify-center gap-3">
+                 <div className="w-12 h-12 rounded-full bg-card border border-border flex items-center justify-center">
+                   <Info className="h-6 w-6 text-muted-foreground"/>
                  </div>
                  No clinical triage anomalies detected in family messages.
                </div>
              ) : featuredTriage.length === 0 ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10">
+               <div className="p-8 text-center text-sm font-medium text-muted-foreground bg-muted rounded-lg border border-dashed border-border">
                  No triage items match this filter.
                </div>
              ) : (
                 <MotionList className="space-y-4">
                   {featuredTriage.map((row) => (
                     <MotionItem key={row.id}>
-                      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_2fr_3fr_1fr] gap-4 items-center p-6 rounded-lg bg-white border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-rose-200 dark:hover:border-rose-500/30 transition-all duration-300 w-full cursor-pointer outline-none hover:shadow-lg dark:hover:bg-white/[0.05]">
+                      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_2fr_3fr_1fr] gap-3 items-center min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card tap-responsive group hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] w-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-muted border border-border flex items-center justify-center shrink-0">
                             <></>
                           </div>
-                          <span className="font-semibold text-xl text-slate-900 dark:text-white truncate group-hover:text-rose-600 dark:group-hover:text-rose-300 transition-colors tracking-tight">
+                          <span className="text-[13px] font-semibold text-foreground truncate tracking-tight">
                              {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "—"}
                           </span>
                         </div>
                         
                         <div className="flex flex-row justify-between lg:justify-start items-center">
-                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Status</span>
+                          <span className="lg:hidden text-[12px] text-muted-foreground uppercase tracking-wider font-bold">Status</span>
                           <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full border shadow-inner bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400">
                             {formatStatus(row.triage_status)}
                           </span>
                         </div>
 
                         <div className="flex flex-row justify-between lg:justify-start items-center">
-                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Keywords</span>
-                          <span className="text-sm font-mono text-rose-600 dark:text-rose-400 truncate max-w-[200px]">
+                          <span className="lg:hidden text-[12px] text-muted-foreground uppercase tracking-wider font-bold">Keywords</span>
+                          <span className="text-[12px] text-rose-600 dark:text-rose-400 truncate max-w-[200px]">
                             {(row.matched_keywords?.length ?? 0) > 0 ? row.matched_keywords.join(", ") : "—"}
                           </span>
                         </div>
                         
                         <div className="flex flex-row justify-between lg:justify-start items-center">
-                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Snippet</span>
-                          <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 truncate max-w-[300px]">
+                          <span className="lg:hidden text-[12px] text-muted-foreground uppercase tracking-wider font-bold">Snippet</span>
+                          <span className="text-[13px] text-foreground truncate max-w-[300px]">
                             {row.family_portal_messages?.body ?? "—"}
                           </span>
                         </div>
 
                         <div className="flex flex-row justify-between lg:justify-end items-center">
-                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Updated</span>
+                          <span className="lg:hidden text-[12px] text-muted-foreground uppercase tracking-wider font-bold">Updated</span>
                           <div className="flex flex-col items-end gap-2">
-                            <span className="text-[11px] font-mono tracking-wide text-slate-500 dark:text-zinc-500 whitespace-nowrap">
+                            <span className="text-[12px] font-mono tracking-wide tabular-nums text-muted-foreground whitespace-nowrap">
                               {format(new Date(row.updated_at), "MMM d, yyyy")}
                             </span>
                             <div className="flex flex-wrap justify-end gap-2">
@@ -470,9 +470,9 @@ export default function AdminFamilyPortalPage() {
 
       {/* ─── CARE CONFERENCES ─── */}
       <div id="care-conferences" className="space-y-6">
-        <div className="flex items-center gap-3 border-b border-slate-200/50 dark:border-white/10 pb-4 px-2 tracking-tight">
-          <Calendar className="h-5 w-5 text-indigo-500" />
-          <h3 className="text-xl font-medium text-slate-900 dark:text-white">
+        <div className="flex items-center gap-3 border-b border-border pb-4 px-2 tracking-tight">
+          <Calendar className="h-5 w-5 text-primary" />
+          <h3 className="text-xl font-medium text-foreground">
             Care Conferences
           </h3>
           {conferenceFilter !== "all" ? (
@@ -482,7 +482,7 @@ export default function AdminFamilyPortalPage() {
           ) : null}
         </div>
 
-        <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] shadow-2xl overflow-hidden p-6 md:p-8 relative">
+        <div className="border-border rounded-lg bg-card shadow-sm overflow-hidden p-6 md:p-8 relative">
            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
            <div className="relative z-10 mb-6 flex flex-wrap items-center gap-2">
              {([
@@ -500,7 +500,7 @@ export default function AdminFamilyPortalPage() {
                    "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
                    conferenceFilter === option.value
                      ? "bg-indigo-600 text-white"
-                     : "bg-white/80 text-slate-600 hover:bg-white dark:bg-black/20 dark:text-zinc-300 dark:hover:bg-black/30",
+                     : "bg-muted/40 text-muted-foreground hover:bg-muted",
                  )}
                >
                 {option.label}
@@ -512,75 +512,75 @@ export default function AdminFamilyPortalPage() {
               <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
                 Conference filter: {conferenceFilter === "upcoming" ? "upcoming" : formatStatus(conferenceFilter)}
               </Badge>
-              <Link href="/admin/family-portal#care-conferences" className={cn("rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors")}>
+              <Link href="/admin/family-portal#care-conferences" className={cn("rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-muted transition-colors duration-[var(--motion-duration-micro)]")}>
                 Clear conference filter
               </Link>
             </div>
           ) : null}
-           <div className="hidden lg:grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
-             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Resident</div>
-             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Start Time</div>
-             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Status</div>
-             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Recording OK</div>
-             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Room</div>
+           <div className="hidden lg:flex items-center gap-3 px-[13px] py-2 border-b border-border bg-card/60 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+             <div className="flex-[2]">Resident</div>
+             <div className="flex-[1.5]">Start Time</div>
+             <div className="flex-1">Status</div>
+             <div className="flex-1">Recording OK</div>
+             <div className="flex-1">Room</div>
            </div>
 
-           <div className="space-y-4 mt-6 relative z-10">
+           <div className="space-y-4 mt-4">
              {!facilityReady ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500">
+               <div className="p-8 text-center text-sm font-medium text-muted-foreground">
                  Awaiting facility selection...
                </div>
              ) : loading ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500">
+               <div className="p-8 text-center text-sm font-medium text-muted-foreground">
                  Loading queue...
                </div>
              ) : conferences.length === 0 ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10">
+               <div className="p-8 text-center text-sm font-medium text-muted-foreground bg-muted rounded-lg border border-dashed border-border">
                  No scheduled conferences for this facility.
                </div>
              ) : featuredConferences.length === 0 ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10">
+               <div className="p-8 text-center text-sm font-medium text-muted-foreground bg-muted rounded-lg border border-dashed border-border">
                  No conferences match this filter.
                </div>
              ) : (
                 <MotionList className="space-y-4">
                   {featuredConferences.map((row) => (
                     <MotionItem key={row.id}>
-                      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1.5fr_1fr_1fr_1fr] gap-4 items-center p-6 rounded-lg bg-white border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-lg dark:hover:bg-white/[0.05] transition-all duration-300 w-full group">
+                      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1.5fr_1fr_1fr_1fr] gap-3 items-center min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] w-full group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                            <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                          <div className="w-8 h-8 rounded-full bg-muted border border-border flex items-center justify-center shrink-0">
+                            <div className="w-2 h-2 rounded-full bg-primary" />
                           </div>
-                          <span className="font-semibold text-xl text-slate-900 dark:text-white truncate tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">
+                          <span className="text-[13px] font-semibold text-foreground truncate tracking-tight">
                              {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "—"}
                           </span>
                         </div>
 
                         <div className="flex flex-row justify-between lg:justify-start items-center">
-                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Start</span>
-                          <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">
+                          <span className="lg:hidden text-[12px] text-muted-foreground uppercase tracking-wider font-bold">Start</span>
+                          <span className="text-[13px] text-foreground">
                             {format(new Date(row.scheduled_start), "MMM d, yyyy p")}
                           </span>
                         </div>
                         
                         <div className="flex flex-row justify-between lg:justify-start items-center">
-                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Status</span>
-                          <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full border shadow-inner bg-slate-500/10 text-slate-600 border-slate-500/20 dark:text-slate-400">
+                          <span className="lg:hidden text-[12px] text-muted-foreground uppercase tracking-wider font-bold">Status</span>
+                          <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full border shadow-inner bg-muted text-muted-foreground border-border">
                             {formatStatus(row.status)}
                           </span>
                         </div>
 
                         <div className="flex flex-row justify-between lg:justify-start items-center">
-                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Recording</span>
+                          <span className="lg:hidden text-[12px] text-muted-foreground uppercase tracking-wider font-bold">Recording</span>
                           <span className={cn("text-xs font-bold uppercase tracking-wider", row.recording_consent ? "text-emerald-500" : "text-rose-500")}>
                             {row.recording_consent ? "Yes" : "No"}
                           </span>
                         </div>
 
                         <div className="flex flex-row justify-between lg:justify-start items-center">
-                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Room</span>
+                          <span className="lg:hidden text-[12px] text-muted-foreground uppercase tracking-wider font-bold">Room</span>
                           <div className="flex flex-col items-start lg:items-end gap-2">
-                            <span className="text-sm font-mono text-slate-500 dark:text-zinc-500 truncate">
+                            <span className="text-[12px] font-mono tabular-nums text-muted-foreground truncate">
                               {row.external_room_id ?? "—"}
                             </span>
                             <div className="flex flex-wrap gap-2">
@@ -647,66 +647,66 @@ export default function AdminFamilyPortalPage() {
 
       {/* ─── CONSENT RECORDS ─── */}
       <div className="space-y-6">
-        <div className="flex items-center gap-3 border-b border-slate-200/50 dark:border-white/10 pb-4 px-2 tracking-tight">
+        <div className="flex items-center gap-3 border-b border-border pb-4 px-2 tracking-tight">
           <FileCheck2 className="h-5 w-5 text-emerald-500" />
-          <h3 className="text-xl font-medium text-slate-900 dark:text-white">
+          <h3 className="text-xl font-medium text-foreground">
             Consent Records
           </h3>
         </div>
 
-        <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] shadow-2xl overflow-hidden p-6 md:p-8 relative">
+        <div className="border-border rounded-lg bg-card shadow-sm overflow-hidden p-6 md:p-8 relative">
            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
-           <div className="hidden lg:grid grid-cols-[2fr_2fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
-             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Resident</div>
-             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Type</div>
-             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Version</div>
-             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Signed</div>
+           <div className="hidden lg:flex items-center gap-3 px-[13px] py-2 border-b border-border bg-card/60 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+             <div className="flex-[2]">Resident</div>
+             <div className="flex-[2]">Type</div>
+             <div className="flex-1">Version</div>
+             <div className="flex-1">Signed</div>
            </div>
 
-           <div className="space-y-4 mt-6 relative z-10">
+           <div className="space-y-4 mt-4">
              {!facilityReady ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500">
+               <div className="p-8 text-center text-sm font-medium text-muted-foreground">
                  Awaiting facility selection...
                </div>
              ) : loading ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500">
+               <div className="p-8 text-center text-sm font-medium text-muted-foreground">
                  Loading queue...
                </div>
              ) : consents.length === 0 ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10">
+               <div className="p-8 text-center text-sm font-medium text-muted-foreground bg-muted rounded-lg border border-dashed border-border">
                  No consent records for this facility.
                </div>
              ) : (
                 <MotionList className="space-y-4">
                   {featuredConsents.map((row) => (
                     <MotionItem key={row.id}>
-                      <div className="grid grid-cols-1 lg:grid-cols-[2fr_2fr_1fr_1fr] gap-4 items-center p-6 rounded-lg bg-white border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-lg dark:hover:bg-white/[0.05] transition-all duration-300 w-full group">
+                      <div className="grid grid-cols-1 lg:grid-cols-[2fr_2fr_1fr_1fr] gap-3 items-center min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] w-full group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-muted border border-border flex items-center justify-center shrink-0">
                             <div className="w-2 h-2 rounded-full bg-emerald-500" />
                           </div>
-                          <span className="font-semibold text-xl text-slate-900 dark:text-white truncate tracking-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors">
+                          <span className="text-[13px] font-semibold text-foreground truncate tracking-tight">
                              {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "—"}
                           </span>
                         </div>
 
                         <div className="flex flex-row justify-between lg:justify-start items-center">
-                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Type</span>
-                          <span className="text-sm font-semibold text-slate-700 dark:text-zinc-300">
+                          <span className="lg:hidden text-[12px] text-muted-foreground uppercase tracking-wider font-bold">Type</span>
+                          <span className="text-[13px] text-foreground font-medium">
                             {row.consent_type}
                           </span>
                         </div>
                         
                         <div className="flex flex-row justify-between lg:justify-start items-center">
-                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Version</span>
-                          <span className="text-xs font-mono text-slate-500 dark:text-zinc-500">
+                          <span className="lg:hidden text-[12px] text-muted-foreground uppercase tracking-wider font-bold">Version</span>
+                          <span className="text-[12px] font-mono tabular-nums text-muted-foreground">
                             {row.document_version}
                           </span>
                         </div>
 
                         <div className="flex flex-row justify-between lg:justify-start items-center">
-                          <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Signed</span>
-                          <span className="text-[11px] font-mono tracking-wide text-slate-500 dark:text-zinc-500">
+                          <span className="lg:hidden text-[12px] text-muted-foreground uppercase tracking-wider font-bold">Signed</span>
+                          <span className="text-[12px] font-mono tracking-wide tabular-nums text-muted-foreground">
                             {format(new Date(row.signed_at), "MMM d, yyyy")}
                           </span>
                         </div>

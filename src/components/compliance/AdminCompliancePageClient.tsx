@@ -228,10 +228,10 @@ export function AdminCompliancePageClient({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between py-6">
           <div>
             
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
               Compliance {(emergencyItems.some((e) => e.overdue) || (complianceScore?.percentage ?? 100) < 75) && <></>}
             </h1>
-            <p className="mt-2 max-w-xl text-sm text-slate-600 dark:text-slate-400">
+            <p className="mt-2 max-w-xl text-sm text-muted-foreground">
               Incident reporting aligns with{" "}
               <StatuteCitation statuteCode="59A-36.018" className="font-medium text-indigo-700 dark:text-indigo-300">
                 FAC 59A-36.018
@@ -240,10 +240,10 @@ export function AdminCompliancePageClient({
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Link href="/admin/compliance/audit-export" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-white/50 dark:bg-zinc-900/40 text-[10px] uppercase tracking-wider font-mono text-slate-700 dark:text-slate-300")}>
+            <Link href="/admin/compliance/audit-export" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-[10px] uppercase tracking-wider font-mono text-foreground")}>
               Audit log export
             </Link>
-            <Link href="/admin/compliance/policies" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-white/50 dark:bg-zinc-900/40 text-[10px] uppercase tracking-wider font-mono text-slate-700 dark:text-slate-300")}>
+            <Link href="/admin/compliance/policies" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-[10px] uppercase tracking-wider font-mono text-foreground")}>
               Policy library
             </Link>
             <Link href="/admin/compliance/deficiencies/new" className={cn(buttonVariants({ size: "sm" }), "text-[10px] uppercase tracking-wider font-mono bg-indigo-600 hover:bg-indigo-700 text-white")}>
@@ -269,7 +269,7 @@ export function AdminCompliancePageClient({
         </div>
 
         {!facilityReady ? (
-          <div className="rounded-lg bg-amber-50/40 dark:bg-amber-950/20 p-8 border border-amber-200/50 dark:border-amber-900/50 backdrop-blur-md">
+          <div className="rounded-lg bg-amber-50/40 dark:bg-amber-950/20 p-8 border border-amber-200/50 dark:border-amber-900/50">
             <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-300 mb-2">Select a facility</h3>
             <p className="text-sm font-medium text-amber-700 dark:text-amber-500">
               Choose a facility in header to load compliance metrics for that site.
@@ -341,36 +341,36 @@ export function AdminCompliancePageClient({
 
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <FileWarning className="h-6 w-6 text-indigo-500 drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
-            <h2 className="text-xl font-semibold tracking-tight text-slate-800 dark:text-slate-100">Open Deficiencies</h2>
+            <FileWarning className="h-6 w-6 text-primary" />
+            <h2 className="text-xl font-semibold tracking-tight text-foreground">Open Deficiencies</h2>
           </div>
-          <p className="text-sm font-mono text-slate-500 mb-6">Survey citations that still need correction or verification.</p>
+          <p className="text-sm text-muted-foreground mb-6">Survey citations that still need correction or verification.</p>
 
           {!facilityReady ? (
-            <p className="text-sm text-slate-500">Select a facility to list deficiencies.</p>
+            <p className="text-sm text-muted-foreground">Select a facility to list deficiencies.</p>
           ) : defLoading ? (
-            <p className="text-sm font-mono text-slate-500">Loading…</p>
+            <p className="text-sm text-muted-foreground">Loading…</p>
           ) : defRows.length === 0 ? (
-            <div className="p-8 text-center text-slate-500 bg-white/30 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md max-w-xl mx-auto mt-8">
-               <p className="font-medium">All Clear</p>
+            <div className="p-8 text-center text-muted-foreground bg-card rounded-xl border border-border max-w-xl mx-auto mt-8">
+               <p className="font-medium text-foreground">All Clear</p>
                <p className="text-sm opacity-80 mt-1">No open deficiencies for this facility.</p>
             </div>
           ) : (
             <MotionList className="space-y-3">
               {defRows.map((row) => (
-                <MotionItem key={row.id} className="p-4 rounded-2xl group transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/40 dark:border-white/5 bg-white/50 dark:bg-slate-900/30">
+                <MotionItem key={row.id} className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 group cursor-pointer">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800/80 flex flex-col items-center justify-center border border-slate-200 dark:border-slate-700/50 flex-shrink-0">
-                        <span className="text-[10px] uppercase font-mono tracking-wider text-slate-400">Tag</span>
-                        <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{row.tag_number}</span>
+                      <div className="w-12 h-12 rounded-xl bg-muted flex flex-col items-center justify-center border border-border flex-shrink-0">
+                        <span className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground">Tag</span>
+                        <span className="text-sm font-bold text-foreground tabular-nums">{row.tag_number}</span>
                       </div>
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="font-mono text-[9px] uppercase tracking-wider shadow-sm bg-white dark:bg-black/40">Severity {row.severity}</Badge>
-                          <span className="text-[10px] font-mono tracking-wider text-slate-400 uppercase">{row.status.replace(/_/g, " ")}</span>
+                          <Badge variant="outline" className="font-mono text-[9px] uppercase tracking-wider bg-card">Severity {row.severity}</Badge>
+                          <span className="text-[10px] font-mono tracking-wider text-muted-foreground uppercase">{row.status.replace(/_/g, " ")}</span>
                         </div>
-                        <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">POC Due: {row.submission_due_date ?? "—"}</span>
+                        <span className="text-sm text-muted-foreground font-medium">POC Due: {row.submission_due_date ?? "—"}</span>
                       </div>
                     </div>
 
@@ -389,13 +389,13 @@ export function AdminCompliancePageClient({
 
         {/* Enhanced Tier: Compliance Score */}
         {complianceScore && (
-          <div className="rounded-lg p-6 border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/30">
+          <div className="rounded-lg p-6 border border-border bg-card">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <TrendingUp className="h-6 w-6 text-indigo-500" />
+                <TrendingUp className="h-6 w-6 text-primary" />
                 <div>
-                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Compliance Score</h2>
-                  <p className="text-sm text-slate-500">Based on latest rule-based scan</p>
+                  <h2 className="text-xl font-semibold text-foreground">Compliance Score</h2>
+                  <p className="text-sm text-muted-foreground">Based on latest rule-based scan</p>
                 </div>
               </div>
               <Link href="/admin/compliance/scan" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-indigo-50/30 dark:bg-indigo-900/20 text-[10px] uppercase tracking-wider font-mono text-indigo-700 dark:text-indigo-300")}>
@@ -403,23 +403,23 @@ export function AdminCompliancePageClient({
               </Link>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-6 rounded-xl bg-slate-50 dark:bg-slate-900/30 text-center">
-                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              <div className="p-6 rounded-xl bg-muted text-center">
+                <p className="text-2xl font-bold tabular-nums text-foreground">
                   {complianceScore.percentage}%
                 </p>
-                <p className="text-xs text-slate-500 mt-2 uppercase">Pass Rate</p>
+                <p className="text-xs text-muted-foreground mt-2 uppercase">Pass Rate</p>
               </div>
-              <div className="p-6 rounded-xl bg-slate-50 dark:bg-slate-900/30 text-center">
-                <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+              <div className="p-6 rounded-xl bg-muted text-center">
+                <p className="text-3xl font-bold tabular-nums text-foreground">
                   {complianceScore.passed}
                 </p>
-                <p className="text-xs text-slate-500 mt-2 uppercase">Rules Passing</p>
+                <p className="text-xs text-muted-foreground mt-2 uppercase">Rules Passing</p>
               </div>
-              <div className="p-6 rounded-xl bg-slate-50 dark:bg-slate-900/30 text-center">
-                <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+              <div className="p-6 rounded-xl bg-muted text-center">
+                <p className="text-3xl font-bold tabular-nums text-foreground">
                   {complianceScore.total}
                 </p>
-                <p className="text-xs text-slate-500 mt-2 uppercase">Total Rules</p>
+                <p className="text-xs text-muted-foreground mt-2 uppercase">Total Rules</p>
               </div>
             </div>
             <Link href="/admin/compliance/rules" className="mt-4 inline-block text-center w-full">
@@ -433,13 +433,13 @@ export function AdminCompliancePageClient({
 
         {/* Enhanced Tier: Emergency Preparedness */}
         {emergencyItems.length > 0 && (
-          <div className="rounded-lg p-6 border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/30">
+          <div className="rounded-lg p-6 border border-border bg-card">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className={`p-3 rounded-lg ${
                   emergencyItems.some((e) => e.overdue)
-                    ? "bg-rose-100"
-                    : "bg-slate-100"
+                    ? "bg-rose-500/10"
+                    : "bg-muted"
                 }`}>
                   {emergencyItems.some((e) => e.overdue) ? (
                     <Flame className="h-6 w-6 text-rose-600" />
@@ -448,8 +448,8 @@ export function AdminCompliancePageClient({
                   )}
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Emergency Preparedness</h2>
-                  <p className="text-sm text-slate-500">Next required drills and checks</p>
+                  <h2 className="text-xl font-semibold text-foreground">Emergency Preparedness</h2>
+                  <p className="text-sm text-muted-foreground">Next required drills and checks</p>
                 </div>
               </div>
               <Link href="/admin/compliance/emergency-preparedness" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-orange-50/30 dark:bg-orange-950/20 text-[10px] uppercase tracking-wider font-mono text-orange-700 dark:text-orange-300")}>
@@ -466,17 +466,17 @@ export function AdminCompliancePageClient({
                     key={item.id}
                     className={`p-4 rounded-xl border ${
                       isOverdue
-                        ? "border-rose-500 bg-rose-50"
+                        ? "border-rose-500/40 bg-rose-500/10"
                         : isDueSoon
-                          ? "border-amber-500 bg-amber-50"
-                          : "border-slate-200 bg-white"
+                          ? "border-amber-500/40 bg-amber-500/10"
+                          : "border-border bg-card"
                     }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
                         <Shield className="h-5 w-5 text-slate-500" />
                         <div>
-                          <p className="font-medium text-slate-900 dark:text-slate-100">{item.title}</p>
+                          <p className="font-medium text-foreground">{item.title}</p>
                           <p className={`text-xs ${
                             isOverdue
                               ? "text-rose-600 font-semibold"
@@ -502,19 +502,15 @@ export function AdminCompliancePageClient({
 
         {/* Enhanced Tier: Compliance Reminders */}
         {reminders.length > 0 && (
-          <div className="rounded-lg p-6 border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/30">
+          <div className="rounded-lg p-6 border border-border bg-card">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className={`p-3 rounded-lg ${
-                  reminders.some((r) => r.reminder_type === 'weekly_digest')
-                    ? "bg-indigo-100"
-                    : "bg-amber-100"
-                }`}>
-                  <Bell className="h-6 w-6 text-indigo-600" />
+                <div className="p-3 rounded-lg bg-primary/10">
+                  <Bell className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Pending Reminders</h2>
-                  <p className="text-sm text-slate-500">Action items requiring attention</p>
+                  <h2 className="text-xl font-semibold text-foreground">Pending Reminders</h2>
+                  <p className="text-sm text-muted-foreground">Action items requiring attention</p>
                 </div>
               </div>
               <Link href="/admin/compliance/deficiencies/new" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-indigo-50/30 dark:bg-indigo-900/20 text-[10px] uppercase tracking-wider font-mono text-indigo-700 dark:text-indigo-300")}>
@@ -526,14 +522,14 @@ export function AdminCompliancePageClient({
                 const isWeekly = reminder.reminder_type === 'weekly_digest';
                 const isUrgent = reminder.reminder_type === 'poc_due' || reminder.reminder_type === 'assessment_overdue';
                 return (
-                  <MotionItem key={reminder.id} className="p-4 rounded-xl transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/30 hover:bg-white/70 dark:hover:bg-indigo-900/10 cursor-pointer border border-white/40 dark:border-white/5 bg-white/50 dark:bg-slate-900/30">
+                  <MotionItem key={reminder.id} className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 cursor-pointer">
                     <div className="flex items-start justify-between gap-4 w-full">
                       <div className="flex items-start gap-3 flex-1">
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          isWeekly ? 'bg-indigo-100' : isUrgent ? 'bg-rose-100' : 'bg-amber-100'
+                          isWeekly ? 'bg-primary/10' : isUrgent ? 'bg-rose-500/10' : 'bg-amber-500/10'
                         }`}>
                           {isWeekly ? (
-                            <ClipboardList className="h-5 w-5 text-indigo-600" />
+                            <ClipboardList className="h-5 w-5 text-primary" />
                           ) : isUrgent ? (
                             <AlertTriangle className="h-5 w-5 text-rose-600" />
                           ) : (
@@ -542,13 +538,13 @@ export function AdminCompliancePageClient({
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <p className="font-medium text-slate-900 dark:text-slate-100">{reminder.title}</p>
+                            <p className="font-medium text-foreground">{reminder.title}</p>
                             {isUrgent && (
                               <Badge variant="destructive" className="text-[9px] uppercase tracking-wider">Urgent</Badge>
                             )}
                           </div>
                           {reminder.description && (
-                            <p className="text-sm text-slate-600 dark:text-slate-400">{reminder.description}</p>
+                            <p className="text-sm text-muted-foreground">{reminder.description}</p>
                           )}
                         </div>
                       </div>
@@ -560,7 +556,7 @@ export function AdminCompliancePageClient({
                         )}
                         <button
                           onClick={() => dismissReminder(reminder.id, selectedFacilityId || "").then(() => setReminders(r => r.filter(x => x.id !== reminder.id)))}
-                          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          className="p-2 rounded-lg hover:bg-muted transition-colors duration-[var(--motion-duration-micro)]"
                           title="Dismiss reminder"
                         >
                           <X className="h-4 w-4 text-slate-400" />
@@ -576,42 +572,42 @@ export function AdminCompliancePageClient({
 
         {/* Survey Mode and Quick Links */}
         <div className="grid gap-5 md:grid-cols-2 mt-8">
-          <div className="rounded-lg p-6 border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/30">
+          <div className="rounded-lg p-6 border border-border bg-card">
             <div className="flex items-center gap-3 mb-4">
-              <Shield className="h-6 w-6 text-indigo-500" />
+              <Shield className="h-6 w-6 text-primary" />
               <div>
-                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">Survey visit mode</h3>
-                <p className="text-xs font-medium text-slate-500 mb-4">Use bar below header to activate logging while a regulator is on site.</p>
-                <div className="bg-card p-4 rounded-xl border border-white/40 dark:border-white/5 font-mono text-sm text-slate-700 dark:text-slate-300">
+                <h3 className="text-lg font-semibold text-foreground">Survey visit mode</h3>
+                <p className="text-xs font-medium text-muted-foreground mb-4">Use bar below header to activate logging while a regulator is on site.</p>
+                <div className="bg-muted p-4 rounded-xl border border-border font-mono text-sm text-foreground">
                    {snapLoading ? "—" : snapshot?.surveyVisitActive ? <span className="text-emerald-600 dark:text-emerald-400 font-bold">● Session active for this facility.</span> : "No active session."}
                 </div>
               </div>
             </div>
           </div>
-          <div className="rounded-lg p-6 border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/30">
+          <div className="rounded-lg p-6 border border-border bg-card">
             <div className="flex items-center gap-3 mb-4">
               <ClipboardList className="h-6 w-6 text-emerald-500" />
               <div>
-                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">Quick Links</h3>
+                <h3 className="text-lg font-semibold text-foreground">Quick Links</h3>
               </div>
             </div>
             <div className="flex flex-col gap-3">
-              <Link href="/admin/compliance/policies" className="group flex items-center justify-between p-3 rounded-xl hover:bg-card dark:hover:bg-white/5 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-white/10">
-                <span className="font-medium text-sm text-slate-700 dark:text-slate-300">Policy library</span>
-                <span className="text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">→</span>
+              <Link href="/admin/compliance/policies" className="group flex items-center justify-between p-3 rounded-xl hover:bg-muted transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] border border-transparent hover:border-border">
+                <span className="font-medium text-sm text-foreground">Policy library</span>
+                <span className="text-muted-foreground group-hover:text-foreground transition-colors">→</span>
               </Link>
-              <Link href="/admin/compliance/deficiencies/new" className="group flex items-center justify-between p-3 rounded-xl hover:bg-card dark:hover:bg-white/5 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-white/10">
-                <span className="font-medium text-sm text-slate-700 dark:text-slate-300">Enter survey deficiencies</span>
-                <span className="text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">→</span>
+              <Link href="/admin/compliance/deficiencies/new" className="group flex items-center justify-between p-3 rounded-xl hover:bg-muted transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] border border-transparent hover:border-border">
+                <span className="font-medium text-sm text-foreground">Enter survey deficiencies</span>
+                <span className="text-muted-foreground group-hover:text-foreground transition-colors">→</span>
               </Link>
-              <Link href="/admin/incidents" className="group flex items-center justify-between p-3 rounded-xl hover:bg-card dark:hover:bg-white/5 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-white/10">
-                <span className="font-medium text-sm text-slate-700 dark:text-slate-300">Incidents & follow-ups</span>
-                <span className="text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">→</span>
+              <Link href="/admin/incidents" className="group flex items-center justify-between p-3 rounded-xl hover:bg-muted transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] border border-transparent hover:border-border">
+                <span className="font-medium text-sm text-foreground">Incidents & follow-ups</span>
+                <span className="text-muted-foreground group-hover:text-foreground transition-colors">→</span>
               </Link>
               {/* Enhanced tier links */}
-              <Link href="/admin/compliance/deficiencies/analysis" className="group flex items-center justify-between p-3 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-colors border border-transparent hover:border-indigo-500 dark:hover:border-white/10">
-                <span className="font-medium text-sm text-indigo-700 dark:text-indigo-300">Deficiency analysis</span>
-                <span className="text-slate-400 group-hover:text-white dark:group-hover:text-white transition-colors">→</span>
+              <Link href="/admin/compliance/deficiencies/analysis" className="group flex items-center justify-between p-3 rounded-xl hover:bg-primary/10 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] border border-transparent hover:border-primary/30">
+                <span className="font-medium text-sm text-primary">Deficiency analysis</span>
+                <span className="text-muted-foreground group-hover:text-primary transition-colors">→</span>
               </Link>
             </div>
           </div>
@@ -649,7 +645,7 @@ function Tile({
         hoverColor={hoverColor}
         className={cn("h-full flex flex-col justify-between", isDanger ? "border-red-500/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]" : "")}
       >
-        <MonolithicWatermark value={value ?? 0} className={cn("opacity-50", isDanger ? "text-red-500/5" : "text-slate-500/5 dark:text-white/5")} />
+        <MonolithicWatermark value={value ?? 0} className={cn("opacity-50", isDanger ? "text-destructive/10" : "text-muted-foreground/10")} />
         <div className="relative z-10 flex flex-col h-full justify-between">
           <div className="flex items-center justify-between">
              <h3 className={cn("text-[10px] font-mono tracking-wider uppercase", isDanger ? "text-red-600 dark:text-red-400" : "text-slate-500 dark:text-slate-400")}>

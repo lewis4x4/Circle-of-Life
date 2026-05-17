@@ -300,13 +300,10 @@ export default function AdminReputationHubPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <></>
-      
       <div className="relative z-10 space-y-6">
         <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            
-            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
               Reputation Control
             </h2>
           </div>
@@ -365,8 +362,7 @@ export default function AdminReputationHubPage() {
         <KineticGrid className="grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px]">
             <V2Card hoverColor="indigo" className="border-indigo-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
-              <></>
-              <MonolithicWatermark value={accounts.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
+              <MonolithicWatermark value={accounts.length} className="text-info/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
                   <Star className="h-3.5 w-3.5" /> Tracked Listings
@@ -377,23 +373,18 @@ export default function AdminReputationHubPage() {
           </div>
           <div className="h-[160px]">
             <V2Card hoverColor="red" className={draftReplies.length > 0 ? "border-red-500/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]" : ""}>
-              <></>
-              <MonolithicWatermark value={draftReplies.length} className="text-red-600/5 dark:text-red-400/5 opacity-50" />
+              <MonolithicWatermark value={draftReplies.length} className="text-destructive/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-[10px] font-mono tracking-wider uppercase text-red-600 dark:text-red-400 flex items-center gap-2">
-                     Draft Replies
-                  </h3>
-                  {draftReplies.length > 0 && <></>}
-                </div>
+                <h3 className="text-[10px] font-mono tracking-wider uppercase text-red-600 dark:text-red-400 flex items-center gap-2">
+                   Draft Replies
+                </h3>
                 <p className="text-4xl font-mono tracking-tighter text-red-600 dark:text-red-400 pb-1">{draftReplies.length}</p>
               </div>
             </V2Card>
           </div>
           <div className="h-[160px]">
             <V2Card hoverColor="emerald" className="border-emerald-500/20 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]">
-              <></>
-              <MonolithicWatermark value={postedReplies.length} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
+              <MonolithicWatermark value={postedReplies.length} className="text-success/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400">
                   Posted Replies
@@ -405,7 +396,7 @@ export default function AdminReputationHubPage() {
           <div className="h-[180px]">
             <V2Card hoverColor="blue" className="p-5 lg:p-6">
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left sm:items-end sm:text-right">
-                 <p className="hidden max-w-md text-xs font-mono leading-relaxed text-slate-500 sm:block">Connected listings and reply workflow for the selected facility.</p>
+                 <p className="hidden max-w-md text-xs font-mono leading-relaxed text-muted-foreground sm:block">Connected listings and reply workflow for the selected facility.</p>
                  <div className="flex w-full gap-2 justify-start sm:justify-end">
                    <Link href="/admin/reputation/accounts/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-wider text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 border-none whitespace-nowrap")} >
                      + Connect Listing
@@ -417,13 +408,13 @@ export default function AdminReputationHubPage() {
         </KineticGrid>
 
       {!facilityReady && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+        <p className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
           Select a facility to load reputation accounts and replies.
         </p>
       )}
 
       {error && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
+        <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}
         </p>
       )}
@@ -433,34 +424,34 @@ export default function AdminReputationHubPage() {
           
           {/* ACTION QUEUE: Draft Replies */}
           <div className="col-span-1 lg:col-span-2 space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-white/10 dark:border-white/5">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+            <div className="flex items-center justify-between pb-2 border-b border-border">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
                 Draft Approvals
               </h3>
             </div>
             
             <MotionList className="space-y-3">
               {loading ? (
-                <p className="text-sm font-mono text-slate-500">Loading replies…</p>
+                <p className="text-sm font-mono text-muted-foreground">Loading replies…</p>
               ) : draftReplies.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 bg-white/30 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-md">
-                   <p className="font-medium">Inbox Zero</p>
+                <div className="p-8 text-center text-muted-foreground bg-card rounded-lg border border-border">
+                   <p className="font-medium text-foreground">Inbox Zero</p>
                    <p className="text-sm opacity-80">All reputation exceptions resolved.</p>
                 </div>
               ) : (
                 draftReplies.map((row) => (
-                  <MotionItem key={row.id} className="rounded-2xl p-6 border border-indigo-500/10 dark:border-indigo-500/5 bg-white/50 dark:bg-slate-900/40 relative overflow-hidden group transition-all hover:bg-white/70 dark:hover:bg-slate-900/60 hover:border-indigo-500/30">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-red-500" />
+                  <MotionItem key={row.id} className="rounded-lg p-6 border border-border bg-card relative overflow-hidden group transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-muted/40 hover:-translate-y-0.5">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-destructive" />
                     <div className="flex justify-between items-start mb-3">
-                       <span className="text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 px-2 py-1 rounded-md uppercase tracking-wider">
+                       <span className="text-xs font-bold text-destructive bg-destructive/10 px-2 py-1 rounded-md uppercase tracking-wider border border-destructive/20">
                          Needs Action
                        </span>
-                       <span className="text-xs text-slate-500 font-mono">
+                       <span className="text-xs text-muted-foreground font-mono">
                          {format(new Date(row.created_at), "MMM d, yyyy")}
                        </span>
                     </div>
                     <div className="mb-4">
-                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
+                      <p className="text-sm font-medium text-foreground mb-1">
                         {row.reputation_accounts?.label ?? "Unknown Listing"}
                       </p>
                       <label className="sr-only" htmlFor={`draft-reply-${row.id}`}>
@@ -468,7 +459,7 @@ export default function AdminReputationHubPage() {
                       </label>
                       <textarea
                         id={`draft-reply-${row.id}`}
-                        className="w-full min-h-[88px] rounded-lg border border-slate-200 bg-white/80 px-3 py-2 text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950/50 dark:text-slate-100"
+                        className="w-full min-h-[88px] rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                         defaultValue={row.reply_body}
                         disabled={
                           postingGoogleId === row.id ||
@@ -509,7 +500,7 @@ export default function AdminReputationHubPage() {
                             type="button"
                             className={cn(
                               buttonVariants({ variant: "default", size: "sm" }),
-                              "bg-red-700 hover:bg-red-800 text-white font-mono uppercase tracking-wider text-[10px]",
+                              "bg-destructive hover:bg-destructive/90 text-destructive-foreground font-mono uppercase tracking-wider text-[10px]",
                             )}
                             disabled={
                               postingYelpId === row.id ||
@@ -528,7 +519,7 @@ export default function AdminReputationHubPage() {
                         ) : null}
                         <button
                           type="button"
-                          className={cn(buttonVariants({ variant: "default", size: "sm" }), "bg-red-600 hover:bg-red-700 text-white font-mono uppercase tracking-wider text-[10px]")}
+                          className={cn(buttonVariants({ variant: "default", size: "sm" }), "bg-destructive hover:bg-destructive/90 text-destructive-foreground font-mono uppercase tracking-wider text-[10px]")}
                           disabled={
                             updatingId === row.id ||
                             postingGoogleId === row.id ||
@@ -546,17 +537,19 @@ export default function AdminReputationHubPage() {
             
             {/* Posted Feed */}
             {postedReplies.length > 0 && (
-              <MotionList className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
-                 <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Recently Posted</h4>
+              <MotionList className="mt-8 space-y-2 opacity-60 hover:opacity-100 transition-opacity">
+                 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Recently Posted</h4>
                  {postedReplies.slice(0, 3).map((row) => (
-                   <MotionItem key={row.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-card flex gap-4 items-center">
-                     <div className="flex-1 min-w-0">
-                       <p className="text-xs font-medium text-slate-900 dark:text-slate-300 truncate">{row.reputation_accounts?.label}</p>
-                       <p className="text-[10px] text-slate-500 truncate">{row.reply_body}</p>
+                   <MotionItem key={row.id}>
+                     <div className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
+                       <div className="flex-1 min-w-0">
+                         <p className="text-xs font-medium text-foreground truncate">{row.reputation_accounts?.label}</p>
+                         <p className="text-[10px] text-muted-foreground truncate">{row.reply_body}</p>
+                       </div>
+                       <span className="text-[10px] font-mono text-success shrink-0">
+                         {row.posted_to_platform_at ? format(new Date(row.posted_to_platform_at), "MMM d") : "Done"}
+                       </span>
                      </div>
-                     <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
-                       {row.posted_to_platform_at ? format(new Date(row.posted_to_platform_at), "MMM d") : "Done"}
-                     </span>
                    </MotionItem>
                  ))}
               </MotionList>
@@ -565,29 +558,32 @@ export default function AdminReputationHubPage() {
           </div>
 
           {/* WATCHLIST: Connected Listings */}
-          <div className="col-span-1 border-l border-white/10 dark:border-white/5 pl-0 lg:pl-6 pt-6 lg:pt-0">
-            <div className="flex items-center justify-between pb-2 border-b border-white/10 dark:border-white/5 mb-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+          <div className="col-span-1 border-l border-border pl-0 lg:pl-6 pt-6 lg:pt-0">
+            <div className="flex items-center justify-between pb-2 border-b border-border mb-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
                 Integrations Health
               </h3>
             </div>
             
             {loading ? (
-              <p className="text-sm font-mono text-slate-500">Loading…</p>
+              <p className="text-sm font-mono text-muted-foreground">Loading…</p>
             ) : accounts.length === 0 ? (
-               <p className="text-sm text-slate-500 italic">No connected accounts.</p>
+               <p className="text-sm text-muted-foreground">No connected accounts.</p>
             ) : (
                <div className="space-y-2">
                  {accounts.map(row => (
-                   <div key={row.id} className="p-3 rounded-xl border border-white/20 dark:border-white/10 bg-white/30 flex items-center justify-between">
-                     <div>
-                       <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">{row.label}</p>
-                       <p className="text-[9px] font-mono text-slate-500 mt-1 uppercase">{formatPlatform(row.platform)}</p>
+                   <div
+                     key={row.id}
+                     className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]"
+                   >
+                     <div className="flex-1 min-w-0">
+                       <p className="text-xs font-semibold text-foreground truncate">{row.label}</p>
+                       <p className="text-[9px] font-mono text-muted-foreground mt-0.5 uppercase">{formatPlatform(row.platform)}</p>
                      </div>
                      {row.is_active ? (
-                       <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                       <span className="w-2 h-2 rounded-full bg-success shrink-0" />
                      ) : (
-                       <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-700" />
+                       <span className="w-2 h-2 rounded-full bg-muted-foreground/30 shrink-0" />
                      )}
                    </div>
                  ))}

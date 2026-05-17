@@ -300,27 +300,27 @@ export function AdminResidentsPageClient({
         status !== DEFAULT_FILTERS.status) ? (
         <div className="flex flex-wrap items-center gap-2">
           {search !== DEFAULT_FILTERS.search ? (
-            <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+            <Badge variant="outline" className="border-info/20 bg-info/10 text-info">
               Search: {search}
             </Badge>
           ) : null}
           {acuity !== DEFAULT_FILTERS.acuity ? (
-            <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
+            <Badge variant="outline" className="border-destructive/20 bg-destructive/10 text-destructive">
               Acuity: {acuity === "watchlist" ? "watchlist (2-3)" : acuity}
             </Badge>
           ) : null}
           {unit !== DEFAULT_FILTERS.unit ? (
-            <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+            <Badge variant="outline" className="border-warning/20 bg-warning/10 text-warning">
               Unit: {unit}
             </Badge>
           ) : null}
           {adl !== DEFAULT_FILTERS.adl ? (
-            <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+            <Badge variant="outline" className="border-success/20 bg-success/10 text-success">
               ADL: {adl}
             </Badge>
           ) : null}
           {status !== DEFAULT_FILTERS.status ? (
-            <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
+            <Badge variant="outline" className="border-border bg-muted/40 text-muted-foreground">
               Status: {status === "away" ? "hospital / LOA" : status}
             </Badge>
           ) : null}
@@ -339,28 +339,23 @@ export function AdminResidentsPageClient({
       ) : null}
 
       {!isLoading && !error && filteredRows.length > 0 ? (
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
-          <div className="hidden lg:grid grid-cols-[3fr_1fr_1fr_1fr_1fr_1fr] gap-4 border-b border-border/60 bg-secondary/30 px-4 py-2.5">
-            <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Resident</div>
-            <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Location</div>
-            <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Acuity</div>
-            <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">ADL</div>
-            <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Status</div>
-            <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground text-right">Updated</div>
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <div className="hidden lg:flex items-center gap-3 px-[13px] py-2 border-b border-border bg-card/60 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <div className="flex-[3]">Resident</div>
+            <div className="flex-1">Location</div>
+            <div className="flex-1">Acuity</div>
+            <div className="flex-1">ADL</div>
+            <div className="flex-1">Status</div>
+            <div className="flex-1 text-right">Updated</div>
           </div>
-          <MotionList className="flex flex-col">
+          <MotionList className="space-y-1 p-1">
             {filteredRows.map((resident) => (
               <MotionItem key={resident.id}>
                 <Link
                   href={`/admin/residents/${resident.id}`}
-                  className={cn(
-                    "grid grid-cols-1 lg:grid-cols-[3fr_1fr_1fr_1fr_1fr_1fr] gap-3 items-center px-4 py-2.5",
-                    "border-b border-border/60 last:border-b-0",
-                    "transition-colors hover:bg-secondary/40",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
-                  )}
+                  className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex-[3] flex items-center gap-3 min-w-0">
                     <span className="grid size-8 shrink-0 place-items-center rounded-full bg-secondary text-[11px] font-semibold text-foreground">
                       {resident.initials}
                     </span>
@@ -374,31 +369,24 @@ export function AdminResidentsPageClient({
                     </div>
                   </div>
 
-                  <div className="flex flex-row items-center justify-between lg:justify-start">
-                    <span className="lg:hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Location</span>
-                    <div className="flex flex-col leading-tight">
-                      <span className="text-[13px] font-medium text-foreground">{resident.room}</span>
-                      <span className="text-[11px] text-muted-foreground tabular-nums">{resident.unit}</span>
-                    </div>
+                  <div className="flex-1 flex flex-col leading-tight">
+                    <span className="text-[13px] font-medium text-foreground">{resident.room}</span>
+                    <span className="text-[11px] text-muted-foreground tabular-nums">{resident.unit}</span>
                   </div>
 
-                  <div className="flex flex-row items-center justify-between lg:justify-start">
-                    <span className="lg:hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Acuity</span>
+                  <div className="flex-1">
                     <AcuityBadge acuity={resident.acuity} />
                   </div>
 
-                  <div className="flex flex-row items-center justify-between lg:justify-start">
-                    <span className="lg:hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground">ADL</span>
+                  <div className="flex-1">
                     <AdlBadge status={resident.adlStatus} />
                   </div>
 
-                  <div className="flex flex-row items-center justify-between lg:justify-start">
-                    <span className="lg:hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Status</span>
+                  <div className="flex-1">
                     <ResidentStatusBadge status={resident.status} />
                   </div>
 
-                  <div className="flex flex-row items-center justify-between lg:justify-end">
-                    <span className="lg:hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Updated</span>
+                  <div className="flex-1 flex justify-end">
                     <span className="text-[11px] tabular-nums text-muted-foreground whitespace-nowrap">
                       {resident.updatedAt}
                     </span>

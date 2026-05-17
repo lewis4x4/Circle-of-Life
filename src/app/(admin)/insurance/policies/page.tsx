@@ -84,22 +84,20 @@ export default function InsurancePoliciesPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <></>
-      
       <div className="relative z-10 space-y-6 max-w-5xl mx-auto">
         <InsuranceHubNav />
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-border shadow-sm mt-4">
           <div className="space-y-2">
-            <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-              Policies {rows.some(r => r.status === "cancelled") && <></>}
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground flex items-center gap-4">
+              Policies
             </h1>
-            <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
+            <p className="mt-2 font-medium tracking-wide text-muted-foreground max-w-2xl">
               Entity-level corporate insurance inventory.
             </p>
           </div>
           {canWrite && (
             <div className="flex flex-wrap items-center gap-2">
-              <Link href="/admin/insurance/policies/new" className={cn(buttonVariants({ size: "default" }), "h-12 px-6 rounded-full font-bold uppercase tracking-wider text-[10px] tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg")} >
+              <Link href="/admin/insurance/policies/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-wider text-[10px]")} >
                  + New Policy
               </Link>
             </div>
@@ -107,18 +105,18 @@ export default function InsurancePoliciesPage() {
         </header>
 
         {loadError && (
-          <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+          <p className="text-sm text-destructive" role="alert">
             {loadError}
           </p>
         )}
 
-        <div className="p-6 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
-          <div className="flex flex-col md:flex-row gap-4 mb-6 pb-6 border-b border-slate-200 dark:border-white/5">
+        <div className="p-6 rounded-lg border border-border bg-card">
+          <div className="flex flex-col md:flex-row gap-4 mb-6 pb-6 border-b border-border">
             <div className="flex-1 space-y-1.5">
-              <Label htmlFor="ent" className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Entity</Label>
+              <Label htmlFor="ent" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Entity</Label>
               <select
                 id="ent"
-                className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-slate-900 shadow-sm"
+                className="w-full h-10 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm"
                 value={entityFilter}
                 onChange={(e) => setEntityFilter(e.target.value)}
               >
@@ -131,10 +129,10 @@ export default function InsurancePoliciesPage() {
               </select>
             </div>
             <div className="flex-1 space-y-1.5">
-              <Label htmlFor="st" className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Status</Label>
+              <Label htmlFor="st" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Status</Label>
               <select
                 id="st"
-                className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-slate-900 shadow-sm"
+                className="w-full h-10 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
@@ -147,26 +145,26 @@ export default function InsurancePoliciesPage() {
               </select>
             </div>
             <div className="flex items-end">
-              <Button type="button" variant="outline" className="h-10 rounded-xl px-6 bg-white dark:bg-white/5 border-slate-200 dark:border-white/10" onClick={() => void load()}>
+              <Button type="button" variant="outline" className="h-10 rounded-lg px-6 border-border" onClick={() => void load()}>
                 Apply Filters
               </Button>
             </div>
           </div>
 
-          <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-200 dark:border-white/5 pl-2">
-            <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+          <div className="flex items-center justify-between pb-4 mb-4 border-b border-border pl-2">
+            <h3 className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
               Policy List
             </h3>
-            <span className="text-xs font-medium text-slate-500">{loading ? "Loading…" : `${rows.length} policies`}</span>
+            <span className="text-xs font-medium text-muted-foreground">{loading ? "Loading…" : `${rows.length} policies`}</span>
           </div>
 
           <MotionList className="space-y-3">
              {loading ? (
-               <p className="text-sm font-mono text-slate-500 pl-2">Loading policies…</p>
+               <p className="text-sm font-mono text-muted-foreground pl-2">Loading policies…</p>
              ) : rows.length === 0 ? (
-               <div className="p-12 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 backdrop-blur-md">
-                  <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Policies Found</p>
-                 <p className="text-sm opacity-80 mt-1">Try adjusting your filters or adding a new policy.</p>
+               <div className="p-12 text-center rounded-lg border border-dashed border-border bg-muted/20">
+                  <p className="font-semibold text-lg text-foreground">No Policies Found</p>
+                 <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters or adding a new policy.</p>
                </div>
              ) : (
                rows.map((r) => {
@@ -176,47 +174,40 @@ export default function InsurancePoliciesPage() {
                  return (
                    <MotionItem
                      key={r.id}
-                     className={cn(
-                       "p-5 rounded-lg border shadow-sm flex flex-col sm:flex-row gap-4 sm:items-center justify-between group overflow-hidden relative transition-colors",
-                       isActive 
-                         ? "border-emerald-200/80 bg-white dark:border-emerald-900/30 dark:bg-emerald-950/20 hover:border-emerald-300 dark:hover:border-emerald-800/40"
-                         : "border-slate-200/80 bg-white dark:border-white/5 dark:bg-white/[0.03] hover:border-slate-300 dark:hover:border-white/20"
-                     )}
+                     className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] relative overflow-hidden"
                    >
-                     {isActive && <div className="absolute left-0 top-0 w-1.5 h-full bg-emerald-500" />}
-                     <div className="flex-1 min-w-0 pl-1">
-                       <div className="flex items-center gap-3 mb-1">
+                     {isActive && <div className="absolute left-0 top-0 w-1 h-full bg-success rounded-l-lg" />}
+                     <div className="flex-1 min-w-0 pl-1 flex flex-col sm:flex-row sm:items-center gap-3">
+                       <div className="flex items-center gap-3">
                          <span className={cn(
-                           "text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border",
+                           "text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border",
                            isActive 
-                             ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" 
-                             : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/5 dark:text-slate-400 dark:border-white/10"
+                             ? "bg-success/10 text-success border-success/20"
+                             : "bg-muted text-muted-foreground border-border"
                          )}>
                            {r.status.replace(/_/g, " ")}
                          </span>
-                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                           Expires: {formattedDate}
-                         </span>
+                         <span className="text-sm font-semibold text-foreground tracking-tight">{r.carrier_name}</span>
                        </div>
-                       <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight mt-2">{r.carrier_name}</p>
-                       <div className="flex gap-4 mt-1 items-center">
-                         <span className="text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded-md text-xs font-medium">{r.policy_type.replace(/_/g, " ")}</span>
-                         <span className="text-slate-500 text-sm">{entityName(r.entity_id)}</span>
-                       </div>
-                       <div className="mt-3">
-                         <p className="text-[10px] font-mono tracking-wider uppercase text-slate-400 mb-0.5">Premium</p>
-                         <p className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">{formatUsdFromCents(r.premium_cents)}</p>
+                       <div className="flex gap-3 items-center text-xs text-muted-foreground">
+                         <span className="bg-muted px-2 py-0.5 rounded-md">{r.policy_type.replace(/_/g, " ")}</span>
+                         <span>{entityName(r.entity_id)}</span>
+                         <span className="font-mono tracking-wider uppercase">Expires: {formattedDate}</span>
                        </div>
                      </div>
-                     <div className="shrink-0 flex items-center gap-3 pl-1 sm:pl-0">
+                     <div className="shrink-0 flex items-center gap-4">
+                       <div className="flex flex-col items-end">
+                         <span className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground">Premium</span>
+                         <span className="font-semibold text-foreground tabular-nums">{formatUsdFromCents(r.premium_cents)}</span>
+                       </div>
                        <Link
                          href={`/admin/insurance/policies/${r.id}`}
                          className={cn(
                            buttonVariants({ variant: "outline", size: "sm" }),
-                           "h-10 rounded-full px-5 font-bold uppercase tracking-wider text-[10px] bg-white dark:bg-white/5 dark:border-white/10"
+                           "font-mono uppercase tracking-wider text-[10px]"
                          )}
                        >
-                         View Details
+                         View
                        </Link>
                      </div>
                    </MotionItem>

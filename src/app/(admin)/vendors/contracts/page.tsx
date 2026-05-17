@@ -4,10 +4,15 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { VendorHubNav } from "../vendor-hub-nav";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AdminEmptyState,
+  AdminLiveDataFallbackNotice,
+  AdminTableLoadingState,
+} from "@/components/common/admin-list-patterns";
 import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import type { Database } from "@/types/database";
 
 type ContractRow = Database["public"]["Tables"]["contracts"]["Row"];
@@ -52,58 +57,64 @@ export default function VendorContractsListPage() {
   }, [load]);
 
   return (
-    <div className="space-y-6">
-      <VendorHubNav />
-      {loadError && (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-          {loadError}
-        </p>
-      )}
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Contracts</h1>
-        <p className="text-sm text-slate-600 dark:text-slate-400">Vendor agreements and key dates.</p>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">All contracts</CardTitle>
-          <CardDescription>{loading ? "Loading…" : `${rows.length} contract(s)`}</CardDescription>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800">
-                <th className="pb-2 pr-4 font-medium">Title</th>
-                <th className="pb-2 pr-4 font-medium">Vendor</th>
-                <th className="pb-2 pr-4 font-medium">Effective</th>
-                <th className="pb-2 pr-4 font-medium">Expires</th>
-                <th className="pb-2 font-medium">Value</th>
-              </tr>
-            </thead>
-            <tbody>
+    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+      <div className="relative z-10 space-y-6">
+        <VendorHubNav />
+
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-border shadow-sm mt-4">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Contracts</h1>
+            <p className="text-sm text-muted-foreground">Vendor agreements and key dates.</p>
+          </div>
+        </header>
+
+        {loadError && (
+          <AdminLiveDataFallbackNotice message={loadError} onRetry={() => void load()} />
+        )}
+
+        {loading ? (
+          <AdminTableLoadingState />
+        ) : rows.length === 0 && !loadError ? (
+          <AdminEmptyState title="No contracts" description="Vendor contracts will appear here once entered." />
+        ) : (
+          <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
+            {/* Header row */}
+            <div className="flex items-center gap-3 px-[13px] py-2 border-b border-border bg-card/60 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <span className="flex-1 min-w-0">Title</span>
+              <span className="w-[140px] shrink-0">Vendor</span>
+              <span className="w-[110px] shrink-0">Effective</span>
+              <span className="w-[110px] shrink-0">Expires</span>
+              <span className="w-[110px] shrink-0 text-right">Value</span>
+            </div>
+            <MotionList className="space-y-1">
               {rows.map((r) => (
-                <tr key={r.id} className="border-b border-slate-100 dark:border-slate-900">
-                  <td className="py-2 pr-4">
-                    <Link className="text-primary underline-offset-4 hover:underline" href={`/admin/vendors/contracts/${r.id}`}>
+                <MotionItem key={r.id}>
+                  <Link
+                    href={`/admin/vendors/contracts/${r.id}`}
+                    className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+                  >
+                    <span className="flex-1 min-w-0 font-medium text-[13px] text-foreground truncate">
                       {r.title}
-                    </Link>
-                  </td>
-                  <td className="py-2 pr-4 text-slate-600 dark:text-slate-400">{r.vendor_name ?? "—"}</td>
-                  <td className="py-2 pr-4 tabular-nums">{r.effective_date}</td>
-                  <td className="py-2 pr-4 tabular-nums">{r.expiration_date ?? "—"}</td>
-                  <td className="py-2">{formatUsdFromCents(r.total_value_cents)}</td>
-                </tr>
+                    </span>
+                    <span className="w-[140px] shrink-0 text-[12px] text-muted-foreground truncate">
+                      {r.vendor_name ?? "—"}
+                    </span>
+                    <span className="w-[110px] shrink-0 font-mono text-[12px] text-muted-foreground tabular-nums">
+                      {r.effective_date}
+                    </span>
+                    <span className="w-[110px] shrink-0 font-mono text-[12px] text-muted-foreground tabular-nums">
+                      {r.expiration_date ?? "—"}
+                    </span>
+                    <span className="w-[110px] shrink-0 text-right font-mono text-[13px] font-medium text-foreground tabular-nums">
+                      {formatUsdFromCents(r.total_value_cents)}
+                    </span>
+                  </Link>
+                </MotionItem>
               ))}
-              {!loading && rows.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="py-6 text-slate-500">
-                    No contracts yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
+            </MotionList>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

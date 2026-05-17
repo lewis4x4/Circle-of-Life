@@ -159,17 +159,14 @@ export default function AdminRoundingHubPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <></>
-
       <div className="relative z-10 space-y-6">
         
         {/* ─── MOONSHOT HEADER ─── */}
-        <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
+        <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-border shadow-sm mt-4">
            <div className="space-y-2">
              
              <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
                 Resident Assurance
-                {hasUrgent && <></>}
              </h1>
              <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
                Live rounding visibility, observation plans, and compliance reporting.
@@ -191,7 +188,7 @@ export default function AdminRoundingHubPage() {
         <Link
           href="/admin/rounding/live"
           className={cn(
-            "group relative block overflow-hidden rounded-lg border p-8 transition-all duration-300",
+            "group relative block overflow-hidden rounded-lg border border-border p-8 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]",
             "",
             "border-emerald-500/30 hover:border-emerald-400/50",
             "shadow-lg shadow-emerald-900/20 hover:shadow-emerald-800/30",
@@ -199,7 +196,7 @@ export default function AdminRoundingHubPage() {
         >
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-6">
-              <div className="rounded-lg bg-emerald-500/20 p-5 group-hover:bg-emerald-500/30 transition-colors">
+              <div className="rounded-lg bg-success/20 p-5 group-hover:bg-success/30 transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
                 <Play className="h-10 w-10 text-emerald-400" />
               </div>
               <div>
@@ -215,7 +212,6 @@ export default function AdminRoundingHubPage() {
             <div className="flex items-center gap-4">
               {summary.urgentTasks > 0 && (
                 <span className="flex items-center gap-2 rounded-full bg-rose-500/20 px-4 py-1.5 text-xs font-mono font-bold uppercase tracking-wider text-rose-300 border border-rose-500/30">
-                  <></>
                   {summary.urgentTasks} urgent
                 </span>
               )}
@@ -241,7 +237,6 @@ export default function AdminRoundingHubPage() {
             label="Urgent Now"
             value={String(summary.urgentTasks)}
             hoverColor={hasUrgent ? "rose" : "emerald"}
-            pulse={hasUrgent}
           />
           <MetricV2
             label="Completion Rate"
@@ -328,21 +323,21 @@ export default function AdminRoundingHubPage() {
           <Button
             onClick={() => void load()}
             variant="outline"
-            className="h-[52px] px-8 rounded-full border border-slate-200 dark:border-white/10 bg-white/50 text-slate-900 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-white/5 shadow-sm text-xs font-bold uppercase tracking-wider tap-responsive"
+            className="h-[52px] px-8 rounded-lg border border-border bg-card text-foreground hover:bg-muted/40 shadow-sm text-xs font-bold uppercase tracking-wider tap-responsive"
           >
             <RefreshCw className="mr-3 h-4 w-4" />
             Sync Real-time
           </Button>
           <Link
             href="/admin/rounding/plans/new"
-            className={cn(buttonVariants({ variant: "outline" }), "h-[52px] px-8 rounded-full border-cyan-700/50 bg-cyan-950/30 text-cyan-200 hover:bg-cyan-900/40 text-xs font-bold uppercase tracking-wider tap-responsive")}
+            className={cn(buttonVariants({ variant: "outline" }), "h-[52px] px-8 rounded-lg border-cyan-700/50 bg-cyan-950/30 text-cyan-200 hover:bg-cyan-900/40 text-xs font-bold uppercase tracking-wider tap-responsive")}
           >
             <UserPlus className="mr-3 h-4 w-4" />
             Create plan
           </Link>
           <Link
             href="/caregiver/rounds"
-            className={cn(buttonVariants({ variant: "outline" }), "h-[52px] px-8 rounded-full border-emerald-700/50 bg-emerald-950/30 text-emerald-200 hover:bg-emerald-900/40 text-xs font-bold uppercase tracking-wider tap-responsive")}
+            className={cn(buttonVariants({ variant: "outline" }), "h-[52px] px-8 rounded-lg border-emerald-700/50 bg-emerald-950/30 text-emerald-200 hover:bg-emerald-900/40 text-xs font-bold uppercase tracking-wider tap-responsive")}
           >
             <Play className="mr-3 h-4 w-4" />
             Caregiver Interface
@@ -358,12 +353,10 @@ function MetricV2({
   label,
   value,
   hoverColor,
-  pulse,
 }: {
   label: string;
   value: string;
   hoverColor: string;
-  pulse?: boolean;
 }) {
   const borderColor = {
     cyan: "border-cyan-500/20 shadow-[0_8px_30px_rgba(6,182,212,0.05)]",
@@ -385,7 +378,6 @@ function MetricV2({
         <div className="relative z-10 flex flex-col h-full justify-between">
           <h3 className={cn("text-[11px] font-bold tracking-wider uppercase flex items-center gap-2", labelColor)}>
             {label}
-            {pulse && <></>}
           </h3>
           <p className={cn("text-2xl tracking-tight font-medium pb-2", labelColor)}>{value}</p>
         </div>
